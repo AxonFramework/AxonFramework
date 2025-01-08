@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,9 @@ import io.opentelemetry.context.propagation.TextMapPropagator;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -90,12 +92,11 @@ class OpenTelemetrySpanFactoryTest {
         GlobalOpenTelemetry.set(otelMock);
     }
 
-    @Test
-    void propagatesContextInjectsMetadata() {
-        EventMessage<Object> originalMessage = GenericEventMessage.asEventMessage("MyEvent");
-        EventMessage<Object> modifiedMessage = factory.propagateContext(originalMessage);
-
-        assertNotNull(modifiedMessage.getMetaData().get("traceparent"));
+    private static <P> EventMessage<P> asEventMessage(P event) {
+        return new GenericEventMessage<>(
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
+                () -> GenericEventMessage.clock.instant()
+        );
     }
 
     @Test
@@ -207,9 +208,12 @@ class OpenTelemetrySpanFactoryTest {
         verify(spanBuilder).setAttribute("myKey", "myValue");
     }
 
-    private Message<?> generateMessageWithTraceId(String traceId) {
-        return GenericEventMessage.asEventMessage("MyEvent")
-                                  .andMetaData(Collections.singletonMap("traceparent", traceId));
+    @Test
+    void propagatesContextInjectsMetadata() {
+        EventMessage<Object> originalMessage = asEventMessage("MyEvent");
+        EventMessage<Object> modifiedMessage = factory.propagateContext(originalMessage);
+
+        assertNotNull(modifiedMessage.getMetaData().get("traceparent"));
     }
 
     @Test
@@ -234,5 +238,9 @@ class OpenTelemetrySpanFactoryTest {
     void builderRejectsNullTextMapSetter() {
         OpenTelemetrySpanFactory.Builder builder = OpenTelemetrySpanFactory.builder();
         assertThrows(AxonConfigurationException.class, () -> builder.textMapSetter(null));
+    }
+
+    private Message<?> generateMessageWithTraceId(String traceId) {
+        return asEventMessage("MyEvent").andMetaData(Collections.singletonMap("traceparent", traceId));
     }
 }

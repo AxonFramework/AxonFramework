@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.common.Context;
+import org.axonframework.messaging.Context;
 
 /**
  * Interface representing a point in an Event Stream up to where certain models have been made up-to-date. Typically,
@@ -33,7 +33,7 @@ public interface ConsistencyMarker {
      *
      * @see Context#getResource(Context.ResourceKey)
      */
-    Context.ResourceKey<ConsistencyMarker> RESOURCE_KEY = Context.ResourceKey.create("consistencyMarker");
+    Context.ResourceKey<ConsistencyMarker> RESOURCE_KEY = Context.ResourceKey.withLabel("consistencyMarker");
 
     /**
      * The consistency marker representing the start of an event stream. Effectively any event present in an event store

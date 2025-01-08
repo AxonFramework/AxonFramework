@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.Context.ResourceKey;
+import org.axonframework.messaging.Context.ResourceKey;
 
 import javax.annotation.Nonnull;
 
@@ -30,7 +30,7 @@ import javax.annotation.Nonnull;
  */
 public interface RoutingStrategy {
 
-    ResourceKey<String> ROUTING_KEY = ResourceKey.create("RoutingKey");
+    ResourceKey<String> ROUTING_KEY = ResourceKey.withLabel("RoutingKey");
 
     /**
      * Generates a routing key for the given {@code command}. Commands that should be handled by the same segment,

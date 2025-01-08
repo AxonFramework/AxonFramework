@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import io.axoniq.axonserver.connector.event.EventStream;
 import io.axoniq.axonserver.grpc.event.Event;
 import io.axoniq.axonserver.grpc.event.EventWithToken;
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Context;
 import org.axonframework.common.StringUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.SimpleEntry;
 
@@ -62,16 +62,15 @@ class AxonServerMessageStream implements MessageStream<EventMessage<?>> {
         if (eventWithToken == null) {
             return Optional.empty();
         }
-        EventMessage<byte[]> message = messageConverter.apply(eventWithToken.getEvent());
+        Event event = eventWithToken.getEvent();
+        EventMessage<byte[]> message = messageConverter.apply(event);
         GlobalSequenceTrackingToken token = new GlobalSequenceTrackingToken(eventWithToken.getToken());
         Context context = Context.with(TrackingToken.RESOURCE_KEY, token);
-        if (StringUtils.nonEmptyOrNull(eventWithToken.getEvent().getAggregateIdentifier())) {
+        if (StringUtils.nonEmptyOrNull(event.getAggregateIdentifier())) {
             context = context.withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
-                                           eventWithToken.getEvent().getAggregateSequenceNumber())
-                             .withResource(LegacyResources.AGGREGATE_TYPE_KEY,
-                                           eventWithToken.getEvent().getAggregateType())
-                             .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY,
-                                           eventWithToken.getEvent().getAggregateIdentifier());
+                                           event.getAggregateSequenceNumber())
+                             .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getAggregateType())
+                             .withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier());
         }
         return Optional.of(new SimpleEntry<>(message, context));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,11 +148,11 @@ class AsyncRetrySchedulerTest {
         MessageStream<Message<?>> actual =
                 testSubject.scheduleRetry(testMessage, null, new MockException("Simulating exception"), dispatcher);
 
-        assertFalse(actual.firstAsCompletableFuture().isDone());
+        assertFalse(actual.hasNextAvailable());
         verify(dispatcher, never()).dispatch(any(), any());
         scheduledTasks.remove().task.run();
 
-        assertTrue(actual.firstAsCompletableFuture().isDone());
+        assertTrue(actual.hasNextAvailable());
 
         StepVerifier.create(actual.asFlux())
                     .expectNextCount(1)

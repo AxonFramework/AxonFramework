@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.common;
+package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
 /**
  * Interface describing operations for context-specific, <b>immutable</b>, resource management.
@@ -87,47 +88,57 @@ public interface Context {
                              @Nonnull T resource);
 
     /**
-     * Object that is used as a key to retrieve and register resources of a given type in a processing context.
+     * Object that is used as a key to retrieve and register resources of a given type in a {@code Context}.
      * <p>
-     * Implementations are encouraged to override the {@link #toString()} method to include some information useful for
-     * debugging.
-     * <p>
-     * Instance of a {@code ResourceKey} can be created using {@link ResourceKey#create(String)}.
+     * Instance of a {@code ResourceKey} can be created using the {@link #withLabel(String)} method. Regardless of the
+     * given {@code label}, a unique key will be constructed at all times, ensuring user-defined keys do not clash with
+     * system keys. Thus, if a {@code Context} specific resource should be shared, the constructed {@code ResourceKey}
+     * should be shared.
      *
      * @param <T> The type of resource registered under this key.
+     * @author Allard Buijze
+     * @author Mitchell Herrijgers
+     * @author Steven van Beelen
+     * @since 5.0.0
      */
     @SuppressWarnings("unused") // Suppresses the warning that the generic type is not used.
     final class ResourceKey<T> {
 
         private static final String RESOURCE_KEY_PREFIX = "ResourceKey@";
 
-        private final String toString;
+        private final String identity;
+        private final String label;
 
-        private ResourceKey(String debugString) {
+        private ResourceKey(@Nullable String label) {
+            this.label = label;
             String keyId = RESOURCE_KEY_PREFIX + Integer.toHexString(System.identityHashCode(this));
-            if (debugString == null || debugString.isBlank()) {
-                this.toString = keyId;
+            if (label == null || label.isBlank()) {
+                this.identity = keyId;
             } else {
-                this.toString = keyId + "[" + debugString + "]";
+                this.identity = keyId + "[" + label + "]";
             }
         }
 
         /**
-         * Create a new ResourceKey for a resource of type {@code T}. The given {@code debugString} is part of the
+         * Create a new {@code ResourceKey} for a resource of type {@code T}. The given {@code label} is part of the
          * {@link #toString()} (if not {@code null} or empty) of the created key instance and may be used for debugging
          * purposes.
          *
-         * @param debugString A {@link String} to recognize this key during debugging.
-         * @param <T>         The type of resource of this key.
-         * @return A new key used to register and retrieve resources.
+         * @param label A {@code String} to recognize this key during debugging.
+         * @param <T>   The type of resource of this key.
+         * @return A new {@code ResourceKey} used to register and retrieve resources.
          */
-        public static <T> ResourceKey<T> create(String debugString) {
-            return new ResourceKey<>(debugString);
+        public static <T> ResourceKey<T> withLabel(@Nullable String label) {
+            return new ResourceKey<>(label);
+        }
+
+        public String label() {
+            return label;
         }
 
         @Override
         public String toString() {
-            return toString;
+            return identity;
         }
     }
 }

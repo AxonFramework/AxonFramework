@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ReplayStatus;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.MessageNameResolver;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -30,7 +32,7 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ReplayParameterResolverFactoryTest {
@@ -39,11 +41,12 @@ class ReplayParameterResolverFactoryTest {
     private AnnotationEventHandlerAdapter testSubject;
     private TrackingToken replayToken;
     private GlobalSequenceTrackingToken regularToken;
+    private final MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
     @BeforeEach
     void setUp() {
         handler = new SomeHandler();
-        testSubject = new AnnotationEventHandlerAdapter(handler);
+        testSubject = new AnnotationEventHandlerAdapter(handler, messageNameResolver);
         regularToken = new GlobalSequenceTrackingToken(1L);
         replayToken = ReplayToken.createReplayToken(regularToken);
     }

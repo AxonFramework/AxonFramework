@@ -50,7 +50,7 @@ class AsyncInMemoryEventStorageEngineTest extends StorageEngineTestSuite<AsyncIn
      * AppendConditionAssertionException as intended.
      */
     @Test
-    void appendEventsThrowsAppendConditionAssertionExceptionWhenToManyIndicesAreGiven() {
+    void appendEventsThrowsAppendConditionAssertionExceptionWhenToManyTagsAreGiven() {
         SourcingCondition firstCondition = conditionFor(TEST_CRITERIA);
         SourcingCondition secondCondition = conditionFor(hasTag(new Tag("aggregateId", "other-aggregate-id")));
 

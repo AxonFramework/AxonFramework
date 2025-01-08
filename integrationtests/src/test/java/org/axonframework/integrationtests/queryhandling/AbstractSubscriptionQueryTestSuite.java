@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.queryhandling;
 
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -197,7 +197,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
         // Sets given UnitOfWork as the current, active, started UnitOfWork
         DefaultUnitOfWork<?> unitOfWork =
-                new DefaultUnitOfWork<>(GenericEventMessage.<String>asEventMessage("some-event-payload"));
+                new DefaultUnitOfWork<>(EventTestUtils.<String>asEventMessage("some-event-payload"));
         unitOfWork.start();
 
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
@@ -294,7 +294,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
         // Sets given UnitOfWork as the current, active, started UnitOfWork
         DefaultUnitOfWork<?> unitOfWork =
-                new DefaultUnitOfWork<>(GenericEventMessage.<String>asEventMessage("some-event-payload"));
+                new DefaultUnitOfWork<>(EventTestUtils.<String>asEventMessage("some-event-payload"));
         unitOfWork.start();
 
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
@@ -356,7 +356,7 @@ public abstract class AbstractSubscriptionQueryTestSuite {
 
         // Sets given UnitOfWork as the current, active, started UnitOfWork
         DefaultUnitOfWork<?> unitOfWork =
-                new DefaultUnitOfWork<>(GenericEventMessage.<String>asEventMessage("some-event-payload"));
+                new DefaultUnitOfWork<>(EventTestUtils.<String>asEventMessage("some-event-payload"));
         unitOfWork.start();
 
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(

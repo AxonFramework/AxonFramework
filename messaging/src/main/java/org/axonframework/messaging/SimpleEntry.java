@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.axonframework.common.Context;
 import org.axonframework.messaging.MessageStream.Entry;
 
 import java.util.function.Function;
@@ -48,6 +47,7 @@ public record SimpleEntry<M extends Message<?>>(@Nullable M message, @Nonnull Co
 
     /**
      * Compact construct asserting the {@code context} is not {@code null}.
+     *
      * @param context The context for this entry
      * @param message The message for this entry
      */

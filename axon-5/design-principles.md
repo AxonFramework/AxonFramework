@@ -172,17 +172,22 @@ We can take this list to better to deduce what we will tackle for Axon Framework
   Hence, assuring they're in the same store will mitigate this.
 
 ## Configuration
+
 - Break up Configuration module, to not have one module that depends on all other modules.
 - Define Message Handling Component configuration (MHC-configuration), without Annotations.
 - Drop default Serializer, to enforce users to think about the Serializer to use.
 - Revamp the configuration to allow a 'higher-level' configuration component,
-   like a "Command Handling Component Configuration" or "Command Center Configuration".
+  like a "Command Handling Component Configuration" or "Command Center Configuration".
   Through this, we can have a user define a message handler, appending any type of additional behavior required.
-  Furthermore, this allows us to eliminate unclear config options (e.g., why have a Parameter Resolver for the Repository?).
-  Instead, we are then able to take the users configuration, 
-   and wrap the behavior of the infrastructure components.
+  Furthermore, this allows us to eliminate unclear config options (e.g., why have a Parameter Resolver for the
+  Repository?).
+  Instead, we are then able to take the users configuration,
+  and wrap the behavior of the infrastructure components.
   Simply put, use the Decorator Pattern.
 - Favor direct component configuration i.o. Service Loader usage.
+- Enforce required fields during creation of an infrastructure component by means of a constructor with non-null
+  parameters. Customizations should be provided through a "customization" interface that users can adjust in a
+  `UnaryOperator` through the constructor. This style will replace the current use of the builder pattern throughout.
 * Dynamic configuration changes?
 
 ## Annotations

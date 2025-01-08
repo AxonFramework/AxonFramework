@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEventStorageEngine> {
 
-    public static final String TEST_AGGREGATE_TYPE = "TEST_AGGREGATE";
+    private static final String TEST_AGGREGATE_TYPE = "TEST_AGGREGATE";
     protected String TEST_AGGREGATE_ID;
     protected String OTHER_AGGREGATE_ID;
     protected EventCriteria TEST_AGGREGATE_CRITERIA;
@@ -252,7 +252,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
     }
 
     @Test
-    void concurrentTransactionsForNonOverlappingIndicesBothCommit()
+    void concurrentTransactionsForNonOverlappingTagsBothCommit()
             throws ExecutionException, InterruptedException, TimeoutException {
 
         AppendTransaction firstTx =
