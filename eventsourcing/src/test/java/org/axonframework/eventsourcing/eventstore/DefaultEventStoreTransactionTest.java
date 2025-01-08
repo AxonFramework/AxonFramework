@@ -330,6 +330,63 @@ class DefaultEventStoreTransactionTest {
     }
 
 //    @Test
+//    void callbacksAreNotExecutedOnRollback() {
+//        // given
+//        var event1 = eventMessage(0);
+//        var callbackInvoked = new AtomicBoolean(false);
+//
+//        // when
+//        var uow = new AsyncUnitOfWork();
+//        uow.runOnPreInvocation(context -> {
+//               EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+//               transaction.onAppend(event -> callbackInvoked.set(true)); // Register callback
+//               transaction.appendEvent(event1); // Append an event
+//           })
+//           .runOnPrepareCommit(context -> {
+//               throw new RuntimeException("Simulated failure during prepare commit");
+//           }); // Simulate failure to trigger rollback
+//
+//        // then
+//        assertThrows(RuntimeException.class, () -> awaitCompletion(uow.execute()));
+//
+//        // Verify that the callback was not invoked
+//        assertFalse(callbackInvoked.get(), "Callback should not be executed during rollback");
+//    }
+
+//    @Test
+//    void errorPropagationIsHandledByOnErrorPhase() {
+//        // given
+//        var event1 = eventMessage(0);
+//        var capturedError = new AtomicReference<Throwable>();
+//        var postErrorCheck = new AtomicBoolean(false);
+//
+//        // when
+//        var uow = new AsyncUnitOfWork();
+//        uow.onError((context, phase, error) -> capturedError.set(error)) // Capture errors
+//           .runOnPreInvocation(context -> {
+//               EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
+//               transaction.appendEvent(event1);
+//           })
+//           .runOnPrepareCommit(context -> {
+//               throw new RuntimeException("Simulated failure during prepare commit");
+//           })
+//           .runOnPostInvocation(context -> postErrorCheck.set(true)); // Should not execute
+//
+//        // then
+//        RuntimeException exception = assertThrows(CompletionException.class, () -> awaitCompletion(uow.execute()));
+//
+//        // Assert that the error was captured
+//        assertNotNull(capturedError.get());
+//        assertEquals("Simulated failure during prepare commit", capturedError.get().getMessage());
+//
+//        // Assert the same exception is propagated
+//        assertEquals(exception, capturedError.get());
+//
+//        // Ensure post-invocation steps are not executed
+//        assertFalse(postErrorCheck.get(), "Post invocation steps should not execute after an error");
+//    }
+
+//    @Test
 //    void eventsRemainVisibleAfterSuccessfulCommitEvenIfLaterTransactionFails() {
 //        // given
 //        var event1 = eventMessage(0);

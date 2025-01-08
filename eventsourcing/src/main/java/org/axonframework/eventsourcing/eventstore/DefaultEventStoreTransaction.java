@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -85,7 +85,8 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public void appendEvent(@Nonnull EventMessage<?> eventMessage) {
+    public void appendEvent(
+            @Nonnull EventMessage<?> eventMessage) { // todo: should we pass context here and remove from constructor?
         List<EventMessage<?>> eventQueue = processingContext.computeResourceIfAbsent(
                 eventQueueKey,
                 () -> {
