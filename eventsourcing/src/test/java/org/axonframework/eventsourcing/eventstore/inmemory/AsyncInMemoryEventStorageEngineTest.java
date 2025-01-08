@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ class AsyncInMemoryEventStorageEngineTest extends StorageEngineTestSuite<AsyncIn
      * AppendConditionAssertionException as intended.
      */
     @Test
-    void appendEventsThrowsAppendConditionAssertionExceptionWhenToManyIndicesAreGiven() {
+    void appendEventsThrowsAppendConditionAssertionExceptionWhenToManyTagsAreGiven() {
         SourcingCondition firstCondition = conditionFor(TEST_CRITERIA);
         SourcingCondition secondCondition = conditionFor(hasTag(new Tag("aggregateId", "other-aggregate-id")));
 
