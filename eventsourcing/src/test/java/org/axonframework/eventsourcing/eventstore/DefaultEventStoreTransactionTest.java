@@ -119,45 +119,45 @@ class DefaultEventStoreTransactionTest {
     @Test
     void sourcingConditionIsMappedToAppendCondition() {
         // given
-        var expectedCriteria = TEST_AGGREGATE_CRITERIA;
-        var expectedEventOne = eventMessage(0);
-        var expectedEventTwo = eventMessage(1);
-        var expectedEventThree = eventMessage(2);
-        var sourcingCondition = SourcingCondition.conditionFor(expectedCriteria);
-        var holder = new Object() {
-            MessageStream<? extends EventMessage<?>> initialStreamReference;
-            MessageStream<? extends EventMessage<?>> finalStreamReference;
-            long consistencyMarker = 0;
+        var eventCriteria = TEST_AGGREGATE_CRITERIA;
+        var event1 = eventMessage(0);
+        var event2 = eventMessage(1);
+        var event3 = eventMessage(2);
+        var sourcingCondition = SourcingCondition.conditionFor(eventCriteria);
+        var expected = new Object() {
+            MessageStream<? extends EventMessage<?>> initialStream;
+            MessageStream<? extends EventMessage<?>> finalStream;
+            Long consistencyMarker;
         };
 
         // when
         var uow = new AsyncUnitOfWork();
         uow.runOnPreInvocation(context -> {
                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-               holder.initialStreamReference = transaction.source(sourcingCondition, context);
+               expected.initialStream = transaction.source(sourcingCondition, context);
            })
            .runOnPostInvocation(context -> {
                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-               transaction.appendEvent(expectedEventOne);
-               transaction.appendEvent(expectedEventTwo);
-               transaction.appendEvent(expectedEventThree);
+               transaction.appendEvent(event1);
+               transaction.appendEvent(event2);
+               transaction.appendEvent(event3);
            })
            // Event are given to the store in the PREPARE_COMMIT phase.
            // Hence, we retrieve the sourced set after that.
            .runOnAfterCommit(context -> {
                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-               holder.finalStreamReference = transaction.source(sourcingCondition, context);
+               expected.finalStream = transaction.source(sourcingCondition, context);
 
-               holder.consistencyMarker = transaction.appendPosition(context);
+               expected.consistencyMarker = transaction.appendPosition(context);
            });
         awaitCompletion(uow.execute());
 
         // then
-        assertNull(holder.initialStreamReference.firstAsCompletableFuture().join());
-        StepVerifier.create(holder.finalStreamReference.asFlux())
-                    .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 0, expectedEventOne))
-                    .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 1, expectedEventTwo))
-                    .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 2, expectedEventThree))
+        assertNull(expected.initialStream.firstAsCompletableFuture().join());
+        StepVerifier.create(expected.finalStream.asFlux())
+                    .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 0, event1))
+                    .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 1, event2))
+                    .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 2, event3))
                     .verifyComplete();
     }
 }
