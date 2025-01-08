@@ -17,18 +17,20 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.util.Set;
 
 /**
- * Functional interface towards resolving a {@link Set} of {@link Tag Tags} for a given event of type {@code E}.
+ * Functional interface towards resolving a {@link Set} of {@link Tag Tags} for a given {@link EventMessage} of type
+ * {@code E}.
  *
- * @param <E> The event for which to resolve a {@link Set} of {@link Tag Tags} for.
+ * @param <E> The {@link EventMessage} implementation for which to resolve a {@link Set} of {@link Tag Tags} for.
  * @author Steven van Beelen
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface TagResolver<E> {
+public interface TagResolver<E extends EventMessage<?>> {
 
     /**
      * Resolves a {@link Set} of {@link Tag Tags} for the given {@code event} of type {@code E}.

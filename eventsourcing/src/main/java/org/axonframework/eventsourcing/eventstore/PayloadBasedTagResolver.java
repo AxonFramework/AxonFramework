@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,13 +31,13 @@ import java.util.stream.Collectors;
  * {@link Tag Tags} from payloads of type {@code P}.
  * <p>
  * The results of invoking all configured lambdas are combined into the {@link Set} of {@code Tags} when invoking
- * {@link #resolve(Object)}.
+ * {@link #resolve(EventMessage)}.
  *
  * @param <P> The payload for which to resolve a {@link Set} of {@link Tag Tags} for.
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class PayloadBasedTagResolver<P> implements TagResolver<P> {
+public class PayloadBasedTagResolver<P> implements TagResolver<EventMessage<P>> {
 
     private final List<Function<P, Tag>> resolvers;
 
@@ -88,9 +89,9 @@ public class PayloadBasedTagResolver<P> implements TagResolver<P> {
     }
 
     @Override
-    public Set<Tag> resolve(@Nonnull P event) {
+    public Set<Tag> resolve(@Nonnull EventMessage<P> event) {
         return resolvers.stream()
-                        .map(resolver -> resolver.apply(event))
+                        .map(resolver -> resolver.apply(event.getPayload()))
                         .collect(Collectors.toSet());
     }
 }

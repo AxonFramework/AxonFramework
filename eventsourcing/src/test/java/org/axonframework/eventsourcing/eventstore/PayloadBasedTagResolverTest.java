@@ -16,7 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;
@@ -32,6 +33,9 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class PayloadBasedTagResolverTest {
 
+    private static final GenericEventMessage<TestEvent> TEST_EVENT =
+            new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), TestEvent.INSTANCE);
+
     @Test
     void resolveSetsExpectedTags() {
         Set<Tag> expectedTags = Set.of(new Tag("id", TestEvent.INSTANCE.identifier),
@@ -42,7 +46,7 @@ class PayloadBasedTagResolverTest {
                                        .withResolver(event -> new Tag("id", event.identifier))
                                        .withResolver(event -> "otherId", TestEvent::otherIdentifier);
 
-        Set<Tag> result = testSubject.resolve(TestEvent.INSTANCE);
+        Set<Tag> result = testSubject.resolve(TEST_EVENT);
 
         assertEquals(2, result.size());
         assertEquals(expectedTags, result);
@@ -52,7 +56,7 @@ class PayloadBasedTagResolverTest {
     void emptyTagSetWhenNoTagResolversAreGiven() {
         PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forPayloadType(TestEvent.class);
 
-        Set<Tag> result = testSubject.resolve(TestEvent.INSTANCE);
+        Set<Tag> result = testSubject.resolve(TEST_EVENT);
 
         assertTrue(result.isEmpty());
     }
@@ -64,7 +68,7 @@ class PayloadBasedTagResolverTest {
                                                                                 .withResolver(tagResolver)
                                                                                 .withResolver(tagResolver);
 
-        Set<Tag> result = testSubject.resolve(TestEvent.INSTANCE);
+        Set<Tag> result = testSubject.resolve(TEST_EVENT);
 
         assertEquals(1, result.size());
     }
