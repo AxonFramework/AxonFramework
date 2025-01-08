@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class PayloadBasedTagResolver<P> implements TagResolver<EventMessage<?>> {
+public class PayloadBasedTagResolver<P> implements TagResolver {
 
     private final Class<P> payloadType;
     private final List<Function<P, Tag>> resolvers;

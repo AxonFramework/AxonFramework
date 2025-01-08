@@ -22,21 +22,19 @@ import org.axonframework.eventhandling.EventMessage;
 import java.util.Set;
 
 /**
- * Functional interface towards resolving a {@link Set} of {@link Tag Tags} for a given {@link EventMessage} of type
- * {@code E}.
+ * Functional interface towards resolving a {@link Set} of {@link Tag Tags} for a given {@link EventMessage}.
  *
- * @param <E> The {@link EventMessage} implementation for which to resolve a {@link Set} of {@link Tag Tags} for.
  * @author Steven van Beelen
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface TagResolver<E extends EventMessage<?>> {
+public interface TagResolver {
 
     /**
-     * Resolves a {@link Set} of {@link Tag Tags} for the given {@code event} of type {@code E}.
+     * Resolves a {@link Set} of {@link Tag Tags} for the given {@code event}.
      *
      * @param event The event to resolve a {@link Set} of {@link Tag Tags} for.
-     * @return A {@link Set} of {@link Tag Tags} for the given {@code event} of type {@code E}.
+     * @return A {@link Set} of {@link Tag Tags} for the given {@code event}.
      */
-    Set<Tag> resolve(@Nonnull E event);
+    Set<Tag> resolve(@Nonnull EventMessage<?> event);
 }
