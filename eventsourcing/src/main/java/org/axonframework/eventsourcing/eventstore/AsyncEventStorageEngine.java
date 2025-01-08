@@ -69,6 +69,10 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      * Events will be appended in the order that they are offered in, validating the given {@code condition} before
      * being stored. Note that all events should have a unique event identifier. {@link Tag Tags} paired with the
      * {@code events} will be stored as well.
+     * <p>
+     * Implementations may be able to detect conflicts during the append stage. In such case, the returned completable
+     * future will complete exceptionally, indicating such conflict. Other implementations may delay such checks until
+     * the {@link AppendTransaction#commit()} is called.
      *
      * @param condition The condition describing the transactional requirements for the append transaction
      * @param events    The {@link List} of {@link EventMessage events} to append to the underlying storage solution.

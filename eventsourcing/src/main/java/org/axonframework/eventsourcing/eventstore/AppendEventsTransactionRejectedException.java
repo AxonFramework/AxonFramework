@@ -16,16 +16,18 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.AxonNonTransientException;
+
 /**
- * A {@link RuntimeException} implementation dedicated towards failed assertions on an {@link AppendCondition}.
+ * Exception indicating that a transaction was rejected due to conflicts detected in the events to append.
  *
  * @author Steven van Beelen
+ * @author Allard Buijze
  * @since 5.0.0
  */
-// TODO #3092 - Validate exception usage
-public class AppendConditionAssertionException extends RuntimeException {
+public class AppendEventsTransactionRejectedException extends AxonNonTransientException {
 
-    private AppendConditionAssertionException(String message) {
+    private AppendEventsTransactionRejectedException(String message) {
         super(message);
     }
 
@@ -38,9 +40,10 @@ public class AppendConditionAssertionException extends RuntimeException {
      * @return An {@code AppendConditionAssertionException} noting that the {@link AsyncEventStorageEngine} contains
      * events matching the {@link AppendCondition#criteria() criteria} passed the given {@code consistencyMarker}.
      */
-    public static AppendConditionAssertionException consistencyMarkerSurpassed(ConsistencyMarker consistencyMarker) {
-        return new AppendConditionAssertionException(
-                "Found events matching past consistency marker [" + consistencyMarker + "] while this is not allowed."
+    public static AppendEventsTransactionRejectedException conflictingEventsDetected(
+            ConsistencyMarker consistencyMarker) {
+        return new AppendEventsTransactionRejectedException(
+                "Event matching append criteria have been detected beyond provided consistency marker: " + consistencyMarker
         );
     }
 }
