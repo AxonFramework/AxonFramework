@@ -32,7 +32,6 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
@@ -125,15 +124,17 @@ class DefaultEventStoreTransactionTest {
         var expectedEventTwo = eventMessage(1);
         var expectedEventThree = eventMessage(2);
         var sourcingCondition = SourcingCondition.conditionFor(expectedCriteria);
-
-        AtomicReference<MessageStream<? extends EventMessage<?>>> initialStreamReference = new AtomicReference<>();
-        AtomicReference<MessageStream<? extends EventMessage<?>>> finalStreamReference = new AtomicReference<>();
+        var holder = new Object() {
+            MessageStream<? extends EventMessage<?>> initialStreamReference;
+            MessageStream<? extends EventMessage<?>> finalStreamReference;
+            long consistencyMarker = 0;
+        };
 
         // when
         var uow = new AsyncUnitOfWork();
         uow.runOnPreInvocation(context -> {
                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-               initialStreamReference.set(transaction.source(sourcingCondition, context));
+               holder.initialStreamReference = transaction.source(sourcingCondition, context);
            })
            .runOnPostInvocation(context -> {
                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
@@ -145,14 +146,15 @@ class DefaultEventStoreTransactionTest {
            // Hence, we retrieve the sourced set after that.
            .runOnAfterCommit(context -> {
                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-               finalStreamReference.set(transaction.source(sourcingCondition, context));
+               holder.finalStreamReference = transaction.source(sourcingCondition, context);
+
+               holder.consistencyMarker = transaction.appendPosition(context);
            });
         awaitCompletion(uow.execute());
 
         // then
-        assertNull(initialStreamReference.get().firstAsCompletableFuture().join());
-
-        StepVerifier.create(finalStreamReference.get().asFlux())
+        assertNull(holder.initialStreamReference.firstAsCompletableFuture().join());
+        StepVerifier.create(holder.finalStreamReference.asFlux())
                     .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 0, expectedEventOne))
                     .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 1, expectedEventTwo))
                     .assertNext(entry -> assertTagsPositionAndEvent(entry, expectedCriteria, 2, expectedEventThree))
