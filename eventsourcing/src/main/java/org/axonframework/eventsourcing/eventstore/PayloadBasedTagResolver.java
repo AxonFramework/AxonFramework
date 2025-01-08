@@ -31,17 +31,20 @@ import java.util.stream.Collectors;
  * {@link Tag Tags} from payloads of type {@code P}.
  * <p>
  * The results of invoking all configured lambdas are combined into the {@link Set} of {@code Tags} when invoking
- * {@link #resolve(EventMessage)}.
+ * {@link #resolve(EventMessage)}. The {@link #resolve(EventMessage) resolve} operation defaults to return an empty
+ * {@code Set} when an {@link EventMessage} for another payload type is passed.
  *
  * @param <P> The payload for which to resolve a {@link Set} of {@link Tag Tags} for.
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class PayloadBasedTagResolver<P> implements TagResolver<EventMessage<P>> {
+public class PayloadBasedTagResolver<P> implements TagResolver<EventMessage<?>> {
 
+    private final Class<P> payloadType;
     private final List<Function<P, Tag>> resolvers;
 
-    private PayloadBasedTagResolver(List<Function<P, Tag>> resolvers) {
+    private PayloadBasedTagResolver(Class<P> payloadType, List<Function<P, Tag>> resolvers) {
+        this.payloadType = payloadType;
         this.resolvers = List.copyOf(resolvers);
     }
 
@@ -51,12 +54,13 @@ public class PayloadBasedTagResolver<P> implements TagResolver<EventMessage<P>> 
      * The initial resolver does not construct any {@link Tag Tags} yet. To add {@code Tags}, additional resolvers can
      * be included through {@link #withResolver(Function)}.
      *
-     * @param payloadType The  {@code Class} of the event for which to resolve a {@link Set} of {@link Tag Tags} for.
+     * @param payloadType The {@code Class} of the event payload for which to resolve a {@link Set} of {@link Tag Tags}
+     *                    for.
      * @param <P>         The payload for which to resolve a {@link Set} of {@link Tag Tags} for.
      * @return A {@code SimpleTagResolver} instance start, still requiring resolvers.
      */
-    public static <P> PayloadBasedTagResolver<P> forPayloadType(@SuppressWarnings("unused") Class<P> payloadType) {
-        return new PayloadBasedTagResolver<>(new ArrayList<>());
+    public static <P> PayloadBasedTagResolver<P> forPayloadType(Class<P> payloadType) {
+        return new PayloadBasedTagResolver<>(payloadType, new ArrayList<>());
     }
 
     /**
@@ -68,7 +72,7 @@ public class PayloadBasedTagResolver<P> implements TagResolver<EventMessage<P>> 
     public PayloadBasedTagResolver<P> withResolver(@Nonnull Function<P, Tag> resolver) {
         List<Function<P, Tag>> copy = new ArrayList<>(resolvers);
         copy.add(Objects.requireNonNull(resolver, "A TagResolver cannot be null"));
-        return new PayloadBasedTagResolver<>(copy);
+        return new PayloadBasedTagResolver<>(payloadType, copy);
     }
 
     /**
@@ -89,9 +93,12 @@ public class PayloadBasedTagResolver<P> implements TagResolver<EventMessage<P>> 
     }
 
     @Override
-    public Set<Tag> resolve(@Nonnull EventMessage<P> event) {
-        return resolvers.stream()
-                        .map(resolver -> resolver.apply(event.getPayload()))
-                        .collect(Collectors.toSet());
+    public Set<Tag> resolve(@Nonnull EventMessage<?> event) {
+        //noinspection unchecked - suppressing cast warning
+        return payloadType.isAssignableFrom(event.getPayload().getClass())
+                ? resolvers.stream()
+                           .map(resolver -> resolver.apply((P) event.getPayload()))
+                           .collect(Collectors.toSet())
+                : Set.of();
     }
 }

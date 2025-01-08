@@ -33,18 +33,18 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class PayloadBasedTagResolverTest {
 
-    private static final GenericEventMessage<TestEvent> TEST_EVENT =
-            new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), TestEvent.INSTANCE);
+    private static final GenericEventMessage<TestPayload> TEST_EVENT =
+            new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), TestPayload.INSTANCE);
 
     @Test
     void resolveSetsExpectedTags() {
-        Set<Tag> expectedTags = Set.of(new Tag("id", TestEvent.INSTANCE.identifier),
-                                       new Tag("otherId", TestEvent.INSTANCE.otherIdentifier));
+        Set<Tag> expectedTags = Set.of(new Tag("id", TestPayload.INSTANCE.identifier),
+                                       new Tag("otherId", TestPayload.INSTANCE.otherIdentifier));
 
-        PayloadBasedTagResolver<TestEvent> testSubject =
-                PayloadBasedTagResolver.forPayloadType(TestEvent.class)
+        PayloadBasedTagResolver<TestPayload> testSubject =
+                PayloadBasedTagResolver.forPayloadType(TestPayload.class)
                                        .withResolver(event -> new Tag("id", event.identifier))
-                                       .withResolver(event -> "otherId", TestEvent::otherIdentifier);
+                                       .withResolver(event -> "otherId", TestPayload::otherIdentifier);
 
         Set<Tag> result = testSubject.resolve(TEST_EVENT);
 
@@ -54,7 +54,18 @@ class PayloadBasedTagResolverTest {
 
     @Test
     void emptyTagSetWhenNoTagResolversAreGiven() {
-        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forPayloadType(TestEvent.class);
+        PayloadBasedTagResolver<TestPayload> testSubject = PayloadBasedTagResolver.forPayloadType(TestPayload.class);
+
+        Set<Tag> result = testSubject.resolve(TEST_EVENT);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void emptyTagSetWhenResolvingForAnotherPayload() {
+        PayloadBasedTagResolver<String> testSubject =
+                PayloadBasedTagResolver.forPayloadType(String.class)
+                                       .withResolver(event -> new Tag("id", event));
 
         Set<Tag> result = testSubject.resolve(TEST_EVENT);
 
@@ -63,10 +74,10 @@ class PayloadBasedTagResolverTest {
 
     @Test
     void noDuplicateTagsForDuplicatedTagResolver() {
-        Function<TestEvent, Tag> tagResolver = event -> new Tag("id", event.identifier);
-        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forPayloadType(TestEvent.class)
-                                                                                .withResolver(tagResolver)
-                                                                                .withResolver(tagResolver);
+        Function<TestPayload, Tag> tagResolver = event -> new Tag("id", event.identifier);
+        PayloadBasedTagResolver<TestPayload> testSubject = PayloadBasedTagResolver.forPayloadType(TestPayload.class)
+                                                                                  .withResolver(tagResolver)
+                                                                                  .withResolver(tagResolver);
 
         Set<Tag> result = testSubject.resolve(TEST_EVENT);
 
@@ -75,28 +86,28 @@ class PayloadBasedTagResolverTest {
 
     @Test
     void throwsNullPointerExceptionForNullTagResolver() {
-        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forPayloadType(TestEvent.class);
+        PayloadBasedTagResolver<TestPayload> testSubject = PayloadBasedTagResolver.forPayloadType(TestPayload.class);
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> testSubject.withResolver(null));
     }
 
     @Test
     void throwsNullPointerExceptionForNullKeyResolver() {
-        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forPayloadType(TestEvent.class);
+        PayloadBasedTagResolver<TestPayload> testSubject = PayloadBasedTagResolver.forPayloadType(TestPayload.class);
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.withResolver(null, TestEvent::identifier));
+        assertThrows(NullPointerException.class, () -> testSubject.withResolver(null, TestPayload::identifier));
     }
 
     @Test
     void throwsNullPointerExceptionForNullValueResolver() {
-        PayloadBasedTagResolver<TestEvent> testSubject = PayloadBasedTagResolver.forPayloadType(TestEvent.class);
+        PayloadBasedTagResolver<TestPayload> testSubject = PayloadBasedTagResolver.forPayloadType(TestPayload.class);
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.withResolver(TestEvent::identifier, null));
+        assertThrows(NullPointerException.class, () -> testSubject.withResolver(TestPayload::identifier, null));
     }
 
-    record TestEvent(String identifier,
-                     String otherIdentifier) {
+    record TestPayload(String identifier,
+                       String otherIdentifier) {
 
-        static final TestEvent INSTANCE = new TestEvent(UUID.randomUUID().toString(), UUID.randomUUID().toString());
+        static final TestPayload INSTANCE = new TestPayload(UUID.randomUUID().toString(), UUID.randomUUID().toString());
     }
 }
