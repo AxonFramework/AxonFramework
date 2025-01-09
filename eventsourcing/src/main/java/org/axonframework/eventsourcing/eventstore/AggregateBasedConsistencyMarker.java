@@ -17,8 +17,8 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.CollectionUtils;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -35,8 +35,8 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
     /**
      * Construct a new consistency marker for given {@code aggregateIdentifier} and {@code sequenceNumber}.
      *
-     * @param aggregateIdentifier The identifier of the aggregate to contain in the marker
-     * @param sequenceNumber      The sequence number of the last seen event of the aggregate
+     * @param aggregateIdentifier The identifier of the aggregate to contain in the marker.
+     * @param sequenceNumber      The sequence number of the last seen event of the aggregate.
      */
     public AggregateBasedConsistencyMarker(String aggregateIdentifier, long sequenceNumber) {
         this(Map.of(aggregateIdentifier, sequenceNumber));
@@ -62,7 +62,7 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
             return abcm;
         }
         if (!appendCondition.criteria().tags().isEmpty() && appendCondition.consistencyMarker() == INFINITY) {
-            throw new IllegalArgumentException("Consistency marker must not be infinity");
+            throw new IllegalArgumentException("Consistency marker must not be infinity when criteria are present");
         } else if (appendCondition.consistencyMarker() == ORIGIN || appendCondition.consistencyMarker() == INFINITY) {
             return new AggregateBasedConsistencyMarker(Map.of());
         }
@@ -83,8 +83,8 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
      * Returns the position of the given {@code aggregateIdentifier} within this marker, or {@value -1} if such
      * aggregate's position was not explicitly defined.
      *
-     * @param aggregateIdentifier The identifier of the aggregate to find the position for
-     * @return the sequence of the last seen event for given {@code aggregateIdentifier}, or {@value -1} if no events
+     * @param aggregateIdentifier The identifier of the aggregate to find the position for.
+     * @return The sequence of the last seen event for given {@code aggregateIdentifier}, or {@value -1} if no events
      * have been seen.
      */
     public long positionOf(@Nonnull String aggregateIdentifier) {
@@ -115,8 +115,7 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
             // no forwarding required
             return this;
         }
-        HashMap<String, Long> newMap = new HashMap<>(aggregatePositions);
-        newMap.put(aggregateIdentifier, newSequence);
+        Map<String, Long> newMap = CollectionUtils.mapWith(aggregatePositions, aggregateIdentifier, newSequence);
         return new AggregateBasedConsistencyMarker(newMap);
     }
 }

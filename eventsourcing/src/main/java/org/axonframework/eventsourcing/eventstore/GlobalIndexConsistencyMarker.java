@@ -18,6 +18,9 @@ package org.axonframework.eventsourcing.eventstore;
 
 /**
  * {@link ConsistencyMarker} implementation that uses a single `long` to represent a position in an event stream.
+ *
+ * @author Allard Buijze
+ * @since 5.0.0
  */
 public class GlobalIndexConsistencyMarker extends AbstractConsistencyMarker<GlobalIndexConsistencyMarker> {
 
@@ -26,7 +29,7 @@ public class GlobalIndexConsistencyMarker extends AbstractConsistencyMarker<Glob
     /**
      * Creates a marker for the given {@code position}.
      *
-     * @param position The position in the event stream this marker represents
+     * @param position The position in the event stream this marker represents.
      */
     public GlobalIndexConsistencyMarker(long position) {
         this.position = position;
@@ -37,8 +40,8 @@ public class GlobalIndexConsistencyMarker extends AbstractConsistencyMarker<Glob
      * account that the given {@code consistencyMarker} may be either {@link ConsistencyMarker#ORIGIN} or
      * {@link ConsistencyMarker#INFINITY}.
      *
-     * @param consistencyMarker The marker to retrieve the position from
-     * @return a long representation of the position described by the consistency marker
+     * @param consistencyMarker The marker to retrieve the position from.
+     * @return a long representation of the position described by the consistency marker.
      */
     public static long position(ConsistencyMarker consistencyMarker) {
         if (consistencyMarker instanceof GlobalIndexConsistencyMarker gicm) {

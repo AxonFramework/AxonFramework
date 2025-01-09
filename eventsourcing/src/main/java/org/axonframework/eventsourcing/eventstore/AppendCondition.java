@@ -47,10 +47,10 @@ public sealed interface AppendCondition permits NoAppendCondition, DefaultAppend
     }
 
     /**
-     * Creates an AppendCondition to append events only if no events matching given {@code criteria} are available
+     * Creates an AppendCondition to append events only if no events matching given {@code criteria} are.available
      *
-     * @param criteria The criteria for the AppendCondition
-     * @return a condition that matches against given criteria
+     * @param criteria The criteria for the AppendCondition.
+     * @return a condition that matches against given criteria.
      */
     static AppendCondition withCriteria(@Nonnull EventCriteria criteria) {
         return new DefaultAppendCondition(ConsistencyMarker.ORIGIN, criteria);
@@ -58,10 +58,10 @@ public sealed interface AppendCondition permits NoAppendCondition, DefaultAppend
 
     /**
      * Returns an AppendCondition with a condition that represents this AppendCondition's criteria or the given
-     * {@code criteria}
+     * {@code criteria}.
      *
-     * @param criteria The additional criteria the condition may match against
-     * @return an AppendCondition that combined this condition's criteria and the given, using 'OR' semantics
+     * @param criteria The additional criteria the condition may match against.
+     * @return an AppendCondition that combined this condition's criteria and the given, using 'OR' semantics.
      */
     default AppendCondition orCriteria(@Nonnull EventCriteria criteria) {
         return new DefaultAppendCondition(this.consistencyMarker(), criteria.combine(criteria));
