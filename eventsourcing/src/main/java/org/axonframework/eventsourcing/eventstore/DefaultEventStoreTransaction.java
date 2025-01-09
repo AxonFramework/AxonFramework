@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * The default {@link EventStoreTransaction}.
  * <p>
  * While {@link #source(SourcingCondition, ProcessingContext) sourcing} it will map the {@link SourcingCondition} into
- * an {@link AppendCondition} for {@link #appendEvent(EventMessage) appending}, taking into account several sourcing
+ * an {@link AppendCondition} for {@link #appendEvent(EventMessage, ProcessingContext) appending}, taking into account several sourcing
  * invocation might have occurred in the same {@link ProcessingContext}. During
- * {@link #appendEvent(EventMessage) appending} it will pass along a collection of {@link EventMessage events} to an
+ * {@link #appendEvent(EventMessage, ProcessingContext) appending} it will pass along a collection of {@link EventMessage events} to an
  * {@link AsyncEventStorageEngine} is part of the prepare commit phase of the {@link ProcessingContext}.
  *
  * @author Steven van Beelen
@@ -45,7 +45,6 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     private final AsyncEventStorageEngine eventStorageEngine;
-    private final ProcessingContext processingContext;
     private final List<Consumer<EventMessage<?>>> callbacks;
 
     private final ResourceKey<AppendCondition> appendConditionKey;
@@ -54,17 +53,13 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     /**
      * Constructs a {@code DefaultEventStoreTransaction} using the given {@code eventStorageEngine} to
-     * {@link #appendEvent(EventMessage) append events} originating from the given {@code context}.
+     * {@link #appendEvent(EventMessage, ProcessingContext) append events} originating from the given {@code context}.
      *
      * @param eventStorageEngine The {@link AsyncEventStorageEngine} used to
-     *                           {@link #appendEvent(EventMessage) append events} with.
-     * @param processingContext  The {@link ProcessingContext} from which to
-     *                           {@link #appendEvent(EventMessage) append events} and attach resources to.
+     *                           {@link #appendEvent(EventMessage, ProcessingContext) append events} with.
      */
-    public DefaultEventStoreTransaction(@Nonnull AsyncEventStorageEngine eventStorageEngine,
-                                        @Nonnull ProcessingContext processingContext) {
+    public DefaultEventStoreTransaction(@Nonnull AsyncEventStorageEngine eventStorageEngine) {
         this.eventStorageEngine = eventStorageEngine;
-        this.processingContext = processingContext;
         this.callbacks = new CopyOnWriteArrayList<>();
 
         this.appendConditionKey = ResourceKey.withLabel("appendCondition");
@@ -85,11 +80,11 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public void appendEvent(@Nonnull EventMessage<?> eventMessage) {
-        List<EventMessage<?>> eventQueue = processingContext.computeResourceIfAbsent(
+    public void appendEvent(@Nonnull EventMessage<?> eventMessage, @Nonnull ProcessingContext context) {
+        List<EventMessage<?>> eventQueue = context.computeResourceIfAbsent(
                 eventQueueKey,
                 () -> {
-                    attachAppendEventsStep();
+                    attachAppendEventsStep(context);
                     return new CopyOnWriteArrayList<>();
                 }
         );
@@ -98,7 +93,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
         callbacks.forEach(callback -> callback.accept(eventMessage));
     }
 
-    private void attachAppendEventsStep() {
+    private void attachAppendEventsStep(ProcessingContext processingContext) {
         processingContext.onPrepareCommit(
                 context -> {
                     AppendCondition appendCondition =
@@ -114,8 +109,8 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                     }
                     return eventStorageEngine.appendEvents(appendCondition, taggedEvents)
                                              .thenAccept(tx -> {
-                                                 processingContext.onCommit(c -> doCommit(context, tx));
-                                                 processingContext.onError((ctx, p, e) -> tx.rollback());
+                                                 context.onCommit(c -> doCommit(context, tx));
+                                                 context.onError((ctx, p, e) -> tx.rollback());
                                              });
                 }
         );

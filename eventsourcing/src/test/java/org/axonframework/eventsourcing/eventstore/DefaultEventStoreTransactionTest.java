@@ -80,9 +80,9 @@ class DefaultEventStoreTransactionTest {
                })
                .runOnPostInvocation(context -> {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-                   transaction.appendEvent(event1);
-                   transaction.appendEvent(event2);
-                   transaction.appendEvent(event3);
+                   transaction.appendEvent(event1, context);
+                   transaction.appendEvent(event2, context);
+                   transaction.appendEvent(event3, context);
                })
                // Event are given to the store in the PREPARE_COMMIT phase.
                // Hence, we retrieve the sourced set after that.
@@ -117,8 +117,8 @@ class DefaultEventStoreTransactionTest {
             var uow = new AsyncUnitOfWork();
             uow.runOnPreInvocation(context -> {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-                   transaction.appendEvent(event1);
-                   transaction.appendEvent(event2);
+                   transaction.appendEvent(event1, context);
+                   transaction.appendEvent(event2, context);
                    beforeCommitEvents.set(transaction.source(sourcingCondition, context));
                })
                .runOnAfterCommit(context -> {
@@ -155,7 +155,7 @@ class DefaultEventStoreTransactionTest {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 transaction.onAppend(onAppendCallback1::add);
                 transaction.onAppend(onAppendCallback2::add);
-                transaction.appendEvent(event1);
+                transaction.appendEvent(event1, context);
             });
             awaitCompletion(uow.execute());
 
@@ -177,7 +177,7 @@ class DefaultEventStoreTransactionTest {
             uow.runOnPreInvocation(context -> {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 transaction.onAppend(event -> callbackInvoked.set(true));
-                transaction.appendEvent(event1);
+                transaction.appendEvent(event1, context);
             }).runOnPrepareCommit(context -> {
                 throw new RuntimeException("Simulated failure during prepare commit");
             });
@@ -215,10 +215,10 @@ class DefaultEventStoreTransactionTest {
             var uow = new AsyncUnitOfWork();
             uow.runOnPreInvocation(context -> {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-                transaction.appendEvent(eventMessage(0));
-                transaction.appendEvent(eventMessage(1));
-                transaction.appendEvent(eventMessage(2));
-                transaction.appendEvent(eventMessage(3));
+                transaction.appendEvent(eventMessage(0), context);
+                transaction.appendEvent(eventMessage(1), context);
+                transaction.appendEvent(eventMessage(2), context);
+                transaction.appendEvent(eventMessage(3), context);
             }).runOnAfterCommit(context -> {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                 result.set(transaction.appendPosition(context));
@@ -244,8 +244,8 @@ class DefaultEventStoreTransactionTest {
             var uow = new AsyncUnitOfWork();
             uow.runOnPreInvocation(context -> {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-                   transaction.appendEvent(event1);
-                   transaction.appendEvent(event2);
+                   transaction.appendEvent(event1, context);
+                   transaction.appendEvent(event2, context);
                })
                .runOnPrepareCommit(context -> {
                    throw new IllegalStateException("Simulated failure during prepare commit");
@@ -279,7 +279,7 @@ class DefaultEventStoreTransactionTest {
             var uow = new AsyncUnitOfWork();
             uow.onError((context, phase, error) -> capturedError.set(error)).runOnPreInvocation(context -> {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-                   transaction.appendEvent(event1);
+                   transaction.appendEvent(event1, context);
                })
                .runOnPrepareCommit(context -> {
                    throw new RuntimeException("Simulated failure during prepare commit");
@@ -316,8 +316,7 @@ class DefaultEventStoreTransactionTest {
 
     private EventStoreTransaction defaultEventStoreTransactionFor(ProcessingContext processingContext) {
         return processingContext.computeResourceIfAbsent(testEventStoreTransactionKey,
-                                                         () -> new DefaultEventStoreTransaction(new AsyncInMemoryEventStorageEngine(),
-                                                                                                processingContext));
+                                                         () -> new DefaultEventStoreTransaction(new AsyncInMemoryEventStorageEngine()));
     }
 
     // TODO - Discuss: @Steven - Perfect candidate to move to a commons test utils module?

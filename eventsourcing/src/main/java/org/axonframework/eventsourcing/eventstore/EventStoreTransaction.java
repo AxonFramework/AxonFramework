@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.util.function.Consumer;
  * {@link AsyncEventStore} based on the resulting {@link MessageStream}.
  * <p>
  * Note that this transaction includes operations for {@link #source(SourcingCondition, ProcessingContext) sourcing} the
- * model as well as {@link #appendEvent(EventMessage) appending events}.
+ * model as well as {@link #appendEvent(EventMessage, ProcessingContext) appending events}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -43,7 +43,7 @@ public interface EventStoreTransaction {
      * The given {@code context} is used to perform tasks at the right
      * {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle.Phase phases} and register resources throughout
      * its lifecycle. All {@code condition} instances provided to source as part of the given {@code context} should be
-     * used to derive the {@link AppendCondition} typically used by the {@link #appendEvent(EventMessage)} method's
+     * used to derive the {@link AppendCondition} typically used by the {@link #appendEvent(EventMessage, ProcessingContext)} method's
      * implementation.
      *
      * @param condition The {@link SourcingCondition} used to retrieve the {@link MessageStream} containing the sequence
@@ -63,14 +63,14 @@ public interface EventStoreTransaction {
      *
      * @param eventMessage The {@link EventMessage} to append.
      */
-    void appendEvent(@Nonnull EventMessage<?> eventMessage);
+    void appendEvent(@Nonnull EventMessage<?> eventMessage, @Nonnull ProcessingContext context);
 
     /**
-     * Registers a {@code callback} to invoke when an event is {@link #appendEvent(EventMessage) appended} to this
+     * Registers a {@code callback} to invoke when an event is {@link #appendEvent(EventMessage, ProcessingContext) appended} to this
      * transaction.
      * <p>
      * Each {@code callback} registration adds a new callback that is invoked on the
-     * {@code appendEvent(EventMessage, AppendCondition)} operation.
+     * {@code appendEvent(EventMessage, AppendCondition)} operation. // fixme: AppendCondition?
      *
      * @param callback A {@link Consumer} to invoke when an event is appended in this transaction.
      */
