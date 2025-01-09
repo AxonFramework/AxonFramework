@@ -50,8 +50,8 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
  */
 class DefaultEventStoreTransactionTest {
 
-    protected static final String TEST_AGGREGATE_ID = "someId";
-    protected static final EventCriteria TEST_AGGREGATE_CRITERIA =
+    private static final String TEST_AGGREGATE_ID = "someId";
+    private static final EventCriteria TEST_AGGREGATE_CRITERIA =
             EventCriteria.hasTag(new Tag("aggregateIdentifier", TEST_AGGREGATE_ID));
 
     private final Context.ResourceKey<EventStoreTransaction> testEventStoreTransactionKey = Context.ResourceKey.withLabel(
@@ -184,8 +184,6 @@ class DefaultEventStoreTransactionTest {
 
             // then
             assertThrows(RuntimeException.class, () -> awaitCompletion(uow.execute()));
-
-            // Verify that the callback was not invoked
             assertTrue(callbackInvoked.get());
         }
     }
