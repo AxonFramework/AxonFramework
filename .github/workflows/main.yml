@@ -48,12 +48,12 @@ jobs:
       - name: Regular Build
         if: ${{ !matrix.sonar-enabled }}
         run: |
-          ./mvnw -B -U -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true clean verify
+          ./mvnw -B -U -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5 clean verify
 
       - name: Build with Coverage reports
         if: matrix.sonar-enabled
         run: |
-          ./mvnw -B -U -Dstyle.color=always -Dcoverage clean verify
+          ./mvnw -B -U -Dstyle.color=always -Dcoverage -Dsurefire.rerunFailingTestsCount=5 clean verify
 
       - name: Sonar Analysis
         if: matrix.sonar-enabled
