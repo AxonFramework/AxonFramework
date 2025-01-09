@@ -85,8 +85,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public void appendEvent(
-            @Nonnull EventMessage<?> eventMessage) { // todo: should we pass context here and remove from constructor?
+    public void appendEvent(@Nonnull EventMessage<?> eventMessage) {
         List<EventMessage<?>> eventQueue = processingContext.computeResourceIfAbsent(
                 eventQueueKey,
                 () -> {
