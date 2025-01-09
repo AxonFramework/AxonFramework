@@ -20,7 +20,8 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.quartz.Job;
@@ -60,6 +61,11 @@ public class FireEventJob implements Job {
      */
     public static final String TRANSACTION_MANAGER_KEY = TransactionManager.class.getName();
 
+    /**
+     * The key used to locate the MessageNameResolver in the scheduler context.
+     */
+    public static final String MESSAGE_NAME_RESOLVER_KEY = MessageNameResolver.class.getName();
+
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         logger.debug("Starting job to publish a scheduled event");
@@ -72,12 +78,12 @@ public class FireEventJob implements Job {
 
             EventJobDataBinder jobDataBinder = (EventJobDataBinder) schedulerContext.get(EVENT_JOB_DATA_BINDER_KEY);
             Object event = jobDataBinder.fromJobData(jobData);
-            EventMessage<?> eventMessage = createMessage(event);
+            MessageNameResolver messageNameResolver = (MessageNameResolver) schedulerContext.get(
+                    MESSAGE_NAME_RESOLVER_KEY);
+            EventMessage<?> eventMessage = createMessage(event, messageNameResolver);
 
-            EventBus eventBus = (EventBus) context.getScheduler().getContext().get(EVENT_BUS_KEY);
-            TransactionManager txManager = (TransactionManager) context.getScheduler()
-                                                                       .getContext()
-                                                                       .get(TRANSACTION_MANAGER_KEY);
+            EventBus eventBus = (EventBus) schedulerContext.get(EVENT_BUS_KEY);
+            TransactionManager txManager = (TransactionManager) schedulerContext.get(TRANSACTION_MANAGER_KEY);
 
             UnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
             if (txManager != null) {
@@ -100,14 +106,14 @@ public class FireEventJob implements Job {
      * generated, so that the timestamp will reflect the actual moment the trigger occurred.
      *
      * @param event The actual event (either a payload or an entire message) to create the message from
+     * @param messageNameResolver used to resolve the {@link QualifiedName} when publishing {@link EventMessage EventMessages}.
      * @return the message to publish
      */
-    private EventMessage<?> createMessage(Object event) {
+    private EventMessage<?> createMessage(Object event, MessageNameResolver messageNameResolver) {
         return event instanceof EventMessage
                 ? new GenericEventMessage<>(((EventMessage<?>) event).name(),
                                             ((EventMessage<?>) event).getPayload(),
                                             ((EventMessage<?>) event).getMetaData())
-                : new GenericEventMessage<>(QualifiedNameUtils.fromClassName(event.getClass()),
-                                            event); // TODO #3085 use MessageNameResolver
+                : new GenericEventMessage<>(messageNameResolver.resolve(event), event);
     }
 }
