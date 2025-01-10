@@ -25,7 +25,6 @@ import org.axonframework.serialization.Serializer;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
 import static java.lang.String.format;
 
@@ -70,6 +69,25 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return CompletableFuture.completedFuture(new NoOpAppendTransaction(condition));
         }
 
+        var tx = transactionManager.startTransaction();
+
+        return CompletableFuture.completedFuture(new AppendTransaction() {
+            @Override
+            public CompletableFuture<ConsistencyMarker> commit() {
+                events.stream().map(event -> createEventEntity(event, serializer)).forEach(entityManager()::persist);
+                if (explicitFlush) {
+                    entityManagerProvider.getEntityManager().flush();
+                }
+                tx.commit();
+                return null;
+            }
+
+            @Override
+            public void rollback() {
+                tx.rollback();
+            }
+        });
+
         transactionManager.executeInTransaction(() -> {
             try {
 //                events.stream().map(event -> createEventEntity(event, serializer)).forEach(entityManager()::persist);
@@ -77,14 +95,39 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 //                    entityManager().flush();
 //                }
             } catch (Exception e) {
-                handlePersistenceException(e, events.get(0));
+                mapPersistenceException(e, events.get(0));
             }
         });
 
         return CompletableFuture.failedFuture(new UnsupportedOperationException("Not implemented yet"));
     }
 
-    private Exception handlePersistenceException(Exception exception, TaggedEventMessage<?> failedEvent) {
+    private AppendTransaction appendTransaction(AppendCondition appendCondition, Runnable runnable) {
+        var tx = transactionManager.startTransaction();
+        return new AppendTransaction() {
+            @Override
+            public CompletableFuture<ConsistencyMarker> commit() {
+                try {
+                    runnable.run();
+                    if (explicitFlush) {
+                        entityManagerProvider.getEntityManager().flush();
+                    }
+                    tx.commit();
+                    return CompletableFuture.completedFuture(AggregateBasedConsistencyMarker.from(appendCondition));
+                } catch (Exception e) {
+                    tx.rollback();
+                    return CompletableFuture.failedFuture(e); // todo: mapPersistenceException
+                }
+            }
+
+            @Override
+            public void rollback() {
+                tx.rollback();
+            }
+        };
+    }
+
+    private Exception mapPersistenceException(Exception exception, TaggedEventMessage<?> failedEvent) {
         String eventDescription = buildExceptionMessage(failedEvent);
         if (persistenceExceptionResolver != null && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
             if (isFirstDomainEvent(failedEvent)) {
@@ -104,21 +147,22 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
      * @return the created exception message
      */
     private String buildExceptionMessage(TaggedEventMessage<?> failedEvent) {
-        String eventDescription = format("An event with identifier [%s] could not be persisted",
-                                         failedEvent.getIdentifier());
-        if (isFirstDomainEvent(failedEvent)) {
-            DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
-            eventDescription = format(
-                    "Cannot reuse aggregate identifier [%s] to create aggregate [%s] since identifiers need to be unique.",
-                    failedDomainEvent.getAggregateIdentifier(),
-                    failedDomainEvent.getType());
-        } else if (failedEvent instanceof DomainEventMessage<?>) {
-            DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
-            eventDescription = format("An event for aggregate [%s] at sequence [%d] was already inserted",
-                                      failedDomainEvent.getAggregateIdentifier(),
-                                      failedDomainEvent.getSequenceNumber());
-        }
-        return eventDescription;
+//        String eventDescription = format("An event with identifier [%s] could not be persisted",
+//                                         failedEvent.getIdentifier());
+//        if (isFirstDomainEvent(failedEvent)) {
+//            DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
+//            eventDescription = format(
+//                    "Cannot reuse aggregate identifier [%s] to create aggregate [%s] since identifiers need to be unique.",
+//                    failedDomainEvent.getAggregateIdentifier(),
+//                    failedDomainEvent.getType());
+//        } else if (failedEvent instanceof DomainEventMessage<?>) {
+//            DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
+//            eventDescription = format("An event for aggregate [%s] at sequence [%d] was already inserted",
+//                                      failedDomainEvent.getAggregateIdentifier(),
+//                                      failedDomainEvent.getSequenceNumber());
+//        }
+//        return eventDescription;
+        return "Exception";
     }
 
     /**
@@ -134,7 +178,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
         return false;
     }
-
 
 
     @Override
