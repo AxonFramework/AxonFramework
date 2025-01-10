@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.configuration.CommandHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -86,12 +86,13 @@ class RecordingCommandBusTest {
 
     @Test
     void registerHandler() {
-        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> handler = command -> {
+        CommandHandler handler = (command, context) -> {
             fail("Did not expect handler to be invoked");
             return null;
         };
-        testSubject.subscribe(String.class.getName(), handler);
+        QualifiedName name = new QualifiedName("axon", "test", "0.0.5");
+        testSubject.subscribe(name, handler);
         assertTrue(testSubject.isSubscribed(handler));
-        assertTrue(testSubject.isSubscribed(String.class.getName(), handler));
+        assertTrue(testSubject.isSubscribed(name, handler));
     }
 }

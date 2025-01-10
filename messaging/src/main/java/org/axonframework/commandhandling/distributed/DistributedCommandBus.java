@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,32 @@
 
 package org.axonframework.commandhandling.distributed;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.configuration.CommandHandler;
+import org.axonframework.messaging.configuration.MessageHandlerRegistry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
+/**
+ * Implementation of a {@code CommandBus} that is aware of multiple instances of a {@code CommandBus} working together
+ * to spread load. Each "physical" {@code CommandBus} instance is considered a "segment" of a conceptual distributed
+ * {@code CommandBus}.
+ * <p/>
+ * The {@code DistributedCommandBus} relies on a {@link Connector} to dispatch commands and replies to different
+ * segments of the {@code CommandBus}. Depending on the implementation used, each segment may run in a different JVM.
+ *
+ * @author Allard Buijze
+ * @since 2.0
+ */
 public class DistributedCommandBus implements CommandBus {
 
     private final CommandBus delegate;
@@ -55,11 +69,14 @@ public class DistributedCommandBus implements CommandBus {
     }
 
     @Override
-    public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
-        Registration delegateSubscription = delegate.subscribe(commandName, handler);
-        connector.subscribe(commandName, 100);
-        return () -> delegateSubscription.cancel() && connector.unsubscribe(commandName);
+    public MessageHandlerRegistry<CommandHandler> subscribe(@Nonnull Set<QualifiedName> names,
+                                                            @Nonnull CommandHandler handler) {
+        CommandHandler commandHandler = Objects.requireNonNull(handler, "Given handler cannot be null.");
+        delegate.subscribe(names, commandHandler);
+        for (QualifiedName name : names) {
+            connector.subscribe(name.toString(), 100);
+        }
+        return this;
     }
 
     @Override

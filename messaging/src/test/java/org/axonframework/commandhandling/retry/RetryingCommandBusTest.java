@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,10 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.configuration.CommandHandler;
 import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.utils.MockException;
@@ -127,10 +128,10 @@ class RetryingCommandBusTest {
 
     @Test
     void shouldDelegateHandlerSubscription() {
-        MessageHandler<? super CommandMessage<?>, ? extends Message<?>> mock = mock();
-        testSubject.subscribe("test", mock);
+        CommandHandler mock = mock();
+        testSubject.subscribe(QualifiedNameUtils.fromDottedName("test"), mock);
 
-        verify(delegate).subscribe("test", mock);
+        verify(delegate).subscribe(QualifiedNameUtils.fromDottedName("test"), mock);
     }
 
     @Test

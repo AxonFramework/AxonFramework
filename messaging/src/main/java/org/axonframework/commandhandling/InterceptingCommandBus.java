@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,27 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.common.Registration;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.configuration.CommandHandler;
+import org.axonframework.messaging.configuration.MessageHandler;
+import org.axonframework.messaging.configuration.MessageHandlerRegistry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
@@ -62,14 +71,16 @@ public class InterceptingCommandBus implements CommandBus {
     }
 
     @Override
-    public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
+    public MessageHandlerRegistry<CommandHandler> subscribe(@Nonnull Set<QualifiedName> names,
+                                                            @Nonnull CommandHandler handler) {
+        CommandHandler commandHandler = Objects.requireNonNull(handler, "Given handler cannot be null.");
         Iterator<MessageHandlerInterceptor<? super CommandMessage<?>>> iter = handlerInterceptors.descendingIterator();
-        MessageHandler<? super CommandMessage<?>, ? extends Message<?>> interceptedHandler = handler;
+        CommandHandler interceptedHandler = commandHandler;
         while (iter.hasNext()) {
             interceptedHandler = new InterceptedHandler(iter.next(), interceptedHandler);
         }
-        return delegate.subscribe(commandName, interceptedHandler);
+        delegate.subscribe(names, interceptedHandler);
+        return this;
     }
 
     @Override
@@ -79,26 +90,23 @@ public class InterceptingCommandBus implements CommandBus {
         descriptor.describeProperty("dispatchInterceptors", dispatchInterceptors);
     }
 
-    private static class InterceptedHandler implements MessageHandler<CommandMessage<?>, Message<?>>,
-            InterceptorChain<CommandMessage<?>, Message<?>> {
+    private static class InterceptedHandler implements
+            CommandHandler,
+            InterceptorChain<CommandMessage<?>, CommandResultMessage<?>> {
 
         private final MessageHandlerInterceptor<? super CommandMessage<?>> interceptor;
-        private final MessageHandler<? super CommandMessage<?>, ? extends Message<?>> next;
+        private final MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> next;
 
         public InterceptedHandler(MessageHandlerInterceptor<? super CommandMessage<?>> interceptor,
-                                  MessageHandler<? super CommandMessage<?>, ? extends Message<?>> next) {
+                                  MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> next) {
             this.interceptor = interceptor;
             this.next = next;
         }
 
+        @Nonnull
         @Override
-        public Object handleSync(CommandMessage<?> message) throws Exception {
-            return next.handleSync(message);
-        }
-
-        @Override
-        public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
-                                                                       ProcessingContext processingContext) {
+        public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+                                                                       @Nonnull ProcessingContext processingContext) {
             try {
                 return interceptor.interceptOnHandle(message, processingContext, this);
             } catch (RuntimeException e) {
@@ -112,7 +120,7 @@ public class InterceptingCommandBus implements CommandBus {
         }
 
         @Override
-        public MessageStream<? extends Message<?>> proceed(CommandMessage<?> message,
+        public MessageStream<? extends CommandResultMessage<?>> proceed(CommandMessage<?> message,
                                                                         ProcessingContext processingContext) {
             return next.handle(message, processingContext);
         }
@@ -134,7 +142,7 @@ public class InterceptingCommandBus implements CommandBus {
 
         @Override
         public MessageStream<? extends Message<?>> apply(CommandMessage<?> commandMessage,
-                                                                      ProcessingContext processingContext) {
+                                                         ProcessingContext processingContext) {
             try {
                 return interceptor.interceptOnDispatch(commandMessage, processingContext, this);
             } catch (RuntimeException e) {
@@ -149,7 +157,7 @@ public class InterceptingCommandBus implements CommandBus {
 
         @Override
         public MessageStream<? extends Message<?>> proceed(CommandMessage<?> message,
-                                                                        ProcessingContext processingContext) {
+                                                           ProcessingContext processingContext) {
             return next.apply(message, processingContext);
         }
     }

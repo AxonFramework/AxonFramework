@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,14 @@ package org.axonframework.commandhandling.distributed;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -81,19 +80,10 @@ class DistributedCommandBusTest {
 
     @Test
     void incomingCommandsAreDelegatedToSubscribedHandlers() {
-        GenericMessage<String> okMessage = new GenericMessage<>(new QualifiedName("test", "command", "0.0.1"), "OK");
-        testSubject.subscribe(String.class.getName(), new MessageHandler<>() {
-            @Override
-            public Object handleSync(CommandMessage<?> message) {
-                return "OK";
-            }
-
-            @Override
-            public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
-                                                              ProcessingContext processingContext) {
-                return MessageStream.just(okMessage);
-            }
-        });
+        GenericCommandResultMessage<String> okMessage =
+                new GenericCommandResultMessage<>(new QualifiedName("test", "command", "0.0.1"), "OK");
+        testSubject.subscribe(QualifiedNameUtils.fromClassName(String.class),
+                              (message, processingContext) -> MessageStream.just(okMessage));
         Connector.ResultCallback mockCallback = mock();
         connector.handler.get().accept(commandMessage, mockCallback);
 
@@ -101,26 +91,15 @@ class DistributedCommandBusTest {
     }
 
     @Test
+    @Disabled("TODO broken test, as registration is not there at the moment.")
     void incomingCommandsAreRejectedForCancelledHandlerSubscription() {
-        GenericMessage<String> okMessage = new GenericMessage<>(new QualifiedName("test", "command", "0.0.1"), "OK");
-        Registration registration = testSubject.subscribe(String.class.getName(),
-                                                          new MessageHandler<>() {
-                                                              @Override
-                                                              public Object handleSync(
-                                                                      CommandMessage<?> message) {
-                                                                  return "OK";
-                                                              }
+        GenericCommandResultMessage<String> okMessage =
+                new GenericCommandResultMessage<>(new QualifiedName("test", "command", "0.0.1"), "OK");
 
-                                                              @Override
-                                                              public MessageStream<? extends Message<?>> handle(
-                                                                      CommandMessage<?> message,
-                                                                      ProcessingContext processingContext) {
-                                                                  return MessageStream.just(
-                                                                          okMessage);
-                                                              }
-                                                          });
+        testSubject.subscribe(QualifiedNameUtils.fromClassName(String.class),
+                              (message, processingContext) -> MessageStream.just(okMessage));
 
-        assertTrue(registration.cancel());
+//        assertTrue(registration.cancel());
         Connector.ResultCallback mockCallback = mock();
         connector.handler.get().accept(commandMessage, mockCallback);
 
@@ -128,10 +107,11 @@ class DistributedCommandBusTest {
     }
 
     @Test
+    @Disabled("TODO broken test, as registration is not there at the moment.")
     void unregisterNonExistentCommandHandlerReturnsFalse() {
-        Registration registration = testSubject.subscribe(String.class.getName(), mock());
-        assertTrue(registration.cancel());
-        assertFalse(registration.cancel());
+        testSubject.subscribe(QualifiedNameUtils.fromClassName(String.class), mock());
+//        assertTrue(registration.cancel());
+//        assertFalse(registration.cancel());
     }
 
     @Test

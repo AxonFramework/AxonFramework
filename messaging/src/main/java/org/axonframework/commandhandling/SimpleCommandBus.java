@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,16 @@
 
 package org.axonframework.commandhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.DirectExecutor;
-import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream.Entry;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.configuration.CommandHandler;
+import org.axonframework.messaging.configuration.MessageHandler;
+import org.axonframework.messaging.configuration.MessageHandlerRegistry;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
@@ -32,17 +36,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
-import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Implementation of the CommandBus that dispatches commands to the handlers subscribed to that specific command's
@@ -57,7 +60,8 @@ public class SimpleCommandBus implements CommandBus {
     private static final Logger logger = LoggerFactory.getLogger(SimpleCommandBus.class);
 
     private final List<ProcessingLifecycleHandlerRegistrar> processingLifecycleHandlerRegistrars;
-    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>, ? extends Message<?>>> subscriptions = new ConcurrentHashMap<>();
+    //    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>, ? extends Message<?>>> subscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<QualifiedName, CommandHandler> subscriptions = new ConcurrentHashMap<>();
     // TODO - Instead of using an Executor, we should use a WorkerFactory to allow more flexible creation (and disposal) of workers
     private final Executor worker;
 
@@ -88,8 +92,9 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     private Optional<MessageHandler<? super CommandMessage<?>, ? extends Message<?>>> findCommandHandlerFor(
-            CommandMessage<?> command) {
-        return Optional.ofNullable(subscriptions.get(command.getCommandName()));
+            CommandMessage<?> command
+    ) {
+        return Optional.ofNullable(subscriptions.get(command.name()));
     }
 
     /**
@@ -134,17 +139,19 @@ public class SimpleCommandBus implements CommandBus {
      *                                                      commandName
      */
     @Override
-    public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
-        assertNonNull(handler, "handler may not be null");
-        logger.debug("Subscribing command with name [{}]", commandName);
-        var existingHandler = subscriptions.putIfAbsent(commandName, handler);
+    public MessageHandlerRegistry<CommandHandler> subscribe(@Nonnull Set<QualifiedName> names,
+                                                            @Nonnull CommandHandler handler) {
+        CommandHandler commandHandler = Objects.requireNonNull(handler, "Given handler cannot be null.");
+        for (QualifiedName name : names) {
+            logger.debug("Subscribing command with name [{}]", name);
+            var existingHandler = subscriptions.putIfAbsent(name, commandHandler);
 
-        if (existingHandler != null && existingHandler != handler) {
-            throw new DuplicateCommandHandlerSubscriptionException(commandName, existingHandler, handler);
+            if (existingHandler != null && existingHandler != handler) {
+                throw new DuplicateCommandHandlerSubscriptionException(name, existingHandler, commandHandler);
+            }
         }
-
-        return () -> subscriptions.remove(commandName, handler);
+        // TODO what about Registration object?
+        return this;
     }
 
     @Override

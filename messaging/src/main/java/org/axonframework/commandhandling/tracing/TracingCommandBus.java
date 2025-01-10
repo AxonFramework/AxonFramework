@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,23 @@
 
 package org.axonframework.commandhandling.tracing;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.Registration;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.configuration.CommandHandler;
+import org.axonframework.messaging.configuration.MessageHandler;
+import org.axonframework.messaging.configuration.MessageHandlerRegistry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.Span;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -59,9 +64,10 @@ public class TracingCommandBus implements CommandBus {
     }
 
     @Override
-    public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
-        return delegate.subscribe(commandName, new TracingHandler(handler));
+    public MessageHandlerRegistry<CommandHandler> subscribe(@Nonnull Set<QualifiedName> names,
+                                                            @Nonnull CommandHandler handler) {
+        delegate.subscribe(names, new TracingHandler(Objects.requireNonNull(handler, "Given handler cannot be null.")));
+        return this;
     }
 
     @Override
@@ -70,25 +76,19 @@ public class TracingCommandBus implements CommandBus {
         descriptor.describeProperty("spanFactory", spanFactory);
     }
 
-    private class TracingHandler implements MessageHandler<CommandMessage<?>, Message<?>> {
+    private class TracingHandler implements CommandHandler {
 
-        private final MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler;
+        private final MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler;
 
-        public TracingHandler(MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
+        public TracingHandler(MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
             this.handler = handler;
         }
 
         @Override
-        public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
-                                                          ProcessingContext processingContext) {
+        public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+                                                                       @Nonnull ProcessingContext processingContext) {
             return spanFactory.createHandleCommandSpan(message, false)
                               .runSupplier(() -> handler.handle(message, processingContext));
-        }
-
-        @Override
-        public Object handleSync(CommandMessage<?> message) throws Exception {
-            return spanFactory.createHandleCommandSpan(message, false)
-                              .runCallable(() -> handler.handleSync(message));
         }
     }
 }
