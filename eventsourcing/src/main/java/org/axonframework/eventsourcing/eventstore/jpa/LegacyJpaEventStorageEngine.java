@@ -1,12 +1,15 @@
 package org.axonframework.eventsourcing.eventstore.jpa;
 
 import jakarta.annotation.Nonnull;
+import jakarta.persistence.EntityManager;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
@@ -25,6 +28,8 @@ import org.axonframework.serialization.Serializer;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 
 import static java.lang.String.format;
 
@@ -47,6 +52,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     private final PersistenceExceptionResolver persistenceExceptionResolver;
 
     private boolean explicitFlush = false;
+    private Executor executor;
 
     public LegacyJpaEventStorageEngine(
             @javax.annotation.Nonnull EntityManagerProvider entityManagerProvider,
@@ -60,64 +66,41 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         this.snapshotSerializer = snapshotSerializer;
         // optional config - default will be provided here:
         this.persistenceExceptionResolver = new JdbcSQLErrorCodesResolver();
+        this.executor = ForkJoinPool.commonPool(); // todo: configurable
     }
 
     @Override
     public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
                                                              @Nonnull List<TaggedEventMessage<?>> events) {
-        if (events.isEmpty()) {
-            return CompletableFuture.completedFuture(new NoOpAppendTransaction(condition));
-        }
-
-        var tx = transactionManager.startTransaction();
-
-        return CompletableFuture.completedFuture(new AppendTransaction() {
-            @Override
-            public CompletableFuture<ConsistencyMarker> commit() {
-                events.stream().map(event -> createEventEntity(event, serializer)).forEach(entityManager()::persist);
-                if (explicitFlush) {
-                    entityManagerProvider.getEntityManager().flush();
-                }
-                tx.commit();
-                return null;
-            }
-
-            @Override
-            public void rollback() {
-                tx.rollback();
-            }
-        });
-
-        transactionManager.executeInTransaction(() -> {
-            try {
-//                events.stream().map(event -> createEventEntity(event, serializer)).forEach(entityManager()::persist);
-//                if (explicitFlush) {
-//                    entityManager().flush();
-//                }
-            } catch (Exception e) {
-                mapPersistenceException(e, events.get(0));
-            }
-        });
-
-        return CompletableFuture.failedFuture(new UnsupportedOperationException("Not implemented yet"));
+        return CompletableFuture.completedFuture(
+                events.isEmpty()
+                        ? new NoOpAppendTransaction(condition)
+                        : appendTransaction(condition, events, this.eventSerializer)
+        );
     }
 
-    private AppendTransaction appendTransaction(AppendCondition appendCondition, Runnable runnable) {
+    private AppendTransaction appendTransaction(AppendCondition appendCondition,
+                                                List<TaggedEventMessage<?>> events,
+                                                Serializer eventSerializer) {
         var tx = transactionManager.startTransaction();
         return new AppendTransaction() {
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
-                try {
-                    runnable.run();
-                    if (explicitFlush) {
-                        entityManagerProvider.getEntityManager().flush();
+                return CompletableFuture.supplyAsync(() -> {
+                    try {
+                        var entityManager = entityManagerProvider.getEntityManager();
+                        events.stream().map(event -> createEventEntity(event, eventSerializer))
+                              .forEach(entityManager::persist);
+                        if (explicitFlush) {
+                            entityManager.flush();
+                        }
+                        tx.commit();
+                        return AggregateBasedConsistencyMarker.from(appendCondition);
+                    } catch (Exception e) {
+                        tx.rollback();
+                        throw mapPersistenceException(e, events.getFirst().event());
                     }
-                    tx.commit();
-                    return CompletableFuture.completedFuture(AggregateBasedConsistencyMarker.from(appendCondition));
-                } catch (Exception e) {
-                    tx.rollback();
-                    return CompletableFuture.failedFuture(e); // todo: mapPersistenceException
-                }
+                }, executor);
             }
 
             @Override
@@ -127,7 +110,33 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         };
     }
 
-    private Exception mapPersistenceException(Exception exception, TaggedEventMessage<?> failedEvent) {
+    /**
+     * Returns a Jpa event entity for given {@code eventMessage}. Use the given {@code serializer} to serialize the
+     * payload and metadata of the event.
+     *
+     * @param eventMessage the event message to store
+     * @param serializer   the serializer to serialize the payload and metadata
+     * @return the Jpa entity to be inserted
+     */
+    protected Object createEventEntity(TaggedEventMessage<?> eventMessage, Serializer serializer) {
+        return new DomainEventEntry(asDomainEventMessage(eventMessage), serializer);
+    }
+
+    // todo: understand why aggregateType null and sequenceNUmber 0
+    protected static <P, T extends EventMessage<P>> DomainEventMessage<P> asDomainEventMessage(
+            TaggedEventMessage<T> taggedEvent) {
+        EventMessage<P> eventMessage = taggedEvent.event();
+        if (eventMessage instanceof DomainEventMessage<?>) {
+            return (DomainEventMessage<P>) eventMessage;
+        }
+        return new GenericDomainEventMessage<>(null,
+                                               eventMessage.getIdentifier(),
+                                               0L,
+                                               eventMessage,
+                                               eventMessage::getTimestamp);
+    }
+
+    private RuntimeException mapPersistenceException(Exception exception, EventMessage<?> failedEvent) {
         String eventDescription = buildExceptionMessage(failedEvent);
         if (persistenceExceptionResolver != null && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
             if (isFirstDomainEvent(failedEvent)) {
@@ -146,23 +155,22 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
      * @param failedEvent the event to be used for the exception message
      * @return the created exception message
      */
-    private String buildExceptionMessage(TaggedEventMessage<?> failedEvent) {
-//        String eventDescription = format("An event with identifier [%s] could not be persisted",
-//                                         failedEvent.getIdentifier());
-//        if (isFirstDomainEvent(failedEvent)) {
-//            DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
-//            eventDescription = format(
-//                    "Cannot reuse aggregate identifier [%s] to create aggregate [%s] since identifiers need to be unique.",
-//                    failedDomainEvent.getAggregateIdentifier(),
-//                    failedDomainEvent.getType());
-//        } else if (failedEvent instanceof DomainEventMessage<?>) {
-//            DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
-//            eventDescription = format("An event for aggregate [%s] at sequence [%d] was already inserted",
-//                                      failedDomainEvent.getAggregateIdentifier(),
-//                                      failedDomainEvent.getSequenceNumber());
-//        }
-//        return eventDescription;
-        return "Exception";
+    private String buildExceptionMessage(EventMessage<?> failedEvent) {
+        String eventDescription = format("An event with identifier [%s] could not be persisted",
+                                         failedEvent.getIdentifier());
+        if (isFirstDomainEvent(failedEvent)) {
+            DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
+            eventDescription = format(
+                    "Cannot reuse aggregate identifier [%s] to create aggregate [%s] since identifiers need to be unique.",
+                    failedDomainEvent.getAggregateIdentifier(),
+                    failedDomainEvent.getType());
+        } else if (failedEvent instanceof DomainEventMessage<?>) {
+            DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
+            eventDescription = format("An event for aggregate [%s] at sequence [%d] was already inserted",
+                                      failedDomainEvent.getAggregateIdentifier(),
+                                      failedDomainEvent.getSequenceNumber());
+        }
+        return eventDescription;
     }
 
     /**
@@ -172,8 +180,8 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
      * @param failedEvent the event to be checked
      * @return true in case of first event, false otherwise
      */
-    private boolean isFirstDomainEvent(TaggedEventMessage<?> failedEvent) {
-        if (failedEvent.event() instanceof DomainEventMessage<?>) {
+    private boolean isFirstDomainEvent(EventMessage<?> failedEvent) {
+        if (failedEvent instanceof DomainEventMessage<?>) {
             return ((DomainEventMessage<?>) failedEvent).getSequenceNumber() == 0L; // todo: what to do with that?
         }
         return false;
