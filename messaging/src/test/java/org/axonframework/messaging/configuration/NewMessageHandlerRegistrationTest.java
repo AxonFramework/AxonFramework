@@ -24,6 +24,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.ResponseType;
@@ -165,12 +166,13 @@ class NewMessageHandlerRegistrationTest {
 
     @Test
     void handlingUnknownMessageReturnsFailedMessageStream() {
-        MessageStream<Message<?>> result = testSubject.handle(new GenericMessage<>(new QualifiedName("axon",
-                                                                                                     "test",
-                                                                                                     "0.0.1"), "test"),
-                                                              ProcessingContext.NONE);
+        MessageStream<? extends Message<?>> result = testSubject.handle(new GenericMessage<>(new QualifiedName("axon",
+                                                                                                               "test",
+                                                                                                               "0.0.1"),
+                                                                                             "test"),
+                                                                        ProcessingContext.NONE);
 
-        CompletableFuture<MessageStream.Entry<Message<?>>> resultFuture = result.firstAsCompletableFuture();
+        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.firstAsCompletableFuture();
 
         assertTrue(resultFuture.isDone());
         assertTrue(resultFuture.isCompletedExceptionally());
@@ -185,13 +187,13 @@ class NewMessageHandlerRegistrationTest {
     void handlingGenericMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
         Message<Object> testMessage = new MessageWithType(MESSAGE_HANDLER_NAME);
 
-        MessageStream<Message<?>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
+        MessageStream<? extends Message<?>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
 
-        CompletableFuture<MessageStream.Entry<Message<?>>> resultFuture = result.firstAsCompletableFuture();
+        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.firstAsCompletableFuture();
 
         assertTrue(resultFuture.isDone());
         assertFalse(resultFuture.isCompletedExceptionally());
-        MessageStream.Entry<Message<?>> resultEntry = resultFuture.get();
+        Entry<? extends Message<?>> resultEntry = resultFuture.get();
         assertNull(resultEntry);
 
         assertTrue(messageHandlerInvoked.get());
@@ -204,13 +206,13 @@ class NewMessageHandlerRegistrationTest {
     void handlingCommandMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
         Message<Object> testMessage = new CommandMessageWithType(COMMAND_HANDLER_NAME);
 
-        MessageStream<Message<?>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
+        MessageStream<? extends Message<?>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
 
-        CompletableFuture<MessageStream.Entry<Message<?>>> resultFuture = result.firstAsCompletableFuture();
+        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.firstAsCompletableFuture();
 
         assertTrue(resultFuture.isDone());
         assertFalse(resultFuture.isCompletedExceptionally());
-        MessageStream.Entry<Message<?>> resultEntry = resultFuture.get();
+        Entry<? extends Message<?>> resultEntry = resultFuture.get();
         assertNull(resultEntry);
 
         assertFalse(messageHandlerInvoked.get());
@@ -223,13 +225,13 @@ class NewMessageHandlerRegistrationTest {
     void handlingEventMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
         Message<Object> testMessage = new EventMessageWithType(EVENT_HANDLER_NAME);
 
-        MessageStream<Message<?>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
+        MessageStream<? extends Message<?>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
 
-        CompletableFuture<MessageStream.Entry<Message<?>>> resultFuture = result.firstAsCompletableFuture();
+        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.firstAsCompletableFuture();
 
         assertTrue(resultFuture.isDone());
         assertFalse(resultFuture.isCompletedExceptionally());
-        MessageStream.Entry<Message<?>> resultEntry = resultFuture.get();
+        Entry<? extends Message<?>> resultEntry = resultFuture.get();
         assertNull(resultEntry);
 
         assertFalse(messageHandlerInvoked.get());
@@ -242,13 +244,13 @@ class NewMessageHandlerRegistrationTest {
     void handlingQueryMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
         Message<Object> testMessage = new QueryMessageWithType(QUERY_HANDLER_NAME);
 
-        MessageStream<Message<?>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
+        MessageStream<? extends Message<?>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
 
-        CompletableFuture<MessageStream.Entry<Message<?>>> resultFuture = result.firstAsCompletableFuture();
+        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.firstAsCompletableFuture();
 
         assertTrue(resultFuture.isDone());
         assertFalse(resultFuture.isCompletedExceptionally());
-        MessageStream.Entry<Message<?>> resultEntry = resultFuture.get();
+        Entry<? extends Message<?>> resultEntry = resultFuture.get();
         assertNull(resultEntry);
 
         assertFalse(messageHandlerInvoked.get());
