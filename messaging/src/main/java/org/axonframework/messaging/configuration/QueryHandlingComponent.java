@@ -17,17 +17,18 @@
 package org.axonframework.messaging.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class QueryHandlingComponent implements MessageHandlingComponent<QueryMessage<?, ?>, QueryResponseMessage<?>> {
+public class QueryHandlingComponent implements
+        MessageHandlingComponent<QueryHandler, QueryMessage<?, ?>, QueryResponseMessage<?>> {
 
     private final ConcurrentHashMap<QualifiedName, QueryHandler> queryHandlers;
 
@@ -53,48 +54,16 @@ public class QueryHandlingComponent implements MessageHandlingComponent<QueryMes
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> QueryHandlingComponent subscribe(
-            @Nonnull Set<QualifiedName> names,
-            @Nonnull H messageHandler
-    ) {
-        if (messageHandler instanceof CommandHandler) {
-            throw new UnsupportedOperationException("Cannot register command handlers on a query handling component");
-        }
-        if (messageHandler instanceof EventHandler) {
-            throw new UnsupportedOperationException("Cannot register event handlers on a query handling component");
-        }
-        names.forEach(name -> queryHandlers.put(name, (QueryHandler) messageHandler));
+    public QueryHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
+                                            @Nonnull QueryHandler handler) {
+        names.forEach(name -> queryHandlers.put(name, Objects.requireNonNull(handler, "TODO")));
         return this;
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> QueryHandlingComponent subscribe(
-            @Nonnull QualifiedName name,
-            @Nonnull H messageHandler
-    ) {
-        return subscribe(Set.of(name), messageHandler);
-    }
-
-    /**
-     * @param names
-     * @param queryHandler
-     * @param <Q>
-     * @return
-     */
-    public <Q extends QueryHandler> QueryHandlingComponent registerQueryHandler(@Nonnull Set<QualifiedName> names,
-                                                                                @Nonnull Q queryHandler) {
-        return subscribe(names, queryHandler);
-    }
-
-    /**
-     * @param name
-     * @param queryHandler
-     * @param <Q>
-     * @return
-     */
-    public <Q extends QueryHandler> QueryHandlingComponent registerQueryHandler(@Nonnull QualifiedName name,
-                                                                                @Nonnull Q queryHandler) {
-        return registerQueryHandler(Set.of(name), queryHandler);
+    public QueryHandlingComponent subscribe(@Nonnull QualifiedName name,
+                                            @Nonnull QueryHandler handler) {
+        return subscribe(Set.of(name), handler);
     }
 
     @Override

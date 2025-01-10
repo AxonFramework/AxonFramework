@@ -34,7 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class GenericMessageHandlingComponent implements MessageHandlingComponent<Message<?>, Message<?>> {
+public class GenericMessageHandlingComponent
+        implements MessageHandlingComponent<MessageHandler<?, ?>, Message<?>, Message<?>> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -51,66 +52,62 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
     @Nonnull
     @Override
     public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
-                                            @Nonnull ProcessingContext context) {
+                                                      @Nonnull ProcessingContext context) {
         QualifiedName messageType = message.name();
         // TODO add interceptor knowledge
-        MessageHandler<Message<?>, Message<?>> messageHandler = messageHandlersByName.get(messageType);
-        if (messageHandler == null) {
+        MessageHandler<Message<?>, Message<?>> handler = messageHandlersByName.get(messageType);
+        if (handler == null) {
             // TODO this would benefit from a dedicate exception
             return MessageStream.failed(new IllegalArgumentException(
                     "No handler found for message type [" + messageType + "]"
             ));
         }
-        return messageHandler.apply(message, context);
+        return handler.apply(message, context);
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> GenericMessageHandlingComponent subscribe(
-            @Nonnull Set<QualifiedName> names,
-            @Nonnull H messageHandler
-    ) {
-        if (messageHandler != this) {
+    public GenericMessageHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
+                                                     @Nonnull MessageHandler<?, ?> handler) {
+        if (handler != this) {
             names.forEach(messageType -> {
                 //noinspection unchecked
                 MessageHandler<Message<?>, Message<?>> oldHandler = messageHandlersByName.put(
-                        messageType, (MessageHandler<Message<?>, Message<?>>) messageHandler
+                        messageType, (MessageHandler<Message<?>, Message<?>>) handler
                 );
                 if (oldHandler != null) {
                     logger.warn("Duplicate message handler for message type [{}]. Replaced [{}] for [{}].",
-                                messageType, oldHandler.name(), messageHandler.name());
+                                messageType, oldHandler.name(), handler.name());
                 }
             });
         } else {
             logger.warn(
-                    "Ignoring registration of [{}], as it is not recommend to register a MessageHandlingComponent with itself.",
-                    messageHandler.name());
+                    "Ignoring registration of [{}], as it is not recommend to subscribe a MessageHandlingComponent with itself.",
+                    handler.name());
         }
         return this;
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> GenericMessageHandlingComponent subscribe(
-            @Nonnull QualifiedName name,
-            @Nonnull H messageHandler
-    ) {
-        return this.subscribe(Set.of(name), messageHandler);
+    public GenericMessageHandlingComponent subscribe(@Nonnull QualifiedName name,
+                                                     @Nonnull MessageHandler<?, ?> handler) {
+        return this.subscribe(Set.of(name), handler);
     }
 
-    public <C extends CommandHandler> GenericMessageHandlingComponent registerCommandHandler(
+    public <C extends CommandHandler> GenericMessageHandlingComponent subscribeCommandHandler(
             @Nonnull QualifiedName messageType,
             @Nonnull C commandHandler
     ) {
         return subscribe(messageType, commandHandler);
     }
 
-    public <E extends EventHandler> GenericMessageHandlingComponent registerEventHandler(
+    public <E extends EventHandler> GenericMessageHandlingComponent subscribeEventHandler(
             @Nonnull QualifiedName messageType,
             @Nonnull E eventHandler
     ) {
         return subscribe(messageType, eventHandler);
     }
 
-    public <Q extends QueryHandler> GenericMessageHandlingComponent registerQueryHandler(
+    public <Q extends QueryHandler> GenericMessageHandlingComponent subscribeQueryHandler(
             @Nonnull QualifiedName messageType,
             @Nonnull Q queryHandler
     ) {

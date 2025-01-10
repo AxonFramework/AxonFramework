@@ -33,7 +33,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class QueryModelComponent implements MessageHandlingComponent<Message<?>, Message<?>> {
+public class QueryModelComponent implements MessageHandlingComponent<MessageHandler<?, ?>, Message<?>, Message<?>> {
 
     private final EventHandlingComponent eventComponent;
     private final QueryHandlingComponent queryComponent;
@@ -45,7 +45,8 @@ public class QueryModelComponent implements MessageHandlingComponent<Message<?>,
 
     @Nonnull
     @Override
-    public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+    public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
+                                                      @Nonnull ProcessingContext context) {
         return switch (message) {
             case QueryMessage<?, ?> query -> queryComponent.handle(query, context);
             case EventMessage<?> event -> eventComponent.handle(event, context);
@@ -57,37 +58,34 @@ public class QueryModelComponent implements MessageHandlingComponent<Message<?>,
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> QueryModelComponent subscribe(
-            @Nonnull Set<QualifiedName> names, @Nonnull H messageHandler
-    ) {
-        if (messageHandler instanceof EventHandler eventHandler) {
-            eventComponent.registerEventHandler(names, eventHandler);
+    public QueryModelComponent subscribe(@Nonnull Set<QualifiedName> names,
+                                         @Nonnull MessageHandler<?, ?> handler) {
+        if (handler instanceof EventHandler eventHandler) {
+            eventComponent.subscribe(names, eventHandler);
             return this;
         }
-        if (messageHandler instanceof QueryHandler queryHandler) {
-            queryComponent.registerQueryHandler(names, queryHandler);
+        if (handler instanceof QueryHandler queryHandler) {
+            queryComponent.subscribe(names, queryHandler);
             return this;
         }
-        throw new IllegalArgumentException("Cannot register command handlers on a query model component");
+        throw new IllegalArgumentException("Cannot subscribe command handlers on a query model component");
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> QueryModelComponent subscribe(
-            @Nonnull QualifiedName name,
-            @Nonnull H messageHandler
-    ) {
-        return subscribe(Set.of(name), messageHandler);
+    public QueryModelComponent subscribe(@Nonnull QualifiedName name,
+                                         @Nonnull MessageHandler<?, ?> handler) {
+        return subscribe(Set.of(name), handler);
     }
 
-    public <E extends EventHandler> QueryModelComponent registerEventHandler(@Nonnull QualifiedName messageType,
-                                                                             @Nonnull E eventHandler) {
-        eventComponent.registerEventHandler(messageType, eventHandler);
+    public <E extends EventHandler> QueryModelComponent subscribeEventHandler(@Nonnull QualifiedName name,
+                                                                              @Nonnull E eventHandler) {
+        eventComponent.subscribe(name, eventHandler);
         return this;
     }
 
-    public <Q extends QueryHandler> QueryModelComponent registerQueryHandler(@Nonnull QualifiedName messageType,
-                                                                             @Nonnull Q queryHandler) {
-        queryComponent.registerQueryHandler(messageType, queryHandler);
+    public <Q extends QueryHandler> QueryModelComponent subscribeQueryHandler(@Nonnull QualifiedName name,
+                                                                              @Nonnull Q queryHandler) {
+        queryComponent.subscribe(name, queryHandler);
         return this;
     }
 

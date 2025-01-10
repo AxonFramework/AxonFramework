@@ -31,8 +31,8 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface MessageHandlingComponent<M extends Message<?>, R extends Message<?>>
-        extends MessageHandlerRegistry, MessageHandler<M, R> {
+public interface MessageHandlingComponent<H extends MessageHandler<?, ?>, M extends Message<?>, R extends Message<?>>
+        extends MessageHandlerRegistry<H>, MessageHandler<M, R> {
 
     /**
      * The {@link QualifiedName} of this message handling component.
@@ -45,7 +45,6 @@ public interface MessageHandlingComponent<M extends Message<?>, R extends Messag
     }
 
     /**
-     *
      * @return The {@link Set} of {@link QualifiedName QualifiedNames} representing all supported message types.
      */
     Set<QualifiedName> supportedMessages();

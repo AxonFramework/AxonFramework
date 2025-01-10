@@ -75,15 +75,15 @@ class NewMessageHandlerRegistrationTest {
                        messageHandlerInvoked.set(true);
                        return MessageStream.empty();
                    })
-                   .registerCommandHandler(COMMAND_HANDLER_NAME, (command, context) -> {
+                   .subscribeCommandHandler(COMMAND_HANDLER_NAME, (command, context) -> {
                        commandHandlerInvoked.set(true);
                        return MessageStream.empty();
                    })
-                   .registerEventHandler(EVENT_HANDLER_NAME, (event, context) -> {
+                   .subscribeEventHandler(EVENT_HANDLER_NAME, (event, context) -> {
                        eventHandlerInvoked.set(true);
                        return MessageStream.empty();
                    })
-                   .registerQueryHandler(QUERY_HANDLER_NAME, (query, context) -> {
+                   .subscribeQueryHandler(QUERY_HANDLER_NAME, (query, context) -> {
                        queryHandlerInvoked.set(true);
                        return MessageStream.empty();
                    });
@@ -91,8 +91,8 @@ class NewMessageHandlerRegistrationTest {
 
     // TODO parameterized test to validate archetypes
     @Test
-    void registeringHandlers() {
-        MessageHandlingComponent<Message<?>, Message<?>> plainMHC = new GenericMessageHandlingComponent();
+    void subscribingHandlers() {
+        MessageHandlingComponent<MessageHandler<?, ?>, Message<?>, Message<?>> plainMHC = new GenericMessageHandlingComponent();
         CommandModelComponent aggregate = new CommandModelComponent();
         QueryModelComponent projector = new QueryModelComponent();
         GenericMessageHandlingComponent genericMHC = new GenericMessageHandlingComponent();
@@ -102,64 +102,64 @@ class NewMessageHandlerRegistrationTest {
         plainMHC.subscribe(testName, (message, context) -> MessageStream.empty())
 
                 .subscribe(testName, new TestCommandHandler())
-//                .registerCommandHandler(testName, new TestCommandHandler())
-//                .registerCommandHandler(testName, (command, context) -> MessageStream.empty())
+//                .subscribCommandHandler(testName, new TestCommandHandler())
+//                .subscribCommandHandler(testName, (command, context) -> MessageStream.empty())
 
                 .subscribe(testName, new TestEventHandler())
-//                .registerEventHandler(testName, new TestEventHandler())
-//                .registerEventHandler(testName, (event, context) -> MessageStream.empty())
+//                .subscribEventHandler(testName, new TestEventHandler())
+//                .subscribEventHandler(testName, (event, context) -> MessageStream.empty())
 
                 .subscribe(testName, new TestQueryHandler())
-//                .registerQueryHandler(testName, new TestQueryHandler())
-//                .registerQueryHandler(testName, (query, context) -> MessageStream.empty())
+//                .subscribQueryHandler(testName, new TestQueryHandler())
+//                .subscribQueryHandler(testName, (query, context) -> MessageStream.empty())
 
                 .subscribe(Set.of(testName), new TestMessageHandlingComponent<>());
 
-        aggregate.subscribe(testName, (message, context) -> MessageStream.empty())
+        aggregate/*.subscribe(testName, (message, context) -> MessageStream.empty())*/
 
                  .subscribe(testName, new TestCommandHandler())
-                 .registerCommandHandler(testName, new TestCommandHandler())
-                 .registerCommandHandler(testName, (command, context) -> MessageStream.empty())
+                 .subscribeCommandHandler(testName, new TestCommandHandler())
+                 .subscribeCommandHandler(testName, (command, context) -> MessageStream.empty())
 
                  .subscribe(testName, new TestEventHandler())
-                 .registerEventHandler(testName, new TestEventHandler())
-                 .registerEventHandler(testName, (event, context) -> MessageStream.empty())
+                 .subscribeEventHandler(testName, new TestEventHandler())
+                 .subscribeEventHandler(testName, (event, context) -> MessageStream.empty())
 
-//                 .registerMessageHandler(testName, new TestQueryHandler())
-//                 .registerQueryHandler(testName, new TestQueryHandler())
-//                 .registerQueryHandler(testName, (query, context) -> MessageStream.empty())
+//                 .subscribMessageHandler(testName, new TestQueryHandler())
+//                 .subscribQueryHandler(testName, new TestQueryHandler())
+//                 .subscribQueryHandler(testName, (query, context) -> MessageStream.empty())
 
-                 .subscribe(Set.of(testName), new TestMessageHandlingComponent<>());
+                 /*.subscribe(Set.of(testName), new TestMessageHandlingComponent<>())*/;
 
-        projector.subscribe(testName, (message, context) -> MessageStream.empty())
+        projector/*.subscribe(testName, (message, context) -> MessageStream.empty())*/
 
-//                 .registerMessageHandler(testName, new TestCommandHandler())
-//                 .registerCommandHandler(testName, new TestCommandHandler())
-//                 .registerCommandHandler(testName, (command, context) -> MessageStream.empty())
+//                 .subscribMessageHandler(testName, new TestCommandHandler())
+//                 .subscribCommandHandler(testName, new TestCommandHandler())
+//                 .subscribCommandHandler(testName, (command, context) -> MessageStream.empty())
 
                  .subscribe(testName, new TestEventHandler())
-                 .registerEventHandler(testName, new TestEventHandler())
-                 .registerEventHandler(testName, (event, context) -> MessageStream.empty())
+                 .subscribeEventHandler(testName, new TestEventHandler())
+                 .subscribeEventHandler(testName, (event, context) -> MessageStream.empty())
 
                  .subscribe(testName, new TestQueryHandler())
-                 .registerQueryHandler(testName, new TestQueryHandler())
-                 .registerQueryHandler(testName, (query, context) -> MessageStream.empty())
+                 .subscribeQueryHandler(testName, new TestQueryHandler())
+                 .subscribeQueryHandler(testName, (query, context) -> MessageStream.empty())
 
-                 .subscribe(Set.of(testName), new TestMessageHandlingComponent<>());
+                 /*.subscribe(Set.of(testName), new TestMessageHandlingComponent<>())*/;
 
         genericMHC.subscribe(testName, (message, context) -> MessageStream.empty())
 
                   .subscribe(testName, new TestCommandHandler())
-                  .registerCommandHandler(testName, new TestCommandHandler())
-                  .registerCommandHandler(testName, (command, context) -> MessageStream.empty())
+                  .subscribeCommandHandler(testName, new TestCommandHandler())
+                  .subscribeCommandHandler(testName, (command, context) -> MessageStream.empty())
 
                   .subscribe(testName, new TestEventHandler())
-                  .registerEventHandler(testName, new TestEventHandler())
-                  .registerEventHandler(testName, (event, context) -> MessageStream.empty())
+                  .subscribeEventHandler(testName, new TestEventHandler())
+                  .subscribeEventHandler(testName, (event, context) -> MessageStream.empty())
 
                   .subscribe(testName, new TestQueryHandler())
-                  .registerQueryHandler(testName, new TestQueryHandler())
-                  .registerQueryHandler(testName, (query, context) -> MessageStream.empty())
+                  .subscribeQueryHandler(testName, new TestQueryHandler())
+                  .subscribeQueryHandler(testName, (query, context) -> MessageStream.empty())
 
                   .subscribe(Set.of(testName), new TestMessageHandlingComponent<>());
     }
@@ -260,7 +260,7 @@ class NewMessageHandlerRegistrationTest {
     }
 
     @Test
-    void registeringMessageHandlingComponentEnsuresMessageDelegation() {
+    void subscribingMessageHandlingComponentEnsuresMessageDelegation() {
         Message<Object> testMessage = new MessageWithType(MESSAGE_HANDLER_NAME);
         CommandMessage<Object> testCommandMessage = new CommandMessageWithType(COMMAND_HANDLER_NAME);
         EventMessage<Object> testEventMessage = new EventMessageWithType(EVENT_HANDLER_NAME);
@@ -316,14 +316,12 @@ class NewMessageHandlerRegistrationTest {
         }
     }
 
-    private static class TestMessageHandlingComponent<HM extends Message<?>, HR extends Message<?>>
-            implements MessageHandlingComponent<HM, HR> {
+    private static class TestMessageHandlingComponent<HH extends MessageHandler<?, ?>, HM extends Message<?>, HR extends Message<?>>
+            implements MessageHandlingComponent<HH, HM, HR> {
 
         @Override
-        public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> MessageHandlerRegistry subscribe(
-                @Nonnull Set<QualifiedName> names,
-                @Nonnull H messageHandler
-        ) {
+        public MessageHandlerRegistry<HH> subscribe(@Nonnull Set<QualifiedName> names,
+                                                    @Nonnull HH messageHandler) {
             return null;
         }
 

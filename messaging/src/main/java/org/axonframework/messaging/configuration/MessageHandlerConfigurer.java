@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,11 @@ import org.axonframework.messaging.Message;
 @FunctionalInterface
 public interface MessageHandlerConfigurer {
 
-    static MessageHandlingComponent<Message<?>, Message<?>> messageHandlingComponent() {
+    static MessageHandlingComponent<MessageHandler<?, ?>, Message<?>, Message<?>> messageHandlingComponent() {
         return new GenericMessageHandlingComponent();
     }
 
-    <M extends Message<?>, R extends Message<?>> MessageHandlingComponent<M, R> registerMessageHandlingComponent(String name);
+    <H extends MessageHandler<?, ?>, M extends Message<?>, R extends Message<?>> MessageHandlingComponent<H, M, R> registerMessageHandlingComponent(
+            String name
+    );
 }

@@ -19,15 +19,16 @@ package org.axonframework.messaging.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class CommandHandlingComponent implements MessageHandlingComponent<CommandMessage<?>, CommandResultMessage<?>> {
+public class CommandHandlingComponent
+        implements MessageHandlingComponent<CommandHandler, CommandMessage<?>, CommandResultMessage<?>> {
 
     private final ConcurrentHashMap<QualifiedName, CommandHandler> commandHandlers;
 
@@ -53,48 +54,16 @@ public class CommandHandlingComponent implements MessageHandlingComponent<Comman
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> CommandHandlingComponent subscribe(
-            @Nonnull Set<QualifiedName> names,
-            @Nonnull H messageHandler
-    ) {
-        if (messageHandler instanceof EventHandler) {
-            throw new UnsupportedOperationException("Cannot register event handlers on a command handling component");
-        }
-        if (messageHandler instanceof QueryHandler) {
-            throw new UnsupportedOperationException("Cannot register query handlers on a command handling component");
-        }
-        names.forEach(name -> commandHandlers.put(name, (CommandHandler) messageHandler));
+    public CommandHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
+                                              @Nonnull CommandHandler handler) {
+        names.forEach(name -> commandHandlers.put(name, Objects.requireNonNull(handler, "TODO")));
         return this;
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> CommandHandlingComponent subscribe(
-            @Nonnull QualifiedName name,
-            @Nonnull H messageHandler
-    ) {
+    public CommandHandlingComponent subscribe(@Nonnull QualifiedName name,
+                                              @Nonnull CommandHandler messageHandler) {
         return subscribe(Set.of(name), messageHandler);
-    }
-
-    /**
-     * @param names
-     * @param commandHandler
-     * @param <C>
-     * @return
-     */
-    public <C extends CommandHandler> CommandHandlingComponent registerCommandHandler(@Nonnull Set<QualifiedName> names,
-                                                                                      @Nonnull C commandHandler) {
-        return subscribe(names, commandHandler);
-    }
-
-    /**
-     * @param name
-     * @param commandHandler
-     * @param <C>
-     * @return
-     */
-    public <C extends CommandHandler> CommandHandlingComponent registerCommandHandler(@Nonnull QualifiedName name,
-                                                                                      @Nonnull C commandHandler) {
-        return registerCommandHandler(Set.of(name), commandHandler);
     }
 
     @Override

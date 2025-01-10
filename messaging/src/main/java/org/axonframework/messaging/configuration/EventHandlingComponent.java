@@ -18,15 +18,15 @@ package org.axonframework.messaging.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class EventHandlingComponent implements MessageHandlingComponent<EventMessage<?>, NoMessage> {
+public class EventHandlingComponent implements MessageHandlingComponent<EventHandler, EventMessage<?>, NoMessage> {
 
     private final ConcurrentHashMap<QualifiedName, EventHandler> eventHandlers;
 
@@ -52,49 +52,16 @@ public class EventHandlingComponent implements MessageHandlingComponent<EventMes
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> EventHandlingComponent subscribe(
-            @Nonnull Set<QualifiedName> names,
-            @Nonnull H messageHandler
-    ) {
-        if (messageHandler instanceof CommandHandler) {
-            throw new UnsupportedOperationException("Cannot register command handlers on an event handling component");
-        }
-        if (messageHandler instanceof QueryHandler) {
-            throw new UnsupportedOperationException("Cannot register query handlers on an event handling component");
-        }
-        names.forEach(name -> eventHandlers.put(name, (EventHandler) messageHandler));
+    public EventHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
+                                            @Nonnull EventHandler handler) {
+        names.forEach(name -> eventHandlers.put(name, Objects.requireNonNull(handler, "TODO")));
         return this;
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> EventHandlingComponent subscribe(
-            @Nonnull QualifiedName name,
-            @Nonnull H messageHandler
-    ) {
-        return subscribe(Set.of(name), messageHandler);
-    }
-
-    /**
-     *
-     * @param names
-     * @param eventHandler
-     * @return
-     * @param <E>
-     */
-    public <E extends EventHandler> EventHandlingComponent registerEventHandler(@Nonnull Set<QualifiedName> names,
-                                                                                @Nonnull E eventHandler) {
-        return subscribe(names, eventHandler);
-    }
-
-    /**
-     * @param name
-     * @param eventHandler
-     * @param <E>
-     * @return
-     */
-    public <E extends EventHandler> EventHandlingComponent registerEventHandler(@Nonnull QualifiedName name,
-                                                                                @Nonnull E eventHandler) {
-        return registerEventHandler(Set.of(name), eventHandler);
+    public EventHandlingComponent subscribe(@Nonnull QualifiedName name,
+                                            @Nonnull EventHandler handler) {
+        return subscribe(Set.of(name), handler);
     }
 
     @Override

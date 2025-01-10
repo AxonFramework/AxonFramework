@@ -24,6 +24,8 @@ import org.axonframework.messaging.QualifiedName;
 import java.util.Set;
 
 /**
+ * TODO
+ *
  * @author Allard Buijze
  * @author Gerard Klijs
  * @author Milan Savic
@@ -31,26 +33,37 @@ import java.util.Set;
  * @author Sara Pellegrini
  * @author Steven van Beelen
  * @since 5.0.0
- * TODO next session -> make a implementation that can be used by any Message Bus type. Or, at least try to.
  */
-public interface MessageHandlerRegistry {
+public interface MessageHandlerRegistry<H extends MessageHandler<? extends Message<?>, ? extends Message<?>>> {
 
     /**
-     * @param names   The set of {@link QualifiedName message types} the given {@code messageHandler} can handle.
-     * @param messageHandler A {@link MessageHandler handler} or {@link MessageHandlingComponent handling component}
-     *                       interested in messages dispatched with any of the given {@code names}.
+     * Subscribe the given {@code handler} for messages of the given {@code names}.
+     * <p/>
+     * If a subscription already exists for any {@link QualifiedName name} in the given set, the behavior is undefined.
+     * Implementations may throw an exception to refuse duplicate subscription or alternatively decide whether the
+     * existing or new {@code handler} gets the subscription.
+     *
+     * @param names   The names of the message to subscribe the handler for.
+     * @param handler The handler instance that handles messages for the given name.
      * @return This registry for fluent interfacing.
      */
-    <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> MessageHandlerRegistry subscribe(
-            @Nonnull Set<QualifiedName> names,
-            @Nonnull H messageHandler
-    );
+    MessageHandlerRegistry<H> subscribe(@Nonnull Set<QualifiedName> names,
+                                        @Nonnull H handler);
 
-    default <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> MessageHandlerRegistry subscribe(
-            @Nonnull QualifiedName name,
-            @Nonnull H messageHandler
-    ) {
-        return subscribe(Set.of(name), messageHandler);
+    /**
+     * Subscribe the given {@code handler} for messages of the given {@code name}.
+     * <p/>
+     * If a subscription already exists for the {@code name}, the behavior is undefined. Implementations may throw an
+     * exception to refuse duplicate subscription or alternatively decide whether the existing or new {@code handler}
+     * gets the subscription.
+     *
+     * @param name    The names of the message to subscribe the handler for.
+     * @param handler The handler instance that handles messages for the given name.
+     * @return This registry for fluent interfacing.
+     */
+    default MessageHandlerRegistry<H> subscribe(@Nonnull QualifiedName name,
+                                                @Nonnull H handler) {
+        return subscribe(Set.of(name), handler);
     }
 
     /**

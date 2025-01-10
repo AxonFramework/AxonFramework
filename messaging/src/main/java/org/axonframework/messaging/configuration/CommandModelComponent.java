@@ -33,7 +33,8 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class CommandModelComponent implements MessageHandlingComponent<Message<?>, Message<?>> {
+public class CommandModelComponent implements
+        MessageHandlingComponent<MessageHandler<?, ?>, Message<?>, Message<?>> {
 
     private final CommandHandlingComponent commandComponent;
     private final EventHandlingComponent eventComponent;
@@ -57,38 +58,34 @@ public class CommandModelComponent implements MessageHandlingComponent<Message<?
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> CommandModelComponent subscribe(
-            @Nonnull Set<QualifiedName> names,
-            @Nonnull H messageHandler
-    ) {
+    public CommandModelComponent subscribe(@Nonnull Set<QualifiedName> names,
+                                           @Nonnull MessageHandler<?, ?> messageHandler) {
         if (messageHandler instanceof CommandHandler commandHandler) {
-            commandComponent.registerCommandHandler(names, commandHandler);
+            commandComponent.subscribe(names, commandHandler);
             return this;
         }
         if (messageHandler instanceof EventHandler eventHandler) {
-            eventComponent.registerEventHandler(names, eventHandler);
+            eventComponent.subscribe(names, eventHandler);
             return this;
         }
-        throw new IllegalArgumentException("Cannot register query handlers on a command model component");
+        throw new IllegalArgumentException("Cannot subscribe query handlers on a command model component");
     }
 
     @Override
-    public <H extends MessageHandler<M, R>, M extends Message<?>, R extends Message<?>> CommandModelComponent subscribe(
-            @Nonnull QualifiedName name,
-            @Nonnull H messageHandler
-    ) {
+    public CommandModelComponent subscribe(@Nonnull QualifiedName name,
+                                           @Nonnull MessageHandler<?, ?> messageHandler) {
         return subscribe(Set.of(name), messageHandler);
     }
 
-    public <C extends CommandHandler> CommandModelComponent registerCommandHandler(@Nonnull QualifiedName messageType,
-                                                                                   @Nonnull C commandHandler) {
-        commandComponent.registerCommandHandler(messageType, commandHandler);
+    public <C extends CommandHandler> CommandModelComponent subscribeCommandHandler(@Nonnull QualifiedName name,
+                                                                                    @Nonnull C commandHandler) {
+        commandComponent.subscribe(name, commandHandler);
         return this;
     }
 
-    public <E extends EventHandler> CommandModelComponent registerEventHandler(@Nonnull QualifiedName messageType,
-                                                                               @Nonnull E eventHandler) {
-        eventComponent.registerEventHandler(messageType, eventHandler);
+    public <E extends EventHandler> CommandModelComponent subscribeEventHandler(@Nonnull QualifiedName name,
+                                                                                @Nonnull E eventHandler) {
+        eventComponent.subscribe(name, eventHandler);
         return this;
     }
 
