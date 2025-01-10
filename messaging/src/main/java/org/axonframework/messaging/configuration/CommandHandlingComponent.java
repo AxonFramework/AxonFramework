@@ -16,58 +16,16 @@
 
 package org.axonframework.messaging.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+/**
+ * A {@code MessageHandlingComponent} specialization for {@code CommandHandlers}.
+ *
+ * @author Allard Buijze
+ * @since 5.0.0
+ */
+public interface CommandHandlingComponent
+        extends MessageHandlingComponent<CommandHandler, CommandMessage<?>, CommandResultMessage<?>> {
 
-public class CommandHandlingComponent
-        implements MessageHandlingComponent<CommandHandler, CommandMessage<?>, CommandResultMessage<?>> {
-
-    private final ConcurrentHashMap<QualifiedName, CommandHandler> commandHandlers;
-
-    public CommandHandlingComponent() {
-        this.commandHandlers = new ConcurrentHashMap<>();
-    }
-
-    @Nonnull
-    @Override
-    public MessageStream<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                         @Nonnull ProcessingContext context) {
-        QualifiedName name = command.name();
-        // TODO add interceptor knowledge
-        CommandHandler handler = commandHandlers.get(name);
-        if (handler == null) {
-            // TODO this would benefit from a dedicate exception
-            return MessageStream.failed(new IllegalArgumentException(
-                    "No handler found for command with name [" + name + "]"
-            ));
-        }
-        // TODO - can we do something about this cast?
-        return (MessageStream<CommandResultMessage<?>>) handler.apply(command, context);
-    }
-
-    @Override
-    public CommandHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
-                                              @Nonnull CommandHandler handler) {
-        names.forEach(name -> commandHandlers.put(name, Objects.requireNonNull(handler, "TODO")));
-        return this;
-    }
-
-    @Override
-    public CommandHandlingComponent subscribe(@Nonnull QualifiedName name,
-                                              @Nonnull CommandHandler messageHandler) {
-        return subscribe(Set.of(name), messageHandler);
-    }
-
-    @Override
-    public Set<QualifiedName> supportedMessages() {
-        return commandHandlers.keySet();
-    }
 }

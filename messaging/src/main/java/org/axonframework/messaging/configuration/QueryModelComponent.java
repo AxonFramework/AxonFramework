@@ -35,12 +35,12 @@ import java.util.Set;
  */
 public class QueryModelComponent implements MessageHandlingComponent<MessageHandler<?, ?>, Message<?>, Message<?>> {
 
-    private final EventHandlingComponent eventComponent;
-    private final QueryHandlingComponent queryComponent;
+    private final SimpleEventHandlingComponent eventComponent;
+    private final SimpleQueryHandlingComponent queryComponent;
 
     public QueryModelComponent() {
-        this.eventComponent = new EventHandlingComponent();
-        this.queryComponent = new QueryHandlingComponent();
+        this.eventComponent = new SimpleEventHandlingComponent();
+        this.queryComponent = new SimpleQueryHandlingComponent();
     }
 
     @Nonnull

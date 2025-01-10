@@ -16,58 +16,16 @@
 
 package org.axonframework.messaging.configuration;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+/**
+ * A {@code MessageHandlingComponent} specialization for {@code QueryHandlers}.
+ *
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
+public interface QueryHandlingComponent
+        extends MessageHandlingComponent<QueryHandler, QueryMessage<?, ?>, QueryResponseMessage<?>> {
 
-public class QueryHandlingComponent implements
-        MessageHandlingComponent<QueryHandler, QueryMessage<?, ?>, QueryResponseMessage<?>> {
-
-    private final ConcurrentHashMap<QualifiedName, QueryHandler> queryHandlers;
-
-    public QueryHandlingComponent() {
-        this.queryHandlers = new ConcurrentHashMap<>();
-    }
-
-    @Nonnull
-    @Override
-    public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
-                                                         @Nonnull ProcessingContext context) {
-        QualifiedName name = query.name();
-        // TODO add interceptor knowledge
-        QueryHandler handler = queryHandlers.get(name);
-        if (handler == null) {
-            // TODO this would benefit from a dedicate exception
-            return MessageStream.failed(new IllegalArgumentException(
-                    "No handler found for query with name [" + name + "]"
-            ));
-        }
-        // TODO - can we do something about this cast?
-        return (MessageStream<QueryResponseMessage<?>>) handler.apply(query, context);
-    }
-
-    @Override
-    public QueryHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
-                                            @Nonnull QueryHandler handler) {
-        names.forEach(name -> queryHandlers.put(name, Objects.requireNonNull(handler, "TODO")));
-        return this;
-    }
-
-    @Override
-    public QueryHandlingComponent subscribe(@Nonnull QualifiedName name,
-                                            @Nonnull QueryHandler handler) {
-        return subscribe(Set.of(name), handler);
-    }
-
-    @Override
-    public Set<QualifiedName> supportedMessages() {
-        return queryHandlers.keySet();
-    }
 }

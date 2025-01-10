@@ -36,12 +36,12 @@ import java.util.Set;
 public class CommandModelComponent implements
         MessageHandlingComponent<MessageHandler<?, ?>, Message<?>, Message<?>> {
 
-    private final CommandHandlingComponent commandComponent;
-    private final EventHandlingComponent eventComponent;
+    private final SimpleCommandHandlingComponent commandComponent;
+    private final SimpleEventHandlingComponent eventComponent;
 
     public CommandModelComponent() {
-        this.commandComponent = new CommandHandlingComponent();
-        this.eventComponent = new EventHandlingComponent();
+        this.commandComponent = new SimpleCommandHandlingComponent();
+        this.eventComponent = new SimpleEventHandlingComponent();
     }
 
     @Nonnull

@@ -16,56 +16,15 @@
 
 package org.axonframework.messaging.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+/**
+ * A {@code MessageHandlingComponent} specialization for {@code EventHandlers}.
+ *
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
+public interface EventHandlingComponent
+        extends MessageHandlingComponent<EventHandler, EventMessage<?>, NoMessage> {
 
-public class EventHandlingComponent implements MessageHandlingComponent<EventHandler, EventMessage<?>, NoMessage> {
-
-    private final ConcurrentHashMap<QualifiedName, EventHandler> eventHandlers;
-
-    public EventHandlingComponent() {
-        this.eventHandlers = new ConcurrentHashMap<>();
-    }
-
-    @Nonnull
-    @Override
-    public MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
-                                           @Nonnull ProcessingContext context) {
-        QualifiedName name = event.name();
-        // TODO add interceptor knowledge
-        EventHandler handler = eventHandlers.get(name);
-        if (handler == null) {
-            // TODO this would benefit from a dedicate exception
-            return MessageStream.failed(new IllegalArgumentException(
-                    "No handler found for event with name [" + name + "]"
-            ));
-        }
-        // TODO - can we do something about this cast?
-        return (MessageStream<NoMessage>) handler.apply(event, context);
-    }
-
-    @Override
-    public EventHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
-                                            @Nonnull EventHandler handler) {
-        names.forEach(name -> eventHandlers.put(name, Objects.requireNonNull(handler, "TODO")));
-        return this;
-    }
-
-    @Override
-    public EventHandlingComponent subscribe(@Nonnull QualifiedName name,
-                                            @Nonnull EventHandler handler) {
-        return subscribe(Set.of(name), handler);
-    }
-
-    @Override
-    public Set<QualifiedName> supportedMessages() {
-        return eventHandlers.keySet();
-    }
 }
