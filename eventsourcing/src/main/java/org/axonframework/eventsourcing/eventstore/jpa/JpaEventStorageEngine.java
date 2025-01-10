@@ -314,6 +314,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         if (events.isEmpty()) {
             return;
         }
+        var tx = transactionManager.startTransaction();
 
         transactionManager.executeInTransaction(() -> {
             try {
