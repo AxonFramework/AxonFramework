@@ -70,10 +70,11 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     @Override
     public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
                                                              @Nonnull List<TaggedEventMessage<?>> events) {
-        return CompletableFuture.completedFuture(
-                events.isEmpty()
+        return CompletableFuture.supplyAsync(
+                () -> events.isEmpty()
                         ? new NoOpAppendTransaction(condition)
-                        : appendTransaction(condition, events, this.eventSerializer)
+                        : appendTransaction(condition, events, this.eventSerializer),
+                executor
         );
     }
 
@@ -84,21 +85,19 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         return new AppendTransaction() {
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
-                return CompletableFuture.supplyAsync(() -> {
-                    try {
-                        var entityManager = entityManagerProvider.getEntityManager();
-                        events.stream().map(event -> createEventEntity(event, eventSerializer))
-                              .forEach(entityManager::persist);
-                        if (explicitFlush) {
-                            entityManager.flush();
-                        }
-                        tx.commit();
-                        return AggregateBasedConsistencyMarker.from(appendCondition);
-                    } catch (Exception e) {
-                        tx.rollback();
-                        throw mapPersistenceException(e, events.getFirst().event());
+                try {
+                    var entityManager = entityManagerProvider.getEntityManager();
+                    events.stream().map(event -> createEventEntity(event, eventSerializer))
+                          .forEach(entityManager::persist);
+                    if (explicitFlush) {
+                        entityManager.flush();
                     }
-                }, executor);
+                    tx.commit();
+                    return CompletableFuture.completedFuture(AggregateBasedConsistencyMarker.from(appendCondition));
+                } catch (Exception e) {
+                    tx.rollback();
+                    return CompletableFuture.failedFuture(mapPersistenceException(e, events.getFirst().event()));
+                }
             }
 
             @Override
