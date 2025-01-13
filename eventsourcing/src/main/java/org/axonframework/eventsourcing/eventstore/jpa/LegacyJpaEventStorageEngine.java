@@ -117,16 +117,15 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
      * @return the Jpa entity to be inserted
      */
     protected Object createEventEntity(TaggedEventMessage<?> eventMessage, Serializer serializer) {
-//        return new DomainEventEntry(asDomainEventMessage(eventMessage), serializer);
-        return new DomainEventEntry(null, serializer);
+        var domainEventMessage = asDomainEventMessage(eventMessage);
+        return new DomainEventEntry(domainEventMessage, serializer);
     }
 
     // todo: understand why aggregateType null and sequenceNUmber 0
-    protected static <P, T extends EventMessage<P>> DomainEventMessage<P> asDomainEventMessage(
-            TaggedEventMessage<T> taggedEvent) {
-        EventMessage<P> eventMessage = taggedEvent.event();
+    private static DomainEventMessage<?> asDomainEventMessage(TaggedEventMessage<?> taggedEvent) {
+        EventMessage<?> eventMessage = taggedEvent.event();
         if (eventMessage instanceof DomainEventMessage<?>) {
-            return (DomainEventMessage<P>) eventMessage;
+            return (DomainEventMessage<?>) eventMessage;
         }
         return new GenericDomainEventMessage<>(null,
                                                eventMessage.getIdentifier(),

@@ -47,6 +47,7 @@ public class DomainEventEntry extends AbstractSequencedDomainEventEntry<byte[]> 
         super(eventMessage, serializer, byte[].class);
     }
 
+
     /**
      * Default constructor required by JPA
      */
