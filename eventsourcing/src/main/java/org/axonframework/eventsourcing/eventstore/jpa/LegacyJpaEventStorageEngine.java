@@ -1,7 +1,6 @@
 package org.axonframework.eventsourcing.eventstore.jpa;
 
 import jakarta.annotation.Nonnull;
-import jakarta.persistence.EntityManager;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -9,7 +8,6 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
@@ -29,7 +27,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Executors;
 
 import static java.lang.String.format;
 
@@ -66,7 +64,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         this.snapshotSerializer = snapshotSerializer;
         // optional config - default will be provided here:
         this.persistenceExceptionResolver = new JdbcSQLErrorCodesResolver();
-        this.executor = ForkJoinPool.commonPool(); // todo: configurable
+        this.executor = Executors.newFixedThreadPool(10); // todo: configurable, AxonThreadFactory etc.
     }
 
     @Override
