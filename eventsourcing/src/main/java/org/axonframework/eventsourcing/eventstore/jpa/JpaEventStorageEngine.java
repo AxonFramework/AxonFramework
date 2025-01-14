@@ -60,7 +60,7 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  * By default, the payload of events is stored as a serialized blob of bytes. Other columns are used to store meta-data
  * that allow quick finding of DomainEvents for a specific aggregate in the correct order.
  *
- * @deprecated Since the {@link org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine} should be used instead.
+ * @deprecated Will be removed in version 5.0.0. The {@link org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine} implementations should be used instead.
  * @author Rene de Waele
  * @since 3.0
  */
@@ -274,15 +274,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     public Optional<Long> lastSequenceNumberFor(@Nonnull String aggregateIdentifier) {
-        List<Long> results = entityManager().createQuery(
-                                                    "SELECT MAX(e.sequenceNumber) FROM " + domainEventEntryEntityName()
-                                                            + " e WHERE e.aggregateIdentifier = :aggregateId", Long.class)
-                                            .setParameter("aggregateId", aggregateIdentifier)
-                                            .getResultList();
-        if (results.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(results.get(0));
+        return legacyJpaOperations.lastSequenceNumberFor(aggregateIdentifier);
     }
 
     @Override
@@ -310,11 +302,11 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         if (noTokenFound(tokens)) {
             return null;
         }
-        return GapAwareTrackingToken.newInstance(tokens.get(0), Collections.emptySet());
+        return GapAwareTrackingToken.newInstance(tokens.getFirst(), Collections.emptySet());
     }
 
     private boolean noTokenFound(List<Long> tokens) {
-        return tokens.isEmpty() || tokens.get(0) == null;
+        return tokens.isEmpty() || tokens.getFirst() == null;
     }
 
     /**
