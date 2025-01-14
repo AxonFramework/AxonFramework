@@ -173,4 +173,16 @@ record LegacyJpaOperations(
                 "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e", Long.class
         ).getResultList();
     }
+
+    void deleteSnapshots(String aggregateIdentifier, long sequenceNumber) {
+        entityManager
+                .createQuery(
+                        "DELETE FROM " + snapshotEventEntryEntityName() + " e "
+                                + "WHERE e.aggregateIdentifier = :aggregateIdentifier "
+                                + "AND e.sequenceNumber < :sequenceNumber"
+                )
+                .setParameter("aggregateIdentifier", aggregateIdentifier)
+                .setParameter("sequenceNumber", sequenceNumber)
+                .executeUpdate();
+    }
 }
