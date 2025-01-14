@@ -93,6 +93,9 @@ record LegacyJpaOperations(
             long lastSequenceNumber,
             int batchSize
     ) {
+        if (lastSequenceNumber == Long.MAX_VALUE) {
+            return fetchDomainEvents(aggregateIdentifier, firstSequenceNumber, batchSize);
+        }
         return entityManager
                 .createQuery(
                         "SELECT new org.axonframework.eventhandling.GenericDomainEventEntry(" +
