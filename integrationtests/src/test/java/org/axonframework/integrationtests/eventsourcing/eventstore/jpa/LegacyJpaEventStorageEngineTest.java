@@ -8,6 +8,7 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
+import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
@@ -53,7 +54,8 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
         return new LegacyJpaEventStorageEngine(entityManagerProvider,
                                                transactionManager,
                                                TEST_SERIALIZER,
-                                               TEST_SERIALIZER);
+                                               TEST_SERIALIZER,
+                                               config -> config.persistenceExceptionResolver(new JdbcSQLErrorCodesResolver()));
     }
 
     @Override
