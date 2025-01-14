@@ -313,6 +313,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         };
     }
 
+    // todo: how do I know (even if its only tag), that it's an aggregate id?
     @Nullable
     private static String resolveAggregateIdentifier(Set<Tag> tags) {
         if (tags.isEmpty()) {

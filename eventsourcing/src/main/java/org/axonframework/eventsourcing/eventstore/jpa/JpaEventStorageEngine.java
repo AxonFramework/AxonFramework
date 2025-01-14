@@ -189,18 +189,13 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     private GapAwareTrackingToken cleanedToken(GapAwareTrackingToken lastToken) {
         if (lastToken != null && lastToken.getGaps().size() > gapCleaningThreshold) {
-            return withGapsCleaned(lastToken, transactionManager.fetchInTransaction(() -> entityManager()
-                    .createQuery(
-                            "SELECT e.globalIndex, e.timeStamp FROM " + domainEventEntryEntityName() + " e "
-                                    + "WHERE e.globalIndex >= :firstGapOffset "
-                                    + "AND e.globalIndex <= :maxGlobalIndex",
-                            Object[].class
-                    )
-                    .setParameter("firstGapOffset", lastToken.getGaps().first())
-                    .setParameter("maxGlobalIndex", lastToken.getGaps().last() + 1L)
-                    .getResultList()));
+            return withGapsCleaned(lastToken, indexToTimestamp(lastToken));
         }
         return lastToken;
+    }
+
+    private List<Object[]> indexToTimestamp(GapAwareTrackingToken lastToken) {
+        return transactionManager.fetchInTransaction(() -> legacyJpaOperations.indexToTimestamp(lastToken));
     }
 
     private GapAwareTrackingToken withGapsCleaned(GapAwareTrackingToken token, List<Object[]> indexToTimestamp) {
