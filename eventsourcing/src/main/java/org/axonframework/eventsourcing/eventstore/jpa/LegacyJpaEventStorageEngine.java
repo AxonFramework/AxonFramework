@@ -9,6 +9,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
@@ -38,9 +39,11 @@ import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -497,17 +500,34 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     @Override
     public CompletableFuture<TrackingToken> tailToken() {
-        return null;
+        var token = legacyJpaOperations.minGlobalIndex()
+                                       .flatMap(this::gapAwareTrackingTokenOnIndex)
+                                       .orElse(null);
+        return CompletableFuture.completedFuture(token); // todo: supplyAsync?
+    }
+
+    private Optional<TrackingToken> gapAwareTrackingTokenOnIndex(Long token) {
+        return token == null
+                ? Optional.empty()
+                : Optional.of(GapAwareTrackingToken.newInstance(token, Collections.emptySet()));
     }
 
     @Override
     public CompletableFuture<TrackingToken> headToken() {
-        return null;
+        var headToken = legacyJpaOperations.maxGlobalIndex()
+                                           .flatMap(this::gapAwareTrackingTokenOnIndex)
+                                           .orElse(null);
+        return CompletableFuture.completedFuture(headToken); // todo: supplyAsync?
     }
 
     @Override
     public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
-        return null;
+        var token = legacyJpaOperations.globalIndexAt(at)
+                                       .flatMap(this::gapAwareTrackingTokenOnIndex)
+                                       .or(() -> legacyJpaOperations.maxGlobalIndex()
+                                                                    .flatMap(this::gapAwareTrackingTokenOnIndex))
+                                       .orElse(null);
+        return CompletableFuture.completedFuture(token); // todo: supplyAsync?
     }
 
     @Override
