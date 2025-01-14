@@ -34,7 +34,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.sql.DataSource;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 @ExtendWith(SpringExtension.class)

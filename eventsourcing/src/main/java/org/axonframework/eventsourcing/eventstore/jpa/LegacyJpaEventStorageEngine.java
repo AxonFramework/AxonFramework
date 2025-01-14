@@ -3,9 +3,6 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.TypedQuery;
-import org.axonframework.common.Assert;
-import org.axonframework.common.BuilderUtils;
-import org.axonframework.common.StringUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -29,9 +26,10 @@ import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
-import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.MessageNameResolver;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
@@ -39,7 +37,6 @@ import org.axonframework.modelling.command.AggregateStreamCreationException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 
 import java.time.Instant;
@@ -83,9 +80,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     private final EventUpcaster upcasterChain;
     private final SnapshotFilter snapshotFilter;
     private final int batchSize;
+    private final MessageNameResolver messageNameResolver;
 
     private boolean explicitFlush = false;
-    private Executor executor;
+    private Executor writeExecutor;
     private final long lowestGlobalSequence = 1L;
     private final int maxGapOffset = 10000;
     private final int gapTimeout = 60000;
@@ -98,7 +96,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             @javax.annotation.Nonnull Serializer snapshotSerializer,
             @javax.annotation.Nonnull UnaryOperator<Config> configurationOverride
     ) {
-        this.executor = Executors.newFixedThreadPool(10); // todo: configurable, AxonThreadFactory etc.
+        this.writeExecutor = Executors.newFixedThreadPool(10); // todo: configurable, AxonThreadFactory etc.
 
         this.entityManagerProvider = entityManagerProvider;
         this.transactionManager = transactionManager;
@@ -110,6 +108,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         this.persistenceExceptionResolver = customization.persistenceExceptionResolver();
         this.snapshotFilter = customization.snapshotFilter();
         this.batchSize = customization.batchSize();
+        this.messageNameResolver = customization.messageNameResolver();
     }
 
     public record Config(
@@ -117,17 +116,28 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             PersistenceExceptionResolver persistenceExceptionResolver,
             SnapshotFilter snapshotFilter,
             int batchSize,
-            Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate // todo: handle!
+            Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate, // todo: handle!,
+            MessageNameResolver messageNameResolver,
+            boolean explicitFlush
     ) {
 
         public Config {
             assertNonNull(upcasterChain, "EventUpcaster may not be null");
             assertNonNull(snapshotFilter, "The snapshotFilter may not be null");
             assertThat(batchSize, size -> size > 0, "The batchSize must be a positive number");
+            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
         }
 
         public static Config defaultConfig() {
-            return new Config(NoOpEventUpcaster.INSTANCE, null, SnapshotFilter.allowAll(), 100, null);
+            return new Config(
+                    NoOpEventUpcaster.INSTANCE,
+                    null,
+                    SnapshotFilter.allowAll(),
+                    100,
+                    null,
+                    new ClassBasedMessageNameResolver(),
+                    false
+            );
         }
 
         public Config upcasterChain(EventUpcaster upcasterChain) {
@@ -135,7 +145,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                               persistenceExceptionResolver,
                               snapshotFilter,
                               batchSize,
-                              finalAggregateBatchPredicate);
+                              finalAggregateBatchPredicate,
+                              messageNameResolver,
+                              explicitFlush
+            );
         }
 
         public Config persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
@@ -143,7 +156,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                               persistenceExceptionResolver,
                               snapshotFilter,
                               batchSize,
-                              finalAggregateBatchPredicate);
+                              finalAggregateBatchPredicate,
+                              messageNameResolver,
+                              explicitFlush
+            );
         }
 
         public Config snapshotFilter(SnapshotFilter snapshotFilter) {
@@ -151,7 +167,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                               persistenceExceptionResolver,
                               snapshotFilter,
                               batchSize,
-                              finalAggregateBatchPredicate);
+                              finalAggregateBatchPredicate,
+                              messageNameResolver,
+                              explicitFlush
+            );
         }
 
         public Config batchSize(int batchSize) {
@@ -159,7 +178,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                               persistenceExceptionResolver,
                               snapshotFilter,
                               batchSize,
-                              finalAggregateBatchPredicate);
+                              finalAggregateBatchPredicate,
+                              messageNameResolver,
+                              explicitFlush
+            );
         }
 
         public Config finalAggregateBatchPredicate(
@@ -168,7 +190,21 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                               persistenceExceptionResolver,
                               snapshotFilter,
                               batchSize,
-                              finalAggregateBatchPredicate);
+                              finalAggregateBatchPredicate,
+                              messageNameResolver,
+                              explicitFlush
+            );
+        }
+
+        public Config messageNameResolver(MessageNameResolver messageNameResolver) {
+            return new Config(upcasterChain,
+                              persistenceExceptionResolver,
+                              snapshotFilter,
+                              batchSize,
+                              finalAggregateBatchPredicate,
+                              messageNameResolver,
+                              explicitFlush
+            );
         }
     }
 
@@ -180,11 +216,12 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }
+        if (events.isEmpty()) {
+            return CompletableFuture.completedFuture(new EmptyAppendTransaction(condition));
+        }
         return CompletableFuture.supplyAsync(
-                () -> events.isEmpty()
-                        ? new NoOpAppendTransaction(condition)
-                        : appendTransaction(condition, events, this.eventSerializer),
-                executor
+                () -> appendTransaction(condition, events),
+                writeExecutor
         );
     }
 
@@ -198,9 +235,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
     }
 
-    private AppendTransaction appendTransaction(AppendCondition condition,
-                                                List<TaggedEventMessage<?>> events,
-                                                Serializer eventSerializer) {
+    private AppendTransaction appendTransaction(AppendCondition condition, List<TaggedEventMessage<?>> events) {
         var tx = transactionManager.startTransaction();
         return new AppendTransaction() {
             @Override
@@ -214,6 +249,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                         var aggregateType = resolveAggregateType(taggedEvent.tags());
                         var event = taggedEvent.event();
                         if (aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty()) {
+                            // todo: what is GenericDomainEventMessage instance
                             var nextSequence = resolveSequencer(
                                     aggregateSequences,
                                     aggregateIdentifier,
@@ -224,13 +260,12 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                     aggregateIdentifier,
                                     nextSequence,
                                     event.getIdentifier(),
-                                    new QualifiedName("test", "event", "0.0.1"),
-                                    // todo: change to QualifiedName resolver
+                                    LegacyJpaEventStorageEngine.this.messageNameResolver.resolve(event.getPayload()),
                                     event.getPayload(),
                                     event.getMetaData(),
                                     event.getTimestamp()
                             );
-                            var eventEntity = new DomainEventEntry(domainEvent, eventSerializer);
+                            Object eventEntity = new DomainEventEntry(domainEvent, eventSerializer);
                             entityManager.persist(eventEntity);
                         } else {
                             var domainEvent = new GenericDomainEventMessage<>(
@@ -238,13 +273,12 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                     null,
                                     0L,
                                     event.getIdentifier(),
-                                    new QualifiedName("test", "event", "0.0.1"),
-                                    // todo: change to QualifiedName resolver
+                                    LegacyJpaEventStorageEngine.this.messageNameResolver.resolve(event.getPayload()),
                                     event.getPayload(),
                                     event.getMetaData(),
                                     event.getTimestamp()
                             );
-                            var eventEntity = new DomainEventEntry(domainEvent, eventSerializer);
+                            Object eventEntity = new DomainEventEntry(domainEvent, eventSerializer);
                             entityManager.persist(eventEntity);
                         }
                     });
@@ -493,11 +527,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     }
 
-    // todo: better name?
-    private record NoOpAppendTransaction(AppendCondition appendCondition) implements AppendTransaction {
+    private record EmptyAppendTransaction(AppendCondition appendCondition) implements AppendTransaction {
 
         @Override
-        public CompletableFuture<ConsistencyMarker> commit() { // todo: not sure about that from(appendCondition)
+        public CompletableFuture<ConsistencyMarker> commit() {
             return CompletableFuture.completedFuture(AggregateBasedConsistencyMarker.from(appendCondition));
         }
 
