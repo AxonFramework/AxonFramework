@@ -16,6 +16,8 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import static org.axonframework.common.DateTimeUtils.formatInstant;
+
 /**
  * Contains operations that are used to interact with the legacy JPA event storage database structure.
  *
@@ -148,5 +150,27 @@ record LegacyJpaOperations(
                 .setParameter("id", aggregateIdentifier)
                 .setMaxResults(1)
                 .getResultList();
+    }
+
+    List<Long> mostRecentIndex() {
+        return entityManager
+                .createQuery("SELECT MAX(e.globalIndex) FROM " + domainEventEntryEntityName() + " e", Long.class)
+                .getResultList();
+    }
+
+    List<Long> minGlobalIndexAt(Instant dateTime) {
+        return entityManager
+                .createQuery(
+                        "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e "
+                                + "WHERE e.timeStamp >= :dateTime", Long.class
+                )
+                .setParameter("dateTime", formatInstant(dateTime))
+                .getResultList();
+    }
+
+    List<Long> minGlobalIndex() {
+        return entityManager().createQuery(
+                "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e", Long.class
+        ).getResultList();
     }
 }

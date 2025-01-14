@@ -287,9 +287,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     public TrackingToken createTailToken() {
-        List<Long> results = entityManager().createQuery(
-                "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e", Long.class
-        ).getResultList();
+        List<Long> results = legacyJpaOperations.minGlobalIndex();
         return createToken(results);
     }
 
@@ -300,21 +298,12 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     public TrackingToken createTokenAt(@Nonnull Instant dateTime) {
-        List<Long> results = entityManager()
-                .createQuery(
-                        "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e "
-                                + "WHERE e.timeStamp >= :dateTime", Long.class
-                )
-                .setParameter("dateTime", formatInstant(dateTime))
-                .getResultList();
-
+        List<Long> results = legacyJpaOperations.minGlobalIndexAt(dateTime);
         return noTokenFound(results) ? createToken(mostRecentIndex()) : createToken(results);
     }
 
     private List<Long> mostRecentIndex() {
-        return entityManager()
-                .createQuery("SELECT MAX(e.globalIndex) FROM " + domainEventEntryEntityName() + " e", Long.class)
-                .getResultList();
+        return legacyJpaOperations.mostRecentIndex();
     }
 
     private TrackingToken createToken(List<Long> tokens) {
