@@ -385,6 +385,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     }
 
     // todo: don't mind gaps
+    // same as old:     public DomainEventStream readEvents(@Nonnull String aggregateIdentifier, long firstSequenceNumber) {
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
 //        var startToken = GapAwareTrackingToken.newInstance(lowestGlobalSequence, Collections.emptySet());
@@ -457,7 +458,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             ).setParameter("gaps", token.getGaps());
         }
         return query.setParameter("token", token == null ? -1L : token.getIndex())
-                    .setMaxResults(10) // todo: configurable
+                    .setMaxResults(batchSize)
                     .getResultList();
     }
 
