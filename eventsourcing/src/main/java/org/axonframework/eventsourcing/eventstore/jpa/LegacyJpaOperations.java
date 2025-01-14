@@ -87,6 +87,28 @@ record LegacyJpaOperations(
                 .getResultList();
     }
 
+    List<? extends DomainEventData<?>> fetchDomainEvents(
+            String aggregateIdentifier,
+            long firstSequenceNumber,
+            long lastSequenceNumber,
+            int batchSize
+    ) {
+        return entityManager
+                .createQuery(
+                        "SELECT new org.axonframework.eventhandling.GenericDomainEventEntry(" +
+                                "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, e.timeStamp, "
+                                + "e.payloadType, e.payloadRevision, e.payload, e.metaData) FROM "
+                                + domainEventEntryEntityName() + " e WHERE e.aggregateIdentifier = :id "
+                                + "AND e.sequenceNumber >= :min_seq AND e.sequenceNumber <= :max_seq ORDER BY e.sequenceNumber ASC"
+                )
+                .setParameter("id", aggregateIdentifier)
+                .setParameter("min_seq", firstSequenceNumber)
+                .setParameter("max_seq", lastSequenceNumber)
+                .setMaxResults(batchSize)
+                .getResultList();
+    }
+
+
     // todo: check that return type changed!
     List<TrackedDomainEventData<?>> entriesToEvents(
             GapAwareTrackingToken previousToken,
