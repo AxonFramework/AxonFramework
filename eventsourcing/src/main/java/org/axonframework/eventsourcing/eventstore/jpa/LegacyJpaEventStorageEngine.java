@@ -15,6 +15,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
+import org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
@@ -43,6 +44,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -56,6 +58,7 @@ import java.util.function.UnaryOperator;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.*;
+import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
 
 
 /**
@@ -186,7 +189,13 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                         }
                         return CompletableFuture.completedFuture(newConsistencyMarker);
                     } catch (Exception e) {
-                        throw persistenceExceptionMapper.mapPersistenceException(e, events.getFirst().event());
+                        var appendException = AppendEventsTransactionRejectedException.conflictingEventsDetected(
+                                consistencyMarker);
+                        var legacyPersistenceException = persistenceExceptionMapper.mapPersistenceException(e,
+                                                                                                            events.getFirst()
+                                                                                                                  .event());
+                        appendException.addSuppressed(legacyPersistenceException);
+                        throw appendException; // fixme: changed behavior (legacy throws legacyPersistenceException), compare with LegacyAxonServerEventStorageEngine
                     }
                 });
             }
