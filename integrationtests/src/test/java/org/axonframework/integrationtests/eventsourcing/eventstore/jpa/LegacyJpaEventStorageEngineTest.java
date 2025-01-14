@@ -11,35 +11,37 @@ import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTes
 import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.DependsOn;
-import org.springframework.context.annotation.EnableMBeanExport;
+import org.springframework.context.annotation.*;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
+import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import javax.sql.DataSource;
 
 @ExtendWith(SpringExtension.class)
-@EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @ContextConfiguration(classes = LegacyJpaEventStorageEngineTest.TestContext.class)
 class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSuite<LegacyJpaEventStorageEngine> {
 
     @Autowired
     private EntityManagerProvider entityManagerProvider;
+
     @Autowired
     @Qualifier("axonTransactionManager")
     private TransactionManager transactionManager;
@@ -63,7 +65,6 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
 
         @Configuration
         public static class PersistenceConfig {
-
             @PersistenceContext
             private EntityManager entityManager;
 
@@ -73,6 +74,14 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
             }
         }
 
+//        @Bean
+//        public DataSource dataSource() {
+//            DriverManagerDataSource driverManagerDataSource
+//                    = new DriverManagerDataSource("jdbc:tc:postgresql:17.2:///axon_test", "axon", "axon");
+//            driverManagerDataSource.setDriverClassName("org.postgresql.Driver");
+//            return Mockito.spy(driverManagerDataSource);
+//        }
+
         @Bean
         public DataSource dataSource() {
             var now = Instant.now();
@@ -80,7 +89,6 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
                     = new DriverManagerDataSource("jdbc:hsqldb:file:./data/" + now + "_legacyjpatest",
                                                   "sa",
                                                   "password");
-//                    = new DriverManagerDataSource("jdbc:hsqldb:mem:axontest", "sa", "password");
             driverManagerDataSource.setDriverClassName("org.hsqldb.jdbcDriver");
             return Mockito.spy(driverManagerDataSource);
         }
@@ -92,12 +100,14 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
             entityManagerFactoryBean.setPersistenceUnitName("integrationtest");
 
             HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
+//            jpaVendorAdapter.setDatabasePlatform("org.hibernate.dialect.PostgreSQLDialect");
             jpaVendorAdapter.setDatabasePlatform("org.hibernate.dialect.HSQLDialect");
             jpaVendorAdapter.setGenerateDdl(true);
             jpaVendorAdapter.setShowSql(false);
-            entityManagerFactoryBean.setJpaVendorAdapter(jpaVendorAdapter);
 
+            entityManagerFactoryBean.setJpaVendorAdapter(jpaVendorAdapter);
             entityManagerFactoryBean.setDataSource(dataSource);
+
             return entityManagerFactoryBean;
         }
 
