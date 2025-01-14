@@ -166,6 +166,19 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
     }
 
     @Test
+    void sourcingEventsReturnsMatchingAggregateEvent() {
+        AppendCondition appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
+        testSubject.appendEvents(appendCondition,
+                                 taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags())
+                   )
+                   .thenCompose(AppendTransaction::commit).join();
+
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
+                    .expectNextMatches(entryWithAggregateEvent("event-0", 0))
+                    .verifyComplete();
+    }
+
+    @Test
     void sourcingEventsReturnsMatchingAggregateEvents() {
         AppendCondition appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
         AppendCondition appendCondition2 = AppendCondition.withCriteria(OTHER_AGGREGATE_CRITERIA);

@@ -168,7 +168,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                                0L,
                                                event.getIdentifier(),
                                                new QualifiedName("test", "event", "0.0.1"), // todo: change
-                                               event,
+                                               event.getPayload(),
                                                event.getMetaData(),
                                                event.getTimestamp());
     }
@@ -271,11 +271,12 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return new GenericEventMessage<>(
                     identifier,
                     name,
-                    eventSerializer.convert(data, Class.forName(payload.getType().getName())),
+//                    eventSerializer.convert(data, Class.forName(payload.getType().getName())),
+                    data,
                     metaData,
                     event.getTimestamp()
             );
-        } catch (ClassNotFoundException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
