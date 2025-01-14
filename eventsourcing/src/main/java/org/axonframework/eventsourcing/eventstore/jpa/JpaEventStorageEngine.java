@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing.eventstore.jpa;
 
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.DateTimeUtils;
@@ -28,10 +27,8 @@ import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
-import org.axonframework.eventhandling.GenericDomainEventEntry;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
@@ -45,14 +42,10 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.TreeSet;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.sql.DataSource;
@@ -111,7 +104,8 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         this.legacyJpaOperations = new LegacyJpaOperations(
                 transactionManager,
                 entityManagerProvider.getEntityManager(),
-                domainEventEntryEntityName()
+                domainEventEntryEntityName(),
+                snapshotEventEntryEntityName()
         );
     }
 
@@ -240,20 +234,9 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     protected Stream<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
         return transactionManager.fetchInTransaction(
-                () -> entityManager()
-                        .createQuery(
-                                "SELECT new org.axonframework.eventhandling.GenericDomainEventEntry("
-                                        + "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
-                                        + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) FROM "
-                                        + snapshotEventEntryEntityName() + " e " + "WHERE e.aggregateIdentifier = :id "
-                                        + "ORDER BY e.sequenceNumber DESC"
-                        )
-                        .setParameter("id", aggregateIdentifier)
-                        .setMaxResults(1)
-                        .getResultList()
+                () -> legacyJpaOperations.readSnapshotData(aggregateIdentifier)
                         .stream()
         );
     }

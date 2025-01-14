@@ -7,7 +7,6 @@ import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericDomainEventEntry;
 import org.axonframework.eventhandling.TrackedDomainEventData;
-import org.axonframework.eventhandling.TrackedEventData;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -20,7 +19,8 @@ import java.util.stream.LongStream;
 record LegacyJpaOperations(
         TransactionManager transactionManager,
         EntityManager entityManager,
-        String domainEventEntryEntityName
+        String domainEventEntryEntityName,
+        String snapshotEventEntryEntityName
 ) {
 
     /**
@@ -31,7 +31,7 @@ record LegacyJpaOperations(
      * @param batchSize Size of event list is decided by that.
      * @return A batch of event messages as object stored since the given tracking token.
      */
-    protected List<Object[]> fetchEvents(GapAwareTrackingToken token, int batchSize) {
+    List<Object[]> fetchEvents(GapAwareTrackingToken token, int batchSize) {
         TypedQuery<Object[]> query;
         if (token == null || token.getGaps().isEmpty()) {
             query = entityManager().createQuery(
@@ -121,6 +121,22 @@ record LegacyJpaOperations(
                 )
                 .setParameter("firstGapOffset", lastToken.getGaps().first())
                 .setParameter("maxGlobalIndex", lastToken.getGaps().last() + 1L)
+                .getResultList();
+    }
+
+    //todo: check return type!
+    @SuppressWarnings("unchecked")
+    List<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
+        return entityManager
+                .createQuery(
+                        "SELECT new org.axonframework.eventhandling.GenericDomainEventEntry("
+                                + "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
+                                + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData) FROM "
+                                + snapshotEventEntryEntityName() + " e " + "WHERE e.aggregateIdentifier = :id "
+                                + "ORDER BY e.sequenceNumber DESC"
+                )
+                .setParameter("id", aggregateIdentifier)
+                .setMaxResults(1)
                 .getResultList();
     }
 }

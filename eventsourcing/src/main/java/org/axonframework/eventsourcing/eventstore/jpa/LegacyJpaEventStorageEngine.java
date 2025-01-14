@@ -116,7 +116,8 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
         this.legacyJpaOperations = new LegacyJpaOperations(transactionManager,
                                                            entityManagerProvider.getEntityManager(),
-                                                           domainEventEntryEntityName());
+                                                           domainEventEntryEntityName(),
+                                                           SnapshotEventEntry.class.getSimpleName());
     }
 
     public record Config(
