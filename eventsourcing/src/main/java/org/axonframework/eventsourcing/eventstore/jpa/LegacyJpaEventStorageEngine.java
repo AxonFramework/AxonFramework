@@ -130,15 +130,54 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 try {
                     var entityManager = entityManagerProvider.getEntityManager();
                     events.forEach(taggedEvent -> {
-                        var domainEventMessage = asDomainEventMessage(taggedEvent);
-                        var eventEntity = new DomainEventEntry(domainEventMessage, eventSerializer);
-                        entityManager.persist(eventEntity);
+                        String aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
+                        String aggregateType = resolveAggregateType(taggedEvent.tags());
+                        var event = taggedEvent.event();
+                        if (aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty()) {
+                            var nextSequence = resolveSequencer(
+                                    aggregateSequences,
+                                    aggregateIdentifier,
+                                    consistencyMarker
+                            ).incrementAndGet();
+                            var domainEvent = new GenericDomainEventMessage<>(
+                                    aggregateType,
+                                    aggregateIdentifier,
+                                    nextSequence,
+                                    event.getIdentifier(),
+                                    new QualifiedName("test", "event", "0.0.1"),
+                                    // todo: change to QualifiedName resolver
+                                    event.getPayload(),
+                                    event.getMetaData(),
+                                    event.getTimestamp()
+                            );
+                            var eventEntity = new DomainEventEntry(domainEvent, eventSerializer);
+                            entityManager.persist(eventEntity);
+                        } else {
+                            var domainEvent = new GenericDomainEventMessage<>(
+                                    null,
+                                    null,
+                                    0L,
+                                    event.getIdentifier(),
+                                    new QualifiedName("test", "event", "0.0.1"),
+                                    // todo: change to QualifiedName resolver
+                                    event.getPayload(),
+                                    event.getMetaData(),
+                                    event.getTimestamp()
+                            );
+                            var eventEntity = new DomainEventEntry(domainEvent, eventSerializer);
+                            entityManager.persist(eventEntity);
+                        }
                     });
                     if (explicitFlush) {
                         entityManager.flush();
                     }
+                    AggregateBasedConsistencyMarker newConsistencyMarker = consistencyMarker;
+                    for (Map.Entry<String, AtomicLong> aggSeq : aggregateSequences.entrySet()) {
+                        newConsistencyMarker = newConsistencyMarker.forwarded(aggSeq.getKey(), aggSeq.getValue().get());
+                    }
+                    var finalConsistencyMarker = newConsistencyMarker;
                     tx.commit();
-                    return CompletableFuture.completedFuture(AggregateBasedConsistencyMarker.from(condition));
+                    return CompletableFuture.completedFuture(finalConsistencyMarker);
                 } catch (Exception e) {
                     tx.rollback();
                     return CompletableFuture.failedFuture(mapPersistenceException(e, events.getFirst().event()));
@@ -163,26 +202,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
     }
 
-    // todo: understand why sequenceNumber 0
-    private static DomainEventMessage<?> asDomainEventMessage(TaggedEventMessage<?> taggedEvent) {
-        EventMessage<?> event = taggedEvent.event();
-//        if (event instanceof DomainEventMessage<?>) {
-//            return (DomainEventMessage<?>) event;
-//        }
-        String aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
-        String aggregateType = resolveAggregateType(taggedEvent.tags());
-
-        return new GenericDomainEventMessage<>(aggregateType,
-                                               aggregateIdentifier,
-                                               0L, // todo: calculate the sequence
-                                               event.getIdentifier(),
-                                               new QualifiedName("test", "event", "0.0.1"), // todo: change
-                                               event.getPayload(),
-                                               event.getMetaData(),
-                                               event.getTimestamp());
-    }
-
-
     @Nullable
     private static String resolveAggregateType(Set<Tag> tags) {
         if (tags.isEmpty()) {
@@ -192,6 +211,12 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         } else {
             return tags.iterator().next().key();
         }
+    }
+
+    private static AtomicLong resolveSequencer(Map<String, AtomicLong> aggregateSequences, String aggregateIdentifier,
+                                               AggregateBasedConsistencyMarker consistencyMarker) {
+        return aggregateSequences.computeIfAbsent(aggregateIdentifier,
+                                                  i -> new AtomicLong(consistencyMarker.positionOf(i)));
     }
 
     private RuntimeException mapPersistenceException(Exception exception, EventMessage<?> failedEvent) {
