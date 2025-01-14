@@ -144,8 +144,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         );
     }
 
-    // todo: move it for some base class
-
+    // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
     private void assertValidTags(List<TaggedEventMessage<?>> events) {
         for (TaggedEventMessage<?> taggedEvent : events) {
             if (taggedEvent.tags().size() > 1) {
@@ -164,12 +163,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 var aggregateSequences = new HashMap<String, AtomicLong>();
                 try {
                     var entityManager = entityManagerProvider.getEntityManager();
-                    events.forEach(taggedEvent -> {
-                        var domainEventMessage =
-                                toDomainEventMessage(taggedEvent, consistencyMarker, aggregateSequences);
-                        Object eventEntity = new DomainEventEntry(domainEventMessage, eventSerializer);
-                        entityManager.persist(eventEntity);
-                    });
+                    events.stream()
+                          .map(taggedEvent -> toDomainEventMessage(taggedEvent, consistencyMarker, aggregateSequences))
+                          .map(domainEventMessage -> new DomainEventEntry(domainEventMessage, eventSerializer))
+                          .forEach(entityManager::persist);
                     if (explicitFlush) {
                         entityManager.flush();
                     }
@@ -229,8 +226,8 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         };
     }
 
+    // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
     // todo: how do I know (even if its only tag), that it's an aggregate id?
-
     @Nullable
     private static String resolveAggregateIdentifier(Set<Tag> tags) {
         if (tags.isEmpty()) {
@@ -242,6 +239,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
     }
 
+    // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
     @Nullable
     private static String resolveAggregateType(Set<Tag> tags) {
         if (tags.isEmpty()) {
@@ -253,6 +251,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
     }
 
+    // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
     private static AtomicLong resolveSequencer(Map<String, AtomicLong> aggregateSequences, String aggregateIdentifier,
                                                AggregateBasedConsistencyMarker consistencyMarker) {
         return aggregateSequences.computeIfAbsent(aggregateIdentifier,
