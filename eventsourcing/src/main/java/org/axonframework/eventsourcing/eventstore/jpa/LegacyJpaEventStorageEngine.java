@@ -399,10 +399,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
         MessageStream<EventMessage<?>> resultingStream = MessageStream.empty();
-//        var startToken = GapAwareTrackingToken.newInstance(lowestGlobalSequence, Collections.emptySet());
         for (EventCriteria criterion : condition.criteria()) {
             var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
             // todo: support condition.end()
+            // todo: fetch in single transaction or multiple???
             var events =
                     transactionManager.fetchInTransaction(() -> legacyJpaOperations.fetchDomainEvents(
                             aggregateIdentifier,
