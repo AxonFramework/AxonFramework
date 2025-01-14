@@ -86,7 +86,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     private final MessageNameResolver messageNameResolver;
     private final LegacyJpaOperations legacyJpaOperations;
 
-    private boolean explicitFlush = false;
+    private final boolean explicitFlush;
     private Executor writeExecutor;
     private final long lowestGlobalSequence = 1L;
     private final int maxGapOffset = 10000;
@@ -114,6 +114,13 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         this.batchSize = customization.batchSize();
         this.messageNameResolver = customization.messageNameResolver();
 
+        // BatchingEventStorageEngine
+        // customization.batchSize();
+        // customization.finalAggregateBatchPredicate();
+
+        // JpaEventStorageEngine
+        this.explicitFlush = customization.explicitFlush();
+
         this.legacyJpaOperations = new LegacyJpaOperations(transactionManager,
                                                            entityManagerProvider.getEntityManager(),
                                                            domainEventEntryEntityName(),
@@ -127,14 +134,29 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             int batchSize,
             Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate, // todo: handle!,
             MessageNameResolver messageNameResolver,
-            boolean explicitFlush
+            boolean explicitFlush,
+            int maxGapOffset,
+            long lowestGlobalSequence,
+            int gapTimeout,
+            int gapCleaningThreshold
     ) {
+
+        private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
+        private static final long DEFAULT_LOWEST_GLOBAL_SEQUENCE = 1;
+        private static final int DEFAULT_GAP_TIMEOUT = 60000;
+        private static final int DEFAULT_GAP_CLEANING_THRESHOLD = 250;
 
         public Config {
             assertNonNull(upcasterChain, "EventUpcaster may not be null");
             assertNonNull(snapshotFilter, "The snapshotFilter may not be null");
             assertThat(batchSize, size -> size > 0, "The batchSize must be a positive number");
             assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
+            assertPositive(maxGapOffset, "maxGapOffset");
+            assertThat(lowestGlobalSequence,
+                       number -> number > 0,
+                       "The lowestGlobalSequence must be a positive number");
+            assertPositive(gapTimeout, "gapTimeout");
+            assertPositive(gapCleaningThreshold, "gapCleaningThreshold");
         }
 
         public static Config defaultConfig() {
@@ -145,7 +167,11 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                     100,
                     null,
                     new ClassBasedMessageNameResolver(),
-                    false
+                    true,
+                    DEFAULT_MAX_GAP_OFFSET,
+                    DEFAULT_LOWEST_GLOBAL_SEQUENCE,
+                    DEFAULT_GAP_TIMEOUT,
+                    DEFAULT_GAP_CLEANING_THRESHOLD
             );
         }
 
@@ -156,7 +182,11 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                               batchSize,
                               finalAggregateBatchPredicate,
                               messageNameResolver,
-                              explicitFlush
+                              explicitFlush,
+                              maxGapOffset,
+                              lowestGlobalSequence,
+                              gapTimeout,
+                              gapCleaningThreshold
             );
         }
 
@@ -167,7 +197,11 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                               batchSize,
                               finalAggregateBatchPredicate,
                               messageNameResolver,
-                              explicitFlush
+                              explicitFlush,
+                              maxGapOffset,
+                              lowestGlobalSequence,
+                              gapTimeout,
+                              gapCleaningThreshold
             );
         }
 
@@ -178,7 +212,11 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                               batchSize,
                               finalAggregateBatchPredicate,
                               messageNameResolver,
-                              explicitFlush
+                              explicitFlush,
+                              maxGapOffset,
+                              lowestGlobalSequence,
+                              gapTimeout,
+                              gapCleaningThreshold
             );
         }
 
@@ -189,7 +227,11 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                               batchSize,
                               finalAggregateBatchPredicate,
                               messageNameResolver,
-                              explicitFlush
+                              explicitFlush,
+                              maxGapOffset,
+                              lowestGlobalSequence,
+                              gapTimeout,
+                              gapCleaningThreshold
             );
         }
 
@@ -201,7 +243,11 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                               batchSize,
                               finalAggregateBatchPredicate,
                               messageNameResolver,
-                              explicitFlush
+                              explicitFlush,
+                              maxGapOffset,
+                              lowestGlobalSequence,
+                              gapTimeout,
+                              gapCleaningThreshold
             );
         }
 
@@ -212,9 +258,15 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                               batchSize,
                               finalAggregateBatchPredicate,
                               messageNameResolver,
-                              explicitFlush
+                              explicitFlush,
+                              maxGapOffset,
+                              lowestGlobalSequence,
+                              gapTimeout,
+                              gapCleaningThreshold
             );
         }
+
+        // todo: other functions!
     }
 
     @Override

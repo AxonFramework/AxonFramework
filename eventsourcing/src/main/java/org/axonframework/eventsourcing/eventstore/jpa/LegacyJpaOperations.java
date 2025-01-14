@@ -16,6 +16,16 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+/**
+ * Contains operations that are used to interact with the legacy JPA event storage database structure.
+ *
+ * @param transactionManager
+ * @param entityManager
+ * @param domainEventEntryEntityName
+ * @param snapshotEventEntryEntityName
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 record LegacyJpaOperations(
         TransactionManager transactionManager,
         EntityManager entityManager,
