@@ -30,6 +30,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import javax.sql.DataSource;
 
 @ExtendWith(SpringExtension.class)
@@ -74,8 +75,12 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
 
         @Bean
         public DataSource dataSource() {
+            var now = Instant.now();
             DriverManagerDataSource driverManagerDataSource
-                    = new DriverManagerDataSource("jdbc:hsqldb:mem:axontest", "sa", "password");
+                    = new DriverManagerDataSource("jdbc:hsqldb:file:./data/" + now + "_legacyjpatest",
+                                                  "sa",
+                                                  "password");
+//                    = new DriverManagerDataSource("jdbc:hsqldb:mem:axontest", "sa", "password");
             driverManagerDataSource.setDriverClassName("org.hsqldb.jdbcDriver");
             return Mockito.spy(driverManagerDataSource);
         }
