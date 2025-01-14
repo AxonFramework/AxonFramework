@@ -109,7 +109,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             public CompletableFuture<ConsistencyMarker> commit() {
                 try {
                     var entityManager = entityManagerProvider.getEntityManager();
-                    events.stream().map(event -> createEventEntity(condition, event, eventSerializer))
+                    events.stream().map(event -> createEventEntity(event, eventSerializer))
                           .forEach(entityManager::persist);
                     if (explicitFlush) {
                         entityManager.flush();
@@ -148,15 +148,14 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
      * @param serializer   the serializer to serialize the payload and metadata
      * @return the Jpa entity to be inserted
      */
-    protected Object createEventEntity(AppendCondition condition, TaggedEventMessage<?> eventMessage,
+    protected Object createEventEntity(TaggedEventMessage<?> eventMessage,
                                        Serializer serializer) {
-        var domainEventMessage = asDomainEventMessage(condition, eventMessage);
+        var domainEventMessage = asDomainEventMessage(eventMessage);
         return new DomainEventEntry(domainEventMessage, serializer);
     }
 
-    // todo: understand why aggregateType null and sequenceNUmber 0
-    private static DomainEventMessage<?> asDomainEventMessage(AppendCondition condition,
-                                                              TaggedEventMessage<?> taggedEvent) {
+    // todo: understand why sequenceNumber 0
+    private static DomainEventMessage<?> asDomainEventMessage(TaggedEventMessage<?> taggedEvent) {
         EventMessage<?> event = taggedEvent.event();
         if (event instanceof DomainEventMessage<?>) {
             return (DomainEventMessage<?>) event;
