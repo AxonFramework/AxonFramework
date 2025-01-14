@@ -61,8 +61,8 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     /**
      * Instantiate a {@link AbstractEventStorageEngine} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the event and snapshot {@link Serializer} are not {@code null}, and will throw an {@link
-     * AxonConfigurationException} if any of them is {@code null}.
+     * Will assert that the event and snapshot {@link Serializer} are not {@code null}, and will throw an
+     * {@link AxonConfigurationException} if any of them is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AbstractEventStorageEngine} instance
      */
@@ -136,10 +136,8 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
      * @return true in case of first event, false otherwise
      */
     private boolean isFirstDomainEvent(EventMessage<?> failedEvent) {
-        if (failedEvent instanceof DomainEventMessage<?>) {
-            return ((DomainEventMessage<?>) failedEvent).getSequenceNumber() == 0L;
-        }
-        return false;
+        return failedEvent instanceof DomainEventMessage<?> domainEvent
+                && domainEvent.getSequenceNumber() == 0L;
     }
 
     /**
@@ -186,8 +184,8 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
 
     /**
      * Returns a {@link Stream} of serialized event data entries for an aggregate with given {@code identifier}. The
-     * events should be ordered by aggregate sequence number and have a sequence number starting from the given {@code
-     * firstSequenceNumber}.
+     * events should be ordered by aggregate sequence number and have a sequence number starting from the given
+     * {@code firstSequenceNumber}.
      *
      * @param identifier          The identifier of the aggregate to open a stream for
      * @param firstSequenceNumber The sequence number of the first excepted event entry
@@ -273,8 +271,8 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
         }
 
         /**
-         * Sets the {@link EventUpcaster} used to deserialize events of older revisions. Defaults to a {@link
-         * NoOpEventUpcaster}.
+         * Sets the {@link EventUpcaster} used to deserialize events of older revisions. Defaults to a
+         * {@link NoOpEventUpcaster}.
          *
          * @param upcasterChain an {@link EventUpcaster} used to deserialize events of older revisions
          * @return the current Builder instance, for fluent interfacing
@@ -300,11 +298,11 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
         }
 
         /**
-         * Sets the {@link Serializer} used to serialize and deserialize the Event Message's payload and {@link
-         * org.axonframework.messaging.MetaData} with.
+         * Sets the {@link Serializer} used to serialize and deserialize the Event Message's payload and
+         * {@link org.axonframework.messaging.MetaData} with.
          *
-         * @param eventSerializer The serializer to serialize the Event Message's payload and {@link
-         *                        org.axonframework.messaging.MetaData} with
+         * @param eventSerializer The serializer to serialize the Event Message's payload and
+         *                        {@link org.axonframework.messaging.MetaData} with
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder eventSerializer(Serializer eventSerializer) {
