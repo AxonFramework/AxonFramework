@@ -9,6 +9,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
 import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
+import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
@@ -39,6 +40,7 @@ import java.time.Instant;
 @ContextConfiguration(classes = LegacyJpaEventStorageEngineTest.TestContext.class)
 class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSuite<LegacyJpaEventStorageEngine> {
 
+    public static final Serializer TEST_SERIALIZER = TestSerializer.JACKSON.getSerializer();
     @Autowired
     private EntityManagerProvider entityManagerProvider;
 
@@ -48,16 +50,15 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
 
     @Override
     protected LegacyJpaEventStorageEngine buildStorageEngine() {
-        var testSerializer = TestSerializer.JACKSON.getSerializer();
         return new LegacyJpaEventStorageEngine(entityManagerProvider,
                                                transactionManager,
-                                               testSerializer,
-                                               testSerializer);
+                                               TEST_SERIALIZER,
+                                               TEST_SERIALIZER);
     }
 
     @Override
     protected EventMessage<String> convertPayload(EventMessage<?> original) {
-        return original.withConvertedPayload(p -> new String((byte[]) p, StandardCharsets.UTF_8));
+        return original.withConvertedPayload(p -> TEST_SERIALIZER.convert(p, String.class).replaceAll("\"", ""));
     }
 
     @Configuration
@@ -65,6 +66,7 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
 
         @Configuration
         public static class PersistenceConfig {
+
             @PersistenceContext
             private EntityManager entityManager;
 
