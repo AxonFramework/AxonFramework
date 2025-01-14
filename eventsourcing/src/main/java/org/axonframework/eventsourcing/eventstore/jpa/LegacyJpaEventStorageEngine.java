@@ -20,6 +20,7 @@ import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarke
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
@@ -52,6 +53,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -82,6 +84,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     private final SnapshotFilter snapshotFilter;
     private final int batchSize;
     private final MessageNameResolver messageNameResolver;
+    private final LegacyJpaOperations legacyJpaOperations;
 
     private boolean explicitFlush = false;
     private Executor writeExecutor;
@@ -110,6 +113,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         this.snapshotFilter = customization.snapshotFilter();
         this.batchSize = customization.batchSize();
         this.messageNameResolver = customization.messageNameResolver();
+
+        this.legacyJpaOperations = new LegacyJpaOperations(transactionManager,
+                                                           entityManagerProvider.getEntityManager(),
+                                                           domainEventEntryEntityName());
     }
 
     public record Config(
@@ -387,28 +394,45 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     // todo: don't mind gaps
     // now support just one aggregate per source!
+    // todo: support batches!!!
     // same as old:     public DomainEventStream readEvents(@Nonnull String aggregateIdentifier, long firstSequenceNumber) {
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
+        MessageStream<EventMessage<?>> resultingStream = MessageStream.empty();
 //        var startToken = GapAwareTrackingToken.newInstance(lowestGlobalSequence, Collections.emptySet());
-        var events = toEvents(null, fetchEvents(null)).stream();
-//        var processed = upcastAndDeserializeTrackedEvents(events, eventSerializer, upcasterChain)
-//                .filter(e -> e instanceof TrackedDomainEventData<?>)
-//                .map(e -> (TrackedDomainEventData<?>) e);
-        return MessageStream.fromStream(
-                events,
-                this::convertToMessage,
-                event -> Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
-                                .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getType())
-                                .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
-                                              event.getSequenceNumber())
-                                .withResource(ConsistencyMarker.RESOURCE_KEY,
-                                              new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
-                                                                                  event.getSequenceNumber()))
-        );
+        for (EventCriteria criterion : condition.criteria()) {
+            var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
+            // todo: support condition.end()
+            var events =
+                    transactionManager.fetchInTransaction(() -> legacyJpaOperations.fetchDomainEvents(
+                            aggregateIdentifier,
+                            condition.start(),
+                            batchSize));
+            // todo: upcasting etc!!
+            MessageStream<EventMessage<?>> aggregateEvents = MessageStream.fromStream(
+                    events.stream(),
+                    this::convertToMessage,
+                    event -> Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY,
+                                          event.getAggregateIdentifier())
+                                    .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getType())
+                                    .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
+                                                  event.getSequenceNumber())
+                                    .withResource(ConsistencyMarker.RESOURCE_KEY,
+                                                  new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
+                                                                                      event.getSequenceNumber()))
+            );
+            resultingStream = resultingStream.concatWith(aggregateEvents);
+        }
+        AtomicReference<ConsistencyMarker> consistencyMarker = new AtomicReference<>();
+        return resultingStream.map(e -> {
+            ConsistencyMarker newMarker = consistencyMarker.accumulateAndGet(e.getResource(ConsistencyMarker.RESOURCE_KEY),
+                                                                             (m1, m2) -> m1
+                                                                                     == null ? m2 : m1.upperBound(m2));
+            return e.withResource(ConsistencyMarker.RESOURCE_KEY, newMarker);
+        });
     }
 
-    private EventMessage<?> convertToMessage(TrackedDomainEventData<?> event) {
+    private EventMessage<?> convertToMessage(DomainEventData<?> event) {
         var payload = event.getPayload();
         var qualifiedName = payload.getType().getName().split("\\.(?=[^.]*$)");
         var namespace = qualifiedName[0];
@@ -434,91 +458,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
     }
 
-    // todo: what to do with GAPS???
-
-    /**
-     * Returns a batch of event data as object entries in the event storage with a greater than the given {@code token}.
-     * Size of event is decided by {@link #batchSize()}.
-     * todo: move it to some shared place
-     *
-     * @param token Object describing the global index of the last processed event.
-     * @return A batch of event messages as object stored since the given tracking token.
-     */
-    private List<Object[]> fetchEvents(GapAwareTrackingToken token) {
-        var entityManager = entityManagerProvider.getEntityManager();
-        TypedQuery<Object[]> query;
-        if (token == null || token.getGaps().isEmpty()) {
-            query = entityManager.createQuery(
-                    "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
-                            + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
-                            "FROM " + domainEventEntryEntityName() + " e " +
-                            "WHERE e.globalIndex > :token ORDER BY e.globalIndex ASC", Object[].class);
-        } else {
-            query = entityManager.createQuery(
-                    "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
-                            + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
-                            "FROM " + domainEventEntryEntityName() + " e " +
-                            "WHERE e.globalIndex > :token OR e.globalIndex IN :gaps ORDER BY e.globalIndex ASC",
-                    Object[].class
-            ).setParameter("gaps", token.getGaps());
-        }
-        return query.setParameter("token", token == null ? -1L : token.getIndex())
-                    .setMaxResults(batchSize)
-                    .getResultList();
-    }
-
-    @SuppressWarnings("unchecked")
-    protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
-                                                                   int batchSize) {
-        return transactionManager.fetchInTransaction(
-                () -> this.entityManagerProvider.getEntityManager()
-                                                .createQuery(
-                                                        "SELECT new org.axonframework.eventhandling.GenericDomainEventEntry("
-                                                                +
-                                                                "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, e.timeStamp, "
-                                                                + "e.payloadType, e.payloadRevision, e.payload, e.metaData) FROM "
-                                                                + domainEventEntryEntityName()
-                                                                + " e WHERE e.aggregateIdentifier = :id "
-                                                                + "AND e.sequenceNumber >= :seq ORDER BY e.sequenceNumber ASC"
-                                                )
-                                                .setParameter("id", aggregateIdentifier)
-                                                .setParameter("seq", firstSequenceNumber)
-                                                .setMaxResults(batchSize)
-                                                .getResultList());
-    }
-
-    private List<TrackedDomainEventData<?>> toEvents(GapAwareTrackingToken previousToken, List<Object[]> entries) {
-        List<TrackedDomainEventData<?>> result = new ArrayList<>();
-        GapAwareTrackingToken token = previousToken;
-        for (Object[] entry : entries) {
-            long globalSequence = (Long) entry[0];
-            String aggregateIdentifier = (String) entry[2];
-            String eventIdentifier = (String) entry[4];
-            GenericDomainEventEntry<?> domainEvent = new GenericDomainEventEntry<>(
-                    (String) entry[1], eventIdentifier.equals(aggregateIdentifier) ? null : aggregateIdentifier,
-                    (long) entry[3], eventIdentifier, entry[5],
-                    (String) entry[6], (String) entry[7], entry[8], entry[9]
-            );
-
-            // Now that we have the event itself, we can calculate the token
-            boolean allowGaps = domainEvent.getTimestamp().isAfter(gapTimeoutThreshold());
-            if (token == null) {
-                token = GapAwareTrackingToken.newInstance(
-                        globalSequence,
-                        allowGaps
-                                ? LongStream.range(Math.min(lowestGlobalSequence, globalSequence), globalSequence)
-                                            .boxed()
-                                            .collect(Collectors.toCollection(TreeSet::new))
-                                : Collections.emptySortedSet()
-                );
-            } else {
-                token = token.advanceTo(globalSequence, allowGaps ? maxGapOffset : 0);
-            }
-            result.add(new TrackedDomainEventData<>(token, domainEvent));
-        }
-        return result;
-    }
-
     private Instant gapTimeoutThreshold() {
         return GenericEventMessage.clock.instant().minus(gapTimeout, ChronoUnit.MILLIS);
     }
@@ -530,7 +469,28 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     @Override
     public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
         // todo: find tracking token by condition (position)
-        return MessageStream.empty();
+        //        var startToken = GapAwareTrackingToken.newInstance(lowestGlobalSequence, Collections.emptySet());
+        // todo: there fetchDomainEvents
+        var events = legacyJpaOperations.entriesToEvents(
+                null,
+                legacyJpaOperations.fetchEvents(null, batchSize),
+                gapTimeoutThreshold(),
+                lowestGlobalSequence,
+                maxGapOffset);
+//        var processed = upcastAndDeserializeTrackedEvents(events, eventSerializer, upcasterChain)
+//                .filter(e -> e instanceof TrackedDomainEventData<?>)
+//                .map(e -> (TrackedDomainEventData<?>) e);
+        return MessageStream.fromStream(
+                events.stream(),
+                this::convertToMessage,
+                event -> Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
+                                .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getType())
+                                .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
+                                              event.getSequenceNumber())
+                                .withResource(ConsistencyMarker.RESOURCE_KEY,
+                                              new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
+                                                                                  event.getSequenceNumber()))
+        );
     }
 
     @Override
