@@ -59,6 +59,7 @@ import java.util.stream.LongStream;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.*;
+import static org.axonframework.eventhandling.EventUtils.upcastAndDeserializeTrackedEvents;
 
 
 /**
@@ -385,12 +386,15 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     }
 
     // todo: don't mind gaps
+    // now support just one aggregate per source!
     // same as old:     public DomainEventStream readEvents(@Nonnull String aggregateIdentifier, long firstSequenceNumber) {
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
 //        var startToken = GapAwareTrackingToken.newInstance(lowestGlobalSequence, Collections.emptySet());
         var events = toEvents(null, fetchEvents(null)).stream();
-//        events.stream().map(e -> )
+//        var processed = upcastAndDeserializeTrackedEvents(events, eventSerializer, upcasterChain)
+//                .filter(e -> e instanceof TrackedDomainEventData<?>)
+//                .map(e -> (TrackedDomainEventData<?>) e);
         return MessageStream.fromStream(
                 events,
                 this::convertToMessage,
@@ -435,6 +439,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     /**
      * Returns a batch of event data as object entries in the event storage with a greater than the given {@code token}.
      * Size of event is decided by {@link #batchSize()}.
+     * todo: move it to some shared place
      *
      * @param token Object describing the global index of the last processed event.
      * @return A batch of event messages as object stored since the given tracking token.
@@ -460,6 +465,26 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         return query.setParameter("token", token == null ? -1L : token.getIndex())
                     .setMaxResults(batchSize)
                     .getResultList();
+    }
+
+    @SuppressWarnings("unchecked")
+    protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
+                                                                   int batchSize) {
+        return transactionManager.fetchInTransaction(
+                () -> this.entityManagerProvider.getEntityManager()
+                                                .createQuery(
+                                                        "SELECT new org.axonframework.eventhandling.GenericDomainEventEntry("
+                                                                +
+                                                                "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, e.timeStamp, "
+                                                                + "e.payloadType, e.payloadRevision, e.payload, e.metaData) FROM "
+                                                                + domainEventEntryEntityName()
+                                                                + " e WHERE e.aggregateIdentifier = :id "
+                                                                + "AND e.sequenceNumber >= :seq ORDER BY e.sequenceNumber ASC"
+                                                )
+                                                .setParameter("id", aggregateIdentifier)
+                                                .setParameter("seq", firstSequenceNumber)
+                                                .setMaxResults(batchSize)
+                                                .getResultList());
     }
 
     private List<TrackedDomainEventData<?>> toEvents(GapAwareTrackingToken previousToken, List<Object[]> entries) {
