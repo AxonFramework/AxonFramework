@@ -141,7 +141,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
         return CompletableFuture.supplyAsync(
                 () -> appendTransaction(condition, events),
-                writeExecutor
+                writeExecutor // todo: is it needed?
         );
     }
 
