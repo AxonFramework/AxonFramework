@@ -62,6 +62,10 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
         return original.withConvertedPayload(p -> TEST_SERIALIZER.convert(p, String.class).replaceAll("\"", ""));
     }
 
+    // todo: test batching
+    // todo: test token with gaps
+    // todo: fix serialization issues
+
     @Configuration
     public static class TestContext {
 

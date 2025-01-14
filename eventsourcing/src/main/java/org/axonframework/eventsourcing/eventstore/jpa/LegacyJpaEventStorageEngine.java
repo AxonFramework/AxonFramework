@@ -228,6 +228,8 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             @Override
             public void rollback() {
                 finished.set(true);
+                // todo: is it good solution?
+                // Previously I received: jakarta.persistence.TransactionRequiredException: No EntityManager with actual transaction available for current thread - cannot reliably process 'persist' call
                 // No action needed for rollback as the transaction is managed by the TransactionManager
             }
         };
@@ -281,6 +283,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                     transactionManager.fetchInTransaction(() -> legacyJpaOperations.fetchDomainEvents(
                             aggregateIdentifier,
                             condition.start(),
+                            condition.end(),
                             batchSize));
             // todo: support more than 1 batch!
             // todo: upcasting etc!!
