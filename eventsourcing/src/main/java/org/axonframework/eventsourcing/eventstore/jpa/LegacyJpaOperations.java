@@ -155,26 +155,29 @@ record LegacyJpaOperations(
                 .getResultList();
     }
 
-    List<Long> mostRecentIndex() {
-        return entityManager
+    Optional<Long> maxGlobalIndex() {
+        var results = entityManager
                 .createQuery("SELECT MAX(e.globalIndex) FROM " + domainEventEntryEntityName() + " e", Long.class)
                 .getResultList();
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.getFirst());
     }
 
-    List<Long> minGlobalIndexAt(Instant dateTime) {
-        return entityManager
+    Optional<Long> globalIndexAt(Instant dateTime) {
+        var results = entityManager
                 .createQuery(
                         "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e "
                                 + "WHERE e.timeStamp >= :dateTime", Long.class
                 )
                 .setParameter("dateTime", formatInstant(dateTime))
                 .getResultList();
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.getFirst());
     }
 
-    List<Long> minGlobalIndex() {
-        return entityManager.createQuery(
+    Optional<Long> minGlobalIndex() {
+        var results = entityManager.createQuery(
                 "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e", Long.class
         ).getResultList();
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.getFirst());
     }
 
     void deleteSnapshots(String aggregateIdentifier, long sequenceNumber) {

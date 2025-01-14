@@ -52,7 +52,6 @@ import javax.sql.DataSource;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
-import static org.axonframework.common.DateTimeUtils.formatInstant;
 
 /**
  * EventStorageEngine implementation that uses JPA to store and fetch events.
@@ -60,9 +59,10 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  * By default, the payload of events is stored as a serialized blob of bytes. Other columns are used to store meta-data
  * that allow quick finding of DomainEvents for a specific aggregate in the correct order.
  *
- * @deprecated Will be removed in version 5.0.0. The {@link org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine} implementations should be used instead.
  * @author Rene de Waele
  * @since 3.0
+ * @deprecated Will be removed in version 5.0.0. The
+ * {@link org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine} implementations should be used instead.
  */
 @Deprecated
 public class JpaEventStorageEngine extends BatchingEventStorageEngine {
@@ -279,34 +279,31 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     @Override
     public TrackingToken createTailToken() {
-        List<Long> results = legacyJpaOperations.minGlobalIndex();
-        return createToken(results);
+        return legacyJpaOperations.minGlobalIndex()
+                                  .flatMap(this::gapAwareTrackingTokenOnIndex)
+                                  .orElse(null);
     }
 
     @Override
     public TrackingToken createHeadToken() {
-        return createToken(mostRecentIndex());
+        return legacyJpaOperations.maxGlobalIndex()
+                                  .flatMap(this::gapAwareTrackingTokenOnIndex)
+                                  .orElse(null);
     }
 
     @Override
     public TrackingToken createTokenAt(@Nonnull Instant dateTime) {
-        List<Long> results = legacyJpaOperations.minGlobalIndexAt(dateTime);
-        return noTokenFound(results) ? createToken(mostRecentIndex()) : createToken(results);
+        return legacyJpaOperations.globalIndexAt(dateTime)
+                                  .flatMap(this::gapAwareTrackingTokenOnIndex)
+                                  .or(() -> legacyJpaOperations.maxGlobalIndex()
+                                                               .flatMap(this::gapAwareTrackingTokenOnIndex))
+                                  .orElse(null);
     }
 
-    private List<Long> mostRecentIndex() {
-        return legacyJpaOperations.mostRecentIndex();
-    }
-
-    private TrackingToken createToken(List<Long> tokens) {
-        if (noTokenFound(tokens)) {
-            return null;
-        }
-        return GapAwareTrackingToken.newInstance(tokens.getFirst(), Collections.emptySet());
-    }
-
-    private boolean noTokenFound(List<Long> tokens) {
-        return tokens.isEmpty() || tokens.getFirst() == null;
+    private Optional<TrackingToken> gapAwareTrackingTokenOnIndex(Long token) {
+        return token == null
+                ? Optional.empty()
+                : Optional.of(GapAwareTrackingToken.newInstance(token, Collections.emptySet()));
     }
 
     /**
