@@ -280,27 +280,27 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     @Override
     public TrackingToken createTailToken() {
         return legacyJpaOperations.minGlobalIndex()
-                                  .flatMap(this::gapAwareTrackingTokenOnIndex)
+                                  .flatMap(this::gapAwareTrackingTokenOn)
                                   .orElse(null);
     }
 
     @Override
     public TrackingToken createHeadToken() {
         return legacyJpaOperations.maxGlobalIndex()
-                                  .flatMap(this::gapAwareTrackingTokenOnIndex)
+                                  .flatMap(this::gapAwareTrackingTokenOn)
                                   .orElse(null);
     }
 
     @Override
     public TrackingToken createTokenAt(@Nonnull Instant dateTime) {
         return legacyJpaOperations.globalIndexAt(dateTime)
-                                  .flatMap(this::gapAwareTrackingTokenOnIndex)
+                                  .flatMap(this::gapAwareTrackingTokenOn)
                                   .or(() -> legacyJpaOperations.maxGlobalIndex()
-                                                               .flatMap(this::gapAwareTrackingTokenOnIndex))
+                                                               .flatMap(this::gapAwareTrackingTokenOn))
                                   .orElse(null);
     }
 
-    private Optional<TrackingToken> gapAwareTrackingTokenOnIndex(Long token) {
+    private Optional<TrackingToken> gapAwareTrackingTokenOn(Long token) {
         return token == null
                 ? Optional.empty()
                 : Optional.of(GapAwareTrackingToken.newInstance(token, Collections.emptySet()));
