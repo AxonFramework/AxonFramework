@@ -125,13 +125,13 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         return new AppendTransaction() {
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
-                AggregateBasedConsistencyMarker consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
-                Map<String, AtomicLong> aggregateSequences = new HashMap<>();
+                var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
+                var aggregateSequences = new HashMap<String, AtomicLong>();
                 try {
                     var entityManager = entityManagerProvider.getEntityManager();
                     events.forEach(taggedEvent -> {
-                        String aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
-                        String aggregateType = resolveAggregateType(taggedEvent.tags());
+                        var aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
+                        var aggregateType = resolveAggregateType(taggedEvent.tags());
                         var event = taggedEvent.event();
                         if (aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty()) {
                             var nextSequence = resolveSequencer(
@@ -171,8 +171,8 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                     if (explicitFlush) {
                         entityManager.flush();
                     }
-                    AggregateBasedConsistencyMarker newConsistencyMarker = consistencyMarker;
-                    for (Map.Entry<String, AtomicLong> aggSeq : aggregateSequences.entrySet()) {
+                    var newConsistencyMarker = consistencyMarker;
+                    for (var aggSeq : aggregateSequences.entrySet()) {
                         newConsistencyMarker = newConsistencyMarker.forwarded(aggSeq.getKey(), aggSeq.getValue().get());
                     }
                     var finalConsistencyMarker = newConsistencyMarker;
@@ -302,7 +302,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         var data = payload.getData();
         var metadata = event.getMetaData();
         MetaData metaData = eventSerializer.convert(metadata.getData(), MetaData.class);
-        try { // todo: how to serialize / deserliazie!?
+        try { // todo: how to serialize / deserliazie the payload and metadata!?
             return new GenericEventMessage<>(
                     identifier,
                     name,
