@@ -155,34 +155,33 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     }
 
     private AppendTransaction appendTransaction(AppendCondition condition, List<TaggedEventMessage<?>> events) {
-        var tx = transactionManager.startTransaction();
         return new AppendTransaction() {
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
                 var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
                 var aggregateSequences = new HashMap<String, AtomicLong>();
-                try {
-                    var entityManager = entityManagerProvider.getEntityManager();
-                    events.stream()
-                          .map(taggedEvent -> toDomainEventMessage(taggedEvent, consistencyMarker, aggregateSequences))
-                          .map(domainEventMessage -> new DomainEventEntry(domainEventMessage, eventSerializer))
-                          .forEach(entityManager::persist);
-                    if (explicitFlush) {
-                        entityManager.flush();
+                return transactionManager.fetchInTransaction(() -> {
+                    try {
+                        var entityManager = entityManagerProvider.getEntityManager();
+                        events.stream()
+                              .map(taggedEvent -> toDomainEventMessage(taggedEvent,
+                                                                       consistencyMarker,
+                                                                       aggregateSequences))
+                              .map(domainEventMessage -> new DomainEventEntry(domainEventMessage, eventSerializer))
+                              .forEach(entityManager::persist);
+                        if (explicitFlush) {
+                            entityManager.flush();
+                        }
+                        var newConsistencyMarker = consistencyMarker;
+                        for (var aggSeq : aggregateSequences.entrySet()) {
+                            newConsistencyMarker = newConsistencyMarker.forwarded(aggSeq.getKey(),
+                                                                                  aggSeq.getValue().get());
+                        }
+                        return CompletableFuture.completedFuture(newConsistencyMarker);
+                    } catch (Exception e) {
+                        throw persistenceExceptionMapper.mapPersistenceException(e, events.getFirst().event());
                     }
-                    var newConsistencyMarker = consistencyMarker;
-                    for (var aggSeq : aggregateSequences.entrySet()) {
-                        newConsistencyMarker = newConsistencyMarker.forwarded(aggSeq.getKey(), aggSeq.getValue().get());
-                    }
-                    var finalConsistencyMarker = newConsistencyMarker;
-                    tx.commit();
-                    return CompletableFuture.completedFuture(finalConsistencyMarker);
-                } catch (Exception e) {
-                    tx.rollback();
-                    return CompletableFuture.failedFuture(persistenceExceptionMapper.mapPersistenceException(e,
-                                                                                                             events.getFirst()
-                                                                                                                   .event()));
-                }
+                });
             }
 
             private DomainEventMessage<?> toDomainEventMessage(TaggedEventMessage<?> taggedEvent,
@@ -221,7 +220,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
             @Override
             public void rollback() {
-                tx.rollback();
+                // No action needed for rollback as the transaction is managed by the TransactionManager
             }
         };
     }
