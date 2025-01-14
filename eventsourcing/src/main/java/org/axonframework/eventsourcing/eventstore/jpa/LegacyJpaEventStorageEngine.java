@@ -271,8 +271,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return new GenericEventMessage<>(
                     identifier,
                     name,
-//                    eventSerializer.convert(data, Class.forName(payload.getType().getName())),
-                    data,
+                    event.getPayload().getData(),
                     metaData,
                     event.getTimestamp()
             );
