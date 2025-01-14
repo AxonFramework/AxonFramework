@@ -324,15 +324,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * @param sequenceNumber      The sequence number from which value snapshots should be kept
      */
     protected void deleteSnapshots(String aggregateIdentifier, long sequenceNumber) {
-        entityManager()
-                .createQuery(
-                        "DELETE FROM " + snapshotEventEntryEntityName() + " e "
-                                + "WHERE e.aggregateIdentifier = :aggregateIdentifier "
-                                + "AND e.sequenceNumber < :sequenceNumber"
-                )
-                .setParameter("aggregateIdentifier", aggregateIdentifier)
-                .setParameter("sequenceNumber", sequenceNumber)
-                .executeUpdate();
+        legacyJpaOperations.deleteSnapshots(aggregateIdentifier, sequenceNumber);
     }
 
     /**
