@@ -38,12 +38,15 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -92,12 +95,27 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     @Override
     public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
                                                              @Nonnull List<TaggedEventMessage<?>> events) {
+        try {
+            assertValidTags(events);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
         return CompletableFuture.supplyAsync(
                 () -> events.isEmpty()
                         ? new NoOpAppendTransaction(condition)
                         : appendTransaction(condition, events, this.eventSerializer),
                 executor
         );
+    }
+
+    // todo: move it for some base class
+    private void assertValidTags(List<TaggedEventMessage<?>> events) {
+        for (TaggedEventMessage<?> taggedEvent : events) {
+            if (taggedEvent.tags().size() > 1) {
+                throw new IllegalArgumentException(
+                        "An Event Storage engine in Aggregate mode does not support multiple tags per event");
+            }
+        }
     }
 
     private AppendTransaction appendTransaction(AppendCondition condition,
@@ -107,10 +125,15 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         return new AppendTransaction() {
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
+                AggregateBasedConsistencyMarker consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
+                Map<String, AtomicLong> aggregateSequences = new HashMap<>();
                 try {
                     var entityManager = entityManagerProvider.getEntityManager();
-                    events.stream().map(event -> createEventEntity(event, eventSerializer))
-                          .forEach(entityManager::persist);
+                    events.forEach(taggedEvent -> {
+                        var domainEventMessage = asDomainEventMessage(taggedEvent);
+                        var eventEntity = new DomainEventEntry(domainEventMessage, eventSerializer);
+                        entityManager.persist(eventEntity);
+                    });
                     if (explicitFlush) {
                         entityManager.flush();
                     }
@@ -140,32 +163,18 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
     }
 
-    /**
-     * Returns a Jpa event entity for given {@code eventMessage}. Use the given {@code serializer} to serialize the
-     * payload and metadata of the event.
-     *
-     * @param eventMessage the event message to store
-     * @param serializer   the serializer to serialize the payload and metadata
-     * @return the Jpa entity to be inserted
-     */
-    protected Object createEventEntity(TaggedEventMessage<?> eventMessage,
-                                       Serializer serializer) {
-        var domainEventMessage = asDomainEventMessage(eventMessage);
-        return new DomainEventEntry(domainEventMessage, serializer);
-    }
-
     // todo: understand why sequenceNumber 0
     private static DomainEventMessage<?> asDomainEventMessage(TaggedEventMessage<?> taggedEvent) {
         EventMessage<?> event = taggedEvent.event();
-        if (event instanceof DomainEventMessage<?>) {
-            return (DomainEventMessage<?>) event;
-        }
+//        if (event instanceof DomainEventMessage<?>) {
+//            return (DomainEventMessage<?>) event;
+//        }
         String aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
         String aggregateType = resolveAggregateType(taggedEvent.tags());
 
         return new GenericDomainEventMessage<>(aggregateType,
                                                aggregateIdentifier,
-                                               0L,
+                                               0L, // todo: calculate the sequence
                                                event.getIdentifier(),
                                                new QualifiedName("test", "event", "0.0.1"), // todo: change
                                                event.getPayload(),
@@ -236,6 +245,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         return false;
     }
 
+    // todo: don't mind gaps
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
 //        var startToken = GapAwareTrackingToken.newInstance(lowestGlobalSequence, Collections.emptySet());
@@ -308,7 +318,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             ).setParameter("gaps", token.getGaps());
         }
         return query.setParameter("token", token == null ? -1L : token.getIndex())
-                    .setMaxResults(2) // todo: configurable
+                    .setMaxResults(10) // todo: configurable
                     .getResultList();
     }
 
@@ -354,6 +364,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     @Override
     public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
+        // todo: find tracking token by condition (position)
         return MessageStream.empty();
     }
 
