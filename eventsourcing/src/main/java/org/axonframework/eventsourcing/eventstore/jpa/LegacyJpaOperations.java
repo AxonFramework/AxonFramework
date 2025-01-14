@@ -110,4 +110,17 @@ record LegacyJpaOperations(
         }
         return result;
     }
+
+    List<Object[]> indexToTimestamp(GapAwareTrackingToken lastToken) {
+        return entityManager
+                .createQuery(
+                        "SELECT e.globalIndex, e.timeStamp FROM " + domainEventEntryEntityName() + " e "
+                                + "WHERE e.globalIndex >= :firstGapOffset "
+                                + "AND e.globalIndex <= :maxGlobalIndex",
+                        Object[].class
+                )
+                .setParameter("firstGapOffset", lastToken.getGaps().first())
+                .setParameter("maxGlobalIndex", lastToken.getGaps().last() + 1L)
+                .getResultList();
+    }
 }
