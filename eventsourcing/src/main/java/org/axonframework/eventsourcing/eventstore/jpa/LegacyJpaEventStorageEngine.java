@@ -48,6 +48,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -156,8 +157,14 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     private AppendTransaction appendTransaction(AppendCondition condition, List<TaggedEventMessage<?>> events) {
         return new AppendTransaction() {
+
+            private final AtomicBoolean finished = new AtomicBoolean(false);
+
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
+                if (finished.getAndSet(true)) {
+                    return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
+                }
                 var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
                 var aggregateSequences = new HashMap<String, AtomicLong>();
                 return transactionManager.fetchInTransaction(() -> {
@@ -220,6 +227,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
             @Override
             public void rollback() {
+                finished.set(true);
                 // No action needed for rollback as the transaction is managed by the TransactionManager
             }
         };
