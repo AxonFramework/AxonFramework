@@ -1,33 +1,51 @@
 package org.axonframework.eventsourcing.eventstore.jpa;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import jakarta.persistence.TypedQuery;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.GenericDomainEventEntry;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
+import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.command.AggregateStreamCreationException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 import static java.lang.String.format;
 
@@ -51,6 +69,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     private boolean explicitFlush = false;
     private Executor executor;
+    private final long lowestGlobalSequence = 1L;
+    private final int maxGapOffset = 10000;
+    private final int gapTimeout = 60000;
+
 
     public LegacyJpaEventStorageEngine(
             @javax.annotation.Nonnull EntityManagerProvider entityManagerProvider,
@@ -78,7 +100,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         );
     }
 
-    private AppendTransaction appendTransaction(AppendCondition appendCondition,
+    private AppendTransaction appendTransaction(AppendCondition condition,
                                                 List<TaggedEventMessage<?>> events,
                                                 Serializer eventSerializer) {
         var tx = transactionManager.startTransaction();
@@ -87,13 +109,13 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             public CompletableFuture<ConsistencyMarker> commit() {
                 try {
                     var entityManager = entityManagerProvider.getEntityManager();
-                    events.stream().map(event -> createEventEntity(event, eventSerializer))
+                    events.stream().map(event -> createEventEntity(condition, event, eventSerializer))
                           .forEach(entityManager::persist);
                     if (explicitFlush) {
                         entityManager.flush();
                     }
                     tx.commit();
-                    return CompletableFuture.completedFuture(AggregateBasedConsistencyMarker.from(appendCondition));
+                    return CompletableFuture.completedFuture(AggregateBasedConsistencyMarker.from(condition));
                 } catch (Exception e) {
                     tx.rollback();
                     return CompletableFuture.failedFuture(mapPersistenceException(e, events.getFirst().event()));
@@ -107,6 +129,17 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         };
     }
 
+    @Nullable
+    private static String resolveAggregateIdentifier(Set<Tag> tags) {
+        if (tags.isEmpty()) {
+            return null;
+        } else if (tags.size() > 1) {
+            throw new IllegalArgumentException("Condition must provide exactly one tag");
+        } else {
+            return tags.iterator().next().value();
+        }
+    }
+
     /**
      * Returns a Jpa event entity for given {@code eventMessage}. Use the given {@code serializer} to serialize the
      * payload and metadata of the event.
@@ -115,22 +148,42 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
      * @param serializer   the serializer to serialize the payload and metadata
      * @return the Jpa entity to be inserted
      */
-    protected Object createEventEntity(TaggedEventMessage<?> eventMessage, Serializer serializer) {
-        var domainEventMessage = asDomainEventMessage(eventMessage);
+    protected Object createEventEntity(AppendCondition condition, TaggedEventMessage<?> eventMessage,
+                                       Serializer serializer) {
+        var domainEventMessage = asDomainEventMessage(condition, eventMessage);
         return new DomainEventEntry(domainEventMessage, serializer);
     }
 
     // todo: understand why aggregateType null and sequenceNUmber 0
-    private static DomainEventMessage<?> asDomainEventMessage(TaggedEventMessage<?> taggedEvent) {
-        EventMessage<?> eventMessage = taggedEvent.event();
-        if (eventMessage instanceof DomainEventMessage<?>) {
-            return (DomainEventMessage<?>) eventMessage;
+    private static DomainEventMessage<?> asDomainEventMessage(AppendCondition condition,
+                                                              TaggedEventMessage<?> taggedEvent) {
+        EventMessage<?> event = taggedEvent.event();
+        if (event instanceof DomainEventMessage<?>) {
+            return (DomainEventMessage<?>) event;
         }
-        return new GenericDomainEventMessage<>(null,
-                                               eventMessage.getIdentifier(),
+        String aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
+        String aggregateType = resolveAggregateType(taggedEvent.tags());
+
+        return new GenericDomainEventMessage<>(aggregateType,
+                                               aggregateIdentifier,
                                                0L,
-                                               eventMessage,
-                                               eventMessage::getTimestamp);
+                                               event.getIdentifier(),
+                                               new QualifiedName("test", "event", "0.0.1"), // todo: change
+                                               event,
+                                               event.getMetaData(),
+                                               event.getTimestamp());
+    }
+
+
+    @Nullable
+    private static String resolveAggregateType(Set<Tag> tags) {
+        if (tags.isEmpty()) {
+            return null;
+        } else if (tags.size() > 1) {
+            throw new IllegalArgumentException("Condition must provide exactly one tag");
+        } else {
+            return tags.iterator().next().key();
+        }
     }
 
     private RuntimeException mapPersistenceException(Exception exception, EventMessage<?> failedEvent) {
@@ -184,15 +237,125 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         return false;
     }
 
-
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
-        return null;
+//        var startToken = GapAwareTrackingToken.newInstance(lowestGlobalSequence, Collections.emptySet());
+        var events = toEvents(null, fetchEvents(null)).stream();
+//        events.stream().map(e -> )
+        return MessageStream.fromStream(
+                events,
+                this::convertToMessage,
+                event -> Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
+                                .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getType())
+                                .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
+                                              event.getSequenceNumber())
+                                .withResource(ConsistencyMarker.RESOURCE_KEY,
+                                              new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
+                                                                                  event.getSequenceNumber()))
+        );
+    }
+
+    private EventMessage<?> convertToMessage(TrackedDomainEventData<?> event) {
+        var payload = event.getPayload();
+        var qualifiedName = payload.getType().getName().split("\\.(?=[^.]*$)");
+        var namespace = qualifiedName[0];
+        var localName = qualifiedName[1];
+        var revision = payload.getType().getRevision();
+        var name = new QualifiedName(namespace,
+                                     localName,
+                                     revision == null ? "0.0.1" : revision); // todo: resolve qualified name
+        var identifier = event.getEventIdentifier();
+        var data = payload.getData();
+        var metadata = event.getMetaData();
+        MetaData metaData = eventSerializer.convert(metadata.getData(), MetaData.class);
+        try { // todo: how to serialize / deserliazie!?
+            return new GenericEventMessage<>(
+                    identifier,
+                    name,
+                    eventSerializer.convert(data, Class.forName(payload.getType().getName())),
+                    metaData,
+                    event.getTimestamp()
+            );
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // todo: what to do with GAPS???
+
+    /**
+     * Returns a batch of event data as object entries in the event storage with a greater than the given {@code token}.
+     * Size of event is decided by {@link #batchSize()}.
+     *
+     * @param token Object describing the global index of the last processed event.
+     * @return A batch of event messages as object stored since the given tracking token.
+     */
+    private List<Object[]> fetchEvents(GapAwareTrackingToken token) {
+        var entityManager = entityManagerProvider.getEntityManager();
+        TypedQuery<Object[]> query;
+        if (token == null || token.getGaps().isEmpty()) {
+            query = entityManager.createQuery(
+                    "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
+                            + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
+                            "FROM " + domainEventEntryEntityName() + " e " +
+                            "WHERE e.globalIndex > :token ORDER BY e.globalIndex ASC", Object[].class);
+        } else {
+            query = entityManager.createQuery(
+                    "SELECT e.globalIndex, e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
+                            + "e.timeStamp, e.payloadType, e.payloadRevision, e.payload, e.metaData " +
+                            "FROM " + domainEventEntryEntityName() + " e " +
+                            "WHERE e.globalIndex > :token OR e.globalIndex IN :gaps ORDER BY e.globalIndex ASC",
+                    Object[].class
+            ).setParameter("gaps", token.getGaps());
+        }
+        return query.setParameter("token", token == null ? -1L : token.getIndex())
+                    .setMaxResults(2) // todo: configurable
+                    .getResultList();
+    }
+
+    private List<TrackedDomainEventData<?>> toEvents(GapAwareTrackingToken previousToken, List<Object[]> entries) {
+        List<TrackedDomainEventData<?>> result = new ArrayList<>();
+        GapAwareTrackingToken token = previousToken;
+        for (Object[] entry : entries) {
+            long globalSequence = (Long) entry[0];
+            String aggregateIdentifier = (String) entry[2];
+            String eventIdentifier = (String) entry[4];
+            GenericDomainEventEntry<?> domainEvent = new GenericDomainEventEntry<>(
+                    (String) entry[1], eventIdentifier.equals(aggregateIdentifier) ? null : aggregateIdentifier,
+                    (long) entry[3], eventIdentifier, entry[5],
+                    (String) entry[6], (String) entry[7], entry[8], entry[9]
+            );
+
+            // Now that we have the event itself, we can calculate the token
+            boolean allowGaps = domainEvent.getTimestamp().isAfter(gapTimeoutThreshold());
+            if (token == null) {
+                token = GapAwareTrackingToken.newInstance(
+                        globalSequence,
+                        allowGaps
+                                ? LongStream.range(Math.min(lowestGlobalSequence, globalSequence), globalSequence)
+                                            .boxed()
+                                            .collect(Collectors.toCollection(TreeSet::new))
+                                : Collections.emptySortedSet()
+                );
+            } else {
+                token = token.advanceTo(globalSequence, allowGaps ? maxGapOffset : 0);
+            }
+            result.add(new TrackedDomainEventData<>(token, domainEvent));
+        }
+        return result;
+    }
+
+    private Instant gapTimeoutThreshold() {
+        return GenericEventMessage.clock.instant().minus(gapTimeout, ChronoUnit.MILLIS);
+    }
+
+    private String domainEventEntryEntityName() {
+        return DomainEventEntry.class.getSimpleName(); // todo: configurable
     }
 
     @Override
     public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
-        return null;
+        return MessageStream.empty();
     }
 
     @Override
