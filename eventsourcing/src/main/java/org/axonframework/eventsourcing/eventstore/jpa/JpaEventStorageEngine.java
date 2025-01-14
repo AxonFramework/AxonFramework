@@ -60,9 +60,11 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  * By default, the payload of events is stored as a serialized blob of bytes. Other columns are used to store meta-data
  * that allow quick finding of DomainEvents for a specific aggregate in the correct order.
  *
+ * @deprecated Since the {@link org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine} should be used instead.
  * @author Rene de Waele
  * @since 3.0
  */
+@Deprecated
 public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaEventStorageEngine.class);
@@ -236,8 +238,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     @Override
     protected Stream<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
         return transactionManager.fetchInTransaction(
-                () -> legacyJpaOperations.readSnapshotData(aggregateIdentifier)
-                        .stream()
+                () -> legacyJpaOperations.readSnapshotData(aggregateIdentifier).stream()
         );
     }
 
