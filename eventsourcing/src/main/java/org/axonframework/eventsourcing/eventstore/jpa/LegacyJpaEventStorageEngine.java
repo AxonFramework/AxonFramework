@@ -3,10 +3,14 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.TypedQuery;
+import org.axonframework.common.Assert;
+import org.axonframework.common.BuilderUtils;
+import org.axonframework.common.StringUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
@@ -26,6 +30,7 @@ import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MetaData;
@@ -33,6 +38,9 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.command.AggregateStreamCreationException;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
+import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
+import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -47,10 +55,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static java.lang.String.format;
+import static org.axonframework.common.BuilderUtils.*;
 
 
 /**
@@ -69,6 +80,9 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     private final Serializer eventSerializer;
     private final Serializer snapshotSerializer;
     private final PersistenceExceptionResolver persistenceExceptionResolver;
+    private final EventUpcaster upcasterChain;
+    private final SnapshotFilter snapshotFilter;
+    private final int batchSize;
 
     private boolean explicitFlush = false;
     private Executor executor;
@@ -81,15 +95,81 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             @javax.annotation.Nonnull EntityManagerProvider entityManagerProvider,
             @javax.annotation.Nonnull TransactionManager transactionManager,
             @javax.annotation.Nonnull Serializer eventSerializer,
-            @javax.annotation.Nonnull Serializer snapshotSerializer
+            @javax.annotation.Nonnull Serializer snapshotSerializer,
+            @javax.annotation.Nonnull UnaryOperator<Config> configurationOverride
     ) {
+        this.executor = Executors.newFixedThreadPool(10); // todo: configurable, AxonThreadFactory etc.
+
         this.entityManagerProvider = entityManagerProvider;
         this.transactionManager = transactionManager;
         this.eventSerializer = eventSerializer;
         this.snapshotSerializer = snapshotSerializer;
-        // optional config - default will be provided here:
-        this.persistenceExceptionResolver = new JdbcSQLErrorCodesResolver();
-        this.executor = Executors.newFixedThreadPool(10); // todo: configurable, AxonThreadFactory etc.
+
+        var customization = configurationOverride.apply(Config.defaultConfig());
+        this.upcasterChain = customization.upcasterChain();
+        this.persistenceExceptionResolver = customization.persistenceExceptionResolver();
+        this.snapshotFilter = customization.snapshotFilter();
+        this.batchSize = customization.batchSize();
+    }
+
+    public record Config(
+            EventUpcaster upcasterChain,
+            PersistenceExceptionResolver persistenceExceptionResolver,
+            SnapshotFilter snapshotFilter,
+            int batchSize,
+            Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate // todo: handle!
+    ) {
+
+        public Config {
+            assertNonNull(upcasterChain, "EventUpcaster may not be null");
+            assertNonNull(snapshotFilter, "The snapshotFilter may not be null");
+            assertThat(batchSize, size -> size > 0, "The batchSize must be a positive number");
+        }
+
+        public static Config defaultConfig() {
+            return new Config(NoOpEventUpcaster.INSTANCE, null, SnapshotFilter.allowAll(), 100, null);
+        }
+
+        public Config upcasterChain(EventUpcaster upcasterChain) {
+            return new Config(upcasterChain,
+                              persistenceExceptionResolver,
+                              snapshotFilter,
+                              batchSize,
+                              finalAggregateBatchPredicate);
+        }
+
+        public Config persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
+            return new Config(upcasterChain,
+                              persistenceExceptionResolver,
+                              snapshotFilter,
+                              batchSize,
+                              finalAggregateBatchPredicate);
+        }
+
+        public Config snapshotFilter(SnapshotFilter snapshotFilter) {
+            return new Config(upcasterChain,
+                              persistenceExceptionResolver,
+                              snapshotFilter,
+                              batchSize,
+                              finalAggregateBatchPredicate);
+        }
+
+        public Config batchSize(int batchSize) {
+            return new Config(upcasterChain,
+                              persistenceExceptionResolver,
+                              snapshotFilter,
+                              batchSize,
+                              finalAggregateBatchPredicate);
+        }
+
+        public Config finalAggregateBatchPredicate(
+                Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate) {
+            return new Config(upcasterChain,
+                              persistenceExceptionResolver,
+                              snapshotFilter,
+                              batchSize,
+                              finalAggregateBatchPredicate);
+        }
     }
 
     @Override
@@ -306,7 +386,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return new GenericEventMessage<>(
                     identifier,
                     name,
-                    event.getPayload().getData(),
+                    data,
                     metaData,
                     event.getTimestamp()
             );
