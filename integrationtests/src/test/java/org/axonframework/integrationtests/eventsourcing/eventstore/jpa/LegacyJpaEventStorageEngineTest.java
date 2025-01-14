@@ -29,6 +29,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.nio.charset.StandardCharsets;
 import javax.sql.DataSource;
 
 @ExtendWith(SpringExtension.class)
@@ -53,7 +54,7 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
 
     @Override
     protected EventMessage<String> convertPayload(EventMessage<?> original) {
-        return null;
+        return original.withConvertedPayload(p -> new String((byte[]) p, StandardCharsets.UTF_8));
     }
 
     @Configuration
