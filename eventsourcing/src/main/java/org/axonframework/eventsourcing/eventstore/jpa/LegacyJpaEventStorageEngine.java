@@ -165,42 +165,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 try {
                     var entityManager = entityManagerProvider.getEntityManager();
                     events.forEach(taggedEvent -> {
-                        var aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
-                        var aggregateType = resolveAggregateType(taggedEvent.tags());
-                        var event = taggedEvent.event();
-                        if (aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty()) {
-                            // todo: what is GenericDomainEventMessage instance
-                            var nextSequence = resolveSequencer(
-                                    aggregateSequences,
-                                    aggregateIdentifier,
-                                    consistencyMarker
-                            ).incrementAndGet();
-                            var domainEvent = new GenericDomainEventMessage<>(
-                                    aggregateType,
-                                    aggregateIdentifier,
-                                    nextSequence,
-                                    event.getIdentifier(),
-                                    LegacyJpaEventStorageEngine.this.messageNameResolver.resolve(event.getPayload()),
-                                    event.getPayload(),
-                                    event.getMetaData(),
-                                    event.getTimestamp()
-                            );
-                            Object eventEntity = new DomainEventEntry(domainEvent, eventSerializer);
-                            entityManager.persist(eventEntity);
-                        } else {
-                            var domainEvent = new GenericDomainEventMessage<>(
-                                    null,
-                                    null,
-                                    0L,
-                                    event.getIdentifier(),
-                                    LegacyJpaEventStorageEngine.this.messageNameResolver.resolve(event.getPayload()),
-                                    event.getPayload(),
-                                    event.getMetaData(),
-                                    event.getTimestamp()
-                            );
-                            Object eventEntity = new DomainEventEntry(domainEvent, eventSerializer);
-                            entityManager.persist(eventEntity);
-                        }
+                        var domainEventMessage =
+                                toDomainEventMessage(taggedEvent, consistencyMarker, aggregateSequences);
+                        Object eventEntity = new DomainEventEntry(domainEventMessage, eventSerializer);
+                        entityManager.persist(eventEntity);
                     });
                     if (explicitFlush) {
                         entityManager.flush();
@@ -217,6 +185,40 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                     return CompletableFuture.failedFuture(persistenceExceptionMapper.mapPersistenceException(e,
                                                                                                              events.getFirst()
                                                                                                                    .event()));
+                }
+            }
+
+            private DomainEventMessage<?> toDomainEventMessage(TaggedEventMessage<?> taggedEvent,
+                                                               AggregateBasedConsistencyMarker consistencyMarker,
+                                                               HashMap<String, AtomicLong> aggregateSequences) {
+                var aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
+                var aggregateType = resolveAggregateType(taggedEvent.tags());
+                var event = taggedEvent.event();
+                var isAggregateEvent =
+                        aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty();
+                if (isAggregateEvent) {
+                    var nextSequence = resolveSequencer(
+                            aggregateSequences,
+                            aggregateIdentifier,
+                            consistencyMarker
+                    ).incrementAndGet();
+                    return new GenericDomainEventMessage<>(
+                            aggregateType,
+                            aggregateIdentifier,
+                            nextSequence,
+                            event.getIdentifier(),
+                            event.name(),
+                            event.getPayload(),
+                            event.getMetaData(),
+                            event.getTimestamp()
+                    );
+                } else {
+                    // returns non-aggregate event, so the sequence is always 0
+                    return new GenericDomainEventMessage<>(null,
+                                                           event.getIdentifier(),
+                                                           0L,
+                                                           event,
+                                                           event::getTimestamp);
                 }
             }
 
