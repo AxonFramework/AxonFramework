@@ -93,6 +93,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             @javax.annotation.Nonnull UnaryOperator<Config> configurationOverride
     ) {
         this.writeExecutor = Executors.newFixedThreadPool(10); // todo: configurable, AxonThreadFactory etc.
+        // todo: is is useful? Maybe we'd like to utilize the same thread as invoker?
 
         this.entityManagerProvider = entityManagerProvider;
         this.transactionManager = transactionManager;
@@ -511,7 +512,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     @Override
     public void describeTo(@javax.annotation.Nonnull ComponentDescriptor descriptor) {
-
+        // todo: how to describe? what's the idea behind it?
     }
 
     private record EmptyAppendTransaction(AppendCondition appendCondition) implements AppendTransaction {

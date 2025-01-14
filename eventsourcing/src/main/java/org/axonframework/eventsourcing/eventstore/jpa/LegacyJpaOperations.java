@@ -12,9 +12,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
+
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 
@@ -169,7 +172,7 @@ record LegacyJpaOperations(
     }
 
     List<Long> minGlobalIndex() {
-        return entityManager().createQuery(
+        return entityManager.createQuery(
                 "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e", Long.class
         ).getResultList();
     }
@@ -184,5 +187,17 @@ record LegacyJpaOperations(
                 .setParameter("aggregateIdentifier", aggregateIdentifier)
                 .setParameter("sequenceNumber", sequenceNumber)
                 .executeUpdate();
+    }
+
+    Optional<Long> lastSequenceNumberFor(@Nonnull String aggregateIdentifier) {
+        List<Long> results = entityManager.createQuery(
+                                                  "SELECT MAX(e.sequenceNumber) FROM " + domainEventEntryEntityName()
+                                                          + " e WHERE e.aggregateIdentifier = :aggregateId", Long.class)
+                                          .setParameter("aggregateId", aggregateIdentifier)
+                                          .getResultList();
+        if (results.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(results.get(0));
     }
 }
