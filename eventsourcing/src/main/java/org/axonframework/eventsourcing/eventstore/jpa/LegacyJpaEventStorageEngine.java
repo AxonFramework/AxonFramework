@@ -379,8 +379,9 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     private static Context fillContextWith(DomainEventData<?> event) {
         var isAggregateEvent = event.getAggregateIdentifier() != null && event.getType() != null;
+        var context = Context.empty();
         if (isAggregateEvent) {
-            return Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
+            context = context.withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
                           .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getType())
                           .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
                                         event.getSequenceNumber())
@@ -388,7 +389,11 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                         new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
                                                                             event.getSequenceNumber()));
         }
-        return Context.empty(); // todo: what to do with that?
+        if (event instanceof TrackedDomainEventData<?> trackedDomainEventData) {
+            var token = trackedDomainEventData.trackingToken();
+            context = Context.with(TrackingToken.RESOURCE_KEY, token); // is it OK?
+        }
+        return context; // todo: what to do with that?
     }
 
     @Override
