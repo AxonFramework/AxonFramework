@@ -58,7 +58,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
     protected ESE testSubject;
 
     @BeforeEach
-    void setUp() throws Exception {
+    protected void setUpTestSuite() throws Exception {
         TEST_AGGREGATE_ID = UUID.randomUUID().toString();
         OTHER_AGGREGATE_ID = UUID.randomUUID().toString();
 
