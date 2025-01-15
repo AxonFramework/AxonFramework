@@ -560,15 +560,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return StreamSupport.stream(spliterator, false);
         }
 
-        Stream<? extends TrackedEventData<?>> readEventData(TrackingToken lastToken) {
-            Assert.isTrue(
-                    lastToken == null || lastToken instanceof GapAwareTrackingToken,
-                    () -> String.format("Token [%s] is of the wrong type. Expected [%s]",
-                                        lastToken, GapAwareTrackingToken.class.getSimpleName())
-            );
-
+        Stream<? extends TrackedEventData<?>> readEventData(TrackingToken trackingToken) {
             EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(
-                    lastItem -> fetchTrackedEvents(lastItem == null ? lastToken : lastItem.trackingToken(), batchSize),
+                    lastItem -> fetchTrackedEvents(lastItem == null ? trackingToken : lastItem.trackingToken(),
+                                                   batchSize),
                     batch -> BATCH_OPTIMIZATION_DISABLED
             );
             return StreamSupport.stream(spliterator, false);
