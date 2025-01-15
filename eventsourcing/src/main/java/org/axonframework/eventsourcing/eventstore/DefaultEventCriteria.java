@@ -44,11 +44,11 @@ record DefaultEventCriteria(Set<String> types, Set<Tag> tags) implements EventCr
 
     @Override
     public Set<String> types() {
-        return Set.copyOf(types);
+        return types;
     }
 
     @Override
     public Set<Tag> tags() {
-        return Set.copyOf(tags);
+        return tags;
     }
 }
