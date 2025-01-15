@@ -2,6 +2,7 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
@@ -12,6 +13,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
@@ -37,6 +39,8 @@ import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -78,6 +82,8 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  */
 public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
+    private static final Logger logger = LoggerFactory.getLogger(LegacyJpaEventStorageEngine.class);
+
     private final EntityManagerProvider entityManagerProvider;
     private final TransactionManager transactionManager;
     private final Serializer eventSerializer;
@@ -97,6 +103,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     private final MessageNameResolver messageNameResolver;
     private final LegacyJpaEventStorageOperations legacyJpaOperations;
     private final BatchingEventStorageOperations batchingOperations;
+    private final GapAwareTrackingTokenOperations tokenOperations;
     private Executor writeExecutor;
 
     public LegacyJpaEventStorageEngine(
@@ -135,12 +142,18 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                                                        entityManagerProvider.getEntityManager(),
                                                                        domainEventEntryEntityName(),
                                                                        SnapshotEventEntry.class.getSimpleName());
+        this.tokenOperations = new GapAwareTrackingTokenOperations(gapTimeout, logger);
         this.batchingOperations = new BatchingEventStorageOperations(
                 transactionManager,
                 legacyJpaOperations,
+                tokenOperations,
                 batchSize,
                 customization.finalAggregateBatchPredicate(),
-                true);
+                true,
+                customization.gapCleaningThreshold(),
+                customization.lowestGlobalSequence(),
+                customization.maxGapOffset()
+        );
         this.persistenceExceptionMapper = new PersistenceExceptionMapper(persistenceExceptionResolver);
     }
 
@@ -491,28 +504,46 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
     }
 
+    private record BatchingEventStorageOperations(TransactionManager transactionManager,
+                                                  LegacyJpaEventStorageOperations legacyJpaOperations,
+                                                  GapAwareTrackingTokenOperations tokenOperations,
+                                                  int batchSize,
+                                                  Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate,
+                                                  boolean fetchForAggregateUntilEmpty,
+                                                  int gapCleaningThreshold,
+                                                  long lowestGlobalSequence,
+                                                  int maxGapOffset
+    ) {
 
-    private static class BatchingEventStorageOperations {
+        /**
+         * The batch optimization is intended to *not* retrieve a second batch of events to cover for potential gaps in
+         * the first batch. This optimization is desirable for aggregate event streams, as these close once the end is
+         * reached. For token-based event reading the stream does not necessarily close once reaching the end, thus the
+         * optimization will block further event retrieval.
+         */
+        private static final boolean BATCH_OPTIMIZATION_DISABLED = false;
 
-        private final TransactionManager transactionManager;
-        private final LegacyJpaEventStorageOperations legacyJpaOperations;
-        private final int batchSize;
-        private final Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate;
-        private final boolean fetchForAggregateUntilEmpty;
-
-        BatchingEventStorageOperations(
+        private BatchingEventStorageOperations(
                 TransactionManager transactionManager,
                 LegacyJpaEventStorageOperations legacyJpaOperations,
+                GapAwareTrackingTokenOperations tokenOperations,
                 int batchSize,
                 Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate,
-                boolean fetchForAggregateUntilEmpty
+                boolean fetchForAggregateUntilEmpty,
+                int gapCleaningThreshold,
+                long lowestGlobalSequence,
+                int maxGapOffset
         ) {
             this.transactionManager = transactionManager;
             this.legacyJpaOperations = legacyJpaOperations;
+            this.tokenOperations = tokenOperations;
             this.batchSize = batchSize;
             this.finalAggregateBatchPredicate = getOrDefault(finalAggregateBatchPredicate,
                                                              this::defaultFinalAggregateBatchPredicate);
             this.fetchForAggregateUntilEmpty = fetchForAggregateUntilEmpty;
+            this.gapCleaningThreshold = gapCleaningThreshold;
+            this.lowestGlobalSequence = lowestGlobalSequence;
+            this.maxGapOffset = maxGapOffset;
         }
 
         Stream<? extends DomainEventData<?>> readEventData(String identifier, long firstSequenceNumber,
@@ -529,28 +560,51 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return StreamSupport.stream(spliterator, false);
         }
 
-//        Stream<? extends TrackedEventData<?>> readEventData(TrackingToken trackingToken, boolean mayBlock) {
-//            EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(
-//                    lastItem -> legacyJpaOperations.fetchTrackedEvents(lastItem == null ? trackingToken : lastItem.trackingToken(), batchSize),
-//                    batch -> BATCH_OPTIMIZATION_DISABLED
-//            );
-//            return StreamSupport.stream(spliterator, false);
-//        }
+        Stream<? extends TrackedEventData<?>> readEventData(TrackingToken lastToken) {
+            Assert.isTrue(
+                    lastToken == null || lastToken instanceof GapAwareTrackingToken,
+                    () -> String.format("Token [%s] is of the wrong type. Expected [%s]",
+                                        lastToken, GapAwareTrackingToken.class.getSimpleName())
+            );
+
+            EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(
+                    lastItem -> fetchTrackedEvents(lastItem == null ? lastToken : lastItem.trackingToken(), batchSize),
+                    batch -> BATCH_OPTIMIZATION_DISABLED
+            );
+            return StreamSupport.stream(spliterator, false);
+        }
+
+        private List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
+            Assert.isTrue(
+                    lastToken == null || lastToken instanceof GapAwareTrackingToken,
+                    () -> String.format("Token [%s] is of the wrong type. Expected [%s]",
+                                        lastToken, GapAwareTrackingToken.class.getSimpleName())
+            );
+
+            GapAwareTrackingToken previousToken = cleanedToken((GapAwareTrackingToken) lastToken);
+
+            List<Object[]> entries = transactionManager.fetchInTransaction(() -> legacyJpaOperations.fetchEvents(
+                    previousToken,
+                    batchSize));
+            return legacyJpaOperations.entriesToEvents(
+                    previousToken, entries, tokenOperations.gapTimeoutThreshold(), lowestGlobalSequence, maxGapOffset
+            );
+        }
+
+        private GapAwareTrackingToken cleanedToken(GapAwareTrackingToken lastToken) {
+            if (lastToken != null && lastToken.getGaps().size() > gapCleaningThreshold) {
+                return tokenOperations.withGapsCleaned(lastToken, indexToTimestamp(lastToken));
+            }
+            return lastToken;
+        }
+
+        private List<Object[]> indexToTimestamp(GapAwareTrackingToken lastToken) {
+            return transactionManager.fetchInTransaction(() -> legacyJpaOperations.indexToTimestamp(lastToken));
+        }
+
 
         private boolean defaultFinalAggregateBatchPredicate(List<? extends DomainEventData<?>> recentBatch) {
             return fetchForAggregateUntilEmpty() ? recentBatch.isEmpty() : recentBatch.size() < batchSize;
-        }
-
-        public int batchSize() {
-            return batchSize;
-        }
-
-        public Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate() {
-            return finalAggregateBatchPredicate;
-        }
-
-        public boolean fetchForAggregateUntilEmpty() {
-            return fetchForAggregateUntilEmpty;
         }
 
         private static class EventStreamSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
@@ -605,6 +659,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             int gapCleaningThreshold
     ) {
 
+        private static final int DEFAULT_BATCH_SIZE = 100;
         private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
         private static final long DEFAULT_LOWEST_GLOBAL_SEQUENCE = 1;
         private static final int DEFAULT_GAP_TIMEOUT = 60000;
@@ -628,7 +683,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                     NoOpEventUpcaster.INSTANCE,
                     null,
                     SnapshotFilter.allowAll(),
-                    100,
+                    DEFAULT_BATCH_SIZE,
                     null,
                     new ClassBasedMessageNameResolver(),
                     true,

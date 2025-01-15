@@ -83,6 +83,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     private int gapCleaningThreshold;
 
     private final LegacyJpaEventStorageOperations legacyJpaOperations;
+    private final GapAwareTrackingTokenOperations tokenOperations;
 
     /**
      * Instantiate a {@link JpaEventStorageEngine} based on the fields contained in the {@link Builder}.
@@ -109,6 +110,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                 domainEventEntryEntityName(),
                 snapshotEventEntryEntityName()
         );
+        this.tokenOperations = new GapAwareTrackingTokenOperations(gapTimeout, logger);
     }
 
     /**
@@ -179,51 +181,19 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
         List<Object[]> entries = transactionManager.fetchInTransaction(() -> fetchEvents(previousToken));
         return legacyJpaOperations.entriesToEvents(
-                previousToken, entries, gapTimeoutThreshold(), lowestGlobalSequence, maxGapOffset
+                previousToken, entries, tokenOperations.gapTimeoutThreshold(), lowestGlobalSequence, maxGapOffset
         );
     }
 
     private GapAwareTrackingToken cleanedToken(GapAwareTrackingToken lastToken) {
         if (lastToken != null && lastToken.getGaps().size() > gapCleaningThreshold) {
-            return withGapsCleaned(lastToken, indexToTimestamp(lastToken));
+            return tokenOperations.withGapsCleaned(lastToken, indexToTimestamp(lastToken));
         }
         return lastToken;
     }
 
     private List<Object[]> indexToTimestamp(GapAwareTrackingToken lastToken) {
         return transactionManager.fetchInTransaction(() -> legacyJpaOperations.indexToTimestamp(lastToken));
-    }
-
-    private GapAwareTrackingToken withGapsCleaned(GapAwareTrackingToken token, List<Object[]> indexToTimestamp) {
-        Instant gapTimeoutThreshold = gapTimeoutThreshold();
-        GapAwareTrackingToken cleanedToken = token;
-        for (Object[] result : indexToTimestamp) {
-            try {
-                Instant timestamp = DateTimeUtils.parseInstant(result[1].toString());
-                long sequenceNumber = (long) result[0];
-                if (cleanedToken.getGaps().contains(sequenceNumber) || timestamp.isAfter(gapTimeoutThreshold)) {
-                    // filled a gap or found an entry that is too recent. Should not continue cleaning up
-                    return cleanedToken;
-                }
-                if (cleanedToken.getGaps().contains(sequenceNumber - 1)) {
-                    cleanedToken = cleanedToken.withGapsTruncatedAt(sequenceNumber);
-                }
-            } catch (DateTimeParseException e) {
-                if (logger.isDebugEnabled()) {
-                    logger.info("Unable to parse timestamp ('{}') to clean old gaps. Trying to proceed. ",
-                                e.getParsedString(), e);
-                } else {
-                    logger.info("Unable to parse timestamp ('{}') to clean old gaps. Trying to proceed. " +
-                                        "Exception message: {}. (enable debug logging for full stack trace)",
-                                e.getParsedString(), e.getMessage());
-                }
-            }
-        }
-        return cleanedToken;
-    }
-
-    private Instant gapTimeoutThreshold() {
-        return GenericEventMessage.clock.instant().minus(gapTimeout, ChronoUnit.MILLIS);
     }
 
     @Override
