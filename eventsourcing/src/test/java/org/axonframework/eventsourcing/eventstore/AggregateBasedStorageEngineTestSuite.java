@@ -135,7 +135,6 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                     // we've skipped the first two
                     .expectNextCount(2).assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 5))
                     .expectNextCount(2).thenCancel().verify();
-        // todo: does expected position same for different implementations?
     }
 
     @Test
