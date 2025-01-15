@@ -75,6 +75,12 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
      */
     protected abstract ESE buildStorageEngine() throws Exception;
 
+    protected abstract long lowestGlobalSequence();
+
+    private long sequenceOfEventNo(long eventNumber) {
+        return lowestGlobalSequence() + eventNumber;
+    }
+
     @Test
     void streamingFromStartReturnsSelectedMessages() {
         TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags());
@@ -82,8 +88,9 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags());
         // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
         ConsistencyMarker newMarker = testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                                  expectedEventOne,
-                                                  expectedEventTwo).thenCompose(AppendTransaction::commit).join();
+                                                               expectedEventOne,
+                                                               expectedEventTwo).thenCompose(AppendTransaction::commit)
+                                                 .join();
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-2", emptySet()),
                                  taggedEventMessage("event-3", emptySet())).thenCompose(AppendTransaction::commit)
@@ -143,8 +150,9 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags());
         // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
         ConsistencyMarker marker1 = testSubject.appendEvents(AppendCondition.withCriteria(expectedCriteria),
-                                                expectedEventOne,
-                                                expectedEventTwo).thenCompose(AppendTransaction::commit).join();
+                                                             expectedEventOne,
+                                                             expectedEventTwo).thenCompose(AppendTransaction::commit)
+                                               .join();
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-2", Set.of()),
                                  taggedEventMessage("event-3", Set.of())).thenCompose(
@@ -160,8 +168,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                 10)).or(expectedCriteria));
 
         try {
-            Optional<Entry<EventMessage<?>>> firstEvent = result.next();
-            assertTrue(firstEvent.isEmpty());
+            assertTrue(result.next().isEmpty());
         } finally {
             result.close();
         }
@@ -365,12 +372,13 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         assertTrue(validConsistencyMarker(secondCommit.join(), OTHER_AGGREGATE_ID, 0));
     }
 
-    private void assertTrackedEntry(Entry<EventMessage<?>> actual, EventMessage<?> expected, long expectedPosition) {
+    private void assertTrackedEntry(Entry<EventMessage<?>> actual, EventMessage<?> expected, long expectedEventNo) {
         Optional<TrackingToken> actualToken = TrackingToken.fromContext(actual);
         assertTrue(actualToken.isPresent());
         OptionalLong actualPosition = actualToken.get().position();
         assertTrue(actualPosition.isPresent());
-//        assertEquals(expectedPosition, actualPosition.getAsLong()); // todo: uncomment
+        var expectedPosition = sequenceOfEventNo(expectedEventNo);
+        assertEquals(expectedPosition, actualPosition.getAsLong());
         assertEvent(actual.message(), expected);
     }
 
@@ -406,5 +414,4 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         return consistencyMarker instanceof AggregateBasedConsistencyMarker cm
                 && cm.positionOf(aggregateIdentifier) == aggregateSequence;
     }
-
 }
