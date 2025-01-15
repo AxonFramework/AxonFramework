@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -88,10 +88,10 @@ class DeadLetterParameterResolverFactoryTest {
     @Test
     void resolverMatchesForAnyMessageType() {
         CommandMessage<Object> testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "some-command");
+                new GenericCommandMessage<>(new MessageType("command"), "some-command");
         EventMessage<Object> testEvent = EventTestUtils.asEventMessage("some-command");
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "some-query", instanceOf(String.class)
+                new MessageType("query"), "some-query", instanceOf(String.class)
         );
 
         ParameterResolver<DeadLetter<?>> resolver =

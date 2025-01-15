@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -107,7 +107,7 @@ import static org.mockito.Mockito.*;
 class DefaultConfigurerTest {
 
     private static final GenericCommandMessage<String> TEST_COMMAND =
-            new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test");
+            new GenericCommandMessage<>(new MessageType("command"), "test");
 
     private EntityManagerFactory entityManagerFactory;
     private EntityManager entityManager;
@@ -269,7 +269,7 @@ class DefaultConfigurerTest {
         config.commandGateway()
               .sendAndWait(TEST_COMMAND);
         CommandMessage<String> testCommand = new GenericCommandMessage<>(
-                new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "test"), "update"
+                new GenericMessage<>(new MessageType("message"), "test"), "update"
         );
         config.commandGateway().sendAndWait(testCommand);
         assertEquals(1, counter.get());
@@ -526,7 +526,7 @@ class DefaultConfigurerTest {
         EntityManagerTransactionManager transactionManager = spy(new EntityManagerTransactionManager(entityManager));
 
         DomainEventMessage<String> testDomainEvent = new GenericDomainEventMessage<>(
-                "StubAggregate", "some-aggregate-id", 0, new QualifiedName("test", "event", "0.0.1"), "some-payload"
+                "StubAggregate", "some-aggregate-id", 0, new MessageType("event"), "some-payload"
         );
         DomainEventData<byte[]> snapshotData =
                 new AbstractSnapshotEventEntry<>(testDomainEvent, serializer, byte[].class) {

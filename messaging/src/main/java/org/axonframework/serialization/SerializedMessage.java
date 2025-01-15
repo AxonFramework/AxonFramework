@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,8 @@ package org.axonframework.serialization;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.AbstractMessage;
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 
 import java.io.Serial;
 import java.util.Map;
@@ -49,12 +48,12 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
     private final LazyDeserializingObject<MetaData> metaData;
 
     /**
-     * Constructs a {@link SerializedMessage} with given {@code identifier} from the given {@code serializedPayload} and
+     * Constructs a {@code SerializedMessage} with given {@code identifier} from the given {@code serializedPayload} and
      * {@code serializedMetaData}.
      * <p>
      * The given {@code serializer} is used to deserialize the data.
      *
-     * @param identifier         The identifier of this {@link SerializedMessage}.
+     * @param identifier         The identifier of this {@code SerializedMessage}.
      * @param serializedPayload  The {@link SerializedObject serializer} message payload.
      * @param serializedMetaData The {@link SerializedObject serializer} message metadata.
      * @param serializer         The {@link Serializer} required when the data needs to be deserialized.
@@ -63,37 +62,37 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
                              @Nonnull SerializedObject<?> serializedPayload,
                              @Nonnull SerializedObject<?> serializedMetaData,
                              @Nonnull Serializer serializer) {
-        // TODO #3012 - I think the Serializer/Converter should provide the QualifiedName in this case.
+        // TODO #3012 - I think the Serializer/Converter should provide the MessageType in this case.
         this(identifier,
-             QualifiedNameUtils.fromDottedName(serializedPayload.getType().getName()),
+             new MessageType(serializedPayload.getType().getName()),
              new LazyDeserializingObject<>(serializedPayload, serializer),
              new LazyDeserializingObject<>(serializedMetaData, serializer));
     }
 
     /**
-     * Constructs a {@link SerializedMessage} with given {@code identifier}, {@code name}, and lazily deserialized
+     * Constructs a {@code SerializedMessage} with given {@code identifier}, {@code type}, and lazily deserialized
      * {@code payload} and {@code metadata}.
      * <p>
      * The {@code identifier} originates from the {@link org.axonframework.messaging.Message} where the lazily
      * deserialized {@code payload} and {@code metadata} originate from.
      *
-     * @param identifier The identifier of this {@link SerializedMessage}.
-     * @param name       The {@link QualifiedName name} for this {@link SerializedMessage}.
+     * @param identifier The identifier of this {@code SerializedMessage}.
+     * @param type       The {@link MessageType type} for this {@code SerializedMessage}.
      * @param payload    serialized payload that can be deserialized on demand and never more than once
      * @param metaData   serialized metadata that can be deserialized on demand and never more than once
      */
     public SerializedMessage(@Nonnull String identifier,
-                             @Nonnull QualifiedName name,
+                             @Nonnull MessageType type,
                              @Nonnull LazyDeserializingObject<P> payload,
                              @Nonnull LazyDeserializingObject<MetaData> metaData) {
-        super(identifier, name);
+        super(identifier, type);
         this.metaData = metaData;
         this.payload = payload;
     }
 
     private SerializedMessage(@Nonnull SerializedMessage<P> message,
                               @Nonnull LazyDeserializingObject<MetaData> newMetaData) {
-        this(message.getIdentifier(), message.name(), message.payload, newMetaData);
+        this(message.getIdentifier(), message.type(), message.payload, newMetaData);
     }
 
     @Override
@@ -178,6 +177,6 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
      * @return the GenericMessage to use as a replacement when serializing
      */
     protected Object writeReplace() {
-        return new GenericMessage<>(getIdentifier(), name(), getPayload(), getMetaData());
+        return new GenericMessage<>(getIdentifier(), type(), getPayload(), getMetaData());
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -68,7 +68,7 @@ public abstract class EventStorageEngineTest {
 
     @Test
     public void appendAndReadNonDomainEvent() {
-        testSubject.appendEvents(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Hello world"));
+        testSubject.appendEvents(new GenericEventMessage<>(new MessageType("event"), "Hello world"));
 
         List<? extends TrackedEventMessage<?>> actual = testSubject.readEvents(null, false)
                                                                    .toList();
@@ -85,7 +85,7 @@ public abstract class EventStorageEngineTest {
     @Test
     public void storeAndLoadApplicationEvent() {
         EventMessage<String> testEvent = new GenericEventMessage<>(
-                new QualifiedName("test", "event", "0.0.1"), "application event", MetaData.with("key", "value")
+                new MessageType("event"), "application event", MetaData.with("key", "value")
         );
         testSubject.appendEvents(testEvent);
         assertEquals(1, testSubject.readEvents(null, false).count());

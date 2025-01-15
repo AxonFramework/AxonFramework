@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,11 @@ package org.axonframework.commandhandling;
 import org.axonframework.common.Registration;
 import org.axonframework.common.StubExecutor;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
@@ -33,7 +37,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -47,7 +50,7 @@ class SimpleCommandBusTest {
 
     private static final String PAYLOAD = "Say hi!";
     private static final CommandMessage<String> TEST_COMMAND =
-            new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), PAYLOAD);
+            new GenericCommandMessage<>(new MessageType("command"), PAYLOAD);
 
     private SimpleCommandBus testSubject;
     private StubExecutor executor;
@@ -308,10 +311,10 @@ class SimpleCommandBusTest {
                 return MessageStream.failed(error);
             } else if (result instanceof CompletableFuture<?> future) {
                 return MessageStream.fromFuture(future.thenApply(
-                        r -> new GenericMessage<>(fromClassName(r.getClass()), r)
+                        r -> new GenericMessage<>(new MessageType(r.getClass()), r)
                 ));
             } else {
-                return MessageStream.just(new GenericMessage<>(fromClassName(result.getClass()), result));
+                return MessageStream.just(new GenericMessage<>(new MessageType(result.getClass()), result));
             }
         }
 
@@ -321,8 +324,8 @@ class SimpleCommandBusTest {
         }
     }
 
-    private static GenericCommandResultMessage<?> asCommandResultMessage(CommandMessage<?> message){
+    private static GenericCommandResultMessage<?> asCommandResultMessage(CommandMessage<?> message) {
         var payload = message.getPayload();
-        return new GenericCommandResultMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload);
+        return new GenericCommandResultMessage<>(new MessageType(payload.getClass()), payload);
     }
 }

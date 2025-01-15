@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.tracing.attributes;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.junit.jupiter.api.*;
 
@@ -34,7 +34,7 @@ class AggregateIdentifierSpanAttributesProviderTest {
     @Test
     void domainEventMessage() {
         Message<?> message = new GenericDomainEventMessage<>(
-                "MyType", "1729872981", 1, new QualifiedName("test", "event", "0.0.1"), "payload"
+                "MyType", "1729872981", 1, new MessageType("event"), "payload"
         );
 
         Map<String, String> map = provider.provideForMessage(message);
@@ -44,7 +44,7 @@ class AggregateIdentifierSpanAttributesProviderTest {
 
     @Test
     void genericEventMessage() {
-        Message<?> message = new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "payload");
+        Message<?> message = new GenericEventMessage<>(new MessageType("event"), "payload");
 
         Map<String, String> map = provider.provideForMessage(message);
         assertEquals(0, map.size());

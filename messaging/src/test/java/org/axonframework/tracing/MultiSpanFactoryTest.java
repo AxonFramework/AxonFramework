@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.tracing;
 
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -37,7 +37,7 @@ class MultiSpanFactoryTest {
     private final SpanFactory multiSpanFactory = new MultiSpanFactory(Arrays.asList(spanFactory1, spanFactory2));
 
     private final GenericEventMessage<?> message =
-            new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "payload");
+            new GenericEventMessage<>(new MessageType("event"), "payload");
     private final Supplier<String> stringSupplier = () -> "Trace";
 
     @Test

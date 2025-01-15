@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,7 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
@@ -326,11 +324,11 @@ class FixtureTest_Deadlines {
 
     @SuppressWarnings("unchecked")
     private static <P> DeadlineMessage<P> asDeadlineMessage(String deadlineName,
-                                                           Object payload,
-                                                           Instant expiryTime) {
-        var messageName = QualifiedNameUtils.fromClassName(payload.getClass());
+                                                            Object payload,
+                                                            Instant expiryTime) {
+        var type = new MessageType(payload.getClass());
         return new GenericDeadlineMessage<>(
-                deadlineName, new GenericMessage<>(messageName, (P) payload), () -> expiryTime
+                deadlineName, new GenericMessage<>(type, (P) payload), () -> expiryTime
         );
     }
 

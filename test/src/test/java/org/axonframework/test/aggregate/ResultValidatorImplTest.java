@@ -21,8 +21,7 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.deadline.ScheduledDeadlineInfo;
 import org.axonframework.test.deadline.StubDeadlineManager;
@@ -354,7 +353,7 @@ class ResultValidatorImplTest {
     private ScheduledDeadlineInfo createDeadline(Instant expiryTime) {
         var payload = "payload";
         DeadlineMessage<String> deadlineMessage = new GenericDeadlineMessage<>(
-                "deadlineName", new GenericMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload), () -> expiryTime
+                "deadlineName", new GenericMessage<>(new MessageType(payload.getClass()), payload), () -> expiryTime
         );
         return new ScheduledDeadlineInfo(expiryTime, "deadlineName", "1", 0, deadlineMessage, null);
     }
@@ -384,6 +383,6 @@ class ResultValidatorImplTest {
     }
 
     private static EventMessage<Object> asEventMessage(Object payload) {
-        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload);
+        return new GenericEventMessage<>(new MessageType("event"), payload);
     }
 }

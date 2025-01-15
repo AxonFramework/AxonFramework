@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,99 +53,99 @@ public class GenericMessage<P> extends AbstractMessage<P> {
     private final Class<P> payloadType;
 
     /**
-     * Constructs a {@link GenericMessage} for the given {@code name} and {@code payload}.
+     * Constructs a {@link GenericMessage} for the given {@code type} and {@code payload}.
      * <p>
      * Uses the correlation data of the current Unit of Work, if present.
      *
-     * @param name    The {@link QualifiedName name} for this {@link Message}.
+     * @param type    The {@link MessageType type} for this {@link Message}.
      * @param payload The payload of type {@code P} for this {@link Message}.
      */
-    public GenericMessage(@Nonnull QualifiedName name,
+    public GenericMessage(@Nonnull MessageType type,
                           @Nullable P payload) {
-        this(name, payload, MetaData.emptyInstance());
+        this(type, payload, MetaData.emptyInstance());
     }
 
     /**
-     * Constructs a {@link GenericMessage} for the given {@code name}, {@code payload}, and {@code metaData}.
+     * Constructs a {@link GenericMessage} for the given {@code type}, {@code payload}, and {@code metaData}.
      * <p>
      * The given {@code metaData} is merged with the {@link MetaData} from the correlation data of the current Unit of
      * Work, if present. In case the {@code payload == null}, {@link Void} will be used as the {@code payloadType}.
      *
-     * @param name     The {@link QualifiedName name} for this {@link Message}.
+     * @param type     The {@link MessageType type} for this {@link Message}.
      * @param payload  The payload of type {@code P} for this {@link Message}.
      * @param metaData The metadata for this {@link Message}.
      */
-    public GenericMessage(@Nonnull QualifiedName name,
+    public GenericMessage(@Nonnull MessageType type,
                           @Nullable P payload,
                           @Nonnull Map<String, ?> metaData) {
-        this(name, payload, metaData, getDeclaredPayloadType(payload));
+        this(type, payload, metaData, getDeclaredPayloadType(payload));
     }
 
     /**
-     * Constructs a {@link GenericMessage} for the given {@code name}, {@code payload}, and {@code metaData}.
+     * Constructs a {@link GenericMessage} for the given {@code type}, {@code payload}, and {@code metaData}.
      * <p>
      * The given {@code metaData} is merged with the MetaData from the correlation data of the current Unit of Work, if
      * present.
      *
-     * @param name     The {@link QualifiedName name} for this {@link Message}.
+     * @param type     The {@link MessageType type} for this {@link Message}.
      * @param payload  The payload of type {@code P} for this {@link Message}.
      * @param metaData The metadata for this {@link Message}.
-     * @deprecated In favor of {@link #GenericMessage(QualifiedName, Object, Map)} once the {@code declaredPayloadType}
-     * is removed completely.
+     * @deprecated In favor of {@link #GenericMessage(MessageType, Object, Map)} once the {@code declaredPayloadType} is
+     * removed completely.
      */
     @Deprecated
-    public GenericMessage(@Nonnull QualifiedName name,
+    public GenericMessage(@Nonnull MessageType type,
                           @Nullable P payload,
                           @Nonnull Map<String, ?> metaData,
                           @Deprecated Class<P> declaredPayloadType) {
         this(IdentifierFactory.getInstance().generateIdentifier(),
-             name, payload,
+             type, payload,
              CurrentUnitOfWork.correlationData().mergedWith(MetaData.from(metaData)),
              declaredPayloadType);
     }
 
     /**
-     * Constructs a {@link GenericMessage} for the given {@code identifier}, {@code name}, {@code payload}, and
+     * Constructs a {@link GenericMessage} for the given {@code identifier}, {@code type}, {@code payload}, and
      * {@code metaData}, intended to reconstruct another {@link Message}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work. If you in tend to construct a new {@link GenericMessage}, please use
-     * {@link #GenericMessage(QualifiedName, Object)} instead.
+     * {@link #GenericMessage(MessageType, Object)} instead.
      *
      * @param identifier The identifier of this {@link Message}.
-     * @param name       The {@link QualifiedName name} for this {@link Message}.
+     * @param type       The {@link MessageType type} for this {@link Message}.
      * @param payload    The payload of type {@code P} for this {@link Message}.
      * @param metaData   The metadata for this {@link Message}.
      */
     public GenericMessage(@Nonnull String identifier,
-                          @Nonnull QualifiedName name,
+                          @Nonnull MessageType type,
                           @Nullable P payload,
                           @Nonnull Map<String, ?> metaData) {
-        this(identifier, name, payload, metaData, getDeclaredPayloadType(payload));
+        this(identifier, type, payload, metaData, getDeclaredPayloadType(payload));
     }
 
     /**
-     * Constructs a {@link GenericMessage} for the given {@code identifier}, {@code name}, {@code payload}, and
+     * Constructs a {@link GenericMessage} for the given {@code identifier}, {@code type}, {@code payload}, and
      * {@code metaData}, intended to reconstruct another {@link Message}.
      * <p>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work. If you in tend to construct a new {@link GenericMessage}, please use
-     * {@link #GenericMessage(QualifiedName, Object)} instead.
+     * {@link #GenericMessage(MessageType, Object)} instead.
      *
      * @param identifier The identifier of this {@link Message}.
-     * @param name       The {@link QualifiedName name} for this {@link Message}.
+     * @param type       The {@link MessageType type} for this {@link Message}.
      * @param payload    The payload of type {@code P} for this {@link Message}.
      * @param metaData   The metadata for this {@link Message}.
-     * @deprecated In favor of {@link #GenericMessage(String, QualifiedName, Object, Map)} once the
+     * @deprecated In favor of {@link #GenericMessage(String, MessageType, Object, Map)} once the
      * {@code declaredPayloadType} is removed completely.
      */
     @Deprecated
     public GenericMessage(@Nonnull String identifier,
-                          @Nonnull QualifiedName name,
+                          @Nonnull MessageType type,
                           @Nullable P payload,
                           @Nonnull Map<String, ?> metaData,
                           @Deprecated Class<P> declaredPayloadType) {
-        super(identifier, name);
+        super(identifier, type);
         this.payload = payload;
         this.metaData = MetaData.from(metaData);
         this.payloadType = declaredPayloadType;
@@ -153,7 +153,7 @@ public class GenericMessage<P> extends AbstractMessage<P> {
 
     private GenericMessage(@Nonnull GenericMessage<P> original,
                            @Nonnull MetaData metaData) {
-        super(original.getIdentifier(), original.name());
+        super(original.getIdentifier(), original.type());
         this.payload = original.getPayload();
         this.metaData = metaData;
         this.payloadType = original.getPayloadType();
@@ -165,8 +165,8 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      *
      * @param payload the payload of this {@link Message}
      * @return the declared type of the given {@code payload} or {@link Void} if {@code payload == null}
-     * @deprecated Remove this method entirely once the {@link #name()} has taken over the {@link #getPayloadType()}
-     * entirely.
+     * @deprecated Remove this method entirely once the {@link Message#type()} has taken over the
+     * {@link #getPayloadType()} entirely.
      */
     @Deprecated
     @SuppressWarnings("unchecked")
@@ -178,10 +178,10 @@ public class GenericMessage<P> extends AbstractMessage<P> {
      * Construct an empty message.
      *
      * @return A message with {@code null} {@link Message#getPayload()}, no {@link MetaData}, and a
-     * {@link Message#name()} of {@code "empty"}.
+     * {@link Message#type()} of {@code "empty"}.
      */
     public static Message<Void> emptyMessage() {
-        return new GenericMessage<>(new QualifiedName("axon.framework", "empty", "5.0.0"), null);
+        return new GenericMessage<>(new MessageType("empty"), null);
     }
 
     @Override

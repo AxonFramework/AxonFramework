@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling;
 
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.junit.jupiter.api.*;
 
@@ -41,7 +41,7 @@ class TrackingTokenParameterResolverFactoryTest {
         ParameterResolver<?> resolver = testSubject.createInstance(method, method.getParameters(), 1);
 
         assertNotNull(resolver);
-        EventMessage<String> message = new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "test");
+        EventMessage<String> message = new GenericEventMessage<>(new MessageType("event"), "test");
         assertFalse(resolver.matches(message, null));
         GlobalSequenceTrackingToken trackingToken = new GlobalSequenceTrackingToken(1L);
         GenericTrackedEventMessage<String> trackedEventMessage = new GenericTrackedEventMessage<>(trackingToken,

@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SimpleEntryTest extends ContextTestSuite<SimpleEntry<?>> {
 
     private static final Message<Object> TEST_MESSAGE =
-            new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "some-payload");
+            new GenericMessage<>(new MessageType("message"), "some-payload");
 
     @Override
     public SimpleEntry<Message<?>> testSubject() {

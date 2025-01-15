@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,12 @@ import jakarta.annotation.Nullable;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.util.Optional;
-
-import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 
 /**
  * Interface describing a handler for specific messages targeting entities of a specific type.
@@ -67,7 +66,7 @@ public interface MessageHandlingMember<T> {
      * @param processingContext
      * @return {@code true} if the handler is capable of handling the message, {@code false} otherwise
      */
-    // TODO - ProcessingContext should eventually become non-null when canHandle for event handlers is based on fully-qualified message name only
+    // TODO - ProcessingContext should eventually become non-null when canHandle for event handlers is based on fully-qualified message qualifiedName only
     boolean canHandle(@Nonnull Message<?> message, @Nullable ProcessingContext processingContext);
 
     /**
@@ -116,7 +115,7 @@ public interface MessageHandlingMember<T> {
         try {
             // TODO: 24-11-2023 proper impl
             Object result = handleSync(message, target);
-            return MessageStream.just(new GenericMessage<>(fromClassName(result.getClass()), result));
+            return MessageStream.just(new GenericMessage<>(new MessageType(result.getClass()), result));
         } catch (Exception e) {
             return MessageStream.failed(e);
         }

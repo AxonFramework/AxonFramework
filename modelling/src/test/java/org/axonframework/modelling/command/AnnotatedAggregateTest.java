@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.*;
 
 public class AnnotatedAggregateTest {
 
-    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
+    private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");
 
     private final String ID = "id";
     private Repository<AggregateRoot> repository;
@@ -64,7 +64,7 @@ public class AnnotatedAggregateTest {
     @Test
     void applyingMultipleEventsInAndThenPublishesWithRightState() {
         Command testPayload = new Command(ID, 2);
-        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, testPayload);
+        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, testPayload);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(testCommand);
 
         Aggregate<AggregateRoot> aggregate =
@@ -86,7 +86,7 @@ public class AnnotatedAggregateTest {
     @Test
     void applyingEventInHandlerPublishesInRightOrder() {
         Command testPayload = new Command(ID, 0);
-        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, testPayload);
+        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, testPayload);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(testCommand);
 
         Aggregate<AggregateRoot> aggregate =
@@ -109,7 +109,7 @@ public class AnnotatedAggregateTest {
     @Test
     void lastSequenceReturnsNullIfNoEventsHaveBeenPublishedYet() {
         final Command testPayload = new Command(ID, 0);
-        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, testPayload);
+        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, testPayload);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(testCommand);
 
         AnnotatedAggregate<AggregateRoot> testSubject =
@@ -123,7 +123,7 @@ public class AnnotatedAggregateTest {
     @ValueSource(booleans = {false, true})
     void conditionalApplyingEventInHandlerPublishesInRightOrder(boolean applyConditional) {
         Command_2 testPayload = new Command_2(ID, 0, applyConditional);
-        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, testPayload);
+        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, testPayload);
         DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(testCommand);
 
         Aggregate<AggregateRoot> aggregate =

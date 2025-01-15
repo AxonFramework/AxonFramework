@@ -36,7 +36,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.json.JacksonSerializer;
@@ -170,13 +170,13 @@ class AxonServerEventStoreTest {
         });
         testSubject.publish(
                 new GenericDomainEventMessage<>(
-                        AGGREGATE_TYPE, AGGREGATE_ID, 0, new QualifiedName("test", "event", "0.0.1"), "Test1"
+                        AGGREGATE_TYPE, AGGREGATE_ID, 0, new MessageType("event"), "Test1"
                 ),
                 new GenericDomainEventMessage<>(
-                        AGGREGATE_TYPE, AGGREGATE_ID, 1, new QualifiedName("test", "event", "0.0.1"), "Test2"
+                        AGGREGATE_TYPE, AGGREGATE_ID, 1, new MessageType("event"), "Test2"
                 ),
                 new GenericDomainEventMessage<>(
-                        AGGREGATE_TYPE, AGGREGATE_ID, 2, new QualifiedName("test", "event", "0.0.1"), "Test3"
+                        AGGREGATE_TYPE, AGGREGATE_ID, 2, new MessageType("event"), "Test3"
                 )
         );
 
@@ -200,17 +200,17 @@ class AxonServerEventStoreTest {
         });
         testSubject.publish(
                 new GenericDomainEventMessage<>(
-                        AGGREGATE_TYPE, AGGREGATE_ID, 0, new QualifiedName("test", "event", "0.0.1"), "Test1"
+                        AGGREGATE_TYPE, AGGREGATE_ID, 0, new MessageType("event"), "Test1"
                 ),
                 new GenericDomainEventMessage<>(
-                        AGGREGATE_TYPE, AGGREGATE_ID, 1, new QualifiedName("test", "event", "0.0.1"), "Test2"
+                        AGGREGATE_TYPE, AGGREGATE_ID, 1, new MessageType("event"), "Test2"
                 ),
                 new GenericDomainEventMessage<>(
-                        AGGREGATE_TYPE, AGGREGATE_ID, 2, new QualifiedName("test", "event", "0.0.1"), "Test3"
+                        AGGREGATE_TYPE, AGGREGATE_ID, 2, new MessageType("event"), "Test3"
                 )
         );
         DomainEventMessage<String> snapshotEvent = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 1, new QualifiedName("test", "snapshot", "0.0.1"), "Snapshot1"
+                AGGREGATE_TYPE, AGGREGATE_ID, 1, new MessageType("snapshot"), "Snapshot1"
         );
         testSubject.storeSnapshot(snapshotEvent);
 
@@ -256,13 +256,13 @@ class AxonServerEventStoreTest {
         when(upcasterChain.upcast(any())).thenAnswer(i -> upcaster.upcast(i.getArgument(0)));
         testSubject.publish(
                 new GenericDomainEventMessage<>(
-                        AGGREGATE_TYPE, AGGREGATE_ID, 0, new QualifiedName("test", "event", "0.0.1"), "Test1"
+                        AGGREGATE_TYPE, AGGREGATE_ID, 0, new MessageType("event"), "Test1"
                 ),
                 new GenericDomainEventMessage<>(
-                        AGGREGATE_TYPE, AGGREGATE_ID, 1, new QualifiedName("test", "event", "0.0.1"), "Test2"
+                        AGGREGATE_TYPE, AGGREGATE_ID, 1, new MessageType("event"), "Test2"
                 ),
                 new GenericDomainEventMessage<>(
-                        AGGREGATE_TYPE, AGGREGATE_ID, 2, new QualifiedName("test", "event", "0.0.1"), "Test3"
+                        AGGREGATE_TYPE, AGGREGATE_ID, 2, new MessageType("event"), "Test3"
                 )
         );
 
@@ -287,7 +287,7 @@ class AxonServerEventStoreTest {
     @Test
     void usingLocalEventStoreOnOpeningStream() {
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 0, new QualifiedName("test", "event", "0.0.1"), "Test1"
+                AGGREGATE_TYPE, AGGREGATE_ID, 0, new MessageType("event"), "Test1"
         );
         testSubject.publish(testEvent);
         testSubject.openStream(null);
@@ -298,7 +298,7 @@ class AxonServerEventStoreTest {
     @Test
     void usingLocalEventStoreOnQueryingEvents() {
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 0, new QualifiedName("test", "event", "0.0.1"), "Test1"
+                AGGREGATE_TYPE, AGGREGATE_ID, 0, new MessageType("event"), "Test1"
         );
         testSubject.publish(testEvent);
         testSubject.query("", true);
@@ -311,17 +311,17 @@ class AxonServerEventStoreTest {
     void readEventsReturnsSnapshotsAndEventsWithMetaData() {
         Map<String, String> testMetaData = Collections.singletonMap("key", "value");
         DomainEventMessage<String> testSnapshot = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 1, new QualifiedName("test", "snapshot", "0.0.1"),
+                AGGREGATE_TYPE, AGGREGATE_ID, 1, new MessageType("snapshot"),
                 "Snapshot1", testMetaData
         );
         DomainEventMessage<String> testEventOne = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 0, new QualifiedName("test", "event", "0.0.1"), "Test1", testMetaData
+                AGGREGATE_TYPE, AGGREGATE_ID, 0, new MessageType("event"), "Test1", testMetaData
         );
         DomainEventMessage<String> testEventTwo = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 1, new QualifiedName("test", "event", "0.0.1"), "Test2", testMetaData
+                AGGREGATE_TYPE, AGGREGATE_ID, 1, new MessageType("event"), "Test2", testMetaData
         );
         DomainEventMessage<String> testEventThree = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 2, new QualifiedName("test", "event", "0.0.1"), "Test3", testMetaData
+                AGGREGATE_TYPE, AGGREGATE_ID, 2, new MessageType("event"), "Test3", testMetaData
         );
 
         testSubject.storeSnapshot(testSnapshot);
@@ -355,17 +355,17 @@ class AxonServerEventStoreTest {
     void readEventsWithSequenceNumberIgnoresSnapshots() {
         Map<String, String> testMetaData = Collections.singletonMap("key", "value");
         DomainEventMessage<String> testSnapshot = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 1, new QualifiedName("test", "snapshot", "0.0.1"),
+                AGGREGATE_TYPE, AGGREGATE_ID, 1, new MessageType("snapshot"),
                 "Snapshot1", testMetaData
         );
         DomainEventMessage<String> testEventOne = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 0, new QualifiedName("test", "event", "0.0.1"), "Test1", testMetaData
+                AGGREGATE_TYPE, AGGREGATE_ID, 0, new MessageType("event"), "Test1", testMetaData
         );
         DomainEventMessage<String> testEventTwo = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 1, new QualifiedName("test", "event", "0.0.1"), "Test2", testMetaData
+                AGGREGATE_TYPE, AGGREGATE_ID, 1, new MessageType("event"), "Test2", testMetaData
         );
         DomainEventMessage<String> testEventThree = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 2, new QualifiedName("test", "event", "0.0.1"), "Test3", testMetaData
+                AGGREGATE_TYPE, AGGREGATE_ID, 2, new MessageType("event"), "Test3", testMetaData
         );
 
         testSubject.storeSnapshot(testSnapshot);
@@ -418,17 +418,17 @@ class AxonServerEventStoreTest {
     void readEventsWithMagicSequenceNumberAndSnapshotFilterSetIgnoresSnapshots() {
         Map<String, String> testMetaData = Collections.singletonMap("key", "value");
         DomainEventMessage<String> testSnapshot = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 1, new QualifiedName("test", "snapshot", "0.0.1"),
+                AGGREGATE_TYPE, AGGREGATE_ID, 1, new MessageType("snapshot"),
                 "Snapshot1", testMetaData
         );
         DomainEventMessage<String> testEventOne = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 0, new QualifiedName("test", "event", "0.0.1"), "Test1", testMetaData
+                AGGREGATE_TYPE, AGGREGATE_ID, 0, new MessageType("event"), "Test1", testMetaData
         );
         DomainEventMessage<String> testEventTow = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 1, new QualifiedName("test", "event", "0.0.1"), "Test2", testMetaData
+                AGGREGATE_TYPE, AGGREGATE_ID, 1, new MessageType("event"), "Test2", testMetaData
         );
         DomainEventMessage<String> testEventThree = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 2, new QualifiedName("test", "event", "0.0.1"), "Test3", testMetaData
+                AGGREGATE_TYPE, AGGREGATE_ID, 2, new MessageType("event"), "Test3", testMetaData
         );
 
         testSubject.storeSnapshot(testSnapshot);
@@ -478,17 +478,17 @@ class AxonServerEventStoreTest {
 
         Map<String, String> testMetaData = Collections.singletonMap("key", "value");
         DomainEventMessage<String> testSnapshot = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 1, new QualifiedName("test", "snapshot", "0.0.1"),
+                AGGREGATE_TYPE, AGGREGATE_ID, 1, new MessageType("snapshot"),
                 "Snapshot1", testMetaData
         );
         DomainEventMessage<String> testEventOne = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 0, new QualifiedName("test", "event", "0.0.1"), "Test1", testMetaData
+                AGGREGATE_TYPE, AGGREGATE_ID, 0, new MessageType("event"), "Test1", testMetaData
         );
         DomainEventMessage<String> testEventTwo = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 1, new QualifiedName("test", "event", "0.0.1"), "Test2", testMetaData
+                AGGREGATE_TYPE, AGGREGATE_ID, 1, new MessageType("event"), "Test2", testMetaData
         );
         DomainEventMessage<String> testEventThree = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 2, new QualifiedName("test", "event", "0.0.1"), "Test3", testMetaData
+                AGGREGATE_TYPE, AGGREGATE_ID, 2, new MessageType("event"), "Test3", testMetaData
         );
 
         testSubject.storeSnapshot(testSnapshot);
@@ -542,19 +542,19 @@ class AxonServerEventStoreTest {
         Map<String, Object> testMetaData = Collections.EMPTY_MAP;
 
         DomainEventMessage<String> testSnapshot = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 1, new QualifiedName("test", "snapshot", "0.0.1"),
+                AGGREGATE_TYPE, AGGREGATE_ID, 1, new MessageType("snapshot"),
                 "Snapshot1", testMetaData
         );
         DomainEventMessage<String> testEventOne = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 0, new QualifiedName("test", "event", "0.0.1"),
+                AGGREGATE_TYPE, AGGREGATE_ID, 0, new MessageType("event"),
                 testPayloadOne, testMetaData
         );
         DomainEventMessage<String> testEventTwo = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 1, new QualifiedName("test", "event", "0.0.1"),
+                AGGREGATE_TYPE, AGGREGATE_ID, 1, new MessageType("event"),
                 testPayloadTwo, testMetaData
         );
         DomainEventMessage<String> testEventThree = new GenericDomainEventMessage<>(
-                AGGREGATE_TYPE, AGGREGATE_ID, 2, new QualifiedName("test", "event", "0.0.1"),
+                AGGREGATE_TYPE, AGGREGATE_ID, 2, new MessageType("event"),
                 testPayloadThree, testMetaData
         );
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.apache.logging.slf4j.Log4jLogger;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
@@ -60,7 +60,7 @@ class LoggingInterceptorTest {
 
         interceptorChain = mock(InterceptorChain.class);
         unitOfWork = new DefaultUnitOfWork<>(
-                new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), new StubMessage())
+                new GenericMessage<>(new MessageType("message"), new StubMessage())
         );
     }
 
@@ -142,7 +142,7 @@ class LoggingInterceptorTest {
     void dispatchInterceptorLogging() {
         when(mockLogger.isInfoEnabled()).thenReturn(true);
 
-        testSubject.handle(new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), new StubMessage()));
+        testSubject.handle(new GenericMessage<>(new MessageType("message"), new StubMessage()));
 
         verify(mockLogger).logIfEnabled(anyString(), eq(Level.INFO), isNull(), anyString(), contains("StubMessage"));
         verifyNoMoreInteractions(mockLogger);

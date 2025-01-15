@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -55,7 +55,7 @@ class DistributedCommandBusTest {
 
     @BeforeEach
     void setUp() {
-        commandMessage = new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test");
+        commandMessage = new GenericCommandMessage<>(new MessageType("command"), "test");
         connector = new StubConnector();
         delegate = new SimpleCommandBus();
         testSubject = new DistributedCommandBus(delegate, connector);
@@ -81,7 +81,7 @@ class DistributedCommandBusTest {
 
     @Test
     void incomingCommandsAreDelegatedToSubscribedHandlers() {
-        GenericMessage<String> okMessage = new GenericMessage<>(new QualifiedName("test", "command", "0.0.1"), "OK");
+        GenericMessage<String> okMessage = new GenericMessage<>(new MessageType("command"), "OK");
         testSubject.subscribe(String.class.getName(), new MessageHandler<>() {
             @Override
             public Object handleSync(CommandMessage<?> message) {
@@ -102,7 +102,7 @@ class DistributedCommandBusTest {
 
     @Test
     void incomingCommandsAreRejectedForCancelledHandlerSubscription() {
-        GenericMessage<String> okMessage = new GenericMessage<>(new QualifiedName("test", "command", "0.0.1"), "OK");
+        GenericMessage<String> okMessage = new GenericMessage<>(new MessageType("command"), "OK");
         Registration registration = testSubject.subscribe(String.class.getName(),
                                                           new MessageHandler<>() {
                                                               @Override
