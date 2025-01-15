@@ -75,11 +75,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
      */
     protected abstract ESE buildStorageEngine() throws Exception;
 
-    protected abstract long lowestGlobalSequence();
-
-    private long sequenceOfEventNo(long eventNumber) {
-        return lowestGlobalSequence() + eventNumber;
-    }
+    protected abstract long sequenceOfEventNo(long eventNo);
 
     @Test
     void streamingFromStartReturnsSelectedMessages() {
@@ -106,10 +102,10 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                 testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(-1)));
 
         StepVerifier.create(result.asFlux())
-                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne.event(), 0))
-                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventTwo.event(), 1))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne.event(), 1))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventTwo.event(), 2))
                     .expectNextCount(2)
-                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 4))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 5))
                     .expectNextCount(2)
                     .thenCancel()
                     .verify();
@@ -133,11 +129,11 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                 AppendTransaction::commit).join();
 
         MessageStream<EventMessage<?>> result =
-                testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(1)));
+                testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(sequenceOfEventNo(2))));
 
         StepVerifier.create(result.asFlux())
                     // we've skipped the first two
-                    .expectNextCount(2).assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 4))
+                    .expectNextCount(2).assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 5))
                     .expectNextCount(2).thenCancel().verify();
         // todo: does expected position same for different implementations?
     }
@@ -372,13 +368,12 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         assertTrue(validConsistencyMarker(secondCommit.join(), OTHER_AGGREGATE_ID, 0));
     }
 
-    private void assertTrackedEntry(Entry<EventMessage<?>> actual, EventMessage<?> expected, long expectedEventNo) {
+    private void assertTrackedEntry(Entry<EventMessage<?>> actual, EventMessage<?> expected, long eventNumber) {
         Optional<TrackingToken> actualToken = TrackingToken.fromContext(actual);
         assertTrue(actualToken.isPresent());
         OptionalLong actualPosition = actualToken.get().position();
         assertTrue(actualPosition.isPresent());
-        var expectedPosition = sequenceOfEventNo(expectedEventNo);
-        assertEquals(expectedPosition, actualPosition.getAsLong());
+        assertEquals(sequenceOfEventNo(eventNumber), actualPosition.getAsLong());
         assertEvent(actual.message(), expected);
     }
 
