@@ -36,31 +36,18 @@ import java.time.Instant;
 class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSuite<LegacyJpaEventStorageEngine> {
 
     public static final Serializer TEST_SERIALIZER = TestSerializer.JACKSON.getSerializer();
-
     @Autowired
     private EntityManagerProvider entityManagerProvider;
 
     @Autowired
-    private PlatformTransactionManager platformTransactionManager;
-
+    @Qualifier("axonTransactionManager")
     private TransactionManager transactionManager;
 
     @BeforeEach
-    void setUp() throws Exception {
-        getTransactionManager();
-        setUpTestSuite();
-        clearEventStore();
-    }
-
-    private void clearEventStore() {
+    public void clearEventStore() {
         transactionManager.executeInTransaction(() -> entityManagerProvider.getEntityManager()
                                                                            .createQuery("DELETE FROM DomainEventEntry e")
                                                                            .executeUpdate());
-    }
-
-    private TransactionManager getTransactionManager() {
-        transactionManager = new SpringTransactionManager(platformTransactionManager);
-        return transactionManager;
     }
 
     @Override
