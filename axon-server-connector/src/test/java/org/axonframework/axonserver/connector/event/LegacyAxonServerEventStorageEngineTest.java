@@ -105,8 +105,8 @@ class LegacyAxonServerEventStorageEngineTest extends
     }
 
     @Override
-    protected long lowestGlobalSequence() {
-        return 0;
+    protected long sequenceOfEventNo(long eventNo) {
+        return eventNo - 1;
     }
 
     @Override
