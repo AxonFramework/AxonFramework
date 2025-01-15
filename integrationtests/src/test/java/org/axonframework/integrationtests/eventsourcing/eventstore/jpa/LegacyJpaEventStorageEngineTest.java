@@ -48,7 +48,8 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
                                                transactionManager,
                                                TEST_SERIALIZER,
                                                TEST_SERIALIZER,
-                                               config -> config.persistenceExceptionResolver(new JdbcSQLErrorCodesResolver()));
+                                               config -> config.persistenceExceptionResolver(new JdbcSQLErrorCodesResolver())
+                                                               .lowestGlobalSequence(1));
     }
 
     @Override
