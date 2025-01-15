@@ -16,7 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
@@ -59,5 +60,16 @@ class DefaultAppendConditionTest {
 
         assertEquals(testConsistencyMarker, result.consistencyMarker());
         assertEquals(testSubject.criteria(), result.criteria());
+    }
+
+    @Test
+    void orCriteriaAreCombinedWithExistingCriteria() {
+        ConsistencyMarker testConsistencyMarker = new GlobalIndexConsistencyMarker(5);
+
+        EventCriteria otherCriteria = EventCriteria.forAnyEventType().withAnyTags();
+        AppendCondition result = testSubject.withMarker(testConsistencyMarker).orCriteria(TEST_CRITERIA)
+                .orCriteria(otherCriteria);
+        assertTrue(result.criteria().contains(TEST_CRITERIA));
+        assertTrue(result.criteria().contains(otherCriteria));
     }
 }

@@ -17,7 +17,8 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
@@ -57,4 +58,15 @@ class DefaultStreamingConditionTest {
         assertEquals(Set.of(TEST_CRITERIA), testSubject.criteria());
     }
 
+    @Test
+    void withCriteriaCombinesGivenWithExistingCriteria() {
+        EventCriteria testCriteria = EventCriteria.forEventTypes("test-type").withTags(new Tag("other-key", "other-value"));
+
+        StreamingCondition result = testSubject.or(testCriteria);
+
+        assertEquals(TEST_POSITION, result.position());
+        assertTrue(result.matches("test-type", Set.of(new Tag("other-key", "other-value"))));
+        assertFalse(result.matches("random-type", Set.of(new Tag("other-key", "other-value"))));
+        assertTrue(result.matches("random-type", Set.of(new Tag("key", "value"))));
+    }
 }

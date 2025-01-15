@@ -61,8 +61,8 @@ public sealed interface EventCriteria permits AnyEvent, DefaultEventCriteria {
      * Create a builder for criteria that match events with any of the given {@code types}. Events with types not
      * matching any of the given types will not match against criteria built by the returned builder.
      *
-     * @param types The types of messages to build the criteria for
-     * @return a builder that allows criteria to be built for the given event types
+     * @param types The types of messages to build the criteria for.
+     * @return a builder that allows criteria to be built for the given event types.
      */
     static EventCriteria.Builder forEventTypes(@Nonnull String... types) {
         if (types.length == 0) {
@@ -73,7 +73,7 @@ public sealed interface EventCriteria permits AnyEvent, DefaultEventCriteria {
 
     /**
      * Create a builder for criteria that match events with any type.
-     * @return a builder that allows criteria to be built matching against any event type
+     * @return a builder that allows criteria to be built matching against any event type.
      */
     static EventCriteria.Builder forAnyEventType() {
         return EventCriteriaBuilder.NO_TYPES;
@@ -100,8 +100,8 @@ public sealed interface EventCriteria permits AnyEvent, DefaultEventCriteria {
      * Indicates whether the given {@code type} matches the types defined in this instance. If no types are defined, any
      * given {@code type} will be considered a match.
      *
-     * @param type The type to match against this criteria instance
-     * @return {@code true} if the type matches, otherwise {@code false}
+     * @param type The type to match against this criteria instance.
+     * @return {@code true} if the type matches, otherwise {@code false}.
      */
     default boolean matchingType(String type) {
         return types().isEmpty() || types().contains(type);
@@ -162,13 +162,13 @@ public sealed interface EventCriteria permits AnyEvent, DefaultEventCriteria {
      * <p/>
      * See {@link #matchingTags(Set)} for more details about how Tags are matched.
      *
-     * @param type The type to match against this criteria instance
-     * @param tags The tags to match against this criteria instance
-     * @return {@code true} if the type matches, otherwise {@code false}
+     * @param type The type to match against this criteria instance.
+     * @param tags The tags to match against this criteria instance.
+     * @return {@code true} if the type matches, otherwise {@code false}.
      * @see #matchingType(String)
      * @see #matchingTags(Set)
      */
-    default boolean matches(String type, Set<Tag> tags) {
+    default boolean matches(@Nonnull String type, @Nonnull Set<Tag> tags) {
         return matchingType(type) && matchingTags(tags);
     }
 
@@ -180,16 +180,16 @@ public sealed interface EventCriteria permits AnyEvent, DefaultEventCriteria {
         /**
          * Create a {@link EventCriteria} expecting events containing the given {@code tags}.
          *
-         * @param tags The tags that events must have to match
-         * @return a criteria object that matches against the given tags
+         * @param tags The tags that events must have to match.
+         * @return a criteria object that matches against the given tags.
          */
         EventCriteria withTags(@Nonnull Set<Tag> tags);
 
         /**
          * Create a {@link EventCriteria} expecting events containing the given {@code tags}.
          *
-         * @param tags The tags that events must have to match
-         * @return a criteria object that matches against the given tags
+         * @param tags The tags that events must have to match.
+         * @return a criteria object that matches against the given tags.
          */
         EventCriteria withTags(@Nonnull Tag... tags);
 
@@ -198,16 +198,16 @@ public sealed interface EventCriteria permits AnyEvent, DefaultEventCriteria {
          * values are used in pairs to construct a tag with the first parameter as key, and the second as value,
          * repeating until all parameters are used to create tags.
          *
-         * @param tagKeyValuePairs The tags that events must have to match
-         * @return a criteria object that matches against the given tags
-         * @throws IllegalArgumentException if an odd number tagKeyValuePairs parameters are provided
+         * @param tagKeyValuePairs The tags that events must have to match.
+         * @return a criteria object that matches against the given tags.
+         * @throws IllegalArgumentException if an odd number of parameters are provided.
          */
         EventCriteria withTags(@Nonnull String... tagKeyValuePairs);
 
         /**
          * Create a {@link EventCriteria} that doesn't require any specific tags on events to match.
          *
-         * @return a criteria object that matches against all events
+         * @return a criteria object that matches against all events.
          */
         EventCriteria withAnyTags();
     }

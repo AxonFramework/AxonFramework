@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
 import java.util.Set;
 
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
-class DefaultCriteriaTest {
+class DefaultEventCriteriaTest {
 
     @Test
     void throwsExceptionWhenConstructingWithNullTag() {

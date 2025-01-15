@@ -103,7 +103,7 @@ public sealed interface SourcingCondition extends EventsCondition permits Defaul
      * <p>
      * Any event that would have been sourced under either condition, will also be sourced under the combined condition.
      * If the conditions' start and end do not overlap or are not contingent, some event may be returned under the
-     * combined condition, that would not have been returned under either this ot the other individual conditions.
+     * combined condition that would not have been returned under either this or the other individual conditions.
      * <p>
      * Typically, the minimum value of both {@code start} values and the maximum value of both {@code end} values will
      * be part of the end result.

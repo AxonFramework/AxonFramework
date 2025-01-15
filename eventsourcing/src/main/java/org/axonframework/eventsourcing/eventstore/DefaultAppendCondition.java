@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 
 import java.util.Set;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Default implementation of the {@link AppendCondition}, using the given {@code consistencyMarker} and {@code criteria}
@@ -32,22 +32,23 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 5.0.0
  */
 record DefaultAppendCondition(
-        ConsistencyMarker consistencyMarker,
+        @Nonnull ConsistencyMarker consistencyMarker,
         @Nonnull Set<EventCriteria> criteria
 ) implements AppendCondition {
 
     DefaultAppendCondition {
-        assertNonNull(criteria, "The EventCriteria cannot be null");
+        requireNonNull(consistencyMarker, "The ConsistencyMarker cannot be null");
+        requireNonNull(criteria, "The EventCriteria cannot be null");
     }
 
     /**
-     * Creates an appendCondition with given {@code consistencyMarker} and a single {@code eventCriteria}
+     * Creates an appendCondition with given {@code consistencyMarker} and a single {@code eventCriteria}.
      *
-     * @param consistencyMarker The consistency marker for this append condition
-     * @param eventCriteria     The criteria for the append condition
+     * @param consistencyMarker The consistency marker for this append condition.
+     * @param eventCriteria     The criteria for the append condition.
      */
     public DefaultAppendCondition(@Nonnull ConsistencyMarker consistencyMarker, @Nonnull EventCriteria eventCriteria) {
-        this(consistencyMarker, Set.of(eventCriteria));
+        this(consistencyMarker, Set.of(requireNonNull(eventCriteria, "EventCriteria may not be null")));
     }
 
     @Override

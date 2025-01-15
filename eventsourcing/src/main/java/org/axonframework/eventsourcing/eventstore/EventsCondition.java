@@ -28,23 +28,23 @@ import java.util.Set;
 public sealed interface EventsCondition permits SourcingCondition, StreamingCondition, AppendCondition {
 
     /**
-     * The set of criteria against which the Sourced events must match.
+     * The set of criteria against which Events must match.
      *
-     * @return The {@link EventCriteria} used to retrieve an event sequence complying to its criteria.
+     * @return The {@link EventCriteria} used to match this condition against Events.
      */
     Set<EventCriteria> criteria();
 
     /**
-     * Indicates whether the criteria defined in condition matches against the given {@code type} and {@code tags}.
+     * Indicates whether the criteria defined in this condition matches against the given {@code type} and {@code tags}.
      * <p>
      * More specifically, this condition matches if any of the provided criteria match the given {@code type} and
      * {@code tags}, or if no criteria have been provided at all.
      * <p>
      * See {@link EventCriteria#matchingTags(Set)} for more details on matching tags.
      *
-     * @param type The type of the event to validate against
-     * @param tags The tags of an event message to match
-     * @return {@code true} if given type and tags match, otherwise {@code false}
+     * @param type The type of the event to validate against.
+     * @param tags The tags of an event message to match.
+     * @return {@code true} if given type and tags match, otherwise {@code false}.
      * @see EventCriteria#matchingTags(Set)
      */
     default boolean matches(String type, Set<Tag> tags) {

@@ -25,17 +25,12 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.QualifiedName;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.OptionalLong;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -264,7 +259,6 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         List<String> actual = new ArrayList<>();
 
         StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(1, 1, TEST_AGGREGATE_CRITERIA)).asFlux())
-                    //there is no predefined order between aggregates. We just expect 6 entries.
                     .thenConsumeWhile(e -> actual.add(e.map(this::convertPayload).message().getPayload()))
                     .verifyComplete();
 
@@ -292,7 +286,6 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
             throw new TestAbortedException("Multi-aggregate streams not supported", e);
         }
         StepVerifier.create(source.asFlux())
-                    //there is no predefined order between aggregates. We just expect 6 entries.
                     .thenConsumeWhile(e -> actual.add(e.map(this::convertPayload).message().getPayload()))
                     .verifyComplete();
         assertEquals(Set.of("event-2", "event-3", "event-4", "event-5"), actual);

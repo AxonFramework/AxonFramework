@@ -35,8 +35,8 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-record DefaultSourcingCondition(long start, long end, @Nonnull Set<EventCriteria> criteria
-) implements SourcingCondition {
+record DefaultSourcingCondition(long start, long end, @Nonnull Set<EventCriteria> criteria)
+        implements SourcingCondition {
 
     DefaultSourcingCondition {
         assertNonNull(criteria, "The EventCriteria cannot be null");
