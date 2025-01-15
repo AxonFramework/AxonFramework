@@ -30,6 +30,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 import java.time.Instant;
+import java.util.List;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = LegacyJpaEventStorageEngineTest.TestContext.class)
@@ -47,15 +48,53 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
 
     @BeforeEach
     void setUp() throws Exception {
-        getTransactionManager();
+        transactionManager = getTransactionManager();
         setUpTestSuite();
         clearEventStore();
     }
 
     private void clearEventStore() {
-        transactionManager.executeInTransaction(() -> entityManagerProvider.getEntityManager()
-                                                                           .createQuery("DELETE FROM DomainEventEntry e")
-                                                                           .executeUpdate());
+        transactionManager.executeInTransaction(() -> {
+            EntityManager entityManager = entityManagerProvider.getEntityManager();
+
+            // Get all tables except H2's internal tables
+            List<String> tableNames = entityManager.createNativeQuery(
+                                                           "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES " +
+                                                                   "WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_TYPE = 'TABLE'")
+                                                   .getResultList();
+
+            // Get all sequences
+            List<String> sequenceNames = entityManager.createNativeQuery(
+                                                              "SELECT SEQUENCE_NAME FROM INFORMATION_SCHEMA.SEQUENCES " +
+                                                                      "WHERE SEQUENCE_SCHEMA = 'PUBLIC'")
+                                                      .getResultList();
+
+            // Disable foreign keys for each table
+            for (String tableName : tableNames) {
+                entityManager.createNativeQuery("ALTER TABLE " + tableName + " DISABLE CONSTRAINT ALL")
+                             .executeUpdate();
+            }
+
+            // Truncate all tables
+            for (String tableName : tableNames) {
+                entityManager.createNativeQuery("TRUNCATE TABLE " + tableName).executeUpdate();
+            }
+
+            // Reset all sequences
+            for (String sequenceName : sequenceNames) {
+                entityManager.createNativeQuery("ALTER SEQUENCE " + sequenceName + " RESTART WITH 1")
+                             .executeUpdate();
+            }
+
+            // Re-enable foreign keys for each table
+            for (String tableName : tableNames) {
+                entityManager.createNativeQuery("ALTER TABLE " + tableName + " ENABLE CONSTRAINT ALL")
+                             .executeUpdate();
+            }
+
+
+            entityManager.flush();
+        });
     }
 
     private TransactionManager getTransactionManager() {
@@ -148,10 +187,10 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
             return jpaTransactionManager;
         }
 
-        @Bean("axonTransactionManager")
-        public TransactionManager axonTransactionManager(PlatformTransactionManager platformTransactionManager) {
-            return new SpringTransactionManager(platformTransactionManager);
-        }
+//        @Bean("axonTransactionManager")
+//        public TransactionManager axonTransactionManager(PlatformTransactionManager platformTransactionManager) {
+//            return new SpringTransactionManager(platformTransactionManager);
+//        }
 
         @Bean
         public PersistenceAnnotationBeanPostProcessor persistenceAnnotationBeanPostProcessor() {
