@@ -82,7 +82,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     private int gapTimeout;
     private int gapCleaningThreshold;
 
-    private final LegacyJpaOperations legacyJpaOperations;
+    private final LegacyJpaEventStorageOperations legacyJpaOperations;
 
     /**
      * Instantiate a {@link JpaEventStorageEngine} based on the fields contained in the {@link Builder}.
@@ -103,7 +103,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         this.gapTimeout = builder.gapTimeout;
         this.gapCleaningThreshold = builder.gapCleaningThreshold;
 
-        this.legacyJpaOperations = new LegacyJpaOperations(
+        this.legacyJpaOperations = new LegacyJpaEventStorageOperations(
                 transactionManager,
                 entityManagerProvider.getEntityManager(),
                 domainEventEntryEntityName(),

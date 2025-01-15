@@ -31,7 +31,7 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-record LegacyJpaOperations(
+record LegacyJpaEventStorageOperations(
         TransactionManager transactionManager,
         EntityManager entityManager,
         String domainEventEntryEntityName,
