@@ -105,6 +105,11 @@ class LegacyAxonServerEventStorageEngineTest extends
     }
 
     @Override
+    protected long lowestGlobalSequence() {
+        return 0;
+    }
+
+    @Override
     protected EventMessage<String> convertPayload(EventMessage<?> original) {
         return original.withConvertedPayload(p -> new String((byte[]) p, StandardCharsets.UTF_8));
     }
