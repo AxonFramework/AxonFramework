@@ -22,13 +22,15 @@ package org.axonframework.eventsourcing.eventstore;
  * {@link org.axonframework.eventsourcing.eventstore.ConsistencyMarker#INFINITY} consistency markers. The
  * implementation-specific comparisons are left to the subclasses.
  *
+ * @author Allard Buijze
+ * @since 5.0.0
  * @param <T> The type of ConsistencyMarker this implementation expects. It's typically the same as the implementing
  *            class.
  */
 public abstract class AbstractConsistencyMarker<T extends ConsistencyMarker> implements ConsistencyMarker {
 
     /**
-     * @throws ClassCastException when the given marker is not of the expected type
+     * @throws ClassCastException when the given marker is not of the expected type.
      */
     @Override
     public ConsistencyMarker lowerBound(ConsistencyMarker other) {
@@ -56,8 +58,8 @@ public abstract class AbstractConsistencyMarker<T extends ConsistencyMarker> imp
      * lowest of the given markers. This may either be on of {@code this} or the {@code other} marker, or any other that
      * represents their lower bound.
      *
-     * @param other The other marker
-     * @return a marker representing the lower bound of this and the other marker
+     * @param other The other marker.
+     * @return A marker representing the lower bound of this and the other marker.
      */
     protected abstract ConsistencyMarker doLowerBound(T other);
 
@@ -66,8 +68,8 @@ public abstract class AbstractConsistencyMarker<T extends ConsistencyMarker> imp
      * highest of the given markers. This may either be on of {@code this} or the {@code other} marker, or any other
      * that represents their upper bound.
      *
-     * @param other The other marker
-     * @return a marker representing the upper bound of this and the other marker
+     * @param other The other marker.
+     * @return A marker representing the upper bound of this and the other marker.
      */
     protected abstract ConsistencyMarker doUpperBound(T other);
 }

@@ -196,8 +196,8 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
     private void assertValidTags(List<TaggedEventMessage<?>> events) {
         for (TaggedEventMessage<?> taggedEvent : events) {
             if (taggedEvent.tags().size() > 1) {
-                throw new IllegalArgumentException(
-                        "An Event Storage engine in Aggregate mode does not support multiple tags per event");
+                throw new TooManyTagsOnEventMessageException(
+                        "An Event Storage engine in Aggregate mode does not support multiple tags per event", taggedEvent.event(), taggedEvent.tags());
             }
         }
     }

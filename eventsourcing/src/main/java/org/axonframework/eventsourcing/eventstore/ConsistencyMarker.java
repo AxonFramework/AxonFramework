@@ -25,6 +25,14 @@ import org.axonframework.messaging.Context;
  * Consistency Markers are used to identify the expected position new events should be inserted at, in order to avoid
  * conflicts. If the actual insert position doesn't match the position described in this ConsistencyMarker, there may
  * have been a concurrency conflict.
+ *
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ * @author Milan Savic
+ * @author Sara Pellegrini
+ * @author Michal Negacz
+ * @author Marco Amann
+ * @since 5.0.0
  */
 public interface ConsistencyMarker {
 

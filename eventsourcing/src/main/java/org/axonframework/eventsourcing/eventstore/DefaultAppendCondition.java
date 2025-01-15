@@ -26,8 +26,8 @@ import static java.util.Objects.requireNonNull;
  * Default implementation of the {@link AppendCondition}, using the given {@code consistencyMarker} and {@code criteria}
  * as output for the {@link #consistencyMarker()} and {@link #criteria()} operations respectively.
  *
- * @param consistencyMarker The {@code long} to return on the {@link #consistencyMarker()} operation.
- * @param criteria          The {@link EventCriteria} to return on the {@link #criteria()} operation.
+ * @param consistencyMarker The consistency marker obtained while sourcing events.
+ * @param criteria          The criteria defining which changes are considered conflicting
  * @author Steven van Beelen
  * @since 5.0.0
  */
