@@ -34,6 +34,7 @@ import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageNameResolver;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MetaData;
@@ -73,6 +74,7 @@ import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.*;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventhandling.EventUtils.upcastAndDeserializeTrackedEvents;
+import static org.axonframework.eventsourcing.EventStreamUtils.upcastAndDeserializeDomainEvents;
 
 
 /**
@@ -318,12 +320,12 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                                           condition.start(),
                                                           condition.end());
             // todo: upcasting etc!!
-//            var deserialized = upcastAndDeserializeTrackedEvents(events, eventSerializer, upcasterChain);
+            var deserialized = upcastAndDeserializeDomainEvents(events, eventSerializer, upcasterChain);
 
             MessageStream<EventMessage<?>> aggregateEvents = MessageStream.fromStream(
-                    events,
-                    this::convertToMessage,
-                    LegacyJpaEventStorageEngine::fillContextWith
+                    deserialized.asStream(),
+                    e -> e,
+                    e -> fillContextWith(e)
             );
             resultingStream = resultingStream.concatWith(aggregateEvents);
         }
@@ -334,32 +336,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                                                                      == null ? m2 : m1.upperBound(m2));
             return e.withResource(ConsistencyMarker.RESOURCE_KEY, newMarker);
         });
-    }
-
-    private EventMessage<?> convertToMessage(DomainEventData<?> event) {
-        var payload = event.getPayload();
-        var qualifiedName = payload.getType().getName().split("\\.(?=[^.]*$)");
-        var namespace = qualifiedName[0];
-        var localName = qualifiedName[1];
-        var revision = payload.getType().getRevision();
-        var name = new QualifiedName(namespace,
-                                     localName,
-                                     revision == null ? "0.0.1" : revision); // todo: resolve qualified name
-        var identifier = event.getEventIdentifier();
-        var data = payload.getData();
-        var metadata = event.getMetaData();
-        MetaData metaData = eventSerializer.convert(metadata.getData(), MetaData.class);
-        try { // todo: how to serialize / deserliazie the payload and metadata!?
-            return new GenericEventMessage<>(
-                    identifier,
-                    name,
-                    data,
-                    metaData,
-                    event.getTimestamp()
-            );
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private String domainEventEntryEntityName() {
@@ -378,7 +354,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         );
     }
 
-    private static Context fillContextWith(TrackedEventMessage<?> event) {
+    private static Context fillContextWith(Message<?> event) {
         var context = Context.empty();
         if (event instanceof DomainEventMessage<?> trackedDomainEventData
                 && trackedDomainEventData.getAggregateIdentifier() != null
@@ -394,25 +370,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
         if (event instanceof TrackedEventMessage<?> trackedEventMessage) {
             var token = trackedEventMessage.trackingToken();
-            context = Context.with(TrackingToken.RESOURCE_KEY, token); // is it OK?
-        }
-        return context; // todo: what to do with that?
-    }
-
-    private static Context fillContextWith(DomainEventData<?> event) {
-        var isAggregateEvent = event.getAggregateIdentifier() != null && event.getType() != null;
-        var context = Context.empty();
-        if (isAggregateEvent) {
-            context = context.withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
-                          .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getType())
-                          .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
-                                        event.getSequenceNumber())
-                          .withResource(ConsistencyMarker.RESOURCE_KEY,
-                                        new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
-                                                                            event.getSequenceNumber()));
-        }
-        if (event instanceof TrackedDomainEventData<?> trackedDomainEventData) {
-            var token = trackedDomainEventData.trackingToken();
             context = Context.with(TrackingToken.RESOURCE_KEY, token); // is it OK?
         }
         return context; // todo: what to do with that?
