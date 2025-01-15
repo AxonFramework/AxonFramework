@@ -24,6 +24,7 @@ import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -33,6 +34,7 @@ import java.time.Instant;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = LegacyJpaEventStorageEngineTest.TestContext.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD) // todo: find better way to clear db between tests
 class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSuite<LegacyJpaEventStorageEngine> {
 
     public static final Serializer TEST_SERIALIZER = TestSerializer.JACKSON.getSerializer();
@@ -42,13 +44,6 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
     @Autowired
     @Qualifier("axonTransactionManager")
     private TransactionManager transactionManager;
-
-    @BeforeEach
-    public void clearEventStore() {
-        transactionManager.executeInTransaction(() -> entityManagerProvider.getEntityManager()
-                                                                           .createQuery("DELETE FROM DomainEventEntry e")
-                                                                           .executeUpdate());
-    }
 
     @Override
     protected LegacyJpaEventStorageEngine buildStorageEngine() {
@@ -72,7 +67,6 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
 
     // todo: test batching
     // todo: test token with gaps
-    // todo: fix serialization issues
 
     @Configuration
     public static class TestContext {
