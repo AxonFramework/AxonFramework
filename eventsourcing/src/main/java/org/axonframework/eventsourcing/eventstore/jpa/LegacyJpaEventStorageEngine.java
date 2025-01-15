@@ -44,7 +44,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -58,7 +57,6 @@ import java.util.function.UnaryOperator;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.*;
-import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
 
 
 /**
@@ -89,7 +87,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     // AsyncEventStorageEngine specific
     private final PersistenceExceptionMapper persistenceExceptionMapper;
     private final MessageNameResolver messageNameResolver;
-    private final LegacyJpaOperations legacyJpaOperations;
+    private final LegacyJpaEventStorageOperations legacyJpaOperations;
     private Executor writeExecutor;
 
     public LegacyJpaEventStorageEngine(
@@ -124,10 +122,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         this.maxGapOffset = customization.maxGapOffset();
         this.gapTimeout = customization.gapTimeout();
 
-        this.legacyJpaOperations = new LegacyJpaOperations(transactionManager,
-                                                           entityManagerProvider.getEntityManager(),
-                                                           domainEventEntryEntityName(),
-                                                           SnapshotEventEntry.class.getSimpleName());
+        this.legacyJpaOperations = new LegacyJpaEventStorageOperations(transactionManager,
+                                                                       entityManagerProvider.getEntityManager(),
+                                                                       domainEventEntryEntityName(),
+                                                                       SnapshotEventEntry.class.getSimpleName());
         this.persistenceExceptionMapper = new PersistenceExceptionMapper(persistenceExceptionResolver);
     }
 
@@ -414,7 +412,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     @Override
     public void describeTo(@javax.annotation.Nonnull ComponentDescriptor descriptor) {
-        // todo: how to describe? what's the idea behind it?
+        // todo: describe all fields (configuration)!
     }
 
     private record EmptyAppendTransaction(AppendCondition appendCondition) implements AppendTransaction {
