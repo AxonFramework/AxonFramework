@@ -21,10 +21,10 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -43,11 +43,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<EventMessage<?>> {
 
-    private final ProcessingContext.ResourceKey<EventStoreTransaction> eventStoreTransactionKey =
-            ProcessingContext.ResourceKey.create("eventStoreTransaction");
-
     private final AsyncEventStorageEngine eventStorageEngine;
     private final String context;
+    private final ResourceKey<EventStoreTransaction> eventStoreTransactionKey;
 
     /**
      * Constructs a {@link SimpleEventStore} using the given {@code eventStorageEngine} to start
@@ -65,6 +63,7 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
                             @Nonnull String context) {
         this.eventStorageEngine = eventStorageEngine;
         this.context = context;
+        this.eventStoreTransactionKey = ResourceKey.withLabel("eventStoreTransaction");
     }
 
     @Override
@@ -123,13 +122,6 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
                                                     @Nonnull Instant at) {
         validate(context);
         return eventStorageEngine.tokenAt(at);
-    }
-
-    @Override
-    public CompletableFuture<TrackingToken> tokenSince(@Nonnull String context,
-                                                       @Nonnull Duration since) {
-        validate(context);
-        return eventStorageEngine.tokenSince(since);
     }
 
     @Override

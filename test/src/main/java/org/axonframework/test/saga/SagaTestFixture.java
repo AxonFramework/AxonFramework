@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,14 @@ import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
@@ -135,7 +137,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         registeredResources.add(commandBus);
         registeredResources.add(eventScheduler);
         registeredResources.add(deadlineManager);
-        registeredResources.add(new DefaultCommandGateway(commandBus));
+        registeredResources.add(new DefaultCommandGateway(commandBus, new ClassBasedMessageNameResolver()));
 
         fixtureExecutionResult = new FixtureExecutionResultImpl<>(
                 sagaStore,
@@ -296,11 +298,18 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         return this;
     }
 
-    @Override
-    public ContinuedGivenState givenAPublished(Object event, Map<String, ?> metaData) {
-        EventMessage<?> msg = GenericEventMessage.asEventMessage(event).andMetaData(metaData);
-        handleInSaga(timeCorrectedEventMessage(msg));
-        return this;
+    @SuppressWarnings("unchecked")
+    private static <P> EventMessage<P> asEventMessage(Object event) {
+        if (event instanceof EventMessage) {
+            return (EventMessage<P>) event;
+        } else if (event instanceof Message) {
+            Message<P> message = (Message<P>) event;
+            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
+        }
+        return new GenericEventMessage<>(
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
+                () -> GenericEventMessage.clock.instant()
+        );
     }
 
     @Override
@@ -341,9 +350,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
-    public ContinuedGivenState andThenAPublished(Object event, Map<String, ?> metaData) {
-        EventMessage<?> msg = GenericEventMessage.asEventMessage(event).andMetaData(metaData);
-
+    public ContinuedGivenState givenAPublished(Object event, Map<String, ?> metaData) {
+        EventMessage<?> msg = asEventMessage(event).andMetaData(metaData);
         handleInSaga(timeCorrectedEventMessage(msg));
         return this;
     }
@@ -362,8 +370,16 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     @Override
+    public ContinuedGivenState andThenAPublished(Object event, Map<String, ?> metaData) {
+        EventMessage<?> msg = asEventMessage(event).andMetaData(metaData);
+
+        handleInSaga(timeCorrectedEventMessage(msg));
+        return this;
+    }
+
+    @Override
     public FixtureExecutionResult whenPublishingA(Object event, Map<String, ?> metaData) {
-        EventMessage<?> msg = GenericEventMessage.asEventMessage(event).andMetaData(metaData);
+        EventMessage<?> msg = asEventMessage(event).andMetaData(metaData);
 
         fixtureExecutionResult.startRecording();
         handleInSaga(timeCorrectedEventMessage(msg));
@@ -371,8 +387,10 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     }
 
     private EventMessage<Object> timeCorrectedEventMessage(Object event) {
-        EventMessage<?> msg = GenericEventMessage.asEventMessage(event);
-        return new GenericEventMessage<>(msg.getIdentifier(), msg.getPayload(), msg.getMetaData(), currentTime());
+        EventMessage<?> msg = asEventMessage(event);
+        return new GenericEventMessage<>(
+                msg.getIdentifier(), msg.name(), msg.getPayload(), msg.getMetaData(), currentTime()
+        );
     }
 
     @Override
@@ -470,12 +488,12 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private class AggregateEventPublisherImpl implements GivenAggregateEventPublisher, WhenAggregateEventPublisher {
 
         private final String aggregateIdentifier;
-        private final String type;
+        private final String aggregateType;
         private int sequenceNumber = 0;
 
         public AggregateEventPublisherImpl(String aggregateIdentifier) {
             this.aggregateIdentifier = aggregateIdentifier;
-            this.type = "Stub_" + aggregateIdentifier;
+            this.aggregateType = "Stub_" + aggregateIdentifier;
         }
 
         @Override
@@ -492,7 +510,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
         @Override
         public FixtureExecutionResult publishes(Object event, Map<String, ?> metaData) {
-            EventMessage<?> eventMessage = GenericEventMessage.asEventMessage(event).andMetaData(metaData);
+            EventMessage<?> eventMessage = asEventMessage(event).andMetaData(metaData);
             publish(eventMessage);
 
             return fixtureExecutionResult;
@@ -500,12 +518,14 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
         private void publish(Object... events) {
             for (Object event : events) {
-                EventMessage<?> eventMessage = GenericEventMessage.asEventMessage(event);
-                handleInSaga(new GenericDomainEventMessage<>(type, aggregateIdentifier,
+                EventMessage<?> eventMessage = asEventMessage(event);
+                handleInSaga(new GenericDomainEventMessage<>(aggregateType,
+                                                             aggregateIdentifier,
                                                              sequenceNumber++,
+                                                             eventMessage.getIdentifier(),
+                                                             eventMessage.name(),
                                                              eventMessage.getPayload(),
                                                              eventMessage.getMetaData(),
-                                                             eventMessage.getIdentifier(),
                                                              currentTime()));
             }
         }
@@ -551,10 +571,13 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                              .findFirst()
                              .ifPresent(field -> {
                                  throw new AssertionError(format(
-                                         "Field %s.%s is injected with a resource,"
-                                                 + " but it doesn't have the 'transient' modifier."
-                                                 + "\nMark field as 'transient' or disable this check using:"
-                                                 + "\nfixture.withTransienceCheckDisabled()",
+                                         """
+                                                 Field %s.%s is injected with a resource,\
+                                                  but it doesn't have the 'transient' modifier.\
+                                                 
+                                                 Mark field as 'transient' or disable this check using:\
+                                                 
+                                                 fixture.withTransienceCheckDisabled()""",
                                          field.getDeclaringClass(),
                                          field.getName()
                                  ));

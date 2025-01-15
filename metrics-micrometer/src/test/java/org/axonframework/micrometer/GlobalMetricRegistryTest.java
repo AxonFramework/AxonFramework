@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,9 @@ import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.junit.jupiter.api.*;
@@ -35,7 +37,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import javax.annotation.Nonnull;
 
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GlobalMetricRegistryTest {
@@ -82,7 +83,7 @@ class GlobalMetricRegistryTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         ConsoleReporter.forRegistry(dropWizardRegistry).outputTo(new PrintStream(out)).build().report();
-        String output = new String(out.toByteArray());
+        String output = out.toString();
 
         assertTrue(output.contains("test1"));
         assertTrue(output.contains("test2"));
@@ -105,7 +106,7 @@ class GlobalMetricRegistryTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
         ConsoleReporter.forRegistry(dropWizardRegistry).outputTo(new PrintStream(out)).build().report();
-        String output = new String(out.toByteArray());
+        String output = out.toString();
 
         assertTrue(output.contains("test1"));
         assertTrue(output.contains("test2"));
@@ -119,23 +120,22 @@ class GlobalMetricRegistryTest {
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ConsoleReporter.forRegistry(dropWizardRegistry).outputTo(new PrintStream(out)).build().report();
-        String output = new String(out.toByteArray());
+        String output = out.toString();
 
         assertTrue(output.contains("eventBus"));
     }
 
     @Test
     void createEventBusMonitorWithTags() {
-        MessageMonitor<? super EventMessage<?>> monitor = subject.registerEventBus("eventBus", message -> Tags
-                .of(TagsUtil.PAYLOAD_TYPE_TAG,
-                    message.getPayloadType()
-                           .getSimpleName()));
+        MessageMonitor<? super EventMessage<?>> monitor = subject.registerEventBus(
+                "eventBus", message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
+        );
 
         monitor.onMessageIngested(asEventMessage("test")).reportSuccess();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ConsoleReporter.forRegistry(dropWizardRegistry).outputTo(new PrintStream(out)).build().report();
-        String output = new String(out.toByteArray());
+        String output = out.toString();
 
         assertTrue(output.contains("eventBus"));
     }
@@ -144,27 +144,28 @@ class GlobalMetricRegistryTest {
     void createCommandBusMonitor() {
         MessageMonitor<? super CommandMessage<?>> monitor = subject.registerCommandBus("commandBus");
 
-        monitor.onMessageIngested(new GenericCommandMessage<>("test")).reportSuccess();
+        monitor.onMessageIngested(new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test"))
+               .reportSuccess();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ConsoleReporter.forRegistry(dropWizardRegistry).outputTo(new PrintStream(out)).build().report();
-        String output = new String(out.toByteArray());
+        String output = out.toString();
 
         assertTrue(output.contains("commandBus"));
     }
 
     @Test
     void createCommandBusMonitorWithTags() {
-        MessageMonitor<? super CommandMessage<?>> monitor = subject.registerCommandBus("commandBus", message -> Tags
-                .of(TagsUtil.PAYLOAD_TYPE_TAG,
-                    message.getPayloadType()
-                           .getSimpleName()));
+        MessageMonitor<? super CommandMessage<?>> monitor = subject.registerCommandBus(
+                "commandBus", message -> Tags.of(TagsUtil.PAYLOAD_TYPE_TAG, message.getPayloadType().getSimpleName())
+        );
 
-        monitor.onMessageIngested(new GenericCommandMessage<>("test")).reportSuccess();
+        monitor.onMessageIngested(new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test"))
+               .reportSuccess();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ConsoleReporter.forRegistry(dropWizardRegistry).outputTo(new PrintStream(out)).build().report();
-        String output = new String(out.toByteArray());
+        String output = out.toString();
 
         assertTrue(output.contains("commandBus"));
     }
@@ -181,5 +182,9 @@ class GlobalMetricRegistryTest {
         MessageMonitor<? extends Message<?>> actual = subject.registerComponentWithDefaultTags(String.class, "test");
 
         assertSame(NoOpMessageMonitor.instance(), actual);
+    }
+
+    private static EventMessage<Object> asEventMessage(Object payload) {
+        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload);
     }
 }

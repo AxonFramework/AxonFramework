@@ -22,7 +22,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.MessageStream;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -30,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import static java.util.Arrays.asList;
 
 /**
- * Provides a mechanism to {@link #appendEvents(AppendCondition, EventMessage[]) append} as well as retrieve
+ * Provides a mechanism to {@link #appendEvents(AppendCondition, TaggedEventMessage[])}  append} as well as retrieve
  * {@link EventMessage events} from an underlying storage mechanism.
  * <p>
  * Retrieval can be done either through {@link #source(SourcingCondition) sourcing} or
@@ -49,18 +48,18 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      * Append one or more {@link EventMessage events} to the underlying storage solution.
      * <p>
      * Events will be appended in the order that they are offered in, validating the given {@code condition} before
-     * being stored. Note that all events should have a unique event identifier. When storing
-     * {@link IndexedEventMessage indexed events} the {@link IndexedEventMessage#indices() indices} will be stored as
-     * well.
+     * being stored. Note that all events should have a unique event identifier. {@link Tag Tags} paired with the
+     * {@code events} will be stored as well.
      * <p>
      * By default, this method creates a {@link List} of the offered events and then invokes
      * {@link #appendEvents(AppendCondition, List)}.
      *
-     * @param events One or more {@link EventMessage events} to append to the underlying storage solution.
-     * @return A {@link CompletableFuture} of {@link Long} returning the position of the last event to be appended.
+     * @param condition The condition describing the transactional requirements for the append transaction
+     * @param events    One or more {@link EventMessage events} to append to the underlying storage solution.
+     * @return A {@link AppendTransaction transaction} instance that can be committed or rolled back.
      */
-    default CompletableFuture<Long> appendEvents(@Nonnull AppendCondition condition,
-                                                 @Nonnull EventMessage<?>... events) {
+    default CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
+                                                              @Nonnull TaggedEventMessage<?>... events) {
         return appendEvents(condition, asList(events));
     }
 
@@ -68,16 +67,15 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      * Appends a {@link List} of {@link EventMessage events} to the underlying storage solution.
      * <p>
      * Events will be appended in the order that they are offered in, validating the given {@code condition} before
-     * being stored. Note that all events should have a unique event identifier. When storing
-     * {@link IndexedEventMessage indexed events} the {@link IndexedEventMessage#indices() indices} will be stored as
-     * well.
+     * being stored. Note that all events should have a unique event identifier. {@link Tag Tags} paired with the
+     * {@code events} will be stored as well.
      *
-     * @param events The {@link List} of {@link EventMessage events} to append to the underlying storage solution.
-     * @return A {@link CompletableFuture} of {@link Long} returning the position of the last event in the given
-     * {@link List} to be appended.
+     * @param condition The condition describing the transactional requirements for the append transaction
+     * @param events    The {@link List} of {@link EventMessage events} to append to the underlying storage solution.
+     * @return A {@link AppendTransaction transaction} instance that can be committed or rolled back.
      */
-    CompletableFuture<Long> appendEvents(@Nonnull AppendCondition condition,
-                                         @Nonnull List<? extends EventMessage<?>> events);
+    CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
+                                                      @Nonnull List<TaggedEventMessage<?>> events);
 
     /**
      * Creates a <b>finite</b> {@link MessageStream} of {@link EventMessage events} matching the given
@@ -142,16 +140,23 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      */
     CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at);
 
-
     /**
-     * Creates a {@link TrackingToken} tracking all {@link EventMessage events} since the given {@code since}.
+     * Interface representing the transaction of an appendEvents invocation.
      * <p>
-     * If there is an {@link EventMessage} exactly at that time (before given {@code since}), it will be tracked too.
-     *
-     * @param since The {@link Duration} determining how the {@link TrackingToken} should be created. The returned token
-     *              points at very first event before this {@code Duration}.
-     * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at a position before the given
-     * {@code duration}.
+     * Events may only be visible to consumers after the invocation of {@link #commit()}.
      */
-    CompletableFuture<TrackingToken> tokenSince(@Nonnull Duration since);
+    interface AppendTransaction {
+
+        /**
+         * Commit any underlying transactions to make the appended events visible to consumers.
+         *
+         * @return A {@code CompletableFuture} that completes with the new consistency marker for the transaction.
+         */
+        CompletableFuture<Long> commit();
+
+        /**
+         * Rolls back any events that have been appended, permanently making them unavailable for consumers.
+         */
+        void rollback();
+    }
 }

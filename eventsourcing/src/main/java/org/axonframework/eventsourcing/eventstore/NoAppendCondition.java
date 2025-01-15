@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 
 /**
- * An {@link AppendCondition} implementation that has {@link EventCriteria#noCriteria() no criteria}.
+ * An {@link AppendCondition} implementation that has {@link EventCriteria#anyEvent() no criteria}.
  * <p>
  * Only use this {@code AppendCondition} when appending events that <em>do not</em> partake in the consistency boundary
  * of any model(s).
@@ -40,12 +40,12 @@ final class NoAppendCondition implements AppendCondition {
 
     @Override
     public long consistencyMarker() {
-        return -1;
+        return Long.MAX_VALUE;
     }
 
     @Override
     public EventCriteria criteria() {
-        return EventCriteria.noCriteria();
+        return EventCriteria.anyEvent();
     }
 
     @Override

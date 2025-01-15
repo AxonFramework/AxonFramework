@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package org.axonframework.integrationtests.eventhandling;
 import org.axonframework.common.stream.BlockingStream;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.MultiSourceTrackingToken;
@@ -29,6 +29,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.junit.jupiter.api.*;
 
@@ -71,7 +72,7 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void simplePublishAndConsume() throws InterruptedException {
-        EventMessage<?> publishedEvent = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> publishedEvent = EventTestUtils.asEventMessage("Event1");
 
         eventStoreA.publish(publishedEvent);
 
@@ -106,7 +107,9 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void simplePublishAndConsumeDomainEventMessage() throws InterruptedException {
-        EventMessage<?> publishedEvent = new GenericDomainEventMessage<>("Aggregate", "id", 0, "Event1");
+        EventMessage<?> publishedEvent = new GenericDomainEventMessage<>(
+                "Aggregate", "id", 0, new QualifiedName("test", "event", "0.0.1"), "Event1"
+        );
 
         eventStoreA.publish(publishedEvent);
         BlockingStream<TrackedEventMessage<?>> singleEventStream =
@@ -124,7 +127,7 @@ class MultiStreamableMessageSourceTest {
     @SuppressWarnings("resource")
     @Test
     void peekingLastMessageKeepsItAvailable() throws InterruptedException {
-        EventMessage<?> publishedEvent1 = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> publishedEvent1 = EventTestUtils.asEventMessage("Event1");
 
 
         eventStoreA.publish(publishedEvent1);
@@ -143,7 +146,7 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void openStreamWithNullTokenReturnsFirstEvent() throws InterruptedException {
-        EventMessage<Object> message = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<Object> message = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(message);
 
         BlockingStream<TrackedEventMessage<?>> actual = testSubject.openStream(null);
@@ -173,7 +176,7 @@ class MultiStreamableMessageSourceTest {
         BlockingStream<TrackedEventMessage<?>> singleEventStream =
                 testSubject.openStream(testSubject.createTokenAt(Instant.now()));
 
-        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event1");
         eventStoreB.publish(pubToStreamB);
 
         long beforePollTime = System.currentTimeMillis();
@@ -187,12 +190,12 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void multiPublishAndConsume() throws InterruptedException {
-        EventMessage<?> pubToStreamA = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
 
         Thread.sleep(20);
 
-        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event2");
+        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
 
         BlockingStream<TrackedEventMessage<?>> singleEventStream =
@@ -210,7 +213,7 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void peek() throws InterruptedException {
-        EventMessage<?> publishedEvent = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> publishedEvent = EventTestUtils.asEventMessage("Event1");
 
         eventStoreA.publish(publishedEvent);
 
@@ -228,12 +231,12 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void peekWithMultipleStreams() throws InterruptedException {
-        EventMessage<?> pubToStreamA = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
 
         Thread.sleep(20);
 
-        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event2");
+        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
 
         BlockingStream<TrackedEventMessage<?>> singleEventStream =
@@ -275,10 +278,10 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void createTailToken() {
-        EventMessage<?> pubToStreamA = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
 
-        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event2");
+        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
 
         MultiSourceTrackingToken tailToken = testSubject.createTailToken();
@@ -293,10 +296,10 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void createHeadToken() {
-        EventMessage<?> pubToStreamA = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
 
-        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event2");
+        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
         eventStoreB.publish(pubToStreamB);
 
@@ -312,13 +315,13 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void createTokenAt() throws InterruptedException {
-        EventMessage<?> pubToStreamA = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
         eventStoreA.publish(pubToStreamA);
 
         Thread.sleep(20);
 
-        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event2");
+        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
 
         // Token should track events in eventStoreB and skip those in eventStoreA
@@ -333,13 +336,13 @@ class MultiStreamableMessageSourceTest {
 
     @Test
     void createTokenSince() throws InterruptedException {
-        EventMessage<?> pubToStreamA = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
         eventStoreA.publish(pubToStreamA);
 
         Thread.sleep(20);
 
-        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event2");
+        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event2");
         eventStoreB.publish(pubToStreamB);
 
         // Token should track events in eventStoreB and skip those in eventStoreA
@@ -370,17 +373,17 @@ class MultiStreamableMessageSourceTest {
                                             .trackedEventComparator(eventStoreAPriority)
                                             .build();
 
-        EventMessage<?> pubToStreamA = GenericEventMessage.asEventMessage("Event1");
+        EventMessage<?> pubToStreamA = EventTestUtils.asEventMessage("Event1");
         eventStoreA.publish(pubToStreamA);
         eventStoreA.publish(pubToStreamA);
         eventStoreA.publish(pubToStreamA);
 
-        EventMessage<?> pubToStreamC = GenericEventMessage.asEventMessage("Event2");
+        EventMessage<?> pubToStreamC = EventTestUtils.asEventMessage("Event2");
         eventStoreC.publish(pubToStreamC);
 
         Thread.sleep(5);
 
-        EventMessage<?> pubToStreamB = GenericEventMessage.asEventMessage("Event3");
+        EventMessage<?> pubToStreamB = EventTestUtils.asEventMessage("Event3");
         eventStoreB.publish(pubToStreamB);
 
         BlockingStream<TrackedEventMessage<?>> singleEventStream =
@@ -397,7 +400,7 @@ class MultiStreamableMessageSourceTest {
     @Test
     void skipMessagesWithPayloadTypeOfInvokesAllConfiguredStreams() {
         TrackedEventMessage<String> testEvent = new GenericTrackedEventMessage<>(
-                new GlobalSequenceTrackingToken(1), GenericEventMessage.asEventMessage("some-payload")
+                new GlobalSequenceTrackingToken(1), EventTestUtils.asEventMessage("some-payload")
         );
 
         StreamableMessageSource<TrackedEventMessage<?>> sourceOne = mock(StreamableMessageSource.class);

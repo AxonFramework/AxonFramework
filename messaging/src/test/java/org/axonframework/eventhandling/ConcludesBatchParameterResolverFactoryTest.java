@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.jupiter.api.*;
@@ -24,52 +25,54 @@ import org.junit.jupiter.api.*;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
 import static org.axonframework.utils.EventTestUtils.createEvents;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConcludesBatchParameterResolverFactoryTest {
 
-    private ConcludesBatchParameterResolverFactory subject = new ConcludesBatchParameterResolverFactory();
+    private final ConcludesBatchParameterResolverFactory testSubject = new ConcludesBatchParameterResolverFactory();
 
     @Test
     void createInstance() throws Exception {
         Method method = getClass().getDeclaredMethod("handle", String.class, Boolean.class);
-        assertSame(subject.getResolver(), subject.createInstance(method, method.getParameters(), 1));
+        assertSame(testSubject.getResolver(), testSubject.createInstance(method, method.getParameters(), 1));
         method = getClass().getDeclaredMethod("handlePrimitive", String.class, boolean.class);
-        assertSame(subject.getResolver(), subject.createInstance(method, method.getParameters(), 1));
+        assertSame(testSubject.getResolver(), testSubject.createInstance(method, method.getParameters(), 1));
     }
 
     @Test
     void onlyMatchesEventMessages() {
-        assertTrue(subject.matches(asEventMessage("testEvent"), null));
-        assertFalse(subject.matches(new GenericCommandMessage<>("testCommand"), null));
+        assertTrue(testSubject.matches(asEventMessage("testEvent"), null));
+        assertFalse(testSubject.matches(new GenericCommandMessage<>(
+                new QualifiedName("test", "command", "0.0.1"), "testCommand"), null
+        ));
     }
 
     @Test
     void resolvesToTrueWithoutUnitOfWork() {
-        assertTrue(subject.resolveParameterValue(asEventMessage("testEvent"), null));
+        assertTrue(testSubject.resolveParameterValue(asEventMessage("testEvent"), null));
     }
 
     @Test
     void resolvesToTrueWithRegularUnitOfWork() {
         EventMessage<?> event = asEventMessage("testEvent");
-        DefaultUnitOfWork.startAndGet(event).execute(() -> assertTrue(subject.resolveParameterValue(event,
-                                                                                                    null)));
+        DefaultUnitOfWork.startAndGet(event).execute(() -> assertTrue(testSubject.resolveParameterValue(event,
+                                                                                                        null)));
     }
 
     @Test
     void resolvesToFalseWithBatchingUnitOfWorkIfMessageIsNotLast() {
         List<? extends EventMessage<?>> events = createEvents(5);
-        new BatchingUnitOfWork<>(events).execute(() -> assertFalse(subject.resolveParameterValue(events.get(0),
-                                                                                                 null)));
+        new BatchingUnitOfWork<>(events).execute(() -> assertFalse(testSubject.resolveParameterValue(events.get(0),
+                                                                                                     null)));
     }
 
     @Test
     void resolvesToFalseWithBatchingUnitOfWorkIfMessageIsLast() {
         List<? extends EventMessage<?>> events = createEvents(5);
-        new BatchingUnitOfWork<>(events).execute(() -> assertTrue(subject.resolveParameterValue(events.get(4),
-                                                                                                null)));
+        new BatchingUnitOfWork<>(events).execute(() -> assertTrue(testSubject.resolveParameterValue(events.get(4),
+                                                                                                    null)));
     }
 
     @SuppressWarnings("unused")

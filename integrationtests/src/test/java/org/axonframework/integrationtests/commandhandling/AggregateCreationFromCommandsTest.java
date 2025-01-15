@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.integrationtests.commandhandling;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
@@ -24,6 +26,7 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
@@ -34,7 +37,6 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -66,9 +68,13 @@ class AggregateCreationFromCommandsTest {
     void createAlwaysCreationWithoutFactory() {
         createAndRegisterDefaultCommandHandler();
         String aggregateId = UUID.randomUUID().toString();
-        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(
-                asCommandMessage(new StubAggregateForCreation.CreateAlwaysCommand(aggregateId)), ProcessingContext.NONE
-        );
+        StubAggregateForCreation.CreateAlwaysCommand testPayload =
+                new StubAggregateForCreation.CreateAlwaysCommand(aggregateId);
+        CommandMessage<StubAggregateForCreation.CreateAlwaysCommand> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), testPayload);
+
+        CompletableFuture<? extends Message<?>> dispatchingResult =
+                commandBus.dispatch(testCommand, ProcessingContext.NONE);
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
@@ -82,10 +88,13 @@ class AggregateCreationFromCommandsTest {
     void createIfMissingCreationWithoutFactory() {
         createAndRegisterDefaultCommandHandler();
         String aggregateId = UUID.randomUUID().toString();
-        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(
-                asCommandMessage(new StubAggregateForCreation.CreateIfMissingCommand(aggregateId)),
-                ProcessingContext.NONE
-        );
+        StubAggregateForCreation.CreateIfMissingCommand testPayload =
+                new StubAggregateForCreation.CreateIfMissingCommand(aggregateId);
+        CommandMessage<StubAggregateForCreation.CreateIfMissingCommand> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), testPayload);
+
+        CompletableFuture<? extends Message<?>> dispatchingResult =
+                commandBus.dispatch(testCommand, ProcessingContext.NONE);
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
@@ -99,9 +108,13 @@ class AggregateCreationFromCommandsTest {
     void createAlwaysCreationWithFactory() {
         createAndRegisterCommandHandlerWithFactory();
         String aggregateId = UUID.randomUUID().toString();
-        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(
-                asCommandMessage(new StubAggregateForCreation.CreateAlwaysCommand(aggregateId)), ProcessingContext.NONE
-        );
+        StubAggregateForCreation.CreateAlwaysCommand testPayload =
+                new StubAggregateForCreation.CreateAlwaysCommand(aggregateId);
+        CommandMessage<StubAggregateForCreation.CreateAlwaysCommand> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), testPayload);
+
+        CompletableFuture<? extends Message<?>> dispatchingResult =
+                commandBus.dispatch(testCommand, ProcessingContext.NONE);
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()
@@ -116,10 +129,13 @@ class AggregateCreationFromCommandsTest {
     void createIfMissingCreationWithFactory() {
         createAndRegisterCommandHandlerWithFactory();
         String aggregateId = UUID.randomUUID().toString();
-        CompletableFuture<? extends Message<?>> dispatchingResult = commandBus.dispatch(
-                asCommandMessage(new StubAggregateForCreation.CreateIfMissingCommand(aggregateId)),
-                ProcessingContext.NONE
-        );
+        StubAggregateForCreation.CreateIfMissingCommand testPayload =
+                new StubAggregateForCreation.CreateIfMissingCommand(aggregateId);
+        GenericCommandMessage<StubAggregateForCreation.CreateIfMissingCommand> testCommand =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), testPayload);
+
+        CompletableFuture<? extends Message<?>> dispatchingResult =
+                commandBus.dispatch(testCommand, ProcessingContext.NONE);
         assertFalse(dispatchingResult.isCompletedExceptionally(), () -> dispatchingResult.exceptionNow().getMessage());
 
         List<? extends DomainEventMessage<?>> events = eventStore.readEvents(aggregateId).asStream()

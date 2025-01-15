@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -62,7 +63,9 @@ class AggregateTypeParameterResolverFactoryTest {
     void resolvesToAggregateTypeWhenAnnotatedForDomainEventMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(aggregateTypeMethod, aggregateTypeMethod.getParameters(), 0);
-        final DomainEventMessage<Object> eventMessage = new GenericDomainEventMessage("aggregateType", "id", 0L, "payload");
+        final DomainEventMessage<Object> eventMessage = new GenericDomainEventMessage<>(
+                "aggregateType", "id", 0L, new QualifiedName("test", "event", "0.0.1"), "payload"
+        );
         assertTrue(resolver.matches(eventMessage, null));
         assertEquals(eventMessage.getType(), resolver.resolveParameterValue(eventMessage, null));
     }
@@ -71,7 +74,7 @@ class AggregateTypeParameterResolverFactoryTest {
     void ignoredForNonDomainEventMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(aggregateTypeMethod, aggregateTypeMethod.getParameters(), 0);
-        EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage("test");
+        EventMessage<Object> eventMessage = EventTestUtils.asEventMessage("test");
         assertFalse(resolver.matches(eventMessage, null));
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,11 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.eventhandling.replay.GenericResetContext;
 import org.axonframework.eventhandling.replay.ResetContext;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.HandlerAttributes;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -30,6 +34,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Collection;
 import java.util.Optional;
+
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Adapter that turns any bean with {@link EventHandler} annotated methods into an {@link EventMessageHandler}.
@@ -43,6 +49,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     private final AnnotatedHandlerInspector<Object> inspector;
     private final Class<?> listenerType;
     private final Object annotatedEventListener;
+    private final MessageNameResolver messageNameResolver;
 
     /**
      * Wraps the given {@code annotatedEventListener}, allowing it to be subscribed to an Event Bus.
@@ -50,7 +57,23 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
      * @param annotatedEventListener the annotated event listener
      */
     public AnnotationEventHandlerAdapter(Object annotatedEventListener) {
-        this(annotatedEventListener, ClasspathParameterResolverFactory.forClass(annotatedEventListener.getClass()));
+        this(annotatedEventListener,
+             ClasspathParameterResolverFactory.forClass(annotatedEventListener.getClass()),
+             new ClassBasedMessageNameResolver());
+    }
+
+    /**
+     * Wraps the given {@code annotatedEventListener}, allowing it to be subscribed to an Event Bus.
+     *
+     * @param annotatedEventListener the annotated event listener
+     * @param messageNameResolver    The {@link MessageNameResolver} resolving the
+     *                               {@link org.axonframework.messaging.QualifiedName names} for
+     *                               {@link org.axonframework.eventhandling.EventMessage EventMessages}
+     */
+    public AnnotationEventHandlerAdapter(Object annotatedEventListener, MessageNameResolver messageNameResolver) {
+        this(annotatedEventListener,
+             ClasspathParameterResolverFactory.forClass(annotatedEventListener.getClass()),
+             messageNameResolver);
     }
 
     /**
@@ -59,12 +82,18 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
      *
      * @param annotatedEventListener   the annotated event listener
      * @param parameterResolverFactory the strategy for resolving handler method parameter values
+     * @param messageNameResolver      The {@link MessageNameResolver} resolving the
+     *                                 {@link org.axonframework.messaging.QualifiedName names} for
+     *                                 {@link org.axonframework.eventhandling.EventMessage EventMessages}
      */
     public AnnotationEventHandlerAdapter(Object annotatedEventListener,
-                                         ParameterResolverFactory parameterResolverFactory) {
+                                         ParameterResolverFactory parameterResolverFactory,
+                                         MessageNameResolver messageNameResolver) {
         this(annotatedEventListener,
              parameterResolverFactory,
-             ClasspathHandlerDefinition.forClass(annotatedEventListener.getClass()));
+             ClasspathHandlerDefinition.forClass(annotatedEventListener.getClass()),
+             messageNameResolver
+        );
     }
 
     /**
@@ -75,15 +104,21 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
      * @param annotatedEventListener   the annotated event listener
      * @param parameterResolverFactory the strategy for resolving handler method parameter values
      * @param handlerDefinition        the handler definition used to create concrete handlers
+     * @param messageNameResolver      The {@link MessageNameResolver} resolving the
+     *                                 {@link org.axonframework.messaging.QualifiedName names} for
+     *                                 {@link org.axonframework.eventhandling.EventMessage EventMessages}
      */
     public AnnotationEventHandlerAdapter(Object annotatedEventListener,
                                          ParameterResolverFactory parameterResolverFactory,
-                                         HandlerDefinition handlerDefinition) {
+                                         HandlerDefinition handlerDefinition,
+                                         MessageNameResolver messageNameResolver) {
+        assertNonNull(messageNameResolver, "The Message Name Resolver may not be null");
         this.annotatedEventListener = annotatedEventListener;
         this.listenerType = annotatedEventListener.getClass();
         this.inspector = AnnotatedHandlerInspector.inspectType(annotatedEventListener.getClass(),
                                                                parameterResolverFactory,
                                                                handlerDefinition);
+        this.messageNameResolver = messageNameResolver;
     }
 
     private static boolean supportsReplay(MessageHandlingMember<? super Object> h) {
@@ -129,7 +164,7 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
     @Override
     public <R> void prepareReset(R resetContext, ProcessingContext processingContext) {
         try {
-            ResetContext<?> resetMessage = GenericResetContext.asResetContext(resetContext);
+            ResetContext<?> resetMessage = asResetContext(resetContext);
             inspector.getHandlers(listenerType)
                      .filter(h -> h.canHandle(resetMessage, processingContext))
                      .findFirst()
@@ -141,6 +176,30 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
         } catch (Exception e) {
             throw new ResetNotSupportedException("An Error occurred while notifying handlers of the reset", e);
         }
+    }
+
+    /**
+     * Returns the given {@code messageOrPayload} as a {@link ResetContext}. If {@code messageOrPayload} already
+     * implements {@code ResetContext}, it is returned as-is. If it implements {@link Message}, {@code messageOrPayload}
+     * will be cast to {@code Message} and current time is used to create a {@code ResetContext}. Otherwise, the given
+     * {@code messageOrPayload} is wrapped into a {@link GenericResetContext} as its payload.
+     *
+     * @param messageOrPayload the payload to wrap or cast as {@link ResetContext}
+     * @param <T>              the type of payload contained in the message
+     * @return a {@link ResetContext} containing given {@code messageOrPayload} as payload, or the
+     * {@code messageOrPayload} if it already implements {@code ResetContext}.
+     */
+    @SuppressWarnings("unchecked")
+    private <T> ResetContext<T> asResetContext(Object messageOrPayload) {
+        if (messageOrPayload instanceof ResetContext) {
+            return (ResetContext<T>) messageOrPayload;
+        } else if (messageOrPayload instanceof Message) {
+            return new GenericResetContext<>((Message<T>) messageOrPayload);
+        }
+        QualifiedName name = messageOrPayload == null
+                ? new QualifiedName("axon.framework", "empty.reset.context", "5.0.0")
+                : messageNameResolver.resolve(messageOrPayload);
+        return new GenericResetContext<>(name, (T) messageOrPayload);
     }
 
     /**

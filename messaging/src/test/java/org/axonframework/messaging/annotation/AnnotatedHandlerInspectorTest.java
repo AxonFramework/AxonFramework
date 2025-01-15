@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,22 +22,27 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.utils.MockException;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.internal.util.collections.Sets;
+import org.junit.jupiter.api.*;
+import org.mockito.internal.util.collections.*;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
+import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -66,9 +71,15 @@ class AnnotatedHandlerInspectorTest {
     // TODO This local static function should be replaced with a dedicated interface that converts types.
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
     private static MessageStream<?> returnTypeConverter(Object result) {
-        return result instanceof CompletableFuture<?>
-                ? MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage))
-                : MessageStream.just(GenericMessage.asMessage(result));
+        if (result instanceof CompletableFuture<?> future) {
+            return MessageStream.fromFuture(future.thenApply(
+                    r -> new GenericMessage<>(fromClassName(r.getClass()), r)
+            ));
+        }
+        QualifiedName type = result != null
+                ? fromClassName(result.getClass())
+                : new QualifiedName("axon.framework", "empty.result", "0.0.1");
+        return MessageStream.just(new GenericMessage<>(type, result));
     }
 
     @Test

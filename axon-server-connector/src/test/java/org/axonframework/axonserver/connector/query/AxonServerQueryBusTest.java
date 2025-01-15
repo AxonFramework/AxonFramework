@@ -44,6 +44,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.InstanceResponseType;
 import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -193,7 +194,9 @@ class AxonServerQueryBusTest {
     @Test
     void query() throws Exception {
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(stubResponse("<string>test</string>")));
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "Hello, World", instanceOf(String.class)
+        );
 
         assertEquals("test", testSubject.query(testQuery).get().getPayload());
 
@@ -207,12 +210,13 @@ class AxonServerQueryBusTest {
     class LocalSegmentShortCutEnabled {
 
         private Registration registration;
-        private final QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World",
-                                                                                         TEST_QUERY,
-                                                                                         instanceOf(String.class));
+        private final QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), TEST_QUERY, "Hello, World", instanceOf(String.class)
+        );
 
-        private final StreamingQueryMessage<String, String> testStreamingQuery =
-                new GenericStreamingQueryMessage<>("Hello, World", TEST_QUERY, String.class);
+        private final StreamingQueryMessage<String, String> testStreamingQuery = new GenericStreamingQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), TEST_QUERY, "Hello, World", String.class
+        );
 
         @BeforeEach
         void setUp() {
@@ -237,8 +241,9 @@ class AxonServerQueryBusTest {
 
         @Test
         void queryWhenLocalHandlerIsPresent() {
-            when(localSegment.query(testQuery))
-                    .thenReturn(CompletableFuture.completedFuture(new GenericQueryResponseMessage<>("ok")));
+            when(localSegment.query(testQuery)).thenReturn(CompletableFuture.completedFuture(
+                    new GenericQueryResponseMessage<>(new QualifiedName("test", "query", "0.0.1"), "ok")
+            ));
 
             testSubject.query(testQuery);
 
@@ -257,8 +262,9 @@ class AxonServerQueryBusTest {
 
         @Test
         void streamingQueryWhenLocalHandlerIsPresent() {
-            when(localSegment.streamingQuery(testStreamingQuery))
-                    .thenReturn(Flux.just(new GenericQueryResponseMessage<>("ok")));
+            when(localSegment.streamingQuery(testStreamingQuery)).thenReturn(Flux.just(
+                    new GenericQueryResponseMessage<>(new QualifiedName("test", "query", "0.0.1"), "ok")
+            ));
 
             StepVerifier.create(Flux.from(testSubject.streamingQuery(testStreamingQuery))
                                     .map(Message::getPayload))
@@ -284,7 +290,9 @@ class AxonServerQueryBusTest {
         StubResultStream t = new StubResultStream(new RuntimeException("Faking problems"));
         //noinspection unchecked
         when(mockQueryChannel.query(any())).thenReturn(t);
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "Hello, World", instanceOf(String.class)
+        );
 
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
         try {
@@ -305,7 +313,9 @@ class AxonServerQueryBusTest {
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(
                 stubErrorResponse(ErrorCode.QUERY_EXECUTION_ERROR.errorCode(), "Faking exception result")
         ));
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "Hello, World", instanceOf(String.class)
+        );
 
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
 
@@ -331,7 +341,9 @@ class AxonServerQueryBusTest {
                 stubErrorResponse(ErrorCode.QUERY_EXECUTION_NON_TRANSIENT_ERROR.errorCode(),
                                   "Faking non transient exception result")
         ));
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "Hello, World", instanceOf(String.class)
+        );
 
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
 
@@ -355,9 +367,12 @@ class AxonServerQueryBusTest {
 
     @Test
     void queryCloseConnectionOnCompletableFutureCancel() {
+        //noinspection unchecked
         ResultStream<QueryResponse> resultStream = mock(ResultStream.class);
         when(mockQueryChannel.query(any())).thenReturn(resultStream);
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "Hello, World", instanceOf(String.class)
+        );
         testSubject.query(testQuery).cancel(true);
         verify(resultStream).close();
     }
@@ -388,7 +403,9 @@ class AxonServerQueryBusTest {
 
     @Test
     void scatterGather() {
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "Hello, World", instanceOf(String.class)
+        );
 
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(stubResponse("<string>1</string>"),
                                                                               stubResponse("<string>2</string>"),
@@ -409,7 +426,9 @@ class AxonServerQueryBusTest {
 
     @Test
     void scatterGatherCloseStreamDoesNotThrowExceptionOnCloseMethod() {
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("Hello, World", instanceOf(String.class));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "Hello, World", instanceOf(String.class)
+        );
 
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(stubResponse("<string>1</string>"),
                                                                               stubResponse("<string>2</string>"),
@@ -424,8 +443,9 @@ class AxonServerQueryBusTest {
 
     @Test
     void streamingFluxQuery() {
-        StreamingQueryMessage<String, String> testQuery =
-                new GenericStreamingQueryMessage<>("Hello, World", String.class);
+        StreamingQueryMessage<String, String> testQuery = new GenericStreamingQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "Hello, World", String.class
+        );
 
         //noinspection rawtypes,unchecked
         StubResultStream stubResultStream = new StubResultStream(stubResponse("<string>1</string>"),
@@ -454,8 +474,9 @@ class AxonServerQueryBusTest {
 
     @Test
     void streamingQueryReturnsError() {
-        StreamingQueryMessage<String, String> testQuery =
-                new GenericStreamingQueryMessage<>("Hello, World", String.class);
+        StreamingQueryMessage<String, String> testQuery = new GenericStreamingQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "Hello, World", String.class
+        );
 
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(new RuntimeException("oops")));
 
@@ -477,8 +498,9 @@ class AxonServerQueryBusTest {
 
     @Test
     void streamingQueryReturnsNoResults() {
-        StreamingQueryMessage<String, String> testQuery =
-                new GenericStreamingQueryMessage<>("Hello, World", String.class);
+        StreamingQueryMessage<String, String> testQuery = new GenericStreamingQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "Hello, World", String.class
+        );
 
         when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>());
 
@@ -494,8 +516,9 @@ class AxonServerQueryBusTest {
 
     @Test
     void queryForOptionalWillRequestInstanceOfFromRemoteDestination() {
-        QueryMessage<String, Optional<String>> testQuery =
-                new GenericQueryMessage<>("Hello, World", optionalInstanceOf(String.class));
+        QueryMessage<String, Optional<String>> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "Hello, World", optionalInstanceOf(String.class)
+        );
 
         Stream<QueryResponseMessage<Optional<String>>> actual =
                 testSubject.scatterGather(testQuery, 12, TimeUnit.SECONDS);
@@ -516,8 +539,11 @@ class AxonServerQueryBusTest {
             results.add(b.getPayload());
             return b;
         });
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "payload", new InstanceResponseType<>(String.class)
+        );
 
-        testSubject.query(new GenericQueryMessage<>("payload", new InstanceResponseType<>(String.class)));
+        testSubject.query(testQuery);
         assertEquals("payload", results.getFirst());
         assertEquals(1, results.size());
     }
@@ -539,7 +565,9 @@ class AxonServerQueryBusTest {
 
     @Test
     void afterShutdownDispatchingAnShutdownInProgressExceptionOnQueryInvocation() {
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("some-query", instanceOf(String.class));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "some-query", instanceOf(String.class)
+        );
 
         assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
 
@@ -551,8 +579,10 @@ class AxonServerQueryBusTest {
 
     @Test
     void shutdownTakesFinishedQueriesIntoAccount() {
-        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(QueryResponse.newBuilder().build()));
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("some-query", instanceOf(String.class));
+        when(mockQueryChannel.query(any())).thenReturn(new StubResultStream<>(stubResponse("some-payload")));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "some-query", instanceOf(String.class)
+        );
 
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
         result.join();
@@ -562,7 +592,9 @@ class AxonServerQueryBusTest {
 
     @Test
     void afterShutdownDispatchingAnShutdownInProgressExceptionOnScatterGatherInvocation() {
-        QueryMessage<String, String> testQuery = new GenericQueryMessage<>("some-query", instanceOf(String.class));
+        QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "some-query", instanceOf(String.class)
+        );
 
         assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
 
@@ -581,10 +613,14 @@ class AxonServerQueryBusTest {
                 .thenReturn(new SimpleSubscriptionQueryResult(
                         "<string>Hello world</string>", stubUpdate("Not a valid XML object")
                 ));
+        GenericSubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "test", "Say hi",
+                instanceOf(String.class), instanceOf(String.class)
+        );
+
         SubscriptionQueryResult<QueryResponseMessage<String>, SubscriptionQueryUpdateMessage<String>> queryResult =
-                testSubject.subscriptionQuery(new GenericSubscriptionQueryMessage<>(
-                        "Say hi", "test", instanceOf(String.class), instanceOf(String.class)
-                ));
+                testSubject.subscriptionQuery(testQuery);
+
         Mono<QueryResponseMessage<String>> initialResult = queryResult.initialResult();
         Flux<SubscriptionQueryUpdateMessage<String>> updates = queryResult.updates();
         queryResult.cancel();
@@ -603,10 +639,14 @@ class AxonServerQueryBusTest {
                 .thenReturn(new SimpleSubscriptionQueryResult(
                         "Not a valid XML object", stubUpdate("<string>Hello world</string>")
                 ));
+        GenericSubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "test", "Say hi",
+                instanceOf(String.class), instanceOf(String.class)
+        );
+
         SubscriptionQueryResult<QueryResponseMessage<String>, SubscriptionQueryUpdateMessage<String>> queryResult =
-                testSubject.subscriptionQuery(new GenericSubscriptionQueryMessage<>(
-                        "Say hi", "test", instanceOf(String.class), instanceOf(String.class)
-                ));
+                testSubject.subscriptionQuery(testQuery);
+
         Mono<QueryResponseMessage<String>> initialResult = queryResult.initialResult();
         Flux<SubscriptionQueryUpdateMessage<String>> updates = queryResult.updates();
         queryResult.cancel();
@@ -621,8 +661,10 @@ class AxonServerQueryBusTest {
 
     @Test
     void afterShutdownDispatchingAnShutdownInProgressExceptionOnSubscriptionQueryInvocation() {
-        SubscriptionQueryMessage<String, String, String> testSubscriptionQuery =
-                new GenericSubscriptionQueryMessage<>("some-query", instanceOf(String.class), instanceOf(String.class));
+        SubscriptionQueryMessage<String, String, String> testSubscriptionQuery = new GenericSubscriptionQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "some-query",
+                instanceOf(String.class), instanceOf(String.class)
+        );
 
         assertDoesNotThrow(() -> testSubject.shutdownDispatching().get(5, TimeUnit.SECONDS));
 
@@ -667,15 +709,16 @@ class AxonServerQueryBusTest {
             QueryMessage<?, ?> message = i.getArgument(0);
             actual.add((long) message.getMetaData().get("index"));
             finishProcessingGate.countDown();
-            return CompletableFuture.completedFuture(new GenericQueryResponseMessage<>("ok"));
+            return CompletableFuture.completedFuture(
+                    new GenericQueryResponseMessage<>(new QualifiedName("test", "query", "0.0.1"), "ok")
+            );
         });
 
         // We create a subscription to force a registration for this type of query.
         // It doesn't get invoked because the localSegment is mocked
-        testSubject.subscribe(
-                "testQuery", String.class,
-                (MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>>) message -> "ok"
-        );
+        testSubject.subscribe("testQuery",
+                              String.class,
+                              (MessageHandler<QueryMessage<?, String>, QueryResponseMessage<?>>) message -> "ok");
         assertWithin(1, TimeUnit.SECONDS, () -> assertNotNull(queryHandlerRef.get()));
 
         QueryHandler queryHandler = queryHandlerRef.get();
@@ -783,8 +826,11 @@ class AxonServerQueryBusTest {
         when(localSegment.query(any())).thenAnswer(i -> {
             responseLatch.await();
             QueryMessage<?, ?> message = i.getArgument(0);
-            QueryResponseMessage<?> queryResponse = new GenericQueryResponseMessage<>(message.getPayload()).withMetaData(
-                    MetaData.with("response", message.getPayload()));
+            QueryResponseMessage<?> queryResponse = new GenericQueryResponseMessage<>(
+                    new QualifiedName("test", "query", "0.0.1"),
+                    message.getPayload(),
+                    MetaData.with("response", message.getPayload())
+            );
             return CompletableFuture.completedFuture(queryResponse);
         });
 

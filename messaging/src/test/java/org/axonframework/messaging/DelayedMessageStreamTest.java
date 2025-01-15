@@ -17,7 +17,7 @@
 package org.axonframework.messaging;
 
 import org.axonframework.messaging.MessageStream.Entry;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    MessageStream<Message<String>> testSubject(List<Message<String>> messages) {
+    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
         MessageStream<Message<String>> testStream = MessageStream.fromIterable(messages);
         return DelayedMessageStream.create(CompletableFuture.completedFuture(testStream));
     }
@@ -53,7 +53,8 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     Message<String> createRandomMessage() {
-        return GenericMessage.asMessage("test-" + ThreadLocalRandom.current().nextInt(10000));
+        return new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"),
+                                    "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
     @Test
@@ -115,20 +116,19 @@ class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
     void reduceResultBecomesVisibleWhenFutureCompletes() {
         Message<String> randomMessage = createRandomMessage();
         String expected = randomMessage.getPayload() + randomMessage.getPayload();
-        MessageStream<Message<String>> futureStream = testSubject(List.of(randomMessage, randomMessage));
+        MessageStream<Message<String>> futureStream = completedTestSubject(List.of(randomMessage, randomMessage));
         CompletableFuture<MessageStream<Message<String>>> testFuture = new CompletableFuture<>();
 
         MessageStream<Message<String>> testSubject = DelayedMessageStream.create(testFuture);
 
         CompletableFuture<String> result = testSubject.reduce(
                 "",
-                (base, entry) -> entry.message().getPayload() + entry.message().getPayload()
+                (base, entry) -> base + entry.message().getPayload()
         );
         assertFalse(result.isDone());
 
         testFuture.complete(futureStream);
 
-        result = testSubject.reduce("", (base, entry) -> entry.message().getPayload() + entry.message().getPayload());
         assertTrue(result.isDone());
         assertEquals(expected, result.join());
     }

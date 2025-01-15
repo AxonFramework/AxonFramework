@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.ResultMessage;
 
 import java.util.Collections;
 import java.util.Set;
@@ -64,8 +68,42 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
      */
     default <U> void emit(@Nonnull Predicate<SubscriptionQueryMessage<?, ?, U>> filter, @Nullable U update) {
         if (update != null) {
-            emit(filter, GenericSubscriptionQueryUpdateMessage.asUpdateMessage(update));
+            emit(filter, asUpdateMessage(update));
         }
+    }
+
+    /**
+     * Creates {@link GenericSubscriptionQueryUpdateMessage} from provided {@code payload} which represents incremental
+     * update. The provided {@code payload} may not be {@code null}.
+     *
+     * @param payload incremental update
+     * @param <U>     type of the {@link GenericSubscriptionQueryUpdateMessage}
+     * @return created a {@link SubscriptionQueryUpdateMessage} with the given {@code payload}.
+     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
+     * {@link QualifiedName name}.
+     */
+    @Deprecated
+    @SuppressWarnings("unchecked")
+    private static <U> SubscriptionQueryUpdateMessage<U> asUpdateMessage(Object payload) {
+        if (payload instanceof SubscriptionQueryUpdateMessage) {
+            return (SubscriptionQueryUpdateMessage<U>) payload;
+        } else if (payload instanceof ResultMessage) {
+            ResultMessage<U> resultMessage = (ResultMessage<U>) payload;
+            if (resultMessage.isExceptional()) {
+                Throwable cause = resultMessage.exceptionResult();
+                return new GenericSubscriptionQueryUpdateMessage<>(QualifiedNameUtils.fromClassName(cause.getClass()),
+                        cause,
+                        resultMessage.getMetaData(),
+                        resultMessage.getPayloadType());
+            }
+            return new GenericSubscriptionQueryUpdateMessage<>(resultMessage);
+        } else if (payload instanceof Message) {
+            return new GenericSubscriptionQueryUpdateMessage<>((Message<U>) payload);
+        }
+        // TODO #3085 use MessageNameResolver below
+        return new GenericSubscriptionQueryUpdateMessage<>(
+                QualifiedNameUtils.fromClassName(payload.getClass()), (U) payload
+        );
     }
 
     /**
@@ -99,7 +137,7 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
      */
     default <Q, U> void emit(@Nonnull Class<Q> queryType, @Nonnull Predicate<? super Q> filter, @Nullable U update) {
         if (update != null) {
-            emit(queryType, filter, GenericSubscriptionQueryUpdateMessage.asUpdateMessage(update));
+            emit(queryType, filter, asUpdateMessage(update));
         }
     }
 

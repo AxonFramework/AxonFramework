@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
@@ -34,8 +37,6 @@ import javax.annotation.Nonnull;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.messaging.GenericMessage.asMessage;
-import static org.axonframework.queryhandling.GenericQueryResponseMessage.asResponseMessage;
 
 /**
  * Implementation of the QueryGateway interface that allows the registration of dispatchInterceptors.
@@ -49,6 +50,7 @@ public class DefaultQueryGateway implements QueryGateway {
 
     private final QueryBus queryBus;
     private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors;
+    private final MessageNameResolver messageNameResolver;
 
     /**
      * Instantiate a {@link DefaultQueryGateway} based on the fields contained in the {@link Builder}.
@@ -62,6 +64,7 @@ public class DefaultQueryGateway implements QueryGateway {
         builder.validate();
         this.queryBus = builder.queryBus;
         this.dispatchInterceptors = builder.dispatchInterceptors;
+        this.messageNameResolver = builder.messageNameResolver;
     }
 
     /**
@@ -77,10 +80,12 @@ public class DefaultQueryGateway implements QueryGateway {
     }
 
     @Override
-    public <R, Q> CompletableFuture<R> query(@Nonnull String queryName, @Nonnull Q query,
+    public <R, Q> CompletableFuture<R> query(@Nonnull String queryName,
+                                             @Nonnull Q query,
                                              @Nonnull ResponseType<R> responseType) {
-        CompletableFuture<QueryResponseMessage<R>> queryResponse = queryBus
-                .query(processInterceptors(new GenericQueryMessage<>(asMessage(query), queryName, responseType)));
+        QueryMessage<Q, R> queryMessage = asQueryMessage(query, queryName, responseType);
+
+        CompletableFuture<QueryResponseMessage<R>> queryResponse = queryBus.query(processInterceptors(queryMessage));
         CompletableFuture<R> result = new CompletableFuture<>();
         result.whenComplete((r, e) -> {
             if (!queryResponse.isDone()) {
@@ -102,11 +107,42 @@ public class DefaultQueryGateway implements QueryGateway {
         return result;
     }
 
+    /**
+     * Creates a Query Response Message with given {@code declaredType} and {@code exception}.
+     *
+     * @param declaredType The declared type of the Query Response Message to be created
+     * @param exception    The Exception describing the cause of an error
+     * @param <R>          The type of the payload
+     * @return a message containing exception result
+     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
+     * {@link QualifiedName name}.
+     */
+    @Deprecated
+    private <R> QueryResponseMessage<R> asResponseMessage(Class<R> declaredType, Throwable exception) {
+        return new GenericQueryResponseMessage<>(messageNameResolver.resolve(exception.getClass()),
+                exception,
+                declaredType);
+    }
+
     @Override
     public <R, Q> Publisher<R> streamingQuery(String queryName, Q query, Class<R> responseType) {
-        return Mono.fromSupplier(() -> new GenericStreamingQueryMessage<>(asMessage(query), queryName, responseType))
+        return Mono.fromSupplier(() -> asStreamingQueryMessage(query, queryName, responseType))
                    .flatMapMany(queryMessage -> queryBus.streamingQuery(processInterceptors(queryMessage)))
                    .map(Message::getPayload);
+    }
+
+    private <R, Q> StreamingQueryMessage<Q, R> asStreamingQueryMessage(Q query,
+                                                                              String queryName,
+                                                                              Class<R> responseType) {
+        //noinspection unchecked
+        return query instanceof Message<?>
+                ? new GenericStreamingQueryMessage<>((Message<Q>) query,
+                                                     queryName,
+                                                     responseType)
+                : new GenericStreamingQueryMessage<>(messageNameResolver.resolve(query),
+                                                     queryName,
+                                                     query,
+                                                     responseType);
     }
 
     @Override
@@ -115,9 +151,23 @@ public class DefaultQueryGateway implements QueryGateway {
                                           @Nonnull ResponseType<R> responseType,
                                           long timeout,
                                           @Nonnull TimeUnit timeUnit) {
-        GenericQueryMessage<?, R> queryMessage = new GenericQueryMessage<>(asMessage(query), queryName, responseType);
+        QueryMessage<Q, R> queryMessage = asQueryMessage(query, queryName, responseType);
         return queryBus.scatterGather(processInterceptors(queryMessage), timeout, timeUnit)
                        .map(QueryResponseMessage::getPayload);
+    }
+
+    private <R, Q> QueryMessage<Q, R> asQueryMessage(Q query,
+                                                            String queryName,
+                                                            ResponseType<R> responseType) {
+        //noinspection unchecked
+        return query instanceof Message<?>
+                ? new GenericQueryMessage<>((Message<Q>) query,
+                                            queryName,
+                                            responseType)
+                : new GenericQueryMessage<>(messageNameResolver.resolve(query),
+                                            queryName,
+                                            query,
+                                            responseType);
     }
 
     @Override
@@ -126,8 +176,9 @@ public class DefaultQueryGateway implements QueryGateway {
                                                                      @Nonnull ResponseType<I> initialResponseType,
                                                                      @Nonnull ResponseType<U> updateResponseType,
                                                                      int updateBufferSize) {
-        SubscriptionQueryMessage<?, I, U> interceptedQuery =
-                getSubscriptionQueryMessage(queryName, query, initialResponseType, updateResponseType);
+        SubscriptionQueryMessage<?, I, U> subscriptionQueryMessage =
+                asSubscriptionQueryMessage(query, queryName, initialResponseType, updateResponseType);
+        SubscriptionQueryMessage<?, I, U> interceptedQuery = processInterceptors(subscriptionQueryMessage);
 
         SubscriptionQueryResult<QueryResponseMessage<I>, SubscriptionQueryUpdateMessage<U>> result =
                 queryBus.subscriptionQuery(interceptedQuery, updateBufferSize);
@@ -135,14 +186,23 @@ public class DefaultQueryGateway implements QueryGateway {
         return getSubscriptionQueryResult(result);
     }
 
-    private <Q, I, U> SubscriptionQueryMessage<?, I, U> getSubscriptionQueryMessage(String queryName,
-                                                                                    Q query,
-                                                                                    ResponseType<I> initialResponseType,
-                                                                                    ResponseType<U> updateResponseType) {
-        SubscriptionQueryMessage<?, I, U> subscriptionQueryMessage = new GenericSubscriptionQueryMessage<>(
-                asMessage(query), queryName, initialResponseType, updateResponseType
-        );
-        return processInterceptors(subscriptionQueryMessage);
+    private <Q, I, U> SubscriptionQueryMessage<Q, I, U> asSubscriptionQueryMessage(
+            Q query,
+            String queryName,
+            ResponseType<I> initialResponseType,
+            ResponseType<U> updateResponseType
+    ) {
+        //noinspection unchecked
+        return query instanceof Message<?>
+                ? new GenericSubscriptionQueryMessage<>((Message<Q>) query,
+                                                        queryName,
+                                                        initialResponseType,
+                                                        updateResponseType)
+                : new GenericSubscriptionQueryMessage<>(messageNameResolver.resolve(query),
+                                                        queryName,
+                                                        query,
+                                                        initialResponseType,
+                                                        updateResponseType);
     }
 
     private <I, U> DefaultSubscriptionQueryResult<I, U> getSubscriptionQueryResult(
@@ -186,6 +246,7 @@ public class DefaultQueryGateway implements QueryGateway {
         private QueryBus queryBus;
         private List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors =
                 new CopyOnWriteArrayList<>();
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link QueryBus} to deliver {@link QueryMessage}s on received in this {@link QueryGateway}
@@ -225,6 +286,19 @@ public class DefaultQueryGateway implements QueryGateway {
             this.dispatchInterceptors = dispatchInterceptors != null && !dispatchInterceptors.isEmpty()
                     ? new CopyOnWriteArrayList<>(dispatchInterceptors)
                     : new CopyOnWriteArrayList<>();
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when publishing {@link QueryMessage QueryMessages}.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         *
+         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for {@link QueryMessage QueryMessages}.
+         * @return The current Builder instance, for fluent interfacing.
+         */
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 

@@ -28,9 +28,9 @@ import java.util.Set;
  * {@link StreamableEventSource#open(String, StreamingCondition) streaming} or
  * {@link EventStoreTransaction#appendEvent(EventMessage) appending} events.
  * <p>
- * During sourcing or streaming, the {@link #types()} and {@link #indices()} are used as a filter. While appending
- * events, the {@code #types()} and {@code #tags()} are used to validate the consistency boundary of the event(s) to
- * append. The latter happens starting from the {@link AppendCondition#consistencyMarker()}.
+ * During sourcing or streaming, the {@link #types()} and {@link #tags()} are used as a filter. While appending events,
+ * the {@code #types()} and {@code #tags()} are used to validate the consistency boundary of the event(s) to append. The
+ * latter happens starting from the {@link AppendCondition#consistencyMarker()}.
  *
  * @author Michal Negacz
  * @author Milan Savić
@@ -39,10 +39,10 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public sealed interface EventCriteria permits NoEventCriteria, SingleIndexCriteria, CombinedEventCriteria {
+public sealed interface EventCriteria permits AnyEvent, SingleTagCriteria, CombinedEventCriteria {
 
     /**
-     * Construct a {@link EventCriteria} that contains no criteria at all.
+     * Construct a {@link EventCriteria} that allows <b>any</b> events.
      * <p>
      * Use this instance when all events are of interest during
      * {@link StreamableEventSource#open(String, StreamingCondition) streaming} or when there are no consistency
@@ -53,18 +53,29 @@ public sealed interface EventCriteria permits NoEventCriteria, SingleIndexCriter
      *
      * @return An {@link EventCriteria} that contains no criteria at all.
      */
-    static EventCriteria noCriteria() {
-        return NoEventCriteria.INSTANCE;
+    static EventCriteria anyEvent() {
+        return AnyEvent.INSTANCE;
     }
 
     /**
-     * Construct a simple {@link EventCriteria} based on the given {@code index}.
+     * Construct a simple {@link EventCriteria} based on the given {@code tag}.
      *
-     * @param index The singular {@link Index} of the {@link EventCriteria} being constructed.
-     * @return A simple {@link EventCriteria} based on the given {@code index}.
+     * @param tag The singular {@link Tag} of the {@link EventCriteria} being constructed.
+     * @return A simple {@link EventCriteria} based on the given {@code tag}.
      */
-    static EventCriteria hasIndex(@Nonnull Index index) {
-        return new SingleIndexCriteria(index);
+    static EventCriteria hasTag(@Nonnull Tag tag) {
+        return new SingleTagCriteria(tag);
+    }
+
+    /**
+     * Construct a simple {@link EventCriteria} based on the given index {@code key} and {@code value}.
+     *
+     * @param key   The index key of the {@link EventCriteria} being constructed.
+     * @param value The index value of the {@link EventCriteria} being constructed.
+     * @return A simple {@link EventCriteria}.
+     */
+    static EventCriteria hasTag(@Nonnull String key, @Nonnull String value) {
+        return hasTag(new Tag(key, value));
     }
 
     /**
@@ -77,24 +88,23 @@ public sealed interface EventCriteria permits NoEventCriteria, SingleIndexCriter
     Set<String> types();
 
     /**
-     * A {@link Set} of {@link Index Indices} applicable for sourcing, streaming, or appending events. An {@code Index}
-     * can, for example, refer to a model's (aggregate) identifier name and value.
+     * A {@link Set} of {@link Tag Tags} applicable for sourcing, streaming, or appending events. An {@code Tag} can,
+     * for example, refer to a model's (aggregate) identifier name and value.
      *
-     * @return The {@link Set} of {@link Index Indices} applicable for sourcing, streaming, or appending events.
+     * @return The {@link Set} of {@link Tag Tags} applicable for sourcing, streaming, or appending events.
      */
-    Set<Index> indices();
+    Set<Tag> tags();
 
     /**
-     * Matches the given {@code indices} with the {@link #indices()} of this {@link EventCriteria}.
+     * Matches the given {@code tags} with the {@link #tags()} of this {@link EventCriteria}.
      * <p>
      * Returns {@code true} if they are deemed to be equal, {@code false} otherwise.
      *
-     * @param indices The {@link Set} of {@link Index Indices} to compare with {@code this EventCriteria} its
-     *                {@link #indices()}.
+     * @param tags The {@link Set} of {@link Tag Tags} to compare with {@code this EventCriteria} its {@link #tags()}.
      * @return {@code true} if they are deemed to be equal, {@code false} otherwise.
      */
-    default boolean matchingIndices(@Nonnull Set<Index> indices) {
-        return this.indices().equals(indices);
+    default boolean matchingTags(@Nonnull Set<Tag> tags) {
+        return this.tags().equals(tags);
     }
 
     /**

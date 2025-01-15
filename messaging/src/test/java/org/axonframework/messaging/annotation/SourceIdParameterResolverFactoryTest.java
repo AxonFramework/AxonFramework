@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -62,18 +63,19 @@ class SourceIdParameterResolverFactoryTest {
     void resolvesToAggregateIdentifierWhenAnnotatedForDomainEventMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
-        final GenericDomainEventMessage<Object> eventMessage =
-                new GenericDomainEventMessage<>("test", UUID.randomUUID().toString(), 0L, null);
+        final GenericDomainEventMessage<Object> eventMessage = new GenericDomainEventMessage<>(
+                "test", UUID.randomUUID().toString(), 0L, new QualifiedName("test", "event", "0.0.1"), "event"
+        );
         assertTrue(resolver.matches(eventMessage, null));
-        assertEquals(eventMessage.getAggregateIdentifier(), resolver.resolveParameterValue(eventMessage,
-                                                                                           null));
+        assertEquals(eventMessage.getAggregateIdentifier(), resolver.resolveParameterValue(eventMessage, null));
     }
 
     @Test
     void doesNotMatchWhenAnnotatedForCommandMessage() {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
-        CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage("test");
+        CommandMessage<Object> commandMessage =
+                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test");
         assertFalse(resolver.matches(commandMessage, null));
     }
 

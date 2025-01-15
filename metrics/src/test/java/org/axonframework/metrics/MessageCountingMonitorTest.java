@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,15 @@ package org.axonframework.metrics;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Metric;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
 import java.util.Map;
 
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MessageCountingMonitorTest {
@@ -55,5 +56,9 @@ class MessageCountingMonitorTest {
         assertEquals(1, successCounter.getCount());
         assertEquals(1, failureCounter.getCount());
         assertEquals(1, ignoredCounter.getCount());
+    }
+
+    private static EventMessage<Object> asEventMessage(Object payload) {
+        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload);
     }
 }

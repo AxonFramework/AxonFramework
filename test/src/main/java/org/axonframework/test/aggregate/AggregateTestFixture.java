@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -105,6 +106,7 @@ import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.*;
+import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 
 /**
  * A test fixture that allows the execution of given-when-then style test cases. For detailed usage information, see
@@ -214,7 +216,10 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
         AnnotationCommandHandlerAdapter<?> adapter = new AnnotationCommandHandlerAdapter<>(
-                annotatedCommandHandler, getParameterResolverFactory(), getHandlerDefinition()
+                annotatedCommandHandler,
+                getParameterResolverFactory(),
+                getHandlerDefinition(),
+                new ClassBasedMessageNameResolver()
         );
         adapter.subscribe(commandBus);
         return this;
@@ -402,7 +407,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                     type,
                     aggregateIdentifier,
                     sequenceNumber++,
-                    new GenericMessage<>(payload, metaData),
+                    new GenericMessage<>(fromClassName(payload.getClass()), payload, metaData),
                     deadlineManager.getCurrentDateTime()
             );
             this.givenEvents.add(eventMessage);
@@ -426,12 +431,16 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         return andGivenCommands(commands);
     }
 
+    // TODO 3073 - Current doc states "Similar to the given events, if the provided command is of type `CommandMessage`, the fixture dispatches it as is."
+    //  It's not true anymore, because GenericCommandMessage constructor had logic of passing existing message (as asCommandMessage static factory had before), it's not present in current implementation.
+    //  We decided to drop support for passing Message as payload, but it require API adjustments in order to pass Metadata somehow.
     @Override
     public TestExecutor<T> andGivenCommands(List<?> commands) {
         finalizeConfiguration();
         for (Object command : commands) {
             CompletableFuture<Message<?>> result = new CompletableFuture<>();
-            CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage(command);
+            CommandMessage<Object> commandMessage = new GenericCommandMessage<>(fromClassName(command.getClass()),
+                                                                                command);
             executeAtSimulatedTime(() -> commandBus.dispatch(commandMessage, ProcessingContext.NONE)
                                                    .whenComplete(FutureUtils.alsoComplete(result)));
             result.join();
@@ -491,8 +500,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public ResultValidator<T> when(Object command, Map<String, ?> metaData) {
         return when(resultValidator -> {
-            CommandMessage<Object> commandMessage = GenericCommandMessage.asCommandMessage(command)
-                                                                         .andMetaData(metaData);
+            CommandMessage<Object> commandMessage = new GenericCommandMessage<>(fromClassName(command.getClass()),
+                                                                                command,
+                                                                                metaData);
             commandBus.dispatch(commandMessage, ProcessingContext.NONE)
                       .whenComplete((r, e) -> {
                           if (e == null) {
@@ -1037,9 +1047,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
             givenEvents.clear();
             for (DomainEventMessage<?> oldEvent : oldEvents) {
                 if (oldEvent.getAggregateIdentifier() == null) {
-                    givenEvents.add(new GenericDomainEventMessage<>(oldEvent.getType(), aggregateIdentifier,
-                                                                    oldEvent.getSequenceNumber(), oldEvent.getPayload(),
-                                                                    oldEvent.getMetaData(), oldEvent.getIdentifier(),
+                    givenEvents.add(new GenericDomainEventMessage<>(oldEvent.getType(),
+                                                                    aggregateIdentifier,
+                                                                    oldEvent.getSequenceNumber(),
+                                                                    oldEvent.getIdentifier(),
+                                                                    oldEvent.name(),
+                                                                    oldEvent.getPayload(),
+                                                                    oldEvent.getMetaData(),
                                                                     oldEvent.getTimestamp()));
                 } else {
                     givenEvents.add(oldEvent);
@@ -1104,7 +1118,9 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
         @Override
         public Aggregate<R> newInstance(@Nonnull Callable<R> factoryMethod) throws Exception {
-            AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(aggregateType, getParameterResolverFactory(), getHandlerDefinition());
+            AggregateModel<R> aggregateModel = AnnotatedAggregateMetaModelFactory.inspectAggregate(
+                    aggregateType, getParameterResolverFactory(), getHandlerDefinition()
+            );
             return EventSourcedAggregate.initialize(factoryMethod, aggregateModel, eventStore, repositoryProvider);
         }
 

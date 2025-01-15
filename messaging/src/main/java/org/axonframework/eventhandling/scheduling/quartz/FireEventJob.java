@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,16 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.quartz.*;
+import org.quartz.Job;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.SchedulerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +39,8 @@ import org.slf4j.LoggerFactory;
  * scheduler context.
  *
  * @author Allard Buijze
- * @since 0.7
  * @see EventJobDataBinder
+ * @since 0.7
  */
 public class FireEventJob implements Job {
 
@@ -55,6 +61,11 @@ public class FireEventJob implements Job {
      */
     public static final String TRANSACTION_MANAGER_KEY = TransactionManager.class.getName();
 
+    /**
+     * The key used to locate the MessageNameResolver in the scheduler context.
+     */
+    public static final String MESSAGE_NAME_RESOLVER_KEY = MessageNameResolver.class.getName();
+
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         logger.debug("Starting job to publish a scheduled event");
@@ -67,10 +78,12 @@ public class FireEventJob implements Job {
 
             EventJobDataBinder jobDataBinder = (EventJobDataBinder) schedulerContext.get(EVENT_JOB_DATA_BINDER_KEY);
             Object event = jobDataBinder.fromJobData(jobData);
-            EventMessage<?> eventMessage = createMessage(event);
+            MessageNameResolver messageNameResolver = (MessageNameResolver) schedulerContext.get(
+                    MESSAGE_NAME_RESOLVER_KEY);
+            EventMessage<?> eventMessage = createMessage(event, messageNameResolver);
 
-            EventBus eventBus = (EventBus) context.getScheduler().getContext().get(EVENT_BUS_KEY);
-            TransactionManager txManager = (TransactionManager) context.getScheduler().getContext().get(TRANSACTION_MANAGER_KEY);
+            EventBus eventBus = (EventBus) schedulerContext.get(EVENT_BUS_KEY);
+            TransactionManager txManager = (TransactionManager) schedulerContext.get(TRANSACTION_MANAGER_KEY);
 
             UnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
             if (txManager != null) {
@@ -80,7 +93,7 @@ public class FireEventJob implements Job {
 
             if (logger.isInfoEnabled()) {
                 logger.info("Job successfully executed. Scheduled Event [{}] has been published.",
-                             eventMessage.getPayloadType().getSimpleName());
+                            eventMessage.getPayloadType().getSimpleName());
             }
         } catch (Exception e) {
             logger.error("Exception occurred while publishing scheduled event [{}]", jobDetail.getDescription(), e);
@@ -89,20 +102,18 @@ public class FireEventJob implements Job {
     }
 
     /**
-     * Creates a new message for the scheduled event. This ensures that a new identifier and timestamp will always
-     * be generated, so that the timestamp will reflect the actual moment the trigger occurred.
+     * Creates a new message for the scheduled event. This ensures that a new identifier and timestamp will always be
+     * generated, so that the timestamp will reflect the actual moment the trigger occurred.
      *
      * @param event The actual event (either a payload or an entire message) to create the message from
+     * @param messageNameResolver used to resolve the {@link QualifiedName} when publishing {@link EventMessage EventMessages}.
      * @return the message to publish
      */
-    private EventMessage<?> createMessage(Object event) {
-        EventMessage<?> eventMessage;
-        if (event instanceof EventMessage) {
-            eventMessage = new GenericEventMessage<>(((EventMessage) event).getPayload(),
-                                                     ((EventMessage) event).getMetaData());
-        } else {
-            eventMessage = new GenericEventMessage<>(event, MetaData.emptyInstance());
-        }
-        return eventMessage;
+    private EventMessage<?> createMessage(Object event, MessageNameResolver messageNameResolver) {
+        return event instanceof EventMessage
+                ? new GenericEventMessage<>(((EventMessage<?>) event).name(),
+                                            ((EventMessage<?>) event).getPayload(),
+                                            ((EventMessage<?>) event).getMetaData())
+                : new GenericEventMessage<>(messageNameResolver.resolve(event), event);
     }
 }

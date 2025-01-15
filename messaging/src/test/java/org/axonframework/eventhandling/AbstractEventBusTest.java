@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -44,6 +45,8 @@ import static org.mockito.Mockito.*;
  * @author Rene de Waele
  */
 class AbstractEventBusTest {
+
+    private static final QualifiedName TEST_EVENT_NAME = new QualifiedName("test", "event", "0.0.1");
 
     private UnitOfWork<?> unitOfWork;
     private StubPublishingEventBus testSubject;
@@ -156,7 +159,7 @@ class AbstractEventBusTest {
         when(mockMonitor.onMessageIngested(any())).thenReturn(mockMonitorCallback);
         testSubject = spy(StubPublishingEventBus.builder().messageMonitor(mockMonitor).build());
 
-        testSubject.publish(GenericEventMessage.asEventMessage("test1"), GenericEventMessage.asEventMessage("test2"));
+        testSubject.publish(EventTestUtils.asEventMessage("test1"), EventTestUtils.asEventMessage("test2"));
 
         verify(mockMonitor, times(2)).onMessageIngested(any());
         verify(mockMonitorCallback, never()).reportSuccess();
@@ -194,7 +197,7 @@ class AbstractEventBusTest {
     }
 
     private static EventMessage<Object> newEvent() {
-        return new GenericEventMessage<>(new Object());
+        return new GenericEventMessage<>(TEST_EVENT_NAME, new Object());
     }
 
     private static EventMessage<Integer> numberedEvent(final int number) {
@@ -297,8 +300,10 @@ class AbstractEventBusTest {
 
     private static class StubNumberedEvent extends GenericEventMessage<Integer> {
 
+        private static final QualifiedName NAME = new QualifiedName("test", "StubNumberedEvent", "0.0.1");
+
         StubNumberedEvent(Integer payload) {
-            super(payload);
+            super(NAME, payload);
         }
 
         @Override

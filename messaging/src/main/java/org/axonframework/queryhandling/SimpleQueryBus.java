@@ -20,12 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.DefaultInterceptorChain;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.*;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -73,7 +68,6 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.ObjectUtils.getRemainingOfDeadline;
-import static org.axonframework.queryhandling.GenericQueryResponseMessage.asNullableResponseMessage;
 
 /**
  * Implementation of the QueryBus that dispatches queries to the handlers within the JVM. Any timeouts are ignored by
@@ -99,6 +93,7 @@ public class SimpleQueryBus implements QueryBus {
     private final List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
     private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private final QueryBusSpanFactory spanFactory;
+    private final MessageNameResolver messageNameResolver;
 
     private final QueryUpdateEmitter queryUpdateEmitter;
 
@@ -117,6 +112,7 @@ public class SimpleQueryBus implements QueryBus {
         this.queryUpdateEmitter = builder.queryUpdateEmitter;
         this.duplicateQueryHandlerResolver = builder.duplicateQueryHandlerResolver;
         this.spanFactory = builder.spanFactory;
+        this.messageNameResolver = builder.messageNameResolver;
     }
 
     /**
@@ -203,10 +199,15 @@ public class SimpleQueryBus implements QueryBus {
                     if (!(resultMessage.exceptionResult() instanceof NoHandlerForQueryException)) {
                         GenericQueryResponseMessage<R> queryResponseMessage =
                                 responseType.convertExceptional(resultMessage.exceptionResult())
-                                            .map(GenericQueryResponseMessage::new)
+                                            .map(exceptionalResult -> new GenericQueryResponseMessage<>(
+                                                    messageNameResolver.resolve(exceptionalResult),
+                                                    exceptionalResult
+                                            ))
                                             .orElse(new GenericQueryResponseMessage<>(
-                                                    responseType.responseMessagePayloadType(),
-                                                    resultMessage.exceptionResult()));
+                                                    messageNameResolver.resolve(resultMessage.exceptionResult()),
+                                                    resultMessage.exceptionResult(),
+                                                    responseType.responseMessagePayloadType()
+                                            ));
 
 
                         result.complete(queryResponseMessage);
@@ -467,8 +468,8 @@ public class SimpleQueryBus implements QueryBus {
         Mono<QueryResponseMessage<I>> initialResult = Mono.fromFuture(() -> query(query))
                                                           .doOnError(error -> logger.error(
                                                                   "An error happened while trying to report an initial result. Query: {}",
-                                                                  query,
-                                                                  error));
+                                                                  query, error
+                                                          ));
         UpdateHandlerRegistration<U> updateHandlerRegistration =
                 queryUpdateEmitter.registerUpdateHandler(query, updateBufferSize);
 
@@ -524,6 +525,55 @@ public class SimpleQueryBus implements QueryBus {
         });
     }
 
+    /**
+     * Creates a QueryResponseMessage for the given {@code result} with a {@code declaredType} as the result type.
+     * Providing both the result type and the result allows the creation of a nullable response message, as the
+     * implementation does not have to check the type itself, which could result in a
+     * {@link java.lang.NullPointerException}. If result already implements QueryResponseMessage, it is returned
+     * directly. Otherwise a new QueryResponseMessage is created with the declared type as the result type and the
+     * result as payload.
+     *
+     * @param declaredType The declared type of the Query Response Message to be created.
+     * @param result       The result of a Query, to be wrapped in a QueryResponseMessage
+     * @param <R>          The type of response expected
+     * @return a QueryResponseMessage for the given {@code result}, or the result itself, if already a
+     * QueryResponseMessage.
+     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
+     * {@link QualifiedName name}.
+     */
+    private <R> QueryResponseMessage<R> asNullableResponseMessage(Class<R> declaredType, Object result) {
+        if (result instanceof QueryResponseMessage) {
+            //noinspection unchecked
+            return (QueryResponseMessage<R>) result;
+        } else if (result instanceof ResultMessage) {
+            //noinspection unchecked
+            ResultMessage<R> resultMessage = (ResultMessage<R>) result;
+            if (resultMessage.isExceptional()) {
+                Throwable cause = resultMessage.exceptionResult();
+                return new GenericQueryResponseMessage<>(messageNameResolver.resolve(cause), cause,
+                        resultMessage.getMetaData(),
+                        declaredType);
+            }
+            return new GenericQueryResponseMessage<>(
+                    messageNameResolver.resolve(resultMessage.getPayload()),
+                    resultMessage.getPayload(),
+                    resultMessage.getMetaData()
+            );
+        } else if (result instanceof Message) {
+            //noinspection unchecked
+            Message<R> message = (Message<R>) result;
+            return new GenericQueryResponseMessage<>(messageNameResolver.resolve(message.getPayload()),
+                    message.getPayload(),
+                    message.getMetaData());
+        } else {
+            QualifiedName name = result == null
+                    ? QualifiedNameUtils.fromDottedName("empty.query.response")
+                    : messageNameResolver.resolve(result.getClass());
+            //noinspection unchecked
+            return new GenericQueryResponseMessage<>(name, (R) result, declaredType);
+        }
+    }
+
     private <Q, R> ResultMessage<Publisher<QueryResponseMessage<R>>> interceptAndInvokeStreaming(
             StreamingQueryMessage<Q, R> query,
             MessageHandler<? super StreamingQueryMessage<?, R>, ? extends QueryResponseMessage<?>> handler, Span span) {
@@ -533,8 +583,41 @@ public class SimpleQueryBus implements QueryBus {
                 Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceedSync();
                 return Flux.from(query.getResponseType()
                                       .convert(queryResponse))
-                           .map(GenericQueryResponseMessage::asResponseMessage);
+                           .map(this::asResponseMessage);
             });
+        }
+    }
+
+    /**
+     * Creates a QueryResponseMessage for the given {@code result}. If result already implements QueryResponseMessage,
+     * it is returned directly. Otherwise, a new QueryResponseMessage is created with the result as payload.
+     *
+     * @param result The result of a Query, to be wrapped in a QueryResponseMessage
+     * @param <R>    The type of response expected
+     * @return a QueryResponseMessage for the given {@code result}, or the result itself, if already a
+     * QueryResponseMessage.
+     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
+     * {@link QualifiedName name}.
+     */
+    @Deprecated
+    @SuppressWarnings("unchecked")
+    private <R> QueryResponseMessage<R> asResponseMessage(Object result) {
+        if (result instanceof QueryResponseMessage) {
+            return (QueryResponseMessage<R>) result;
+        } else if (result instanceof ResultMessage) {
+            ResultMessage<R> resultMessage = (ResultMessage<R>) result;
+            return new GenericQueryResponseMessage<>(
+                    messageNameResolver.resolve(resultMessage.getPayload()),
+                    resultMessage.getPayload(),
+                    resultMessage.getMetaData()
+            );
+        } else if (result instanceof Message) {
+            Message<R> message = (Message<R>) result;
+            return new GenericQueryResponseMessage<>(messageNameResolver.resolve(message.getPayload()),
+                    message.getPayload(),
+                    message.getMetaData());
+        } else {
+            return new GenericQueryResponseMessage<>(messageNameResolver.resolve(result), (R) result);
         }
     }
 
@@ -645,6 +728,7 @@ public class SimpleQueryBus implements QueryBus {
         private QueryBusSpanFactory spanFactory = DefaultQueryBusSpanFactory.builder()
                                                                             .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                             .build();
+        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
         /**
          * Sets the {@link MessageMonitor} used to monitor query messages. Defaults to a {@link NoOpMessageMonitor}.
@@ -728,6 +812,19 @@ public class SimpleQueryBus implements QueryBus {
         public Builder spanFactory(@Nonnull QueryBusSpanFactory spanFactory) {
             assertNonNull(spanFactory, "SpanFactory may not be null");
             this.spanFactory = spanFactory;
+            return this;
+        }
+
+        /**
+         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         *
+         * @param messageNameResolver which provides QualifiedName for Event messages
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
+            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
+            this.messageNameResolver = messageNameResolver;
             return this;
         }
 

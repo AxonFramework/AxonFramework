@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,12 @@
 
 package org.axonframework.test.saga;
 
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.CallbackBehavior;
@@ -43,34 +47,11 @@ import static org.mockito.Mockito.*;
  */
 class AnnotatedSagaTest {
 
-    @Test
-    void fixtureApi_WhenEventOccurs() {
-        String aggregate1 = UUID.randomUUID().toString();
-        String aggregate2 = UUID.randomUUID().toString();
-        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
-        FixtureExecutionResult validator = fixture
-                .givenAggregate(aggregate1).published(
-                        GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(aggregate1)),
-                        new TriggerExistingSagaEvent(aggregate1))
-                .andThenAggregate(aggregate2).published(new TriggerSagaStartEvent(aggregate2))
-                .whenAggregate(aggregate1).publishes(new TriggerSagaEndEvent(aggregate1));
-
-        validator.expectActiveSagas(1);
-        validator.expectAssociationWith("identifier", aggregate2);
-        validator.expectNoAssociationWith("identifier", aggregate1);
-        validator.expectScheduledEventOfType(Duration.ofMinutes(10), TimerTriggeredEvent.class);
-        validator.expectScheduledEventMatching(Duration.ofMinutes(10), messageWithPayload(CoreMatchers.any(
-                TimerTriggeredEvent.class)));
-        validator.expectScheduledEvent(Duration.ofMinutes(10), new TimerTriggeredEvent(aggregate1));
-        validator.expectScheduledEventOfType(fixture.currentTime().plusSeconds(600), TimerTriggeredEvent.class);
-        validator.expectScheduledEventMatching(fixture.currentTime().plusSeconds(600),
-                                               messageWithPayload(CoreMatchers.any(TimerTriggeredEvent.class)));
-        validator.expectScheduledEvent(fixture.currentTime().plusSeconds(600),
-                                       new TimerTriggeredEvent(aggregate1));
-        validator.expectDispatchedCommands();
-        validator.expectNoDispatchedCommands();
-        validator.expectPublishedEventsMatching(noEvents());
-        validator.expectNoScheduledDeadlines();
+    private static <P> EventMessage<P> asEventMessage(P event) {
+        return new GenericEventMessage<>(
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
+                () -> GenericEventMessage.clock.instant()
+        );
     }
 
     @Test
@@ -138,11 +119,13 @@ class AnnotatedSagaTest {
                .expectNoScheduledDeadlines();
     }
 
-    @Test// testing issue AXON-279
+    @Test
     void fixtureApi_PublishedEvent_NoHistoricActivity() {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.givenNoPriorActivity()
-               .whenPublishingA(new GenericEventMessage<>(new TriggerSagaStartEvent("id")))
+               .whenPublishingA(new GenericEventMessage<>(
+                       new QualifiedName("test", "event", "0.0.1"), new TriggerSagaStartEvent("id")
+               ))
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", "id")
                .expectNoScheduledDeadlines();
@@ -341,12 +324,42 @@ class AnnotatedSagaTest {
     }
 
     @Test
+    void fixtureApi_WhenEventOccurs() {
+        String aggregate1 = UUID.randomUUID().toString();
+        String aggregate2 = UUID.randomUUID().toString();
+        SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
+        FixtureExecutionResult validator = fixture
+                .givenAggregate(aggregate1).published(
+                        asEventMessage(new TriggerSagaStartEvent(aggregate1)),
+                        new TriggerExistingSagaEvent(aggregate1))
+                .andThenAggregate(aggregate2).published(new TriggerSagaStartEvent(aggregate2))
+                .whenAggregate(aggregate1).publishes(new TriggerSagaEndEvent(aggregate1));
+
+        validator.expectActiveSagas(1);
+        validator.expectAssociationWith("identifier", aggregate2);
+        validator.expectNoAssociationWith("identifier", aggregate1);
+        validator.expectScheduledEventOfType(Duration.ofMinutes(10), TimerTriggeredEvent.class);
+        validator.expectScheduledEventMatching(Duration.ofMinutes(10), messageWithPayload(CoreMatchers.any(
+                TimerTriggeredEvent.class)));
+        validator.expectScheduledEvent(Duration.ofMinutes(10), new TimerTriggeredEvent(aggregate1));
+        validator.expectScheduledEventOfType(fixture.currentTime().plusSeconds(600), TimerTriggeredEvent.class);
+        validator.expectScheduledEventMatching(fixture.currentTime().plusSeconds(600),
+                                               messageWithPayload(CoreMatchers.any(TimerTriggeredEvent.class)));
+        validator.expectScheduledEvent(fixture.currentTime().plusSeconds(600),
+                                       new TimerTriggeredEvent(aggregate1));
+        validator.expectDispatchedCommands();
+        validator.expectNoDispatchedCommands();
+        validator.expectPublishedEventsMatching(noEvents());
+        validator.expectNoScheduledDeadlines();
+    }
+
+    @Test
     void fixtureApi_DomainEventMessageIsAssignableFromMessage() {
         String aggregate1 = UUID.randomUUID().toString();
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         FixtureExecutionResult validator = fixture
                 .givenAggregate(aggregate1).published(
-                        GenericEventMessage.asEventMessage(new TriggerSagaStartEvent(aggregate1)),
+                        asEventMessage(new TriggerSagaStartEvent(aggregate1)),
                         new TriggerExistingSagaEvent(aggregate1),
                         new TriggerAssociationResolverSagaEvent(aggregate1))
                 .whenAggregate(aggregate1).publishes(new TriggerSagaEndEvent(aggregate1));

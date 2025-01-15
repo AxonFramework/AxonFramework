@@ -19,7 +19,9 @@ package org.axonframework.deadline.jobrunr;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.TestScopeDescriptor;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -46,8 +48,11 @@ class DeadlineDetailsSerializationTest {
         map.put("someStringValue", "foo");
         map.put("someIntValue", 2);
         metaData = new MetaData(map);
-        message = GenericDeadlineMessage.asDeadlineMessage(TEST_DEADLINE_NAME, TEST_DEADLINE_PAYLOAD, Instant.now())
-                                        .withMetaData(metaData);
+        message = new GenericDeadlineMessage<>(
+                TEST_DEADLINE_NAME,
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(TEST_DEADLINE_PAYLOAD.getClass()), TEST_DEADLINE_PAYLOAD),
+                Instant::now
+        ).withMetaData(metaData);
     }
 
     @Test

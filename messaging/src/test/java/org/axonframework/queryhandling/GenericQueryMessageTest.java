@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
+import static org.axonframework.messaging.responsetypes.ResponseTypes.instanceOf;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -41,8 +42,9 @@ class GenericQueryMessageTest {
 
     @Test
     void queryNameResemblesMessagePayloadTypeClassName() {
+        QualifiedName testName = new QualifiedName("test", "query", "0.0.1");
         String testPayload = "payload";
-        Message<?> testMessage = GenericMessage.asMessage(testPayload);
+        Message<?> testMessage = new GenericMessage<>(testName, testPayload);
 
         String result = QueryMessage.queryName(testMessage);
 
@@ -52,8 +54,9 @@ class GenericQueryMessageTest {
     @Test
     void queryNameResemblesQueryMessageQueryName() {
         String expectedQueryName = "myQueryName";
-        QueryMessage<String, String> testMessage =
-                new GenericQueryMessage<>("payload", expectedQueryName, ResponseTypes.instanceOf(String.class));
+        QueryMessage<String, String> testMessage = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), expectedQueryName, "payload", instanceOf(String.class)
+        );
 
         String result = QueryMessage.queryName(testMessage);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2024. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,114 +16,160 @@
 
 package org.axonframework.messaging;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
+import java.io.Serial;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nonnull;
 
 /**
- * Generic implementation of {@link ResultMessage}.
+ * Generic implementation of {@link ResultMessage} interface.
  *
+ * @param <R> The type of {@link #getPayload() result} contained in this {@link ResultMessage}.
  * @author Milan Savic
- * @since 4.0
+ * @author Steven van Beelen
+ * @since 4.0.0
  */
 public class GenericResultMessage<R> extends MessageDecorator<R> implements ResultMessage<R> {
 
+    @Serial
     private static final long serialVersionUID = -9086395619674962782L;
 
     private final Throwable exception;
 
     /**
-     * Creates a ResultMessage with the given {@code result} as the payload.
+     * Constructs a {@link GenericResultMessage} for the given {@code name} and {@code result}.
+     * <p>
+     * Uses the correlation data of the current Unit of Work, if present.
      *
-     * @param result the payload for the Message
+     * @param name   The {@link QualifiedName name} for this {@link ResultMessage}.
+     * @param result The result of type {@code R} for this {@link ResultMessage}.
      */
-    public GenericResultMessage(R result) {
-        this(result, MetaData.emptyInstance());
+    public GenericResultMessage(@Nonnull QualifiedName name,
+                                @Nullable R result) {
+        this(name, result, MetaData.emptyInstance());
     }
 
     /**
-     * Creates a ResultMessage with the given {@code exception}.
+     * Constructs a {@link GenericResultMessage} for the given {@code name} and {@code exception}.
+     * <p>
+     * Uses the correlation data of the current Unit of Work, if present.
      *
-     * @param exception the Exception describing the cause of an error
+     * @param name      The {@link QualifiedName name} for this {@link ResultMessage}.
+     * @param exception The {@link Throwable} describing the error representing the response of this
+     *                  {@link ResultMessage}.
      */
-    public GenericResultMessage(Throwable exception) {
-        this(exception, MetaData.emptyInstance());
+    public GenericResultMessage(@Nonnull QualifiedName name,
+                                @Nonnull Throwable exception) {
+        this(name, exception, MetaData.emptyInstance());
     }
 
     /**
-     * Creates a ResultMessage with the given {@code result} as the payload and {@code metaData} as the meta data.
+     * Constructs a {@link GenericResultMessage} for the given {@code name}, {@code result}, and {@code metaData}.
      *
-     * @param result   the payload for the Message
-     * @param metaData the meta data for the Message
+     * @param name     The {@link QualifiedName name} for this {@link ResultMessage}.
+     * @param result   The result of type {@code R} for this {@link ResultMessage}.
+     * @param metaData The metadata for this {@link ResultMessage}.
      */
-    public GenericResultMessage(R result, Map<String, ?> metaData) {
-        this(new GenericMessage<>(result, metaData));
+    public GenericResultMessage(@Nonnull QualifiedName name,
+                                @Nullable R result,
+                                @Nonnull Map<String, ?> metaData) {
+        this(new GenericMessage<>(name, result, metaData));
     }
 
     /**
-     * Creates a ResultMessage with the given {@code exception} and {@code metaData}.
+     * Constructs a {@link GenericResultMessage} for the given {@code name}, {@code exception}, and {@code metaData}.
      *
-     * @param exception the Exception describing the cause of an error
-     * @param metaData  the meta data for the Message
+     * @param name      The {@link QualifiedName name} for this {@link ResultMessage}.
+     * @param exception The {@link Throwable} describing the error representing the response of this
+     *                  {@link ResultMessage}.
+     * @param metaData  The metadata for this {@link ResultMessage}.
      */
-    public GenericResultMessage(Throwable exception, Map<String, ?> metaData) {
-        this(new GenericMessage<>(null, metaData), exception);
+    public GenericResultMessage(@Nonnull QualifiedName name,
+                                @Nonnull Throwable exception,
+                                @Nonnull Map<String, ?> metaData) {
+        this(new GenericMessage<>(name, null, metaData), exception);
     }
 
     /**
-     * Creates a new ResultMessage with given {@code delegate} message.
+     * Constructs a {@link GenericResultMessage} for the given {@code delegate}, intended to reconstruct another
+     * {@link ResultMessage}.
+     * <p>
+     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
+     * of Work.
      *
-     * @param delegate the message delegate
+     * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#name() name},
+     *                 {@link Message#getIdentifier() identifier} and {@link Message#getMetaData() metadata} for the
+     *                 {@link QueryResponseMessage} to reconstruct.
      */
-    public GenericResultMessage(Message<R> delegate) {
+    public GenericResultMessage(@Nonnull Message<R> delegate) {
         this(delegate, GenericResultMessage.findExceptionResult(delegate));
     }
 
     /**
-     * Creates a ResultMessage with given {@code delegate} message and {@code exception}.
+     * Constructs a {@link GenericResultMessage} for the given {@code delegate} and {@code exception} as a cause for the
+     * failure, intended to reconstruct another {@link ResultMessage}.
+     * <p>
+     * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
+     * of Work.
      *
-     * @param delegate  the Message delegate
-     * @param exception the Exception describing the cause of an error
+     * @param delegate  The {@link Message} containing {@link Message#getPayload() payload},
+     *                  {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
+     *                  {@link Message#getMetaData() metadata} for the {@link QueryResponseMessage} to reconstruct.
+     * @param exception The {@link Throwable} describing the error representing the response of this
+     *                  {@link ResultMessage}.
      */
-    public GenericResultMessage(Message<R> delegate, Throwable exception) {
+    public GenericResultMessage(@Nonnull Message<R> delegate,
+                                @Nonnull Throwable exception) {
         super(delegate);
         this.exception = exception;
     }
 
     /**
-     * Returns the given {@code result} as a {@link ResultMessage} instance. If {@code result} already implements {@link
-     * ResultMessage}, it is returned as-is. If {@code result} implements {@link Message}, payload and meta data will be
-     * used to construct new {@link GenericResultMessage}. Otherwise, the given {@code result} is wrapped into a {@link
-     * GenericResultMessage} as its payload.
+     * Returns the given {@code result} as a {@link ResultMessage} instance. If {@code result} already implements
+     * {@link ResultMessage}, it is returned as-is. If {@code result} implements {@link Message}, payload and meta data
+     * will be used to construct new {@link GenericResultMessage}. Otherwise, the given {@code result} is wrapped into a
+     * {@link GenericResultMessage} as its payload.
      *
      * @param result the command result to be wrapped as {@link ResultMessage}
-     * @param <T>    The type of the payload contained in returned Message
-     * @return a Message containing given {@code result} as payload, or {@code result} if already
-     * implements {@link ResultMessage}
+     * @param <R>    The type of payload contained in this {@link ResultMessage}.
+     * @return a Message containing given {@code result} as payload, or {@code result} if already implements
+     * {@link ResultMessage}
+     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
+     * {@link QualifiedName name}.
      */
-    @SuppressWarnings("unchecked")
-    public static <T> ResultMessage<T> asResultMessage(Object result) {
+    @Deprecated
+    public static <R> ResultMessage<R> asResultMessage(Object result) {
         if (result instanceof ResultMessage) {
-            return (ResultMessage<T>) result;
-        } else if (result instanceof Message) {
-            Message<?> resultMessage = (Message<?>) result;
-            return (ResultMessage<T>) new GenericResultMessage<>(resultMessage);
+            //noinspection unchecked
+            return (ResultMessage<R>) result;
+        } else if (result instanceof Message<?> resultMessage) {
+            //noinspection unchecked
+            return (ResultMessage<R>) new GenericResultMessage<>(resultMessage);
         }
-        return new GenericResultMessage<>((T) result);
+        QualifiedName name = result == null
+                ? new QualifiedName("axon.framework", "empty.result", "0.0.1")
+                : QualifiedNameUtils.fromClassName(result.getClass());
+        //noinspection unchecked
+        return new GenericResultMessage<>(name, (R) result);
     }
 
     /**
      * Creates a ResultMessage with the given {@code exception} result.
      *
      * @param exception the Exception describing the cause of an error
-     * @param <T>       the type of payload
+     * @param <R>       The type of payload contained in this {@link ResultMessage}.
      * @return a message containing exception result
+     * @deprecated In favor of using the constructor, as we intend to enforce thinking about the
+     * {@link QualifiedName name}.
      */
-    public static <T> ResultMessage<T> asResultMessage(Throwable exception) {
-        return new GenericResultMessage<>(exception);
+    @Deprecated
+    public static <R> ResultMessage<R> asResultMessage(Throwable exception) {
+        return new GenericResultMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()), exception);
     }
 
     private static <R> Throwable findExceptionResult(Message<R> delegate) {
@@ -182,7 +228,6 @@ public class GenericResultMessage<R> extends MessageDecorator<R> implements Resu
         return "GenericResultMessage";
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public R getPayload() {
         if (isExceptional()) {

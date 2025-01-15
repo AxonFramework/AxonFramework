@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.deadline.DeadlineManager;
+import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
@@ -32,9 +33,11 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
@@ -69,7 +72,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.awaitility.Awaitility.await;
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -286,10 +289,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     void handlerInterceptorOnAggregate() {
         //noinspection resource
         configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
-            uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
-                    .asDeadlineMessage(deadlineMessage.getDeadlineName(),
-                                       new DeadlinePayload(FAKE_IDENTIFIER),
-                                       deadlineMessage.getTimestamp()));
+            uow.transformMessage(AbstractDeadlineManagerTestSuite::asDeadlineMessage);
             return chain.proceedSync();
         });
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER, DEADLINE_TIMEOUT));
@@ -301,10 +301,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @Test
     void dispatchInterceptorOnAggregate() {
         //noinspection resource
-        configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) ->
-                GenericDeadlineMessage.asDeadlineMessage(m.getDeadlineName(),
-                                                         new DeadlinePayload(FAKE_IDENTIFIER),
-                                                         m.getTimestamp()));
+        configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) -> asDeadlineMessage(m));
         configuration.commandGateway().sendAndWait(new CreateMyAggregateCommand(IDENTIFIER));
 
         assertPublishedEvents(new MyAggregateCreatedEvent(IDENTIFIER),
@@ -460,8 +457,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         //noinspection resource
         configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
-            uow.transformMessage(deadlineMessage -> GenericDeadlineMessage
-                    .asDeadlineMessage(deadlineMessage.getDeadlineName(), new DeadlinePayload(FAKE_IDENTIFIER),
+            uow.transformMessage(deadlineMessage -> asDeadlineMessage(deadlineMessage.getDeadlineName(), new DeadlinePayload(FAKE_IDENTIFIER),
                                        deadlineMessage.getTimestamp()));
             return chain.proceedSync();
         });
@@ -477,8 +473,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         //noinspection resource
-        configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) ->
-                GenericDeadlineMessage.asDeadlineMessage(m.getDeadlineName(),
+        configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(),
                                                          new DeadlinePayload(FAKE_IDENTIFIER),
                                                          m.getTimestamp()));
         configuration.eventStore().publish(testEventMessage);
@@ -532,6 +527,25 @@ public abstract class AbstractDeadlineManagerTestSuite {
         SagaStore<MySaga> sagaStore = configuration.eventProcessingConfiguration().sagaStore();
         Set<String> sagaIds = sagaStore.findSagas(MySaga.class, new AssociationValue("id", IDENTIFIER.toString()));
         assertEquals(live, sagaIds.isEmpty());
+    }
+
+    private static DeadlineMessage<DeadlinePayload> asDeadlineMessage(DeadlineMessage<?> deadlineMessage) {
+        var payload = new DeadlinePayload(FAKE_IDENTIFIER);
+        return new GenericDeadlineMessage<>(
+                deadlineMessage.getDeadlineName(),
+                new GenericMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload),
+                deadlineMessage::getTimestamp
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <P> DeadlineMessage<P> asDeadlineMessage(String deadlineName,
+                                                            Object payload,
+                                                            Instant expiryTime) {
+        var name = QualifiedNameUtils.fromClassName(payload.getClass());
+        return new GenericDeadlineMessage<>(
+                deadlineName, new GenericMessage<>(name, (P) payload), () -> expiryTime
+        );
     }
 
     private static class CreateMyAggregateCommand {

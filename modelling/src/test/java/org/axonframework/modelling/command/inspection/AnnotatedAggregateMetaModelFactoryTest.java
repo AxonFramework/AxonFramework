@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -55,8 +57,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
-import static org.axonframework.commandhandling.GenericCommandMessage.asCommandMessage;
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -66,14 +67,18 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AnnotatedAggregateMetaModelFactoryTest {
 
+    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
+
     @Test
     void detectAllAnnotatedHandlers() throws Exception {
         AggregateModel<SomeAnnotatedHandlers> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedHandlers.class);
 
-        CommandMessage<?> message = asCommandMessage("ok");
-        assertEquals(true, getHandler(inspector, message).handleSync(message, new SomeAnnotatedHandlers()));
-        assertEquals(false, getHandler(inspector, message).handleSync(asCommandMessage("ko"), new SomeAnnotatedHandlers()));
+        CommandMessage<?> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "ok");
+        CommandMessage<String> faultyCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "ko");
+
+        assertEquals(true, getHandler(inspector, testCommand).handleSync(testCommand, new SomeAnnotatedHandlers()));
+        assertEquals(false, getHandler(inspector, testCommand).handleSync(faultyCommand, new SomeAnnotatedHandlers()));
     }
 
     @Test
@@ -81,10 +86,12 @@ class AnnotatedAggregateMetaModelFactoryTest {
         AggregateModel<SomeSubclass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
+        CommandMessage<?> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "sub");
+        CommandMessage<String> faultyCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "ok");
         SomeSubclass target = new SomeSubclass();
-        CommandMessage<?> message = asCommandMessage("sub");
-        assertEquals(true, getHandler(inspector, message).handleSync(message, target));
-        assertEquals(false, getHandler(inspector, message).handleSync(asCommandMessage("ok"), target));
+
+        assertEquals(true, getHandler(inspector, testCommand).handleSync(testCommand, target));
+        assertEquals(false, getHandler(inspector, testCommand).handleSync(faultyCommand, target));
     }
 
     @Test
@@ -92,9 +99,9 @@ class AnnotatedAggregateMetaModelFactoryTest {
         AggregateModel<SomeAnnotatedFactoryMethodClass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedFactoryMethodClass.class);
 
-        CommandMessage<?> message = asCommandMessage("string");
+        CommandMessage<?> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "string");
         final MessageHandlingMember<? super SomeAnnotatedFactoryMethodClass> messageHandlingMember =
-                getHandler(inspector, message);
+                getHandler(inspector, testCommand);
         final Optional<CommandMessageHandlingMember> unwrap =
                 messageHandlingMember.unwrap(CommandMessageHandlingMember.class);
         assertNotNull(unwrap);
@@ -227,7 +234,9 @@ class AnnotatedAggregateMetaModelFactoryTest {
 
         AtomicLong payload = new AtomicLong();
 
-        inspector.publish(new GenericEventMessage<>(payload), new SomeSubclass());
+        EventMessage<AtomicLong> testEvent =
+                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload);
+        inspector.publish(testEvent, new SomeSubclass());
 
         assertEquals(2L, payload.get());
     }
@@ -237,7 +246,8 @@ class AnnotatedAggregateMetaModelFactoryTest {
         AggregateModel<SomeSubclass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
-        GenericCommandMessage<?> message = new GenericCommandMessage<>(BigDecimal.ONE);
+        CommandMessage<?> message =
+                new GenericCommandMessage<>(TEST_COMMAND_NAME, BigDecimal.ONE);
         SomeSubclass target = new SomeSubclass();
         MessageHandlingMember<? super SomeSubclass> handler = getHandler(inspector, message);
         assertEquals("1", handler.handleSync(message, target));
@@ -422,11 +432,11 @@ class AnnotatedAggregateMetaModelFactoryTest {
     @SuppressWarnings("unchecked")
     private <T> MessageHandlingMember<T> getHandler(AggregateModel<T> member, CommandMessage<?> message) {
         return (MessageHandlingMember<T>) member.commandHandlers(member.entityClass())
-                                                 .filter(ch -> ch.canHandle(message, null))
-                                                 .findFirst()
-                                                 .orElseThrow(() -> new AssertionError(
-                                                         "Expected handler for this message"
-                                                 ));
+                                                .filter(ch -> ch.canHandle(message, null))
+                                                .findFirst()
+                                                .orElseThrow(() -> new AssertionError(
+                                                        "Expected handler for this message"
+                                                ));
     }
 
     @Documented

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,14 @@ import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.MessageNameResolver;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.axonframework.eventhandling.GenericEventMessage.asEventMessage;
+import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -43,15 +45,16 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
     private AnnotationEventHandlerAdapter testMethodSubject;
     private TrackingToken replayToken;
     private AnnotationEventHandlerAdapter testDisallowingSubject;
+    private final MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
 
     @BeforeEach
     void setUp() {
         handler = new SomeHandler();
         ReplayPreventingHandler disallowingHandler = new ReplayPreventingHandler();
         methodHandler = new SomeMethodHandler();
-        testSubject = new AnnotationEventHandlerAdapter(handler);
-        testMethodSubject = new AnnotationEventHandlerAdapter(methodHandler);
-        testDisallowingSubject = new AnnotationEventHandlerAdapter(disallowingHandler);
+        testSubject = new AnnotationEventHandlerAdapter(handler, messageNameResolver);
+        testMethodSubject = new AnnotationEventHandlerAdapter(methodHandler, messageNameResolver);
+        testDisallowingSubject = new AnnotationEventHandlerAdapter(disallowingHandler, messageNameResolver);
         replayToken = ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(1L));
     }
 

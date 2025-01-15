@@ -17,18 +17,22 @@
 package org.axonframework.queryhandling.annotation;
 
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.annotation.*;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryHandler;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -66,15 +70,15 @@ class MethodQueryMessageHandlerDefinitionTest {
         QueryHandlingMember<MethodQueryMessageHandlerDefinitionTest> handler = messageHandler("optionalReturnType");
         assertEquals(String.class, handler.getResultType());
 
-        GenericQueryMessage<String, String> message =
-                new GenericQueryMessage<>("mock", ResponseTypes.instanceOf(String.class));
+        GenericQueryMessage<String, String> message = new GenericQueryMessage<>(
+                new QualifiedName("test", "query", "0.0.1"), "mock", ResponseTypes.instanceOf(String.class)
+        );
 
         assertTrue(handler.canHandle(message, null));
 
         Object invocationResult = handler.handleSync(message, this);
         assertNull(invocationResult);
     }
-
 
     @Test
     void unspecifiedOptionalResponseTypeUnwrapped() {
@@ -97,9 +101,15 @@ class MethodQueryMessageHandlerDefinitionTest {
     // TODO This local static function should be replaced with a dedicated interface that converts types.
     // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
     private static MessageStream<?> returnTypeConverter(Object result) {
-        return result instanceof CompletableFuture<?>
-                ? MessageStream.fromFuture(((CompletableFuture<?>) result).thenApply(GenericMessage::asMessage))
-                : MessageStream.just(GenericMessage.asMessage(result));
+        if (result instanceof CompletableFuture<?> future) {
+            return MessageStream.fromFuture(future.thenApply(
+                    r -> new GenericMessage<>(fromClassName(r.getClass()), r)
+            ));
+        }
+        QualifiedName type = result != null
+                ? fromClassName(result.getClass())
+                : new QualifiedName("axon.framework", "empty.result", "0.0.1");
+        return MessageStream.just(new GenericMessage<>(type, result));
     }
 
     private <R> QueryHandlingMember<R> messageHandler(String methodName) {
