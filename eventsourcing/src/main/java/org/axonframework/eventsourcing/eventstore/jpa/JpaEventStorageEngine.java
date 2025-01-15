@@ -523,9 +523,9 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder lowestGlobalSequence(long lowestGlobalSequence) {
-//            assertThat(lowestGlobalSequence,
-//                       number -> number > 0,
-//                       "The lowestGlobalSequence must be a positive number");
+            assertThat(lowestGlobalSequence,
+                       number -> number > 0,
+                       "The lowestGlobalSequence must be a positive number");
             this.lowestGlobalSequence = lowestGlobalSequence;
             return this;
         }
