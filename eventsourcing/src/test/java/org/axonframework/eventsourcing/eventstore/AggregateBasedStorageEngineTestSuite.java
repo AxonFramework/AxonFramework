@@ -165,7 +165,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                 10)).or(expectedCriteria));
 
         try {
-            assertTrue(result.next().isEmpty());
+            Optional<Entry<EventMessage<?>>> firstEvent = result.next();
+            assertTrue(firstEvent.isEmpty());
         } finally {
             result.close();
         }
