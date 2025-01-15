@@ -82,8 +82,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
 
     protected abstract long lowestGlobalSequence();
 
-    private long sequenceOfEventNo(long eventNumber) {
-        return lowestGlobalSequence() + eventNumber;
+    private long sequenceOfEventNo(long eventNo) {
+        return lowestGlobalSequence() + eventNo;
     }
 
     @Test
@@ -138,7 +138,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                 AppendTransaction::commit).join();
 
         MessageStream<EventMessage<?>> result =
-                testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(1)));
+                testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(sequenceOfEventNo(1))));
 
         StepVerifier.create(result.asFlux())
                     // we've skipped the first two
