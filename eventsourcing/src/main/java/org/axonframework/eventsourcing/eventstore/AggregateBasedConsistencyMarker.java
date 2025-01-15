@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.CollectionUtils;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
