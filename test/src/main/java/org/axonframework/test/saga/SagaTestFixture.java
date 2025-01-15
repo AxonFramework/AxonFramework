@@ -38,7 +38,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
@@ -307,7 +307,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
             return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
         }
         return new GenericEventMessage<>(
-                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
+                new GenericMessage<>(new MessageType(event.getClass()), (P) event),
                 () -> GenericEventMessage.clock.instant()
         );
     }
@@ -389,7 +389,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     private EventMessage<Object> timeCorrectedEventMessage(Object event) {
         EventMessage<?> msg = asEventMessage(event);
         return new GenericEventMessage<>(
-                msg.getIdentifier(), msg.name(), msg.getPayload(), msg.getMetaData(), currentTime()
+                msg.getIdentifier(), msg.type(), msg.getPayload(), msg.getMetaData(), currentTime()
         );
     }
 
@@ -523,7 +523,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
                                                              aggregateIdentifier,
                                                              sequenceNumber++,
                                                              eventMessage.getIdentifier(),
-                                                             eventMessage.name(),
+                                                             eventMessage.type(),
                                                              eventMessage.getPayload(),
                                                              eventMessage.getMetaData(),
                                                              currentTime()));
