@@ -14,7 +14,6 @@ import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedDomainEventData;
-import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
@@ -44,7 +43,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -359,10 +357,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private Instant gapTimeoutThreshold() {
-        return GenericEventMessage.clock.instant().minus(gapTimeout, ChronoUnit.MILLIS);
     }
 
     private String domainEventEntryEntityName() {
