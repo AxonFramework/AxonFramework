@@ -18,10 +18,12 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.StubProcessingContext;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
@@ -71,6 +73,18 @@ class SimpleEventStoreTest {
         }
 
         @Test
+        void publishThrowsIfContextDoesNotMatch() {
+            assertThrows(IllegalArgumentException.class,
+                         () -> testSubject.publish(processingContext, NOT_MATCHING_CONTEXT, eventMessage(0)));
+        }
+
+        @Test
+        void publishWithoutProcessingContextThrowsUnsupportedOperationException() {
+            assertThrows(UnsupportedOperationException.class,
+                         () -> testSubject.publish(NOT_MATCHING_CONTEXT, eventMessage(0)));
+        }
+
+        @Test
         void openThrowsIfContextDoesNotMatch() {
             assertThrows(IllegalArgumentException.class,
                          () -> testSubject.open(NOT_MATCHING_CONTEXT, aStreamingCondition()));
@@ -97,6 +111,15 @@ class SimpleEventStoreTest {
         @Test
         void transactionDoesNotThrowIfContextMatches() {
             assertDoesNotThrow(() -> testSubject.transaction(processingContext, MATCHING_CONTEXT));
+        }
+
+        @Test
+        void publishDoesNotThrowIfContextMatches() {
+            ProcessingContext mockProcessingContext = mock(ProcessingContext.class);
+            when(mockProcessingContext.computeResourceIfAbsent(any(), any()))
+                    .thenReturn(mock(EventStoreTransaction.class));
+
+            assertDoesNotThrow(() -> testSubject.publish(mockProcessingContext, MATCHING_CONTEXT, eventMessage(0)));
         }
 
         @Test
@@ -193,5 +216,10 @@ class SimpleEventStoreTest {
         // then
         verify(descriptor).describeProperty("eventStorageEngine", mockStorageEngine);
         verify(descriptor).describeProperty("context", MATCHING_CONTEXT);
+    }
+
+    // TODO - Discuss: @Steven - Perfect candidate to move to a commons test utils module?
+    private static EventMessage<?> eventMessage(int seq) {
+        return EventTestUtils.asEventMessage("Event[" + seq + "]");
     }
 }
