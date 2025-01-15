@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -100,6 +100,6 @@ class EventSinkTest {
 
     // TODO - Discuss: Perfect candidate to move to a commons test utils module?
     private static EventMessage<?> eventMessage(int seq) {
-        return GenericEventMessage.asEventMessage("Event[" + seq + "]");
+        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Event[" + seq + "]");
     }
 }

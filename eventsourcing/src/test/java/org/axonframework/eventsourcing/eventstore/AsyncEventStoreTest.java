@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -144,6 +145,6 @@ class AsyncEventStoreTest {
 
     // TODO - Discuss: Perfect candidate to move to a commons test utils module?
     private static EventMessage<?> eventMessage(int seq) {
-        return GenericEventMessage.asEventMessage("Event[" + seq + "]");
+        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Event[" + seq + "]");
     }
 }
