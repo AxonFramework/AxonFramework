@@ -13,6 +13,7 @@ import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngin
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,13 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
     @Qualifier("axonTransactionManager")
     private TransactionManager transactionManager;
 
+    @BeforeEach
+    public void clearEventStore() {
+        transactionManager.executeInTransaction(() -> entityManagerProvider.getEntityManager()
+                                                                           .createQuery("DELETE FROM DomainEventEntry e")
+                                                                           .executeUpdate());
+    }
+
     @Override
     protected LegacyJpaEventStorageEngine buildStorageEngine() {
         return new LegacyJpaEventStorageEngine(entityManagerProvider,
@@ -49,12 +57,12 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
                                                TEST_SERIALIZER,
                                                TEST_SERIALIZER,
                                                config -> config.persistenceExceptionResolver(new JdbcSQLErrorCodesResolver())
-                                                               .lowestGlobalSequence(lowestGlobalSequence()));
+                                                               .lowestGlobalSequence(1));
     }
 
     @Override
-    protected long lowestGlobalSequence() {
-        return 1;
+    protected long sequenceOfEventNo(long eventNo) {
+        return eventNo;
     }
 
     @Override
