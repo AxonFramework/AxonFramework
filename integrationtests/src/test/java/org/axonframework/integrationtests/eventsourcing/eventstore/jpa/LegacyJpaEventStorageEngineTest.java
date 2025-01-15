@@ -67,7 +67,7 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
 
     @Override
     protected EventMessage<String> convertPayload(EventMessage<?> original) {
-        return original.withConvertedPayload(p -> TEST_SERIALIZER.convert(p, String.class).replaceAll("\"", ""));
+        return original.withConvertedPayload(p -> TEST_SERIALIZER.convert(p, String.class));
     }
 
     // todo: test batching
