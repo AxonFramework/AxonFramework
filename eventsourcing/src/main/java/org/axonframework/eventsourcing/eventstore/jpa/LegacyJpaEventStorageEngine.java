@@ -13,6 +13,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
@@ -321,14 +322,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             MessageStream<EventMessage<?>> aggregateEvents = MessageStream.fromStream(
                     events,
                     this::convertToMessage,
-                    event -> Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY,
-                                          event.getAggregateIdentifier())
-                                    .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getType())
-                                    .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
-                                                  event.getSequenceNumber())
-                                    .withResource(ConsistencyMarker.RESOURCE_KEY,
-                                                  new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
-                                                                                      event.getSequenceNumber()))
+                    LegacyJpaEventStorageEngine::fillContextWith
             );
             resultingStream = resultingStream.concatWith(aggregateEvents);
         }
@@ -377,29 +371,30 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     @Override
     public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
-        // todo: find tracking token by condition (position)
-        //        var startToken = GapAwareTrackingToken.newInstance(lowestGlobalSequence, Collections.emptySet());
-        // todo: there fetchDomainEvents
-        var events = legacyJpaOperations.entriesToEvents(
-                null,
-                legacyJpaOperations.fetchEvents(null, batchSize),
-                gapTimeoutThreshold(),
-                lowestGlobalSequence,
-                maxGapOffset);
+        var trackingToken = gapAwareTrackingTokenFrom(condition.position());
+        var events = batchingOperations.readEventData(trackingToken);
 //        var processed = upcastAndDeserializeTrackedEvents(events, eventSerializer, upcasterChain)
 //                .filter(e -> e instanceof TrackedDomainEventData<?>)
 //                .map(e -> (TrackedDomainEventData<?>) e);
         return MessageStream.fromStream(
-                events.stream(),
+                events,
                 this::convertToMessage,
-                event -> Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
-                                .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getType())
-                                .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
-                                              event.getSequenceNumber())
-                                .withResource(ConsistencyMarker.RESOURCE_KEY,
-                                              new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
-                                                                                  event.getSequenceNumber()))
+                LegacyJpaEventStorageEngine::fillContextWith
         );
+    }
+
+    private static Context fillContextWith(DomainEventData<?> event) {
+        var isAggregateEvent = event.getAggregateIdentifier() != null && event.getType() != null;
+        if (isAggregateEvent) {
+            return Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
+                          .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getType())
+                          .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
+                                        event.getSequenceNumber())
+                          .withResource(ConsistencyMarker.RESOURCE_KEY,
+                                        new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
+                                                                            event.getSequenceNumber()));
+        }
+        return Context.empty(); // todo: what to do with that?
     }
 
     @Override
@@ -408,6 +403,15 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                        .flatMap(this::gapAwareTrackingTokenOn)
                                        .orElse(null);
         return CompletableFuture.completedFuture(token); // todo: supplyAsync?
+    }
+
+    private GapAwareTrackingToken gapAwareTrackingTokenFrom(TrackingToken trackingToken) {
+        if (trackingToken instanceof GapAwareTrackingToken gapAwareTrackingToken) {
+            return gapAwareTrackingToken;
+        }
+        // todo: is it OK to get Gap aware tracking token from global one? or throw exception?
+        return GapAwareTrackingToken.newInstance(trackingToken.position().orElse(lowestGlobalSequence),
+                                                 Collections.emptySet());
     }
 
     private Optional<TrackingToken> gapAwareTrackingTokenOn(Long globalIndex) {
@@ -560,8 +564,9 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return StreamSupport.stream(spliterator, false);
         }
 
-        Stream<? extends TrackedEventData<?>> readEventData(TrackingToken trackingToken) {
-            EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(
+        // todo: changed TrackedDomainEventData, check if its good, maybe should be TrackedEventData and handled on upper level
+        Stream<? extends TrackedDomainEventData<?>> readEventData(TrackingToken trackingToken) {
+            EventStreamSpliterator<? extends TrackedDomainEventData<?>> spliterator = new EventStreamSpliterator<>(
                     lastItem -> fetchTrackedEvents(lastItem == null ? trackingToken : lastItem.trackingToken(),
                                                    batchSize),
                     batch -> BATCH_OPTIMIZATION_DISABLED
@@ -569,7 +574,8 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return StreamSupport.stream(spliterator, false);
         }
 
-        private List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
+        // todo: changed TrackedDomainEventData, check if its good, maybe should be TrackedEventData and handled on upper level
+        private List<? extends TrackedDomainEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
             Assert.isTrue(
                     lastToken == null || lastToken instanceof GapAwareTrackingToken,
                     () -> String.format("Token [%s] is of the wrong type. Expected [%s]",
