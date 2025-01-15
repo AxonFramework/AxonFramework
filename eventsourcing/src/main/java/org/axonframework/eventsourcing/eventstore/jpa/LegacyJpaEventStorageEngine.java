@@ -785,6 +785,21 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             );
         }
 
+        public Config lowestGlobalSequence(long lowestGlobalSequence) {
+            return new Config(upcasterChain,
+                              persistenceExceptionResolver,
+                              snapshotFilter,
+                              batchSize,
+                              finalAggregateBatchPredicate,
+                              messageNameResolver,
+                              explicitFlush,
+                              maxGapOffset,
+                              lowestGlobalSequence,
+                              gapTimeout,
+                              gapCleaningThreshold
+            );
+        }
+
         // todo: other functions!
     }
 }
