@@ -42,21 +42,29 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Spliterators;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.*;
+import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 
 /**
@@ -88,6 +96,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     private final PersistenceExceptionMapper persistenceExceptionMapper;
     private final MessageNameResolver messageNameResolver;
     private final LegacyJpaEventStorageOperations legacyJpaOperations;
+    private final BatchingEventStorageOperations batchingOperations;
     private Executor writeExecutor;
 
     public LegacyJpaEventStorageEngine(
@@ -126,6 +135,12 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                                                        entityManagerProvider.getEntityManager(),
                                                                        domainEventEntryEntityName(),
                                                                        SnapshotEventEntry.class.getSimpleName());
+        this.batchingOperations = new BatchingEventStorageOperations(
+                transactionManager,
+                legacyJpaOperations,
+                batchSize,
+                customization.finalAggregateBatchPredicate(),
+                true);
         this.persistenceExceptionMapper = new PersistenceExceptionMapper(persistenceExceptionResolver);
     }
 
@@ -282,20 +297,16 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
         MessageStream<EventMessage<?>> resultingStream = MessageStream.empty();
+
+        // todo: fetch in single transaction or multiple???
         for (EventCriteria criterion : condition.criteria()) {
             var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
-            // todo: support condition.end()
-            // todo: fetch in single transaction or multiple???
-            var events =
-                    transactionManager.fetchInTransaction(() -> legacyJpaOperations.fetchDomainEvents(
-                            aggregateIdentifier,
-                            condition.start(),
-                            condition.end(),
-                            batchSize));
-            // todo: support more than 1 batch!
+            var events = batchingOperations.readEventData(aggregateIdentifier,
+                                                          condition.start(),
+                                                          condition.end());
             // todo: upcasting etc!!
             MessageStream<EventMessage<?>> aggregateEvents = MessageStream.fromStream(
-                    events.stream(),
+                    events,
                     this::convertToMessage,
                     event -> Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY,
                                           event.getAggregateIdentifier())
@@ -479,6 +490,106 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                     && domainEvent.getSequenceNumber() == 0L;
         }
     }
+
+
+    private static class BatchingEventStorageOperations {
+
+        private final TransactionManager transactionManager;
+        private final LegacyJpaEventStorageOperations legacyJpaOperations;
+        private final int batchSize;
+        private final Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate;
+        private final boolean fetchForAggregateUntilEmpty;
+
+        BatchingEventStorageOperations(
+                TransactionManager transactionManager,
+                LegacyJpaEventStorageOperations legacyJpaOperations,
+                int batchSize,
+                Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate,
+                boolean fetchForAggregateUntilEmpty
+        ) {
+            this.transactionManager = transactionManager;
+            this.legacyJpaOperations = legacyJpaOperations;
+            this.batchSize = batchSize;
+            this.finalAggregateBatchPredicate = getOrDefault(finalAggregateBatchPredicate,
+                                                             this::defaultFinalAggregateBatchPredicate);
+            this.fetchForAggregateUntilEmpty = fetchForAggregateUntilEmpty;
+        }
+
+        Stream<? extends DomainEventData<?>> readEventData(String identifier, long firstSequenceNumber,
+                                                           long lastSequenceNumber) {
+            EventStreamSpliterator<? extends DomainEventData<?>> spliterator = new EventStreamSpliterator<>(
+                    lastItem -> transactionManager.fetchInTransaction(
+                            () -> legacyJpaOperations.fetchDomainEvents(
+                                    identifier,
+                                    lastItem == null ? firstSequenceNumber : lastItem.getSequenceNumber() + 1,
+                                    lastSequenceNumber,
+                                    batchSize)
+                    )
+                    , finalAggregateBatchPredicate);
+            return StreamSupport.stream(spliterator, false);
+        }
+
+//        Stream<? extends TrackedEventData<?>> readEventData(TrackingToken trackingToken, boolean mayBlock) {
+//            EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(
+//                    lastItem -> legacyJpaOperations.fetchTrackedEvents(lastItem == null ? trackingToken : lastItem.trackingToken(), batchSize),
+//                    batch -> BATCH_OPTIMIZATION_DISABLED
+//            );
+//            return StreamSupport.stream(spliterator, false);
+//        }
+
+        private boolean defaultFinalAggregateBatchPredicate(List<? extends DomainEventData<?>> recentBatch) {
+            return fetchForAggregateUntilEmpty() ? recentBatch.isEmpty() : recentBatch.size() < batchSize;
+        }
+
+        public int batchSize() {
+            return batchSize;
+        }
+
+        public Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate() {
+            return finalAggregateBatchPredicate;
+        }
+
+        public boolean fetchForAggregateUntilEmpty() {
+            return fetchForAggregateUntilEmpty;
+        }
+
+        private static class EventStreamSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
+
+            private final Function<T, List<? extends T>> fetchFunction;
+            private final Predicate<List<? extends T>> finalBatchPredicate;
+
+            private Iterator<? extends T> iterator;
+            private T lastItem;
+            private boolean lastBatchFound;
+
+            private EventStreamSpliterator(Function<T, List<? extends T>> fetchFunction,
+                                           Predicate<List<? extends T>> finalBatchPredicate) {
+                super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT);
+                this.fetchFunction = fetchFunction;
+                this.finalBatchPredicate = finalBatchPredicate;
+            }
+
+            @Override
+            public boolean tryAdvance(Consumer<? super T> action) {
+                Objects.requireNonNull(action);
+                if (iterator == null || !iterator.hasNext()) {
+                    if (lastBatchFound) {
+                        return false;
+                    }
+                    List<? extends T> items = fetchFunction.apply(lastItem);
+                    lastBatchFound = finalBatchPredicate.test(items);
+                    iterator = items.iterator();
+                }
+                if (!iterator.hasNext()) {
+                    return false;
+                }
+
+                action.accept(lastItem = iterator.next());
+                return true;
+            }
+        }
+    }
+
 
     public record Config(
             EventUpcaster upcasterChain,
