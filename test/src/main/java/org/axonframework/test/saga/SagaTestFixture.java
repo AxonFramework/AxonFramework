@@ -31,7 +31,7 @@ import org.axonframework.eventhandling.LoggingErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
@@ -137,7 +137,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
         registeredResources.add(commandBus);
         registeredResources.add(eventScheduler);
         registeredResources.add(deadlineManager);
-        registeredResources.add(new DefaultCommandGateway(commandBus, new ClassBasedMessageNameResolver()));
+        registeredResources.add(new DefaultCommandGateway(commandBus, new ClassBasedMessageTypeResolver()));
 
         fixtureExecutionResult = new FixtureExecutionResultImpl<>(
                 sagaStore,

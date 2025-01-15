@@ -40,7 +40,7 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -219,7 +219,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 annotatedCommandHandler,
                 getParameterResolverFactory(),
                 getHandlerDefinition(),
-                new ClassBasedMessageNameResolver()
+                new ClassBasedMessageTypeResolver()
         );
         adapter.subscribe(commandBus);
         return this;

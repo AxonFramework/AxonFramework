@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package org.axonframework.commandhandling.gateway;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.messaging.MessageNameResolver;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
@@ -40,10 +40,10 @@ class DefaultCommandGatewayTest {
 
     private DefaultCommandGateway testSubject;
     private CommandBus mockCommandBus;
-    private static final MessageNameResolver TEST_MESSAGE_NAME_RESOLVER = new MessageNameResolver() {
+    private static final MessageTypeResolver TEST_MESSAGE_NAME_RESOLVER = new MessageTypeResolver() {
         @Override
-        public <P> QualifiedName resolve(P payload) {
-            return new QualifiedName("test", payload.getClass().getSimpleName(), "0.5.0");
+        public <P> MessageType resolve(P payload) {
+            return new MessageType(payload.getClass().getSimpleName());
         }
     };
 
@@ -56,7 +56,7 @@ class DefaultCommandGatewayTest {
     @Test
     void wrapsObjectIntoCommandMessage() throws ExecutionException, InterruptedException {
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(new QualifiedName("test", "result", "0.0.1"), "OK")
+                new GenericCommandResultMessage<>(new MessageType("result"), "OK")
         ));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
@@ -67,7 +67,7 @@ class DefaultCommandGatewayTest {
     @Test
     void dispatchReturnsExceptionallyCompletedFutureWhenCommandBusCompletesExceptionally() {
         when(mockCommandBus.dispatch(any(),
-                any())).thenAnswer(i -> CompletableFuture.failedFuture(new MockException()));
+                                     any())).thenAnswer(i -> CompletableFuture.failedFuture(new MockException()));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
         verify(mockCommandBus).dispatch(argThat(m -> m.getPayload().equals(payload)), isNull());
@@ -77,7 +77,7 @@ class DefaultCommandGatewayTest {
     @Test
     void dispatchReturnsExceptionallyCompletedFutureWhenCommandBusReturnsExceptionalMessage() {
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(new QualifiedName("test", "result", "0.0.1"), new MockException())
+                new GenericCommandResultMessage<>(new MessageType("result"), new MockException())
         ));
         TestPayload payload = new TestPayload();
         CommandResult result = testSubject.send(payload, null);
@@ -86,10 +86,10 @@ class DefaultCommandGatewayTest {
     }
 
     @Test
-    void resolvesQualifiedNameUsingMessageNameResolver() throws ExecutionException, InterruptedException {
+    void resolvesMessageTypeUsingMessageNameResolver() throws ExecutionException, InterruptedException {
         // given
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(new QualifiedName("test", "result", "0.0.1"), "OK")
+                new GenericCommandResultMessage<>(new MessageType("result"), "OK")
         ));
 
         // when
@@ -97,8 +97,8 @@ class DefaultCommandGatewayTest {
         CommandResult result = testSubject.send(payload, null);
 
         // then
-        var expectedQualifiedName = new QualifiedName("test", "TestPayload", "0.5.0");
-        verify(mockCommandBus).dispatch(argThat(m -> m.name().equals(expectedQualifiedName)), isNull());
+        var expectedMessageType = new MessageType("TestPayload");
+        verify(mockCommandBus).dispatch(argThat(m -> m.type().equals(expectedMessageType)), isNull());
         assertEquals("OK", result.getResultMessage().get().getPayload());
     }
 
@@ -106,13 +106,13 @@ class DefaultCommandGatewayTest {
     void passCommandMessageAsIs() throws ExecutionException, InterruptedException {
         // given
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(
-                new GenericCommandResultMessage<>(new QualifiedName("test", "result", "0.0.1"), "OK")
+                new GenericCommandResultMessage<>(new MessageType("result"), "OK")
         ));
 
         // when
         TestPayload payload = new TestPayload();
         var testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "1.0.0"), payload);
+                new GenericCommandMessage<>(new MessageType("command"), payload);
         CommandResult result = testSubject.send(testCommand, null);
 
         // then
