@@ -173,6 +173,8 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
     }
 
+    // todo: move it shared, use in other implementations
+
     private AppendTransaction appendTransaction(AppendCondition condition, List<TaggedEventMessage<?>> events) {
         return new AppendTransaction() {
 
@@ -184,25 +186,18 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
                 var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
-                var aggregateSequences = new HashMap<String, AtomicLong>();
+                var aggregateSequencer = AggregateSequencer.with(consistencyMarker);
                 return transactionManager.fetchInTransaction(() -> {
                     try {
                         var entityManager = entityManagerProvider.getEntityManager();
                         events.stream()
-                              .map(taggedEvent -> toDomainEventMessage(taggedEvent,
-                                                                       consistencyMarker,
-                                                                       aggregateSequences))
+                              .map(taggedEvent -> toDomainEventMessage(taggedEvent, aggregateSequencer))
                               .map(domainEventMessage -> new DomainEventEntry(domainEventMessage, eventSerializer))
                               .forEach(entityManager::persist);
                         if (explicitFlush) {
                             entityManager.flush();
                         }
-                        var newConsistencyMarker = consistencyMarker;
-                        for (var aggSeq : aggregateSequences.entrySet()) {
-                            newConsistencyMarker = newConsistencyMarker
-                                    .forwarded(aggSeq.getKey(), aggSeq.getValue().get());
-                        }
-                        return CompletableFuture.completedFuture(newConsistencyMarker);
+                        return CompletableFuture.completedFuture(aggregateSequencer.forwarded());
                     } catch (Exception e) {
                         var appendException = AppendEventsTransactionRejectedException
                                 .conflictingEventsDetected(consistencyMarker);
@@ -214,20 +209,17 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 });
             }
 
-            private DomainEventMessage<?> toDomainEventMessage(TaggedEventMessage<?> taggedEvent,
-                                                               AggregateBasedConsistencyMarker consistencyMarker,
-                                                               HashMap<String, AtomicLong> aggregateSequences) {
+            private DomainEventMessage<?> toDomainEventMessage(
+                    TaggedEventMessage<?> taggedEvent,
+                    AggregateSequencer aggregateSequencer
+            ) {
                 var aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
                 var aggregateType = resolveAggregateType(taggedEvent.tags());
                 var event = taggedEvent.event();
                 var isAggregateEvent =
                         aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty();
                 if (isAggregateEvent) {
-                    var nextSequence = resolveSequencer(
-                            aggregateSequences,
-                            aggregateIdentifier,
-                            consistencyMarker
-                    ).incrementAndGet();
+                    var nextSequence = aggregateSequencer.resolveBy(aggregateIdentifier).incrementAndGet();
                     return new GenericDomainEventMessage<>(
                             aggregateType,
                             aggregateIdentifier,
@@ -260,6 +252,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
     // todo: how do I know (even if its only tag), that it's an aggregate id?
+
     @Nullable
     private static String resolveAggregateIdentifier(Set<Tag> tags) {
         if (tags.isEmpty()) {
@@ -270,8 +263,8 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return tags.iterator().next().value();
         }
     }
-
     // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
+
     @Nullable
     private static String resolveAggregateType(Set<Tag> tags) {
         if (tags.isEmpty()) {
@@ -282,14 +275,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return tags.iterator().next().key();
         }
     }
-
-    // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
-    private static AtomicLong resolveSequencer(Map<String, AtomicLong> aggregateSequences, String aggregateIdentifier,
-                                               AggregateBasedConsistencyMarker consistencyMarker) {
-        return aggregateSequences.computeIfAbsent(aggregateIdentifier,
-                                                  i -> new AtomicLong(consistencyMarker.positionOf(i)));
-    }
-
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
         MessageStream<EventMessage<?>> resultingStream = MessageStream.empty();
@@ -402,6 +387,37 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         @Override
         public void rollback() {
 
+        }
+    }
+
+    static final class AggregateSequencer {
+
+        private final Map<String, AtomicLong> aggregateSequences;
+        private AggregateBasedConsistencyMarker consistencyMarker;
+
+        AggregateSequencer(Map<String, AtomicLong> aggregateSequences,
+                           AggregateBasedConsistencyMarker consistencyMarker) {
+            this.aggregateSequences = aggregateSequences;
+            this.consistencyMarker = consistencyMarker;
+        }
+
+        public static AggregateSequencer with(AggregateBasedConsistencyMarker consistencyMarker) {
+            return new AggregateSequencer(new HashMap<>(), consistencyMarker);
+        }
+
+        AggregateBasedConsistencyMarker forwarded() {
+            var newConsistencyMarker = consistencyMarker;
+            for (var aggSeq : aggregateSequences.entrySet()) {
+                newConsistencyMarker = newConsistencyMarker
+                        .forwarded(aggSeq.getKey(), aggSeq.getValue().get());
+            }
+            consistencyMarker = newConsistencyMarker;
+            return newConsistencyMarker;
+        }
+
+        private AtomicLong resolveBy(String aggregateIdentifier) {
+            return aggregateSequences.computeIfAbsent(aggregateIdentifier,
+                                                      i -> new AtomicLong(consistencyMarker.positionOf(i)));
         }
     }
 
