@@ -84,27 +84,25 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(LegacyJpaEventStorageEngine.class);
 
-    // todo: group configs!!!
     private final EntityManagerProvider entityManagerProvider;
     private final TransactionManager transactionManager;
     private final Serializer eventSerializer;
-    private final Serializer snapshotSerializer;
-    private final PersistenceExceptionResolver persistenceExceptionResolver;
     private final EventUpcaster upcasterChain;
+
+    // todo: snapshots support
+    private final Serializer snapshotSerializer;
     private final SnapshotFilter snapshotFilter;
-    private final int batchSize;
 
     private final boolean explicitFlush;
     private final long lowestGlobalSequence;
-    private final int maxGapOffset;
-    private final int gapTimeout;
 
     // AsyncEventStorageEngine specific
     private final PersistenceExceptionMapper persistenceExceptionMapper;
-    private final MessageNameResolver messageNameResolver;
+    private final MessageNameResolver messageNameResolver; // todo: use while upcasting
     private final LegacyJpaEventStorageOperations legacyJpaOperations;
     private final BatchingEventStorageOperations batchingOperations;
     private final GapAwareTrackingTokenOperations tokenOperations;
+
     private Executor writeExecutor;
 
     public LegacyJpaEventStorageEngine(
@@ -112,7 +110,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             @javax.annotation.Nonnull TransactionManager transactionManager,
             @javax.annotation.Nonnull Serializer eventSerializer,
             @javax.annotation.Nonnull Serializer snapshotSerializer,
-            @javax.annotation.Nonnull UnaryOperator<Config> configurationOverride
+            @javax.annotation.Nonnull UnaryOperator<Customization> configurationOverride
     ) {
         this.writeExecutor = Executors.newFixedThreadPool(10); // todo: configurable, AxonThreadFactory etc.
         // todo: is is useful? Maybe we'd like to utilize the same thread as invoker?
@@ -122,40 +120,33 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         this.eventSerializer = eventSerializer;
         this.snapshotSerializer = snapshotSerializer;
 
-        var customization = configurationOverride.apply(Config.defaultConfig());
-        this.upcasterChain = customization.upcasterChain();
-        this.persistenceExceptionResolver = customization.persistenceExceptionResolver();
-        this.snapshotFilter = customization.snapshotFilter();
-        this.batchSize = customization.batchSize();
-        this.messageNameResolver = customization.messageNameResolver();
 
-        // BatchingEventStorageEngine
-        // customization.batchSize();
-        // customization.finalAggregateBatchPredicate();
+        var customization = configurationOverride.apply(Customization.defaultConfig());
+        this.upcasterChain = customization.upcasterChain();
+        this.snapshotFilter = customization.snapshotFilter();
+        this.messageNameResolver = customization.messageNameResolver();
 
         // JpaEventStorageEngine
         this.explicitFlush = customization.explicitFlush();
         this.lowestGlobalSequence = customization.lowestGlobalSequence();
-        this.maxGapOffset = customization.maxGapOffset();
-        this.gapTimeout = customization.gapTimeout();
 
         this.legacyJpaOperations = new LegacyJpaEventStorageOperations(transactionManager,
                                                                        entityManagerProvider.getEntityManager(),
                                                                        domainEventEntryEntityName(),
                                                                        SnapshotEventEntry.class.getSimpleName());
-        this.tokenOperations = new GapAwareTrackingTokenOperations(gapTimeout, logger);
+        this.tokenOperations = new GapAwareTrackingTokenOperations(customization.gapTimeout(), logger);
         this.batchingOperations = new BatchingEventStorageOperations(
                 transactionManager,
                 legacyJpaOperations,
                 tokenOperations,
-                batchSize,
+                customization.batchSize(),
                 customization.finalAggregateBatchPredicate(),
                 true,
                 customization.gapCleaningThreshold(),
                 customization.lowestGlobalSequence(),
                 customization.maxGapOffset()
         );
-        this.persistenceExceptionMapper = new PersistenceExceptionMapper(persistenceExceptionResolver);
+        this.persistenceExceptionMapper = new PersistenceExceptionMapper(customization.persistenceExceptionResolver());
     }
 
     @Override
@@ -169,10 +160,8 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         if (events.isEmpty()) {
             return CompletableFuture.completedFuture(new EmptyAppendTransaction(condition));
         }
-        return CompletableFuture.supplyAsync(
-                () -> appendTransaction(condition, events),
-                writeExecutor // todo: is it needed?
-        );
+        // todo: async with some executor?
+        return CompletableFuture.completedFuture(appendTransaction(condition, events));
     }
 
     // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
@@ -211,16 +200,15 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                         }
                         var newConsistencyMarker = consistencyMarker;
                         for (var aggSeq : aggregateSequences.entrySet()) {
-                            newConsistencyMarker = newConsistencyMarker.forwarded(aggSeq.getKey(),
-                                                                                  aggSeq.getValue().get());
+                            newConsistencyMarker = newConsistencyMarker
+                                    .forwarded(aggSeq.getKey(), aggSeq.getValue().get());
                         }
                         return CompletableFuture.completedFuture(newConsistencyMarker);
                     } catch (Exception e) {
-                        var appendException = AppendEventsTransactionRejectedException.conflictingEventsDetected(
-                                consistencyMarker);
-                        var legacyPersistenceException = persistenceExceptionMapper.mapPersistenceException(e,
-                                                                                                            events.getFirst()
-                                                                                                                  .event());
+                        var appendException = AppendEventsTransactionRejectedException
+                                .conflictingEventsDetected(consistencyMarker);
+                        var legacyPersistenceException = persistenceExceptionMapper
+                                .mapPersistenceException(e, events.getFirst().event());
                         appendException.addSuppressed(legacyPersistenceException);
                         throw appendException; // fixme: changed behavior (legacy throws legacyPersistenceException), compare with LegacyAxonServerEventStorageEngine
                     }
@@ -263,10 +251,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
             @Override
             public void rollback() {
+                // No action needed for rollback as the transaction is managed by the TransactionManager
                 finished.set(true);
                 // todo: is it good solution?
                 // Previously I received: jakarta.persistence.TransactionRequiredException: No EntityManager with actual transaction available for current thread - cannot reliably process 'persist' call
-                // No action needed for rollback as the transaction is managed by the TransactionManager
             }
         };
     }
@@ -307,19 +295,18 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
         MessageStream<EventMessage<?>> resultingStream = MessageStream.empty();
 
-        // todo: fetch in single transaction or multiple???
+        // todo: fetch stream for each criteria in separate transaction (now) or together?
         for (EventCriteria criterion : condition.criteria()) {
             var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
             var events = batchingOperations.readEventData(aggregateIdentifier,
                                                           condition.start(),
                                                           condition.end());
-            // todo: upcasting etc!!
             var deserialized = upcastAndDeserializeDomainEvents(events, eventSerializer, upcasterChain);
 
             MessageStream<EventMessage<?>> aggregateEvents = MessageStream.fromStream(
                     deserialized.asStream(),
                     e -> e,
-                    e -> fillContextWith(e)
+                    LegacyJpaEventStorageEngine::fillContextWith
             );
             resultingStream = resultingStream.concatWith(aggregateEvents);
         }
@@ -333,7 +320,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     }
 
     private String domainEventEntryEntityName() {
-        return DomainEventEntry.class.getSimpleName(); // todo: configurable
+        return DomainEventEntry.class.getSimpleName();
     }
 
     @Override
@@ -364,9 +351,9 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
         if (event instanceof TrackedEventMessage<?> trackedEventMessage) {
             var token = trackedEventMessage.trackingToken();
-            context = Context.with(TrackingToken.RESOURCE_KEY, token); // is it OK?
+            context = Context.with(TrackingToken.RESOURCE_KEY, token);
         }
-        return context; // todo: what to do with that?
+        return context;
     }
 
     @Override
@@ -536,7 +523,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return StreamSupport.stream(spliterator, false);
         }
 
-        // todo: changed TrackedDomainEventData, check if its good, maybe should be TrackedEventData and handled on upper level
         Stream<? extends TrackedEventData<?>> readEventData(TrackingToken trackingToken) {
             EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(
                     lastItem -> fetchTrackedEvents(lastItem == null ? trackingToken : lastItem.trackingToken(),
@@ -546,7 +532,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return StreamSupport.stream(spliterator, false);
         }
 
-        // todo: changed TrackedDomainEventData, check if its good, maybe should be TrackedEventData and handled on upper level
         private List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
             Assert.isTrue(
                     lastToken == null || lastToken instanceof GapAwareTrackingToken,
@@ -618,7 +603,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     }
 
 
-    public record Config(
+    public record Customization(
             EventUpcaster upcasterChain,
             PersistenceExceptionResolver persistenceExceptionResolver,
             SnapshotFilter snapshotFilter,
@@ -638,7 +623,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         private static final int DEFAULT_GAP_TIMEOUT = 60000;
         private static final int DEFAULT_GAP_CLEANING_THRESHOLD = 250;
 
-        public Config {
+        public Customization {
             assertNonNull(upcasterChain, "EventUpcaster may not be null");
             assertNonNull(snapshotFilter, "The snapshotFilter may not be null");
             assertThat(batchSize, size -> size > 0, "The batchSize must be a positive number");
@@ -651,8 +636,8 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             assertPositive(gapCleaningThreshold, "gapCleaningThreshold");
         }
 
-        public static Config defaultConfig() {
-            return new Config(
+        public static Customization defaultConfig() {
+            return new Customization(
                     NoOpEventUpcaster.INSTANCE,
                     null,
                     SnapshotFilter.allowAll(),
@@ -667,109 +652,109 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             );
         }
 
-        public Config upcasterChain(EventUpcaster upcasterChain) {
-            return new Config(upcasterChain,
-                              persistenceExceptionResolver,
-                              snapshotFilter,
-                              batchSize,
-                              finalAggregateBatchPredicate,
-                              messageNameResolver,
-                              explicitFlush,
-                              maxGapOffset,
-                              lowestGlobalSequence,
-                              gapTimeout,
-                              gapCleaningThreshold
+        public Customization upcasterChain(EventUpcaster upcasterChain) {
+            return new Customization(upcasterChain,
+                                     persistenceExceptionResolver,
+                                     snapshotFilter,
+                                     batchSize,
+                                     finalAggregateBatchPredicate,
+                                     messageNameResolver,
+                                     explicitFlush,
+                                     maxGapOffset,
+                                     lowestGlobalSequence,
+                                     gapTimeout,
+                                     gapCleaningThreshold
             );
         }
 
-        public Config persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
-            return new Config(upcasterChain,
-                              persistenceExceptionResolver,
-                              snapshotFilter,
-                              batchSize,
-                              finalAggregateBatchPredicate,
-                              messageNameResolver,
-                              explicitFlush,
-                              maxGapOffset,
-                              lowestGlobalSequence,
-                              gapTimeout,
-                              gapCleaningThreshold
+        public Customization persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
+            return new Customization(upcasterChain,
+                                     persistenceExceptionResolver,
+                                     snapshotFilter,
+                                     batchSize,
+                                     finalAggregateBatchPredicate,
+                                     messageNameResolver,
+                                     explicitFlush,
+                                     maxGapOffset,
+                                     lowestGlobalSequence,
+                                     gapTimeout,
+                                     gapCleaningThreshold
             );
         }
 
-        public Config snapshotFilter(SnapshotFilter snapshotFilter) {
-            return new Config(upcasterChain,
-                              persistenceExceptionResolver,
-                              snapshotFilter,
-                              batchSize,
-                              finalAggregateBatchPredicate,
-                              messageNameResolver,
-                              explicitFlush,
-                              maxGapOffset,
-                              lowestGlobalSequence,
-                              gapTimeout,
-                              gapCleaningThreshold
+        public Customization snapshotFilter(SnapshotFilter snapshotFilter) {
+            return new Customization(upcasterChain,
+                                     persistenceExceptionResolver,
+                                     snapshotFilter,
+                                     batchSize,
+                                     finalAggregateBatchPredicate,
+                                     messageNameResolver,
+                                     explicitFlush,
+                                     maxGapOffset,
+                                     lowestGlobalSequence,
+                                     gapTimeout,
+                                     gapCleaningThreshold
             );
         }
 
-        public Config batchSize(int batchSize) {
-            return new Config(upcasterChain,
-                              persistenceExceptionResolver,
-                              snapshotFilter,
-                              batchSize,
-                              finalAggregateBatchPredicate,
-                              messageNameResolver,
-                              explicitFlush,
-                              maxGapOffset,
-                              lowestGlobalSequence,
-                              gapTimeout,
-                              gapCleaningThreshold
+        public Customization batchSize(int batchSize) {
+            return new Customization(upcasterChain,
+                                     persistenceExceptionResolver,
+                                     snapshotFilter,
+                                     batchSize,
+                                     finalAggregateBatchPredicate,
+                                     messageNameResolver,
+                                     explicitFlush,
+                                     maxGapOffset,
+                                     lowestGlobalSequence,
+                                     gapTimeout,
+                                     gapCleaningThreshold
             );
         }
 
-        public Config finalAggregateBatchPredicate(
+        public Customization finalAggregateBatchPredicate(
                 Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate) {
-            return new Config(upcasterChain,
-                              persistenceExceptionResolver,
-                              snapshotFilter,
-                              batchSize,
-                              finalAggregateBatchPredicate,
-                              messageNameResolver,
-                              explicitFlush,
-                              maxGapOffset,
-                              lowestGlobalSequence,
-                              gapTimeout,
-                              gapCleaningThreshold
+            return new Customization(upcasterChain,
+                                     persistenceExceptionResolver,
+                                     snapshotFilter,
+                                     batchSize,
+                                     finalAggregateBatchPredicate,
+                                     messageNameResolver,
+                                     explicitFlush,
+                                     maxGapOffset,
+                                     lowestGlobalSequence,
+                                     gapTimeout,
+                                     gapCleaningThreshold
             );
         }
 
-        public Config messageNameResolver(MessageNameResolver messageNameResolver) {
-            return new Config(upcasterChain,
-                              persistenceExceptionResolver,
-                              snapshotFilter,
-                              batchSize,
-                              finalAggregateBatchPredicate,
-                              messageNameResolver,
-                              explicitFlush,
-                              maxGapOffset,
-                              lowestGlobalSequence,
-                              gapTimeout,
-                              gapCleaningThreshold
+        public Customization messageNameResolver(MessageNameResolver messageNameResolver) {
+            return new Customization(upcasterChain,
+                                     persistenceExceptionResolver,
+                                     snapshotFilter,
+                                     batchSize,
+                                     finalAggregateBatchPredicate,
+                                     messageNameResolver,
+                                     explicitFlush,
+                                     maxGapOffset,
+                                     lowestGlobalSequence,
+                                     gapTimeout,
+                                     gapCleaningThreshold
             );
         }
 
-        public Config lowestGlobalSequence(long lowestGlobalSequence) {
-            return new Config(upcasterChain,
-                              persistenceExceptionResolver,
-                              snapshotFilter,
-                              batchSize,
-                              finalAggregateBatchPredicate,
-                              messageNameResolver,
-                              explicitFlush,
-                              maxGapOffset,
-                              lowestGlobalSequence,
-                              gapTimeout,
-                              gapCleaningThreshold
+        public Customization lowestGlobalSequence(long lowestGlobalSequence) {
+            return new Customization(upcasterChain,
+                                     persistenceExceptionResolver,
+                                     snapshotFilter,
+                                     batchSize,
+                                     finalAggregateBatchPredicate,
+                                     messageNameResolver,
+                                     explicitFlush,
+                                     maxGapOffset,
+                                     lowestGlobalSequence,
+                                     gapTimeout,
+                                     gapCleaningThreshold
             );
         }
 
