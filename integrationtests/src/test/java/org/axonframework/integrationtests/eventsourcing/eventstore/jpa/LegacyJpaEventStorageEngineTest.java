@@ -34,7 +34,7 @@ import java.time.Instant;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = LegacyJpaEventStorageEngineTest.TestContext.class)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD) // todo: find better way to clear db between tests
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSuite<LegacyJpaEventStorageEngine> {
 
     public static final Serializer TEST_SERIALIZER = TestSerializer.JACKSON.getSerializer();
