@@ -52,8 +52,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterators;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -95,14 +93,11 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     private final boolean explicitFlush;
 
-    // AsyncEventStorageEngine specific
     private final PersistenceExceptionMapper persistenceExceptionMapper;
     private final MessageNameResolver messageNameResolver; // todo: use while upcasting
     private final LegacyJpaEventStorageOperations legacyJpaOperations;
     private final BatchingEventStorageOperations batchingOperations;
     private final GapAwareTrackingTokenOperations tokenOperations;
-
-    private Executor writeExecutor; // todo: do we need that?
 
     public LegacyJpaEventStorageEngine(
             @javax.annotation.Nonnull EntityManagerProvider entityManagerProvider,
@@ -111,9 +106,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             @javax.annotation.Nonnull Serializer snapshotSerializer,
             @javax.annotation.Nonnull UnaryOperator<Customization> configurationOverride
     ) {
-        this.writeExecutor = Executors.newFixedThreadPool(10); // todo: configurable, AxonThreadFactory etc.
-        // todo: is is useful? Maybe we'd like to utilize the same thread as invoker?
-
         this.entityManagerProvider = entityManagerProvider;
         this.transactionManager = transactionManager;
         this.eventSerializer = eventSerializer;
@@ -345,7 +337,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         var token = legacyJpaOperations.minGlobalIndex()
                                        .flatMap(this::gapAwareTrackingTokenOn)
                                        .orElse(null);
-        return CompletableFuture.completedFuture(token); // todo: supplyAsync?
+        return CompletableFuture.completedFuture(token);
     }
 
     private Optional<TrackingToken> gapAwareTrackingTokenOn(Long globalIndex) {
@@ -359,7 +351,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         var headToken = legacyJpaOperations.maxGlobalIndex()
                                            .flatMap(this::gapAwareTrackingTokenOn)
                                            .orElse(null);
-        return CompletableFuture.completedFuture(headToken); // todo: supplyAsync?
+        return CompletableFuture.completedFuture(headToken);
     }
 
     @Override
@@ -369,7 +361,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                        .or(() -> legacyJpaOperations.maxGlobalIndex()
                                                                     .flatMap(this::gapAwareTrackingTokenOn))
                                        .orElse(null);
-        return CompletableFuture.completedFuture(token); // todo: supplyAsync?
+        return CompletableFuture.completedFuture(token);
     }
 
     @Override
