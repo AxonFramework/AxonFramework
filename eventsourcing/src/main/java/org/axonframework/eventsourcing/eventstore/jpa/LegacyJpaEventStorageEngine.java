@@ -6,6 +6,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -169,10 +170,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         if (events.isEmpty()) {
             return CompletableFuture.completedFuture(new EmptyAppendTransaction(condition));
         }
-        return CompletableFuture.supplyAsync(
-                () -> appendTransaction(condition, events),
-                writeExecutor // todo: is it needed?
-        );
+        return CompletableFuture.completedFuture(appendTransaction(condition, events));
     }
 
     // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
@@ -188,43 +186,40 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     private AppendTransaction appendTransaction(AppendCondition condition, List<TaggedEventMessage<?>> events) {
         return new AppendTransaction() {
 
-            private final AtomicBoolean finished = new AtomicBoolean(false);
+            final Transaction tx = transactionManager.startTransaction();
 
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
-                if (finished.getAndSet(true)) {
-                    return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
-                }
                 var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
                 var aggregateSequences = new HashMap<String, AtomicLong>();
-                return transactionManager.fetchInTransaction(() -> {
-                    try {
-                        var entityManager = entityManagerProvider.getEntityManager();
-                        events.stream()
-                              .map(taggedEvent -> toDomainEventMessage(taggedEvent,
-                                                                       consistencyMarker,
-                                                                       aggregateSequences))
-                              .map(domainEventMessage -> new DomainEventEntry(domainEventMessage, eventSerializer))
-                              .forEach(entityManager::persist);
-                        if (explicitFlush) {
-                            entityManager.flush();
-                        }
-                        var newConsistencyMarker = consistencyMarker;
-                        for (var aggSeq : aggregateSequences.entrySet()) {
-                            newConsistencyMarker = newConsistencyMarker.forwarded(aggSeq.getKey(),
-                                                                                  aggSeq.getValue().get());
-                        }
-                        return CompletableFuture.completedFuture(newConsistencyMarker);
-                    } catch (Exception e) {
-                        var appendException = AppendEventsTransactionRejectedException.conflictingEventsDetected(
-                                consistencyMarker);
-                        var legacyPersistenceException = persistenceExceptionMapper.mapPersistenceException(e,
-                                                                                                            events.getFirst()
-                                                                                                                  .event());
-                        appendException.addSuppressed(legacyPersistenceException);
-                        throw appendException; // fixme: changed behavior (legacy throws legacyPersistenceException), compare with LegacyAxonServerEventStorageEngine
+                try {
+                    var entityManager = entityManagerProvider.getEntityManager();
+                    events.stream()
+                          .map(taggedEvent -> toDomainEventMessage(taggedEvent,
+                                                                   consistencyMarker,
+                                                                   aggregateSequences))
+                          .map(domainEventMessage -> new DomainEventEntry(domainEventMessage, eventSerializer))
+                          .forEach(entityManager::persist);
+                    if (explicitFlush) {
+                        entityManager.flush();
                     }
-                });
+                    var newConsistencyMarker = consistencyMarker;
+                    for (var aggSeq : aggregateSequences.entrySet()) {
+                        newConsistencyMarker = newConsistencyMarker.forwarded(aggSeq.getKey(),
+                                                                              aggSeq.getValue().get());
+                    }
+                    tx.commit();
+                    return CompletableFuture.completedFuture(newConsistencyMarker);
+                } catch (Exception e) {
+                    tx.rollback();
+                    var appendException = AppendEventsTransactionRejectedException.conflictingEventsDetected(
+                            consistencyMarker);
+                    var legacyPersistenceException = persistenceExceptionMapper.mapPersistenceException(e,
+                                                                                                        events.getFirst()
+                                                                                                              .event());
+                    appendException.addSuppressed(legacyPersistenceException);
+                    throw appendException; // fixme: changed behavior (legacy throws legacyPersistenceException), compare with LegacyAxonServerEventStorageEngine
+                }
             }
 
             private DomainEventMessage<?> toDomainEventMessage(TaggedEventMessage<?> taggedEvent,
@@ -263,10 +258,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
             @Override
             public void rollback() {
-                finished.set(true);
-                // todo: is it good solution?
-                // Previously I received: jakarta.persistence.TransactionRequiredException: No EntityManager with actual transaction available for current thread - cannot reliably process 'persist' call
-                // No action needed for rollback as the transaction is managed by the TransactionManager
+                tx.rollback();
             }
         };
     }
