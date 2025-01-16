@@ -19,6 +19,7 @@ package org.axonframework.common.transaction;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycle;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -88,6 +89,18 @@ public interface TransactionManager extends ProcessingLifecycleHandlerRegistrar 
         Transaction transaction = startTransaction();
         try {
             T result = supplier.get();
+            transaction.commit();
+            return result;
+        } catch (Throwable e) {
+            transaction.rollback();
+            throw e;
+        }
+    }
+
+    default <T> T transactionally(Function<Transaction, T> doInTransaction) {
+        Transaction transaction = startTransaction();
+        try {
+            T result = doInTransaction.apply(transaction);
             transaction.commit();
             return result;
         } catch (Throwable e) {

@@ -27,6 +27,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.test.StepVerifier;
 
 import java.util.ArrayList;

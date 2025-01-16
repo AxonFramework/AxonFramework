@@ -184,32 +184,45 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     }
 
     private AppendTransaction appendTransaction(AppendCondition condition, List<TaggedEventMessage<?>> events) {
-        return new AppendTransaction() {
 
-            final Transaction tx = transactionManager.startTransaction();
+        var tx = transactionManager.startTransaction();
+
+        var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
+        var aggregateSequences = new HashMap<String, AtomicLong>();
+        AggregateBasedConsistencyMarker newConsistencyMarker = consistencyMarker;
+        var entityManager = entityManagerProvider.getEntityManager();
+        try {
+            events.stream()
+                  .map(taggedEvent -> toDomainEventMessage(taggedEvent,
+                                                           consistencyMarker,
+                                                           aggregateSequences))
+                  .map(domainEventMessage -> new DomainEventEntry(domainEventMessage, eventSerializer))
+                  .forEach(entityManager::persist);
+            for (var aggSeq : aggregateSequences.entrySet()) {
+                newConsistencyMarker = newConsistencyMarker.forwarded(aggSeq.getKey(),
+                                                                      aggSeq.getValue().get());
+            }
+        } catch (Exception e) {
+            var appendException = AppendEventsTransactionRejectedException.conflictingEventsDetected(
+                    consistencyMarker);
+            var legacyPersistenceException = persistenceExceptionMapper.mapPersistenceException(e,
+                                                                                                events.getFirst()
+                                                                                                      .event());
+            appendException.addSuppressed(legacyPersistenceException);
+            throw appendException; // fixme: changed behavior (legacy throws legacyPersistenceException), compare with LegacyAxonServerEventStorageEngine
+        }
+
+        AggregateBasedConsistencyMarker finalNewConsistencyMarker = newConsistencyMarker;
+        return new AppendTransaction() {
 
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
-                var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
-                var aggregateSequences = new HashMap<String, AtomicLong>();
                 try {
-                    var entityManager = entityManagerProvider.getEntityManager();
-                    events.stream()
-                          .map(taggedEvent -> toDomainEventMessage(taggedEvent,
-                                                                   consistencyMarker,
-                                                                   aggregateSequences))
-                          .map(domainEventMessage -> new DomainEventEntry(domainEventMessage, eventSerializer))
-                          .forEach(entityManager::persist);
                     if (explicitFlush) {
                         entityManager.flush();
                     }
-                    var newConsistencyMarker = consistencyMarker;
-                    for (var aggSeq : aggregateSequences.entrySet()) {
-                        newConsistencyMarker = newConsistencyMarker.forwarded(aggSeq.getKey(),
-                                                                              aggSeq.getValue().get());
-                    }
                     tx.commit();
-                    return CompletableFuture.completedFuture(newConsistencyMarker);
+                    return CompletableFuture.completedFuture(finalNewConsistencyMarker);
                 } catch (Exception e) {
                     tx.rollback();
                     var appendException = AppendEventsTransactionRejectedException.conflictingEventsDetected(
@@ -222,45 +235,45 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 }
             }
 
-            private DomainEventMessage<?> toDomainEventMessage(TaggedEventMessage<?> taggedEvent,
-                                                               AggregateBasedConsistencyMarker consistencyMarker,
-                                                               HashMap<String, AtomicLong> aggregateSequences) {
-                var aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
-                var aggregateType = resolveAggregateType(taggedEvent.tags());
-                var event = taggedEvent.event();
-                var isAggregateEvent =
-                        aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty();
-                if (isAggregateEvent) {
-                    var nextSequence = resolveSequencer(
-                            aggregateSequences,
-                            aggregateIdentifier,
-                            consistencyMarker
-                    ).incrementAndGet();
-                    return new GenericDomainEventMessage<>(
-                            aggregateType,
-                            aggregateIdentifier,
-                            nextSequence,
-                            event.getIdentifier(),
-                            event.name(),
-                            event.getPayload(),
-                            event.getMetaData(),
-                            event.getTimestamp()
-                    );
-                } else {
-                    // returns non-aggregate event, so the sequence is always 0
-                    return new GenericDomainEventMessage<>(null,
-                                                           event.getIdentifier(),
-                                                           0L,
-                                                           event,
-                                                           event::getTimestamp);
-                }
-            }
-
             @Override
             public void rollback() {
                 tx.rollback();
             }
         };
+    }
+
+    private DomainEventMessage<?> toDomainEventMessage(TaggedEventMessage<?> taggedEvent,
+                                                       AggregateBasedConsistencyMarker consistencyMarker,
+                                                       HashMap<String, AtomicLong> aggregateSequences) {
+        var aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
+        var aggregateType = resolveAggregateType(taggedEvent.tags());
+        var event = taggedEvent.event();
+        var isAggregateEvent =
+                aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty();
+        if (isAggregateEvent) {
+            var nextSequence = resolveSequencer(
+                    aggregateSequences,
+                    aggregateIdentifier,
+                    consistencyMarker
+            ).incrementAndGet();
+            return new GenericDomainEventMessage<>(
+                    aggregateType,
+                    aggregateIdentifier,
+                    nextSequence,
+                    event.getIdentifier(),
+                    event.name(),
+                    event.getPayload(),
+                    event.getMetaData(),
+                    event.getTimestamp()
+            );
+        } else {
+            // returns non-aggregate event, so the sequence is always 0
+            return new GenericDomainEventMessage<>(null,
+                                                   event.getIdentifier(),
+                                                   0L,
+                                                   event,
+                                                   event::getTimestamp);
+        }
     }
 
     // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
