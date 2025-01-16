@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Interface describing a {@link QualifiedName qualified @code qualifiedName} and {@code version}.
+ * Record combining a {@link QualifiedName qualified name} and {@code version}.
  * <p>
  * The {@code QualifiedName} is useful to provide clear names to {@link Message Messages},
  * {@link MessageHandler MessageHandlers}, and other components that require naming.
@@ -61,10 +61,13 @@ public record MessageType(@Nonnull QualifiedName qualifiedName,
      */
     public MessageType {
         requireNonNull(qualifiedName, "The qualified qualifiedName cannot be null.");
-        Assert.assertThat(version, StringUtils::nonEmptyOrNull,
-                          () -> new IllegalArgumentException(
-                                  "The given version [" + version + "] is unsupported because it is null or empty."
-                          ));
+        Assert.assertThat(
+                requireNonNull(version, "The given version [" + version + "] is unsupported because it is null."),
+                StringUtils::nonEmpty,
+                () -> new IllegalArgumentException(
+                        "The given version [" + version + "] is unsupported because it is empty."
+                )
+        );
     }
 
     /**
@@ -73,7 +76,7 @@ public record MessageType(@Nonnull QualifiedName qualifiedName,
      * @param name The {@code QualifiedName} of this {@code MessageType}.
      */
     public MessageType(@Nonnull QualifiedName name) {
-        this(requireNonNull(name, "The given QualifiedName cannot be null"), DEFAULT_VERSION);
+        this(name, DEFAULT_VERSION);
     }
 
     /**
@@ -84,8 +87,7 @@ public record MessageType(@Nonnull QualifiedName qualifiedName,
      *                      {@code MessageType} under construction.
      */
     public MessageType(@Nonnull String qualifiedName) {
-        this(new QualifiedName(requireNonNull(qualifiedName, "The given qualified qualifiedName cannot be null.")),
-             DEFAULT_VERSION);
+        this(new QualifiedName(qualifiedName), DEFAULT_VERSION);
     }
 
     /**
@@ -99,8 +101,7 @@ public record MessageType(@Nonnull QualifiedName qualifiedName,
      */
     public MessageType(@Nonnull String qualifiedName,
                        @Nonnull String version) {
-        this(new QualifiedName(requireNonNull(qualifiedName, "The given qualified qualifiedName cannot be null.")),
-             requireNonNull(version, "The given version cannot be null."));
+        this(new QualifiedName(qualifiedName), version);
     }
 
     /**
@@ -117,8 +118,7 @@ public record MessageType(@Nonnull QualifiedName qualifiedName,
     public MessageType(String namespace,
                        @Nonnull String localName,
                        @Nonnull String version) {
-        this(new QualifiedName(namespace, requireNonNull(localName, "The given localName cannot be null.")),
-             requireNonNull(version, "The given version cannot be null."));
+        this(new QualifiedName(namespace, localName), version);
     }
 
     /**
@@ -132,8 +132,7 @@ public record MessageType(@Nonnull QualifiedName qualifiedName,
      */
     public MessageType(@Nonnull Class<?> clazz,
                        @Nonnull String version) {
-        this(new QualifiedName(requireNonNull(clazz, "The given Class cannot be null.")),
-             requireNonNull(version, "The given version cannot be null."));
+        this(new QualifiedName(clazz), version);
     }
 
     /**

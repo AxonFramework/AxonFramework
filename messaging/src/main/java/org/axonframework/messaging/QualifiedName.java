@@ -23,6 +23,8 @@ import org.axonframework.common.StringUtils;
 
 import java.io.Serializable;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Interface describing a qualified {@code qualifiedName}, providing space for a {@link #namespace() namespace},
  * {@link #localName() local qualifiedName}.
@@ -51,10 +53,13 @@ public record QualifiedName(@Nonnull String name) implements Serializable {
      * Compact constructor asserting whether the {@code qualifiedName} is non-null and not empty.
      */
     public QualifiedName {
-        Assert.assertThat(name, StringUtils::nonEmptyOrNull,
-                          () -> new IllegalArgumentException(
-                                  "The given qualifiedName [" + name + "] is unsupported because it is null or empty."
-                          ));
+        Assert.assertThat(
+                requireNonNull(name, "The given name [" + name + "] is unsupported because it is null."),
+                StringUtils::nonEmpty,
+                () -> new IllegalArgumentException(
+                        "The given name [" + name + "] is unsupported because it is empty."
+                )
+        );
     }
 
     /**
@@ -72,11 +77,15 @@ public record QualifiedName(@Nonnull String name) implements Serializable {
     }
 
     private static String combineNames(String namespace, String localName) {
-        Assert.assertThat(localName, StringUtils::nonEmptyOrNull,
-                          () -> new IllegalArgumentException(
-                                  "The given local qualifiedName [" + localName
-                                          + "] is unsupported because it is null or empty."
-                          ));
+        Assert.assertThat(
+                requireNonNull(
+                        localName, "The given local name [" + localName + "] is unsupported because it is null."
+                ),
+                StringUtils::nonEmptyOrNull,
+                () -> new IllegalArgumentException(
+                        "The given local name [" + localName + "] is unsupported because it is empty."
+                )
+        );
         return StringUtils.nonEmptyOrNull(namespace) ? namespace + DELIMITER + localName : localName;
     }
 
@@ -87,7 +96,7 @@ public record QualifiedName(@Nonnull String name) implements Serializable {
      * @param clazz The {@code Class} from which to use the {@link Class#getName()} as the {@link #name()}.
      */
     public QualifiedName(@Nonnull Class<?> clazz) {
-        this(clazz.getName());
+        this(requireNonNull(clazz, "The given Class cannot be null.").getName());
     }
 
     @Nullable

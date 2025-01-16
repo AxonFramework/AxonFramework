@@ -68,9 +68,9 @@ class QualifiedNameTest {
     }
 
     @Test
-    void throwsIllegalArgumentExceptionForNullName() {
+    void throwsNullPointerExceptionForNullName() {
         //noinspection DataFlowIssue
-        assertThrows(IllegalArgumentException.class, () -> new QualifiedName((String) null));
+        assertThrows(NullPointerException.class, () -> new QualifiedName((String) null));
     }
 
     @Test
@@ -79,9 +79,9 @@ class QualifiedNameTest {
     }
 
     @Test
-    void throwsIllegalArgumentExceptionForNullLocalName() {
+    void throwsNullPointerExceptionForNullLocalName() {
         //noinspection DataFlowIssue
-        assertThrows(IllegalArgumentException.class, () -> new QualifiedName(NAMESPACE, null));
+        assertThrows(NullPointerException.class, () -> new QualifiedName(NAMESPACE, null));
     }
 
     @Test

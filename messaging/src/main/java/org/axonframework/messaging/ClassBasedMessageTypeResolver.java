@@ -26,15 +26,15 @@ import javax.annotation.Nonnull;
  * <p>
  * The {@link Class#getPackageName()} becomes the {@link QualifiedName#namespace()} and the
  * {@link Class#getSimpleName()} becomes the {@link QualifiedName#localName()} of the
- * {@link MessageType#qualifiedName()}. The {@link MessageType#revision()} is defaulted to {@link #DEFAULT_REVISION}
- * when not specified differently through this class' constructor.
+ * {@link MessageType#qualifiedName()}. The {@link MessageType#version()} is defaulted to
+ * {@link MessageType#DEFAULT_VERSION} when not specified differently through this class' constructor.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
 public class ClassBasedMessageTypeResolver implements MessageTypeResolver {
 
-    private final String revision;
+    private final String version;
 
     /**
      * Constructs a {@link ClassBasedMessageTypeResolver} using {@link MessageType#DEFAULT_VERSION} as the revision for
@@ -49,11 +49,11 @@ public class ClassBasedMessageTypeResolver implements MessageTypeResolver {
      * resolved {@link MessageType types}. If payload is already a message the {@code type} of the message is used
      * without any changes.
      *
-     * @param revision The revision for all resolved {@link MessageType types} by this {@link MessageTypeResolver}
-     *                 implementation.
+     * @param version The version for all resolved {@link MessageType types} by this {@link MessageTypeResolver}
+     *                implementation.
      */
-    public ClassBasedMessageTypeResolver(String revision) {
-        this.revision = revision;
+    public ClassBasedMessageTypeResolver(String version) {
+        this.version = version;
     }
 
     @Override
@@ -61,6 +61,6 @@ public class ClassBasedMessageTypeResolver implements MessageTypeResolver {
         if (payload instanceof Message<?>) {
             return ((Message<?>) payload).type();
         }
-        return new MessageType(ObjectUtils.nullSafeTypeOf(payload), revision);
+        return new MessageType(ObjectUtils.nullSafeTypeOf(payload), version);
     }
 }
