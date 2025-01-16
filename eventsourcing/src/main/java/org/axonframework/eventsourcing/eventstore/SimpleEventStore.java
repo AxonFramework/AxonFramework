@@ -19,12 +19,14 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -71,6 +73,28 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
         return processingContext.computeResourceIfAbsent(
                 eventStoreTransactionKey,
                 () -> new DefaultEventStoreTransaction(eventStorageEngine, processingContext)
+        );
+    }
+
+    @Override
+    public void publish(@Nonnull ProcessingContext processingContext,
+                        @Nonnull String context,
+                        @Nonnull List<EventMessage<?>> events) {
+        validate(context);
+        EventStoreTransaction transaction = transaction(processingContext, context);
+        for (EventMessage<?> event : events) {
+            transaction.appendEvent(event);
+        }
+    }
+
+    @Override
+    public CompletableFuture<Void> publish(@Nonnull String context,
+                                           @Nonnull List<EventMessage<?>> events) {
+        throw new UnsupportedOperationException(
+                """
+                        Publishing events with the SimpleEventStore requires a ProcessingContext at all times.
+                        Or, use an EventStoreTransaction as provided by the SimpleEventStore instead.
+                        """
         );
     }
 

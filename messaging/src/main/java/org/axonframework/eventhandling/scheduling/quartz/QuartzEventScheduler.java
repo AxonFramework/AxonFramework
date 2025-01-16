@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,6 +113,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         scheduler.getContext().put(EVENT_BUS_KEY, eventBus);
         scheduler.getContext().put(TRANSACTION_MANAGER_KEY, transactionManager);
         scheduler.getContext().put(EVENT_JOB_DATA_BINDER_KEY, jobDataBinder);
+        scheduler.getContext().put(MESSAGE_NAME_RESOLVER_KEY, messageNameResolver);
         initialized = true;
     }
 
