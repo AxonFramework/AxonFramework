@@ -19,7 +19,6 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 import jakarta.persistence.EntityManager;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.DateTimeUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
@@ -40,8 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.time.Instant;
-import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -110,7 +107,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                 domainEventEntryEntityName(),
                 snapshotEventEntryEntityName()
         );
-        this.tokenOperations = new GapAwareTrackingTokenOperations(gapTimeout, logger);
+        this.tokenOperations = new GapAwareTrackingTokenOperations(lowestGlobalSequence, gapTimeout, logger);
     }
 
     /**
