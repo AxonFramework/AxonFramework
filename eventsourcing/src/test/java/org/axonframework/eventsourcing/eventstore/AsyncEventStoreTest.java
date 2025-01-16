@@ -24,8 +24,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,8 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@code default} methods of the {@link AsyncEventStore}.
@@ -138,7 +136,7 @@ class AsyncEventStoreTest {
         }
 
         @Override
-        public long appendPosition(@NotNull ProcessingContext context) {
+        public ConsistencyMarker appendPosition(@NotNull ProcessingContext context) {
             throw new UnsupportedOperationException("We don't need this method to test the defaulted methods.");
         }
     }
