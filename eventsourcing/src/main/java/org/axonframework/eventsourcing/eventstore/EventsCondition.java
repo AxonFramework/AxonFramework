@@ -28,7 +28,7 @@ import java.util.Set;
 public sealed interface EventsCondition permits SourcingCondition, StreamingCondition, AppendCondition {
 
     /**
-     * The set of criteria against which Events must match.
+     * The set of criteria against which events must match.
      *
      * @return The {@link EventCriteria} used to match this condition against Events.
      */

@@ -38,7 +38,7 @@ record DefaultAppendCondition(
 
     DefaultAppendCondition {
         requireNonNull(consistencyMarker, "The ConsistencyMarker cannot be null");
-        requireNonNull(criteria, "The EventCriteria cannot be null");
+        requireNonNull(criteria, "The EventCriteria set cannot be null");
     }
 
     /**
