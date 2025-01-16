@@ -50,7 +50,7 @@ record GapAwareTrackingTokenOperations(
         if (trackingToken instanceof GapAwareTrackingToken gapAwareTrackingToken) {
             return gapAwareTrackingToken;
         }
-        // todo: is it OK to get Gap aware tracking token from global one? or throw exception?
+        // todo: reject another types! adjust test suite
         return GapAwareTrackingToken.newInstance(trackingToken.position().orElse(lowestGlobalSequence),
                                                  Collections.emptySet());
     }
