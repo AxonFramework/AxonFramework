@@ -3,14 +3,17 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.TrackingToken;
 import org.slf4j.Logger;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
 
 record GapAwareTrackingTokenOperations(
+        long lowestGlobalSequence,
         int gapTimeout,
         Logger logger
 ) {
@@ -42,6 +45,16 @@ record GapAwareTrackingTokenOperations(
         }
         return cleanedToken;
     }
+
+    GapAwareTrackingToken gapAwareTrackingTokenFrom(TrackingToken trackingToken) {
+        if (trackingToken instanceof GapAwareTrackingToken gapAwareTrackingToken) {
+            return gapAwareTrackingToken;
+        }
+        // todo: is it OK to get Gap aware tracking token from global one? or throw exception?
+        return GapAwareTrackingToken.newInstance(trackingToken.position().orElse(lowestGlobalSequence),
+                                                 Collections.emptySet());
+    }
+
 
     Instant gapTimeoutThreshold() {
         return GenericEventMessage.clock.instant().minus(gapTimeout, ChronoUnit.MILLIS);
