@@ -184,7 +184,7 @@ record LegacyJpaEventStorageOperations(
         var results = entityManager
                 .createQuery("SELECT MAX(e.globalIndex) FROM " + domainEventEntryEntityName() + " e", Long.class)
                 .getResultList();
-        return results.isEmpty() ? Optional.empty() : Optional.of(results.getFirst());
+        return (results.isEmpty() || results.getFirst() == null) ? Optional.empty() : Optional.of(results.getFirst());
     }
 
     Optional<Long> globalIndexAt(Instant dateTime) {
@@ -195,14 +195,14 @@ record LegacyJpaEventStorageOperations(
                 )
                 .setParameter("dateTime", formatInstant(dateTime))
                 .getResultList();
-        return results.isEmpty() ? Optional.empty() : Optional.of(results.getFirst());
+        return (results.isEmpty() || results.getFirst() == null) ? Optional.empty() : Optional.of(results.getFirst());
     }
 
     Optional<Long> minGlobalIndex() {
         var results = entityManager.createQuery(
                 "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e", Long.class
         ).getResultList();
-        return results.isEmpty() ? Optional.empty() : Optional.of(results.getFirst());
+        return (results.isEmpty() || results.getFirst() == null) ? Optional.empty() : Optional.of(results.getFirst());
     }
 
     void deleteSnapshots(String aggregateIdentifier, long sequenceNumber) {
