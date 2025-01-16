@@ -16,6 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import jakarta.annotation.Nonnull;
+
 import java.util.Set;
 
 /**
@@ -35,7 +37,8 @@ public sealed interface EventsCondition permits SourcingCondition, StreamingCond
     Set<EventCriteria> criteria();
 
     /**
-     * Indicates whether the criteria defined in this condition matches against the given {@code type} and {@code tags}.
+     * Indicates whether the criteria defined in this condition matches against the given {@code type} and
+     * {@code tags}.
      * <p>
      * More specifically, this condition matches if any of the provided criteria match the given {@code type} and
      * {@code tags}, or if no criteria have been provided at all.
@@ -47,8 +50,7 @@ public sealed interface EventsCondition permits SourcingCondition, StreamingCond
      * @return {@code true} if given type and tags match, otherwise {@code false}.
      * @see EventCriteria#matchingTags(Set)
      */
-    default boolean matches(String type, Set<Tag> tags) {
-        return criteria().isEmpty()
-                || criteria().stream().anyMatch(criteria -> criteria.matches(type, tags));
+    default boolean matches(@Nonnull String type, @Nonnull Set<Tag> tags) {
+        return criteria().isEmpty() || criteria().stream().anyMatch(criteria -> criteria.matches(type, tags));
     }
 }

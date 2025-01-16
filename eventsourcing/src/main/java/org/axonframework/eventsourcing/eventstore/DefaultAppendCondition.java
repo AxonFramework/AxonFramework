@@ -27,7 +27,7 @@ import static java.util.Objects.requireNonNull;
  * as output for the {@link #consistencyMarker()} and {@link #criteria()} operations respectively.
  *
  * @param consistencyMarker The consistency marker obtained while sourcing events.
- * @param criteria          The criteria defining which changes are considered conflicting
+ * @param criteria          The criteria set defining which changes are considered conflicting.
  * @author Steven van Beelen
  * @since 5.0.0
  */
@@ -48,7 +48,7 @@ record DefaultAppendCondition(
      * @param eventCriteria     The criteria for the append condition.
      */
     public DefaultAppendCondition(@Nonnull ConsistencyMarker consistencyMarker, @Nonnull EventCriteria eventCriteria) {
-        this(consistencyMarker, Set.of(requireNonNull(eventCriteria, "EventCriteria may not be null")));
+        this(consistencyMarker, Set.of(requireNonNull(eventCriteria, "The EventCriteria cannot be null")));
     }
 
     @Override

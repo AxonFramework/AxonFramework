@@ -25,16 +25,20 @@ import static java.util.Objects.requireNonNull;
 /**
  * Implementation of the {@link EventCriteria} that takes both message types and their tags into consideration.
  *
+ * @param types The types that this criteria instance matches with.
+ * @param tags  The tags that events are expected to have.
  * @author Steven van Beelen
  * @author Allard Buijze
  * @since 5.0.0
  */
-record DefaultEventCriteria(Set<String> types, Set<Tag> tags) implements EventCriteria {
+record DefaultEventCriteria(@Nonnull Set<String> types,
+                            @Nonnull Set<Tag> tags) implements EventCriteria {
 
     /**
-     * Constructs Event Criteria that matches against given {@code types} if they match with given {@code tags}
-     * @param types The types that this criteria instance matches with
-     * @param tags The tags that events are expected to have
+     * Constructs Event Criteria that matches against given {@code types} if they match with given {@code tags}.
+     *
+     * @param types The types that this criteria instance matches with.
+     * @param tags  The tags that events are expected to have.
      */
     DefaultEventCriteria(@Nonnull Set<String> types,
                          @Nonnull Set<Tag> tags) {

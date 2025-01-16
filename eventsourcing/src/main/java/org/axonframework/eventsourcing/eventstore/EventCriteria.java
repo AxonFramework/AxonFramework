@@ -28,9 +28,8 @@ import java.util.Set;
  * {@link StreamableEventSource#open(String, StreamingCondition) streaming} or
  * {@link EventStoreTransaction#appendEvent(EventMessage) appending} events.
  * <p>
- * During sourcing or streaming, the criteria are used as a filter for events to read. While appending events,
- * the criteria are used to detect conflicts when appending events beyond the consistency
- * boundary.
+ * During sourcing or streaming, the criteria are used as a filter for events to read. While appending events, the
+ * criteria are used to detect conflicts when appending events beyond the consistency boundary.
  *
  * @author Michal Negacz
  * @author Milan Savić
@@ -73,6 +72,7 @@ public sealed interface EventCriteria permits AnyEvent, DefaultEventCriteria {
 
     /**
      * Create a builder for criteria that match events with any type.
+     *
      * @return a builder that allows criteria to be built matching against any event type.
      */
     static EventCriteria.Builder forAnyEventType() {

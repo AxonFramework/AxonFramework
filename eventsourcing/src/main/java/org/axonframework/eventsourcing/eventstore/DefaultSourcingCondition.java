@@ -31,7 +31,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  *
  * @param start    The start position in the event sequence to retrieve of the model to source.
  * @param end      The end position in the event sequence to retrieve of the model to source.
- * @param criteria The {@link EventCriteria} of the model to source.
+ * @param criteria The {@link EventCriteria} set of the model to source.
  * @author Steven van Beelen
  * @since 5.0.0
  */
