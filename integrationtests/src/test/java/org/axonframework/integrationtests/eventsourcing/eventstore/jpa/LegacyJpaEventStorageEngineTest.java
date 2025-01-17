@@ -30,6 +30,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import javax.sql.DataSource;
 import java.time.Instant;
@@ -52,12 +53,14 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
 
     @Override
     protected LegacyJpaEventStorageEngine buildStorageEngine() {
+//        var txDefinition = new DefaultTransactionDefinition();
+//        txDefinition.setPropagationBehavior(DefaultTransactionDefinition.PROPAGATION_REQUIRES_NEW);
         return new LegacyJpaEventStorageEngine(entityManagerProvider,
                                                new SpringTransactionManager(platformTransactionManager),
                                                TEST_SERIALIZER,
                                                TEST_SERIALIZER,
                                                config -> config.persistenceExceptionResolver(new JdbcSQLErrorCodesResolver())
-                                                               .explicitFlush(true));
+                                                               .explicitFlush(false));
     }
 
     @Override
@@ -106,7 +109,7 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
                                                   "sa",
                                                   "password");
             driverManagerDataSource.setDriverClassName("org.hsqldb.jdbcDriver");
-            return Mockito.spy(driverManagerDataSource);
+            return driverManagerDataSource;
         }
 
         @Bean("entityManagerFactory")
