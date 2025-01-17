@@ -18,7 +18,6 @@ package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.configuration.MessageHandlerRegistry;
 
 import java.util.Set;
 
@@ -33,7 +32,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public non-sealed interface QueryHandlerRegistry extends MessageHandlerRegistry {
+public interface QueryHandlerRegistry {
 
     /**
      * Subscribe the given {@code handler} for messages of the given {@code names}.

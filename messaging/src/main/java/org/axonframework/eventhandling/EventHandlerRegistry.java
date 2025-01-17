@@ -18,7 +18,6 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.configuration.MessageHandlerRegistry;
 
 import java.util.Set;
 
@@ -33,7 +32,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public non-sealed interface EventHandlerRegistry extends MessageHandlerRegistry {
+public interface EventHandlerRegistry {
 
     /**
      * Subscribe the given {@code handler} for messages of the given {@code names}.
@@ -42,7 +41,7 @@ public non-sealed interface EventHandlerRegistry extends MessageHandlerRegistry 
      * Implementations may throw an exception to refuse duplicate subscription or alternatively decide whether the
      * existing or new {@code handler} gets the subscription.
      *
-     * @param names          The names of the message to subscribe the handler for.
+     * @param names        The names of the message to subscribe the handler for.
      * @param eventHandler The handler instance that handles messages for the given name.
      * @return This registry for fluent interfacing.
      */
@@ -60,7 +59,7 @@ public non-sealed interface EventHandlerRegistry extends MessageHandlerRegistry 
      * exception to refuse duplicate subscription or alternatively decide whether the existing or new {@code handler}
      * gets the subscription.
      *
-     * @param name           The names of the message to subscribe the handler for.
+     * @param name         The names of the message to subscribe the handler for.
      * @param eventHandler The handler instance that handles messages for the given name.
      * @return This registry for fluent interfacing.
      */

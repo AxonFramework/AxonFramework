@@ -32,7 +32,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public non-sealed interface CommandHandlerRegistry extends MessageHandlerRegistry {
+public interface CommandHandlerRegistry {
 
     /**
      * Subscribe the given {@code handler} for messages of the given {@code names}.
