@@ -21,6 +21,8 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.configuration.MessageHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * TODO documentation
  *
@@ -38,4 +40,11 @@ public /*non-sealed */interface CommandHandler extends MessageHandler {
     @Nonnull
     MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                             @Nonnull ProcessingContext context);
+
+    // TODO discuss if we want to deviate from the MessageStream here.
+    // Foreseen downside of doing so, is removal of void/CompletableFuture/Mono return type flexibility
+    default CompletableFuture<?> handleSimple(@Nonnull CommandMessage<?> command,
+                                              @Nonnull ProcessingContext context) {
+        return handle(command, context).firstAsCompletableFuture();
+    }
 }

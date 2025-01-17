@@ -21,6 +21,8 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.configuration.MessageHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.stream.Stream;
+
 /**
  * TODO documentation
  *
@@ -38,4 +40,11 @@ public /*non-sealed */interface QueryHandler extends MessageHandler {
     @Nonnull
     MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
                                                   @Nonnull ProcessingContext context);
+
+    // TODO discuss if we want to deviate from the MessageStream here.
+    // Foreseen downside of doing so, is removal of void/CompletableFuture/Mono return type flexibility
+    default Stream<? extends QueryResponseMessage<?>> handleSimple(@Nonnull QueryMessage<?, ?> query,
+                                                                   @Nonnull ProcessingContext context) {
+        return handle(query, context).asFlux().map(MessageStream.Entry::message).toStream();
+    }
 }
