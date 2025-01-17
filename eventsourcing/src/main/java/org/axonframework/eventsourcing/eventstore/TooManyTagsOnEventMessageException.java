@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.event;
+package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.eventstore.Tag;
 
 import java.util.Set;
 
