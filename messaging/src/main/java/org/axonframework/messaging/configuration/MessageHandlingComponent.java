@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.common.CollectionUtils;
 import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryHandlingComponent;

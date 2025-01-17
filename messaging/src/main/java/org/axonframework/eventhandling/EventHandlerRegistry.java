@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.configuration;
+package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.configuration.MessageHandlerRegistry;
 
 import java.util.Set;
 

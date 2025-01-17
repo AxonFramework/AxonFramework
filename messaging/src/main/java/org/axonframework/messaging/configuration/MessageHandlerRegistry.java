@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.configuration;
 
+import org.axonframework.eventhandling.EventHandlerRegistry;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.QueryHandlerRegistry;

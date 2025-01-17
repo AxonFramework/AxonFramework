@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.configuration;
+package org.axonframework.eventhandling;
 
-import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.messaging.QualifiedName;
 
 import java.util.Set;
