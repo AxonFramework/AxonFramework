@@ -163,20 +163,22 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 if (finished.getAndSet(true)) {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
-                return transactionManager.fetchInTransaction(() -> {
-                    try {
-                        var beforePersistenceConsistencyMarker = AggregateBasedConsistencyMarker.from(condition);
-                        var afterPersistenceConsistencyMarker = entityManagerPersistEvents(
-                                beforePersistenceConsistencyMarker,
-                                events);
-                        if (explicitFlush) {
-                            entityManagerProvider.getEntityManager().flush();
-                        }
-                        return CompletableFuture.completedFuture(afterPersistenceConsistencyMarker);
-                    } catch (Exception e) {
-                        throw appendEventsTransactionRejectedExceptionFrom(e, condition, events);
+                CompletableFuture<ConsistencyMarker> result = new CompletableFuture<>();
+
+                var finalConsistencyMarker = transactionManager.fetchInTransaction(() -> {
+                    var beforePersistenceConsistencyMarker = AggregateBasedConsistencyMarker.from(condition);
+                    var afterPersistenceConsistencyMarker = entityManagerPersistEvents(
+                            beforePersistenceConsistencyMarker,
+                            events);
+                    if (explicitFlush) {
+                        entityManagerProvider.getEntityManager().flush();
                     }
+                    return afterPersistenceConsistencyMarker;
                 });
+
+                return result.exceptionallyCompose(e -> CompletableFuture.failedFuture(
+                                     appendEventsTransactionRejectedExceptionFrom(e, condition, events)))
+                             .thenApply(r -> finalConsistencyMarker);
             }
 
             @Override
@@ -190,7 +192,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     }
 
     // todo: describe changed behavior (legacy throws legacyPersistenceException), compare with LegacyAxonServerEventStorageEngine
-    private AppendEventsTransactionRejectedException appendEventsTransactionRejectedExceptionFrom(Exception suppressed,
+    private AppendEventsTransactionRejectedException appendEventsTransactionRejectedExceptionFrom(Throwable suppressed,
                                                                                                   AppendCondition appendCondition,
                                                                                                   List<TaggedEventMessage<?>> events) {
         var consistencyMarker = AggregateBasedConsistencyMarker.from(appendCondition);
@@ -439,17 +441,20 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     private record PersistenceExceptionMapper(PersistenceExceptionResolver persistenceExceptionResolver) {
 
-        RuntimeException mapPersistenceException(Exception exception, EventMessage<?> failedEvent) {
-            String eventDescription = buildExceptionMessage(failedEvent);
-            if (persistenceExceptionResolver != null
-                    && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
-                if (isFirstDomainEvent(failedEvent)) {
-                    return new AggregateStreamCreationException(eventDescription, exception);
+        Throwable mapPersistenceException(Throwable throwable, EventMessage<?> failedEvent) {
+            if (throwable instanceof Exception exception) {
+                String eventDescription = buildExceptionMessage(failedEvent);
+                if (persistenceExceptionResolver != null
+                        && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
+                    if (isFirstDomainEvent(failedEvent)) {
+                        return new AggregateStreamCreationException(eventDescription, exception);
+                    }
+                    return new ConcurrencyException(eventDescription, exception);
+                } else {
+                    return new EventStoreException(eventDescription, exception);
                 }
-                return new ConcurrencyException(eventDescription, exception);
-            } else {
-                return new EventStoreException(eventDescription, exception);
             }
+            return throwable;
         }
 
         /**
