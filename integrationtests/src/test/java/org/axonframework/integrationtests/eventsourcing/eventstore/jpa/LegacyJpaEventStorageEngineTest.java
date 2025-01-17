@@ -5,7 +5,6 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
-import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
@@ -21,7 +20,6 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.*;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.jpa.JpaTransactionManager;
@@ -45,21 +43,21 @@ import static org.junit.jupiter.api.Assertions.*;
 class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSuite<LegacyJpaEventStorageEngine> {
 
     public static final Serializer TEST_SERIALIZER = TestSerializer.JACKSON.getSerializer();
-    @Autowired
-    private EntityManagerProvider entityManagerProvider;
 
     @Autowired
-    @Qualifier("axonTransactionManager")
-    private TransactionManager transactionManager;
+    private PlatformTransactionManager platformTransactionManager;
+
+    @Autowired
+    private EntityManagerProvider entityManagerProvider;
 
     @Override
     protected LegacyJpaEventStorageEngine buildStorageEngine() {
         return new LegacyJpaEventStorageEngine(entityManagerProvider,
-                                               transactionManager,
+                                               new SpringTransactionManager(platformTransactionManager),
                                                TEST_SERIALIZER,
                                                TEST_SERIALIZER,
                                                config -> config.persistenceExceptionResolver(new JdbcSQLErrorCodesResolver())
-                                                               .lowestGlobalSequence(1));
+                                                               .explicitFlush(true));
     }
 
     @Override
@@ -135,11 +133,6 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
             JpaTransactionManager jpaTransactionManager = new JpaTransactionManager(entityManagerFactory);
             jpaTransactionManager.setDataSource(dataSource);
             return jpaTransactionManager;
-        }
-
-        @Bean("axonTransactionManager")
-        public TransactionManager axonTransactionManager(PlatformTransactionManager platformTransactionManager) {
-            return new SpringTransactionManager(platformTransactionManager);
         }
 
         @Bean
