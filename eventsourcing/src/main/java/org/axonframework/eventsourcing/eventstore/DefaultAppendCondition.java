@@ -25,7 +25,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * as output for the {@link #consistencyMarker()} and {@link #criteria()} operations respectively.
  *
  * @param consistencyMarker The consistency marker obtained while sourcing events.
- * @param criteria          The criteria defining which changes are considered conflicting
+ * @param criteria          The criteria defining which changes are considered conflicting.
  * @author Steven van Beelen
  * @since 5.0.0
  */
