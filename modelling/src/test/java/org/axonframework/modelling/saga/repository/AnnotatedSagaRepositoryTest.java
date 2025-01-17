@@ -17,7 +17,7 @@
 package org.axonframework.modelling.saga.repository;
 
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;

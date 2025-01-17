@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;

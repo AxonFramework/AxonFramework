@@ -24,7 +24,7 @@ import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;

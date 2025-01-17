@@ -22,6 +22,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -244,7 +245,7 @@ public interface Configurer extends LifecycleOperations {
      * Registers a message handler bean with this configuration. The bean may be of any type. The actual message handler
      * methods will be detected based on the annotations present on the bean's methods. Message handling functions
      * annotated with {@link CommandHandler}, {@link
-     * org.axonframework.eventhandling.EventHandler} and {@link org.axonframework.queryhandling.QueryHandler} will be
+     * EventHandler} and {@link org.axonframework.queryhandling.QueryHandler} will be
      * taken into account.
      * <p>
      * The builder function receives the {@link Configuration} as input, and is expected to return a fully initialized

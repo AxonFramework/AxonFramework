@@ -19,7 +19,7 @@ package org.axonframework.axonserver.connector;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.DefaultConfigurer;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;

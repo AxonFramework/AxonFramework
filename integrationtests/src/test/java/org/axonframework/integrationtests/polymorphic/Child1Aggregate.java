@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.polymorphic;
 
 import jakarta.persistence.Entity;
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;

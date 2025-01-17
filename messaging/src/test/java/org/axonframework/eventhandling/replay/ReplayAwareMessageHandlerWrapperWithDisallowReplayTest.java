@@ -19,7 +19,7 @@ package org.axonframework.eventhandling.replay;
 import org.axonframework.eventhandling.AllowReplay;
 import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.DisallowReplay;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ReplayToken;

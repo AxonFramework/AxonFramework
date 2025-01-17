@@ -19,7 +19,7 @@ package org.axonframework.test.aggregate;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;

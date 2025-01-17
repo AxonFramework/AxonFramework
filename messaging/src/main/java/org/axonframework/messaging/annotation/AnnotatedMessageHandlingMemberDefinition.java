@@ -18,6 +18,7 @@ package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 
@@ -41,7 +42,7 @@ import static org.axonframework.common.annotation.AnnotationUtils.findAnnotation
  *
  * @see HandlerEnhancerDefinition
  * @see CommandHandler
- * @see org.axonframework.eventhandling.EventHandler
+ * @see EventHandler
  */
 public class AnnotatedMessageHandlingMemberDefinition implements HandlerDefinition {
 
