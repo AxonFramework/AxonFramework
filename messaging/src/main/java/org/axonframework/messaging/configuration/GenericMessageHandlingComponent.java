@@ -76,13 +76,14 @@ public class GenericMessageHandlingComponent
                 );
                 if (oldHandler != null) {
                     logger.warn("Duplicate message handler for message type [{}]. Replaced [{}] for [{}].",
-                                messageType, oldHandler.name(), handler.name());
+                                messageType, oldHandler, handler);
                 }
             });
         } else {
             logger.warn(
                     "Ignoring registration of [{}], as it is not recommend to subscribe a MessageHandlingComponent with itself.",
-                    handler.name());
+                    handler
+            );
         }
         return this;
     }

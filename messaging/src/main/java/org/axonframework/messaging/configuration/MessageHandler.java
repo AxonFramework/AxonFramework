@@ -19,8 +19,6 @@ package org.axonframework.messaging.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.function.BiFunction;
@@ -33,7 +31,7 @@ import java.util.function.BiFunction;
  */
 @FunctionalInterface
 public interface MessageHandler<M extends Message<?>, R extends Message<?>>
-        extends Named, BiFunction<M, ProcessingContext, MessageStream<? extends R>> {
+        extends BiFunction<M, ProcessingContext, MessageStream<? extends R>> {
 
     /**
      * @param message
@@ -46,10 +44,5 @@ public interface MessageHandler<M extends Message<?>, R extends Message<?>>
     @Override
     default MessageStream<? extends R> apply(@Nonnull M message, @Nonnull ProcessingContext context) {
         return this.handle(message, context);
-    }
-
-    @Override
-    default QualifiedName name() {
-        return QualifiedNameUtils.fromClassName(this.getClass());
     }
 }

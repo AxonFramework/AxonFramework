@@ -18,7 +18,6 @@ package org.axonframework.messaging.configuration;
 
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 
 import java.util.Set;
 
@@ -36,16 +35,6 @@ import java.util.Set;
  */
 public interface MessageHandlingComponent<H extends MessageHandler<?, ?>, M extends Message<?>, R extends Message<?>>
         extends MessageHandlerRegistry<H>, MessageHandler<M, R> {
-
-    /**
-     * The {@link QualifiedName} of this message handling component.
-     *
-     * @return The {@link QualifiedName} of this message handling component.
-     */
-    @Override
-    default QualifiedName name() {
-        return QualifiedNameUtils.fromClassName(getClass());
-    }
 
     /**
      * @return The {@link Set} of {@link QualifiedName QualifiedNames} representing all supported message types.
