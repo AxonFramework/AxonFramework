@@ -167,10 +167,9 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
                 var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
                 var aggregateSequencer = AggregateSequencer.with(consistencyMarker);
+                var tx = transactionManager.startTransaction();
 
                 CompletableFuture<Void> txResult = new CompletableFuture<>();
-
-                var tx = transactionManager.startTransaction();
                 try {
                     entityManagerPersistEvents(aggregateSequencer, events);
                     if (explicitFlush) {
