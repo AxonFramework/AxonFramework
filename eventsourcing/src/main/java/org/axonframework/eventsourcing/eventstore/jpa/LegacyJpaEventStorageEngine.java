@@ -2,6 +2,7 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import jakarta.persistence.EntityManager;
 import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
@@ -53,6 +54,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterators;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -151,11 +153,8 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         if (events.isEmpty()) {
             return CompletableFuture.completedFuture(new EmptyAppendTransaction(condition));
         }
-        return CompletableFuture.completedFuture(appendTransaction(condition, events));
-    }
 
-    private AppendTransaction appendTransaction(AppendCondition condition, List<TaggedEventMessage<?>> events) {
-        return new AppendTransaction() {
+        return CompletableFuture.completedFuture(new AppendTransaction() {
 
             private final AtomicBoolean finished = new AtomicBoolean(false);
 
@@ -165,18 +164,14 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
                 var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
-                var aggregateSequencer = AggregateSequencer.with(consistencyMarker);
                 return transactionManager.fetchInTransaction(() -> {
                     try {
                         var entityManager = entityManagerProvider.getEntityManager();
-                        events.stream()
-                              .map(taggedEvent -> toDomainEventMessage(taggedEvent, aggregateSequencer))
-                              .map(domainEventMessage -> new DomainEventEntry(domainEventMessage, eventSerializer))
-                              .forEach(entityManager::persist);
+                        var afterPersistenceConsistencyMarker = entityManagerPersistEvents(consistencyMarker, events);
                         if (explicitFlush) {
                             entityManager.flush();
                         }
-                        return CompletableFuture.completedFuture(aggregateSequencer.forwarded());
+                        return CompletableFuture.completedFuture(afterPersistenceConsistencyMarker);
                     } catch (Exception e) {
                         var appendException = AppendEventsTransactionRejectedException
                                 .conflictingEventsDetected(consistencyMarker);
@@ -195,8 +190,22 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 // todo: is it good solution?
                 // Previously I received: jakarta.persistence.TransactionRequiredException: No EntityManager with actual transaction available for current thread - cannot reliably process 'persist' call
             }
-        };
+        });
     }
+
+    private AggregateBasedConsistencyMarker entityManagerPersistEvents(
+            AggregateBasedConsistencyMarker consistencyMarker,
+            List<TaggedEventMessage<?>> events
+    ) {
+        var entityManager = entityManagerProvider.getEntityManager();
+        var aggregateSequencer = AggregateSequencer.with(consistencyMarker);
+        events.stream()
+              .map(taggedEvent -> toDomainEventMessage(taggedEvent, aggregateSequencer))
+              .map(domainEventMessage -> new DomainEventEntry(domainEventMessage, eventSerializer))
+              .forEach(entityManager::persist);
+        return aggregateSequencer.forwarded();
+    }
+
 
     private void assertValidTags(List<TaggedEventMessage<?>> events) {
         for (TaggedEventMessage<?> taggedEvent : events) {
