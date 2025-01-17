@@ -94,7 +94,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     private final boolean explicitFlush;
 
     private final PersistenceExceptionMapper persistenceExceptionMapper;
-    private final MessageNameResolver messageNameResolver; // todo: use while upcasting
+    private final MessageNameResolver messageNameResolver; // todo: use while upcasting implementing MessageName
     private final LegacyJpaEventStorageOperations legacyJpaOperations;
     private final BatchingEventStorageOperations batchingOperations;
     private final GapAwareTrackingTokenOperations tokenOperations;
@@ -150,7 +150,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         if (events.isEmpty()) {
             return CompletableFuture.completedFuture(new EmptyAppendTransaction(condition));
         }
-        // todo: async with some executor?
         return CompletableFuture.completedFuture(appendTransaction(condition, events));
     }
 
@@ -163,8 +162,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             }
         }
     }
-
-    // todo: move it shared, use in other implementations
 
     private AppendTransaction appendTransaction(AppendCondition condition, List<TaggedEventMessage<?>> events) {
         return new AppendTransaction() {
@@ -266,16 +263,17 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return tags.iterator().next().key();
         }
     }
+
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
         MessageStream<EventMessage<?>> resultingStream = MessageStream.empty();
-
-        // todo: fetch stream for each criteria in separate transaction (now) or together?
         for (EventCriteria criterion : condition.criteria()) {
             var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
-            var events = batchingOperations.readEventData(aggregateIdentifier,
-                                                          condition.start(),
-                                                          condition.end());
+            var events = batchingOperations.readEventData(
+                    aggregateIdentifier,
+                    condition.start(),
+                    condition.end()
+            );
             var deserialized = upcastAndDeserializeDomainEvents(events, eventSerializer, upcasterChain);
 
             MessageStream<EventMessage<?>> aggregateEvents = MessageStream.fromStream(
@@ -365,7 +363,18 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     @Override
     public void describeTo(@javax.annotation.Nonnull ComponentDescriptor descriptor) {
-        // todo: describe all fields (configuration)!
+        descriptor.describeProperty("entityManagerProvider", entityManagerProvider);
+        descriptor.describeProperty("transactionManager", transactionManager);
+        descriptor.describeProperty("eventSerializer", eventSerializer);
+        descriptor.describeProperty("upcasterChain", upcasterChain);
+        descriptor.describeProperty("snapshotSerializer", snapshotSerializer);
+        descriptor.describeProperty("snapshotFilter", snapshotFilter);
+        descriptor.describeProperty("explicitFlush", explicitFlush);
+        descriptor.describeProperty("persistenceExceptionMapper", persistenceExceptionMapper);
+        descriptor.describeProperty("messageNameResolver", messageNameResolver);
+        descriptor.describeProperty("legacyJpaOperations", legacyJpaOperations);
+        descriptor.describeProperty("tokenOperations", tokenOperations);
+        descriptor.describeProperty("batchingOperations", batchingOperations);
     }
 
     private record EmptyAppendTransaction(AppendCondition appendCondition) implements AppendTransaction {
