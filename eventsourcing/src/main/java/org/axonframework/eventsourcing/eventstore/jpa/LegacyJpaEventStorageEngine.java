@@ -7,6 +7,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
+import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -168,15 +169,17 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 var aggregateSequencer = AggregateSequencer.with(consistencyMarker);
 
                 CompletableFuture<Void> txResult = new CompletableFuture<>();
+
+                var tx = transactionManager.startTransaction();
                 try {
-                    transactionManager.executeInTransaction(() -> {
-                        entityManagerPersistEvents(aggregateSequencer, events);
-                        if (explicitFlush) {
-                            entityManagerProvider.getEntityManager().flush();
-                        }
-                    });
+                    entityManagerPersistEvents(aggregateSequencer, events);
+                    if (explicitFlush) {
+                        entityManagerProvider.getEntityManager().flush();
+                    }
+                    tx.commit();
                     txResult.complete(null);
                 } catch (Exception e) {
+                    tx.rollback();
                     txResult.completeExceptionally(e);
                 }
 
