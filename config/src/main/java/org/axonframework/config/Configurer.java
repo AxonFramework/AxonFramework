@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.deadline.DeadlineManager;
@@ -216,7 +217,7 @@ public interface Configurer extends LifecycleOperations {
     /**
      * Registers a command handler bean with this {@link Configurer}. The bean may be of any type. The actual command
      * handler methods will be detected based on the annotations present on the bean's methods. Message handling
-     * functions annotated with {@link org.axonframework.commandhandling.CommandHandler} will be taken into account.
+     * functions annotated with {@link CommandHandler} will be taken into account.
      * <p>
      * The builder function receives the {@link Configuration} as input, and is expected to return a fully initialized
      * instance of the command handler bean.
@@ -242,7 +243,7 @@ public interface Configurer extends LifecycleOperations {
     /**
      * Registers a message handler bean with this configuration. The bean may be of any type. The actual message handler
      * methods will be detected based on the annotations present on the bean's methods. Message handling functions
-     * annotated with {@link org.axonframework.commandhandling.CommandHandler}, {@link
+     * annotated with {@link CommandHandler}, {@link
      * org.axonframework.eventhandling.EventHandler} and {@link org.axonframework.queryhandling.QueryHandler} will be
      * taken into account.
      * <p>
