@@ -163,19 +163,19 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 if (finished.getAndSet(true)) {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
-                CompletableFuture<ConsistencyMarker> result = new CompletableFuture<>();
 
-                var finalConsistencyMarker = transactionManager.fetchInTransaction(() -> {
-                    var beforePersistenceConsistencyMarker = AggregateBasedConsistencyMarker.from(condition);
-                    var afterPersistenceConsistencyMarker = entityManagerPersistEvents(
-                            beforePersistenceConsistencyMarker,
-                            events);
+                CompletableFuture<ConsistencyMarker> result = new CompletableFuture<>();
+                var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
+                var aggregateSequencer = AggregateSequencer.with(consistencyMarker);
+
+                transactionManager.executeInTransaction(() -> {
+                    entityManagerPersistEvents(aggregateSequencer, events);
                     if (explicitFlush) {
                         entityManagerProvider.getEntityManager().flush();
                     }
-                    return afterPersistenceConsistencyMarker;
                 });
 
+                var finalConsistencyMarker = aggregateSequencer.forwarded();
                 return result.exceptionallyCompose(e -> CompletableFuture.failedFuture(
                                      appendEventsTransactionRejectedExceptionFrom(e, condition, events)))
                              .thenApply(r -> finalConsistencyMarker);
@@ -203,17 +203,15 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         return appendException;
     }
 
-    private AggregateBasedConsistencyMarker entityManagerPersistEvents(
-            AggregateBasedConsistencyMarker consistencyMarker,
+    private void entityManagerPersistEvents(
+            AggregateSequencer aggregateSequencer,
             List<TaggedEventMessage<?>> events
     ) {
         var entityManager = entityManagerProvider.getEntityManager();
-        var aggregateSequencer = AggregateSequencer.with(consistencyMarker);
         events.stream()
               .map(taggedEvent -> toDomainEventMessage(taggedEvent, aggregateSequencer))
               .map(domainEventMessage -> new DomainEventEntry(domainEventMessage, eventSerializer))
               .forEach(entityManager::persist);
-        return aggregateSequencer.forwarded();
     }
 
     private void assertValidTags(List<TaggedEventMessage<?>> events) {
