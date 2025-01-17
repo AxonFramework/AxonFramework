@@ -155,26 +155,16 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return CompletableFuture.completedFuture(new EmptyAppendTransaction(condition));
         }
 
-        var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
-        var aggregateSequencer = AggregateSequencer.with(consistencyMarker);
-
-//        var tx = transactionManager.startTransaction();
-//        try {
-//            entityManagerPersistEvents(aggregateSequencer, events);
-//            if (explicitFlush) {
-//                entityManagerProvider.getEntityManager().flush();
-//            }
-//        } catch (Exception e) {
-//            tx.rollback();
-//            return CompletableFuture.failedFuture(e);
-//        }
-
         return CompletableFuture.completedFuture(new AppendTransaction() {
 
+            // todo: run test on different threads
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
+                var beforeCommitConsistencyMarker = AggregateBasedConsistencyMarker.from(condition);
+                var aggregateSequencer = AggregateSequencer.with(beforeCommitConsistencyMarker);
+
                 CompletableFuture<Void> txResult = new CompletableFuture<>();
-                var tx = transactionManager.startTransaction();
+                var tx = transactionManager.startTransaction(); //todo: use executeInTransaction
                 try {
                     entityManagerPersistEvents(aggregateSequencer, events);
                     if (explicitFlush) {
@@ -187,15 +177,16 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                     txResult.completeExceptionally(e);
                 }
 
-                var finalConsistencyMarker = aggregateSequencer.forwarded();
+                var afterCommitConsistencyMarker = aggregateSequencer.forwarded();
                 return txResult.exceptionallyCompose(e -> CompletableFuture.failedFuture(
                                      appendEventsTransactionRejectedExceptionFrom(e, condition, events)))
-                             .thenApply(r -> finalConsistencyMarker);
+                               .thenApply(r -> afterCommitConsistencyMarker);
             }
 
             @Override
             public void rollback() {
 //                tx.rollback();
+                // todo: prevent commit!
             }
         });
     }
@@ -650,6 +641,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
         private static final int DEFAULT_BATCH_SIZE = 100;
         private static final long DEFAULT_LOWEST_GLOBAL_SEQUENCE = 1;
+        private static final boolean DEFAULT_EXPLICIT_FLUSH = false;
 
         public Customization {
             assertNonNull(upcasterChain, "EventUpcaster may not be null");
@@ -688,7 +680,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                     DEFAULT_BATCH_SIZE,
                     null,
                     new ClassBasedMessageNameResolver(),
-                    true,
+                    DEFAULT_EXPLICIT_FLUSH,
                     DEFAULT_LOWEST_GLOBAL_SEQUENCE,
                     TokenGapsHandlingConfig.withDefaultValues()
             );
