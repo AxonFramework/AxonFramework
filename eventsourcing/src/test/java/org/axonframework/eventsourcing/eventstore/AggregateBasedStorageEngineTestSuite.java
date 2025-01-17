@@ -33,6 +33,7 @@ import reactor.test.StepVerifier;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -351,6 +352,28 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         CompletableFuture<ConsistencyMarker> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
         var actual = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
         assertInstanceOf(AppendEventsTransactionRejectedException.class, actual.getCause());
+    }
+
+    @Test
+    void transactionRejectedWhenConcurrentlyCreatedTransactionIsCommittedFirstThreads() {
+        var executor = Executors.newVirtualThreadPerTaskExecutor(); // todo: move it to before/after each
+        var firstTx = CompletableFuture.supplyAsync(() -> testSubject.appendEvents(AppendCondition.withCriteria(
+                                                                                           TEST_AGGREGATE_CRITERIA),
+                                                                                   taggedEventMessage("event-10",
+                                                                                                      TEST_AGGREGATE_CRITERIA.tags()))
+                                                                     .join(), executor);
+        var secondTx = CompletableFuture.runAsync(() -> {
+        }, executor).thenCompose(r -> testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                                               taggedEventMessage("event-11",
+                                                                                  TEST_AGGREGATE_CRITERIA.tags())));
+
+        CompletableFuture<ConsistencyMarker> firstCommit = firstTx.thenCompose(AppendTransaction::commit);
+        assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
+
+        CompletableFuture<ConsistencyMarker> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
+        var actual = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
+        assertInstanceOf(AppendEventsTransactionRejectedException.class, actual.getCause());
+        executor.close();
     }
 
     @Test
