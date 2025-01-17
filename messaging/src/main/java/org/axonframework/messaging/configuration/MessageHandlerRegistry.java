@@ -18,6 +18,7 @@ package org.axonframework.messaging.configuration;
 
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.queryhandling.QueryHandlerRegistry;
 
 import java.util.Set;
 
@@ -36,7 +37,8 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public sealed interface MessageHandlerRegistry permits CommandHandlerRegistry, EventHandlerRegistry, QueryHandlerRegistry {
+public sealed interface MessageHandlerRegistry permits CommandHandlerRegistry, EventHandlerRegistry,
+        QueryHandlerRegistry {
 
     /**
      * Generic registration of a {@link MessageHandlerInterceptor} used for <b>all</b> handlers

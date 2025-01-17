@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.configuration;
+package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.messaging.configuration.MessageHandlerRegistry;
 
 import java.util.Set;
 

@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.configuration;
+package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.queryhandling.QueryHandler;
 
 import java.util.Set;
 
