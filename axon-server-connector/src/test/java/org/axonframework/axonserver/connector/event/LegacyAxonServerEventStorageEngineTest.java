@@ -20,6 +20,8 @@ import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
@@ -51,7 +53,8 @@ class LegacyAxonServerEventStorageEngineTest extends
     static void beforeAll() {
         axonServerContainer.start();
         connection = AxonServerConnectionFactory.forClient("Test")
-                                                .routingServers(new ServerAddress(axonServerContainer.getHost(), axonServerContainer.getGrpcPort()))
+                                                .routingServers(new ServerAddress(axonServerContainer.getHost(),
+                                                                                  axonServerContainer.getGrpcPort()))
                                                 .build()
                                                 .connect("default");
     }
@@ -105,8 +108,13 @@ class LegacyAxonServerEventStorageEngineTest extends
     }
 
     @Override
-    protected long sequenceOfEventNo(long eventNo) {
-        return eventNo - 1;
+    protected long globalSequenceOfEvent(long eventNumber) {
+        return eventNumber - 1;
+    }
+
+    @Override
+    protected TrackingToken trackingTokenOnPosition(long eventNumber) {
+        return new GlobalSequenceTrackingToken(globalSequenceOfEvent(eventNumber));
     }
 
     @Override

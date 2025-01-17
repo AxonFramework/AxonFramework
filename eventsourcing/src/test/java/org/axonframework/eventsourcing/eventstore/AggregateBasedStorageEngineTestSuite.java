@@ -75,7 +75,16 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
      */
     protected abstract ESE buildStorageEngine() throws Exception;
 
-    protected abstract long sequenceOfEventNo(long eventNo);
+    /**
+     * Will translate eventNumber to global sequence position. It differs among the EventStore implementations. For
+     * example: AxonServer starts the global stream from 0, whereas JPA implementations starts from 1.
+     *
+     * @param eventNumber the event number to translate, first is 1
+     * @return the global index position for given event storage engine
+     */
+    protected abstract long globalSequenceOfEvent(long eventNumber);
+
+    protected abstract TrackingToken trackingTokenOnPosition(long eventNumber);
 
     @Test
     void streamingFromStartReturnsSelectedMessages() {
@@ -99,7 +108,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                    .join();
 
         MessageStream<EventMessage<?>> result =
-                testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(-1)));
+                testSubject.stream(StreamingCondition.startingFrom(trackingTokenOnPosition(-1)));
 
         StepVerifier.create(result.asFlux())
                     .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne.event(), 1))
@@ -129,7 +138,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                 AppendTransaction::commit).join();
 
         MessageStream<EventMessage<?>> result =
-                testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(sequenceOfEventNo(2))));
+                testSubject.stream(StreamingCondition.startingFrom(trackingTokenOnPosition(2)));
 
         StepVerifier.create(result.asFlux())
                     // we've skipped the first two
@@ -159,8 +168,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                                  taggedEventMessage("event-6", Set.of())).thenCompose(
                 AppendTransaction::commit).join();
 
-        MessageStream<EventMessage<?>> result = testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(
-                10)).or(expectedCriteria));
+        MessageStream<EventMessage<?>> result = testSubject.stream(StreamingCondition.startingFrom(
+                trackingTokenOnPosition(10)).or(expectedCriteria));
 
         try {
             assertTrue(result.next().isEmpty());
@@ -372,7 +381,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         assertTrue(actualToken.isPresent());
         OptionalLong actualPosition = actualToken.get().position();
         assertTrue(actualPosition.isPresent());
-        assertEquals(sequenceOfEventNo(eventNumber), actualPosition.getAsLong());
+        assertEquals(globalSequenceOfEvent(eventNumber), actualPosition.getAsLong());
         assertEvent(actual.message(), expected);
     }
 
