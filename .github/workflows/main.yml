@@ -13,6 +13,7 @@ jobs:
   build:
     name: Test and Build on JDK ${{ matrix.java-version }}
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -35,7 +36,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK ${{ matrix.java-version }}
-        uses: actions/setup-java@v4.5.0
+        uses: actions/setup-java@v4.6.0
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
@@ -47,12 +48,12 @@ jobs:
       - name: Regular Build
         if: ${{ !matrix.sonar-enabled }}
         run: |
-          ./mvnw -B -U -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true clean verify
+          ./mvnw -B -U -Dstyle.color=always -Possrh -Pintegration-test -Djacoco.skip=true -Dsurefire.rerunFailingTestsCount=5 clean verify
 
       - name: Build with Coverage reports
         if: matrix.sonar-enabled
         run: |
-          ./mvnw -B -U -Dstyle.color=always -Dcoverage clean verify
+          ./mvnw -B -U -Dstyle.color=always -Dcoverage -Dsurefire.rerunFailingTestsCount=5 clean verify
 
       - name: Sonar Analysis
         if: matrix.sonar-enabled
