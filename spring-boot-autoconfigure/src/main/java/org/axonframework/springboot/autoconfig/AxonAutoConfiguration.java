@@ -200,7 +200,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                         ? schemaStoreBeans.get("defaultAxonSchemaStore")
                         : schemaStoreBeans.values().stream().findFirst()
                                           .orElseThrow(() -> new NoSuchBeanDefinitionException(SchemaStore.class));
-                // TODO: Question, is it ok to fallback to Jackson as delegate?
+                // TODO: Instead of using jackson for the delegate serializer, we could use the configured general serializer instead (-> new issue)
                 Serializer delegateSerializer = buildSerializer(revisionResolver,
                                                                 SerializerProperties.SerializerType.JACKSON);
                 Map<String, AvroSerializerStrategy> serializationStrategies = beansOfTypeIncludingAncestors(

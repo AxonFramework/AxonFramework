@@ -42,6 +42,7 @@ public class ByteArrayToGenericRecordConverter implements ContentTypeConverter<b
     /**
      * Constructs a content type converter used during deserialization for upcasting,
      * to create {@link GenericRecord} from single-object-encoded for a given schema.
+     *
      * @param schemaStore schema store to resolve schema from fingerprint.
      */
     public ByteArrayToGenericRecordConverter(SchemaStore schemaStore) {
@@ -60,14 +61,15 @@ public class ByteArrayToGenericRecordConverter implements ContentTypeConverter<b
 
     @Override
     public GenericRecord convert(byte[] singleObjectEncodeBytes) {
+
         long fingerprint = AvroUtil.fingerprint(singleObjectEncodeBytes);
         Schema writerSchema = schemaStore.findByFingerprint(fingerprint);
         GenericDatumReader<GenericRecord> reader = new GenericDatumReader<>(writerSchema,
-                                                                            writerSchema,
-                                                                            AvroUtil.genericData);
+                writerSchema,
+                AvroUtil.genericData);
 
         try {
-            return reader.read(null, decoderFactory.binaryDecoder(singleObjectEncodeBytes, null));
+            return reader.read(null, decoderFactory.binaryDecoder(AvroUtil.payload(singleObjectEncodeBytes), null));
         } catch (IOException e) {
             throw new CannotConvertBetweenTypesException("Cannot convert bytes to GenericRecord", e);
         }

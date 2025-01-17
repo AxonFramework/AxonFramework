@@ -16,26 +16,21 @@
 
 package org.axonframework.serialization.avro;
 
-import org.apache.avro.AvroRuntimeException;
-import org.apache.avro.InvalidAvroMagicException;
-import org.apache.avro.InvalidNumberEncodingException;
-import org.apache.avro.Schema;
-import org.apache.avro.SchemaCompatibility;
+import org.apache.avro.*;
 import org.apache.avro.SchemaCompatibility.SchemaCompatibilityResult;
-import org.apache.avro.SchemaNormalization;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.message.BadHeaderException;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.axonframework.serialization.SerializationException;
 
+import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 
 import static org.apache.avro.SchemaCompatibility.checkReaderWriterCompatibility;
 
@@ -60,12 +55,18 @@ public class AvroUtil {
      * specification</a>.
      */
     public static final int FORMAT_VERSION = 0x01;
+
     /**
-     * Header size of single-objet-encoding as defined in <a
+     * Length of encoded fingerprint long value.
+     */
+    public static final int AVRO_FINGERPRINT_LENGTH = Long.BYTES;
+
+    /**
+     * Header size of single-object-encoding as defined in <a
      * href="https://avro.apache.org/docs/1.11.4/specification/#single-object-encoding-specification">Avro
      * specification</a>.
      */
-    public static final int AVRO_HEADER_LENGTH = 8;
+    public static final int AVRO_HEADER_LENGTH = AVRO_FINGERPRINT_LENGTH + 2;
 
     /**
      * Constant utilities for construction of {@link org.apache.avro.generic.GenericRecord} preloaded by default Avro
@@ -81,10 +82,11 @@ public class AvroUtil {
     }
 
     /**
-     * Reads fingerprint from byte array.
+     * Reads fingerprint from single object encoded byte array.
      *
-     * @param singleObjectEncodedBytes byte array.
+     * @param singleObjectEncodedBytes The single object encoded byte array.
      * @return fingerprint of the schema.
+     * @throws AvroRuntimeException if fingerprint can not be read from input bytes.
      */
     public static long fingerprint(@Nonnull byte[] singleObjectEncodedBytes) {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(singleObjectEncodedBytes)) {
@@ -96,16 +98,38 @@ public class AvroUtil {
             }
             if (versionByte != FORMAT_VERSION) {
                 throw new InvalidNumberEncodingException(String.format("Unrecognized header version bytes: 0x%02X",
-                                                                       versionByte));
+                        versionByte));
             }
-            byte[] fingerprintBytes = new byte[AVRO_HEADER_LENGTH];
+            byte[] fingerprintBytes = new byte[AVRO_FINGERPRINT_LENGTH];
             int read = bis.read(fingerprintBytes);
-            if (read != AVRO_HEADER_LENGTH) {
+            if (read != AVRO_FINGERPRINT_LENGTH) {
                 throw new BadHeaderException("Could not read header bytes, end of stream reached at position " + read);
             }
             return ByteBuffer.wrap(fingerprintBytes).order(ByteOrder.LITTLE_ENDIAN).getLong();
         } catch (IOException e) {
             throw new AvroRuntimeException("Could not read fingerprint from byte array");
+        }
+    }
+
+    /**
+     * Reads payload from single object encoded byte array.
+     *
+     * @param singleObjectEncodedBytes The single object encoded byte array.
+     * @return payload bytes.
+     * @throws AvroRuntimeException if payload bytes can not be read from input bytes.
+     */
+    public static byte[] payload(@Nonnull byte[] singleObjectEncodedBytes) {
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(singleObjectEncodedBytes)) {
+            if (AVRO_HEADER_LENGTH != bis.skip(AVRO_HEADER_LENGTH)) {
+                throw new BadHeaderException("Could not read header bytes, end of stream reached.");
+            }
+            byte[] payloadBytes = new byte[singleObjectEncodedBytes.length - AVRO_HEADER_LENGTH];
+            if (bis.read(payloadBytes) != payloadBytes.length) {
+                throw new AvroRuntimeException("Could not read payload from byte array - Insufficient payload bytes.");
+            }
+            return payloadBytes;
+        } catch (IOException e) {
+            throw new AvroRuntimeException("Could not read payload from byte array");
         }
     }
 
@@ -255,9 +279,9 @@ public class AvroUtil {
      */
     public static String incompatibilityPrinter(@Nonnull SchemaCompatibility.Incompatibility incompatibility) {
         return String.format("%s located at \"%s\" with value \"%s\"",
-                             incompatibility.getType(),
-                             incompatibility.getLocation(),
-                             incompatibility.getMessage());
+                incompatibility.getType(),
+                incompatibility.getLocation(),
+                incompatibility.getMessage());
     }
 
     /**
@@ -272,8 +296,8 @@ public class AvroUtil {
             long fingerprint
     ) {
         return new SerializationException("Schema store could didn't contain schema deserializing "
-                                                  + readerType
-                                                  + " with fingerprint:"
-                                                  + fingerprint);
+                + readerType
+                + " with fingerprint:"
+                + fingerprint);
     }
 }

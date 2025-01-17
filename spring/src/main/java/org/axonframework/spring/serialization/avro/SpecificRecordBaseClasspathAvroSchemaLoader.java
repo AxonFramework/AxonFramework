@@ -65,7 +65,7 @@ public class SpecificRecordBaseClasspathAvroSchemaLoader implements ClasspathAvr
                                  if (SpecificRecordBase.class.isAssignableFrom(clazz)) {
                                      @SuppressWarnings("unchecked")
                                      Class<SpecificRecordBase> specificRecordBaseClass = (Class<SpecificRecordBase>) clazz;
-                                     return AvroUtil.getClassSchema(specificRecordBaseClass);
+                                     return AvroUtil.getClassSchemaChecked(specificRecordBaseClass);
                                  } else {
                                      return null;
                                  }

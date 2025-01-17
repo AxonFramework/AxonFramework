@@ -32,11 +32,11 @@ import javax.annotation.Nonnull;
 public interface AvroSerializerStrategy extends Predicate<Class<?>> {
 
     /**
-     * Determines if strategy supports given payloadType, this means that we have either a SpecificRecordBase generated
-     * from schema using apchae-avro-maven-plugin or a kotlinx serializable class, written using avro4k.
+     * Determines if this strategy supports given <code>payloadType</code>. This means that we have either a {@link org.apache.avro.specific.SpecificRecordBase} generated
+     * from a schema using apache-avro-maven-plugin or a kotlinx serializable class, written using avro4k.
      *
-     * @param payloadType for example BankAccountCreated.class
-     * @return <code>true</code> if type is supported by this strategy
+     * @param payloadType The payload type of object to de-/serialize, for example <code>BankAccountCreated.class</code>.
+     * @return <code>true</code> if type is supported by this strategy, <code>false</code> otherwise.
      */
     @Override
     boolean test(Class<?> payloadType);

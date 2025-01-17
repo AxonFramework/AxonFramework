@@ -99,9 +99,13 @@ public class AvroSerializerAutoConfiguration {
             super(ConfigurationPhase.REGISTER_BEAN);
         }
 
+        /**
+         * TODO: Question, the use case of events and messages makes sense for Avro, but general is artificial?
+         * @deprecated this might be not needed, remove when confirmed.
+         */
         @SuppressWarnings("unused")
-        // TODO: Question, the use case of events and messages makes sense for Avro, but general is artificial?
         @ConditionalOnProperty(name = "axon.serializer.general", havingValue = "avro")
+        @Deprecated
         static class GeneralAvroCondition {
 
         }

@@ -112,6 +112,11 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
         SpecificData readerSpecificData = SpecificData.getForClass(specificRecordBaseClass);
         Schema readerSchema = AvroUtil.getClassSchemaChecked(specificRecordBaseClass);
 
+        /*
+         * TODO smcvb I am guessing this logic is behind a gate, as checking the compatibility for every
+         *  serializedObject will take time, correct? If so, wouldn't it make sense to cache the readerSchema-to-writerSchema compatibility too?
+         *  Not that I find that a hard requirement for this PR by the way. Just checking if that's something you've thought about
+         */
         if (this.avroSerializerStrategyConfig.performAvroCompatibilityCheck()) {
             // assert schema compatibility
             AvroUtil.assertSchemaCompatibility(
