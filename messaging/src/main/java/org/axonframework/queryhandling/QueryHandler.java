@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.configuration;
+package org.axonframework.queryhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.configuration.MessageHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
 
 /**
  * @author Steven van Beelen

@@ -21,6 +21,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.common.CollectionUtils;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.queryhandling.QueryHandler;
 
 import java.util.HashSet;
 import java.util.Set;

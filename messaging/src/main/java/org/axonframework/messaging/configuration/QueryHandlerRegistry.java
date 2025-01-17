@@ -18,6 +18,7 @@ package org.axonframework.messaging.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.queryhandling.QueryHandler;
 
 import java.util.Set;
 
