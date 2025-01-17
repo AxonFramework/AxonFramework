@@ -18,7 +18,6 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.configuration.CommandHandlerRegistry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;

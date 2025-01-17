@@ -18,8 +18,10 @@ package org.axonframework.messaging.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.SimpleCommandHandlingComponent;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;

@@ -20,16 +20,17 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.common.Registration;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 
@@ -70,7 +71,7 @@ class AnnotationCommandHandlerAdapterTest {
         mockUnitOfWork = mock(UnitOfWork.class);
         when(mockUnitOfWork.resources()).thenReturn(mock(Map.class));
         when(mockUnitOfWork.getCorrelationData()).thenReturn(MetaData.emptyInstance());
-        when(mockBus.subscribe(any(), any())).thenReturn(mock(Registration.class));
+        when(mockBus.subscribe(any(QualifiedName.class), any())).thenReturn(mockBus);
         CurrentUnitOfWork.set(mockUnitOfWork);
     }
 
@@ -80,10 +81,10 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    void handlerDispatchingVoidReturnType() throws Exception {
+    void handlerDispatchingVoidReturnType() {
         CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_NAME, "");
 
-        Object actualReturnValue = testSubject.handleSync(testCommand);
+        Object actualReturnValue = testSubject.handle(testCommand, mock(ProcessingContext.class));
 
         assertNull(actualReturnValue);
         assertEquals(1, mockTarget.voidHandlerInvoked);
@@ -91,10 +92,10 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    void handlerDispatchingWithReturnType() throws Exception {
+    void handlerDispatchingWithReturnType() {
         CommandMessage<Long> testCommand = new GenericCommandMessage<>(TEST_NAME, 1L);
 
-        Object actualReturnValue = testSubject.handleSync(testCommand);
+        Object actualReturnValue = testSubject.handle(testCommand, mock(ProcessingContext.class));
 
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
@@ -102,10 +103,10 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    void handlerDispatchingWithCustomCommandName() throws Exception {
+    void handlerDispatchingWithCustomCommandName() {
         CommandMessage<Long> testCommand =
                 new GenericCommandMessage<>(new GenericMessage<>(TEST_NAME, 1L), "almostLong");
-        Object actualReturnValue = testSubject.handleSync(testCommand);
+        Object actualReturnValue = testSubject.handle(testCommand, mock(ProcessingContext.class));
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
@@ -115,7 +116,7 @@ class AnnotationCommandHandlerAdapterTest {
     @Test
     void handlerDispatchingThrowingException() {
         try {
-            testSubject.handleSync(new GenericCommandMessage<>(TEST_NAME, new HashSet<>()));
+            testSubject.handle(new GenericCommandMessage<>(TEST_NAME, new HashSet<>()), mock(ProcessingContext.class));
             fail("Expected exception");
         } catch (Exception ex) {
             assertEquals(Exception.class, ex.getClass());
@@ -128,11 +129,11 @@ class AnnotationCommandHandlerAdapterTest {
     void subscribe() {
         testSubject.subscribe(mockBus);
 
-        verify(mockBus).subscribe(Long.class.getName(), testSubject);
-        verify(mockBus).subscribe(String.class.getName(), testSubject);
-        verify(mockBus).subscribe(HashSet.class.getName(), testSubject);
-        verify(mockBus).subscribe(ArrayList.class.getName(), testSubject);
-        verify(mockBus).subscribe("almostLong", testSubject);
+        verify(mockBus).subscribe(QualifiedNameUtils.fromClassName(Long.class), testSubject);
+        verify(mockBus).subscribe(QualifiedNameUtils.fromClassName(String.class), testSubject);
+        verify(mockBus).subscribe(QualifiedNameUtils.fromClassName(HashSet.class), testSubject);
+        verify(mockBus).subscribe(QualifiedNameUtils.fromClassName(ArrayList.class), testSubject);
+        verify(mockBus).subscribe(QualifiedNameUtils.fromDottedName("almostLong"), testSubject);
         verifyNoMoreInteractions(mockBus);
     }
 
@@ -140,18 +141,19 @@ class AnnotationCommandHandlerAdapterTest {
     void handleNoHandlerForCommand() {
         CommandMessage<Object> command = new GenericCommandMessage<>(TEST_NAME, new LinkedList<>());
 
-        assertThrows(NoHandlerForCommandException.class, () -> testSubject.handleSync(command));
+        assertThrows(NoHandlerForCommandException.class,
+                     () -> testSubject.handle(command, mock(ProcessingContext.class)));
     }
 
     @Test
-    void messageHandlerInterceptorAnnotatedMethodsAreSupportedForCommandHandlingComponents() throws Exception {
+    void messageHandlerInterceptorAnnotatedMethodsAreSupportedForCommandHandlingComponents() {
         CommandMessage<String> testCommandMessage = new GenericCommandMessage<>(TEST_NAME, "");
         List<CommandMessage<?>> withInterceptor = new ArrayList<>();
         List<CommandMessage<?>> withoutInterceptor = new ArrayList<>();
         mockTarget = new MyInterceptingCommandHandler(withoutInterceptor, withInterceptor, new ArrayList<>());
         testSubject = new AnnotationCommandHandlerAdapter<>(mockTarget);
 
-        Object result = testSubject.handleSync(testCommandMessage);
+        Object result = testSubject.handle(testCommandMessage, mock(ProcessingContext.class));
 
         assertNull(result);
         assertEquals(1, mockTarget.voidHandlerInvoked);
@@ -168,7 +170,7 @@ class AnnotationCommandHandlerAdapterTest {
         testSubject = new AnnotationCommandHandlerAdapter<>(mockTarget);
 
         try {
-            testSubject.handleSync(testCommandMessage);
+            testSubject.handle(testCommandMessage, mock(ProcessingContext.class));
             fail("Expected exception to be thrown");
         } catch (Exception e) {
 

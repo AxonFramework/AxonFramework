@@ -17,7 +17,8 @@
 package org.axonframework.modelling.command;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandHandlerRegistry;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
@@ -51,7 +52,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -160,15 +160,26 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      * @return A handle that can be used to unsubscribe
      */
     public Registration subscribe(CommandBus commandBus) {
-        List<Registration> subscriptions = supportedCommandsByName
+        /*List<Registration> subscriptions = */
+        supportedCommandsByName
                 .entrySet()
-                .stream()
-                .flatMap(entry -> entry.getValue().stream().map(
-                        messageHandler -> commandBus.subscribe(entry.getKey(), messageHandler)
+                .forEach(entry -> entry.getValue().stream().map(
+                        messageHandler -> commandBus.subscribe(QualifiedNameUtils.fromDottedName(entry.getKey()),
+                                                               (CommandHandler) messageHandler)
                 ))
-                .filter(Objects::nonNull)
-                .toList();
-        return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
+//                .filter(Objects::nonNull)
+//                .toList()
+        ;
+        return () -> true;
+//        return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
+    }
+
+    @Override
+    public CommandHandlerRegistry subscribe(@Nonnull QualifiedName name,
+                                            @Nonnull CommandHandler commandHandler) {
+        throw new UnsupportedOperationException(
+                "This Command Handling Component implementation does not YET support direct command handler registration."
+        );
     }
 
     /**
@@ -176,7 +187,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      * of the method and all parameter types. This is an effective override in the hierarchy.
      */
     private List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> initializeHandlers(
-            AggregateModel<T> aggregateModel) {
+            AggregateModel<T> aggregateModel
+    ) {
         List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlersFound = new ArrayList<>();
 
         aggregateModel.allCommandHandlers()
@@ -234,15 +246,6 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     }
 
     @Override
-    public Object handleSync(CommandMessage<?> commandMessage) throws Exception {
-        return handlers.stream()
-                       .filter(ch -> ch.canHandle(commandMessage))
-                       .findFirst()
-                       .orElseThrow(() -> new NoHandlerForCommandException(commandMessage))
-                       .handleSync(commandMessage);
-    }
-
-    @Override
     public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
                                                          ProcessingContext processingContext) {
         return handlers.stream()
@@ -254,7 +257,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     }
 
     @SuppressWarnings("unchecked")
-    private static <R> CommandResultMessage<R> asCommandResultMessage(@Nullable Object commandResult, @Nonnull Function<Object, QualifiedName> nameResolver) {
+    private static <R> CommandResultMessage<R> asCommandResultMessage(@Nullable Object commandResult,
+                                                                      @Nonnull Function<Object, QualifiedName> nameResolver) {
         if (commandResult instanceof CommandResultMessage) {
             return (CommandResultMessage<R>) commandResult;
         } else if (commandResult instanceof Message) {
@@ -267,7 +271,6 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         return new GenericCommandResultMessage<>(name, (R) commandResult);
     }
 
-    @Override
     public boolean canHandle(CommandMessage<?> message) {
         return handlers.stream()
                        .anyMatch(ch -> ch.canHandle(message));
@@ -289,8 +292,10 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     }
 
     @Override
-    public Set<String> supportedCommandNames() {
-        return supportedCommandNames;
+    public Set<QualifiedName> supportedCommands() {
+        return supportedCommandNames.stream()
+                                    .map(QualifiedNameUtils::fromDottedName)
+                                    .collect(Collectors.toSet());
     }
 
     /**
@@ -421,10 +426,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         /**
-         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when dispatching {@link CommandMessage CommandMessages}.
-         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when dispatching
+         * {@link CommandMessage CommandMessages}. If not set, a {@link ClassBasedMessageNameResolver} is used by
+         * default.
          *
-         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for {@link CommandMessage CommandMessages}.
+         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for
+         *                            {@link CommandMessage CommandMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder<T> messageNameResolver(MessageNameResolver messageNameResolver) {

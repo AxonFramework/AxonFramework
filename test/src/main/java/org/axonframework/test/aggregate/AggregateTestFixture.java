@@ -17,6 +17,7 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
@@ -47,6 +48,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
@@ -236,7 +238,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                           MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
-        commandBus.subscribe(commandName, commandHandler);
+        commandBus.subscribe(QualifiedNameUtils.fromDottedName(commandName), (CommandHandler) commandHandler);
         return this;
     }
 

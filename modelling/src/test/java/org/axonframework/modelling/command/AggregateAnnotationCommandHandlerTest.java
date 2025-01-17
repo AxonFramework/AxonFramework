@@ -16,15 +16,16 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.FixedValueParameterResolver;
 import org.axonframework.messaging.annotation.MetaDataValue;
@@ -152,25 +153,26 @@ class AggregateAnnotationCommandHandlerTest {
     @Test
     @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void supportedCommands() {
-        Set<String> actual = testSubject.supportedCommandNames();
-        Set<String> expected = new HashSet<>(Arrays.asList(
-                CreateCommand.class.getName(),
-                CreateOrUpdateCommand.class.getName(),
-                AlwaysCreateCommand.class.getName(),
-                CreateFactoryMethodCommand.class.getName(),
-                UpdateCommandWithAnnotatedMethod.class.getName(),
-                FailingCreateCommand.class.getName(),
-                UpdateCommandWithAnnotatedMethodAndVersion.class.getName(),
-                UpdateCommandWithAnnotatedField.class.getName(),
-                UpdateCommandWithAnnotatedFieldAndVersion.class.getName(),
-                UpdateCommandWithAnnotatedFieldAndIntegerVersion.class.getName(),
-                FailingUpdateCommand.class.getName(),
+        Set<QualifiedName> actual = testSubject.supportedCommands();
+        Set<QualifiedName> expected = new HashSet<>(Arrays.asList(
+                QualifiedNameUtils.fromClassName(CreateCommand.class),
+                QualifiedNameUtils.fromClassName(CreateOrUpdateCommand.class),
+                QualifiedNameUtils.fromClassName(AlwaysCreateCommand.class),
+                QualifiedNameUtils.fromClassName(CreateFactoryMethodCommand.class),
+                QualifiedNameUtils.fromClassName(UpdateCommandWithAnnotatedMethod.class),
+                QualifiedNameUtils.fromClassName(FailingCreateCommand.class),
+                QualifiedNameUtils.fromClassName(UpdateCommandWithAnnotatedMethodAndVersion.class),
+                QualifiedNameUtils.fromClassName(UpdateCommandWithAnnotatedField.class),
+                QualifiedNameUtils.fromClassName(UpdateCommandWithAnnotatedFieldAndVersion.class),
+                QualifiedNameUtils.fromClassName(UpdateCommandWithAnnotatedFieldAndIntegerVersion.class),
+                QualifiedNameUtils.fromClassName(FailingUpdateCommand.class),
                 // declared in the entities
-                UpdateNestedEntityStateCommand.class.getName(),
-                UpdateEntityStateCommand.class.getName(),
-                UpdateEntityFromCollectionStateCommand.class.getName(),
-                UpdateEntityFromMapStateCommand.class.getName(),
-                UpdateAbstractEntityFromCollectionStateCommand.class.getName()));
+                QualifiedNameUtils.fromClassName(UpdateNestedEntityStateCommand.class),
+                QualifiedNameUtils.fromClassName(UpdateEntityStateCommand.class),
+                QualifiedNameUtils.fromClassName(UpdateEntityFromCollectionStateCommand.class),
+                QualifiedNameUtils.fromClassName(UpdateEntityFromMapStateCommand.class),
+                QualifiedNameUtils.fromClassName(UpdateAbstractEntityFromCollectionStateCommand.class)
+        ));
 
         assertEquals(expected, actual);
     }
@@ -178,14 +180,14 @@ class AggregateAnnotationCommandHandlerTest {
     @Test
     @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerSubscribesToCommands() {
-        //noinspection resource
-        verify(commandBus).subscribe(eq(CreateCommand.class.getName()),
-                                     any(MessageHandler.class));
+        verify(commandBus).subscribe(eq(QualifiedNameUtils.fromClassName(CreateCommand.class)),
+                                     any(org.axonframework.commandhandling.CommandHandler.class));
         // Is subscribed two times because of the duplicate handler. This is good and indicates usage of the
         // DuplicateCommandHandlerResolver
-        //noinspection resource
-        verify(commandBus, times(2)).subscribe(eq(UpdateCommandWithAnnotatedMethod.class.getName()),
-                                               any(MessageHandler.class));
+        verify(commandBus, times(2)).subscribe(
+                eq(QualifiedNameUtils.fromClassName(UpdateCommandWithAnnotatedMethod.class)),
+                any(org.axonframework.commandhandling.CommandHandler.class)
+        );
     }
 
     @Test
