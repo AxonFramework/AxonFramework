@@ -17,6 +17,7 @@
 package org.axonframework.messaging.configuration;
 
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.eventhandling.EventHandler;
 
 /**
  * @author Steven van Beelen

@@ -17,6 +17,7 @@
 package org.axonframework.messaging.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;

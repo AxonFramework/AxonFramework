@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.configuration;
+package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.configuration.MessageHandler;
+import org.axonframework.messaging.configuration.NoMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
