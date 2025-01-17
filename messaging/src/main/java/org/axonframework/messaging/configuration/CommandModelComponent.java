@@ -33,6 +33,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.Set;
 
 /**
+ * TODO This should be regarded as a playground object to verify the API.
+ *
  * @author Steven van Beelen
  * @since 5.0.0
  */

@@ -37,7 +37,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * TODO Playground for a MHC. Or keep as the main component to delegate to from, e.g., a CommandModelComponent?
+ * TODO This should be regarded as a playground object to verify the API.
  *
  * @author Steven van Beelen
  * @since 5.0.0

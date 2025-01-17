@@ -21,6 +21,10 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.queryhandling.QueryHandler;
 
 /**
+ * TODO documentation
+ * Interface for a component that processes Messages.
+ *
+ * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.o
  */

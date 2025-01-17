@@ -21,6 +21,7 @@ import org.axonframework.messaging.QualifiedName;
 import java.util.Set;
 
 /**
+ * TODO documentation
  * A {@code MessageHandlingComponent} specialization for {@code QueryHandlers}.
  *
  * @author Steven van Beelen

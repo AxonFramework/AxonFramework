@@ -23,6 +23,7 @@ import java.util.Set;
 /**
  * MessageHandler specialization for handlers of Command Messages. Besides handling a message, CommandHandlingComponent
  * also specify which command names they support.
+ * TODO documentation
  */
 public interface CommandHandlingComponent extends CommandHandler, CommandHandlerRegistry {
 

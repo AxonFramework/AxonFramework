@@ -22,7 +22,7 @@ import org.axonframework.messaging.QualifiedName;
 import java.util.Set;
 
 /**
- * TODO
+ * TODO documentation
  *
  * @author Allard Buijze
  * @author Gerard Klijs

@@ -32,6 +32,7 @@ import java.util.Set;
 /**
  * A {@code MessageHandler} specialization for a group handlers. Besides handling a message, a
  * {@code MessageHandlingComponent} also specify which message it {@link #supportedMessages() supports}.
+ * TODO documentation
  *
  * @author Allard Buijze
  * @author Gerard Klijs

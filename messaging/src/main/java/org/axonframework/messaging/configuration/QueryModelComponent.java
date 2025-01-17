@@ -33,6 +33,8 @@ import org.axonframework.queryhandling.SimpleQueryHandlingComponent;
 import java.util.Set;
 
 /**
+ * TODO This should be regarded as a playground object to verify the API.
+ *
  * @author Steven van Beelen
  * @since 5.0.0
  */
@@ -48,14 +50,14 @@ public class QueryModelComponent implements EventHandlingComponent, QueryHandlin
 
     @Override
     public QueryModelComponent subscribe(@Nonnull QualifiedName name,
-                                          @Nonnull QueryHandler queryHandler) {
+                                         @Nonnull QueryHandler queryHandler) {
         queryComponent.subscribe(name, queryHandler);
         return this;
     }
 
     @Override
     public QueryModelComponent subscribe(@Nonnull QualifiedName name,
-                                          @Nonnull EventHandler eventHandler) {
+                                         @Nonnull EventHandler eventHandler) {
         eventComponent.subscribe(name, eventHandler);
         return this;
     }

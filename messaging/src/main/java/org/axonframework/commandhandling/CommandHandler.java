@@ -22,6 +22,8 @@ import org.axonframework.messaging.configuration.MessageHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
+ * TODO documentation
+ *
  * @author Steven van Beelen
  * @since 5.0.0
  */
