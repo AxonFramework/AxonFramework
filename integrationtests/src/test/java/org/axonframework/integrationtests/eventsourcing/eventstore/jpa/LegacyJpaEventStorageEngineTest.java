@@ -11,13 +11,9 @@ import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
-import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
-import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
@@ -36,12 +32,10 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
-import reactor.test.StepVerifier;
 
 import javax.sql.DataSource;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -91,9 +85,6 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
         );
     }
 
-    // todo: test batching
-    // todo: test token with gaps
-
     @Configuration
     public static class TestContext {
 
@@ -108,14 +99,6 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
                 return new SimpleEntityManagerProvider(entityManager);
             }
         }
-
-//        @Bean
-//        public DataSource dataSource() {
-//            DriverManagerDataSource driverManagerDataSource
-//                    = new DriverManagerDataSource("jdbc:tc:postgresql:17.2:///axon_test", "axon", "axon");
-//            driverManagerDataSource.setDriverClassName("org.postgresql.Driver");
-//            return Mockito.spy(driverManagerDataSource);
-//        }
 
         @Bean
         public DataSource dataSource() {
@@ -135,7 +118,6 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
             entityManagerFactoryBean.setPersistenceUnitName("integrationtest");
 
             HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
-//            jpaVendorAdapter.setDatabasePlatform("org.hibernate.dialect.PostgreSQLDialect");
             jpaVendorAdapter.setDatabasePlatform("org.hibernate.dialect.HSQLDialect");
             jpaVendorAdapter.setGenerateDdl(true);
             jpaVendorAdapter.setShowSql(false);
