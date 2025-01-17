@@ -34,6 +34,7 @@ import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
+import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.tracing.SpanFactory;
@@ -231,7 +232,7 @@ public interface Configurer extends LifecycleOperations {
     /**
      * Registers a query handler bean with this {@link Configurer}. The bean may be of any type. The actual query
      * handler methods will be detected based on the annotations present on the bean's methods. Message handling
-     * functions annotated with {@link org.axonframework.queryhandling.QueryHandler} will be taken into account.
+     * functions annotated with {@link QueryHandler} will be taken into account.
      * <p>
      * The builder function receives the {@link Configuration} as input, and is expected to return a fully initialized
      * instance of the query handler bean.
@@ -245,7 +246,7 @@ public interface Configurer extends LifecycleOperations {
      * Registers a message handler bean with this configuration. The bean may be of any type. The actual message handler
      * methods will be detected based on the annotations present on the bean's methods. Message handling functions
      * annotated with {@link CommandHandler}, {@link
-     * EventHandler} and {@link org.axonframework.queryhandling.QueryHandler} will be
+     * EventHandler} and {@link QueryHandler} will be
      * taken into account.
      * <p>
      * The builder function receives the {@link Configuration} as input, and is expected to return a fully initialized
