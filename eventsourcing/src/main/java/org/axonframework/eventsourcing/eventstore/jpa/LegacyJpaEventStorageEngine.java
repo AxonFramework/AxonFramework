@@ -155,6 +155,9 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return CompletableFuture.completedFuture(new EmptyAppendTransaction(condition));
         }
 
+        var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
+        var aggregateSequencer = AggregateSequencer.with(consistencyMarker);
+
         return CompletableFuture.completedFuture(new AppendTransaction() {
 
             private final AtomicBoolean finished = new AtomicBoolean(false);
@@ -165,8 +168,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
 
-                var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
-                var aggregateSequencer = AggregateSequencer.with(consistencyMarker);
                 var tx = transactionManager.startTransaction();
 
                 CompletableFuture<Void> txResult = new CompletableFuture<>();
