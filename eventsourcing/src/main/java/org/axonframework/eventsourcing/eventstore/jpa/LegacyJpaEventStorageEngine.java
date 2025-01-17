@@ -163,22 +163,18 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 if (finished.getAndSet(true)) {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
-                var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
                 return transactionManager.fetchInTransaction(() -> {
                     try {
-                        var entityManager = entityManagerProvider.getEntityManager();
-                        var afterPersistenceConsistencyMarker = entityManagerPersistEvents(consistencyMarker, events);
+                        var beforePersistenceConsistencyMarker = AggregateBasedConsistencyMarker.from(condition);
+                        var afterPersistenceConsistencyMarker = entityManagerPersistEvents(
+                                beforePersistenceConsistencyMarker,
+                                events);
                         if (explicitFlush) {
-                            entityManager.flush();
+                            entityManagerProvider.getEntityManager().flush();
                         }
                         return CompletableFuture.completedFuture(afterPersistenceConsistencyMarker);
                     } catch (Exception e) {
-                        var appendException = AppendEventsTransactionRejectedException
-                                .conflictingEventsDetected(consistencyMarker);
-                        var legacyPersistenceException = persistenceExceptionMapper
-                                .mapPersistenceException(e, events.getFirst().event());
-                        appendException.addSuppressed(legacyPersistenceException);
-                        throw appendException; // fixme: changed behavior (legacy throws legacyPersistenceException), compare with LegacyAxonServerEventStorageEngine
+                        throw appendEventsTransactionRejectedExceptionFrom(e, condition, events);
                     }
                 });
             }
@@ -193,6 +189,18 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         });
     }
 
+    // todo: describe changed behavior (legacy throws legacyPersistenceException), compare with LegacyAxonServerEventStorageEngine
+    private AppendEventsTransactionRejectedException appendEventsTransactionRejectedExceptionFrom(Exception suppressed,
+                                                                                                  AppendCondition appendCondition,
+                                                                                                  List<TaggedEventMessage<?>> events) {
+        var consistencyMarker = AggregateBasedConsistencyMarker.from(appendCondition);
+        var appendException = AppendEventsTransactionRejectedException.conflictingEventsDetected(consistencyMarker);
+        var legacyPersistenceException = persistenceExceptionMapper.mapPersistenceException(suppressed,
+                                                                                            events.getFirst().event());
+        appendException.addSuppressed(legacyPersistenceException);
+        return appendException;
+    }
+
     private AggregateBasedConsistencyMarker entityManagerPersistEvents(
             AggregateBasedConsistencyMarker consistencyMarker,
             List<TaggedEventMessage<?>> events
@@ -205,7 +213,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
               .forEach(entityManager::persist);
         return aggregateSequencer.forwarded();
     }
-
 
     private void assertValidTags(List<TaggedEventMessage<?>> events) {
         for (TaggedEventMessage<?> taggedEvent : events) {
