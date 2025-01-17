@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.common.AxonConfigurationException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -29,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class DefaultSourcingConditionTest {
 
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.hasTag(new Tag("key", "value"));
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.forAnyEventType().withTags("key", "value");
     private static final long TEST_START = 1L;
     private static final long TEST_END = 10L;
 
@@ -37,22 +35,23 @@ class DefaultSourcingConditionTest {
 
     @BeforeEach
     void setUp() {
-        testSubject = new DefaultSourcingCondition(TEST_CRITERIA, TEST_START, TEST_END);
+        testSubject = new DefaultSourcingCondition(TEST_START, TEST_END, TEST_CRITERIA);
     }
 
     @Test
-    void throwsAxonConfigurationExceptionWhenConstructingWithNullEventCriteria() {
+    void throwsExceptionWhenConstructingWithNullEventCriteria() {
         //noinspection DataFlowIssue
-        assertThrows(AxonConfigurationException.class, () -> new DefaultSourcingCondition(null, TEST_START, TEST_END));
+        assertThrows(NullPointerException.class,
+                     () -> new DefaultSourcingCondition(TEST_START, TEST_END, (EventCriteria) null));
     }
 
     @Test
     void combineUsesTheSmallestStartValue() {
         long biggerStart = testSubject.start() + 10;
         SourcingCondition testSubjectWithLargerStart =
-                new DefaultSourcingCondition(TEST_CRITERIA, biggerStart, TEST_END);
+                new DefaultSourcingCondition(biggerStart, TEST_END, TEST_CRITERIA);
 
-        SourcingCondition result = testSubject.combine(testSubjectWithLargerStart);
+        SourcingCondition result = testSubject.or(testSubjectWithLargerStart);
 
         assertNotEquals(biggerStart, result.start());
         assertEquals(testSubject.start(), result.start());
@@ -62,9 +61,9 @@ class DefaultSourcingConditionTest {
     void combineUsesTheLargestEndValue() {
         long smallerEnd = testSubject.end() - 5;
         SourcingCondition testSubjectWithSmallerEnd =
-                new DefaultSourcingCondition(TEST_CRITERIA, TEST_START, smallerEnd);
+                new DefaultSourcingCondition(TEST_START, smallerEnd, TEST_CRITERIA);
 
-        SourcingCondition result = testSubject.combine(testSubjectWithSmallerEnd);
+        SourcingCondition result = testSubject.or(testSubjectWithSmallerEnd);
 
         long resultEnd = result.end();
         assertNotEquals(smallerEnd, resultEnd);

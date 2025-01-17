@@ -27,6 +27,7 @@ Major API Changes
   interfaces.
 * We no longer support message handler annotated constructors. For example, the constructor of an aggregate can no
   longer contain the `@CommandHandler` annotation. Instead, the `@CreationPolicy` should be used.
+* All annotation logic is moved to the annotation module.
 
 ## Unit of Work
 
@@ -89,7 +90,8 @@ list of the latter, please check [here](#removed).
 
 ### Payload Type and Qualified Name
 
-TODO - check if the below section is clear about the uncertainty of the further existence of payloadType (or perhaps contentType).
+TODO - check if the below section is clear about the uncertainty of the further existence of payloadType (or perhaps
+contentType).
 
 The `Message` API has seen roughly two major changes, being:
 
@@ -119,11 +121,13 @@ This layer of indirection will allow us to provide the freedom that currently is
 
 ### Factory Methods, like GenericMessage#asMessage(Object)
 
-The factory methods that would construct a `Mesage` implementation based on a given `Object` have been removed from Axon Framework.
+The factory methods that would construct a `Mesage` implementation based on a given `Object` have been removed from Axon
+Framework.
 These factory methods no longer align with the new API, which expects that the `QualifiedName` is set consciously.
 Hence, users of the factory methods need to revert to using the constructor of the `Message` implementation instead.
 Here's a revised version with improved grammar and clarity:
-If a user needs to specify custom `Metadata` for a `Message`, they can use the `Gateway` method overloads that accept `Metadata` as an additional parameter alongside the payload.
+If a user needs to specify custom `Metadata` for a `Message`, they can use the `Gateway` method overloads that accept
+`Metadata` as an additional parameter alongside the payload.
 
 ## Message Stream
 
@@ -138,7 +142,10 @@ TODO - Start filling adjusted operation once the `MessageStream` generics discus
 Other API changes
 =================
 
-TODO
+* The `EventBus` has been renamed to `EventSink`, with adjusted APIs. All publish methods now expect a `String context`
+  to define in which (bounded-)context an event should be published. Furthermore, either the method holding the
+  `ProcessingContext` or the `publish` returning a `CompletableFuture<Void>` should be used, as these make it possible
+  to perform the publication asynchronously.
 
 Stored format changes
 =====================
@@ -178,6 +185,10 @@ Moved / Remove Classes
 |--------------------------------------------------------------|--------------------------------------------------------------|
 | org.axonframework.common.caching.EhCache3Adapter             | org.axonframework.common.caching.EhCacheAdapter              |
 | org.axonframework.eventsourcing.MultiStreamableMessageSource | org.axonframework.eventhandling.MultiStreamableMessageSource |
+| org.axonframework.eventhandling.EventBus                     | org.axonframework.eventhandling.EventSink                    |
+| org.axonframework.commandhandling.CommandHandler             | org.axonframework.commandhandling.annotation.CommandHandler  |
+| org.axonframework.eventhandling.EventHandler                 | org.axonframework.eventhandling.annotation.EventHandler      |
+| org.axonframework.queryhandling.QueryHandler                 | org.axonframework.queryhandling.annotation.QueryHandler      |
 
 ### Removed
 

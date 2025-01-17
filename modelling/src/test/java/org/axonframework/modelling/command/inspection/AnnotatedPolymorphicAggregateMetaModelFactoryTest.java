@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.axonframework.modelling.command.inspection;
 
 import jakarta.persistence.Id;
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;

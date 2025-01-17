@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Id;
 import jakarta.persistence.Persistence;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptingCommandBus;
@@ -68,7 +68,7 @@ import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
-import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.axonframework.serialization.Serializer;

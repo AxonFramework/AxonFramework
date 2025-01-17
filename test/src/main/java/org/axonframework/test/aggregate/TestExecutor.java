@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.test.aggregate;
 
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.Message;
 
 import java.time.Duration;
@@ -147,7 +148,7 @@ public interface TestExecutor<T> {
      * one of the aggregate's constructors.
      * <p>
      * You should use this when-phase operation whenever you do not use the
-     * {@link org.axonframework.commandhandling.CommandHandler} annotation on the aggregate's methods, nor have
+     * {@link CommandHandler} annotation on the aggregate's methods, nor have
      * {@link org.axonframework.test.aggregate.FixtureConfiguration#registerAnnotatedCommandHandler(Object) registered
      * an external command handler} invoking the {@link org.axonframework.modelling.command.Repository}.
      *
@@ -165,7 +166,7 @@ public interface TestExecutor<T> {
      * All activity is recorded in the fixture for result validation.
      * <p>
      * You should use this when-phase operation whenever you do not use the
-     * {@link org.axonframework.commandhandling.CommandHandler} annotation on the aggregate's methods, nor have
+     * {@link CommandHandler} annotation on the aggregate's methods, nor have
      * {@link org.axonframework.test.aggregate.FixtureConfiguration#registerAnnotatedCommandHandler(Object) registered
      * an external command handler} invoking the {@link org.axonframework.modelling.command.Repository}.
      *

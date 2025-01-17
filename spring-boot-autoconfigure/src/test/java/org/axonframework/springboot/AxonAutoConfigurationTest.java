@@ -17,7 +17,7 @@
 package org.axonframework.springboot;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
@@ -26,7 +26,7 @@ import org.axonframework.config.Configurer;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.gateway.EventGateway;

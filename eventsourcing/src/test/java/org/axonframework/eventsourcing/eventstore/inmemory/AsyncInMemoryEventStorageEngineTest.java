@@ -16,22 +16,8 @@
 
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
-import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.AppendConditionAssertionException;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
-import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
-import org.axonframework.eventsourcing.eventstore.Tag;
-import org.junit.jupiter.api.*;
-
-import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-
-import static org.axonframework.eventsourcing.eventstore.EventCriteria.hasTag;
-import static org.axonframework.eventsourcing.eventstore.SourcingCondition.conditionFor;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Test class validating the {@link SimpleEventStore} together with the {@link AsyncInMemoryEventStorageEngine}.
@@ -43,26 +29,5 @@ class AsyncInMemoryEventStorageEngineTest extends StorageEngineTestSuite<AsyncIn
     @Override
     protected AsyncInMemoryEventStorageEngine buildStorageEngine() {
         return new AsyncInMemoryEventStorageEngine();
-    }
-
-    /**
-     * By sourcing twice within a given UnitOfWork, the DefaultEventStoreTransaction combines the AppendConditions. By
-     * following this up with an appendEvent invocation, the in-memory EventStorageEngine will throw an
-     * AppendConditionAssertionException as intended.
-     */
-    @Test
-    void appendEventsThrowsAppendConditionAssertionExceptionWhenToManyTagsAreGiven() {
-        SourcingCondition firstCondition = conditionFor(TEST_CRITERIA);
-        SourcingCondition secondCondition = conditionFor(hasTag(new Tag("aggregateId", "other-aggregate-id")));
-
-        CompletableFuture<AsyncEventStorageEngine.AppendTransaction> result = testSubject.appendEvents(AppendCondition.from(
-                firstCondition.combine(secondCondition)));
-
-        await().atMost(Duration.ofMillis(500))
-               .pollDelay(Duration.ofMillis(25))
-               .untilAsserted(() -> {
-                   assertTrue(result.isCompletedExceptionally());
-                   assertInstanceOf(AppendConditionAssertionException.class, result.exceptionNow());
-               });
     }
 }

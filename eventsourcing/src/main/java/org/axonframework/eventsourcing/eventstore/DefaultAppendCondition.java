@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,36 +18,41 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
+import java.util.Set;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Default implementation of the {@link AppendCondition}, using the given {@code consistencyMarker} and {@code criteria}
  * as output for the {@link #consistencyMarker()} and {@link #criteria()} operations respectively.
  *
- * @param consistencyMarker The {@code long} to return on the {@link #consistencyMarker()} operation.
- * @param criteria          The {@link EventCriteria} to return on the {@link #criteria()} operation.
+ * @param consistencyMarker The consistency marker obtained while sourcing events.
+ * @param criteria          The criteria set defining which changes are considered conflicting.
  * @author Steven van Beelen
  * @since 5.0.0
  */
 record DefaultAppendCondition(
-        long consistencyMarker,
-        @Nonnull EventCriteria criteria
+        @Nonnull ConsistencyMarker consistencyMarker,
+        @Nonnull Set<EventCriteria> criteria
 ) implements AppendCondition {
 
     DefaultAppendCondition {
-        assertNonNull(criteria, "The EventCriteria cannot be null");
+        requireNonNull(consistencyMarker, "The ConsistencyMarker cannot be null");
+        requireNonNull(criteria, "The EventCriteria set cannot be null");
+    }
+
+    /**
+     * Creates an appendCondition with given {@code consistencyMarker} and a single {@code eventCriteria}.
+     *
+     * @param consistencyMarker The consistency marker for this append condition.
+     * @param eventCriteria     The criteria for the append condition.
+     */
+    public DefaultAppendCondition(@Nonnull ConsistencyMarker consistencyMarker, @Nonnull EventCriteria eventCriteria) {
+        this(consistencyMarker, Set.of(requireNonNull(eventCriteria, "The EventCriteria cannot be null")));
     }
 
     @Override
-    public AppendCondition with(@Nonnull SourcingCondition condition) {
-        return new DefaultAppendCondition(
-                Math.min(condition.end(), consistencyMarker),
-                criteria.combine(condition.criteria())
-        );
-    }
-
-    @Override
-    public AppendCondition withMarker(long consistencyMarker) {
-        return new DefaultAppendCondition(Math.min(consistencyMarker, this.consistencyMarker), criteria);
+    public AppendCondition withMarker(ConsistencyMarker consistencyMarker) {
+        return new DefaultAppendCondition(consistencyMarker, criteria);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -26,26 +29,32 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * The {@code start} and {@code end} refer to the window of events that is of interest to this
  * {@link SourcingCondition}.
  *
- * @param criteria The {@link EventCriteria} of the model to source.
  * @param start    The start position in the event sequence to retrieve of the model to source.
  * @param end      The end position in the event sequence to retrieve of the model to source.
+ * @param criteria The {@link EventCriteria} set of the model to source.
  * @author Steven van Beelen
  * @since 5.0.0
  */
-record DefaultSourcingCondition(@Nonnull EventCriteria criteria,
-                                long start,
-                                long end) implements SourcingCondition {
+record DefaultSourcingCondition(
+        long start,
+        long end,
+        @Nonnull Set<EventCriteria> criteria
+) implements SourcingCondition {
 
     DefaultSourcingCondition {
-        assertNonNull(criteria, "The EventCriteria cannot be null");
+        assertNonNull(criteria, "The EventCriteria set cannot be null");
+    }
+
+    public DefaultSourcingCondition(long start, long end, @Nonnull EventCriteria eventCriteria) {
+        this(start, end, Set.of(eventCriteria));
     }
 
     @Override
-    public SourcingCondition combine(@Nonnull SourcingCondition other) {
-        return new DefaultSourcingCondition(
-                criteria().combine(other.criteria()),
-                Math.min(this.start, other.start()),
-                Math.max(this.end, other.end())
-        );
+    public SourcingCondition or(@Nonnull SourcingCondition other) {
+        var combined = new HashSet<>(criteria());
+        combined.addAll(other.criteria());
+        return new DefaultSourcingCondition(Math.min(this.start, other.start()),
+                                            Math.max(this.end, other.end()),
+                                            combined);
     }
 }

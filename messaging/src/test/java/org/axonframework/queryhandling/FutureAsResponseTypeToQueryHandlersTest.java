@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
+import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;

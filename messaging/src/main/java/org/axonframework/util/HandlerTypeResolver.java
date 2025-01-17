@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package org.axonframework.util;
 
-import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.queryhandling.annotation.QueryHandler;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
