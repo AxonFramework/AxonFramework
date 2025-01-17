@@ -16,15 +16,17 @@
 
 package org.axonframework.messaging.configuration;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.QualifiedName;
 
 import java.util.Set;
 
 /**
- * TODO
+ * Subscribe the given {@code handler} for messages of the given {@code names}.
+ * <p/>
+ * If a subscription already exists for any {@link QualifiedName name} in the given set, the behavior is undefined.
+ * Implementations may throw an exception to refuse duplicate subscription or alternatively decide whether the existing
+ * or new {@code handler} gets the subscription.
  *
  * @author Allard Buijze
  * @author Gerard Klijs
@@ -34,37 +36,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface MessageHandlerRegistry<H extends MessageHandler<? extends Message<?>, ? extends Message<?>>> {
-
-    /**
-     * Subscribe the given {@code handler} for messages of the given {@code names}.
-     * <p/>
-     * If a subscription already exists for any {@link QualifiedName name} in the given set, the behavior is undefined.
-     * Implementations may throw an exception to refuse duplicate subscription or alternatively decide whether the
-     * existing or new {@code handler} gets the subscription.
-     *
-     * @param names   The names of the message to subscribe the handler for.
-     * @param handler The handler instance that handles messages for the given name.
-     * @return This registry for fluent interfacing.
-     */
-    MessageHandlerRegistry<H> subscribe(@Nonnull Set<QualifiedName> names,
-                                        @Nonnull H handler);
-
-    /**
-     * Subscribe the given {@code handler} for messages of the given {@code name}.
-     * <p/>
-     * If a subscription already exists for the {@code name}, the behavior is undefined. Implementations may throw an
-     * exception to refuse duplicate subscription or alternatively decide whether the existing or new {@code handler}
-     * gets the subscription.
-     *
-     * @param name    The names of the message to subscribe the handler for.
-     * @param handler The handler instance that handles messages for the given name.
-     * @return This registry for fluent interfacing.
-     */
-    default MessageHandlerRegistry<H> subscribe(@Nonnull QualifiedName name,
-                                                @Nonnull H handler) {
-        return subscribe(Set.of(name), handler);
-    }
+public sealed interface MessageHandlerRegistry permits CommandHandlerRegistry, EventHandlerRegistry, QueryHandlerRegistry {
 
     /**
      * Generic registration of a {@link MessageHandlerInterceptor} used for <b>all</b> handlers

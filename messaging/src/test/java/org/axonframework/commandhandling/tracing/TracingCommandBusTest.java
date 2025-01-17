@@ -39,6 +39,8 @@ import static org.mockito.Mockito.*;
 
 class TracingCommandBusTest {
 
+    private static final QualifiedName COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
+
     private TracingCommandBus testSubject;
     private TestSpanFactory spanFactory;
     private CommandBus delegate;
@@ -56,8 +58,7 @@ class TracingCommandBusTest {
 
     @Test
     void dispatchIsCorrectlyTraced() {
-        CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "Say hi!");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "Say hi!");
 
         when(delegate.dispatch(any(), any())).thenAnswer(
                 i -> {
@@ -75,8 +76,7 @@ class TracingCommandBusTest {
 
     @Test
     void dispatchIsCorrectlyTracedDuringException() {
-        CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "Say hi!");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "Say hi!");
 
         when(delegate.dispatch(any(), any())).thenAnswer(i -> {
             spanFactory.verifySpanPropagated("CommandBus.dispatchCommand",
@@ -98,12 +98,11 @@ class TracingCommandBusTest {
 
     @Test
     void verifyHandlerSpansAreCreatedOnHandlerInvocation() {
-        CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "Test");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "Test");
         ArgumentCaptor<CommandHandler> captor = ArgumentCaptor.forClass(CommandHandler.class);
         when(delegate.subscribe(any(QualifiedName.class), captor.capture())).thenReturn(null);
 
-        testSubject.subscribe(QualifiedNameUtils.fromDottedName("test"),
+        testSubject.subscribe(COMMAND_NAME,
                               (command, processingContext) -> {
                                   spanFactory.verifySpanActive("CommandBus.handleCommand");
                                   return MessageStream.just(new GenericCommandResultMessage<>(
@@ -117,12 +116,11 @@ class TracingCommandBusTest {
 
     @Test
     void verifyHandlerSpansAreCompletedOnExceptionInHandlerInvocation() {
-        CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "Test");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "Test");
         ArgumentCaptor<CommandHandler> captor = ArgumentCaptor.forClass(CommandHandler.class);
         when(delegate.subscribe(any(QualifiedName.class), captor.capture())).thenReturn(null);
 
-        testSubject.subscribe(QualifiedNameUtils.fromDottedName("test"),
+        testSubject.subscribe(COMMAND_NAME,
                               (command, processingContext) -> {
                                   spanFactory.verifySpanActive("CommandBus.handleCommand");
                                   throw new MockException("Simulating failure");

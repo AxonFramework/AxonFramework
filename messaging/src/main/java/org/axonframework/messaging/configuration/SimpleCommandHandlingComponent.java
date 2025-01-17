@@ -37,8 +37,8 @@ public class SimpleCommandHandlingComponent implements CommandHandlingComponent 
 
     @Nonnull
     @Override
-    public MessageStream<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                         @Nonnull ProcessingContext context) {
+    public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                   @Nonnull ProcessingContext context) {
         QualifiedName name = command.name();
         // TODO add interceptor knowledge
         CommandHandler handler = commandHandlers.get(name);
@@ -48,8 +48,7 @@ public class SimpleCommandHandlingComponent implements CommandHandlingComponent 
                     "No handler found for command with name [" + name + "]"
             ));
         }
-        // TODO - can we do something about this cast?
-        return (MessageStream<CommandResultMessage<?>>) handler.apply(command, context);
+        return handler.handle(command, context);
     }
 
     @Override
@@ -66,7 +65,7 @@ public class SimpleCommandHandlingComponent implements CommandHandlingComponent 
     }
 
     @Override
-    public Set<QualifiedName> supportedMessages() {
-        return commandHandlers.keySet();
+    public Set<QualifiedName> supportedCommands() {
+        return Set.copyOf(commandHandlers.keySet());
     }
 }

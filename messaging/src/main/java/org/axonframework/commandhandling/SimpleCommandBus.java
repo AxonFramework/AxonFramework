@@ -24,8 +24,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.configuration.CommandHandler;
-import org.axonframework.messaging.configuration.MessageHandler;
-import org.axonframework.messaging.configuration.MessageHandlerRegistry;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
@@ -38,7 +36,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -91,9 +88,7 @@ public class SimpleCommandBus implements CommandBus {
                         "No handler was subscribed for command [%s].", command.getCommandName()))));
     }
 
-    private Optional<MessageHandler<? super CommandMessage<?>, ? extends Message<?>>> findCommandHandlerFor(
-            CommandMessage<?> command
-    ) {
+    private Optional<CommandHandler> findCommandHandlerFor(CommandMessage<?> command) {
         return Optional.ofNullable(subscriptions.get(command.name()));
     }
 
@@ -103,9 +98,7 @@ public class SimpleCommandBus implements CommandBus {
      * @param command The actual command to handle
      * @param handler The handler that must be invoked for this command
      */
-    protected CompletableFuture<? extends Message<?>> handle(
-            CommandMessage<?> command,
-            MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
+    protected CompletableFuture<? extends Message<?>> handle(CommandMessage<?> command, CommandHandler handler) {
         if (logger.isDebugEnabled()) {
             logger.debug("Handling command [{} ({})]", command.getIdentifier(), command.getCommandName());
         }
@@ -139,16 +132,13 @@ public class SimpleCommandBus implements CommandBus {
      *                                                      commandName
      */
     @Override
-    public MessageHandlerRegistry<CommandHandler> subscribe(@Nonnull Set<QualifiedName> names,
-                                                            @Nonnull CommandHandler handler) {
-        CommandHandler commandHandler = Objects.requireNonNull(handler, "Given handler cannot be null.");
-        for (QualifiedName name : names) {
-            logger.debug("Subscribing command with name [{}]", name);
-            var existingHandler = subscriptions.putIfAbsent(name, commandHandler);
+    public CommandBus subscribe(@Nonnull QualifiedName name, @Nonnull CommandHandler commandHandler) {
+        CommandHandler handler = Objects.requireNonNull(commandHandler, "Given command handler cannot be null.");
+        logger.debug("Subscribing command with name [{}]", name);
+        var existingHandler = subscriptions.putIfAbsent(name, handler);
 
-            if (existingHandler != null && existingHandler != handler) {
-                throw new DuplicateCommandHandlerSubscriptionException(name, existingHandler, commandHandler);
-            }
+        if (existingHandler != null && existingHandler != handler) {
+            throw new DuplicateCommandHandlerSubscriptionException(name, existingHandler, handler);
         }
         // TODO what about Registration object?
         return this;

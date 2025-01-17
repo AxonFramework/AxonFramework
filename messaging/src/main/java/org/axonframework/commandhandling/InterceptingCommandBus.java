@@ -27,8 +27,6 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.configuration.CommandHandler;
-import org.axonframework.messaging.configuration.MessageHandler;
-import org.axonframework.messaging.configuration.MessageHandlerRegistry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.ArrayList;
@@ -36,7 +34,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
@@ -71,15 +68,15 @@ public class InterceptingCommandBus implements CommandBus {
     }
 
     @Override
-    public MessageHandlerRegistry<CommandHandler> subscribe(@Nonnull Set<QualifiedName> names,
-                                                            @Nonnull CommandHandler handler) {
-        CommandHandler commandHandler = Objects.requireNonNull(handler, "Given handler cannot be null.");
+    public CommandBus subscribe(@Nonnull QualifiedName name,
+                                @Nonnull CommandHandler commandHandler) {
+        CommandHandler handler = Objects.requireNonNull(commandHandler, "Given handler cannot be null.");
         Iterator<MessageHandlerInterceptor<? super CommandMessage<?>>> iter = handlerInterceptors.descendingIterator();
-        CommandHandler interceptedHandler = commandHandler;
+        CommandHandler interceptedHandler = handler;
         while (iter.hasNext()) {
             interceptedHandler = new InterceptedHandler(iter.next(), interceptedHandler);
         }
-        delegate.subscribe(names, interceptedHandler);
+        delegate.subscribe(name, interceptedHandler);
         return this;
     }
 
@@ -95,10 +92,10 @@ public class InterceptingCommandBus implements CommandBus {
             InterceptorChain<CommandMessage<?>, CommandResultMessage<?>> {
 
         private final MessageHandlerInterceptor<? super CommandMessage<?>> interceptor;
-        private final MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> next;
+        private final CommandHandler next;
 
         public InterceptedHandler(MessageHandlerInterceptor<? super CommandMessage<?>> interceptor,
-                                  MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> next) {
+                                  CommandHandler next) {
             this.interceptor = interceptor;
             this.next = next;
         }

@@ -24,11 +24,9 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.configuration.CommandHandler;
-import org.axonframework.messaging.configuration.MessageHandlerRegistry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -69,13 +67,11 @@ public class DistributedCommandBus implements CommandBus {
     }
 
     @Override
-    public MessageHandlerRegistry<CommandHandler> subscribe(@Nonnull Set<QualifiedName> names,
-                                                            @Nonnull CommandHandler handler) {
+    public CommandBus subscribe(@Nonnull QualifiedName name,
+                                @Nonnull CommandHandler handler) {
         CommandHandler commandHandler = Objects.requireNonNull(handler, "Given handler cannot be null.");
-        delegate.subscribe(names, commandHandler);
-        for (QualifiedName name : names) {
-            connector.subscribe(name.toString(), 100);
-        }
+        delegate.subscribe(name, commandHandler);
+        connector.subscribe(name.toString(), 100);
         return this;
     }
 

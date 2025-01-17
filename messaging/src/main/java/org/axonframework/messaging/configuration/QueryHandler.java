@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package org.axonframework.messaging.configuration;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 
@@ -24,6 +27,14 @@ import org.axonframework.queryhandling.QueryResponseMessage;
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface QueryHandler extends MessageHandler<QueryMessage<?, ?>, QueryResponseMessage<?>> {
+public non-sealed interface QueryHandler extends MessageHandler {
 
+    /**
+     * @param query
+     * @param context
+     * @return
+     */
+    @Nonnull
+    MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
+                                                  @Nonnull ProcessingContext context);
 }

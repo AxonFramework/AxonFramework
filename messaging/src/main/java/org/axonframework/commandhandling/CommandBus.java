@@ -18,8 +18,7 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.configuration.CommandHandler;
-import org.axonframework.messaging.configuration.MessageHandlerRegistry;
+import org.axonframework.messaging.configuration.CommandHandlerRegistry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -34,7 +33,7 @@ import javax.annotation.Nullable;
  * @author Allard Buijze
  * @since 0.5
  */
-public interface CommandBus extends MessageHandlerRegistry<CommandHandler>, DescribableComponent {
+public interface CommandBus extends CommandHandlerRegistry, DescribableComponent {
 
     /**
      * Dispatch the given {@code command} to the CommandHandler subscribed to the given {@code command}'s name.

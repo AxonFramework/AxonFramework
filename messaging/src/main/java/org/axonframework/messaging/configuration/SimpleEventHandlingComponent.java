@@ -47,8 +47,7 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
                     "No handler found for event with name [" + name + "]"
             ));
         }
-        // TODO - can we do something about this cast?
-        return (MessageStream<NoMessage>) handler.apply(event, context);
+        return handler.handle(event, context);
     }
 
     @Override
@@ -65,7 +64,7 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
     }
 
     @Override
-    public Set<QualifiedName> supportedMessages() {
-        return eventHandlers.keySet();
+    public Set<QualifiedName> supportedEvents() {
+        return Set.copyOf(eventHandlers.keySet());
     }
 }

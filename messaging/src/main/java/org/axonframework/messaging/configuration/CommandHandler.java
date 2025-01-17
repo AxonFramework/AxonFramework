@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,25 @@
 
 package org.axonframework.messaging.configuration;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
  * @author Steven van Beelen
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface CommandHandler extends MessageHandler<CommandMessage<?>, CommandResultMessage<?>> {
+public non-sealed interface CommandHandler extends MessageHandler {
 
+    /**
+     * @param command
+     * @param context
+     * @return
+     */
+    @Nonnull
+    MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                            @Nonnull ProcessingContext context);
 }

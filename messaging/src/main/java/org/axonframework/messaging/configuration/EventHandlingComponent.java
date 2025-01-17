@@ -16,7 +16,9 @@
 
 package org.axonframework.messaging.configuration;
 
-import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.QualifiedName;
+
+import java.util.Set;
 
 /**
  * A {@code MessageHandlingComponent} specialization for {@code EventHandlers}.
@@ -24,7 +26,10 @@ import org.axonframework.eventhandling.EventMessage;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface EventHandlingComponent
-        extends MessageHandlingComponent<EventHandler, EventMessage<?>, NoMessage> {
+public interface EventHandlingComponent extends EventHandler, EventHandlerRegistry {
 
+    /**
+     * @return The {@link Set} of {@link QualifiedName QualifiedNames} representing all supported events.
+     */
+    Set<QualifiedName> supportedEvents();
 }

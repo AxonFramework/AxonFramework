@@ -27,15 +27,12 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.configuration.CommandHandler;
-import org.axonframework.messaging.configuration.MessageHandler;
-import org.axonframework.messaging.configuration.MessageHandlerRegistry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -49,7 +46,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class RecordingCommandBus implements CommandBus {
 
-    private final ConcurrentMap<QualifiedName, MessageHandler<? super CommandMessage<?>, ? extends Message<?>>> subscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<QualifiedName, CommandHandler> subscriptions = new ConcurrentHashMap<>();
     private final List<CommandMessage<?>> dispatchedCommands = new ArrayList<>();
     private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
@@ -58,20 +55,19 @@ public class RecordingCommandBus implements CommandBus {
                                                   @Nullable ProcessingContext processingContext) {
         dispatchedCommands.add(command);
         try {
-            return CompletableFuture.completedFuture(asCommandResultMessage(callbackBehavior.handle(command.getPayload(),
-                                                                                                    command.getMetaData())));
+            return CompletableFuture.completedFuture(asCommandResultMessage(
+                    callbackBehavior.handle(command.getPayload(), command.getMetaData())
+            ));
         } catch (Throwable throwable) {
             return CompletableFuture.failedFuture(throwable);
         }
     }
 
     @Override
-    public MessageHandlerRegistry<CommandHandler> subscribe(@Nonnull Set<QualifiedName> names,
-                                                            @Nonnull CommandHandler handler) {
+    public CommandBus subscribe(@Nonnull QualifiedName name,
+                                @Nonnull CommandHandler handler) {
         CommandHandler commandHandler = Objects.requireNonNull(handler, "Given handler cannot be null.");
-        for (QualifiedName name : names) {
-            subscriptions.putIfAbsent(name, commandHandler);
-        }
+        subscriptions.putIfAbsent(name, commandHandler);
         return this;
     }
 
@@ -109,8 +105,7 @@ public class RecordingCommandBus implements CommandBus {
      * @param commandHandler The command handler to verify the subscription for
      * @return {@code true} if the handler is subscribed, otherwise {@code false}.
      */
-    public boolean isSubscribed(
-            MessageHandler<? super CommandMessage<?>, ? extends Message<?>> commandHandler) {
+    public boolean isSubscribed(CommandHandler commandHandler) {
         return subscriptions.containsValue(commandHandler);
     }
 
@@ -123,7 +118,7 @@ public class RecordingCommandBus implements CommandBus {
      * @return {@code true} if the handler is subscribed, otherwise {@code false}.
      */
     public boolean isSubscribed(QualifiedName commandName,
-                                MessageHandler<? super CommandMessage<?>, ? extends Message<?>> commandHandler) {
+                                CommandHandler commandHandler) {
         return subscriptions.containsKey(commandName) && subscriptions.get(commandName).equals(commandHandler);
     }
 
@@ -132,7 +127,7 @@ public class RecordingCommandBus implements CommandBus {
      *
      * @return a Map will all Command Names and their Command Handler
      */
-    public Map<QualifiedName, MessageHandler<? super CommandMessage<?>, ? extends Message<?>>> getSubscriptions() {
+    public Map<QualifiedName, CommandHandler> getSubscriptions() {
         return subscriptions;
     }
 

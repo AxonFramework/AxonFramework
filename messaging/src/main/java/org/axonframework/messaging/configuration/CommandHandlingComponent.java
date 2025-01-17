@@ -16,8 +16,9 @@
 
 package org.axonframework.messaging.configuration;
 
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.messaging.QualifiedName;
+
+import java.util.Set;
 
 /**
  * A {@code MessageHandlingComponent} specialization for {@code CommandHandlers}.
@@ -25,7 +26,10 @@ import org.axonframework.commandhandling.CommandResultMessage;
  * @author Allard Buijze
  * @since 5.0.0
  */
-public interface CommandHandlingComponent
-        extends MessageHandlingComponent<CommandHandler, CommandMessage<?>, CommandResultMessage<?>> {
+public interface CommandHandlingComponent extends CommandHandler, CommandHandlerRegistry {
 
+    /**
+     * @return The {@link Set} of {@link QualifiedName QualifiedNames} representing all supported commands.
+     */
+    Set<QualifiedName> supportedCommands();
 }

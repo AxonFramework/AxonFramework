@@ -16,33 +16,10 @@
 
 package org.axonframework.messaging.configuration;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-
-import java.util.function.BiFunction;
-
 /**
- * @param <M>
- * @param <R>
  * @author Steven van Beelen
  * @since 5.0.0
  */
-@FunctionalInterface
-public interface MessageHandler<M extends Message<?>, R extends Message<?>>
-        extends BiFunction<M, ProcessingContext, MessageStream<? extends R>> {
+public sealed interface MessageHandler permits CommandHandler, EventHandler, QueryHandler, MessageHandlingComponent {
 
-    /**
-     * @param message
-     * @param context
-     * @return
-     */
-    @Nonnull
-    MessageStream<? extends R> handle(@Nonnull M message, @Nonnull ProcessingContext context);
-
-    @Override
-    default MessageStream<? extends R> apply(@Nonnull M message, @Nonnull ProcessingContext context) {
-        return this.handle(message, context);
-    }
 }

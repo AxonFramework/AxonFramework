@@ -18,22 +18,19 @@ package org.axonframework.messaging.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.QueryResponseMessage;
 
 import java.util.Set;
 
 /**
- * TODO Should reside in the query module
- * TODO Should have an interface.
- *
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class QueryModelComponent implements MessageHandlingComponent<MessageHandler<?, ?>, Message<?>, Message<?>> {
+public class QueryModelComponent implements EventHandlingComponent, QueryHandlingComponent {
 
     private final SimpleEventHandlingComponent eventComponent;
     private final SimpleQueryHandlingComponent queryComponent;
@@ -43,56 +40,41 @@ public class QueryModelComponent implements MessageHandlingComponent<MessageHand
         this.queryComponent = new SimpleQueryHandlingComponent();
     }
 
-    @Nonnull
-    @Override
-    public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message,
-                                                      @Nonnull ProcessingContext context) {
-        return switch (message) {
-            case QueryMessage<?, ?> query -> queryComponent.handle(query, context);
-            case EventMessage<?> event -> eventComponent.handle(event, context);
-            default -> throw new IllegalArgumentException(
-                    "Cannot handle message of type " + message.getClass()
-                            + ". Only EventMessages and QueryMessages are supported."
-            );
-        };
-    }
-
-    @Override
-    public QueryModelComponent subscribe(@Nonnull Set<QualifiedName> names,
-                                         @Nonnull MessageHandler<?, ?> handler) {
-        if (handler instanceof EventHandler eventHandler) {
-            eventComponent.subscribe(names, eventHandler);
-            return this;
-        }
-        if (handler instanceof QueryHandler queryHandler) {
-            queryComponent.subscribe(names, queryHandler);
-            return this;
-        }
-        throw new IllegalArgumentException("Cannot subscribe command handlers on a query model component");
-    }
-
     @Override
     public QueryModelComponent subscribe(@Nonnull QualifiedName name,
-                                         @Nonnull MessageHandler<?, ?> handler) {
-        return subscribe(Set.of(name), handler);
-    }
-
-    public <E extends EventHandler> QueryModelComponent subscribeEventHandler(@Nonnull QualifiedName name,
-                                                                              @Nonnull E eventHandler) {
-        eventComponent.subscribe(name, eventHandler);
-        return this;
-    }
-
-    public <Q extends QueryHandler> QueryModelComponent subscribeQueryHandler(@Nonnull QualifiedName name,
-                                                                              @Nonnull Q queryHandler) {
+                                          @Nonnull QueryHandler queryHandler) {
         queryComponent.subscribe(name, queryHandler);
         return this;
     }
 
     @Override
-    public Set<QualifiedName> supportedMessages() {
-        Set<QualifiedName> supportedMessage = eventComponent.supportedMessages();
-        supportedMessage.addAll(queryComponent.supportedMessages());
-        return supportedMessage;
+    public QueryModelComponent subscribe(@Nonnull QualifiedName name,
+                                          @Nonnull EventHandler eventHandler) {
+        eventComponent.subscribe(name, eventHandler);
+        return this;
+    }
+
+    @Override
+    public Set<QualifiedName> supportedQueries() {
+        return queryComponent.supportedQueries();
+    }
+
+    @Override
+    public Set<QualifiedName> supportedEvents() {
+        return eventComponent.supportedEvents();
+    }
+
+    @Nonnull
+    @Override
+    public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
+                                                         @Nonnull ProcessingContext context) {
+        return queryComponent.handle(query, context);
+    }
+
+    @Nonnull
+    @Override
+    public MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
+                                           @Nonnull ProcessingContext context) {
+        return eventComponent.handle(event, context);
     }
 }

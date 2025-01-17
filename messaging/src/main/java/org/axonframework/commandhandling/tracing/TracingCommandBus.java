@@ -26,13 +26,10 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.configuration.CommandHandler;
-import org.axonframework.messaging.configuration.MessageHandler;
-import org.axonframework.messaging.configuration.MessageHandlerRegistry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.Span;
 
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -64,9 +61,9 @@ public class TracingCommandBus implements CommandBus {
     }
 
     @Override
-    public MessageHandlerRegistry<CommandHandler> subscribe(@Nonnull Set<QualifiedName> names,
-                                                            @Nonnull CommandHandler handler) {
-        delegate.subscribe(names, new TracingHandler(Objects.requireNonNull(handler, "Given handler cannot be null.")));
+    public CommandBus subscribe(@Nonnull QualifiedName name,
+                                @Nonnull CommandHandler handler) {
+        delegate.subscribe(name, new TracingHandler(Objects.requireNonNull(handler, "Given handler cannot be null.")));
         return this;
     }
 
@@ -78,12 +75,13 @@ public class TracingCommandBus implements CommandBus {
 
     private class TracingHandler implements CommandHandler {
 
-        private final MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler;
+        private final CommandHandler handler;
 
-        public TracingHandler(MessageHandler<? super CommandMessage<?>, ? extends CommandResultMessage<?>> handler) {
+        public TracingHandler(CommandHandler handler) {
             this.handler = handler;
         }
 
+        @Nonnull
         @Override
         public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
                                                                        @Nonnull ProcessingContext processingContext) {

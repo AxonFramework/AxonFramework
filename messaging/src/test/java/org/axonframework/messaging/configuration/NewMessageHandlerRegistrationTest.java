@@ -19,29 +19,27 @@ package org.axonframework.messaging.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.GenericMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
-import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.responsetypes.ResponseType;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.junit.jupiter.api.*;
 import org.mockito.internal.util.collections.*;
 
-import java.time.Instant;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -50,12 +48,10 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class NewMessageHandlerRegistrationTest {
 
-    private static final QualifiedName MESSAGE_HANDLER_NAME = new QualifiedName("axon", "message", "0.0.1");
-    private static final QualifiedName COMMAND_HANDLER_NAME = new QualifiedName("axon", "command", "0.0.1");
-    private static final QualifiedName EVENT_HANDLER_NAME = new QualifiedName("axon", "event", "0.0.1");
-    private static final QualifiedName QUERY_HANDLER_NAME = new QualifiedName("axon", "query", "0.0.1");
+    private static final QualifiedName COMMAND_NAME = new QualifiedName("axon", "command", "0.0.1");
+    private static final QualifiedName EVENT_NAME = new QualifiedName("axon", "event", "0.0.1");
+    private static final QualifiedName QUERY_NAME = new QualifiedName("axon", "query", "0.0.1");
 
-    private AtomicBoolean messageHandlerInvoked;
     private AtomicBoolean commandHandlerInvoked;
     private AtomicBoolean eventHandlerInvoked;
     private AtomicBoolean queryHandlerInvoked;
@@ -64,26 +60,21 @@ class NewMessageHandlerRegistrationTest {
 
     @BeforeEach
     void setUp() {
-        messageHandlerInvoked = new AtomicBoolean(false);
         commandHandlerInvoked = new AtomicBoolean(false);
         eventHandlerInvoked = new AtomicBoolean(false);
         queryHandlerInvoked = new AtomicBoolean(false);
 
         testSubject = new GenericMessageHandlingComponent();
 
-        testSubject.subscribe(MESSAGE_HANDLER_NAME, (message, context) -> {
-                       messageHandlerInvoked.set(true);
-                       return MessageStream.empty();
-                   })
-                   .subscribeCommandHandler(COMMAND_HANDLER_NAME, (command, context) -> {
+        testSubject.subscribe(COMMAND_NAME, (CommandHandler) (command, context) -> {
                        commandHandlerInvoked.set(true);
                        return MessageStream.empty();
                    })
-                   .subscribeEventHandler(EVENT_HANDLER_NAME, (event, context) -> {
+                   .subscribe(EVENT_NAME, (EventHandler) (event, context1) -> {
                        eventHandlerInvoked.set(true);
                        return MessageStream.empty();
                    })
-                   .subscribeQueryHandler(QUERY_HANDLER_NAME, (query, context) -> {
+                   .subscribe(QUERY_NAME, (QueryHandler) (event1, context2) -> {
                        queryHandlerInvoked.set(true);
                        return MessageStream.empty();
                    });
@@ -92,119 +83,42 @@ class NewMessageHandlerRegistrationTest {
     // TODO parameterized test to validate archetypes
     @Test
     void subscribingHandlers() {
-        MessageHandlingComponent<MessageHandler<?, ?>, Message<?>, Message<?>> plainMHC = new GenericMessageHandlingComponent();
+        MessageHandlingComponent plainMHC = new GenericMessageHandlingComponent();
         CommandModelComponent aggregate = new CommandModelComponent();
         QueryModelComponent projector = new QueryModelComponent();
         GenericMessageHandlingComponent genericMHC = new GenericMessageHandlingComponent();
 
         QualifiedName testName = new QualifiedName("axon", "test", "0.0.1");
 
-        plainMHC.subscribe(testName, (message, context) -> MessageStream.empty())
-
-                .subscribe(testName, new TestCommandHandler())
-//                .subscribCommandHandler(testName, new TestCommandHandler())
-//                .subscribCommandHandler(testName, (command, context) -> MessageStream.empty())
-
+        plainMHC.subscribe(testName, new TestCommandHandler())
                 .subscribe(testName, new TestEventHandler())
-//                .subscribEventHandler(testName, new TestEventHandler())
-//                .subscribEventHandler(testName, (event, context) -> MessageStream.empty())
-
                 .subscribe(testName, new TestQueryHandler())
-//                .subscribQueryHandler(testName, new TestQueryHandler())
-//                .subscribQueryHandler(testName, (query, context) -> MessageStream.empty())
+                .subscribe(Set.of(testName), (MessageHandler) new TestMessageHandlingComponent());
 
-                .subscribe(Set.of(testName), new TestMessageHandlingComponent<>());
-
-        aggregate/*.subscribe(testName, (message, context) -> MessageStream.empty())*/
-
-                 .subscribe(testName, new TestCommandHandler())
-                 .subscribeCommandHandler(testName, new TestCommandHandler())
-                 .subscribeCommandHandler(testName, (command, context) -> MessageStream.empty())
-
+        aggregate.subscribe(testName, new TestCommandHandler())
+                 .subscribe(testName, (CommandHandler) (command, context) -> MessageStream.empty())
                  .subscribe(testName, new TestEventHandler())
-                 .subscribeEventHandler(testName, new TestEventHandler())
-                 .subscribeEventHandler(testName, (event, context) -> MessageStream.empty())
+                 .subscribe(testName, (EventHandler) (event, context) -> MessageStream.empty());
 
-//                 .subscribMessageHandler(testName, new TestQueryHandler())
-//                 .subscribQueryHandler(testName, new TestQueryHandler())
-//                 .subscribQueryHandler(testName, (query, context) -> MessageStream.empty())
-
-                 /*.subscribe(Set.of(testName), new TestMessageHandlingComponent<>())*/;
-
-        projector/*.subscribe(testName, (message, context) -> MessageStream.empty())*/
-
-//                 .subscribMessageHandler(testName, new TestCommandHandler())
-//                 .subscribCommandHandler(testName, new TestCommandHandler())
-//                 .subscribCommandHandler(testName, (command, context) -> MessageStream.empty())
-
-                 .subscribe(testName, new TestEventHandler())
-                 .subscribeEventHandler(testName, new TestEventHandler())
-                 .subscribeEventHandler(testName, (event, context) -> MessageStream.empty())
-
+        projector.subscribe(testName, new TestEventHandler())
+                 .subscribe(testName, (EventHandler) (event, context) -> MessageStream.empty())
                  .subscribe(testName, new TestQueryHandler())
-                 .subscribeQueryHandler(testName, new TestQueryHandler())
-                 .subscribeQueryHandler(testName, (query, context) -> MessageStream.empty())
+                 .subscribe(testName, (QueryHandler) (query, context) -> MessageStream.empty())
 
-                 /*.subscribe(Set.of(testName), new TestMessageHandlingComponent<>())*/;
+        /*.subscribe(Set.of(testName), new TestMessageHandlingComponent<>())*/;
 
-        genericMHC.subscribe(testName, (message, context) -> MessageStream.empty())
-
-                  .subscribe(testName, new TestCommandHandler())
-                  .subscribeCommandHandler(testName, new TestCommandHandler())
-                  .subscribeCommandHandler(testName, (command, context) -> MessageStream.empty())
-
+        genericMHC.subscribe(testName, new TestCommandHandler())
+                  .subscribe(testName, (CommandHandler) (command, context) -> MessageStream.empty())
                   .subscribe(testName, new TestEventHandler())
-                  .subscribeEventHandler(testName, new TestEventHandler())
-                  .subscribeEventHandler(testName, (event, context) -> MessageStream.empty())
-
+                  .subscribe(testName, (EventHandler) (event, context) -> MessageStream.empty())
                   .subscribe(testName, new TestQueryHandler())
-                  .subscribeQueryHandler(testName, new TestQueryHandler())
-                  .subscribeQueryHandler(testName, (query, context) -> MessageStream.empty())
-
-                  .subscribe(Set.of(testName), new TestMessageHandlingComponent<>());
-    }
-
-    @Test
-    void handlingUnknownMessageReturnsFailedMessageStream() {
-        MessageStream<? extends Message<?>> result = testSubject.handle(new GenericMessage<>(new QualifiedName("axon",
-                                                                                                               "test",
-                                                                                                               "0.0.1"),
-                                                                                             "test"),
-                                                                        ProcessingContext.NONE);
-
-        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.firstAsCompletableFuture();
-
-        assertTrue(resultFuture.isDone());
-        assertTrue(resultFuture.isCompletedExceptionally());
-
-        assertFalse(messageHandlerInvoked.get());
-        assertFalse(commandHandlerInvoked.get());
-        assertFalse(eventHandlerInvoked.get());
-        assertFalse(queryHandlerInvoked.get());
-    }
-
-    @Test
-    void handlingGenericMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
-        Message<Object> testMessage = new MessageWithType(MESSAGE_HANDLER_NAME);
-
-        MessageStream<? extends Message<?>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
-
-        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.firstAsCompletableFuture();
-
-        assertTrue(resultFuture.isDone());
-        assertFalse(resultFuture.isCompletedExceptionally());
-        Entry<? extends Message<?>> resultEntry = resultFuture.get();
-        assertNull(resultEntry);
-
-        assertTrue(messageHandlerInvoked.get());
-        assertFalse(commandHandlerInvoked.get());
-        assertFalse(eventHandlerInvoked.get());
-        assertFalse(queryHandlerInvoked.get());
+                  .subscribe(testName, (QueryHandler) (query, context) -> MessageStream.empty())
+                  .subscribe(Set.of(testName), (MessageHandler) new TestMessageHandlingComponent());
     }
 
     @Test
     void handlingCommandMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
-        Message<Object> testMessage = new CommandMessageWithType(COMMAND_HANDLER_NAME);
+        CommandMessage<Object> testMessage = new GenericCommandMessage<>(COMMAND_NAME, COMMAND_NAME);
 
         MessageStream<? extends Message<?>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
 
@@ -215,7 +129,6 @@ class NewMessageHandlerRegistrationTest {
         Entry<? extends Message<?>> resultEntry = resultFuture.get();
         assertNull(resultEntry);
 
-        assertFalse(messageHandlerInvoked.get());
         assertTrue(commandHandlerInvoked.get());
         assertFalse(eventHandlerInvoked.get());
         assertFalse(queryHandlerInvoked.get());
@@ -223,9 +136,9 @@ class NewMessageHandlerRegistrationTest {
 
     @Test
     void handlingEventMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
-        Message<Object> testMessage = new EventMessageWithType(EVENT_HANDLER_NAME);
+        EventMessage<?> testMessage = new GenericEventMessage<>(EVENT_NAME, "payload");
 
-        MessageStream<? extends Message<?>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
+        MessageStream<NoMessage> result = testSubject.handle(testMessage, ProcessingContext.NONE);
 
         CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.firstAsCompletableFuture();
 
@@ -234,7 +147,6 @@ class NewMessageHandlerRegistrationTest {
         Entry<? extends Message<?>> resultEntry = resultFuture.get();
         assertNull(resultEntry);
 
-        assertFalse(messageHandlerInvoked.get());
         assertFalse(commandHandlerInvoked.get());
         assertTrue(eventHandlerInvoked.get());
         assertFalse(queryHandlerInvoked.get());
@@ -242,9 +154,11 @@ class NewMessageHandlerRegistrationTest {
 
     @Test
     void handlingQueryMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
-        Message<Object> testMessage = new QueryMessageWithType(QUERY_HANDLER_NAME);
+        QueryMessage<?, ?> testMessage =
+                new GenericQueryMessage<>(QUERY_NAME, "payload", ResponseTypes.instanceOf(String.class));
 
-        MessageStream<? extends Message<?>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
+        MessageStream<? extends QueryResponseMessage<?>> result =
+                testSubject.handle(testMessage, ProcessingContext.NONE);
 
         CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.firstAsCompletableFuture();
 
@@ -253,7 +167,6 @@ class NewMessageHandlerRegistrationTest {
         Entry<? extends Message<?>> resultEntry = resultFuture.get();
         assertNull(resultEntry);
 
-        assertFalse(messageHandlerInvoked.get());
         assertFalse(commandHandlerInvoked.get());
         assertFalse(eventHandlerInvoked.get());
         assertTrue(queryHandlerInvoked.get());
@@ -261,20 +174,19 @@ class NewMessageHandlerRegistrationTest {
 
     @Test
     void subscribingMessageHandlingComponentEnsuresMessageDelegation() {
-        Message<Object> testMessage = new MessageWithType(MESSAGE_HANDLER_NAME);
-        CommandMessage<Object> testCommandMessage = new CommandMessageWithType(COMMAND_HANDLER_NAME);
-        EventMessage<Object> testEventMessage = new EventMessageWithType(EVENT_HANDLER_NAME);
-        QueryMessage<Object, Object> testQueryMessage = new QueryMessageWithType(QUERY_HANDLER_NAME);
+        CommandMessage<?> testCommandMessage = new GenericCommandMessage<>(COMMAND_NAME, COMMAND_NAME);
+        EventMessage<?> testEventMessage = new GenericEventMessage<>(EVENT_NAME, "payload");
+        QueryMessage<?, ?> testQueryMessage =
+                new GenericQueryMessage<>(QUERY_NAME, "payload", ResponseTypes.instanceOf(String.class));
 
-        GenericMessageHandlingComponent testSubjectWithRegisteredMHC =
-                new GenericMessageHandlingComponent().subscribe(testSubject.supportedMessages(), testSubject);
+        MessageHandlingComponent testSubjectWithRegisteredMHC =
+                new GenericMessageHandlingComponent()
+                        .subscribe(testSubject.supportedMessages(), (MessageHandler) testSubject);
 
-        testSubjectWithRegisteredMHC.handle(testMessage, ProcessingContext.NONE);
         testSubjectWithRegisteredMHC.handle(testCommandMessage, ProcessingContext.NONE);
         testSubjectWithRegisteredMHC.handle(testEventMessage, ProcessingContext.NONE);
         testSubjectWithRegisteredMHC.handle(testQueryMessage, ProcessingContext.NONE);
 
-        assertTrue(messageHandlerInvoked.get());
         assertTrue(commandHandlerInvoked.get());
         assertTrue(eventHandlerInvoked.get());
         assertTrue(queryHandlerInvoked.get());
@@ -284,8 +196,8 @@ class NewMessageHandlerRegistrationTest {
 
         @Override
         @Nonnull
-        public MessageStream<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                             @Nonnull ProcessingContext context) {
+        public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                       @Nonnull ProcessingContext context) {
             return MessageStream.just(new GenericCommandResultMessage<>(
                     new QualifiedName("axon", "command-response", "0.0.1"), "done!"
             ));
@@ -316,216 +228,65 @@ class NewMessageHandlerRegistrationTest {
         }
     }
 
-    private static class TestMessageHandlingComponent<HH extends MessageHandler<?, ?>, HM extends Message<?>, HR extends Message<?>>
-            implements MessageHandlingComponent<HH, HM, HR> {
+    private static class TestMessageHandlingComponent implements MessageHandlingComponent {
 
         @Override
-        public MessageHandlerRegistry<HH> subscribe(@Nonnull Set<QualifiedName> names,
-                                                    @Nonnull HH messageHandler) {
+        public MessageHandlingComponent subscribe(@Nonnull QualifiedName name,
+                                                  @Nonnull CommandHandler commandHandler) {
             return null;
         }
 
-        @Nonnull
         @Override
-        public MessageStream<HR> handle(@Nonnull HM message, @Nonnull ProcessingContext context) {
-            return MessageStream.empty();
+        public MessageHandlingComponent subscribe(@Nonnull QualifiedName name,
+                                                  @Nonnull EventHandler eventHandler) {
+            return null;
+        }
+
+        @Override
+        public MessageHandlingComponent subscribe(@Nonnull QualifiedName name,
+                                                  @Nonnull QueryHandler queryHandler) {
+            return null;
         }
 
         @Override
         public Set<QualifiedName> supportedMessages() {
             return Set.of();
         }
-    }
-
-    private record MessageWithType(QualifiedName name) implements Message<Object> {
 
         @Override
-        public String getIdentifier() {
-            return "identifier - MessageWithQualifiedName";
+        public Set<QualifiedName> supportedCommands() {
+            return Set.of();
+        }
+
+        @Override
+        public Set<QualifiedName> supportedEvents() {
+            return Set.of();
+        }
+
+        @Override
+        public Set<QualifiedName> supportedQueries() {
+            return Set.of();
         }
 
         @Nonnull
         @Override
-        public QualifiedName name() {
-            return name;
-        }
-
-        @Override
-        public Object getPayload() {
-            return "payload - MessageWithQualifiedName";
-        }
-
-        @Override
-        public MetaData getMetaData() {
-            return MetaData.emptyInstance();
-        }
-
-        @Override
-        public Class<Object> getPayloadType() {
-            throw new UnsupportedOperationException("we shouldn't be using this anymore");
-        }
-
-        @Override
-        public Message<Object> withMetaData(@Nonnull Map<String, ?> metaData) {
-            return this;
-        }
-
-        @Override
-        public Message<Object> andMetaData(@Nonnull Map<String, ?> metaData) {
-            return this;
-        }
-    }
-
-    private record CommandMessageWithType(QualifiedName name) implements CommandMessage<Object> {
-
-        @Override
-        public String getIdentifier() {
-            return "identifier - CommandMessageWithQualifiedName";
+        public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                       @Nonnull ProcessingContext context) {
+            return MessageStream.empty();
         }
 
         @Nonnull
         @Override
-        public QualifiedName name() {
-            return name;
-        }
-
-        @Override
-        public String getCommandName() {
-            return "commandName - CommandMessageWithQualifiedName";
-        }
-
-        @Override
-        public Object getPayload() {
-            return "payload - CommandMessageWithQualifiedName";
-        }
-
-        @Override
-        public MetaData getMetaData() {
-            return MetaData.emptyInstance();
-        }
-
-        @Override
-        public Class<Object> getPayloadType() {
-            throw new UnsupportedOperationException("we shouldn't be using this anymore");
-        }
-
-        @Override
-        public CommandMessage<Object> withMetaData(@Nonnull Map<String, ?> metaData) {
-            return this;
-        }
-
-        @Override
-        public CommandMessage<Object> andMetaData(@Nonnull Map<String, ?> metaData) {
-            return this;
-        }
-
-        @Override
-        public <C> CommandMessage<C> withConvertedPayload(@Nonnull Function<Object, C> conversion) {
-            return null;
-        }
-    }
-
-    private record EventMessageWithType(QualifiedName name) implements EventMessage<Object> {
-
-        @Override
-        public String getIdentifier() {
-            return "identifier - EventMessageWithQualifiedName";
+        public MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
+                                               @Nonnull ProcessingContext context) {
+            return MessageStream.empty();
         }
 
         @Nonnull
         @Override
-        public QualifiedName name() {
-            return name;
-        }
-
-        @Override
-        public Object getPayload() {
-            return "payload - EventMessageWithQualifiedName";
-        }
-
-        @Override
-        public MetaData getMetaData() {
-            return MetaData.emptyInstance();
-        }
-
-        @Override
-        public Instant getTimestamp() {
-            return Instant.now();
-        }
-
-        @Override
-        public Class<Object> getPayloadType() {
-            throw new UnsupportedOperationException("we shouldn't be using this anymore");
-        }
-
-        @Override
-        public EventMessage<Object> withMetaData(@Nonnull Map<String, ?> metaData) {
-            return this;
-        }
-
-        @Override
-        public EventMessage<Object> andMetaData(@Nonnull Map<String, ?> metaData) {
-            return this;
-        }
-
-        @Override
-        public <C> EventMessage<C> withConvertedPayload(@Nonnull Function<Object, C> conversion) {
-            return null;
-        }
-    }
-
-    private record QueryMessageWithType(QualifiedName name) implements QueryMessage<Object, Object> {
-
-        @Override
-        public String getIdentifier() {
-            return "identifier - QueryMessageWithQualifiedName";
-        }
-
-        @Nonnull
-        @Override
-        public QualifiedName name() {
-            return name;
-        }
-
-        @Override
-        public Object getPayload() {
-            return "payload - QueryMessageWithQualifiedName";
-        }
-
-        @Override
-        public MetaData getMetaData() {
-            return MetaData.emptyInstance();
-        }
-
-        @Override
-
-        public Class<Object> getPayloadType() {
-            throw new UnsupportedOperationException("we shouldn't be using this anymore");
-        }
-
-        @Override
-        public String getQueryName() {
-            return "queryName - QueryMessageWithQualifiedName";
-        }
-
-        @Override
-        public ResponseType<Object> getResponseType() {
-            return null;
-        }
-
-        @Override
-        public QueryMessage<Object, Object> withMetaData(@Nonnull Map<String, ?> metaData) {
-            return this;
-        }
-
-        @Override
-        public QueryMessage<Object, Object> andMetaData(@Nonnull Map<String, ?> metaData) {
-            return this;
-        }
-
-        @Override
-        public <C> QueryMessage<C, Object> withConvertedPayload(@Nonnull Function<Object, C> conversion) {
-            return null;
+        public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
+                                                             @Nonnull ProcessingContext context) {
+            return MessageStream.empty();
         }
     }
 }

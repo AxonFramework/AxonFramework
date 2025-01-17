@@ -48,8 +48,7 @@ public class SimpleQueryHandlingComponent implements QueryHandlingComponent {
                     "No handler found for query with name [" + name + "]"
             ));
         }
-        // TODO - can we do something about this cast?
-        return (MessageStream<QueryResponseMessage<?>>) handler.apply(query, context);
+        return handler.handle(query, context);
     }
 
     @Override
@@ -66,7 +65,7 @@ public class SimpleQueryHandlingComponent implements QueryHandlingComponent {
     }
 
     @Override
-    public Set<QualifiedName> supportedMessages() {
-        return queryHandlers.keySet();
+    public Set<QualifiedName> supportedQueries() {
+        return Set.copyOf(queryHandlers.keySet());
     }
 }

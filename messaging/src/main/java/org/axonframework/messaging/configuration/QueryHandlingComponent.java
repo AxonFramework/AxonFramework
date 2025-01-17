@@ -16,8 +16,9 @@
 
 package org.axonframework.messaging.configuration;
 
-import org.axonframework.queryhandling.QueryMessage;
-import org.axonframework.queryhandling.QueryResponseMessage;
+import org.axonframework.messaging.QualifiedName;
+
+import java.util.Set;
 
 /**
  * A {@code MessageHandlingComponent} specialization for {@code QueryHandlers}.
@@ -25,7 +26,10 @@ import org.axonframework.queryhandling.QueryResponseMessage;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface QueryHandlingComponent
-        extends MessageHandlingComponent<QueryHandler, QueryMessage<?, ?>, QueryResponseMessage<?>> {
+public interface QueryHandlingComponent extends QueryHandler, QueryHandlerRegistry {
 
+    /**
+     * @return The {@link Set} of {@link QualifiedName QualifiedNames} representing all supported queries.
+     */
+    Set<QualifiedName> supportedQueries();
 }

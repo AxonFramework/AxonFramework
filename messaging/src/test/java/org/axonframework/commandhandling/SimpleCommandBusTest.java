@@ -49,9 +49,9 @@ import static org.mockito.Mockito.*;
  */
 class SimpleCommandBusTest {
 
+    private static final QualifiedName COMMAND_NAME = new QualifiedName("axon", "test", "5.0.0");
     private static final String PAYLOAD = "Say hi!";
-    private static final CommandMessage<String> TEST_COMMAND =
-            new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), PAYLOAD);
+    private static final CommandMessage<String> TEST_COMMAND = new GenericCommandMessage<>(COMMAND_NAME, PAYLOAD);
 
     private SimpleCommandBus testSubject;
     private StubExecutor executor;
@@ -72,7 +72,7 @@ class SimpleCommandBusTest {
 
     @Test
     void dispatchCommandHandlerSubscribed() throws Exception {
-        testSubject.subscribe(QualifiedNameUtils.fromClassName(String.class), new StubCommandHandler("Hi!"));
+        testSubject.subscribe(COMMAND_NAME, new StubCommandHandler("Hi!"));
 
         CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
 
@@ -82,7 +82,7 @@ class SimpleCommandBusTest {
     @Test
     void dispatchCommandImplicitUnitOfWorkIsCommittedOnReturnValue() {
         final AtomicReference<ProcessingContext> unitOfWork = new AtomicReference<>();
-        testSubject.subscribe(QualifiedNameUtils.fromClassName(String.class),
+        testSubject.subscribe(COMMAND_NAME,
                               (message, processingContext) -> {
                                   unitOfWork.set(processingContext);
                                   return MessageStream.just(asCommandResultMessage(message));
@@ -98,7 +98,7 @@ class SimpleCommandBusTest {
     @Test
     void dispatchCommandImplicitUnitOfWorkIsRolledBackOnException() {
         final AtomicReference<ProcessingContext> unitOfWork = new AtomicReference<>();
-        testSubject.subscribe(QualifiedNameUtils.fromClassName(String.class),
+        testSubject.subscribe(COMMAND_NAME,
                               (message, processingContext) -> {
                                   unitOfWork.set(processingContext);
                                   throw new RuntimeException();
@@ -120,7 +120,7 @@ class SimpleCommandBusTest {
     @Disabled("TODO Investigation on registration")
     void dispatchCommandHandlerUnsubscribed() {
         StubCommandHandler commandHandler = new StubCommandHandler("Not important");
-        testSubject.subscribe(QualifiedNameUtils.fromClassName(String.class), commandHandler);
+        testSubject.subscribe(COMMAND_NAME, commandHandler);
         //TODO Investigation on registration
 //        subscription.cancel();
 
@@ -135,8 +135,7 @@ class SimpleCommandBusTest {
     @Test
     void asyncHandlerCompletion() throws Exception {
         var ourFutureIsBright = new CompletableFuture<>();
-        testSubject.subscribe(QualifiedNameUtils.fromClassName(String.class),
-                              new StubCommandHandler(ourFutureIsBright));
+        testSubject.subscribe(COMMAND_NAME, new StubCommandHandler(ourFutureIsBright));
 
         var actual = testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
 
@@ -154,8 +153,7 @@ class SimpleCommandBusTest {
     @Test
     void asyncHandlerVirtual() throws Exception {
         var ourFutureIsBright = new CompletableFuture<>();
-        testSubject.subscribe(QualifiedNameUtils.fromClassName(String.class),
-                              new StubCommandHandler(ourFutureIsBright));
+        testSubject.subscribe(COMMAND_NAME, new StubCommandHandler(ourFutureIsBright));
 
         var actual = testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
 
@@ -214,8 +212,8 @@ class SimpleCommandBusTest {
         CommandMessage<String> command = TEST_COMMAND;
         testSubject.subscribe(command.name(), commandHandler);
 
-        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(
-                command, ProcessingContext.NONE);
+        CompletableFuture<? extends Message<?>> actual =
+                testSubject.dispatch(command, ProcessingContext.NONE);
 
         assertTrue(actual.isCompletedExceptionally());
         ExecutionException exception = assertThrows(ExecutionException.class, actual::get);
@@ -256,16 +254,16 @@ class SimpleCommandBusTest {
     void duplicateRegistrationIsRejected() {
         var handler1 = mock(org.axonframework.messaging.configuration.CommandHandler.class);
         var handler2 = mock(org.axonframework.messaging.configuration.CommandHandler.class);
-        testSubject.subscribe(QualifiedNameUtils.fromDottedName("test1"), handler1);
+        testSubject.subscribe(COMMAND_NAME, handler1);
         assertThrows(DuplicateCommandHandlerSubscriptionException.class,
-                     () -> testSubject.subscribe(QualifiedNameUtils.fromDottedName("test1"), handler2));
+                     () -> testSubject.subscribe(COMMAND_NAME, handler2));
     }
 
     @Test
     void duplicateRegistrationForSameHandlerIsAllowed() {
         var handler = mock(org.axonframework.messaging.configuration.CommandHandler.class);
-        testSubject.subscribe(QualifiedNameUtils.fromDottedName("test1"), handler);
-        assertDoesNotThrow(() -> testSubject.subscribe(QualifiedNameUtils.fromDottedName("test1"), handler));
+        testSubject.subscribe(COMMAND_NAME, handler);
+        assertDoesNotThrow(() -> testSubject.subscribe(COMMAND_NAME, handler));
     }
 
     @Test
@@ -274,8 +272,9 @@ class SimpleCommandBusTest {
         testSubject = new SimpleCommandBus(executor, lifecycleHandlerRegistrar);
         var handler1 = mock(org.axonframework.messaging.configuration.CommandHandler.class);
         var handler2 = mock(CommandHandler.class);
-        testSubject.subscribe(QualifiedNameUtils.fromDottedName("test1"), handler1);
-        testSubject.subscribe(QualifiedNameUtils.fromDottedName("test2"), handler2);
+        testSubject.subscribe(COMMAND_NAME, handler1);
+        QualifiedName handleTwoName = new QualifiedName("axon", "test2", "5.0.0");
+        testSubject.subscribe(handleTwoName, handler2);
 
         ComponentDescriptor mockComponentDescriptor = mock(ComponentDescriptor.class);
         testSubject.describeTo(mockComponentDescriptor);
@@ -283,8 +282,7 @@ class SimpleCommandBusTest {
         verify(mockComponentDescriptor).describeProperty("worker", executor);
         verify(mockComponentDescriptor).describeProperty("lifecycleRegistrars", List.of(lifecycleHandlerRegistrar));
         verify(mockComponentDescriptor)
-                .describeProperty("subscriptions",
-                                  Map.of(QualifiedNameUtils.fromDottedName("test1"), handler1, "test2", handler2));
+                .describeProperty("subscriptions", Map.of(COMMAND_NAME, handler1, handleTwoName, handler2));
     }
 
     private static class StubCommandHandler implements org.axonframework.messaging.configuration.CommandHandler {
@@ -301,11 +299,9 @@ class SimpleCommandBusTest {
             if (result instanceof Throwable error) {
                 return MessageStream.failed(error);
             } else if (result instanceof CompletableFuture<?> future) {
-                // TODO fix generics here
-                CompletableFuture<GenericCommandResultMessage> future1 = future.thenApply(
-                        r -> new GenericCommandResultMessage(fromClassName(r.getClass()), r)
-                );
-                return MessageStream.fromFuture(new CompletableFuture<>());
+                return MessageStream.fromFuture(future.<CommandResultMessage<?>>thenApply(
+                        r -> new GenericCommandResultMessage<>(fromClassName(r.getClass()), r)
+                ));
             } else {
                 return MessageStream.just(new GenericCommandResultMessage<>(fromClassName(result.getClass()), result));
             }

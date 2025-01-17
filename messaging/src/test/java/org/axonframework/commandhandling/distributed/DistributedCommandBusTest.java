@@ -46,6 +46,8 @@ import static org.mockito.Mockito.*;
  */
 class DistributedCommandBusTest {
 
+    private static final QualifiedName COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
+
     private DistributedCommandBus testSubject;
 
     private StubConnector connector;
@@ -54,7 +56,7 @@ class DistributedCommandBusTest {
 
     @BeforeEach
     void setUp() {
-        commandMessage = new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test");
+        commandMessage = new GenericCommandMessage<>(COMMAND_NAME, "test");
         connector = new StubConnector();
         delegate = new SimpleCommandBus();
         testSubject = new DistributedCommandBus(delegate, connector);
@@ -80,10 +82,8 @@ class DistributedCommandBusTest {
 
     @Test
     void incomingCommandsAreDelegatedToSubscribedHandlers() {
-        GenericCommandResultMessage<String> okMessage =
-                new GenericCommandResultMessage<>(new QualifiedName("test", "command", "0.0.1"), "OK");
-        testSubject.subscribe(QualifiedNameUtils.fromClassName(String.class),
-                              (message, processingContext) -> MessageStream.just(okMessage));
+        CommandResultMessage<String> okMessage = new GenericCommandResultMessage<>(COMMAND_NAME, "OK");
+        testSubject.subscribe(COMMAND_NAME, (message, processingContext) -> MessageStream.just(okMessage));
         Connector.ResultCallback mockCallback = mock();
         connector.handler.get().accept(commandMessage, mockCallback);
 
@@ -93,8 +93,7 @@ class DistributedCommandBusTest {
     @Test
     @Disabled("TODO broken test, as registration is not there at the moment.")
     void incomingCommandsAreRejectedForCancelledHandlerSubscription() {
-        GenericCommandResultMessage<String> okMessage =
-                new GenericCommandResultMessage<>(new QualifiedName("test", "command", "0.0.1"), "OK");
+        CommandResultMessage<String> okMessage = new GenericCommandResultMessage<>(COMMAND_NAME, "OK");
 
         testSubject.subscribe(QualifiedNameUtils.fromClassName(String.class),
                               (message, processingContext) -> MessageStream.just(okMessage));

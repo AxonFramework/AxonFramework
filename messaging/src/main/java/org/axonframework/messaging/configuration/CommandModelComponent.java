@@ -18,8 +18,8 @@ package org.axonframework.messaging.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -27,14 +27,10 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.Set;
 
 /**
- * TODO Should reside in the query module
- * TODO Should have an interface.
- *
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class CommandModelComponent implements
-        MessageHandlingComponent<MessageHandler<?, ?>, Message<?>, Message<?>> {
+public class CommandModelComponent implements CommandHandlingComponent, EventHandlingComponent {
 
     private final SimpleCommandHandlingComponent commandComponent;
     private final SimpleEventHandlingComponent eventComponent;
@@ -44,55 +40,39 @@ public class CommandModelComponent implements
         this.eventComponent = new SimpleEventHandlingComponent();
     }
 
-    @Nonnull
     @Override
-    public MessageStream<? extends Message<?>> handle(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
-        return switch (message) {
-            case CommandMessage<?> command -> commandComponent.handle(command, context);
-            case EventMessage<?> event -> eventComponent.handle(event, context);
-            default -> throw new IllegalArgumentException(
-                    "Cannot handle message of type " + message.getClass()
-                            + ". Only CommandMessages and EventMessages are supported."
-            );
-        };
-    }
-
-    @Override
-    public CommandModelComponent subscribe(@Nonnull Set<QualifiedName> names,
-                                           @Nonnull MessageHandler<?, ?> messageHandler) {
-        if (messageHandler instanceof CommandHandler commandHandler) {
-            commandComponent.subscribe(names, commandHandler);
-            return this;
-        }
-        if (messageHandler instanceof EventHandler eventHandler) {
-            eventComponent.subscribe(names, eventHandler);
-            return this;
-        }
-        throw new IllegalArgumentException("Cannot subscribe query handlers on a command model component");
-    }
-
-    @Override
-    public CommandModelComponent subscribe(@Nonnull QualifiedName name,
-                                           @Nonnull MessageHandler<?, ?> messageHandler) {
-        return subscribe(Set.of(name), messageHandler);
-    }
-
-    public <C extends CommandHandler> CommandModelComponent subscribeCommandHandler(@Nonnull QualifiedName name,
-                                                                                    @Nonnull C commandHandler) {
+    public CommandModelComponent subscribe(@Nonnull QualifiedName name, @Nonnull CommandHandler commandHandler) {
         commandComponent.subscribe(name, commandHandler);
         return this;
     }
 
-    public <E extends EventHandler> CommandModelComponent subscribeEventHandler(@Nonnull QualifiedName name,
-                                                                                @Nonnull E eventHandler) {
+    @Override
+    public CommandModelComponent subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
         eventComponent.subscribe(name, eventHandler);
         return this;
     }
 
     @Override
-    public Set<QualifiedName> supportedMessages() {
-        Set<QualifiedName> supportedMessage = commandComponent.supportedMessages();
-        supportedMessage.addAll(eventComponent.supportedMessages());
-        return supportedMessage;
+    public Set<QualifiedName> supportedCommands() {
+        return commandComponent.supportedCommands();
+    }
+
+    @Override
+    public Set<QualifiedName> supportedEvents() {
+        return eventComponent.supportedEvents();
+    }
+
+    @Nonnull
+    @Override
+    public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                   @Nonnull ProcessingContext context) {
+        return commandComponent.handle(command, context);
+    }
+
+    @Nonnull
+    @Override
+    public MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
+                                           @Nonnull ProcessingContext context) {
+        return eventComponent.handle(event, context);
     }
 }
