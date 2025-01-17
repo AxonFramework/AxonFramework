@@ -158,24 +158,23 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
         var aggregateSequencer = AggregateSequencer.with(consistencyMarker);
 
-        return CompletableFuture.completedFuture(new AppendTransaction() {
+        var tx = transactionManager.startTransaction();
+        try {
+            entityManagerPersistEvents(aggregateSequencer, events);
+            if (explicitFlush) {
+                entityManagerProvider.getEntityManager().flush();
+            }
+        } catch (Exception e) {
+            tx.rollback();
+            return CompletableFuture.failedFuture(e);
+        }
 
-            private final AtomicBoolean finished = new AtomicBoolean(false);
+        return CompletableFuture.completedFuture(new AppendTransaction() {
 
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
-                if (finished.getAndSet(true)) {
-                    return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
-                }
-
-                var tx = transactionManager.startTransaction();
-
                 CompletableFuture<Void> txResult = new CompletableFuture<>();
                 try {
-                    entityManagerPersistEvents(aggregateSequencer, events);
-                    if (explicitFlush) {
-                        entityManagerProvider.getEntityManager().flush();
-                    }
                     tx.commit();
                     txResult.complete(null);
                 } catch (Exception e) {
@@ -191,10 +190,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
             @Override
             public void rollback() {
-                // No action needed for rollback as the transaction is managed by the TransactionManager
-                finished.set(true);
-                // todo: is it good solution?
-                // Previously I received: jakarta.persistence.TransactionRequiredException: No EntityManager with actual transaction available for current thread - cannot reliably process 'persist' call
+                tx.rollback();
             }
         });
     }
