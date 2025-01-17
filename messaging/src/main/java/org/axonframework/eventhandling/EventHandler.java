@@ -27,7 +27,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * @since 5.0.0
  */
 @FunctionalInterface
-public non-sealed interface EventHandler extends MessageHandler {
+public /*non-sealed */interface EventHandler extends MessageHandler {
 
     /**
      * @param event

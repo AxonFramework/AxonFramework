@@ -22,8 +22,9 @@ import org.axonframework.queryhandling.QueryHandler;
 
 /**
  * @author Steven van Beelen
- * @since 5.0.0
+ * @since 3.0.o
  */
-public sealed interface MessageHandler permits CommandHandler, EventHandler, QueryHandler, MessageHandlingComponent {
+// TODO change this into a proper sealed interface by adding module information. Without, all interfaces need to reside in the same package, which we do not desire.
+public /*sealed */interface MessageHandler/* permits CommandHandler, EventHandler, QueryHandler, MessageHandlingComponent */ {
 
 }

@@ -41,7 +41,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public non-sealed interface MessageHandlingComponent
+public /*non-sealed */interface MessageHandlingComponent
         extends CommandHandlingComponent, EventHandlingComponent, QueryHandlingComponent, MessageHandler {
 
     /**
@@ -66,6 +66,8 @@ public non-sealed interface MessageHandlingComponent
             case QueryHandler queryHandler:
                 subscribe(name, queryHandler);
                 break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + handler);
         }
         return this;
     }
