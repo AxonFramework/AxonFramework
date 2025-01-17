@@ -154,17 +154,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         return CompletableFuture.completedFuture(appendTransaction(condition, events));
     }
 
-    private void assertValidTags(List<TaggedEventMessage<?>> events) {
-        for (TaggedEventMessage<?> taggedEvent : events) {
-            if (taggedEvent.tags().size() > 1) {
-                throw new TooManyTagsOnEventMessageException(
-                        "An Event Storage engine in Aggregate mode does not support multiple tags per event",
-                        taggedEvent.event(),
-                        taggedEvent.tags());
-            }
-        }
-    }
-
     private AppendTransaction appendTransaction(AppendCondition condition, List<TaggedEventMessage<?>> events) {
         return new AppendTransaction() {
 
@@ -199,37 +188,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 });
             }
 
-            private DomainEventMessage<?> toDomainEventMessage(
-                    TaggedEventMessage<?> taggedEvent,
-                    AggregateSequencer aggregateSequencer
-            ) {
-                var aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
-                var aggregateType = resolveAggregateType(taggedEvent.tags());
-                var event = taggedEvent.event();
-                var isAggregateEvent =
-                        aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty();
-                if (isAggregateEvent) {
-                    var nextSequence = aggregateSequencer.resolveBy(aggregateIdentifier).incrementAndGet();
-                    return new GenericDomainEventMessage<>(
-                            aggregateType,
-                            aggregateIdentifier,
-                            nextSequence,
-                            event.getIdentifier(),
-                            event.name(),
-                            event.getPayload(),
-                            event.getMetaData(),
-                            event.getTimestamp()
-                    );
-                } else {
-                    // returns non-aggregate event, so the sequence is always 0
-                    return new GenericDomainEventMessage<>(null,
-                                                           event.getIdentifier(),
-                                                           0L,
-                                                           event,
-                                                           event::getTimestamp);
-                }
-            }
-
             @Override
             public void rollback() {
                 // No action needed for rollback as the transaction is managed by the TransactionManager
@@ -238,6 +196,48 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 // Previously I received: jakarta.persistence.TransactionRequiredException: No EntityManager with actual transaction available for current thread - cannot reliably process 'persist' call
             }
         };
+    }
+
+    private void assertValidTags(List<TaggedEventMessage<?>> events) {
+        for (TaggedEventMessage<?> taggedEvent : events) {
+            if (taggedEvent.tags().size() > 1) {
+                throw new TooManyTagsOnEventMessageException(
+                        "An Event Storage engine in Aggregate mode does not support multiple tags per event",
+                        taggedEvent.event(),
+                        taggedEvent.tags());
+            }
+        }
+    }
+
+    private static DomainEventMessage<?> toDomainEventMessage(
+            TaggedEventMessage<?> taggedEvent,
+            AggregateSequencer aggregateSequencer
+    ) {
+        var aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
+        var aggregateType = resolveAggregateType(taggedEvent.tags());
+        var event = taggedEvent.event();
+        var isAggregateEvent =
+                aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty();
+        if (isAggregateEvent) {
+            var nextSequence = aggregateSequencer.resolveBy(aggregateIdentifier).incrementAndGet();
+            return new GenericDomainEventMessage<>(
+                    aggregateType,
+                    aggregateIdentifier,
+                    nextSequence,
+                    event.getIdentifier(),
+                    event.name(),
+                    event.getPayload(),
+                    event.getMetaData(),
+                    event.getTimestamp()
+            );
+        } else {
+            // returns non-aggregate event, so the sequence is always 0
+            return new GenericDomainEventMessage<>(null,
+                                                   event.getIdentifier(),
+                                                   0L,
+                                                   event,
+                                                   event::getTimestamp);
+        }
     }
 
     // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
