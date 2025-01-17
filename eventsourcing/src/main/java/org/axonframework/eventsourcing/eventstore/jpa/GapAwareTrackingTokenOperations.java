@@ -9,11 +9,9 @@ import org.slf4j.Logger;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 import java.util.List;
 
 record GapAwareTrackingTokenOperations(
-        long lowestGlobalSequence,
         int gapTimeout,
         Logger logger
 ) {
@@ -46,13 +44,14 @@ record GapAwareTrackingTokenOperations(
         return cleanedToken;
     }
 
-    GapAwareTrackingToken gapAwareTrackingTokenFrom(TrackingToken trackingToken) {
+    GapAwareTrackingToken assertGapAwareTrackingToken(TrackingToken trackingToken) {
         if (trackingToken instanceof GapAwareTrackingToken gapAwareTrackingToken) {
             return gapAwareTrackingToken;
+        } else {
+            throw new IllegalArgumentException(
+                    "Tracking Token is not of expected type. Must be GapAwareTrackingToken. Is: "
+                            + trackingToken.getClass().getName());
         }
-        // todo: reject another types! adjust test suite
-        return GapAwareTrackingToken.newInstance(trackingToken.position().orElse(lowestGlobalSequence),
-                                                 Collections.emptySet());
     }
 
 

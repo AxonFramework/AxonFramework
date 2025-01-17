@@ -107,7 +107,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                 domainEventEntryEntityName(),
                 snapshotEventEntryEntityName()
         );
-        this.tokenOperations = new GapAwareTrackingTokenOperations(lowestGlobalSequence, gapTimeout, logger);
+        this.tokenOperations = new GapAwareTrackingTokenOperations(gapTimeout, logger);
     }
 
     /**

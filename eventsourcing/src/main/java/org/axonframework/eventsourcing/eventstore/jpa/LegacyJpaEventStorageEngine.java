@@ -122,7 +122,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                                                        domainEventEntryEntityName(),
                                                                        SnapshotEventEntry.class.getSimpleName());
         this.tokenOperations = new GapAwareTrackingTokenOperations(
-                customization.lowestGlobalSequence(),
                 customization.tokenGapsHandling().timeout(),
                 logger
         );
@@ -301,7 +300,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     @Override
     public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
-        var trackingToken = tokenOperations.gapAwareTrackingTokenFrom(condition.position());
+        var trackingToken = tokenOperations.assertGapAwareTrackingToken(condition.position());
         var events = batchingOperations.readEventData(trackingToken);
         var deserialized = upcastAndDeserializeTrackedEvents(events, eventSerializer, upcasterChain);
         return MessageStream.fromStream(
