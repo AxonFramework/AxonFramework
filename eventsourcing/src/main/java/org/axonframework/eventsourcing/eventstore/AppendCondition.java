@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,43 +29,42 @@ import org.axonframework.eventhandling.EventMessage;
  * @author Marco Amann
  * @author Sara Pellegrini
  * @author Steven van Beelen
+ * @author Allard Buijze
  * @since 5.0.0
  */
 public sealed interface AppendCondition permits NoAppendCondition, DefaultAppendCondition {
 
     /**
-     * Returns an {@link AppendCondition} that has no criteria nor consistency marker.
+     * Returns an {@code AppendCondition} that has no criteria nor consistency marker.
      * <p>
      * Only use this {@code AppendCondition} when appending events that <em>do not</em> partake in the consistency
      * boundary of any model(s).
      *
-     * @return An {@link AppendCondition} that has no criteria nor consistency marker.
+     * @return An {@code AppendCondition} that has no criteria nor consistency marker.
      */
     static AppendCondition none() {
         return NoAppendCondition.INSTANCE;
     }
 
     /**
-     * Constructs a {@link AppendCondition} based on the given {@code condition}.
-     * <p>
-     * Uses the {@link SourcingCondition#end()} as the {@link #consistencyMarker()}. The
-     * {@link SourcingCondition#criteria()} is taken as is for the {@link #criteria()} operation.
+     * Creates an AppendCondition to append events only if no events matching given {@code criteria} are.available
      *
-     * @param condition The {@link SourcingCondition} to base an {@link AppendCondition}.
-     * @return An {@link AppendCondition} based on the given {@code condition}.
+     * @param criteria The criteria for the AppendCondition.
+     * @return a condition that matches against given criteria.
      */
-    static AppendCondition from(@Nonnull SourcingCondition condition) {
-        return new DefaultAppendCondition(condition.end(), condition.criteria());
+    static AppendCondition withCriteria(@Nonnull EventCriteria criteria) {
+        return new DefaultAppendCondition(ConsistencyMarker.ORIGIN, criteria);
     }
 
     /**
-     * Creates an AppendCondition to append events only if no events matching given {@code criteria} are available
+     * Returns an AppendCondition with a condition that represents this AppendCondition's criteria or the given
+     * {@code criteria}.
      *
-     * @param criteria The criteria for the AppendCondition
-     * @return a condition that matches against given criteria
+     * @param criteria The additional criteria the condition may match against.
+     * @return an AppendCondition that combined this condition's criteria and the given, using 'OR' semantics.
      */
-    static AppendCondition withCriteria(@Nonnull EventCriteria criteria) {
-        return new DefaultAppendCondition(-1, criteria);
+    default AppendCondition orCriteria(@Nonnull EventCriteria criteria) {
+        return new DefaultAppendCondition(this.consistencyMarker(), criteria.combine(criteria));
     }
 
     /**
@@ -76,7 +75,7 @@ public sealed interface AppendCondition permits NoAppendCondition, DefaultAppend
      *
      * @return The position in the event store until which the {@link #criteria()} should be validated against.
      */
-    long consistencyMarker();
+    ConsistencyMarker consistencyMarker();
 
     /**
      * Returns the {@link EventCriteria} to validate until the provided {@link #consistencyMarker()}.
@@ -88,24 +87,10 @@ public sealed interface AppendCondition permits NoAppendCondition, DefaultAppend
     EventCriteria criteria();
 
     /**
-     * Combines the {@code this AppendCondition} with the given {@code condition}.
-     * <p>
-     * Typically attached the {@link SourcingCondition#criteria()} with {@code this} condition's {@link #criteria()} and
-     * picks the lowest value among the {@link #consistencyMarker()} and {@link SourcingCondition#end()} values.
+     * Creates an AppendCondition with the same criteria as this one, but with given {@code consistencyMarker}.
      *
-     * @param condition The {@link SourcingCondition} to combine with {@code this AppendCondition}.
-     * @return An {@link AppendCondition} combined with the given {@code condition}.
+     * @param consistencyMarker The consistency marker for the new {@code this AppendCondition}.
+     * @return An {@code AppendCondition} with the given {@code consistencyMarker}.
      */
-    AppendCondition with(@Nonnull SourcingCondition condition);
-
-    /**
-     * Combines the {@code this AppendCondition} with the given {@code consistencyMarker}.
-     * <p>
-     * Will typically pick the lowest value among the existing {@link #consistencyMarker()} and given
-     * {@code consistencyMarker}.
-     *
-     * @param consistencyMarker The consistency marker {@code this AppendCondition} should comply with.
-     * @return An {@link AppendCondition} with the given {@code consistencyMarker}.
-     */
-    AppendCondition withMarker(long consistencyMarker);
+    AppendCondition withMarker(ConsistencyMarker consistencyMarker);
 }

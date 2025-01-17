@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     private final ResourceKey<AppendCondition> appendConditionKey;
     private final ResourceKey<List<EventMessage<?>>> eventQueueKey;
-    private final ResourceKey<Long> appendPositionKey;
+    private final ResourceKey<ConsistencyMarker> appendPositionKey;
 
     /**
      * Constructs a {@code DefaultEventStoreTransaction} using the given {@code eventStorageEngine} to
@@ -78,8 +78,8 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
         context.updateResource(
                 appendConditionKey,
                 appendCondition -> appendCondition == null
-                        ? AppendCondition.from(condition)
-                        : appendCondition.with(condition)
+                        ? AppendCondition.withCriteria(condition.criteria())
+                        : appendCondition.orCriteria(condition.criteria())
         );
         return eventStorageEngine.source(condition);
     }
@@ -121,7 +121,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
         );
     }
 
-    private CompletableFuture<Long> doCommit(ProcessingContext commitContext,
+    private CompletableFuture<ConsistencyMarker> doCommit(ProcessingContext commitContext,
                                              AsyncEventStorageEngine.AppendTransaction tx) {
         return tx.commit()
                  .whenComplete((position, exception) ->
@@ -134,7 +134,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public long appendPosition(@Nonnull ProcessingContext context) {
-        return getOrDefault(context.getResource(appendPositionKey), -1L);
+    public ConsistencyMarker appendPosition(@Nonnull ProcessingContext context) {
+        return getOrDefault(context.getResource(appendPositionKey), ConsistencyMarker.ORIGIN);
     }
 }

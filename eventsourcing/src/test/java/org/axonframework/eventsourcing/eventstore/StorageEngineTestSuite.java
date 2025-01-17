@@ -179,15 +179,14 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
                                  taggedEventMessage("event-1", TEST_CRITERIA.tags()))
                    .thenApply(AppendTransaction::commit).get(5, TimeUnit.SECONDS);
 
-
-        CompletableFuture<Long> actual = testSubject.appendEvents(AppendCondition.withCriteria(TEST_CRITERIA),
+        CompletableFuture<ConsistencyMarker> actual = testSubject.appendEvents(AppendCondition.withCriteria(TEST_CRITERIA),
                                                                   taggedEventMessage("event-2",
                                                                                      TEST_CRITERIA.tags()))
                                                     .thenCompose(AppendTransaction::commit);
 
         ExecutionException actualException = assertThrows(ExecutionException.class,
                                                           () -> actual.get(1, TimeUnit.SECONDS));
-        assertInstanceOf(AppendConditionAssertionException.class, actualException.getCause());
+        assertInstanceOf(AppendEventsTransactionRejectedException.class, actualException.getCause());
     }
 
     @Test
@@ -199,18 +198,18 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         var secondTx = testSubject.appendEvents(appendCondition,
                                                 taggedEventMessage("event-1", TEST_CRITERIA.tags()));
 
-        CompletableFuture<Long> firstCommit = firstTx.thenCompose(AppendTransaction::commit);
+        CompletableFuture<ConsistencyMarker> firstCommit = firstTx.thenCompose(AppendTransaction::commit);
         assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
 
-        CompletableFuture<Long> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
+        CompletableFuture<ConsistencyMarker> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
         var actual = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
-        assertInstanceOf(AppendConditionAssertionException.class, actual.getCause());
+        assertInstanceOf(AppendEventsTransactionRejectedException.class, actual.getCause());
     }
 
     @Test
     void concurrentTransactionsForNonOverlappingIndicesBothCommit() throws Exception {
-        AppendCondition appendCondition1 = new DefaultAppendCondition(-1, TEST_CRITERIA);
-        AppendCondition appendCondition2 = new DefaultAppendCondition(-1, OTHER_CRITERIA);
+        AppendCondition appendCondition1 = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, TEST_CRITERIA);
+        AppendCondition appendCondition2 = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, OTHER_CRITERIA);
 
         AppendTransaction firstTx = testSubject.appendEvents(appendCondition1,
                                                              taggedEventMessage("event-0", TEST_CRITERIA.tags()))
@@ -220,15 +219,15 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
                                                                                  TEST_CRITERIA.tags()))
                                                 .get(1, TimeUnit.SECONDS);
 
-        CompletableFuture<Long> firstCommit = firstTx.commit();
-        CompletableFuture<Long> secondCommit = secondTx.commit();
+        CompletableFuture<ConsistencyMarker> firstCommit = firstTx.commit();
+        CompletableFuture<ConsistencyMarker> secondCommit = secondTx.commit();
 
         assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
         assertDoesNotThrow(() -> secondCommit.get(1, TimeUnit.SECONDS));
 
-        Long actualIndex = firstCommit.get(5, TimeUnit.SECONDS);
+        ConsistencyMarker actualIndex = firstCommit.get(5, TimeUnit.SECONDS);
         assertNotNull(actualIndex);
-        assertEquals(actualIndex + 1, secondCommit.get(5, TimeUnit.SECONDS));
+        assertEquals(GlobalIndexConsistencyMarker.position(actualIndex) + 1, GlobalIndexConsistencyMarker.position(secondCommit.get(5, TimeUnit.SECONDS)));
     }
 
     @Test

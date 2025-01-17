@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.AppendConditionAssertionException;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
@@ -55,14 +54,13 @@ class AsyncInMemoryEventStorageEngineTest extends StorageEngineTestSuite<AsyncIn
         SourcingCondition firstCondition = conditionFor(TEST_CRITERIA);
         SourcingCondition secondCondition = conditionFor(hasTag(new Tag("aggregateId", "other-aggregate-id")));
 
-        CompletableFuture<AsyncEventStorageEngine.AppendTransaction> result = testSubject.appendEvents(AppendCondition.from(
-                firstCondition.combine(secondCondition)));
+        CompletableFuture<AsyncEventStorageEngine.AppendTransaction> result = testSubject.appendEvents(AppendCondition.withCriteria(firstCondition.combine(secondCondition).criteria()));
 
         await().atMost(Duration.ofMillis(500))
                .pollDelay(Duration.ofMillis(25))
                .untilAsserted(() -> {
                    assertTrue(result.isCompletedExceptionally());
-                   assertInstanceOf(AppendConditionAssertionException.class, result.exceptionNow());
+                   assertInstanceOf(IllegalArgumentException.class, result.exceptionNow());
                });
     }
 }
