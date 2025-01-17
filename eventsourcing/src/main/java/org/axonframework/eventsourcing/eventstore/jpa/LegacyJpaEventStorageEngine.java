@@ -241,8 +241,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     }
 
     // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
-    // todo: how do I know (even if its only tag), that it's an aggregate id?
-
     @Nullable
     private static String resolveAggregateIdentifier(Set<Tag> tags) {
         if (tags.isEmpty()) {
@@ -253,8 +251,8 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return tags.iterator().next().value();
         }
     }
-    // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
 
+    // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
     @Nullable
     private static String resolveAggregateType(Set<Tag> tags) {
         if (tags.isEmpty()) {
@@ -440,7 +438,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
         /**
          * Build an exception message based on an EventMessage.
-         * todo: what to do!?!?!
          *
          * @param failedEvent the event to be used for the exception message
          * @return the created exception message
@@ -771,6 +768,19 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                      explicitFlush,
                                      lowestGlobalSequence,
                                      configurationOverride.apply(tokenGapsHandling)
+            );
+        }
+
+        public Customization explicitFlush(boolean explicitFlush) {
+            return new Customization(upcasterChain,
+                                     persistenceExceptionResolver,
+                                     snapshotFilter,
+                                     batchSize,
+                                     finalAggregateBatchPredicate,
+                                     messageNameResolver,
+                                     explicitFlush,
+                                     lowestGlobalSequence,
+                                     tokenGapsHandling
             );
         }
     }
