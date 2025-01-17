@@ -376,6 +376,30 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         assertTrue(validConsistencyMarker(secondCommit.join(), OTHER_AGGREGATE_ID, 0));
     }
 
+    @Test
+    void eventWithMultipleTagsIsReportedAsPartOfException() {
+        TaggedEventMessage<?> violatingEntry = taggedEventMessage("event2",
+                                                                  Set.of(new Tag("key1", "value1"),
+                                                                         new Tag("key2", "value2")));
+        CompletableFuture<AsyncEventStorageEngine.AppendTransaction> actual = testSubject.appendEvents(
+                AppendCondition.none(),
+                taggedEventMessage("event1", Set.of(new Tag("key1", "value1"))),
+                violatingEntry,
+                taggedEventMessage("event3", Set.of(new Tag("key1", "value1")))
+        );
+
+        assertTrue(actual.isDone());
+        assertTrue(actual.isCompletedExceptionally());
+
+        ExecutionException actualException = assertThrows(ExecutionException.class, actual::get);
+        if (actualException.getCause() instanceof TooManyTagsOnEventMessageException e) {
+            assertEquals(violatingEntry.tags(), e.tags());
+            assertEquals(violatingEntry.event(), e.eventMessage());
+        } else {
+            fail("Unexpected exception", actualException);
+        }
+    }
+
     private void assertTrackedEntry(Entry<EventMessage<?>> actual, EventMessage<?> expected, long eventNumber) {
         Optional<TrackingToken> actualToken = TrackingToken.fromContext(actual);
         assertTrue(actualToken.isPresent());

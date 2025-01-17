@@ -23,10 +23,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
-import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.Tag;
-import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.serialization.Converter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
@@ -34,11 +30,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
 class LegacyAxonServerEventStorageEngineTest extends
@@ -63,30 +54,6 @@ class LegacyAxonServerEventStorageEngineTest extends
     static void afterAll() {
         connection.disconnect();
         axonServerContainer.stop();
-    }
-
-    @Test
-    void eventWithMultipleTagsIsReportedAsPartOfException() {
-        TaggedEventMessage<?> violatingEntry = taggedEventMessage("event2",
-                                                                  Set.of(new Tag("key1", "value1"),
-                                                                         new Tag("key2", "value2")));
-        CompletableFuture<AsyncEventStorageEngine.AppendTransaction> actual = testSubject.appendEvents(
-                AppendCondition.none(),
-                taggedEventMessage("event1", Set.of(new Tag("key1", "value1"))),
-                violatingEntry,
-                taggedEventMessage("event3", Set.of(new Tag("key1", "value1")))
-        );
-
-        assertTrue(actual.isDone());
-        assertTrue(actual.isCompletedExceptionally());
-
-        ExecutionException actualException = assertThrows(ExecutionException.class, actual::get);
-        if (actualException.getCause() instanceof TooManyTagsOnEventMessageException e) {
-            assertEquals(violatingEntry.tags(), e.tags());
-            assertEquals(violatingEntry.event(), e.eventMessage());
-        } else {
-            fail("Unexpected exception", actualException);
-        }
     }
 
     @Override

@@ -27,6 +27,7 @@ import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
+import org.axonframework.eventsourcing.eventstore.TooManyTagsOnEventMessageException;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.Context;
@@ -153,12 +154,13 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         return CompletableFuture.completedFuture(appendTransaction(condition, events));
     }
 
-    // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
     private void assertValidTags(List<TaggedEventMessage<?>> events) {
         for (TaggedEventMessage<?> taggedEvent : events) {
             if (taggedEvent.tags().size() > 1) {
-                throw new IllegalArgumentException(
-                        "An Event Storage engine in Aggregate mode does not support multiple tags per event");
+                throw new TooManyTagsOnEventMessageException(
+                        "An Event Storage engine in Aggregate mode does not support multiple tags per event",
+                        taggedEvent.event(),
+                        taggedEvent.tags());
             }
         }
     }
