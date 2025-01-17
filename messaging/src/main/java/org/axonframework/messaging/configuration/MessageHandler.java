@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.configuration;
 
+import org.axonframework.commandhandling.CommandHandler;
+
 /**
  * @author Steven van Beelen
  * @since 5.0.0

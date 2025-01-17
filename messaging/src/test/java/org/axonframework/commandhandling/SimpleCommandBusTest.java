@@ -23,7 +23,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.QualifiedNameUtils;
-import org.axonframework.messaging.configuration.CommandHandler;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
@@ -252,8 +251,8 @@ class SimpleCommandBusTest {
 
     @Test
     void duplicateRegistrationIsRejected() {
-        var handler1 = mock(org.axonframework.messaging.configuration.CommandHandler.class);
-        var handler2 = mock(org.axonframework.messaging.configuration.CommandHandler.class);
+        var handler1 = mock(CommandHandler.class);
+        var handler2 = mock(CommandHandler.class);
         testSubject.subscribe(COMMAND_NAME, handler1);
         assertThrows(DuplicateCommandHandlerSubscriptionException.class,
                      () -> testSubject.subscribe(COMMAND_NAME, handler2));
@@ -261,7 +260,7 @@ class SimpleCommandBusTest {
 
     @Test
     void duplicateRegistrationForSameHandlerIsAllowed() {
-        var handler = mock(org.axonframework.messaging.configuration.CommandHandler.class);
+        var handler = mock(CommandHandler.class);
         testSubject.subscribe(COMMAND_NAME, handler);
         assertDoesNotThrow(() -> testSubject.subscribe(COMMAND_NAME, handler));
     }
@@ -270,7 +269,7 @@ class SimpleCommandBusTest {
     void describeReturnsRegisteredComponents() {
         ProcessingLifecycleHandlerRegistrar lifecycleHandlerRegistrar = mock(ProcessingLifecycleHandlerRegistrar.class);
         testSubject = new SimpleCommandBus(executor, lifecycleHandlerRegistrar);
-        var handler1 = mock(org.axonframework.messaging.configuration.CommandHandler.class);
+        var handler1 = mock(CommandHandler.class);
         var handler2 = mock(CommandHandler.class);
         testSubject.subscribe(COMMAND_NAME, handler1);
         QualifiedName handleTwoName = new QualifiedName("axon", "test2", "5.0.0");
@@ -285,7 +284,7 @@ class SimpleCommandBusTest {
                 .describeProperty("subscriptions", Map.of(COMMAND_NAME, handler1, handleTwoName, handler2));
     }
 
-    private static class StubCommandHandler implements org.axonframework.messaging.configuration.CommandHandler {
+    private static class StubCommandHandler implements CommandHandler {
 
         private final Object result;
 

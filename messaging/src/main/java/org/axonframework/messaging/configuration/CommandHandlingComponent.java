@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.configuration;
 
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.messaging.QualifiedName;
 
 import java.util.Set;

@@ -19,7 +19,6 @@ package org.axonframework.commandhandling;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.configuration.CommandHandler;
 
 import java.io.Serial;
 

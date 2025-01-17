@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.configuration.CommandHandler;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 

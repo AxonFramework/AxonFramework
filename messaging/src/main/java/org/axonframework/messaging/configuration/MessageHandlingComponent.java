@@ -17,6 +17,7 @@
 package org.axonframework.messaging.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.common.CollectionUtils;
 import org.axonframework.messaging.QualifiedName;
 

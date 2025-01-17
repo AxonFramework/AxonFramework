@@ -23,7 +23,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.configuration.CommandHandler;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Objects;
