@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.TrackingToken;
 
+import java.util.Set;
+
 
 /**
  * Interface describing the condition to {@link StreamableEventSource#open(String, StreamingCondition) stream} events
@@ -35,14 +37,14 @@ import org.axonframework.eventhandling.TrackingToken;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public sealed interface StreamingCondition permits DefaultStreamingCondition, StartingFrom {
+public sealed interface StreamingCondition extends EventsCondition permits DefaultStreamingCondition, StartingFrom {
 
     /**
-     * Constructs a simple {@link StreamingCondition} that starts streaming from the given {@code position}. When the
+     * Constructs a simple {@code  StreamingCondition} that starts streaming from the given {@code position}. When the
      * {@code position} is {@code null} streaming will start from the beginning of the Event Store.
      *
      * @param position The {@link TrackingToken} describing the position to start streaming from.
-     * @return A simple {@link StreamingCondition} that starts streaming from the given {@code position}.
+     * @return A simple {@code  StreamingCondition} that starts streaming from the given {@code position}.
      */
     static StreamingCondition startingFrom(@Nullable TrackingToken position) {
         return new StartingFrom(position);
@@ -55,23 +57,17 @@ public sealed interface StreamingCondition permits DefaultStreamingCondition, St
      */
     TrackingToken position();
 
-    /**
-     * The {@link EventCriteria} used to filter the stream of events. Defaults to
-     * {@link EventCriteria#anyEvent() no criteria}, hence allowing any events
-     *
-     * @return The {@link EventCriteria} used to filter the stream of events.
-     */
-    default EventCriteria criteria() {
-        return EventCriteria.anyEvent();
+    default Set<EventCriteria> criteria() {
+        return Set.of();
     }
 
     /**
-     * Combines the {@link #criteria()} of {@code this} {@link StreamingCondition} with the given {@code criteria}.
+     * Combines the {@link #criteria()} of {@code this} {@code  StreamingCondition} with the given {@code criteria}.
      *
      * @param criteria The {@link EventCriteria} to combine with the {@link #criteria()} of {@code this}
-     *                 {@link StreamingCondition}.
-     * @return A {@link StreamingCondition} that combined the given {@code criteria} with the {@link #criteria()} of
-     * {@code this} {@link StreamingCondition}.
+     *                 {@code  StreamingCondition}.
+     * @return A {@code  StreamingCondition} that combined the given {@code criteria} with the {@link #criteria()} of
+     * {@code this} {@code  StreamingCondition}.
      */
-    StreamingCondition with(@Nonnull EventCriteria criteria);
+    StreamingCondition or(@Nonnull EventCriteria criteria);
 }

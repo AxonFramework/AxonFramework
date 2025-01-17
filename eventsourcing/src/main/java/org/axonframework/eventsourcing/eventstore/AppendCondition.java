@@ -19,6 +19,9 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Interface describing the consistency boundary condition for
  * {@link org.axonframework.eventhandling.EventMessage EventMessages} when
@@ -32,7 +35,7 @@ import org.axonframework.eventhandling.EventMessage;
  * @author Allard Buijze
  * @since 5.0.0
  */
-public sealed interface AppendCondition permits NoAppendCondition, DefaultAppendCondition {
+public sealed interface AppendCondition extends EventsCondition permits NoAppendCondition, DefaultAppendCondition {
 
     /**
      * Returns an {@code AppendCondition} that has no criteria nor consistency marker.
@@ -52,7 +55,17 @@ public sealed interface AppendCondition permits NoAppendCondition, DefaultAppend
      * @param criteria The criteria for the AppendCondition.
      * @return a condition that matches against given criteria.
      */
-    static AppendCondition withCriteria(@Nonnull EventCriteria criteria) {
+    static AppendCondition withCriteria(@Nonnull EventCriteria... criteria) {
+        return withCriteria(Set.of(criteria));
+    }
+
+    /**
+     * Creates an AppendCondition to append events only if no events matching given {@code criteria} are available.
+     *
+     * @param criteria The criteria for the AppendCondition.
+     * @return A condition that matches against given criteria.
+     */
+    static AppendCondition withCriteria(@Nonnull Set<EventCriteria> criteria) {
         return new DefaultAppendCondition(ConsistencyMarker.ORIGIN, criteria);
     }
 
@@ -63,8 +76,28 @@ public sealed interface AppendCondition permits NoAppendCondition, DefaultAppend
      * @param criteria The additional criteria the condition may match against.
      * @return an AppendCondition that combined this condition's criteria and the given, using 'OR' semantics.
      */
-    default AppendCondition orCriteria(@Nonnull EventCriteria criteria) {
-        return new DefaultAppendCondition(this.consistencyMarker(), criteria.combine(criteria));
+    default AppendCondition orCriteria(@Nonnull EventCriteria... criteria) {
+        var newCriteria = new HashSet<>(criteria());
+        if (newCriteria.addAll(Set.of(criteria))) {
+            return new DefaultAppendCondition(this.consistencyMarker(), newCriteria);
+        } else {
+            return this;
+        }
+    }
+
+    /**
+     * Returns an AppendCondition with a condition that represents this AppendCondition's criteria or the given
+     * {@code criteria}
+     *
+     * @param criteria The additional criteria the condition may match against
+     * @return an AppendCondition that combined this condition's criteria and the given, using 'OR' semantics
+     */
+    default AppendCondition orCriteria(@Nonnull Set<EventCriteria> criteria) {
+        HashSet<EventCriteria> newCriteria = new HashSet<>(criteria());
+        if (newCriteria.addAll(criteria)) {
+            return new DefaultAppendCondition(this.consistencyMarker(), newCriteria);
+        }
+        return this;
     }
 
     /**
@@ -76,15 +109,6 @@ public sealed interface AppendCondition permits NoAppendCondition, DefaultAppend
      * @return The position in the event store until which the {@link #criteria()} should be validated against.
      */
     ConsistencyMarker consistencyMarker();
-
-    /**
-     * Returns the {@link EventCriteria} to validate until the provided {@link #consistencyMarker()}.
-     * <p>
-     * Appending will fail when there are events appended after this point that match the criteria.
-     *
-     * @return The {@link EventCriteria} to validate until the provided {@link #consistencyMarker()}.
-     */
-    EventCriteria criteria();
 
     /**
      * Creates an AppendCondition with the same criteria as this one, but with given {@code consistencyMarker}.

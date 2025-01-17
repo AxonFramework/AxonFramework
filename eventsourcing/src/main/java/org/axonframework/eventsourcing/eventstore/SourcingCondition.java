@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.Set;
+
 /**
  * Interface describing the condition to
  * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) source} events from an Event Store.
@@ -34,56 +36,46 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public sealed interface SourcingCondition permits DefaultSourcingCondition {
+public sealed interface SourcingCondition extends EventsCondition permits DefaultSourcingCondition {
 
     /**
-     * Construct a {@link SourcingCondition} used to source a model based on the given {@code criteria}.
+     * Construct a {@code SourcingCondition} used to source a model based on the given {@code criteria}.
      *
      * @param criteria The {@link EventCriteria} used as the {@link SourcingCondition#criteria()}.
-     * @return A {@link SourcingCondition} that will retrieve an event sequence matching the given {@code criteria}.
+     * @return A {@code SourcingCondition} that will retrieve an event sequence matching the given {@code criteria}.
      */
-    static SourcingCondition conditionFor(@Nonnull EventCriteria criteria) {
-        return conditionFor(criteria, -1L);
+    static SourcingCondition conditionFor(@Nonnull EventCriteria... criteria) {
+        return conditionFor(0, criteria);
     }
 
     /**
-     * Construct a {@link SourcingCondition} used to source a model based on the given {@code criteria}.
+     * Construct a {@code SourcingCondition} used to source a model based on the given {@code criteria}.
      * <p>
      * Will start the sequence at the given {@code start} value.
      *
-     * @param criteria The {@link EventCriteria} used as the {@link SourcingCondition#criteria()}.
      * @param start    The start position in the event sequence to retrieve of the model to source.
-     * @return A {@link SourcingCondition} that will retrieve an event sequence matching the given {@code criteria},
+     * @param criteria The {@link EventCriteria} used as the {@link SourcingCondition#criteria()}.
+     * @return A {@code SourcingCondition} that will retrieve an event sequence matching the given {@code criteria},
      * starting at the given {@code start}.
      */
-    static SourcingCondition conditionFor(@Nonnull EventCriteria criteria,
-                                          long start) {
-        return conditionFor(criteria, start, Long.MAX_VALUE);
+    static SourcingCondition conditionFor(long start, @Nonnull EventCriteria... criteria) {
+        return conditionFor(start, Long.MAX_VALUE, criteria);
     }
 
     /**
-     * Construct a {@link SourcingCondition} used to source a model based on the given {@code criteria}.
+     * Construct a {@code SourcingCondition} used to source a model based on the given {@code criteria}.
      * <p>
      * Will start the sequence at the given {@code start} value and cut it off at the given {@code end} value.
      *
+     * @param start    The start position (inclusive) in the event sequence to retrieve of the model to source.
+     * @param end      The end or the range (exclusive) in the event sequence to retrieve of the model to source.
      * @param criteria The {@link EventCriteria} used as the {@link SourcingCondition#criteria()}.
-     * @param start    The start position in the event sequence to retrieve of the model to source.
-     * @param end      The end position in the event sequence to retrieve of the model to source.
-     * @return A {@link SourcingCondition} that will retrieve an event sequence matching the given {@code criteria},
+     * @return A {@code SourcingCondition} that will retrieve an event sequence matching the given {@code criteria},
      * starting at the given {@code start} and ending at the given {@code end}.
      */
-    static SourcingCondition conditionFor(@Nonnull EventCriteria criteria,
-                                          long start,
-                                          long end) {
-        return new DefaultSourcingCondition(criteria, start, end);
+    static SourcingCondition conditionFor(long start, long end, @Nonnull EventCriteria... criteria) {
+        return new DefaultSourcingCondition(start, end, Set.of(criteria));
     }
-
-    /**
-     * The {@link EventCriteria} used to source an event sequence complying to its criteria.
-     *
-     * @return The {@link EventCriteria} used to retrieve an event sequence complying to its criteria.
-     */
-    EventCriteria criteria();
 
     /**
      * The start position in the event sequence to source. Defaults to {@code -1L} to ensure we start at the beginning
@@ -109,11 +101,15 @@ public sealed interface SourcingCondition permits DefaultSourcingCondition {
      * Combine the {@link #criteria()}, {@link #start()}, and {@link #end()} of {@code this SourcingCondition} with the
      * {@code criteria}, {@code start}, and {@code end} of the given {@code other SourcingCondition}.
      * <p>
+     * Any event that would have been sourced under either condition, will also be sourced under the combined condition.
+     * If the conditions' start and end do not overlap or are not contingent, some event may be returned under the
+     * combined condition that would not have been returned under either this or the other individual conditions.
+     * <p>
      * Typically, the minimum value of both {@code start} values and the maximum value of both {@code end} values will
      * be part of the end result.
      *
-     * @param other The {@link SourcingCondition} to combine with {@code this SourcingCondition}.
-     * @return A combined {@link SourcingCondition} based on {@code this SourcingCondition} and the given {@code other}.
+     * @param other The {@code SourcingCondition} to combine with {@code this SourcingCondition}.
+     * @return A combined {@code SourcingCondition} based on {@code this SourcingCondition} and the given {@code other}.
      */
-    SourcingCondition combine(@Nonnull SourcingCondition other);
+    SourcingCondition or(@Nonnull SourcingCondition other);
 }

@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.eventstore.inmemory;
+package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
-import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
+import org.junit.jupiter.api.*;
 
-/**
- * Test class validating the {@link SimpleEventStore} together with the {@link AsyncInMemoryEventStorageEngine}.
- *
- * @author Steven van Beelen
- */
-class AsyncInMemoryEventStorageEngineTest extends StorageEngineTestSuite<AsyncInMemoryEventStorageEngine> {
+import static org.junit.jupiter.api.Assertions.*;
 
-    @Override
-    protected AsyncInMemoryEventStorageEngine buildStorageEngine() {
-        return new AsyncInMemoryEventStorageEngine();
+class AnyEventTest {
+
+    @Test
+    void anyEventDoesNotContainTagsOrTypes() {
+        AnyEvent testSubject = AnyEvent.INSTANCE;
+
+        assertTrue(testSubject.types().isEmpty());
+        assertTrue(testSubject.tags().isEmpty());
     }
 }

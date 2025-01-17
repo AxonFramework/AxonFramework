@@ -18,28 +18,41 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
+import java.util.Set;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Default implementation of the {@link AppendCondition}, using the given {@code consistencyMarker} and {@code criteria}
  * as output for the {@link #consistencyMarker()} and {@link #criteria()} operations respectively.
  *
  * @param consistencyMarker The consistency marker obtained while sourcing events.
- * @param criteria          The criteria defining which changes are considered conflicting.
+ * @param criteria          The criteria set defining which changes are considered conflicting.
  * @author Steven van Beelen
  * @since 5.0.0
  */
 record DefaultAppendCondition(
-        ConsistencyMarker consistencyMarker,
-        @Nonnull EventCriteria criteria
+        @Nonnull ConsistencyMarker consistencyMarker,
+        @Nonnull Set<EventCriteria> criteria
 ) implements AppendCondition {
 
     DefaultAppendCondition {
-        assertNonNull(criteria, "The EventCriteria cannot be null");
+        requireNonNull(consistencyMarker, "The ConsistencyMarker cannot be null");
+        requireNonNull(criteria, "The EventCriteria set cannot be null");
+    }
+
+    /**
+     * Creates an appendCondition with given {@code consistencyMarker} and a single {@code eventCriteria}.
+     *
+     * @param consistencyMarker The consistency marker for this append condition.
+     * @param eventCriteria     The criteria for the append condition.
+     */
+    public DefaultAppendCondition(@Nonnull ConsistencyMarker consistencyMarker, @Nonnull EventCriteria eventCriteria) {
+        this(consistencyMarker, Set.of(requireNonNull(eventCriteria, "The EventCriteria cannot be null")));
     }
 
     @Override
     public AppendCondition withMarker(ConsistencyMarker consistencyMarker) {
-        return new DefaultAppendCondition(this.consistencyMarker.lowerBound(consistencyMarker), criteria);
+        return new DefaultAppendCondition(consistencyMarker, criteria);
     }
 }

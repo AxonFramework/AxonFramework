@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,5 +136,15 @@ public record QualifiedName(@Nonnull String namespace,
     @Override
     public String toString() {
         return namespace + DELIMITER + localName + DELIMITER + revision;
+    }
+
+    /**
+     * Returns the full name of this QualifiedName, consisting of the namespace and localName, separated by a "."
+     * (dot).
+     *
+     * @return the full name of this QualifiedName
+     */
+    public String fullName() {
+        return namespace() + "." + localName();
     }
 }

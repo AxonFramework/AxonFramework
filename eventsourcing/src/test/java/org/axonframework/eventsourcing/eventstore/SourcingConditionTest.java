@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@code static} factory methods and {@code default} methods of the
@@ -28,23 +30,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class SourcingConditionTest {
 
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.hasTag(new Tag("key", "value"));
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.forAnyEventType().withTags("key", "value");
     private static final long TEST_START = 42L;
 
     @Test
     void conditionForCriteria() {
         SourcingCondition result = SourcingCondition.conditionFor(TEST_CRITERIA);
 
-        assertEquals(TEST_CRITERIA, result.criteria());
-        assertEquals(-1L, result.start());
+        assertEquals(Set.of(TEST_CRITERIA), result.criteria());
+        assertEquals(0, result.start());
         assertEquals(Long.MAX_VALUE, result.end());
     }
 
     @Test
     void conditionForCriteriaAndStartPosition() {
-        SourcingCondition result = SourcingCondition.conditionFor(TEST_CRITERIA, TEST_START);
+        SourcingCondition result = SourcingCondition.conditionFor(TEST_START, TEST_CRITERIA);
 
-        assertEquals(TEST_CRITERIA, result.criteria());
+        assertEquals(Set.of(TEST_CRITERIA), result.criteria());
         assertEquals(TEST_START, result.start());
         assertEquals(Long.MAX_VALUE, result.end());
     }
@@ -53,9 +55,9 @@ class SourcingConditionTest {
     void conditionForCriteriaAndStartPositionAndEndPosition() {
         long testEnd = 1337L;
 
-        SourcingCondition result = SourcingCondition.conditionFor(TEST_CRITERIA, TEST_START, testEnd);
+        SourcingCondition result = SourcingCondition.conditionFor(TEST_START, testEnd, TEST_CRITERIA);
 
-        assertEquals(TEST_CRITERIA, result.criteria());
+        assertEquals(Set.of(TEST_CRITERIA), result.criteria());
         assertEquals(TEST_START, result.start());
         assertEquals(testEnd, result.end());
     }
