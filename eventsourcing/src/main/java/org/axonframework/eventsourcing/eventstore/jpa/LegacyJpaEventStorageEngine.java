@@ -158,23 +158,28 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         var consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
         var aggregateSequencer = AggregateSequencer.with(consistencyMarker);
 
-        var tx = transactionManager.startTransaction();
-        try {
-            entityManagerPersistEvents(aggregateSequencer, events);
-            if (explicitFlush) {
-                entityManagerProvider.getEntityManager().flush();
-            }
-        } catch (Exception e) {
-            tx.rollback();
-            return CompletableFuture.failedFuture(e);
-        }
+//        var tx = transactionManager.startTransaction();
+//        try {
+//            entityManagerPersistEvents(aggregateSequencer, events);
+//            if (explicitFlush) {
+//                entityManagerProvider.getEntityManager().flush();
+//            }
+//        } catch (Exception e) {
+//            tx.rollback();
+//            return CompletableFuture.failedFuture(e);
+//        }
 
         return CompletableFuture.completedFuture(new AppendTransaction() {
 
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
                 CompletableFuture<Void> txResult = new CompletableFuture<>();
+                var tx = transactionManager.startTransaction();
                 try {
+                    entityManagerPersistEvents(aggregateSequencer, events);
+                    if (explicitFlush) {
+                        entityManagerProvider.getEntityManager().flush();
+                    }
                     tx.commit();
                     txResult.complete(null);
                 } catch (Exception e) {
@@ -190,7 +195,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
             @Override
             public void rollback() {
-                tx.rollback();
+//                tx.rollback();
             }
         });
     }
