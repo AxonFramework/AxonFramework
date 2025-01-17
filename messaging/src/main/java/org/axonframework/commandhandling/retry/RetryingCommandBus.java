@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,19 @@
 
 package org.axonframework.commandhandling.retry;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -37,6 +37,9 @@ import static org.axonframework.common.FutureUtils.unwrap;
 /**
  * CommandBus wrapper that will retry dispatching Commands that resulted in a failure. A {@link RetryScheduler} is used
  * to determine if and how retries are performed.
+ *
+ * @author Allard Buijze
+ * @since 5.0.0
  */
 public class RetryingCommandBus implements CommandBus {
 
@@ -53,6 +56,13 @@ public class RetryingCommandBus implements CommandBus {
     public RetryingCommandBus(CommandBus delegate, RetryScheduler retryScheduler) {
         this.delegate = delegate;
         this.retryScheduler = retryScheduler;
+    }
+
+    @Override
+    public CommandBus subscribe(@Nonnull QualifiedName name,
+                                @Nonnull CommandHandler handler) {
+        delegate.subscribe(name, handler);
+        return this;
     }
 
     @Override
@@ -77,12 +87,6 @@ public class RetryingCommandBus implements CommandBus {
 
     private MessageStream<Message<?>> redispatch(CommandMessage<?> cmd, ProcessingContext ctx) {
         return MessageStream.fromFuture(dispatchToDelegate(cmd, ctx));
-    }
-
-    @Override
-    public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
-        return delegate.subscribe(commandName, handler);
     }
 
     @Override

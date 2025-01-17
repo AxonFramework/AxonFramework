@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,16 @@
 
 package org.axonframework.commandhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.utils.MockException;
@@ -30,15 +38,13 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class InterceptingCommandBusTest {
 
-    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
+    private static final QualifiedName COMMAND_NAME = new QualifiedName("axon", "test", "5.0.0");
 
     private InterceptingCommandBus testSubject;
     private CommandBus mockCommandBus;
@@ -63,7 +69,7 @@ class InterceptingCommandBusTest {
     @SuppressWarnings("unchecked")
     @Test
     void dispatchInterceptorsInvokedOnDispatch() throws Exception {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "test");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "test");
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(invocation -> CompletableFuture.completedFuture(
                 asCommandResultMessage("ok")));
 
@@ -85,11 +91,10 @@ class InterceptingCommandBusTest {
 
     @Test
     void earlyReturnAvoidsMessageDispatch() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "test");
-        doReturn(MessageStream.failed(new MockException("Simulating early return"))).when(dispatchInterceptor2)
-                                                                                    .interceptOnDispatch(any(),
-                                                                                                         any(),
-                                                                                                         any());
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "test");
+        doReturn(MessageStream.failed(new MockException("Simulating early return")))
+                .when(dispatchInterceptor2)
+                .interceptOnDispatch(any(), any(), any());
 
         CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, ProcessingContext.NONE);
 
@@ -102,7 +107,7 @@ class InterceptingCommandBusTest {
 
     @Test
     void dualProceedCausesDuplicateMessageDispatch() throws Exception {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "test");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "test");
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(invocation -> CompletableFuture.completedFuture(
                 asCommandResultMessage("ok")));
 
@@ -124,7 +129,7 @@ class InterceptingCommandBusTest {
 
     @Test
     void exceptionsInDispatchInterceptorReturnFailedStream() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "test");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "test");
         doThrow(new MockException("Simulating failure in interceptor"))
                 .when(dispatchInterceptor2).interceptOnDispatch(any(), any(), any());
 
@@ -137,21 +142,21 @@ class InterceptingCommandBusTest {
         verify(dispatchInterceptor2).interceptOnDispatch(any(), any(), any());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void handlerInterceptorsInvokedOnHandle() throws Exception {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "test");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "test");
         AtomicReference<CommandMessage<?>> handledMessage = new AtomicReference<>();
-        testSubject.subscribe("test", message -> {
-            handledMessage.set(message);
-            return asCommandResultMessage("ok");
-        });
+        testSubject.subscribe(COMMAND_NAME,
+                              (command, context) -> {
+                                  handledMessage.set(command);
+                                  return MessageStream.just(asCommandResultMessage("ok"));
+                              }
+        );
 
-        ArgumentCaptor<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlerCaptor = ArgumentCaptor.forClass(
-                MessageHandler.class);
-        verify(mockCommandBus).subscribe(eq("test"), handlerCaptor.capture());
+        ArgumentCaptor<CommandHandler> handlerCaptor = ArgumentCaptor.forClass(CommandHandler.class);
+        verify(mockCommandBus).subscribe(eq(COMMAND_NAME), handlerCaptor.capture());
 
-        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> actualHandler = handlerCaptor.getValue();
+        CommandHandler actualHandler = handlerCaptor.getValue();
 
         ProcessingContext processingContext = mock(ProcessingContext.class);
         var result = actualHandler.handle(testCommand, processingContext);
@@ -168,12 +173,13 @@ class InterceptingCommandBusTest {
 
     @Test
     void exceptionsInHandlerInterceptorReturnFailedStream() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "Request");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "Request");
         doThrow(new MockException("Simulating failure in interceptor"))
                 .when(handlerInterceptor2).interceptOnHandle(any(), any(), any());
 
-        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> actualHandler = subscribeHandler(
-                message -> asCommandResultMessage("ok"));
+        CommandHandler actualHandler = subscribeHandler(
+                (command, context) -> MessageStream.just(asCommandResultMessage("ok"))
+        );
 
         ProcessingContext context = mock(ProcessingContext.class);
         var result = actualHandler.handle(testCommand, context);
@@ -186,7 +192,7 @@ class InterceptingCommandBusTest {
 
     @Test
     void dualProceedCausesDuplicateMessageHandling() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "test");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "test");
         doAnswer(i -> {
             i.callRealMethod();
             return i.callRealMethod();
@@ -194,10 +200,10 @@ class InterceptingCommandBusTest {
 
         List<CommandMessage<?>> handledMessages = new ArrayList<>();
 
-        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> actualHandler = subscribeHandler(
-                message -> {
-                    handledMessages.add(message);
-                    return asCommandResultMessage("ok");
+        CommandHandler actualHandler = subscribeHandler(
+                (command, context) -> {
+                    handledMessages.add(command);
+                    return MessageStream.just(asCommandResultMessage("ok"));
                 });
 
         ProcessingContext processingContext = mock(ProcessingContext.class);
@@ -234,18 +240,16 @@ class InterceptingCommandBusTest {
      * @param handler The handling logic for the command
      * @return the handler as wrapped by the surrounding command bus
      */
-    @SuppressWarnings("unchecked")
-    private MessageHandler<CommandMessage<?>, CommandResultMessage<?>> subscribeHandler(
-            MessageHandler<CommandMessage<?>, CommandResultMessage<?>> handler) {
-        testSubject.subscribe("test", handler);
+    private CommandHandler subscribeHandler(CommandHandler handler) {
+        QualifiedName name = COMMAND_NAME;
+        testSubject.subscribe(name, handler);
 
-        ArgumentCaptor<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlerCaptor = ArgumentCaptor.forClass(
-                MessageHandler.class);
-        verify(mockCommandBus).subscribe(eq("test"), handlerCaptor.capture());
+        ArgumentCaptor<CommandHandler> handlerCaptor = ArgumentCaptor.forClass(CommandHandler.class);
+        verify(mockCommandBus).subscribe(eq(name), handlerCaptor.capture());
         return handlerCaptor.getValue();
     }
 
-    private static GenericCommandResultMessage<String> asCommandResultMessage(String payload){
+    private static GenericCommandResultMessage<String> asCommandResultMessage(String payload) {
         return new GenericCommandResultMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload);
     }
 

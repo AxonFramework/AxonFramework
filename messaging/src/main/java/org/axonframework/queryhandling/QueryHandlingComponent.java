@@ -14,11 +14,23 @@
  * limitations under the License.
  */
 
-package org.axonframework.common.infra;
+package org.axonframework.queryhandling;
 
-import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.QualifiedName;
 
-public interface DescribableComponent {
+import java.util.Set;
 
-    void describeTo(@Nonnull ComponentDescriptor descriptor);
+/**
+ * TODO documentation
+ * A {@code MessageHandlingComponent} specialization for {@code QueryHandlers}.
+ *
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
+public interface QueryHandlingComponent extends QueryHandler, QueryHandlerRegistry {
+
+    /**
+     * @return The {@link Set} of {@link QualifiedName QualifiedNames} representing all supported queries.
+     */
+    Set<QualifiedName> supportedQueries();
 }

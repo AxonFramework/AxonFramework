@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,9 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.utils.MockException;
@@ -39,8 +39,8 @@ import static org.mockito.Mockito.*;
 
 class RetryingCommandBusTest {
 
-    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
-    private static final QualifiedName TEST_RESULT_NAME = new QualifiedName("test", "result", "0.0.1");
+    private static final QualifiedName COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
+    private static final QualifiedName RESULT_NAME = new QualifiedName("test", "result", "0.0.1");
 
     private CommandBus delegate;
     private RetryScheduler retryScheduler;
@@ -55,8 +55,8 @@ class RetryingCommandBusTest {
 
     @Test
     void shouldReturnSuccessResultImmediately() throws ExecutionException, InterruptedException {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "Test");
-        Message<Object> result = new GenericMessage<>(TEST_RESULT_NAME, "OK");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "Test");
+        Message<Object> result = new GenericMessage<>(RESULT_NAME, "OK");
         when(delegate.dispatch(any(), any())).thenAnswer(i -> CompletableFuture.completedFuture(result));
 
         ProcessingContext processingContext = mock();
@@ -67,8 +67,8 @@ class RetryingCommandBusTest {
 
     @Test
     void shouldDelegateToRetrySchedulerOnFailure() throws ExecutionException, InterruptedException {
-        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "Test");
-        Message<Object> successResult = new GenericMessage<>(TEST_RESULT_NAME, "OK");
+        CommandMessage<Object> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "Test");
+        Message<Object> successResult = new GenericMessage<>(RESULT_NAME, "OK");
         when(delegate.dispatch(any(), any()))
                 .thenAnswer(i -> CompletableFuture.failedFuture(new MockException("Simulating failure")));
         when(retryScheduler.scheduleRetry(any(), any(), any(), any()))
@@ -95,7 +95,7 @@ class RetryingCommandBusTest {
 
     @Test
     void shouldReturnedFailureIfRetrySchedulerReturnsFailure() {
-        CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "Test");
+        CommandMessage<Object> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "Test");
         when(delegate.dispatch(any(), any()))
                 .thenAnswer(i -> CompletableFuture.failedFuture(new MockException("Simulating failure")));
         when(retryScheduler.scheduleRetry(any(),
@@ -127,10 +127,10 @@ class RetryingCommandBusTest {
 
     @Test
     void shouldDelegateHandlerSubscription() {
-        MessageHandler<? super CommandMessage<?>, ? extends Message<?>> mock = mock();
-        testSubject.subscribe("test", mock);
+        CommandHandler mock = mock();
+        testSubject.subscribe(COMMAND_NAME, mock);
 
-        verify(delegate).subscribe("test", mock);
+        verify(delegate).subscribe(COMMAND_NAME, mock);
     }
 
     @Test

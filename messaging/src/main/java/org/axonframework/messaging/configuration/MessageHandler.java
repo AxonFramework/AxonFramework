@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.messaging.configuration;
 
-import org.axonframework.messaging.QualifiedName;
-
-import java.util.Set;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.queryhandling.QueryHandler;
 
 /**
- * MessageHandler specialization for handlers of Command Messages. Besides handling a message, CommandHandlingComponent
- * also specify which command names they support.
  * TODO documentation
+ * Interface for a component that processes Messages.
+ *
+ * @author Rene de Waele
+ * @author Steven van Beelen
+ * @since 3.0.o
  */
-public interface CommandHandlingComponent extends CommandHandler, CommandHandlerRegistry {
+// TODO change this into a proper sealed interface by adding module information. Without, all interfaces need to reside in the same package, which we do not desire.
+public /*sealed */interface MessageHandler/* permits CommandHandler, EventHandler, QueryHandler, MessageHandlingComponent */ {
 
-    /**
-     * @return The {@link Set} of {@link QualifiedName QualifiedNames} representing all supported commands.
-     */
-    Set<QualifiedName> supportedCommands();
 }
