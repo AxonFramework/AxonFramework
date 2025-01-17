@@ -86,11 +86,6 @@ class LegacyAxonServerEventStorageEngineTest extends
         }
     }
 
-    @BeforeEach
-    void setUp() throws Exception {
-        setUpTestSuite();
-    }
-
     @Override
     protected LegacyAxonServerEventStorageEngine buildStorageEngine() throws IOException {
         AxonServerUtils.purgeEventsFromAxonServer(axonServerContainer.getHost(),
