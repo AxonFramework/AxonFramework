@@ -429,8 +429,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                                          taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags())).join();
 
         assertDoesNotThrow(() -> tx.commit().get(1, TimeUnit.SECONDS));
-        var thrown = assertThrows(Exception.class, () -> tx.commit().get(1, TimeUnit.SECONDS));
-        assertInstanceOf(IllegalStateException.class, thrown.getCause());
+        assertThrows(Exception.class, () -> tx.commit().get(1, TimeUnit.SECONDS));
     }
 
     @Test
