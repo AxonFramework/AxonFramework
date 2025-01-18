@@ -21,13 +21,20 @@ import jakarta.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
 import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
 
+/**
+ * // todo: describe
+ *
+ * @author Mateusz Nowak
+ * @author Allard Buijze
+ * @since 5.0.0
+ */
 public class LegacyAggregateBasedEventStorageEngineUtils {
 
     public static void assertValidTags(List<TaggedEventMessage<?>> events) {
@@ -112,6 +119,25 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
         public AtomicLong resolveBy(String aggregateIdentifier) {
             return aggregateSequences.computeIfAbsent(aggregateIdentifier,
                                                       i -> new AtomicLong(consistencyMarker.positionOf(i)));
+        }
+    }
+
+    /**
+     * Transaction does nothing, always succeed. Useful if there is no events to be persisted.
+     *
+     * @param appendCondition will be returned as commit result
+     */
+    public record EmptyAppendTransaction(AppendCondition appendCondition)
+            implements AsyncEventStorageEngine.AppendTransaction {
+
+        @Override
+        public CompletableFuture<ConsistencyMarker> commit() {
+            return CompletableFuture.completedFuture(AggregateBasedConsistencyMarker.from(appendCondition));
+        }
+
+        @Override
+        public void rollback() {
+
         }
     }
 }
