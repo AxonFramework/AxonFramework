@@ -40,7 +40,6 @@ import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
-import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Message;
@@ -89,17 +88,13 @@ import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEve
 public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(LegacyJpaEventStorageEngine.class);
+    private static final String DOMAIN_EVENT_ENTRY_ENTITY_NAME = DomainEventEntry.class.getSimpleName();
 
     private final EntityManagerProvider entityManagerProvider;
     private final TransactionManager transactionManager;
     private final Serializer eventSerializer;
     private final EventUpcaster upcasterChain;
     private final PersistenceExceptionResolver persistenceExceptionResolver;
-
-    // todo: snapshots support
-    private final Serializer snapshotSerializer;
-    private final SnapshotFilter snapshotFilter;
-
     private final boolean explicitFlush;
 
     private final MessageNameResolver messageNameResolver; // todo: use while upcasting implementing MessageName
@@ -111,23 +106,20 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             @javax.annotation.Nonnull EntityManagerProvider entityManagerProvider,
             @javax.annotation.Nonnull TransactionManager transactionManager,
             @javax.annotation.Nonnull Serializer eventSerializer,
-            @javax.annotation.Nonnull Serializer snapshotSerializer,
             @javax.annotation.Nonnull UnaryOperator<Customization> configurationOverride
     ) {
         this.entityManagerProvider = entityManagerProvider;
         this.transactionManager = transactionManager;
         this.eventSerializer = eventSerializer;
-        this.snapshotSerializer = snapshotSerializer;
 
         var customization = configurationOverride.apply(Customization.withDefaultValues());
         this.upcasterChain = customization.upcasterChain();
-        this.snapshotFilter = customization.snapshotFilter();
         this.messageNameResolver = customization.messageNameResolver();
         this.explicitFlush = customization.explicitFlush();
 
         this.legacyJpaOperations = new LegacyJpaEventStorageOperations(transactionManager,
                                                                        entityManagerProvider.getEntityManager(),
-                                                                       domainEventEntryEntityName(),
+                                                                       DOMAIN_EVENT_ENTRY_ENTITY_NAME,
                                                                        SnapshotEventEntry.class.getSimpleName());
         this.tokenOperations = new GapAwareTrackingTokenOperations(
                 customization.tokenGapsHandling().timeout(),
@@ -168,12 +160,12 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
+                CompletableFuture<Void> txResult = new CompletableFuture<>();
                 if (txFinished.getAndSet(true)) {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
                 var aggregateSequencer = AggregateSequencer.with(beforeCommitConsistencyMarker);
 
-                CompletableFuture<Void> txResult = new CompletableFuture<>();
                 var tx = transactionManager.startTransaction();
                 try {
                     entityManagerPersistEvents(aggregateSequencer, events);
@@ -285,10 +277,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         );
     }
 
-    private String domainEventEntryEntityName() {
-        return DomainEventEntry.class.getSimpleName();
-    }
-
     @Override
     public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
         var trackingToken = tokenOperations.assertGapAwareTrackingToken(condition.position());
@@ -360,8 +348,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         descriptor.describeProperty("transactionManager", transactionManager);
         descriptor.describeProperty("eventSerializer", eventSerializer);
         descriptor.describeProperty("upcasterChain", upcasterChain);
-        descriptor.describeProperty("snapshotSerializer", snapshotSerializer);
-        descriptor.describeProperty("snapshotFilter", snapshotFilter);
         descriptor.describeProperty("explicitFlush", explicitFlush);
         descriptor.describeProperty("persistenceExceptionResolver", persistenceExceptionResolver);
         descriptor.describeProperty("messageNameResolver", messageNameResolver);
@@ -509,7 +495,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     public record Customization(
             EventUpcaster upcasterChain,
             PersistenceExceptionResolver persistenceExceptionResolver,
-            SnapshotFilter snapshotFilter,
             int batchSize,
             Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate,
             MessageNameResolver messageNameResolver,
@@ -524,7 +509,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
         public Customization {
             assertNonNull(upcasterChain, "EventUpcaster may not be null");
-            assertNonNull(snapshotFilter, "The snapshotFilter may not be null");
             assertThat(batchSize, size -> size > 0, "The batchSize must be a positive number");
             assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
             assertThat(lowestGlobalSequence,
@@ -555,7 +539,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             return new Customization(
                     NoOpEventUpcaster.INSTANCE,
                     null,
-                    SnapshotFilter.allowAll(),
                     DEFAULT_BATCH_SIZE,
                     null,
                     new ClassBasedMessageNameResolver(),
@@ -568,7 +551,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         public Customization upcasterChain(EventUpcaster upcasterChain) {
             return new Customization(upcasterChain,
                                      persistenceExceptionResolver,
-                                     snapshotFilter,
                                      batchSize,
                                      finalAggregateBatchPredicate,
                                      messageNameResolver,
@@ -581,20 +563,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         public Customization persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
             return new Customization(upcasterChain,
                                      persistenceExceptionResolver,
-                                     snapshotFilter,
-                                     batchSize,
-                                     finalAggregateBatchPredicate,
-                                     messageNameResolver,
-                                     explicitFlush,
-                                     lowestGlobalSequence,
-                                     tokenGapsHandling
-            );
-        }
-
-        public Customization snapshotFilter(SnapshotFilter snapshotFilter) {
-            return new Customization(upcasterChain,
-                                     persistenceExceptionResolver,
-                                     snapshotFilter,
                                      batchSize,
                                      finalAggregateBatchPredicate,
                                      messageNameResolver,
@@ -607,7 +575,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         public Customization batchSize(int batchSize) {
             return new Customization(upcasterChain,
                                      persistenceExceptionResolver,
-                                     snapshotFilter,
                                      batchSize,
                                      finalAggregateBatchPredicate,
                                      messageNameResolver,
@@ -621,7 +588,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate) {
             return new Customization(upcasterChain,
                                      persistenceExceptionResolver,
-                                     snapshotFilter,
                                      batchSize,
                                      finalAggregateBatchPredicate,
                                      messageNameResolver,
@@ -634,7 +600,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         public Customization messageNameResolver(MessageNameResolver messageNameResolver) {
             return new Customization(upcasterChain,
                                      persistenceExceptionResolver,
-                                     snapshotFilter,
                                      batchSize,
                                      finalAggregateBatchPredicate,
                                      messageNameResolver,
@@ -647,7 +612,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         public Customization lowestGlobalSequence(long lowestGlobalSequence) {
             return new Customization(upcasterChain,
                                      persistenceExceptionResolver,
-                                     snapshotFilter,
                                      batchSize,
                                      finalAggregateBatchPredicate,
                                      messageNameResolver,
@@ -660,7 +624,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         public Customization tokenGapsHandling(UnaryOperator<TokenGapsHandlingConfig> configurationOverride) {
             return new Customization(upcasterChain,
                                      persistenceExceptionResolver,
-                                     snapshotFilter,
                                      batchSize,
                                      finalAggregateBatchPredicate,
                                      messageNameResolver,
@@ -673,7 +636,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         public Customization explicitFlush(boolean explicitFlush) {
             return new Customization(upcasterChain,
                                      persistenceExceptionResolver,
-                                     snapshotFilter,
                                      batchSize,
                                      finalAggregateBatchPredicate,
                                      messageNameResolver,

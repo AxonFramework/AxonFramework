@@ -31,6 +31,7 @@ import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
 
 import java.util.*;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -191,20 +192,6 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                     .expectNextMatches(entryWithAggregateEvent("event-0", 0))
                     .verifyComplete();
     }
-
-    @Test
-    void appendEmptyEventsListShouldSucceed() {
-        // given
-        AppendCondition appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
-
-        // when
-        var commit = testSubject.appendEvents(appendCondition, Collections.emptyList())
-                                .thenCompose(AppendTransaction::commit);
-
-        // then
-        assertDoesNotThrow(commit::join);
-    }
-
 
     @Test
     void sourcingEventsReturnsMatchingAggregateEvents() {
@@ -411,6 +398,27 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
 
         assertTrue(validConsistencyMarker(firstCommit.join(), TEST_AGGREGATE_ID, 0));
         assertTrue(validConsistencyMarker(secondCommit.join(), OTHER_AGGREGATE_ID, 0));
+    }
+
+    @Test
+    void transactionCanBeCommitedOnlyOnce() {
+        var tx =
+                testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                         taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags())).join();
+
+        assertDoesNotThrow(() -> tx.commit().get(1, TimeUnit.SECONDS));
+        var thrown = assertThrows(ExecutionException.class, () -> tx.commit().get(1, TimeUnit.SECONDS));
+        assertInstanceOf(IllegalStateException.class, thrown.getCause());
+    }
+
+    @Test
+    void emptyTransactionAlwaysCommitSuccessfully() {
+        var appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
+
+        var commit = testSubject.appendEvents(appendCondition, Collections.emptyList())
+                                .thenCompose(AppendTransaction::commit);
+
+        assertDoesNotThrow(commit::join);
     }
 
     @Test
