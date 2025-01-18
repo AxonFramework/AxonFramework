@@ -34,7 +34,6 @@ import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
-import org.mockito.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -71,9 +70,7 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
         return new LegacyJpaEventStorageEngine(entityManagerProvider,
                                                new SpringTransactionManager(platformTransactionManager),
                                                TEST_SERIALIZER,
-                                               config -> config
-                                                       .explicitFlush(true)
-                                                       .persistenceExceptionResolver(new JdbcSQLErrorCodesResolver()));
+                                               config -> config.persistenceExceptionResolver(new JdbcSQLErrorCodesResolver()));
     }
 
     @Override
