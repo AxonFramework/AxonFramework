@@ -71,7 +71,6 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
         return new LegacyJpaEventStorageEngine(entityManagerProvider,
                                                new SpringTransactionManager(platformTransactionManager),
                                                TEST_SERIALIZER,
-                                               TEST_SERIALIZER,
                                                config -> config
                                                        .explicitFlush(true)
                                                        .persistenceExceptionResolver(new JdbcSQLErrorCodesResolver()));
