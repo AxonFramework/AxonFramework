@@ -25,8 +25,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.QualifiedName;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
 
@@ -34,11 +33,14 @@ import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,6 +54,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEventStorageEngine> {
 
     private static final String TEST_AGGREGATE_TYPE = "TEST_AGGREGATE";
+    private static ExecutorService executor;
+
     protected String TEST_AGGREGATE_ID;
     protected String OTHER_AGGREGATE_ID;
     protected EventCriteria TEST_AGGREGATE_CRITERIA;
@@ -68,6 +72,16 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         OTHER_AGGREGATE_CRITERIA = EventCriteria.forAnyEventType().withTags("OTHER_AGGREGATE", OTHER_AGGREGATE_ID);
 
         testSubject = buildStorageEngine();
+    }
+
+    @BeforeAll
+    static void beforeAll() {
+        executor = Executors.newVirtualThreadPerTaskExecutor();
+    }
+
+    @AfterAll
+    static void afterAll() {
+        executor.close();
     }
 
     /**
@@ -351,30 +365,38 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
 
         CompletableFuture<ConsistencyMarker> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
-        var actual = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
-        assertInstanceOf(AppendEventsTransactionRejectedException.class, actual.getCause());
+        var thrown = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
+        assertInstanceOf(AppendEventsTransactionRejectedException.class, thrown.getCause());
     }
 
     @Test
-    void transactionRejectedWhenConcurrentlyCreatedTransactionIsCommittedFirstThreads() {
-        var executor = Executors.newVirtualThreadPerTaskExecutor(); // todo: move it to before/after each
-        var firstTx = CompletableFuture.supplyAsync(() -> testSubject.appendEvents(AppendCondition.withCriteria(
-                                                                                           TEST_AGGREGATE_CRITERIA),
-                                                                                   taggedEventMessage("event-10",
-                                                                                                      TEST_AGGREGATE_CRITERIA.tags()))
-                                                                     .join(), executor);
-        var secondTx = CompletableFuture.runAsync(() -> {
-        }, executor).thenCompose(r -> testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                                               taggedEventMessage("event-11",
-                                                                                  TEST_AGGREGATE_CRITERIA.tags())));
+    void transactionRejectedWhenRunConcurrentlyOnDifferentThreadCreatedTransactionIsCommittedFirst() {
+        var firstTx = runAsync(() ->
+                                       testSubject.appendEvents(
+                                               AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                               taggedEventMessage("event-10", TEST_AGGREGATE_CRITERIA.tags())
+                                       )
+        );
+        var secondTx = runAsync(() ->
+                                        testSubject.appendEvents(
+                                                AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                                taggedEventMessage("event-11",
+                                                                   TEST_AGGREGATE_CRITERIA.tags())
+                                        )
+        );
 
-        CompletableFuture<ConsistencyMarker> firstCommit = firstTx.thenCompose(AppendTransaction::commit);
-        assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
+        var firstCommit = firstTx.thenCompose(AppendTransaction::commit);
+        var secondCommit = secondTx.thenCompose(AppendTransaction::commit);
 
-        CompletableFuture<ConsistencyMarker> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
-        var actual = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
-        assertInstanceOf(AppendEventsTransactionRejectedException.class, actual.getCause());
-        executor.close();
+        var result = CompletableFuture.allOf(firstCommit, secondCommit);
+        assertFalse(result.isDone());
+        assertFalse(result.isCompletedExceptionally());
+        var thrown = assertThrows(Exception.class, result::join);
+        assertInstanceOf(AppendEventsTransactionRejectedException.class, thrown.getCause());
+    }
+
+    <T> CompletableFuture<T> runAsync(Supplier<CompletableFuture<T>> task) {
+        return CompletableFuture.supplyAsync(() -> task.get().join(), executor);
     }
 
     @Test
