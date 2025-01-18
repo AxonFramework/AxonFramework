@@ -155,6 +155,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }
+
         if (events.isEmpty()) {
             return CompletableFuture.completedFuture(new EmptyAppendTransaction(condition));
         }
@@ -367,19 +368,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         descriptor.describeProperty("legacyJpaOperations", legacyJpaOperations);
         descriptor.describeProperty("tokenOperations", tokenOperations);
         descriptor.describeProperty("batchingOperations", batchingOperations);
-    }
-
-    private record EmptyAppendTransaction(AppendCondition appendCondition) implements AppendTransaction {
-
-        @Override
-        public CompletableFuture<ConsistencyMarker> commit() {
-            return CompletableFuture.completedFuture(AggregateBasedConsistencyMarker.from(appendCondition));
-        }
-
-        @Override
-        public void rollback() {
-
-        }
     }
 
     private record BatchingEventStorageOperations(TransactionManager transactionManager,
