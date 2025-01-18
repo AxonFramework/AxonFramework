@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing.eventstore.jpa;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
@@ -33,26 +32,20 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
-import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils;
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
-import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
-import org.axonframework.eventsourcing.eventstore.TooManyTagsOnEventMessageException;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageNameResolver;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.modelling.command.AggregateStreamCreationException;
-import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
@@ -61,17 +54,13 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.Spliterators;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -80,7 +69,6 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.*;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventhandling.EventUtils.upcastAndDeserializeTrackedEvents;
@@ -106,6 +94,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     private final TransactionManager transactionManager;
     private final Serializer eventSerializer;
     private final EventUpcaster upcasterChain;
+    private final PersistenceExceptionResolver persistenceExceptionResolver;
 
     // todo: snapshots support
     private final Serializer snapshotSerializer;
@@ -113,7 +102,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     private final boolean explicitFlush;
 
-    private final PersistenceExceptionMapper persistenceExceptionMapper;
     private final MessageNameResolver messageNameResolver; // todo: use while upcasting implementing MessageName
     private final LegacyJpaEventStorageOperations legacyJpaOperations;
     private final BatchingEventStorageOperations batchingOperations;
@@ -156,7 +144,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 customization.lowestGlobalSequence(),
                 customization.tokenGapsHandling().maxOffset()
         );
-        this.persistenceExceptionMapper = new PersistenceExceptionMapper(customization.persistenceExceptionResolver());
+        this.persistenceExceptionResolver = customization.persistenceExceptionResolver();
     }
 
     @Override
@@ -174,26 +162,42 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         return CompletableFuture.completedFuture(new AppendTransaction() {
 
             private final AtomicBoolean txFinished = new AtomicBoolean(false);
+            private final AggregateBasedConsistencyMarker beforeCommitConsistencyMarker = AggregateBasedConsistencyMarker.from(
+                    condition);
 
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
                 if (txFinished.getAndSet(true)) {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
-                var beforeCommitConsistencyMarker = AggregateBasedConsistencyMarker.from(condition);
                 var aggregateSequencer = AggregateSequencer.with(beforeCommitConsistencyMarker);
 
-                var txResult = transactional(() -> {
+                CompletableFuture<Void> txResult = new CompletableFuture<>();
+                var tx = transactionManager.startTransaction();
+                try {
                     entityManagerPersistEvents(aggregateSequencer, events);
                     if (explicitFlush) {
                         entityManagerProvider.getEntityManager().flush();
                     }
-                });
+                    tx.commit();
+                    txResult.complete(null);
+                } catch (Exception e) {
+                    tx.rollback();
+                    txResult.completeExceptionally(e);
+                }
 
+                var afterCommitConsistencyMarker = aggregateSequencer.forwarded();
                 return txResult
-                        .exceptionallyCompose(e -> CompletableFuture.failedFuture(
-                                appendEventsTransactionRejectedExceptionFrom(e, condition, events))
-                        ).thenApply(r -> aggregateSequencer.forwarded());
+                        .exceptionallyCompose(e -> CompletableFuture.failedFuture(translateConflictException(e)))
+                        .thenApply(r -> afterCommitConsistencyMarker);
+            }
+
+            private Throwable translateConflictException(Throwable e) {
+                Predicate<Throwable> isConflictException = (t) -> persistenceExceptionResolver != null
+                        && t instanceof Exception ex
+                        && persistenceExceptionResolver.isDuplicateKeyViolation(ex);
+                return LegacyAggregateBasedEventStorageEngineUtils
+                        .translateConflictException(beforeCommitConsistencyMarker, e, isConflictException);
             }
 
             @Override
@@ -201,32 +205,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 txFinished.set(true);
             }
         });
-    }
-
-    private CompletableFuture<Void> transactional(Runnable inTransaction) {
-        CompletableFuture<Void> txResult = new CompletableFuture<>();
-        var tx = transactionManager.startTransaction();
-        try {
-            inTransaction.run();
-            tx.commit();
-            txResult.complete(null);
-        } catch (Exception e) {
-            tx.rollback();
-            txResult.completeExceptionally(e);
-        }
-        return txResult;
-    }
-
-    // todo: describe changed behavior (legacy throws legacyPersistenceException), compare with LegacyAxonServerEventStorageEngine
-    private AppendEventsTransactionRejectedException appendEventsTransactionRejectedExceptionFrom(Throwable suppressed,
-                                                                                                  AppendCondition appendCondition,
-                                                                                                  List<TaggedEventMessage<?>> events) {
-        var consistencyMarker = AggregateBasedConsistencyMarker.from(appendCondition);
-        var appendException = AppendEventsTransactionRejectedException.conflictingEventsDetected(consistencyMarker);
-        var legacyPersistenceException = persistenceExceptionMapper.mapPersistenceException(suppressed,
-                                                                                            events.getFirst().event());
-        appendException.addSuppressed(legacyPersistenceException);
-        return appendException;
     }
 
     private void entityManagerPersistEvents(
@@ -377,7 +355,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         descriptor.describeProperty("snapshotSerializer", snapshotSerializer);
         descriptor.describeProperty("snapshotFilter", snapshotFilter);
         descriptor.describeProperty("explicitFlush", explicitFlush);
-        descriptor.describeProperty("persistenceExceptionMapper", persistenceExceptionMapper);
+        descriptor.describeProperty("persistenceExceptionResolver", persistenceExceptionResolver);
         descriptor.describeProperty("messageNameResolver", messageNameResolver);
         descriptor.describeProperty("legacyJpaOperations", legacyJpaOperations);
         descriptor.describeProperty("tokenOperations", tokenOperations);
@@ -394,60 +372,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         @Override
         public void rollback() {
 
-        }
-    }
-
-    private record PersistenceExceptionMapper(PersistenceExceptionResolver persistenceExceptionResolver) {
-
-        Throwable mapPersistenceException(Throwable throwable, EventMessage<?> failedEvent) {
-            if (throwable instanceof Exception exception) {
-                String eventDescription = buildExceptionMessage(failedEvent);
-                if (persistenceExceptionResolver != null
-                        && persistenceExceptionResolver.isDuplicateKeyViolation(exception)) {
-                    if (isFirstDomainEvent(failedEvent)) {
-                        return new AggregateStreamCreationException(eventDescription, exception);
-                    }
-                    return new ConcurrencyException(eventDescription, exception);
-                } else {
-                    return new EventStoreException(eventDescription, exception);
-                }
-            }
-            return throwable;
-        }
-
-        /**
-         * Build an exception message based on an EventMessage.
-         *
-         * @param failedEvent the event to be used for the exception message
-         * @return the created exception message
-         */
-        private String buildExceptionMessage(EventMessage<?> failedEvent) {
-            String eventDescription = format("An event with identifier [%s] could not be persisted",
-                                             failedEvent.getIdentifier());
-            if (isFirstDomainEvent(failedEvent)) {
-                DomainEventMessage<?> failedDomainEvent = (DomainEventMessage<?>) failedEvent;
-                eventDescription = format(
-                        "Cannot reuse aggregate identifier [%s] to create aggregate [%s] since identifiers need to be unique.",
-                        failedDomainEvent.getAggregateIdentifier(),
-                        failedDomainEvent.getType());
-            } else if (failedEvent instanceof DomainEventMessage<?> failedDomainEvent) {
-                eventDescription = format("An event for aggregate [%s] at sequence [%d] was already inserted",
-                                          failedDomainEvent.getAggregateIdentifier(),
-                                          failedDomainEvent.getSequenceNumber());
-            }
-            return eventDescription;
-        }
-
-        /**
-         * Check whether or not this is the first event, which means we tried to create an aggregate through the given
-         * {@code failedEvent}.
-         *
-         * @param failedEvent the event to be checked
-         * @return true in case of first event, false otherwise
-         */
-        private boolean isFirstDomainEvent(EventMessage<?> failedEvent) {
-            return failedEvent instanceof DomainEventMessage<?> domainEvent
-                    && domainEvent.getSequenceNumber() == 0L;
         }
     }
 
