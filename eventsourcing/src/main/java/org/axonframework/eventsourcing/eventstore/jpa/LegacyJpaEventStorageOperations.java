@@ -38,12 +38,8 @@ import javax.annotation.Nonnull;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 
 /**
- * Contains operations that are used to interact with the legacy JPA event storage database structure.
+ * Contains operations that are used to interact with the Aggregate based JPA event storage database structure.
  *
- * @param transactionManager
- * @param entityManager
- * @param domainEventEntryEntityName
- * @param snapshotEventEntryEntityName
  * @author Mateusz Nowak
  * @since 5.0.0
  */
@@ -54,14 +50,6 @@ record LegacyJpaEventStorageOperations(
         String snapshotEventEntryEntityName
 ) {
 
-    /**
-     * Returns a batch of event data as object entries in the event storage with a greater than the given
-     * {@code token}.
-     *
-     * @param token     Object describing the global index of the last processed event.
-     * @param batchSize Size of event list is decided by that.
-     * @return A batch of event messages as object stored since the given tracking token.
-     */
     List<Object[]> fetchEvents(GapAwareTrackingToken token, int batchSize) {
         TypedQuery<Object[]> query;
         if (token == null || token.getGaps().isEmpty()) {
@@ -178,7 +166,6 @@ record LegacyJpaEventStorageOperations(
                 .getResultList();
     }
 
-    //todo: check return type!
     @SuppressWarnings("unchecked")
     List<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
         return entityManager
