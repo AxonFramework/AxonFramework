@@ -20,9 +20,11 @@ import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
+import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.serialization.Converter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
@@ -30,6 +32,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
 class LegacyAxonServerEventStorageEngineTest extends
@@ -54,6 +59,15 @@ class LegacyAxonServerEventStorageEngineTest extends
     static void afterAll() {
         connection.disconnect();
         axonServerContainer.stop();
+    }
+
+    @Test
+    void sourcingFromNonGlobalSequenceTrackingTokenShouldThrowException() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> testSubject.stream(StreamingCondition.startingFrom(new GapAwareTrackingToken(5,
+                                                                                                   Collections.emptySet())))
+        );
     }
 
     @Override
