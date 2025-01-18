@@ -18,12 +18,10 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import jakarta.persistence.EntityManager;
 import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
-import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -40,6 +38,7 @@ import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils;
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
@@ -86,6 +85,8 @@ import static org.axonframework.common.BuilderUtils.*;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventhandling.EventUtils.upcastAndDeserializeTrackedEvents;
 import static org.axonframework.eventsourcing.EventStreamUtils.upcastAndDeserializeDomainEvents;
+import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils.*;
+import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils.resolveAggregateIdentifier;
 
 
 /**
@@ -172,41 +173,48 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
         return CompletableFuture.completedFuture(new AppendTransaction() {
 
-            private final AtomicBoolean finished = new AtomicBoolean(false);
+            private final AtomicBoolean txFinished = new AtomicBoolean(false);
 
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
-                if (finished.getAndSet(true)) {
+                if (txFinished.getAndSet(true)) {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
                 var beforeCommitConsistencyMarker = AggregateBasedConsistencyMarker.from(condition);
                 var aggregateSequencer = AggregateSequencer.with(beforeCommitConsistencyMarker);
 
-                CompletableFuture<Void> txResult = new CompletableFuture<>();
-                var tx = transactionManager.startTransaction(); //todo: use executeInTransaction
-                try {
+                var txResult = transactional(() -> {
                     entityManagerPersistEvents(aggregateSequencer, events);
                     if (explicitFlush) {
                         entityManagerProvider.getEntityManager().flush();
                     }
-                    tx.commit();
-                    txResult.complete(null);
-                } catch (Exception e) {
-                    tx.rollback();
-                    txResult.completeExceptionally(e);
-                }
+                });
 
-                var afterCommitConsistencyMarker = aggregateSequencer.forwarded();
-                return txResult.exceptionallyCompose(e -> CompletableFuture.failedFuture(
-                                     appendEventsTransactionRejectedExceptionFrom(e, condition, events)))
-                               .thenApply(r -> afterCommitConsistencyMarker);
+                return txResult
+                        .exceptionallyCompose(e -> CompletableFuture.failedFuture(
+                                appendEventsTransactionRejectedExceptionFrom(e, condition, events))
+                        ).thenApply(r -> aggregateSequencer.forwarded());
             }
 
             @Override
             public void rollback() {
-                finished.set(true);
+                txFinished.set(true);
             }
         });
+    }
+
+    private CompletableFuture<Void> transactional(Runnable inTransaction) {
+        CompletableFuture<Void> txResult = new CompletableFuture<>();
+        var tx = transactionManager.startTransaction();
+        try {
+            inTransaction.run();
+            tx.commit();
+            txResult.complete(null);
+        } catch (Exception e) {
+            tx.rollback();
+            txResult.completeExceptionally(e);
+        }
+        return txResult;
     }
 
     // todo: describe changed behavior (legacy throws legacyPersistenceException), compare with LegacyAxonServerEventStorageEngine
@@ -230,17 +238,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
               .map(taggedEvent -> toDomainEventMessage(taggedEvent, aggregateSequencer))
               .map(domainEventMessage -> new DomainEventEntry(domainEventMessage, eventSerializer))
               .forEach(entityManager::persist);
-    }
-
-    private void assertValidTags(List<TaggedEventMessage<?>> events) {
-        for (TaggedEventMessage<?> taggedEvent : events) {
-            if (taggedEvent.tags().size() > 1) {
-                throw new TooManyTagsOnEventMessageException(
-                        "An Event Storage engine in Aggregate mode does not support multiple tags per event",
-                        taggedEvent.event(),
-                        taggedEvent.tags());
-            }
-        }
     }
 
     private static DomainEventMessage<?> toDomainEventMessage(
@@ -271,30 +268,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                                    0L,
                                                    event,
                                                    event::getTimestamp);
-        }
-    }
-
-    // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
-    @Nullable
-    private static String resolveAggregateIdentifier(Set<Tag> tags) {
-        if (tags.isEmpty()) {
-            return null;
-        } else if (tags.size() > 1) {
-            throw new IllegalArgumentException("Condition must provide exactly one tag");
-        } else {
-            return tags.iterator().next().value();
-        }
-    }
-
-    // todo: move it for some base class, copied from LegacyAxonServerEventStorageEngine
-    @Nullable
-    private static String resolveAggregateType(Set<Tag> tags) {
-        if (tags.isEmpty()) {
-            return null;
-        } else if (tags.size() > 1) {
-            throw new IllegalArgumentException("Condition must provide exactly one tag");
-        } else {
-            return tags.iterator().next().key();
         }
     }
 
@@ -421,37 +394,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         @Override
         public void rollback() {
 
-        }
-    }
-
-    static final class AggregateSequencer {
-
-        private final Map<String, AtomicLong> aggregateSequences;
-        private AggregateBasedConsistencyMarker consistencyMarker;
-
-        AggregateSequencer(Map<String, AtomicLong> aggregateSequences,
-                           AggregateBasedConsistencyMarker consistencyMarker) {
-            this.aggregateSequences = aggregateSequences;
-            this.consistencyMarker = consistencyMarker;
-        }
-
-        public static AggregateSequencer with(AggregateBasedConsistencyMarker consistencyMarker) {
-            return new AggregateSequencer(new HashMap<>(), consistencyMarker);
-        }
-
-        AggregateBasedConsistencyMarker forwarded() {
-            var newConsistencyMarker = consistencyMarker;
-            for (var aggSeq : aggregateSequences.entrySet()) {
-                newConsistencyMarker = newConsistencyMarker
-                        .forwarded(aggSeq.getKey(), aggSeq.getValue().get());
-            }
-            consistencyMarker = newConsistencyMarker;
-            return newConsistencyMarker;
-        }
-
-        private AtomicLong resolveBy(String aggregateIdentifier) {
-            return aggregateSequences.computeIfAbsent(aggregateIdentifier,
-                                                      i -> new AtomicLong(consistencyMarker.positionOf(i)));
         }
     }
 

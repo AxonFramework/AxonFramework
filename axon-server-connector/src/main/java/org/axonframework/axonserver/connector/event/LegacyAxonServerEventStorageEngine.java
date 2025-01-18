@@ -61,6 +61,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
+import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils.*;
 
 /**
  * Event Storage Engine implementation that uses the aggregate-oriented APIs of Axon Server, allowing it to interact
@@ -85,28 +86,6 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
                                               @Nonnull Converter payloadConverter) {
         this.connection = connection;
         this.payloadConverter = payloadConverter;
-    }
-
-    @Nullable
-    private static String resolveAggregateIdentifier(Set<Tag> tags) {
-        if (tags.isEmpty()) {
-            return null;
-        } else if (tags.size() > 1) {
-            throw new IllegalArgumentException("Condition must provide exactly one tag");
-        } else {
-            return tags.iterator().next().value();
-        }
-    }
-
-    @Nullable
-    private static String resolveAggregateType(Set<Tag> tags) {
-        if (tags.isEmpty()) {
-            return null;
-        } else if (tags.size() > 1) {
-            throw new IllegalArgumentException("Condition must provide exactly one tag");
-        } else {
-            return tags.iterator().next().key();
-        }
     }
 
     @Override
@@ -191,15 +170,6 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
                                                AggregateBasedConsistencyMarker consistencyMarker) {
         return aggregateSequences.computeIfAbsent(aggregateIdentifier,
                                                   i -> new AtomicLong(consistencyMarker.positionOf(i)));
-    }
-
-    private void assertValidTags(List<TaggedEventMessage<?>> events) {
-        for (TaggedEventMessage<?> taggedEvent : events) {
-            if (taggedEvent.tags().size() > 1) {
-                throw new TooManyTagsOnEventMessageException(
-                        "An Event Storage engine in Aggregate mode does not support multiple tags per event", taggedEvent.event(), taggedEvent.tags());
-            }
-        }
     }
 
     private void buildMetaData(MetaData metaData, Map<String, MetaDataValue> metaDataMap) {
