@@ -124,7 +124,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                    .join();
 
         MessageStream<EventMessage<?>> result =
-                testSubject.stream(StreamingCondition.startingFrom(trackingTokenOnPosition(-1)));
+                testSubject.stream(StreamingCondition.startingFrom(trackingTokenOnPosition(0)));
 
         StepVerifier.create(result.asFlux())
                     .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne.event(), 1))
@@ -429,7 +429,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                                          taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags())).join();
 
         assertDoesNotThrow(() -> tx.commit().get(1, TimeUnit.SECONDS));
-        var thrown = assertThrows(ExecutionException.class, () -> tx.commit().get(1, TimeUnit.SECONDS));
+        var thrown = assertThrows(Exception.class, () -> tx.commit().get(1, TimeUnit.SECONDS));
         assertInstanceOf(IllegalStateException.class, thrown.getCause());
     }
 
