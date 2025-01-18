@@ -29,7 +29,7 @@ import java.util.function.Predicate;
 import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
 
 /**
- * // todo: describe
+ * Utility class for handling various operations related to the Legacy Aggregate-based Event Storage Engine.
  *
  * @author Mateusz Nowak
  * @author Allard Buijze
@@ -37,6 +37,13 @@ import static org.axonframework.eventsourcing.eventstore.AppendEventsTransaction
  */
 public class LegacyAggregateBasedEventStorageEngineUtils {
 
+    /**
+     * Validates the tags associated with a list of event messages. Ensures that no event has more than one tag, as the
+     * Event Storage engine in Aggregate mode only supports a single tag per event.
+     *
+     * @param events the list of tagged event messages to validate
+     * @throws TooManyTagsOnEventMessageException if any event has more than one tag
+     */
     public static void assertValidTags(List<TaggedEventMessage<?>> events) {
         for (TaggedEventMessage<?> taggedEvent : events) {
             if (taggedEvent.tags().size() > 1) {
@@ -48,6 +55,14 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
         }
     }
 
+    /**
+     * Resolves the aggregate identifier from the provided set of tags.
+     * The set must contain exactly one tag, and its value will be returned as the aggregate identifier.
+     *
+     * @param tags the set of tags to resolve the aggregate identifier from
+     * @return the aggregate identifier, or {@code null} if the set is empty
+     * @throws IllegalArgumentException if the set contains more than one tag
+     */
     @Nullable
     public static String resolveAggregateIdentifier(Set<Tag> tags) {
         if (tags.isEmpty()) {
@@ -59,6 +74,14 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
         }
     }
 
+    /**
+     * Resolves the aggregate type from the provided set of tags.
+     * The set must contain exactly one tag, and its key will be returned as the aggregate type.
+     *
+     * @param tags the set of tags to resolve the aggregate type from
+     * @return the aggregate type, or {@code null} if the set is empty
+     * @throws IllegalArgumentException if the set contains more than one tag
+     */
     @Nullable
     public static String resolveAggregateType(Set<Tag> tags) {
         if (tags.isEmpty()) {
@@ -70,6 +93,16 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
         }
     }
 
+    /**
+     * Translates a conflict exception into an {@link AppendEventsTransactionRejectedException}
+     * if the provided exception is identified as a conflict.
+     * If the exception is not a conflict, it recursively checks the cause of the exception.
+     *
+     * @param consistencyMarker the consistency marker used to identify conflicting events
+     * @param e the exception to translate
+     * @param isConflictException a predicate used to check if the exception is a conflict
+     * @return the translated exception
+     */
     public static Throwable translateConflictException(
             ConsistencyMarker consistencyMarker,
             Throwable e,
@@ -91,21 +124,42 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
         return e;
     }
 
+    /**
+     * Helper class that tracks the sequence of events for different aggregates and
+     * manages the consistency marker for the aggregates.
+     */
     public static final class AggregateSequencer {
 
         private final Map<String, AtomicLong> aggregateSequences;
         private AggregateBasedConsistencyMarker consistencyMarker;
 
-        AggregateSequencer(Map<String, AtomicLong> aggregateSequences,
-                           AggregateBasedConsistencyMarker consistencyMarker) {
+        /**
+         * Constructs a new {@code AggregateSequencer} with the specified aggregate sequences and consistency marker.
+         *
+         * @param aggregateSequences a map of aggregate identifiers to atomic sequences
+         * @param consistencyMarker  the consistency marker for this sequencer
+         */
+        private AggregateSequencer(Map<String, AtomicLong> aggregateSequences,
+                                   AggregateBasedConsistencyMarker consistencyMarker) {
             this.aggregateSequences = aggregateSequences;
             this.consistencyMarker = consistencyMarker;
         }
 
+        /**
+         * Creates a new {@code AggregateSequencer} with the provided consistency marker.
+         *
+         * @param consistencyMarker the consistency marker for the new sequencer
+         * @return a new {@code AggregateSequencer}
+         */
         public static AggregateSequencer with(AggregateBasedConsistencyMarker consistencyMarker) {
             return new AggregateSequencer(new HashMap<>(), consistencyMarker);
         }
 
+        /**
+         * Advances the consistency marker by resolving and forwarding the state of aggregate sequences.
+         *
+         * @return the new consistency marker after forwarding
+         */
         public AggregateBasedConsistencyMarker forwarded() {
             var newConsistencyMarker = consistencyMarker;
             for (var aggSeq : aggregateSequences.entrySet()) {
@@ -116,6 +170,13 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
             return newConsistencyMarker;
         }
 
+        /**
+         * Resolves the sequence for the given aggregate identifier. If the aggregate does not exist, it is initialized
+         * with the consistency marker's position for that identifier.
+         *
+         * @param aggregateIdentifier the identifier of the aggregate to resolve the sequence for
+         * @return the atomic long sequence for the aggregate
+         */
         public AtomicLong resolveBy(String aggregateIdentifier) {
             return aggregateSequences.computeIfAbsent(aggregateIdentifier,
                                                       i -> new AtomicLong(consistencyMarker.positionOf(i)));
@@ -123,21 +184,30 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
     }
 
     /**
-     * Transaction does nothing, always succeed. Useful if there is no events to be persisted.
+     * Represents an empty append transaction. This transaction does nothing and always succeeds.
+     * It is used when there are no events to persist.
      *
      * @param appendCondition will be returned as commit result
      */
     public record EmptyAppendTransaction(AppendCondition appendCondition)
             implements AsyncEventStorageEngine.AppendTransaction {
 
+        /**
+         * Commits the empty append transaction. Always completes successfully with the provided consistency marker.
+         *
+         * @return a completed future with the consistency marker
+         */
         @Override
         public CompletableFuture<ConsistencyMarker> commit() {
             return CompletableFuture.completedFuture(AggregateBasedConsistencyMarker.from(appendCondition));
         }
 
+        /**
+         * Rolls back the empty append transaction. This does nothing as the transaction has no effect.
+         */
         @Override
         public void rollback() {
-
+            // No action needed
         }
     }
 }
