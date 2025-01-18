@@ -251,30 +251,35 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
-        MessageStream<EventMessage<?>> resultingStream = MessageStream.empty();
-        for (EventCriteria criterion : condition.criteria()) {
-            var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
-            var events = batchingOperations.readEventData(
-                    aggregateIdentifier,
-                    condition.start(),
-                    condition.end()
-            );
-            var deserialized = upcastAndDeserializeDomainEvents(events, eventSerializer, upcasterChain);
+        var allCriteriaStream = condition
+                .criteria()
+                .stream()
+                .map(criteria -> this.eventsForCriteria(condition, criteria))
+                .reduce(MessageStream.empty(), MessageStream::concatWith);
 
-            MessageStream<EventMessage<?>> aggregateEvents = MessageStream.fromStream(
-                    deserialized.asStream(),
-                    e -> e,
-                    LegacyJpaEventStorageEngine::fillContextWith
-            );
-            resultingStream = resultingStream.concatWith(aggregateEvents);
-        }
-        AtomicReference<ConsistencyMarker> consistencyMarker = new AtomicReference<>();
-        return resultingStream.map(e -> {
-            ConsistencyMarker newMarker = consistencyMarker.accumulateAndGet(e.getResource(ConsistencyMarker.RESOURCE_KEY),
-                                                                             (m1, m2) -> m1
-                                                                                     == null ? m2 : m1.upperBound(m2));
+        var consistencyMarker = new AtomicReference<ConsistencyMarker>();
+        return allCriteriaStream.map(e -> {
+            var newMarker = consistencyMarker
+                    .accumulateAndGet(e.getResource(ConsistencyMarker.RESOURCE_KEY),
+                                      (m1, m2) -> m1 == null ? m2 : m1.upperBound(m2));
             return e.withResource(ConsistencyMarker.RESOURCE_KEY, newMarker);
         });
+    }
+
+    private MessageStream<EventMessage<?>> eventsForCriteria(SourcingCondition condition,
+                                                             EventCriteria criterion) {
+        var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
+        var events = batchingOperations.readEventData(
+                aggregateIdentifier,
+                condition.start(),
+                condition.end()
+        );
+        var deserialized = upcastAndDeserializeDomainEvents(events, eventSerializer, upcasterChain);
+        return MessageStream.fromStream(
+                deserialized.asStream(),
+                e -> e,
+                LegacyJpaEventStorageEngine::fillContextWith
+        );
     }
 
     private String domainEventEntryEntityName() {
