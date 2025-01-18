@@ -193,6 +193,20 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
     }
 
     @Test
+    void appendEmptyEventsListShouldSucceed() {
+        // given
+        AppendCondition appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
+
+        // when
+        var commit = testSubject.appendEvents(appendCondition, Collections.emptyList())
+                                .thenCompose(AppendTransaction::commit);
+
+        // then
+        assertDoesNotThrow(commit::join);
+    }
+
+
+    @Test
     void sourcingEventsReturnsMatchingAggregateEvents() {
         AppendCondition appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
         AppendCondition appendCondition2 = AppendCondition.withCriteria(OTHER_AGGREGATE_CRITERIA);
