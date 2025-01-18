@@ -73,7 +73,7 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
                                                TEST_SERIALIZER,
                                                TEST_SERIALIZER,
                                                config -> config
-                                                       .explicitFlush(true)
+                                                       .explicitFlush(false)
                                                        .persistenceExceptionResolver(new JdbcSQLErrorCodesResolver()));
     }
 
