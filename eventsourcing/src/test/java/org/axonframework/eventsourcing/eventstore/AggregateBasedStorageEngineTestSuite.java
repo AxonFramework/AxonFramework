@@ -395,8 +395,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         assertInstanceOf(AppendEventsTransactionRejectedException.class, thrown.getCause());
     }
 
-    <T> CompletableFuture<T> runAsync(Supplier<CompletableFuture<T>> task) {
-        return CompletableFuture.supplyAsync(() -> task.get().join(), executor);
+    private static <T> CompletableFuture<T> runAsync(Supplier<CompletableFuture<T>> task) {
+        return CompletableFuture.supplyAsync(task, executor).thenCompose(future -> future);
     }
 
     @Test
