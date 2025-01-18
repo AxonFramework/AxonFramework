@@ -21,8 +21,12 @@ import jakarta.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
+
+import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
 
 public class LegacyAggregateBasedEventStorageEngineUtils {
 
@@ -57,6 +61,27 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
         } else {
             return tags.iterator().next().key();
         }
+    }
+
+    public static Throwable translateConflictException(
+            ConsistencyMarker consistencyMarker,
+            Throwable e,
+            Predicate<Throwable> isConflictException
+    ) {
+        if (isConflictException.test(e)) {
+            AppendEventsTransactionRejectedException translated = conflictingEventsDetected(consistencyMarker);
+            translated.addSuppressed(e);
+            return translated;
+        }
+        if (e.getCause() != null) {
+            Throwable translatedCause = translateConflictException(consistencyMarker,
+                                                                   e.getCause(),
+                                                                   isConflictException);
+            if (translatedCause != e.getCause()) {
+                return translatedCause;
+            }
+        }
+        return e;
     }
 
     public static final class AggregateSequencer {
