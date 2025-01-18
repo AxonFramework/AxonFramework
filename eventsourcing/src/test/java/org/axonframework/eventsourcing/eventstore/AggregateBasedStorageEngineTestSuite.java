@@ -25,7 +25,8 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.QualifiedName;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
 
@@ -87,395 +88,361 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
 
     protected abstract TrackingToken trackingTokenOnPosition(long eventNumber);
 
-    @Nested
-    class AppendEvents {
+    @Test
+    void streamingFromStartReturnsSelectedMessages() {
+        TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags());
+        TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_AGGREGATE_CRITERIA.tags());
+        TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags());
+        // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
+        ConsistencyMarker newMarker = testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                                               expectedEventOne,
+                                                               expectedEventTwo).thenCompose(AppendTransaction::commit)
+                                                 .join();
+        testSubject.appendEvents(AppendCondition.none(),
+                                 taggedEventMessage("event-2", emptySet()),
+                                 taggedEventMessage("event-3", emptySet())).thenCompose(AppendTransaction::commit)
+                   .join();
+        testSubject.appendEvents(new DefaultAppendCondition(newMarker, TEST_AGGREGATE_CRITERIA), expectedEventThree)
+                   .thenCompose(AppendTransaction::commit).join();
+        testSubject.appendEvents(AppendCondition.none(),
+                                 taggedEventMessage("event-5", emptySet()),
+                                 taggedEventMessage("event-6", emptySet())).thenCompose(AppendTransaction::commit)
+                   .join();
 
-        @Test
-        void transactionRejectedWithConflictingEventsInStore() {
-            ConsistencyMarker consistencyMarker = testSubject.appendEvents(
-                                                                     AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                                                     taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags()))
-                                                             .thenCompose(AppendTransaction::commit).join();
-            testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA)
-                                                    .withMarker(consistencyMarker),
-                                     taggedEventMessage("event-1", TEST_AGGREGATE_CRITERIA.tags()))
-                       .thenApply(AppendTransaction::commit).join();
+        MessageStream<EventMessage<?>> result =
+                testSubject.stream(StreamingCondition.startingFrom(trackingTokenOnPosition(-1)));
 
-            CompletableFuture<ConsistencyMarker> actual = testSubject.appendEvents(
-                    AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA).withMarker(consistencyMarker),
-                    taggedEventMessage("event-2", TEST_AGGREGATE_CRITERIA.tags())/*,
+        StepVerifier.create(result.asFlux())
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne.event(), 1))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventTwo.event(), 2))
+                    .expectNextCount(2)
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 5))
+                    .expectNextCount(2)
+                    .thenCancel()
+                    .verify();
+    }
+
+    @Test
+    void streamingFromSpecificPositionSkipsMessages() {
+        TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags());
+        TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_AGGREGATE_CRITERIA.tags());
+        TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags());
+
+        // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
+        testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                 expectedEventOne,
+                                 expectedEventTwo,
+                                 taggedEventMessage("event-2", Set.of()),
+                                 taggedEventMessage("event-3", TEST_AGGREGATE_CRITERIA.tags()),
+                                 expectedEventThree,
+                                 taggedEventMessage("event-5", TEST_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-6", TEST_AGGREGATE_CRITERIA.tags())).thenCompose(
+                AppendTransaction::commit).join();
+
+        MessageStream<EventMessage<?>> result =
+                testSubject.stream(StreamingCondition.startingFrom(trackingTokenOnPosition(2)));
+
+        StepVerifier.create(result.asFlux())
+                    // we've skipped the first two
+                    .expectNextCount(2).assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 5))
+                    .expectNextCount(2).thenCancel().verify();
+    }
+
+    @Test
+    void streamingAfterLastPositionReturnsEmptyStream() {
+        EventCriteria expectedCriteria = TEST_AGGREGATE_CRITERIA;
+        TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags());
+        TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_AGGREGATE_CRITERIA.tags());
+        TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags());
+        // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
+        ConsistencyMarker marker1 = testSubject.appendEvents(AppendCondition.withCriteria(expectedCriteria),
+                                                             expectedEventOne,
+                                                             expectedEventTwo).thenCompose(AppendTransaction::commit)
+                                               .join();
+        testSubject.appendEvents(AppendCondition.none(),
+                                 taggedEventMessage("event-2", Set.of()),
+                                 taggedEventMessage("event-3", Set.of())).thenCompose(
+                AppendTransaction::commit).join();
+        testSubject.appendEvents(new DefaultAppendCondition(marker1, expectedCriteria), expectedEventThree)
+                   .thenCompose(AppendTransaction::commit).join();
+        testSubject.appendEvents(AppendCondition.none(),
+                                 taggedEventMessage("event-5", Set.of()),
+                                 taggedEventMessage("event-6", Set.of())).thenCompose(
+                AppendTransaction::commit).join();
+
+        MessageStream<EventMessage<?>> result = testSubject.stream(StreamingCondition.startingFrom(
+                trackingTokenOnPosition(10)).or(expectedCriteria));
+
+        try {
+            assertTrue(result.next().isEmpty());
+        } finally {
+            result.close();
+        }
+    }
+
+    @Test
+    void sourcingEventsReturnsMatchingAggregateEvent() {
+        AppendCondition appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
+        testSubject.appendEvents(appendCondition,
+                                 taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags())
+                   )
+                   .thenCompose(AppendTransaction::commit).join();
+
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
+                    .expectNextMatches(entryWithAggregateEvent("event-0", 0))
+                    .verifyComplete();
+    }
+
+    @Test
+    void sourcingEventsReturnsMatchingAggregateEvents() {
+        AppendCondition appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
+        AppendCondition appendCondition2 = AppendCondition.withCriteria(OTHER_AGGREGATE_CRITERIA);
+        testSubject.appendEvents(appendCondition,
+                                 taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-1", TEST_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-2", TEST_AGGREGATE_CRITERIA.tags()))
+                   .thenCompose(AppendTransaction::commit).join();
+        testSubject.appendEvents(appendCondition2,
+                                 taggedEventMessage("event-4", OTHER_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-5", OTHER_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-6", OTHER_AGGREGATE_CRITERIA.tags()))
+                   .thenCompose(AppendTransaction::commit).join();
+
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
+                    .expectNextMatches(entryWithAggregateEvent("event-0", 0))
+                    .expectNextMatches(entryWithAggregateEvent("event-1", 1))
+                    .expectNextMatches(entryWithAggregateEvent("event-2", 2))
+                    .verifyComplete();
+    }
+
+    @Test
+    void eventsWithoutTagsAreNotSourcedAsAggregatedEvents() {
+        testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                 taggedEventMessage("event-0", Set.of()),
+                                 taggedEventMessage("event-1", TEST_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-2", Set.of()),
+                                 taggedEventMessage("event-3", TEST_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-4", Set.of()))
+                   .thenCompose(AppendTransaction::commit).join();
+
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
+                    .expectNextMatches(entryWithAggregateEvent("event-1", 0))
+                    .expectNextMatches(entryWithAggregateEvent("event-3", 1))
+                    .verifyComplete();
+    }
+
+    @Test
+    void eventsWithTagsNotMatchingCriteriaAreInsertedAtSequenceZero() {
+        testSubject.appendEvents(AppendCondition.withCriteria(OTHER_AGGREGATE_CRITERIA),
+                                 taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-5", TEST_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-6", TEST_AGGREGATE_CRITERIA.tags()))
+                   .thenCompose(AppendTransaction::commit).join();
+
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
+                    .expectNextMatches(entryWithAggregateEvent("event-4", 0))
+                    .expectNextMatches(entryWithAggregateEvent("event-5", 1))
+                    .expectNextMatches(entryWithAggregateEvent("event-6", 2))
+                    .verifyComplete();
+    }
+
+    @Test
+    void sourcingFromTwoAggregateStreamsReturnsACombinedStream() {
+        var marker = testSubject.appendEvents(AppendCondition.none(),
+                                              taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags()),
+                                              taggedEventMessage("event-1", OTHER_AGGREGATE_CRITERIA.tags()),
+                                              taggedEventMessage("event-2", TEST_AGGREGATE_CRITERIA.tags()),
+                                              taggedEventMessage("event-3", OTHER_AGGREGATE_CRITERIA.tags()),
+                                              taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags()),
+                                              taggedEventMessage("event-5", OTHER_AGGREGATE_CRITERIA.tags()))
+                                .thenCompose(AppendTransaction::commit).join();
+
+        Set<String> actual = new HashSet<>();
+        AtomicReference<ConsistencyMarker> lastMarker = new AtomicReference<>();
+
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA,
+                                                                              OTHER_AGGREGATE_CRITERIA)).asFlux())
+                    //there is no predefined order between aggregates. We just expect 6 entries.
+                    .thenConsumeWhile(e -> {
+                        lastMarker.set(e.getResource(ConsistencyMarker.RESOURCE_KEY));
+                        return actual.add(e.map(this::convertPayload).message().getPayload());
+                    })
+                    .verifyComplete();
+
+        assertEquals(Set.of("event-0", "event-1", "event-2", "event-3", "event-4", "event-5"), actual);
+        assertEquals(marker, lastMarker.get());
+    }
+
+    @Test
+    void sourcingWithStartAndEndReturnsEventsWithinBounds() {
+        testSubject.appendEvents(AppendCondition.none(),
+                                 taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-1", OTHER_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-2", TEST_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-3", OTHER_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-5", OTHER_AGGREGATE_CRITERIA.tags()))
+                   .thenCompose(AppendTransaction::commit).join();
+
+        List<String> actual = new ArrayList<>();
+
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(1, 1, TEST_AGGREGATE_CRITERIA)).asFlux())
+                    .thenConsumeWhile(e -> actual.add(e.map(this::convertPayload).message().getPayload()))
+                    .verifyComplete();
+
+        assertEquals(List.of("event-2"), actual);
+    }
+
+    @Test
+    void sourcingFromTwoAggregatesWithStartAndEndRespectsBounds() {
+        testSubject.appendEvents(AppendCondition.none(),
+                                 taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-1", OTHER_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-2", TEST_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-3", OTHER_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags()),
+                                 taggedEventMessage("event-5", OTHER_AGGREGATE_CRITERIA.tags()))
+                   .thenCompose(AppendTransaction::commit).join();
+
+        Set<String> actual = new HashSet<>();
+        MessageStream<EventMessage<?>> source;
+        try {
+            source = testSubject.source(SourcingCondition.conditionFor(1, 2,
+                                                                       TEST_AGGREGATE_CRITERIA,
+                                                                       OTHER_AGGREGATE_CRITERIA));
+        } catch (IllegalArgumentException e) {
+            throw new TestAbortedException("Multi-aggregate streams not supported", e);
+        }
+        StepVerifier.create(source.asFlux())
+                    .thenConsumeWhile(e -> actual.add(e.map(this::convertPayload).message().getPayload()))
+                    .verifyComplete();
+        assertEquals(Set.of("event-2", "event-3", "event-4", "event-5"), actual);
+    }
+
+    @Test
+    void transactionRejectedWithConflictingEventsInStore() {
+        ConsistencyMarker consistencyMarker = testSubject.appendEvents(
+                                                                 AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                                                 taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags()))
+                                                         .thenCompose(AppendTransaction::commit).join();
+        testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA).withMarker(consistencyMarker),
+                                 taggedEventMessage("event-1", TEST_AGGREGATE_CRITERIA.tags()))
+                   .thenApply(AppendTransaction::commit).join();
+
+        CompletableFuture<ConsistencyMarker> actual = testSubject.appendEvents(
+                AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA).withMarker(consistencyMarker),
+                taggedEventMessage("event-2", TEST_AGGREGATE_CRITERIA.tags())/*,
                 taggedEventMessage("event-3", TEST_AGGREGATE_CRITERIA.tags())*/
-            ).thenCompose(AppendTransaction::commit);
+        ).thenCompose(AppendTransaction::commit);
 
-            ExecutionException actualException = assertThrows(ExecutionException.class,
-                                                              () -> actual.get(1, TimeUnit.SECONDS));
-            assertInstanceOf(AppendEventsTransactionRejectedException.class, actualException.getCause());
-        }
-
-        @Test
-        void transactionRejectedWhenConcurrentlyCreatedTransactionIsCommittedFirst() {
-            var firstTx = testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                                   taggedEventMessage("event-10", TEST_AGGREGATE_CRITERIA.tags()));
-            var secondTx = testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                                    taggedEventMessage("event-11", TEST_AGGREGATE_CRITERIA.tags()));
-
-            CompletableFuture<ConsistencyMarker> firstCommit = firstTx.thenCompose(AppendTransaction::commit);
-            assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
-
-            CompletableFuture<ConsistencyMarker> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
-            var actual = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
-            assertInstanceOf(AppendEventsTransactionRejectedException.class, actual.getCause());
-        }
-
-        @Test
-        void transactionRejectedWhenConcurrentlyCreatedTransactionIsCommittedFirstThreads() {
-            var executor = Executors.newVirtualThreadPerTaskExecutor(); // todo: move it to before/after each
-            var firstTx = CompletableFuture.supplyAsync(() -> testSubject.appendEvents(AppendCondition.withCriteria(
-                                                                                               TEST_AGGREGATE_CRITERIA),
-                                                                                       taggedEventMessage("event-10",
-                                                                                                          TEST_AGGREGATE_CRITERIA.tags()))
-                                                                         .join(), executor);
-            var secondTx = CompletableFuture.runAsync(() -> {
-                                            }, executor)
-                                            .thenCompose(r -> testSubject.appendEvents(AppendCondition.withCriteria(
-                                                                                               TEST_AGGREGATE_CRITERIA),
-                                                                                       taggedEventMessage("event-11",
-                                                                                                          TEST_AGGREGATE_CRITERIA.tags())));
-
-            CompletableFuture<ConsistencyMarker> firstCommit = firstTx.thenCompose(AppendTransaction::commit);
-            assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
-
-            CompletableFuture<ConsistencyMarker> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
-            var actual = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
-            assertInstanceOf(AppendEventsTransactionRejectedException.class, actual.getCause());
-            executor.close();
-        }
-
-        @Test
-        void concurrentTransactionsForNonOverlappingTagsBothCommit()
-                throws ExecutionException, InterruptedException, TimeoutException {
-
-            AppendTransaction firstTx =
-                    testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                             taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags()))
-                               .get(1, TimeUnit.SECONDS);
-            AppendTransaction secondTx =
-                    testSubject.appendEvents(AppendCondition.withCriteria(OTHER_AGGREGATE_CRITERIA),
-                                             taggedEventMessage("event-0", OTHER_AGGREGATE_CRITERIA.tags()))
-                               .get(1, TimeUnit.SECONDS);
-
-            CompletableFuture<ConsistencyMarker> firstCommit = firstTx.commit();
-            CompletableFuture<ConsistencyMarker> secondCommit = secondTx.commit();
-
-            assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
-            assertDoesNotThrow(() -> secondCommit.get(1, TimeUnit.SECONDS));
-
-            assertTrue(validConsistencyMarker(firstCommit.join(), TEST_AGGREGATE_ID, 0));
-            assertTrue(validConsistencyMarker(secondCommit.join(), OTHER_AGGREGATE_ID, 0));
-        }
-
-        @Test
-        void alreadyCommitedTransactionCannotBeCommited() {
-            var tx =
-                    testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                             taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags())).join();
-
-            assertDoesNotThrow(() -> tx.commit().get(1, TimeUnit.SECONDS));
-            assertThrows(Exception.class, () -> tx.commit().get(1, TimeUnit.SECONDS));
-        }
-
-        @Test
-        void rolledbackTransactionCannotBeCommited() {
-            var tx =
-                    testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                             taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags())).join();
-
-            assertDoesNotThrow(tx::rollback);
-            assertThrows(Exception.class, () -> tx.commit().get(1, TimeUnit.SECONDS));
-        }
-
-        @Test
-        void emptyTransactionAlwaysCommitSuccessfully() {
-            var appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
-
-            var commit = testSubject.appendEvents(appendCondition, Collections.emptyList())
-                                    .thenCompose(AppendTransaction::commit);
-
-            assertDoesNotThrow(commit::join);
-        }
-
-        @Test
-        void eventWithMultipleTagsIsReportedAsPartOfException() {
-            TaggedEventMessage<?> violatingEntry = taggedEventMessage("event2",
-                                                                      Set.of(new Tag("key1", "value1"),
-                                                                             new Tag("key2", "value2")));
-            CompletableFuture<AsyncEventStorageEngine.AppendTransaction> actual = testSubject.appendEvents(
-                    AppendCondition.none(),
-                    taggedEventMessage("event1", Set.of(new Tag("key1", "value1"))),
-                    violatingEntry,
-                    taggedEventMessage("event3", Set.of(new Tag("key1", "value1")))
-            );
-
-            assertTrue(actual.isDone());
-            assertTrue(actual.isCompletedExceptionally());
-
-            ExecutionException actualException = assertThrows(ExecutionException.class, actual::get);
-            if (actualException.getCause() instanceof TooManyTagsOnEventMessageException e) {
-                assertEquals(violatingEntry.tags(), e.tags());
-                assertEquals(violatingEntry.event(), e.eventMessage());
-            } else {
-                fail("Unexpected exception", actualException);
-            }
-        }
+        ExecutionException actualException = assertThrows(ExecutionException.class,
+                                                          () -> actual.get(1, TimeUnit.SECONDS));
+        assertInstanceOf(AppendEventsTransactionRejectedException.class, actualException.getCause());
     }
 
-    @Nested
-    class Sourcing {
+    @Test
+    void transactionRejectedWhenConcurrentlyCreatedTransactionIsCommittedFirst() {
+        var firstTx = testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                               taggedEventMessage("event-10", TEST_AGGREGATE_CRITERIA.tags()));
+        var secondTx = testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                                taggedEventMessage("event-11", TEST_AGGREGATE_CRITERIA.tags()));
 
-        @Test
-        void sourcingEventsReturnsMatchingAggregateEvent() {
-            AppendCondition appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
-            testSubject.appendEvents(appendCondition,
-                                     taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags())
-                       )
-                       .thenCompose(AppendTransaction::commit).join();
+        CompletableFuture<ConsistencyMarker> firstCommit = firstTx.thenCompose(AppendTransaction::commit);
+        assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
 
-            StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
-                        .expectNextMatches(entryWithAggregateEvent("event-0", 0))
-                        .verifyComplete();
-        }
-
-        @Test
-        void sourcingEventsReturnsMatchingAggregateEvents() {
-            AppendCondition appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
-            AppendCondition appendCondition2 = AppendCondition.withCriteria(OTHER_AGGREGATE_CRITERIA);
-            testSubject.appendEvents(appendCondition,
-                                     taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-1", TEST_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-2", TEST_AGGREGATE_CRITERIA.tags()))
-                       .thenCompose(AppendTransaction::commit).join();
-            testSubject.appendEvents(appendCondition2,
-                                     taggedEventMessage("event-4", OTHER_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-5", OTHER_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-6", OTHER_AGGREGATE_CRITERIA.tags()))
-                       .thenCompose(AppendTransaction::commit).join();
-
-            StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
-                        .expectNextMatches(entryWithAggregateEvent("event-0", 0))
-                        .expectNextMatches(entryWithAggregateEvent("event-1", 1))
-                        .expectNextMatches(entryWithAggregateEvent("event-2", 2))
-                        .verifyComplete();
-        }
-
-        @Test
-        void eventsWithoutTagsAreNotSourcedAsAggregatedEvents() {
-            testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                     taggedEventMessage("event-0", Set.of()),
-                                     taggedEventMessage("event-1", TEST_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-2", Set.of()),
-                                     taggedEventMessage("event-3", TEST_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-4", Set.of()))
-                       .thenCompose(AppendTransaction::commit).join();
-
-            StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
-                        .expectNextMatches(entryWithAggregateEvent("event-1", 0))
-                        .expectNextMatches(entryWithAggregateEvent("event-3", 1))
-                        .verifyComplete();
-        }
-
-        @Test
-        void eventsWithTagsNotMatchingCriteriaAreInsertedAtSequenceZero() {
-            testSubject.appendEvents(AppendCondition.withCriteria(OTHER_AGGREGATE_CRITERIA),
-                                     taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-5", TEST_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-6", TEST_AGGREGATE_CRITERIA.tags()))
-                       .thenCompose(AppendTransaction::commit).join();
-
-            StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
-                        .expectNextMatches(entryWithAggregateEvent("event-4", 0))
-                        .expectNextMatches(entryWithAggregateEvent("event-5", 1))
-                        .expectNextMatches(entryWithAggregateEvent("event-6", 2))
-                        .verifyComplete();
-        }
-
-        @Test
-        void sourcingFromTwoAggregateStreamsReturnsACombinedStream() {
-            var marker = testSubject.appendEvents(AppendCondition.none(),
-                                                  taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags()),
-                                                  taggedEventMessage("event-1", OTHER_AGGREGATE_CRITERIA.tags()),
-                                                  taggedEventMessage("event-2", TEST_AGGREGATE_CRITERIA.tags()),
-                                                  taggedEventMessage("event-3", OTHER_AGGREGATE_CRITERIA.tags()),
-                                                  taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags()),
-                                                  taggedEventMessage("event-5", OTHER_AGGREGATE_CRITERIA.tags()))
-                                    .thenCompose(AppendTransaction::commit).join();
-
-            Set<String> actual = new HashSet<>();
-            AtomicReference<ConsistencyMarker> lastMarker = new AtomicReference<>();
-
-            StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA,
-                                                                                  OTHER_AGGREGATE_CRITERIA)).asFlux())
-                        //there is no predefined order between aggregates. We just expect 6 entries.
-                        .thenConsumeWhile(e -> {
-                            lastMarker.set(e.getResource(ConsistencyMarker.RESOURCE_KEY));
-                            return actual.add(e.map(this::convertPayload).message().getPayload());
-                        })
-                        .verifyComplete();
-
-            assertEquals(Set.of("event-0", "event-1", "event-2", "event-3", "event-4", "event-5"), actual);
-            assertEquals(marker, lastMarker.get());
-        }
-
-        @Test
-        void sourcingWithStartAndEndReturnsEventsWithinBounds() {
-            testSubject.appendEvents(AppendCondition.none(),
-                                     taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-1", OTHER_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-2", TEST_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-3", OTHER_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-5", OTHER_AGGREGATE_CRITERIA.tags()))
-                       .thenCompose(AppendTransaction::commit).join();
-
-            List<String> actual = new ArrayList<>();
-
-            StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(1, 1, TEST_AGGREGATE_CRITERIA))
-                                           .asFlux())
-                        .thenConsumeWhile(e -> actual.add(e.map(this::convertPayload).message().getPayload()))
-                        .verifyComplete();
-
-            assertEquals(List.of("event-2"), actual);
-        }
-
-        @Test
-        void sourcingFromTwoAggregatesWithStartAndEndRespectsBounds() {
-            testSubject.appendEvents(AppendCondition.none(),
-                                     taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-1", OTHER_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-2", TEST_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-3", OTHER_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-5", OTHER_AGGREGATE_CRITERIA.tags()))
-                       .thenCompose(AppendTransaction::commit).join();
-
-            Set<String> actual = new HashSet<>();
-            MessageStream<EventMessage<?>> source;
-            try {
-                source = testSubject.source(SourcingCondition.conditionFor(1, 2,
-                                                                           TEST_AGGREGATE_CRITERIA,
-                                                                           OTHER_AGGREGATE_CRITERIA));
-            } catch (IllegalArgumentException e) {
-                throw new TestAbortedException("Multi-aggregate streams not supported", e);
-            }
-            StepVerifier.create(source.asFlux())
-                        .thenConsumeWhile(e -> actual.add(e.map(this::convertPayload).message().getPayload()))
-                        .verifyComplete();
-            assertEquals(Set.of("event-2", "event-3", "event-4", "event-5"), actual);
-        }
-
-        private EventMessage<String> convertPayload(EventMessage<?> original) {
-            return AggregateBasedStorageEngineTestSuite.this.convertPayload(original);
-        }
+        CompletableFuture<ConsistencyMarker> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
+        var actual = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
+        assertInstanceOf(AppendEventsTransactionRejectedException.class, actual.getCause());
     }
 
-    @Nested
-    class Streaming {
+    @Test
+    void transactionRejectedWhenConcurrentlyCreatedTransactionIsCommittedFirstThreads() {
+        var executor = Executors.newVirtualThreadPerTaskExecutor(); // todo: move it to before/after each
+        var firstTx = CompletableFuture.supplyAsync(() -> testSubject.appendEvents(AppendCondition.withCriteria(
+                                                                                           TEST_AGGREGATE_CRITERIA),
+                                                                                   taggedEventMessage("event-10",
+                                                                                                      TEST_AGGREGATE_CRITERIA.tags()))
+                                                                     .join(), executor);
+        var secondTx = CompletableFuture.runAsync(() -> {
+        }, executor).thenCompose(r -> testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                                               taggedEventMessage("event-11",
+                                                                                  TEST_AGGREGATE_CRITERIA.tags())));
 
-        @Test
-        void streamingFromStartReturnsSelectedMessages() {
-            TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags());
-            TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_AGGREGATE_CRITERIA.tags());
-            TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags());
-            // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
-            ConsistencyMarker newMarker = testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                                                   expectedEventOne,
-                                                                   expectedEventTwo)
-                                                     .thenCompose(AppendTransaction::commit)
-                                                     .join();
-            testSubject.appendEvents(AppendCondition.none(),
-                                     taggedEventMessage("event-2", emptySet()),
-                                     taggedEventMessage("event-3", emptySet())).thenCompose(AppendTransaction::commit)
-                       .join();
-            testSubject.appendEvents(new DefaultAppendCondition(newMarker, TEST_AGGREGATE_CRITERIA), expectedEventThree)
-                       .thenCompose(AppendTransaction::commit).join();
-            testSubject.appendEvents(AppendCondition.none(),
-                                     taggedEventMessage("event-5", emptySet()),
-                                     taggedEventMessage("event-6", emptySet())).thenCompose(AppendTransaction::commit)
-                       .join();
+        CompletableFuture<ConsistencyMarker> firstCommit = firstTx.thenCompose(AppendTransaction::commit);
+        assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
 
-            MessageStream<EventMessage<?>> result =
-                    testSubject.stream(StreamingCondition.startingFrom(trackingTokenOnPosition(0)));
+        CompletableFuture<ConsistencyMarker> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
+        var actual = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
+        assertInstanceOf(AppendEventsTransactionRejectedException.class, actual.getCause());
+        executor.close();
+    }
 
-            StepVerifier.create(result.asFlux())
-                        .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne.event(), 1))
-                        .assertNext(entry -> assertTrackedEntry(entry, expectedEventTwo.event(), 2))
-                        .expectNextCount(2)
-                        .assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 5))
-                        .expectNextCount(2)
-                        .thenCancel()
-                        .verify();
+    @Test
+    void concurrentTransactionsForNonOverlappingTagsBothCommit()
+            throws ExecutionException, InterruptedException, TimeoutException {
+
+        AppendTransaction firstTx =
+                testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                         taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags()))
+                           .get(1, TimeUnit.SECONDS);
+        AppendTransaction secondTx =
+                testSubject.appendEvents(AppendCondition.withCriteria(OTHER_AGGREGATE_CRITERIA),
+                                         taggedEventMessage("event-0", OTHER_AGGREGATE_CRITERIA.tags()))
+                           .get(1, TimeUnit.SECONDS);
+
+        CompletableFuture<ConsistencyMarker> firstCommit = firstTx.commit();
+        CompletableFuture<ConsistencyMarker> secondCommit = secondTx.commit();
+
+        assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
+        assertDoesNotThrow(() -> secondCommit.get(1, TimeUnit.SECONDS));
+
+        assertTrue(validConsistencyMarker(firstCommit.join(), TEST_AGGREGATE_ID, 0));
+        assertTrue(validConsistencyMarker(secondCommit.join(), OTHER_AGGREGATE_ID, 0));
+    }
+
+    @Test
+    void transactionCanBeCommitedOnlyOnce() {
+        var tx =
+                testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                         taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags())).join();
+
+        assertDoesNotThrow(() -> tx.commit().get(1, TimeUnit.SECONDS));
+        var thrown = assertThrows(ExecutionException.class, () -> tx.commit().get(1, TimeUnit.SECONDS));
+        assertInstanceOf(IllegalStateException.class, thrown.getCause());
+    }
+
+    @Test
+    void emptyTransactionAlwaysCommitSuccessfully() {
+        var appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
+
+        var commit = testSubject.appendEvents(appendCondition, Collections.emptyList())
+                                .thenCompose(AppendTransaction::commit);
+
+        assertDoesNotThrow(commit::join);
+    }
+
+    @Test
+    void eventWithMultipleTagsIsReportedAsPartOfException() {
+        TaggedEventMessage<?> violatingEntry = taggedEventMessage("event2",
+                                                                  Set.of(new Tag("key1", "value1"),
+                                                                         new Tag("key2", "value2")));
+        CompletableFuture<AsyncEventStorageEngine.AppendTransaction> actual = testSubject.appendEvents(
+                AppendCondition.none(),
+                taggedEventMessage("event1", Set.of(new Tag("key1", "value1"))),
+                violatingEntry,
+                taggedEventMessage("event3", Set.of(new Tag("key1", "value1")))
+        );
+
+        assertTrue(actual.isDone());
+        assertTrue(actual.isCompletedExceptionally());
+
+        ExecutionException actualException = assertThrows(ExecutionException.class, actual::get);
+        if (actualException.getCause() instanceof TooManyTagsOnEventMessageException e) {
+            assertEquals(violatingEntry.tags(), e.tags());
+            assertEquals(violatingEntry.event(), e.eventMessage());
+        } else {
+            fail("Unexpected exception", actualException);
         }
-
-        @Test
-        void streamingFromSpecificPositionSkipsMessages() {
-            TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags());
-            TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_AGGREGATE_CRITERIA.tags());
-            TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags());
-
-            // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
-            testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                     expectedEventOne,
-                                     expectedEventTwo,
-                                     taggedEventMessage("event-2", Set.of()),
-                                     taggedEventMessage("event-3", TEST_AGGREGATE_CRITERIA.tags()),
-                                     expectedEventThree,
-                                     taggedEventMessage("event-5", TEST_AGGREGATE_CRITERIA.tags()),
-                                     taggedEventMessage("event-6", TEST_AGGREGATE_CRITERIA.tags())).thenCompose(
-                    AppendTransaction::commit).join();
-
-            MessageStream<EventMessage<?>> result =
-                    testSubject.stream(StreamingCondition.startingFrom(trackingTokenOnPosition(2)));
-
-            StepVerifier.create(result.asFlux())
-                        // we've skipped the first two
-                        .expectNextCount(2).assertNext(entry -> assertTrackedEntry(entry,
-                                                                                   expectedEventThree.event(),
-                                                                                   5))
-                        .expectNextCount(2).thenCancel().verify();
-        }
-
-        @Test
-        void streamingAfterLastPositionReturnsEmptyStream() {
-            EventCriteria expectedCriteria = TEST_AGGREGATE_CRITERIA;
-            TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags());
-            TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_AGGREGATE_CRITERIA.tags());
-            TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags());
-            // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
-            ConsistencyMarker marker1 = testSubject.appendEvents(AppendCondition.withCriteria(expectedCriteria),
-                                                                 expectedEventOne,
-                                                                 expectedEventTwo)
-                                                   .thenCompose(AppendTransaction::commit)
-                                                   .join();
-            testSubject.appendEvents(AppendCondition.none(),
-                                     taggedEventMessage("event-2", Set.of()),
-                                     taggedEventMessage("event-3", Set.of())).thenCompose(
-                    AppendTransaction::commit).join();
-            testSubject.appendEvents(new DefaultAppendCondition(marker1, expectedCriteria), expectedEventThree)
-                       .thenCompose(AppendTransaction::commit).join();
-            testSubject.appendEvents(AppendCondition.none(),
-                                     taggedEventMessage("event-5", Set.of()),
-                                     taggedEventMessage("event-6", Set.of())).thenCompose(
-                    AppendTransaction::commit).join();
-
-            MessageStream<EventMessage<?>> result = testSubject.stream(StreamingCondition.startingFrom(
-                    trackingTokenOnPosition(10)).or(expectedCriteria));
-
-            try {
-                assertTrue(result.next().isEmpty());
-            } finally {
-                result.close();
-            }
-        }
-
     }
 
     private void assertTrackedEntry(Entry<EventMessage<?>> actual, EventMessage<?> expected, long eventNumber) {
