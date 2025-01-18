@@ -260,8 +260,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         var consistencyMarker = new AtomicReference<ConsistencyMarker>();
         return allCriteriaStream.map(e -> {
             var newMarker = consistencyMarker
-                    .accumulateAndGet(e.getResource(ConsistencyMarker.RESOURCE_KEY),
-                                      (m1, m2) -> m1 == null ? m2 : m1.upperBound(m2));
+                    .accumulateAndGet(
+                            e.getResource(ConsistencyMarker.RESOURCE_KEY),
+                            (m1, m2) -> m1 == null ? m2 : m1.upperBound(m2)
+                    );
             return e.withResource(ConsistencyMarker.RESOURCE_KEY, newMarker);
         });
     }
