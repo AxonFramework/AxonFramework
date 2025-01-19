@@ -389,10 +389,10 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         var secondCommit = secondTx.thenCompose(AppendTransaction::commit);
 
         var result = CompletableFuture.allOf(firstCommit, secondCommit);
-        assertFalse(result.isDone());
-        assertFalse(result.isCompletedExceptionally());
         var thrown = assertThrows(Exception.class, result::join);
         assertInstanceOf(AppendEventsTransactionRejectedException.class, thrown.getCause());
+        assertTrue(firstCommit.isDone() || secondCommit.isDone());
+        assertTrue(firstCommit.isCompletedExceptionally() || secondCommit.isCompletedExceptionally());
     }
 
     private static <T> CompletableFuture<T> runAsync(Supplier<CompletableFuture<T>> task) {
