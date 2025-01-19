@@ -160,12 +160,13 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
-                CompletableFuture<Void> txResult = new CompletableFuture<>();
                 if (txFinished.getAndSet(true)) {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
+
                 var aggregateSequencer = AggregateSequencer.with(beforeCommitConsistencyMarker);
 
+                CompletableFuture<Void> txResult = new CompletableFuture<>();
                 var tx = transactionManager.startTransaction();
                 try {
                     entityManagerPersistEvents(aggregateSequencer, events);
