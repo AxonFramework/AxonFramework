@@ -35,7 +35,7 @@
     </description>
 
     <properties>
-        <jobrunr.version>7.3.2</jobrunr.version>
+        <jobrunr.version>7.4.0</jobrunr.version>
         <mysql-connector-java.version>9.1.0</mysql-connector-java.version>
         <spring-boot-3.version>3.4.1</spring-boot-3.version>
         <!-- Build / Plugin -->
