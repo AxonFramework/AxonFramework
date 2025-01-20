@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventStorageEngine;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
@@ -327,7 +327,7 @@ class DefaultEventStoreTransactionTest {
     }
 
     protected static EventMessage<?> eventMessage(int seq) {
-        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "event-" + seq);
+        return new GenericEventMessage<>(new MessageType("test", "event", "0.0.1"), "event-" + seq);
     }
 
     private static void assertTagsPositionAndEvent(MessageStream.Entry<? extends EventMessage<?>> actual,
