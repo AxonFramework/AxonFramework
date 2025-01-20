@@ -173,6 +173,13 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
     }
 
     @Test
+    void sourcingEventsReturnsEmptyStreamIfNoEventsInTheStore() {
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)).asFlux())
+                    .expectNextCount(0)
+                    .verifyComplete();
+    }
+
+    @Test
     void transactionRejectedWithConflictingEventsInStore() throws Exception {
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-0", TEST_CRITERIA.tags()),

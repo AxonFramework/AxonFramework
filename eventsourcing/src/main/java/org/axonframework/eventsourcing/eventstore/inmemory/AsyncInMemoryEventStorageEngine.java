@@ -159,7 +159,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
         }
 
         return eventsToMessageStream(condition.start(),
-                                     Math.min(condition.end(), eventStorage.lastKey()),
+                                     eventStorage.isEmpty() ? -1 : Math.min(condition.end(), eventStorage.lastKey()),
                                      condition);
     }
 
