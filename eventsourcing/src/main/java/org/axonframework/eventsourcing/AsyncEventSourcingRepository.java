@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
                 identifier,
                 id -> eventStore.transaction(processingContext, context)
                                 .source(
-                                        SourcingCondition.conditionFor(criteriaResolver.resolve(id), start, end),
+                                        SourcingCondition.conditionFor(start, end, criteriaResolver.resolve(id)),
                                         processingContext
                                 )
                                 .reduce(new EventSourcedEntity<>(identifier, (M) null), (entity, entry) -> {

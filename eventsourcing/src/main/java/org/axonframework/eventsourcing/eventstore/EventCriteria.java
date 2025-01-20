@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,8 @@ import java.util.Set;
  * {@link StreamableEventSource#open(String, StreamingCondition) streaming} or
  * {@link EventStoreTransaction#appendEvent(EventMessage) appending} events.
  * <p>
- * During sourcing or streaming, the {@link #types()} and {@link #tags()} are used as a filter. While appending events,
- * the {@code #types()} and {@code #tags()} are used to validate the consistency boundary of the event(s) to append. The
- * latter happens starting from the {@link AppendCondition#consistencyMarker()}.
+ * During sourcing or streaming, the criteria are used as a filter for events to read. While appending events, the
+ * criteria are used to detect conflicts when appending events beyond the consistency boundary.
  *
  * @author Michal Negacz
  * @author Milan Savić
@@ -39,43 +38,45 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public sealed interface EventCriteria permits AnyEvent, SingleTagCriteria, CombinedEventCriteria {
+public sealed interface EventCriteria permits AnyEvent, DefaultEventCriteria {
 
     /**
-     * Construct a {@link EventCriteria} that allows <b>any</b> events.
+     * Construct a {@code EventCriteria} that allows <b>any</b> events.
      * <p>
      * Use this instance when all events are of interest during
      * {@link StreamableEventSource#open(String, StreamingCondition) streaming} or when there are no consistency
      * boundaries to validate during {@link EventStoreTransaction#appendEvent(EventMessage) appending}. Note that this
-     * {@link EventCriteria} does not make sense for
+     * {@code EventCriteria} does not make sense for
      * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) sourcing}, as it is <b>not</b>
      * recommended to source the entire event store.
      *
-     * @return An {@link EventCriteria} that contains no criteria at all.
+     * @return An {@code EventCriteria} that contains no criteria at all.
      */
     static EventCriteria anyEvent() {
         return AnyEvent.INSTANCE;
     }
 
     /**
-     * Construct a simple {@link EventCriteria} based on the given {@code tag}.
+     * Create a builder for criteria that match events with any of the given {@code types}. Events with types not
+     * matching any of the given types will not match against criteria built by the returned builder.
      *
-     * @param tag The singular {@link Tag} of the {@link EventCriteria} being constructed.
-     * @return A simple {@link EventCriteria} based on the given {@code tag}.
+     * @param types The types of messages to build the criteria for.
+     * @return a builder that allows criteria to be built for the given event types.
      */
-    static EventCriteria hasTag(@Nonnull Tag tag) {
-        return new SingleTagCriteria(tag);
+    static EventCriteria.Builder forEventTypes(@Nonnull String... types) {
+        if (types.length == 0) {
+            return EventCriteriaBuilder.NO_TYPES;
+        }
+        return new EventCriteriaBuilder(types);
     }
 
     /**
-     * Construct a simple {@link EventCriteria} based on the given index {@code key} and {@code value}.
+     * Create a builder for criteria that match events with any type.
      *
-     * @param key   The index key of the {@link EventCriteria} being constructed.
-     * @param value The index value of the {@link EventCriteria} being constructed.
-     * @return A simple {@link EventCriteria}.
+     * @return a builder that allows criteria to be built matching against any event type.
      */
-    static EventCriteria hasTag(@Nonnull String key, @Nonnull String value) {
-        return hasTag(new Tag(key, value));
+    static EventCriteria.Builder forAnyEventType() {
+        return EventCriteriaBuilder.NO_TYPES;
     }
 
     /**
@@ -96,24 +97,118 @@ public sealed interface EventCriteria permits AnyEvent, SingleTagCriteria, Combi
     Set<Tag> tags();
 
     /**
-     * Matches the given {@code tags} with the {@link #tags()} of this {@link EventCriteria}.
+     * Indicates whether the given {@code type} matches the types defined in this instance. If no types are defined, any
+     * given {@code type} will be considered a match.
+     *
+     * @param type The type to match against this criteria instance.
+     * @return {@code true} if the type matches, otherwise {@code false}.
+     */
+    default boolean matchingType(String type) {
+        return types().isEmpty() || types().contains(type);
+    }
+
+    /**
+     * Matches the given {@code tags} with the {@link #tags()} of this {@code EventCriteria}. An event matches against
+     * this criteria instance if the tags in one of the criteria in this set are all found in that event.
      * <p>
-     * Returns {@code true} if they are deemed to be equal, {@code false} otherwise.
+     * For example, given the following set of criteria :
+     * <ul>
+     *     <li>
+     *         1:
+     *         <ul>
+     *             <li>STUDENT -> A</li>
+     *             <li>COURSE -> X</li>
+     *         </ul>
+     *     </li>
+     *     <li>
+     *         2:
+     *         <ul>
+     *             <li>STUDENT -> A</li>
+     *             <li>COURSE -> Y</li>
+     *         </ul>
+     *     </li>
+     *     <li>
+     *         3:
+     *         <ul>
+     *             <li>COURSE -> Z</li>
+     *         </ul>
+     *     </li>
+     * </ul>
+     * The following events will match:
+     * <ul>
+     *     <li> Event [STUDENT -> A, COURSE -> X]</li>
+     *     <li> Event [STUDENT -> A, COURSE -> X, FACULTY -> 1]</li>
+     *     <li> Event [STUDENT -> A, COURSE -> Z]</li>
+     *     <li> Event [STUDENT -> B, COURSE -> Z]</li>
+     *     <li> Event [COURSE -> Z, FACULTY -> 1]</li>
+     * </ul>
+     * But the following events do not:
+     * <ul>
+     *     <li> Event [STUDENT -> B, COURSE -> X]</li>
+     *     <li> Event [STUDENT -> A]</li>
+     *     <li> Event [STUDENT -> Z]</li>
+     * </ul>
      *
      * @param tags The {@link Set} of {@link Tag Tags} to compare with {@code this EventCriteria} its {@link #tags()}.
      * @return {@code true} if they are deemed to be equal, {@code false} otherwise.
      */
     default boolean matchingTags(@Nonnull Set<Tag> tags) {
-        return this.tags().equals(tags);
+        return tags.containsAll(this.tags());
     }
 
     /**
-     * Combines {@code this} {@link EventCriteria} with {@code that EventCriteria}.
+     * Indicates whether the given {@code type} and {@code tags} matches the types and tags defined in this instance. If
+     * no types are defined, any given {@code type} will be considered a match.
+     * <p/>
+     * See {@link #matchingTags(Set)} for more details about how Tags are matched.
      *
-     * @param that The {@link EventCriteria} to combine with {@code this}.
-     * @return A combined {@link EventCriteria}, consisting out of {@code this} and the given {@code that}.
+     * @param type The type to match against this criteria instance.
+     * @param tags The tags to match against this criteria instance.
+     * @return {@code true} if the type matches, otherwise {@code false}.
+     * @see #matchingType(String)
+     * @see #matchingTags(Set)
      */
-    default EventCriteria combine(@Nonnull EventCriteria that) {
-        return new CombinedEventCriteria(this, that);
+    default boolean matches(@Nonnull String type, @Nonnull Set<Tag> tags) {
+        return matchingType(type) && matchingTags(tags);
+    }
+
+    /**
+     * Interface providing operations during an intermediate state of creating an {@link EventCriteria} instance.
+     */
+    interface Builder {
+
+        /**
+         * Create a {@link EventCriteria} expecting events containing the given {@code tags}.
+         *
+         * @param tags The tags that events must have to match.
+         * @return a criteria object that matches against the given tags.
+         */
+        EventCriteria withTags(@Nonnull Set<Tag> tags);
+
+        /**
+         * Create a {@link EventCriteria} expecting events containing the given {@code tags}.
+         *
+         * @param tags The tags that events must have to match.
+         * @return a criteria object that matches against the given tags.
+         */
+        EventCriteria withTags(@Nonnull Tag... tags);
+
+        /**
+         * Create a {@link EventCriteria} expecting events containing the given {@code tagKeyValuePairs}. The given
+         * values are used in pairs to construct a tag with the first parameter as key, and the second as value,
+         * repeating until all parameters are used to create tags.
+         *
+         * @param tagKeyValuePairs The tags that events must have to match.
+         * @return a criteria object that matches against the given tags.
+         * @throws IllegalArgumentException if an odd number of parameters are provided.
+         */
+        EventCriteria withTags(@Nonnull String... tagKeyValuePairs);
+
+        /**
+         * Create a {@link EventCriteria} that doesn't require any specific tags on events to match.
+         *
+         * @return a criteria object that matches against all events.
+         */
+        EventCriteria withAnyTags();
     }
 }

@@ -17,26 +17,24 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.EventMessage;
 
 import java.util.Set;
-import javax.annotation.Nullable;
 
 /**
- * An implementation of the {@link StreamingCondition} that will start
- * {@link StreamableEventSource#open(String, StreamingCondition) streaming} from the given {@code position}.
+ * Functional interface towards resolving a {@link Set} of {@link Tag Tags} for a given {@link EventMessage}.
  *
- * @param position The {@link TrackingToken} describing the position to start streaming from.
  * @author Steven van Beelen
  * @since 5.0.0
  */
-record StartingFrom(@Nullable TrackingToken position) implements StreamingCondition {
+@FunctionalInterface
+public interface TagResolver {
 
-    @Override
-    public StreamingCondition or(@Nonnull EventCriteria criteria) {
-        if (position == null) {
-            throw new IllegalArgumentException("The position may not be null when adding criteria to it");
-        }
-        return new DefaultStreamingCondition(position, Set.of(criteria));
-    }
+    /**
+     * Resolves a {@link Set} of {@link Tag Tags} for the given {@code event}.
+     *
+     * @param event The event to resolve a {@link Set} of {@link Tag Tags} for.
+     * @return A {@link Set} of {@link Tag Tags} for the given {@code event}.
+     */
+    Set<Tag> resolve(@Nonnull EventMessage<?> event);
 }

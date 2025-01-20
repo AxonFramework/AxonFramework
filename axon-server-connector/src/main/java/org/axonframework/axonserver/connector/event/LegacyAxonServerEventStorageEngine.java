@@ -32,9 +32,12 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.AppendConditionAssertionException;
+import org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
@@ -47,12 +50,16 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Converter;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
 
 /**
  * Event Storage Engine implementation that uses the aggregate-oriented APIs of Axon Server, allowing it to interact
@@ -90,6 +97,7 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
         }
     }
 
+    @Nullable
     private static String resolveAggregateType(Set<Tag> tags) {
         if (tags.isEmpty()) {
             return null;
@@ -103,23 +111,12 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
     @Override
     public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
                                                              @Nonnull List<TaggedEventMessage<?>> events) {
-        if (condition.criteria().tags().size() > 1) {
-            return CompletableFuture.failedFuture(AppendConditionAssertionException.tooManyIndices(condition.criteria()
-                                                                                                            .tags()
-                                                                                                            .size(),
-                                                                                                   1));
-        }
 
-        String aggregateType = resolveAggregateType(condition.criteria().tags());
-        String aggregateIdentifier = resolveAggregateIdentifier(condition.criteria().tags());
-        AtomicLong consistencyMarker = new AtomicLong(condition.consistencyMarker());
+        AggregateBasedConsistencyMarker consistencyMarker = AggregateBasedConsistencyMarker.from(condition);
+        Map<String, AtomicLong> aggregateSequences = new HashMap<>();
 
-        if (aggregateIdentifier != null && condition.consistencyMarker() == Long.MAX_VALUE) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException(
-                    "ConsistencyMarker must be provided explicitly in legacy mode"));
-        }
         try {
-            assertValidTags(events, aggregateType, aggregateIdentifier);
+            assertValidTags(events);
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }
@@ -137,10 +134,12 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
                                                                          .build())
                                              .setMessageIdentifier(event.getIdentifier())
                                              .setTimestamp(event.getTimestamp().toEpochMilli());
+                String aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
+                String aggregateType = resolveAggregateType(taggedEvent.tags());
                 if (aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty()) {
-                    long aggregateSequenceNumber = consistencyMarker.incrementAndGet();
+                    long nextSequence = resolveSequencer(aggregateSequences, aggregateIdentifier, consistencyMarker).incrementAndGet();
                     builder.setAggregateIdentifier(aggregateIdentifier).setAggregateType(aggregateType)
-                           .setAggregateSequenceNumber(aggregateSequenceNumber);
+                           .setAggregateSequenceNumber(nextSequence);
                 }
                 buildMetaData(event.getMetaData(), builder.getMetaDataMap());
                 Event message = builder.build();
@@ -153,17 +152,21 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
 
         return CompletableFuture.completedFuture(new AppendTransaction() {
             @Override
-            public CompletableFuture<Long> commit() {
+            public CompletableFuture<ConsistencyMarker> commit() {
+                AggregateBasedConsistencyMarker newConsistencyMarker = consistencyMarker;
+                for (Map.Entry<String, AtomicLong> aggSeq : aggregateSequences.entrySet()) {
+                    newConsistencyMarker = newConsistencyMarker.forwarded(aggSeq.getKey(), aggSeq.getValue().get());
+                }
+                var finalConsistencyMarker = newConsistencyMarker;
                 return tx.commit()
                          .exceptionallyCompose(e -> CompletableFuture.failedFuture(translateConflictException(e)))
-                         .thenApply(r -> consistencyMarker.get());
+                         .thenApply(r -> finalConsistencyMarker);
             }
 
             private Throwable translateConflictException(Throwable e) {
                 if (e instanceof StatusRuntimeException sre && Objects.equals(sre.getStatus().getCode(),
                                                                               Status.OUT_OF_RANGE.getCode())) {
-                    AppendConditionAssertionException translated = AppendConditionAssertionException.consistencyMarkerSurpassed(
-                            consistencyMarker.get());
+                    AppendEventsTransactionRejectedException translated = conflictingEventsDetected(consistencyMarker);
                     translated.addSuppressed(e);
                     return translated;
                 }
@@ -183,20 +186,17 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
         });
     }
 
-    private void assertValidTags(List<TaggedEventMessage<?>> events, String aggregateType, String aggregateIdentifier) {
+    private static AtomicLong resolveSequencer(Map<String, AtomicLong> aggregateSequences, String aggregateIdentifier,
+                                               AggregateBasedConsistencyMarker consistencyMarker) {
+        return aggregateSequences.computeIfAbsent(aggregateIdentifier,
+                                                  i -> new AtomicLong(consistencyMarker.positionOf(i)));
+    }
+
+    private void assertValidTags(List<TaggedEventMessage<?>> events) {
         for (TaggedEventMessage<?> taggedEvent : events) {
             if (taggedEvent.tags().size() > 1) {
-                throw new IllegalArgumentException(
-                        "An Event Storage engine in Aggregate mode does not support multiple tags per event");
-            } else if (taggedEvent.tags().size() == 1) {
-                Tag tag = taggedEvent.tags().iterator().next();
-                if (aggregateType == null
-                        || aggregateIdentifier == null
-                        || !aggregateType.equals(tag.key())
-                        || !aggregateIdentifier.equals(tag.value())) {
-                    throw new IllegalArgumentException(
-                            "An Event Storage engine in Aggregate mode does not support tags that do not match the append condition");
-                }
+                throw new TooManyTagsOnEventMessageException(
+                        "An Event Storage engine in Aggregate mode does not support multiple tags per event", taggedEvent.event(), taggedEvent.tags());
             }
         }
     }
@@ -221,15 +221,30 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
 
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
-        String aggregateIdentifier = resolveAggregateIdentifier(condition.criteria().tags());
-        AggregateEventStream aggregateStream = connection.eventChannel().openAggregateStream(aggregateIdentifier);
-        return MessageStream.fromStream(
-                aggregateStream.asStream(),
-                this::convertToMessage,
-                event -> Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
-                                .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getAggregateType())
-                                .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
-                                              event.getAggregateSequenceNumber()));
+        MessageStream<EventMessage<?>> resultingStream = MessageStream.empty();
+        for (EventCriteria criterion : condition.criteria()) {
+            String aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
+            // axonserver uses 0 to denote the end of a stream, so if 0 is provided, we use 1. For infinity, we use 0.
+            long end = condition.end() == Long.MAX_VALUE ? 0 : condition.end() + 1;
+            AggregateEventStream aggregateStream = connection.eventChannel().openAggregateStream(aggregateIdentifier, condition.start(), end);
+            resultingStream = resultingStream.concatWith(MessageStream.fromStream(
+                    aggregateStream.asStream(),
+                    this::convertToMessage,
+                    event -> Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
+                                    .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getAggregateType())
+                                    .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
+                                                  event.getAggregateSequenceNumber())
+                                    .withResource(ConsistencyMarker.RESOURCE_KEY,
+                                                  new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
+                                                                                      event.getAggregateSequenceNumber()))));
+        }
+        AtomicReference<ConsistencyMarker> consistencyMarker = new AtomicReference<>();
+        return resultingStream.map(e -> {
+            ConsistencyMarker newMarker = consistencyMarker.accumulateAndGet(e.getResource(ConsistencyMarker.RESOURCE_KEY),
+                                                                             (m1, m2) -> m1
+                                                                                     == null ? m2 : m1.upperBound(m2));
+            return e.withResource(ConsistencyMarker.RESOURCE_KEY, newMarker);
+        });
     }
 
     private EventMessage<byte[]> convertToMessage(Event event) {

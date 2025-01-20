@@ -112,4 +112,14 @@ public record QualifiedName(@Nonnull String name) implements Serializable {
     public String toString() {
         return name;
     }
+
+    /**
+     * Returns the full name of this QualifiedName, consisting of the namespace and localName, separated by a "."
+     * (dot).
+     *
+     * @return the full name of this QualifiedName
+     */
+    public String fullName() {
+        return namespace() + "." + localName();
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,10 +44,10 @@ class EmptyMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     /**
-     * Return a singular instance of the {@link EmptyMessageStream} to be used throughout.
+     * Return a singular instance of the {@code EmptyMessageStream} to be used throughout.
      *
      * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @return The singular instance of the {@link EmptyMessageStream} to be used throughout.
+     * @return The singular instance of the {@code EmptyMessageStream} to be used throughout.
      */
     public static <M extends Message<?>> EmptyMessageStream<M> instance() {
         //noinspection unchecked
@@ -124,5 +124,10 @@ class EmptyMessageStream<M extends Message<?>> implements MessageStream<M> {
         } catch (Exception e) {
             return MessageStream.failed(e);
         }
+    }
+
+    @Override
+    public MessageStream<M> concatWith(@Nonnull MessageStream<M> other) {
+        return other;
     }
 }

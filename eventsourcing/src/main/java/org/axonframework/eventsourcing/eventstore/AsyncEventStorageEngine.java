@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,10 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
      * Events will be appended in the order that they are offered in, validating the given {@code condition} before
      * being stored. Note that all events should have a unique event identifier. {@link Tag Tags} paired with the
      * {@code events} will be stored as well.
+     * <p>
+     * Implementations may be able to detect conflicts during the append stage. In such case, the returned completable
+     * future will complete exceptionally, indicating such conflict. Other implementations may delay such checks until
+     * the {@link AppendTransaction#commit()} is called.
      *
      * @param condition The condition describing the transactional requirements for the append transaction
      * @param events    The {@link List} of {@link EventMessage events} to append to the underlying storage solution.
@@ -152,7 +156,7 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
          *
          * @return A {@code CompletableFuture} that completes with the new consistency marker for the transaction.
          */
-        CompletableFuture<Long> commit();
+        CompletableFuture<ConsistencyMarker> commit();
 
         /**
          * Rolls back any events that have been appended, permanently making them unavailable for consumers.

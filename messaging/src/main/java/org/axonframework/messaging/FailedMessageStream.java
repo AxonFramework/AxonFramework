@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,6 +99,11 @@ class FailedMessageStream<M extends Message<?>> implements MessageStream<M> {
 
     @Override
     public MessageStream<M> whenComplete(@Nonnull Runnable completeHandler) {
+        return this;
+    }
+
+    @Override
+    public MessageStream<M> concatWith(@Nonnull MessageStream<M> other) {
         return this;
     }
 }
