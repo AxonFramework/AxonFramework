@@ -60,12 +60,12 @@ public record MessageType(@Nonnull QualifiedName qualifiedName,
      * Compact constructor validating that the given {@code qualifiedName} is non-null.
      */
     public MessageType {
-        requireNonNull(qualifiedName, "The qualified qualifiedName cannot be null.");
+        requireNonNull(qualifiedName, "The qualifiedName cannot be null.");
         Assert.assertThat(
-                requireNonNull(version, "The given version [" + version + "] is unsupported because it is null."),
+                requireNonNull(version, "The given version is unsupported because it is null."),
                 StringUtils::nonEmpty,
                 () -> new IllegalArgumentException(
-                        "The given version [" + version + "] is unsupported because it is empty."
+                        "The given version is unsupported because it is empty."
                 )
         );
     }
@@ -157,19 +157,19 @@ public record MessageType(@Nonnull QualifiedName qualifiedName,
      * The output of {@code MessageType#toString()} is a concatenation of the {@link #qualifiedName()} and
      * {@link #version()}, split by means of a hashtag ({@code #}).
      * <p>
-     * Thus, if the given {@code String} equals {@code "my.context:BusinessName:1.0.5"}, the {@code #qualifiedName()} is
-     * set to a {@link QualifiedName} of {@code "my.context.BusinessName"} and the {@code #version()} is set to
+     * Thus, if the given {@code String} equals {@code "my.context.BusinessName#1.0.5"}, the {@code #qualifiedName()} is
+     * set to a {@link QualifiedName} of {@code "my.context.BusinessName"} and the {@link #version()} is set to
      * {@code "1.0.5"}.
      *
-     * @param s The output of {@link MessageType#toString()}, given to reconstruct it into a {@code MessageType}.
+     * @param messageTypeString The output of {@link MessageType#toString()}, given to reconstruct it into a {@code MessageType}.
      * @return A reconstructed {@code MessageType} based on the expected output of {@link MessageType#toString()}.
      */
-    public static MessageType fromString(@Nonnull String s) {
+    public static MessageType fromString(@Nonnull String messageTypeString) {
         Matcher matcher = DEBUG_STRING_PATTERN.matcher(
-                Objects.requireNonNull(s, "Cannot construct a MessageType based on a null or empty String.")
+                Objects.requireNonNull(messageTypeString, "Cannot construct a MessageType based on a null or empty String.")
         );
         Assert.isTrue(matcher.matches(),
-                      () -> "The given simple String [" + s + "] does not match the expected pattern.");
+                      () -> "The given simple String [" + messageTypeString + "] does not match the expected pattern.");
         return new MessageType(new QualifiedName(matcher.group(QUALIFIED_NAME_GROUP)), matcher.group(VERSION_GROUP));
     }
 
@@ -178,7 +178,7 @@ public record MessageType(@Nonnull QualifiedName qualifiedName,
      * {@link #version()}, split by means of a hashtag ({@code #}).
      * <p>
      * Thus, if {@code #qualifiedName()} returns {@code "my.context.BusinessName"} and the {@code #version()} returns
-     * {@code "1.0.5"}, the result of <b>this</b> operation would be {@code "my.context:BusinessName:1.0.5"}.
+     * {@code "1.0.5"}, the result of <b>this</b> operation would be {@code "my.context.BusinessName#1.0.5"}.
      *
      * @return A combination of the {@link #qualifiedName()} and {@link #version()}, separated by a hashtag.
      */

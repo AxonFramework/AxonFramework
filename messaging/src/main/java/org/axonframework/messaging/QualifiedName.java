@@ -38,7 +38,7 @@ import static java.util.Objects.requireNonNull;
  * {@link MessageHandler MessageHandlers}, and other components that require naming. To combine a qualified
  * qualifiedName with a version, consider using the {@link MessageType}.
  *
- * @param name The qualifiedName of this {@code QualifiedName}.
+ * @param name The qualifiedName of this {@code QualifiedName}. Must not be {@code null} or empty.
  * @author Allard Buijze
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
@@ -54,11 +54,9 @@ public record QualifiedName(@Nonnull String name) implements Serializable {
      */
     public QualifiedName {
         Assert.assertThat(
-                requireNonNull(name, "The given name [" + name + "] is unsupported because it is null."),
+                requireNonNull(name, "The given name is unsupported because it is null."),
                 StringUtils::nonEmpty,
-                () -> new IllegalArgumentException(
-                        "The given name [" + name + "] is unsupported because it is empty."
-                )
+                () -> new IllegalArgumentException("The given name is unsupported because it is empty.")
         );
     }
 

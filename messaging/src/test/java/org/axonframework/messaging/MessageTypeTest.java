@@ -151,4 +151,9 @@ class MessageTypeTest {
         assertEquals(expectedName, testSubject.qualifiedName());
         assertEquals(expectedVersion, testSubject.version());
     }
+
+    @Test
+    void fromStringRejectsMissingVersion() {
+        assertThrows(IllegalArgumentException.class, () -> MessageType.fromString(NAME));
+    }
 }
