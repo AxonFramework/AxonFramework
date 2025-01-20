@@ -18,7 +18,6 @@ package org.axonframework.commandhandling.annotation;
 
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;

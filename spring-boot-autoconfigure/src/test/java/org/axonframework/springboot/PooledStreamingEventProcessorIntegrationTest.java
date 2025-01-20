@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.ProcessingGroup;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventTrackerStatus;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.TrackingToken;

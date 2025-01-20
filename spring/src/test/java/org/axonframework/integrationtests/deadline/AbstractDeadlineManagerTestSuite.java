@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.deadline;
 
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;

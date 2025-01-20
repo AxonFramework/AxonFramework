@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.DefaultConfigurer;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.junit.jupiter.api.*;
 

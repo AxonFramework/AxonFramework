@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.junit.jupiter.api.*;
 

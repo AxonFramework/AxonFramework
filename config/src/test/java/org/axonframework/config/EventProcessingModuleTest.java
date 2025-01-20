@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;

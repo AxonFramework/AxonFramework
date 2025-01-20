@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.serialization.AnnotationRevisionResolver;
 import org.axonframework.serialization.ChainingConverter;
 import org.axonframework.serialization.ContentTypeConverter;
@@ -254,7 +255,7 @@ class JacksonSerializerTest {
     }
 
     /**
-     * Test case corresponding with a {@link org.axonframework.queryhandling.QueryHandler} annotated method which
+     * Test case corresponding with a {@link QueryHandler} annotated method which
      * returns a {@link List} of {@link ComplexObject}. Upon deserialization, the type info is required by the
      * {@link ObjectMapper} to <b>not</b> defer to an {@link ArrayList} of {@link java.util.LinkedHashMap}s. This can be
      * enabled through {@link JacksonSerializer.Builder#defaultTyping()} or by providing an {@link ObjectMapper} which

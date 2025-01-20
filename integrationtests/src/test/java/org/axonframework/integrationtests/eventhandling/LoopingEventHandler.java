@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.eventhandling;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.integrationtests.commandhandling.LoopingChangeDoneEvent;
 import org.axonframework.integrationtests.commandhandling.UpdateStubAggregateCommand;
 import org.axonframework.messaging.QualifiedName;

@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.AxonException;
 import org.axonframework.common.transaction.NoOpTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.pooled.PooledStreamingEventProcessor;

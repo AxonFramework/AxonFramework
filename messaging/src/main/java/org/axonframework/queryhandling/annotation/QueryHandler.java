@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.axonframework.queryhandling;
+package org.axonframework.queryhandling.annotation;
 
 import org.axonframework.messaging.annotation.MessageHandler;
+import org.axonframework.queryhandling.QueryMessage;
 
 import java.lang.annotation.*;
 

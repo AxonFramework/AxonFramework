@@ -25,7 +25,7 @@ import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.GapAwareTrackingToken;

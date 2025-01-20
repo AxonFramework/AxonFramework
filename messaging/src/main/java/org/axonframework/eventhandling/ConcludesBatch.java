@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 package org.axonframework.eventhandling;
 
+import org.axonframework.eventhandling.annotation.EventHandler;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation indication that a parameter on an {@link org.axonframework.eventhandling.EventHandler} method should be
+ * Annotation indication that a parameter on an {@link EventHandler} method should be
  * injected with a value that informs whether the event is the last event of a processed batch of events. The parameter
  * type must be assignable from {@link Boolean}.
  * <p>

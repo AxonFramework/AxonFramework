@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.thoughtworks.xstream.XStream;
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;

@@ -16,6 +16,7 @@
 
 package org.axonframework.queryhandling;
 
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
 import org.axonframework.messaging.QualifiedName;
@@ -32,7 +33,7 @@ import javax.annotation.Nullable;
  * Component which informs subscription queries about updates, errors and when there are no more updates.
  * <p>
  * If any of the emitter functions in this interface are called from a message handling function (e.g. an {@link
- * org.axonframework.eventhandling.EventHandler} annotated function), then that call will automatically be tied into the
+ * EventHandler} annotated function), then that call will automatically be tied into the
  * lifecycle of the current {@link org.axonframework.messaging.unitofwork.UnitOfWork} to ensure correct order of
  * execution.
  * <p>
