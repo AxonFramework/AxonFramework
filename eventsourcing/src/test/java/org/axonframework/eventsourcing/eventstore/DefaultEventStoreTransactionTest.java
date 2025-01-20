@@ -51,8 +51,9 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 class DefaultEventStoreTransactionTest {
 
     private static final String TEST_AGGREGATE_ID = "someId";
+    public static final Tag AGGREGATE_ID_TAG = new Tag("aggregateIdentifier", TEST_AGGREGATE_ID);
     private static final EventCriteria TEST_AGGREGATE_CRITERIA =
-            EventCriteria.forAnyEventType().withTags(new Tag("aggregateIdentifier", TEST_AGGREGATE_ID));
+            EventCriteria.forAnyEventType().withTags(AGGREGATE_ID_TAG);
 
     private final Context.ResourceKey<EventStoreTransaction> testEventStoreTransactionKey =
             Context.ResourceKey.withLabel("eventStoreTransaction");
@@ -60,7 +61,6 @@ class DefaultEventStoreTransactionTest {
     @Nested
     class AppendEvent {
 
-        @Disabled("TODO - Use a indexer function to define the indices to assign to each event")
         @Test
         void sourcingConditionIsMappedToAppendCondition() {
             // given
@@ -108,7 +108,6 @@ class DefaultEventStoreTransactionTest {
             );
         }
 
-        @Disabled("TODO - Use a indexer function to define the indices to assign to each event")
         @Test
         void sourceReturnsOnlyCommitedEvents() {
             // given
@@ -323,7 +322,9 @@ class DefaultEventStoreTransactionTest {
     private EventStoreTransaction defaultEventStoreTransactionFor(ProcessingContext processingContext) {
         return processingContext.computeResourceIfAbsent(testEventStoreTransactionKey,
                                                          () -> new DefaultEventStoreTransaction(new AsyncInMemoryEventStorageEngine(),
-                                                                                                processingContext));
+                                                                                                processingContext,
+                                                                                                m -> Set.of(
+                                                                                                        AGGREGATE_ID_TAG)));
     }
 
     protected static EventMessage<?> eventMessage(int seq) {

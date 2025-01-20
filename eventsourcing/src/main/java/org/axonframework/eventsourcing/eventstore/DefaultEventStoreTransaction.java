@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     private final AsyncEventStorageEngine eventStorageEngine;
     private final ProcessingContext processingContext;
+    private final TagResolver tagResolver;
     private final List<Consumer<EventMessage<?>>> callbacks;
 
     private final ResourceKey<AppendCondition> appendConditionKey;
@@ -62,9 +63,11 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      *                           {@link #appendEvent(EventMessage) append events} and attach resources to.
      */
     public DefaultEventStoreTransaction(@Nonnull AsyncEventStorageEngine eventStorageEngine,
-                                        @Nonnull ProcessingContext processingContext) {
+                                        @Nonnull ProcessingContext processingContext,
+                                        @Nonnull TagResolver tagResolver) {
         this.eventStorageEngine = eventStorageEngine;
         this.processingContext = processingContext;
+        this.tagResolver = tagResolver;
         this.callbacks = new CopyOnWriteArrayList<>();
 
         this.appendConditionKey = ResourceKey.withLabel("appendCondition");
@@ -93,9 +96,9 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                     return new CopyOnWriteArrayList<>();
                 }
         );
-        // TODO - Use a indexer function to define the indices to assign to each event
-        eventQueue.add(new GenericTaggedEventMessage<>(
-                eventMessage, Set.of()));
+
+        var taggedEvent = new GenericTaggedEventMessage<>(eventMessage, tagResolver.resolve(eventMessage));
+        eventQueue.add(taggedEvent);
 
         callbacks.forEach(callback -> callback.accept(eventMessage));
     }

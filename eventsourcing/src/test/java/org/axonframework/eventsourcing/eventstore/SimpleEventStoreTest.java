@@ -27,6 +27,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,7 +53,7 @@ class SimpleEventStoreTest {
     void setUp() {
         mockStorageEngine = mock(AsyncEventStorageEngine.class);
         processingContext = new StubProcessingContext();
-        testSubject = new SimpleEventStore(mockStorageEngine, MATCHING_CONTEXT);
+        testSubject = new SimpleEventStore(mockStorageEngine, MATCHING_CONTEXT, m -> Collections.emptySet());
     }
 
     private static GlobalSequenceTrackingToken aGlobalSequenceToken() {
