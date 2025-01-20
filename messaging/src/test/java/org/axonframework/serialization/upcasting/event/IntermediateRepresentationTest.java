@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.serialization.upcasting.event;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.serialization.Converter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
@@ -45,7 +45,7 @@ class IntermediateRepresentationTest {
     @Test
     public void canConvertDataTo() {
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, new QualifiedName("test", "event", "0.0.1"), "someString"
+                "test", "aggregateId", 0, new MessageType("event"), "someString"
         );
         EventData<?> eventData = new TestDomainEventEntry(testEvent, serializer);
         Serializer serializer = mock(Serializer.class);

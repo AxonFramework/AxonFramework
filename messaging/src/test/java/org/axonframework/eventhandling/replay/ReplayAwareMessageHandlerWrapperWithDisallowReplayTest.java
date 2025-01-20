@@ -24,8 +24,8 @@ import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
-import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -45,16 +45,16 @@ class ReplayAwareMessageHandlerWrapperWithDisallowReplayTest {
     private AnnotationEventHandlerAdapter testMethodSubject;
     private TrackingToken replayToken;
     private AnnotationEventHandlerAdapter testDisallowingSubject;
-    private final MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+    private final MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
     @BeforeEach
     void setUp() {
         handler = new SomeHandler();
         ReplayPreventingHandler disallowingHandler = new ReplayPreventingHandler();
         methodHandler = new SomeMethodHandler();
-        testSubject = new AnnotationEventHandlerAdapter(handler, messageNameResolver);
-        testMethodSubject = new AnnotationEventHandlerAdapter(methodHandler, messageNameResolver);
-        testDisallowingSubject = new AnnotationEventHandlerAdapter(disallowingHandler, messageNameResolver);
+        testSubject = new AnnotationEventHandlerAdapter(handler, messageTypeResolver);
+        testMethodSubject = new AnnotationEventHandlerAdapter(methodHandler, messageTypeResolver);
+        testDisallowingSubject = new AnnotationEventHandlerAdapter(disallowingHandler, messageTypeResolver);
         replayToken = ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(1L));
     }
 

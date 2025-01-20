@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.Segment;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -96,7 +96,7 @@ class SagaManagerTest {
 
     @Test
     void sagasLoaded() throws Exception {
-        EventMessage<?> event = new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new Object());
+        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
         unitOfWork.executeWithResult(() -> {
             testSubject.handle(event, null, Segment.ROOT_SEGMENT);
@@ -110,7 +110,7 @@ class SagaManagerTest {
 
     @Test
     void sagaIsTraced() {
-        EventMessage<?> event = new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new Object());
+        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
         UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
         unitOfWork.executeWithResult(() -> {
             testSubject.handle(event, null, Segment.ROOT_SEGMENT);
@@ -134,7 +134,7 @@ class SagaManagerTest {
                                                                                            .build())
                                                  .build();
 
-        EventMessage<?> event = new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new Object());
+        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
         when(mockSagaRepository.createInstance(any(), any())).thenReturn(mockSaga1);
         when(mockSagaRepository.find(any())).thenReturn(Collections.emptySet());
 
@@ -146,7 +146,7 @@ class SagaManagerTest {
 
     @Test
     void exceptionPropagated() throws Exception {
-        EventMessage<?> event = new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new Object());
+        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
         MockException toBeThrown = new MockException();
         doThrow(toBeThrown).when(mockSaga1).handleSync(event);
         doThrow(toBeThrown).when(mockErrorHandler).onError(toBeThrown, event, mockSaga1);
@@ -174,7 +174,7 @@ class SagaManagerTest {
                                                  .associationValue(new AssociationValue("someKey", "someValue"))
                                                  .build();
 
-        EventMessage<?> event = new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new Object());
+        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
         when(mockSagaRepository.createInstance(any(), any())).thenReturn(mockSaga1);
         when(mockSagaRepository.find(any())).thenReturn(Collections.emptySet());
 
@@ -195,7 +195,7 @@ class SagaManagerTest {
         Segment matchingSegment = segments[0].matches("someValue") ? segments[0] : segments[1];
         Segment otherSegment = segments[0].matches("someValue") ? segments[1] : segments[0];
 
-        EventMessage<?> event = new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new Object());
+        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
         ArgumentCaptor<String> createdSaga = ArgumentCaptor.forClass(String.class);
         when(mockSagaRepository.createInstance(createdSaga.capture(), any())).thenReturn(mockSaga1);
         when(mockSagaRepository.find(any())).thenReturn(Collections.emptySet());
@@ -230,7 +230,7 @@ class SagaManagerTest {
         assumeTrue((associationValue.hashCode() & Integer.MAX_VALUE) !=
                            (mockSaga1.getSagaIdentifier().hashCode() & Integer.MAX_VALUE));
 
-        EventMessage<?> event = new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new Object());
+        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
 
         String sagaId = mockSaga1.getSagaIdentifier();
         when(mockSagaRepository.find(any())).thenReturn(singleton(sagaId));
@@ -252,7 +252,7 @@ class SagaManagerTest {
 
     @Test
     void exceptionSuppressed() throws Exception {
-        EventMessage<?> event = new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new Object());
+        EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
         MockException toBeThrown = new MockException();
         doThrow(toBeThrown).when(mockSaga1).handleSync(event);
         testSubject.handle(event, null, Segment.ROOT_SEGMENT);

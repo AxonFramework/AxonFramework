@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.saga.EndSaga;
@@ -78,7 +78,7 @@ public class StubSaga {
         timer = scheduler.schedule(
                 message.getTimestamp().plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
                 new GenericEventMessage<>(
-                        new QualifiedName("test", "event", "0.0.1"), new TimerTriggeredEvent(event.getIdentifier())
+                        new MessageType("event"), new TimerTriggeredEvent(event.getIdentifier())
                 )
         );
     }
@@ -90,7 +90,7 @@ public class StubSaga {
         timer = scheduler.schedule(
                 timestamp.plus(TRIGGER_DURATION_MINUTES, ChronoUnit.MINUTES),
                 new GenericEventMessage<>(
-                        new QualifiedName("test", "event", "0.0.1"), new TimerTriggeredEvent(event.getIdentifier())
+                        new MessageType("event"), new TimerTriggeredEvent(event.getIdentifier())
                 )
         );
     }
@@ -99,7 +99,7 @@ public class StubSaga {
     public void handleEvent(TriggerExistingSagaEvent event, EventBus eventBus) {
         handledEvents.add(event);
         eventBus.publish(new GenericEventMessage<>(
-                new QualifiedName("test", "event", "0.0.1"), new SagaWasTriggeredEvent(this)
+                new MessageType("event"), new SagaWasTriggeredEvent(this)
         ));
     }
 
@@ -139,7 +139,7 @@ public class StubSaga {
         timer = scheduler.schedule(
                 Duration.ofMinutes(TRIGGER_DURATION_MINUTES),
                 new GenericEventMessage<>(
-                        new QualifiedName("test", "event", "0.0.1"), new TimerTriggeredEvent(event.getIdentifier())
+                        new MessageType("event"), new TimerTriggeredEvent(event.getIdentifier())
                 )
         );
     }

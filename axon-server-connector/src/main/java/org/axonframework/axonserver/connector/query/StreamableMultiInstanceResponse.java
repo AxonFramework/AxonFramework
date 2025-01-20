@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package org.axonframework.axonserver.connector.query;
 import io.axoniq.axonserver.connector.ReplyChannel;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 
@@ -119,12 +119,12 @@ class StreamableMultiInstanceResponse<T> implements StreamableResponse {
         GenericMessage<?> delegate;
         if (firstResponseToBeSent.compareAndSet(true, false)) {
             delegate = new GenericMessage<>(resultMessage.getIdentifier(),
-                                            QualifiedNameUtils.fromClassName(responseType),
+                                            new MessageType(responseType),
                                             result.next(),
                                             resultMessage.getMetaData(),
                                             responseType);
         } else {
-            delegate = new GenericMessage<>(QualifiedNameUtils.fromClassName(responseType),
+            delegate = new GenericMessage<>(new MessageType(responseType),
                                             result.next(),
                                             MetaData.emptyInstance(),
                                             responseType);

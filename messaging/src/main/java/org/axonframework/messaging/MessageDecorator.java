@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public abstract class MessageDecorator<P> implements Message<P> {
      * Initializes a new decorator with given {@code delegate} {@link Message}.
      * <p>
      * The decorator delegates to the delegate for the message's {@link #getIdentifier() identifier},
-     * {@link #name() type}, {@link #getPayload() payload}, and {@link #getMetaData() metadata}.
+     * {@link Message#type() type}, {@link #getPayload() payload}, and {@link #getMetaData() metadata}.
      *
      * @param delegate The {@link Message} delegate.
      */
@@ -58,8 +58,8 @@ public abstract class MessageDecorator<P> implements Message<P> {
 
     @Nonnull
     @Override
-    public QualifiedName name() {
-        return delegate.name();
+    public MessageType type() {
+        return delegate.type();
     }
 
     @Override

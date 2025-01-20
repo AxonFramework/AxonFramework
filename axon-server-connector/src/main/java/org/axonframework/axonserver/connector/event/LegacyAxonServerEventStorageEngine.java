@@ -45,8 +45,8 @@ import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.Converter;
 
 import java.time.Instant;
@@ -129,9 +129,8 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
                 Event.Builder builder = Event.newBuilder()
                                              .setPayload(SerializedObject.newBuilder()
                                                                          .setData(ByteString.copyFrom(payload))
-                                                                         .setType(event.name().namespace() + "."
-                                                                                          + event.name().localName())
-                                                                         .setRevision(event.name().revision())
+                                                                         .setType(event.type().name())
+                                                                         .setRevision(event.type().version())
                                                                          .build())
                                              .setMessageIdentifier(event.getIdentifier())
                                              .setTimestamp(event.getTimestamp().toEpochMilli());
@@ -249,11 +248,14 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
     }
 
     private EventMessage<byte[]> convertToMessage(Event event) {
-        return new GenericEventMessage<>(event.getMessageIdentifier(),
-                                         new QualifiedName("test", "event", "0.0.1"),
-                                         event.getPayload().getData().toByteArray(),
-                                         getMetaData(event.getMetaDataMap()),
-                                         Instant.ofEpochMilli(event.getTimestamp()));
+        SerializedObject payload = event.getPayload();
+        return new GenericEventMessage<>(
+                event.getMessageIdentifier(),
+                new MessageType(payload.getType(), payload.getRevision()),
+                payload.getData().toByteArray(),
+                getMetaData(event.getMetaDataMap()),
+                Instant.ofEpochMilli(event.getTimestamp())
+        );
     }
 
     private MetaData getMetaData(Map<String, MetaDataValue> metaDataMap) {

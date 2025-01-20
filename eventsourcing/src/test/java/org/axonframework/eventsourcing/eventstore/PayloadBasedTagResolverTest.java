@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;
@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PayloadBasedTagResolverTest {
 
     private static final GenericEventMessage<TestPayload> TEST_EVENT =
-            new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), TestPayload.INSTANCE);
+            new GenericEventMessage<>(new MessageType("test", "event", "0.0.1"), TestPayload.INSTANCE);
 
     @Test
     void resolveSetsExpectedTags() {

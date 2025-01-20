@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.MockException;
@@ -57,7 +57,7 @@ class TracingCommandBusTest {
     @Test
     void dispatchIsCorrectlyTraced() {
         CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "Say hi!");
+                new GenericCommandMessage<>(new MessageType("command"), "Say hi!");
 
         when(delegate.dispatch(any(), any())).thenAnswer(
                 i -> {
@@ -76,7 +76,7 @@ class TracingCommandBusTest {
     @Test
     void dispatchIsCorrectlyTracedDuringException() {
         CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "Say hi!");
+                new GenericCommandMessage<>(new MessageType("command"), "Say hi!");
 
         when(delegate.dispatch(any(), any())).thenAnswer(i -> {
             spanFactory.verifySpanPropagated("CommandBus.dispatchCommand",
@@ -99,7 +99,7 @@ class TracingCommandBusTest {
     @Test
     void verifyHandlerSpansAreCreatedOnHandlerInvocation() {
         CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "Test");
+                new GenericCommandMessage<>(new MessageType("command"), "Test");
         ArgumentCaptor<MessageHandler> captor = ArgumentCaptor.forClass(MessageHandler.class);
         when(delegate.subscribe(anyString(), captor.capture())).thenReturn(null);
 
@@ -113,7 +113,7 @@ class TracingCommandBusTest {
             public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
                                                               ProcessingContext processingContext) {
                 spanFactory.verifySpanActive("CommandBus.handleCommand");
-                return MessageStream.just(new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "ok"));
+                return MessageStream.just(new GenericMessage<>(new MessageType("message"), "ok"));
             }
         });
 
@@ -125,7 +125,7 @@ class TracingCommandBusTest {
     @Test
     void verifyHandlerSpansAreCompletedOnExceptionInHandlerInvocation() {
         CommandMessage<String> testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "Test");
+                new GenericCommandMessage<>(new MessageType("command"), "Test");
         ArgumentCaptor<MessageHandler> captor = ArgumentCaptor.forClass(MessageHandler.class);
         when(delegate.subscribe(anyString(), captor.capture())).thenReturn(null);
 

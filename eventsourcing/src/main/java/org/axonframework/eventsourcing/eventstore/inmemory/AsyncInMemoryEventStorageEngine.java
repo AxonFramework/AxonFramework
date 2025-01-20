@@ -21,17 +21,30 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.*;
+import org.axonframework.eventsourcing.eventstore.AppendCondition;
+import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.EventsCondition;
+import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.SourcingCondition;
+import org.axonframework.eventsourcing.eventstore.StreamingCondition;
+import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SimpleEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
 import java.time.Instant;
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -149,7 +162,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
                                 .values()
                                 .stream()
                                 .map(event -> (TaggedEventMessage<?>) event)
-                                .anyMatch(taggedEvent -> condition.matches(taggedEvent.event().name().fullName(), taggedEvent.tags()));
+                                .anyMatch(taggedEvent -> condition.matches(taggedEvent.event().type().name(), taggedEvent.tags()));
     }
 
     @Override
@@ -179,8 +192,8 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     }
 
     private static boolean match(TaggedEventMessage<?> taggedEvent, EventsCondition condition) {
-        QualifiedName qualifiedName = taggedEvent.event().name();
-        return condition.matches(qualifiedName.namespace() + "." + qualifiedName.localName(), taggedEvent.tags());
+        String qualifiedName = taggedEvent.event().type().name();
+        return condition.matches(qualifiedName, taggedEvent.tags());
     }
 
     @Override

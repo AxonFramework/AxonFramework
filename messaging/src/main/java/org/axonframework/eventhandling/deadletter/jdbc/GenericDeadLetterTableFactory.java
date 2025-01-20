@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class GenericDeadLetterTableFactory implements DeadLetterTableFactory {
                 schema.sequenceIndexColumn() + " BIGINT NOT NULL,\n" +
                 schema.eventTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.eventIdentifierColumn() + " VARCHAR(255) NOT NULL,\n" +
-                schema.nameColumn() + " VARCHAR(255) NOT NULL,\n" +
+                schema.typeColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.timestampColumn() + " " + timestampType() + " NOT NULL,\n" +
                 schema.payloadTypeColumn() + " VARCHAR(255) NOT NULL,\n" +
                 schema.payloadRevisionColumn() + " VARCHAR(255),\n" +

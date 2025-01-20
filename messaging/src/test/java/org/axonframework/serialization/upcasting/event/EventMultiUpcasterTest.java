@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ import org.axonframework.eventhandling.GenericDomainEventEntry;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedDomainEventData;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
@@ -84,7 +84,7 @@ class EventMultiUpcasterTest {
     @Test
     void upcasterIgnoresWrongEventType() {
         DomainEventMessage<String> testEventMessage = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, new QualifiedName("test", "event", "0.0.1"), "someString"
+                "test", "aggregateId", 0, new MessageType("event"), "someString"
         );
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
         IntermediateEventRepresentation testRepresentation =
@@ -104,7 +104,7 @@ class EventMultiUpcasterTest {
         String expectedRevisionNumber = "1";
 
         DomainEventMessage<StubDomainEvent> testEventMessage = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, new QualifiedName("test", "event", "0.0.1"), new StubDomainEvent("oldName")
+                "test", "aggregateId", 0, new MessageType("event"), new StubDomainEvent("oldName")
         );
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);
         IntermediateEventRepresentation testRepresentation = new InitialEventRepresentation(testEventData, serializer);
@@ -173,7 +173,7 @@ class EventMultiUpcasterTest {
 
         MetaData testMetaData = MetaData.with("key", "value");
         DomainEventMessage<StubDomainEvent> testEventMessage = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, new QualifiedName("test", "event", "0.0.1"),
+                "test", "aggregateId", 0, new MessageType("event"),
                 new StubDomainEvent("oldName"), testMetaData
         );
         EventData<?> testEventData = new TestDomainEventEntry(testEventMessage, serializer);

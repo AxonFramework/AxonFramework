@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -48,7 +48,7 @@ class TransactionManagingInterceptorTest {
             CurrentUnitOfWork.get().rollback();
         }
         interceptorChain = mock(InterceptorChain.class);
-        Message<?> message = new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), new Object());
+        Message<?> message = new GenericMessage<>(new MessageType("message"), new Object());
         unitOfWork = DefaultUnitOfWork.startAndGet(message);
         transactionManager = mock(TransactionManager.class);
         transaction = mock(Transaction.class);

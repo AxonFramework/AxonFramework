@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.spring.messaging;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.spring.utils.StubDomainEvent;
 import org.junit.jupiter.api.*;
 import org.springframework.messaging.Message;
@@ -51,7 +51,7 @@ class OutboundEventMessageChannelAdapterTest {
     void messageForwardedToChannel() {
         StubDomainEvent event = new StubDomainEvent();
         EventMessage<StubDomainEvent> testMessage =
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), event);
+                new GenericEventMessage<>(new MessageType("event"), event);
         testSubject.handle(singletonList(testMessage));
 
         verify(mockChannel).send(messageWithPayload(event));
@@ -74,7 +74,7 @@ class OutboundEventMessageChannelAdapterTest {
     }
 
     private EventMessage<String> newDomainEvent() {
-        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Mock");
+        return new GenericEventMessage<>(new MessageType("event"), "Mock");
     }
 
     private Message<?> messageWithPayload(final StubDomainEvent event) {

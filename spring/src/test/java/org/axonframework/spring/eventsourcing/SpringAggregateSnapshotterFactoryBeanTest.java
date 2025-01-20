@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.spring.config.annotation.StubAggregate;
 import org.junit.jupiter.api.*;
@@ -80,10 +80,10 @@ class SpringAggregateSnapshotterFactoryBeanTest {
 
         String type = "testAggregate";
         DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
-                type, aggregateIdentifier, 0L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+                type, aggregateIdentifier, 0L, new MessageType("event"), "Mock contents"
         );
         DomainEventMessage<String> event2 = new GenericDomainEventMessage<>(
-                type, aggregateIdentifier, 1L, new QualifiedName("test", "event", "0.0.1"), "Mock contents"
+                type, aggregateIdentifier, 1L, new MessageType("event"), "Mock contents"
         );
         when(mockEventStore.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(event1, event2));
     }

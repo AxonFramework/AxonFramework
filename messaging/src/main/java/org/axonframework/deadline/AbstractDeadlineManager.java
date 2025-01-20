@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,15 @@
 
 package org.axonframework.deadline;
 
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 
@@ -40,7 +47,7 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
 
     private final List<MessageDispatchInterceptor<? super DeadlineMessage<?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private final List<MessageHandlerInterceptor<? super DeadlineMessage<?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
-    protected MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+    protected MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
     /**
      * Run a given {@code deadlineCall} immediately, or schedule it for the {@link UnitOfWork} it's 'prepare commit'
@@ -117,7 +124,7 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
      * @param messageOrPayload A {@link Message} or payload to wrap as a DeadlineMessage
      * @param expiryTime       The timestamp at which the deadline expires
      * @param <P>              The generic type of the expected payload of the resulting object
-     * @return a DeadlineMessage using the {@code deadlineName} as its deadline name and containing the given
+     * @return a DeadlineMessage using the {@code deadlineName} as its deadline qualifiedName and containing the given
      * {@code messageOrPayload} as the payload
      */
     @SuppressWarnings("unchecked")
@@ -126,14 +133,12 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
                                                        @Nonnull Instant expiryTime) {
         if (messageOrPayload instanceof Message) {
             return new GenericDeadlineMessage<>(deadlineName,
-                    (Message<P>) messageOrPayload,
-                    () -> expiryTime);
+                                                (Message<P>) messageOrPayload,
+                                                () -> expiryTime);
         }
-        QualifiedName name = messageOrPayload == null
-                ? QualifiedNameUtils.fromDottedName("empty.deadline.payload")
-                : messageNameResolver.resolve(messageOrPayload.getClass());
+        MessageType type = messageTypeResolver.resolve(ObjectUtils.nullSafeTypeOf(messageOrPayload));
         return new GenericDeadlineMessage<>(
-                deadlineName, new GenericMessage<>(name, (P) messageOrPayload), () -> expiryTime
+                deadlineName, new GenericMessage<>(type, (P) messageOrPayload), () -> expiryTime
         );
     }
 

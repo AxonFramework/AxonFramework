@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.junit.jupiter.api.*;
@@ -44,7 +44,7 @@ class MessageNameSpanAttributesProviderTest {
     @Test
     void extractsForQueryWithSpecificName() {
         Message<?> genericQueryMessage = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "myQueryName", "MyQuery", instanceOf(String.class)
+                new MessageType("query"), "myQueryName", "MyQuery", instanceOf(String.class)
         );
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());
@@ -54,7 +54,7 @@ class MessageNameSpanAttributesProviderTest {
     @Test
     void extractsForQueryWithPayloadName() {
         Message<?> genericQueryMessage = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "MyQuery", instanceOf(String.class)
+                new MessageType("query"), "MyQuery", instanceOf(String.class)
         );
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());
@@ -64,7 +64,7 @@ class MessageNameSpanAttributesProviderTest {
     @Test
     void extractsForCommandWithSpecificName() {
         Message<?> genericQueryMessage = new GenericCommandMessage<>(new GenericCommandMessage<>(
-                new QualifiedName("test", "command", "0.0.1"), "payload"
+                new MessageType("command"), "payload"
         ), "MyAwesomeCommand");
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());
@@ -74,7 +74,7 @@ class MessageNameSpanAttributesProviderTest {
     @Test
     void extractsForCommandWithPayloadName() {
         Message<?> genericQueryMessage =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "payload");
+                new GenericCommandMessage<>(new MessageType("command"), "payload");
         Map<String, String> map = provider.provideForMessage(genericQueryMessage);
         assertEquals(1, map.size());
         assertEquals("java.lang.String", map.get("axon_message_name"));

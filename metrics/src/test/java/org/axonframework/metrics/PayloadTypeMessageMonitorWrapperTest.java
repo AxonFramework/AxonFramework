@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -37,9 +37,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class PayloadTypeMessageMonitorWrapperTest<T extends MessageMonitor<Message<?>> & MetricSet> {
 
     private static final CommandMessage<Object> STRING_MESSAGE =
-            new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "stringCommand");
+            new GenericCommandMessage<>(new MessageType("command"), "stringCommand");
     private static final CommandMessage<Object> INTEGER_MESSAGE =
-            new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), 1);
+            new GenericCommandMessage<>(new MessageType("command"), 1);
 
     private PayloadTypeMessageMonitorWrapper<CapacityMonitor> testSubject;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.reactivestreams.Publisher;
@@ -50,7 +50,7 @@ public class DefaultQueryGateway implements QueryGateway {
 
     private final QueryBus queryBus;
     private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors;
-    private final MessageNameResolver messageNameResolver;
+    private final MessageTypeResolver messageTypeResolver;
 
     /**
      * Instantiate a {@link DefaultQueryGateway} based on the fields contained in the {@link Builder}.
@@ -64,7 +64,7 @@ public class DefaultQueryGateway implements QueryGateway {
         builder.validate();
         this.queryBus = builder.queryBus;
         this.dispatchInterceptors = builder.dispatchInterceptors;
-        this.messageNameResolver = builder.messageNameResolver;
+        this.messageTypeResolver = builder.messageTypeResolver;
     }
 
     /**
@@ -119,9 +119,9 @@ public class DefaultQueryGateway implements QueryGateway {
      */
     @Deprecated
     private <R> QueryResponseMessage<R> asResponseMessage(Class<R> declaredType, Throwable exception) {
-        return new GenericQueryResponseMessage<>(messageNameResolver.resolve(exception.getClass()),
-                exception,
-                declaredType);
+        return new GenericQueryResponseMessage<>(messageTypeResolver.resolve(exception.getClass()),
+                                                 exception,
+                                                 declaredType);
     }
 
     @Override
@@ -139,7 +139,7 @@ public class DefaultQueryGateway implements QueryGateway {
                 ? new GenericStreamingQueryMessage<>((Message<Q>) query,
                                                      queryName,
                                                      responseType)
-                : new GenericStreamingQueryMessage<>(messageNameResolver.resolve(query),
+                : new GenericStreamingQueryMessage<>(messageTypeResolver.resolve(query),
                                                      queryName,
                                                      query,
                                                      responseType);
@@ -164,7 +164,7 @@ public class DefaultQueryGateway implements QueryGateway {
                 ? new GenericQueryMessage<>((Message<Q>) query,
                                             queryName,
                                             responseType)
-                : new GenericQueryMessage<>(messageNameResolver.resolve(query),
+                : new GenericQueryMessage<>(messageTypeResolver.resolve(query),
                                             queryName,
                                             query,
                                             responseType);
@@ -198,7 +198,7 @@ public class DefaultQueryGateway implements QueryGateway {
                                                         queryName,
                                                         initialResponseType,
                                                         updateResponseType)
-                : new GenericSubscriptionQueryMessage<>(messageNameResolver.resolve(query),
+                : new GenericSubscriptionQueryMessage<>(messageTypeResolver.resolve(query),
                                                         queryName,
                                                         query,
                                                         initialResponseType,
@@ -246,7 +246,7 @@ public class DefaultQueryGateway implements QueryGateway {
         private QueryBus queryBus;
         private List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors =
                 new CopyOnWriteArrayList<>();
-        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+        private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
         /**
          * Sets the {@link QueryBus} to deliver {@link QueryMessage}s on received in this {@link QueryGateway}
@@ -290,15 +290,15 @@ public class DefaultQueryGateway implements QueryGateway {
         }
 
         /**
-         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when publishing {@link QueryMessage QueryMessages}.
-         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when publishing {@link QueryMessage QueryMessages}.
+         * If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
          *
-         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for {@link QueryMessage QueryMessages}.
+         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for {@link QueryMessage QueryMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
-            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
-            this.messageNameResolver = messageNameResolver;
+        public Builder messageNameResolver(MessageTypeResolver messageTypeResolver) {
+            assertNonNull(messageTypeResolver, "MessageNameResolver may not be null");
+            this.messageTypeResolver = messageTypeResolver;
             return this;
         }
 

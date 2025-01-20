@@ -31,7 +31,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -94,7 +94,7 @@ class OpenTelemetrySpanFactoryTest {
 
     private static <P> EventMessage<P> asEventMessage(P event) {
         return new GenericEventMessage<>(
-                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
+                new GenericMessage<>(new MessageType(event.getClass()), event),
                 () -> GenericEventMessage.clock.instant()
         );
     }

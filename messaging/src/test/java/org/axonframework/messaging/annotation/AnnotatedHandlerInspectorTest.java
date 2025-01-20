@@ -18,12 +18,13 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -42,7 +43,6 @@ import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.eventhandling.EventTestUtils.asEventMessage;
-import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -73,13 +73,10 @@ class AnnotatedHandlerInspectorTest {
     private static MessageStream<?> returnTypeConverter(Object result) {
         if (result instanceof CompletableFuture<?> future) {
             return MessageStream.fromFuture(future.thenApply(
-                    r -> new GenericMessage<>(fromClassName(r.getClass()), r)
+                    r -> new GenericMessage<>(new MessageType(r.getClass()), r)
             ));
         }
-        QualifiedName type = result != null
-                ? fromClassName(result.getClass())
-                : new QualifiedName("axon.framework", "empty.result", "0.0.1");
-        return MessageStream.just(new GenericMessage<>(type, result));
+        return MessageStream.just(new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
@@ -106,7 +106,7 @@ class SpawningNewAggregateTest {
         initializeAggregate1Repository(repositoryProvider);
         CreateAggregate1Command testPayload = new CreateAggregate1Command("id", "aggregate2Id");
         CommandMessage<CreateAggregate1Command> testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), testPayload);
+                new GenericCommandMessage<>(new MessageType("command"), testPayload);
 
         commandBus.dispatch(testCommand, ProcessingContext.NONE);
 
@@ -129,7 +129,7 @@ class SpawningNewAggregateTest {
         when(repositoryProvider.repositoryFor(Aggregate2.class)).thenReturn(null);
         CreateAggregate1Command testPayload = new CreateAggregate1Command("id", "aggregate2Id");
         CommandMessage<CreateAggregate1Command> testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), testPayload);
+                new GenericCommandMessage<>(new MessageType("command"), testPayload);
 
         commandBus.dispatch(
                 testCommand,
@@ -155,7 +155,7 @@ class SpawningNewAggregateTest {
         initializeAggregate1Repository(null);
         CreateAggregate1Command testPayload = new CreateAggregate1Command("id", "aggregate2Id");
         CommandMessage<CreateAggregate1Command> testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), testPayload);
+                new GenericCommandMessage<>(new MessageType("command"), testPayload);
 
         commandBus.dispatch(
                 testCommand,
