@@ -25,18 +25,22 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.MessageType;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
 
 import java.util.*;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.*;
@@ -50,6 +54,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEventStorageEngine> {
 
     private static final String TEST_AGGREGATE_TYPE = "TEST_AGGREGATE";
+    private static ExecutorService executor;
+
     protected String TEST_AGGREGATE_ID;
     protected String OTHER_AGGREGATE_ID;
     protected EventCriteria TEST_AGGREGATE_CRITERIA;
@@ -68,12 +74,33 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         testSubject = buildStorageEngine();
     }
 
+    @BeforeAll
+    static void beforeAll() {
+        executor = Executors.newVirtualThreadPerTaskExecutor();
+    }
+
+    @AfterAll
+    static void afterAll() {
+        executor.close();
+    }
+
     /**
      * Constructs the {@link AsyncEventStorageEngine} used in this test suite.
      *
      * @return The {@link AsyncEventStorageEngine} used in this test suite.
      */
     protected abstract ESE buildStorageEngine() throws Exception;
+
+    /**
+     * Will translate eventNumber to global sequence position. It differs among the EventStore implementations. For
+     * example: AxonServer starts the global stream from 0, whereas JPA implementations starts from 1.
+     *
+     * @param eventNumber the event number to translate, first is 1
+     * @return the global index position for given event storage engine
+     */
+    protected abstract long globalSequenceOfEvent(long eventNumber);
+
+    protected abstract TrackingToken trackingTokenOnPosition(long eventNumber);
 
     @Test
     void streamingFromStartReturnsSelectedMessages() {
@@ -82,8 +109,9 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags());
         // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
         ConsistencyMarker newMarker = testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                                  expectedEventOne,
-                                                  expectedEventTwo).thenCompose(AppendTransaction::commit).join();
+                                                               expectedEventOne,
+                                                               expectedEventTwo).thenCompose(AppendTransaction::commit)
+                                                 .join();
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-2", emptySet()),
                                  taggedEventMessage("event-3", emptySet())).thenCompose(AppendTransaction::commit)
@@ -96,13 +124,13 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                    .join();
 
         MessageStream<EventMessage<?>> result =
-                testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(-1)));
+                testSubject.stream(StreamingCondition.startingFrom(trackingTokenOnPosition(0)));
 
         StepVerifier.create(result.asFlux())
-                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne.event(), 0))
-                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventTwo.event(), 1))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne.event(), 1))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventTwo.event(), 2))
                     .expectNextCount(2)
-                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 4))
+                    .assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 5))
                     .expectNextCount(2)
                     .thenCancel()
                     .verify();
@@ -126,11 +154,11 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                 AppendTransaction::commit).join();
 
         MessageStream<EventMessage<?>> result =
-                testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(1)));
+                testSubject.stream(StreamingCondition.startingFrom(trackingTokenOnPosition(2)));
 
         StepVerifier.create(result.asFlux())
                     // we've skipped the first two
-                    .expectNextCount(2).assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 4))
+                    .expectNextCount(2).assertNext(entry -> assertTrackedEntry(entry, expectedEventThree.event(), 5))
                     .expectNextCount(2).thenCancel().verify();
     }
 
@@ -142,8 +170,9 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags());
         // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
         ConsistencyMarker marker1 = testSubject.appendEvents(AppendCondition.withCriteria(expectedCriteria),
-                                                expectedEventOne,
-                                                expectedEventTwo).thenCompose(AppendTransaction::commit).join();
+                                                             expectedEventOne,
+                                                             expectedEventTwo).thenCompose(AppendTransaction::commit)
+                                               .join();
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-2", Set.of()),
                                  taggedEventMessage("event-3", Set.of())).thenCompose(
@@ -155,14 +184,27 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                                  taggedEventMessage("event-6", Set.of())).thenCompose(
                 AppendTransaction::commit).join();
 
-        MessageStream<EventMessage<?>> result = testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(
-                10)).or(expectedCriteria));
+        MessageStream<EventMessage<?>> result = testSubject.stream(StreamingCondition.startingFrom(
+                trackingTokenOnPosition(10)).or(expectedCriteria));
 
         try {
             assertTrue(result.next().isEmpty());
         } finally {
             result.close();
         }
+    }
+
+    @Test
+    void sourcingEventsReturnsMatchingAggregateEvent() {
+        AppendCondition appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
+        testSubject.appendEvents(appendCondition,
+                                 taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags())
+                   )
+                   .thenCompose(AppendTransaction::commit).join();
+
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
+                    .expectNextMatches(entryWithAggregateEvent("event-0", 0))
+                    .verifyComplete();
     }
 
     @Test
@@ -323,8 +365,47 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
 
         CompletableFuture<ConsistencyMarker> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
-        var actual = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
-        assertInstanceOf(AppendEventsTransactionRejectedException.class, actual.getCause());
+        var thrown = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
+        assertInstanceOf(AppendEventsTransactionRejectedException.class, thrown.getCause());
+    }
+
+    @Test
+    void whenConflictingTransactionsRunOnDifferentThreadsConcurrentlyThenOnlyOneOfThemIsCommited() {
+        var transactions = List.of(
+                runAsync(() -> testSubject.appendEvents(
+                        AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                        taggedEventMessage("event-10", TEST_AGGREGATE_CRITERIA.tags())
+                )),
+                runAsync(() -> testSubject.appendEvents(
+                        AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                        taggedEventMessage("event-11", TEST_AGGREGATE_CRITERIA.tags())
+                )),
+                runAsync(() -> testSubject.appendEvents(
+                        AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                        taggedEventMessage("event-12", TEST_AGGREGATE_CRITERIA.tags())
+                )),
+                runAsync(() -> testSubject.appendEvents(
+                        AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                        taggedEventMessage("event-13", TEST_AGGREGATE_CRITERIA.tags())
+                ))
+        );
+
+        var commits = transactions.stream()
+                                  .map(tx -> tx.thenCompose(AppendTransaction::commit))
+                                  .toList();
+
+        var result = CompletableFuture.allOf(commits.toArray(new CompletableFuture[4]));
+        var thrown = assertThrows(Exception.class, result::join);
+        assertInstanceOf(AppendEventsTransactionRejectedException.class, thrown.getCause());
+
+        var commitedTransaction = commits.stream().filter(tx -> !tx.isCompletedExceptionally()).count();
+        assertEquals(1, commitedTransaction);
+        var rejectedTransactions = commits.stream().filter(CompletableFuture::isCompletedExceptionally).count();
+        assertEquals(transactions.size() - 1, rejectedTransactions);
+    }
+
+    private static <T> CompletableFuture<T> runAsync(Supplier<CompletableFuture<T>> task) {
+        return CompletableFuture.supplyAsync(task, executor).thenCompose(future -> future);
     }
 
     @Test
@@ -350,12 +431,56 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         assertTrue(validConsistencyMarker(secondCommit.join(), OTHER_AGGREGATE_ID, 0));
     }
 
-    private void assertTrackedEntry(Entry<EventMessage<?>> actual, EventMessage<?> expected, long expectedPosition) {
+    @Test
+    void transactionCanBeCommitedOnlyOnce() {
+        var tx =
+                testSubject.appendEvents(AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                                         taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags())).join();
+
+        assertDoesNotThrow(() -> tx.commit().get(1, TimeUnit.SECONDS));
+        assertThrows(Exception.class, () -> tx.commit().get(1, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void emptyTransactionAlwaysCommitSuccessfully() {
+        var appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
+
+        var commit = testSubject.appendEvents(appendCondition, Collections.emptyList())
+                                .thenCompose(AppendTransaction::commit);
+
+        assertDoesNotThrow(commit::join);
+    }
+
+    @Test
+    void eventWithMultipleTagsIsReportedAsPartOfException() {
+        TaggedEventMessage<?> violatingEntry = taggedEventMessage("event2",
+                                                                  Set.of(new Tag("key1", "value1"),
+                                                                         new Tag("key2", "value2")));
+        CompletableFuture<AsyncEventStorageEngine.AppendTransaction> actual = testSubject.appendEvents(
+                AppendCondition.none(),
+                taggedEventMessage("event1", Set.of(new Tag("key1", "value1"))),
+                violatingEntry,
+                taggedEventMessage("event3", Set.of(new Tag("key1", "value1")))
+        );
+
+        assertTrue(actual.isDone());
+        assertTrue(actual.isCompletedExceptionally());
+
+        ExecutionException actualException = assertThrows(ExecutionException.class, actual::get);
+        if (actualException.getCause() instanceof TooManyTagsOnEventMessageException e) {
+            assertEquals(violatingEntry.tags(), e.tags());
+            assertEquals(violatingEntry.event(), e.eventMessage());
+        } else {
+            fail("Unexpected exception", actualException);
+        }
+    }
+
+    private void assertTrackedEntry(Entry<EventMessage<?>> actual, EventMessage<?> expected, long eventNumber) {
         Optional<TrackingToken> actualToken = TrackingToken.fromContext(actual);
         assertTrue(actualToken.isPresent());
         OptionalLong actualPosition = actualToken.get().position();
         assertTrue(actualPosition.isPresent());
-        assertEquals(expectedPosition, actualPosition.getAsLong());
+        assertEquals(globalSequenceOfEvent(eventNumber), actualPosition.getAsLong());
         assertEvent(actual.message(), expected);
     }
 
@@ -391,5 +516,4 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         return consistencyMarker instanceof AggregateBasedConsistencyMarker cm
                 && cm.positionOf(aggregateIdentifier) == aggregateSequence;
     }
-
 }
