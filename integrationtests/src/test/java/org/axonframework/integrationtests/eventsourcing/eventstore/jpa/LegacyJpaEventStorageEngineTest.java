@@ -115,7 +115,7 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
         public DataSource dataSource() {
             var now = Instant.now();
             DriverManagerDataSource driverManagerDataSource
-                    = new DriverManagerDataSource("jdbc:hsqldb:file:./data/" + now + "_legacyjpatest",
+                    = new DriverManagerDataSource("jdbc:hsqldb:mem:legacyjpaeventstoreageenginetest",
                                                   "sa",
                                                   "password");
             driverManagerDataSource.setDriverClassName("org.hsqldb.jdbcDriver");

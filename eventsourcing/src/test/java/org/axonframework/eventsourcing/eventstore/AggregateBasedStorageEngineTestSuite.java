@@ -370,29 +370,38 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
     }
 
     @Test
-    void transactionRejectedWhenRunConcurrentlyOnDifferentThreadCreatedTransactionIsCommittedFirst() {
-        var firstTx = runAsync(() ->
-                                       testSubject.appendEvents(
-                                               AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                               taggedEventMessage("event-10", TEST_AGGREGATE_CRITERIA.tags())
-                                       )
-        );
-        var secondTx = runAsync(() ->
-                                        testSubject.appendEvents(
-                                                AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
-                                                taggedEventMessage("event-11",
-                                                                   TEST_AGGREGATE_CRITERIA.tags())
-                                        )
+    void whenConflictingTransactionsRunOnDifferentThreadsConcurrentlyThenOnlyOneOfThemIsCommited() {
+        var transactions = List.of(
+                runAsync(() -> testSubject.appendEvents(
+                        AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                        taggedEventMessage("event-10", TEST_AGGREGATE_CRITERIA.tags())
+                )),
+                runAsync(() -> testSubject.appendEvents(
+                        AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                        taggedEventMessage("event-11", TEST_AGGREGATE_CRITERIA.tags())
+                )),
+                runAsync(() -> testSubject.appendEvents(
+                        AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                        taggedEventMessage("event-12", TEST_AGGREGATE_CRITERIA.tags())
+                )),
+                runAsync(() -> testSubject.appendEvents(
+                        AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA),
+                        taggedEventMessage("event-13", TEST_AGGREGATE_CRITERIA.tags())
+                ))
         );
 
-        var firstCommit = firstTx.thenCompose(AppendTransaction::commit);
-        var secondCommit = secondTx.thenCompose(AppendTransaction::commit);
+        var commits = transactions.stream()
+                                  .map(tx -> tx.thenCompose(AppendTransaction::commit))
+                                  .toList();
 
-        var result = CompletableFuture.allOf(firstCommit, secondCommit);
+        var result = CompletableFuture.allOf(commits.toArray(new CompletableFuture[4]));
         var thrown = assertThrows(Exception.class, result::join);
         assertInstanceOf(AppendEventsTransactionRejectedException.class, thrown.getCause());
-        assertTrue(firstCommit.isDone() || secondCommit.isDone());
-        assertTrue(firstCommit.isCompletedExceptionally() || secondCommit.isCompletedExceptionally());
+
+        var commitedTransaction = commits.stream().filter(tx -> !tx.isCompletedExceptionally()).count();
+        assertEquals(1, commitedTransaction);
+        var rejectedTransactions = commits.stream().filter(CompletableFuture::isCompletedExceptionally).count();
+        assertEquals(transactions.size() - 1, rejectedTransactions);
     }
 
     private static <T> CompletableFuture<T> runAsync(Supplier<CompletableFuture<T>> task) {
