@@ -60,6 +60,8 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
      *                           {@link #transaction(ProcessingContext, String) transactions} and
      *                           {@link #open(String, StreamingCondition) open event streams} with.
      * @param context            The (bounded) {@code context} this event store operates in.
+     * @param tagResolver        The {@link TagResolver} used to resolve tags during appending events in the
+     *                           {@link EventStoreTransaction}.
      */
     public SimpleEventStore(@Nonnull AsyncEventStorageEngine eventStorageEngine,
                             @Nonnull String context,

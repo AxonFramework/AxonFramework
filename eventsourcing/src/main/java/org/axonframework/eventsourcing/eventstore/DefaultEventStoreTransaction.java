@@ -23,7 +23,6 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -61,6 +60,8 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      *                           {@link #appendEvent(EventMessage) append events} with.
      * @param processingContext  The {@link ProcessingContext} from which to
      *                           {@link #appendEvent(EventMessage) append events} and attach resources to.
+     * @param tagResolver        The {@link TagResolver} used to resolve tags while
+     *                           {@link #appendEvent(EventMessage) appending events}.
      */
     public DefaultEventStoreTransaction(@Nonnull AsyncEventStorageEngine eventStorageEngine,
                                         @Nonnull ProcessingContext processingContext,
@@ -120,7 +121,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     private CompletableFuture<ConsistencyMarker> doCommit(ProcessingContext commitContext,
-                                             AsyncEventStorageEngine.AppendTransaction tx) {
+                                                          AsyncEventStorageEngine.AppendTransaction tx) {
         return tx.commit()
                  .whenComplete((position, exception) ->
                                        commitContext.putResource(appendPositionKey, position));

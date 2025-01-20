@@ -321,10 +321,12 @@ class DefaultEventStoreTransactionTest {
 
     private EventStoreTransaction defaultEventStoreTransactionFor(ProcessingContext processingContext) {
         return processingContext.computeResourceIfAbsent(testEventStoreTransactionKey,
-                                                         () -> new DefaultEventStoreTransaction(new AsyncInMemoryEventStorageEngine(),
-                                                                                                processingContext,
-                                                                                                m -> Set.of(
-                                                                                                        AGGREGATE_ID_TAG)));
+                                                         () -> new DefaultEventStoreTransaction(
+                                                                 new AsyncInMemoryEventStorageEngine(),
+                                                                 processingContext,
+                                                                 m -> Set.of(AGGREGATE_ID_TAG)
+                                                         )
+        );
     }
 
     protected static EventMessage<?> eventMessage(int seq) {
