@@ -23,6 +23,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -90,7 +91,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     @Override
     public void appendEvent(@Nonnull EventMessage<?> eventMessage) {
-        List<TaggedEventMessage<?>> eventQueue = processingContext.computeResourceIfAbsent(
+        var eventQueue = processingContext.computeResourceIfAbsent(
                 eventQueueKey,
                 () -> {
                     attachAppendEventsStep();
@@ -98,8 +99,8 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                 }
         );
 
-        var taggedEvent = new GenericTaggedEventMessage<>(eventMessage, tagResolver.resolve(eventMessage));
-        eventQueue.add(taggedEvent);
+        var tags = tagResolver.resolve(eventMessage);
+        eventQueue.add(new GenericTaggedEventMessage<>(eventMessage, tags));
 
         callbacks.forEach(callback -> callback.accept(eventMessage));
     }
