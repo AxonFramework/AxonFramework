@@ -120,7 +120,7 @@
         <dom4j.version>2.1.4</dom4j.version>
         <gson.version>2.11.0</gson.version>
         <jackson.version>2.18.2</jackson.version>
-        <xstream.version>1.4.20</xstream.version>
+        <xstream.version>1.4.21</xstream.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version><!-- Don't upgrade due to JDK8 -->
         <jobrunr.version>7.3.2</jobrunr.version>
