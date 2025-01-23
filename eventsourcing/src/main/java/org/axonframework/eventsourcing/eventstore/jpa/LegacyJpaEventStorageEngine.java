@@ -103,10 +103,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     private final GapAwareTrackingTokenOperations tokenOperations;
 
     public LegacyJpaEventStorageEngine(
-            @javax.annotation.Nonnull EntityManagerProvider entityManagerProvider,
-            @javax.annotation.Nonnull TransactionManager transactionManager,
-            @javax.annotation.Nonnull Serializer eventSerializer,
-            @javax.annotation.Nonnull UnaryOperator<Customization> configurationOverride
+            @Nonnull EntityManagerProvider entityManagerProvider,
+            @Nonnull TransactionManager transactionManager,
+            @Nonnull Serializer eventSerializer,
+            @Nonnull UnaryOperator<Customization> configurationOverride
     ) {
         this.entityManagerProvider = entityManagerProvider;
         this.transactionManager = transactionManager;
@@ -344,7 +344,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     }
 
     @Override
-    public void describeTo(@javax.annotation.Nonnull ComponentDescriptor descriptor) {
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("entityManagerProvider", entityManagerProvider);
         descriptor.describeProperty("transactionManager", transactionManager);
         descriptor.describeProperty("eventSerializer", eventSerializer);
