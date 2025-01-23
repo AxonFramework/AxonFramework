@@ -153,7 +153,7 @@ record LegacyJpaEventStorageOperations(
         return result;
     }
 
-    List<Object[]> indexToTimestamp(GapAwareTrackingToken lastToken) {
+    List<Object[]> indexAndTimestampBetweenGaps(GapAwareTrackingToken token) {
         return entityManager
                 .createQuery(
                         "SELECT e.globalIndex, e.timeStamp FROM " + domainEventEntryEntityName() + " e "
@@ -161,8 +161,8 @@ record LegacyJpaEventStorageOperations(
                                 + "AND e.globalIndex <= :maxGlobalIndex",
                         Object[].class
                 )
-                .setParameter("firstGapOffset", lastToken.getGaps().first())
-                .setParameter("maxGlobalIndex", lastToken.getGaps().last() + 1L)
+                .setParameter("firstGapOffset", token.getGaps().first())
+                .setParameter("maxGlobalIndex", token.getGaps().last() + 1L)
                 .getResultList();
     }
 
