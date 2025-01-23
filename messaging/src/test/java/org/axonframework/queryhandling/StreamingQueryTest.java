@@ -19,6 +19,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
+import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.junit.jupiter.api.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

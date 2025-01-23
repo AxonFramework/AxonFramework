@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.commandhandling;
 
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;

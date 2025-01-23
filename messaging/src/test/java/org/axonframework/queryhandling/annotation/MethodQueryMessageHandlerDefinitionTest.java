@@ -27,7 +27,6 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.GenericQueryMessage;
-import org.axonframework.queryhandling.QueryHandler;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;

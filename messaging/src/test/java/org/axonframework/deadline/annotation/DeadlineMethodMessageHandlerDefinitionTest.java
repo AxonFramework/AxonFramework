@@ -18,7 +18,7 @@ package org.axonframework.deadline.annotation;
 
 import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;

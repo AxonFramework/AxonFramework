@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.modelling.command;
 
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.Assert;

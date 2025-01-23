@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.eventhandling;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.integrationtests.commandhandling.LoopingChangeDoneEvent;
 import org.axonframework.integrationtests.commandhandling.UpdateStubAggregateCommand;
 import org.axonframework.messaging.MessageType;

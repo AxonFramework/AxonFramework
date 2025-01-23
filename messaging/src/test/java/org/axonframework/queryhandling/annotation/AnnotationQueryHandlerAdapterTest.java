@@ -25,7 +25,6 @@ import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.NoHandlerForQueryException;
 import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;

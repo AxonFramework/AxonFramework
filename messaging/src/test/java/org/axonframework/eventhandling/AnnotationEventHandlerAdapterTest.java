@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.AxonException;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageTypeResolver;

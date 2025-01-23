@@ -19,6 +19,7 @@ package org.axonframework.queryhandling;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
+import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

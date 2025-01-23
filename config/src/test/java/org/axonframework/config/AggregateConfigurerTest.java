@@ -18,7 +18,7 @@ package org.axonframework.config;
 
 import com.thoughtworks.xstream.XStream;
 import jakarta.persistence.EntityManager;
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jpa.EntityManagerProvider;
