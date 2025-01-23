@@ -39,18 +39,20 @@ record GapAwareTrackingTokenOperations(
         Logger logger
 ) {
 
-    GapAwareTrackingToken withGapsCleaned(GapAwareTrackingToken token, List<Object[]> indexToTimestamp) {
+    GapAwareTrackingToken withGapsCleaned(GapAwareTrackingToken token, List<Object[]> indexAndTimestampBetweenGaps) {
         Instant gapTimeoutThreshold = gapTimeoutThreshold();
         GapAwareTrackingToken cleanedToken = token;
-        for (Object[] result : indexToTimestamp) {
+        for (Object[] existingEvent : indexAndTimestampBetweenGaps) {
             try {
-                Instant timestamp = DateTimeUtils.parseInstant(result[1].toString());
-                long sequenceNumber = (long) result[0];
-                if (cleanedToken.getGaps().contains(sequenceNumber) || timestamp.isAfter(gapTimeoutThreshold)) {
+                Instant timestamp = DateTimeUtils.parseInstant(existingEvent[1].toString());
+                long sequenceNumber = (long) existingEvent[0];
+                boolean gapFilled = cleanedToken.getGaps().contains(sequenceNumber);
+                if (gapFilled || timestamp.isAfter(gapTimeoutThreshold)) {
                     // filled a gap or found an entry that is too recent. Should not continue cleaning up
                     return cleanedToken;
                 }
-                if (cleanedToken.getGaps().contains(sequenceNumber - 1)) {
+                boolean gapRightBeforeTheEvent = cleanedToken.getGaps().contains(sequenceNumber - 1);
+                if (gapRightBeforeTheEvent) {
                     cleanedToken = cleanedToken.withGapsTruncatedAt(sequenceNumber);
                 }
             } catch (DateTimeParseException e) {

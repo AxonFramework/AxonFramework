@@ -93,7 +93,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     private final Serializer eventSerializer;
     private final EventUpcaster upcasterChain;
     private final PersistenceExceptionResolver persistenceExceptionResolver;
-    private final boolean explicitFlush;
 
     private final LegacyJpaEventStorageOperations legacyJpaOperations;
     private final BatchingEventStorageOperations batchingOperations;
@@ -111,7 +110,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
         var customization = configurationOverride.apply(Customization.withDefaultValues());
         this.upcasterChain = customization.upcasterChain();
-        this.explicitFlush = customization.explicitFlush();
 
         this.legacyJpaOperations = new LegacyJpaEventStorageOperations(transactionManager,
                                                                        entityManagerProvider.getEntityManager(),
@@ -166,9 +164,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 var tx = transactionManager.startTransaction();
                 try {
                     entityManagerPersistEvents(aggregateSequencer, events);
-                    if (explicitFlush) {
-                        entityManagerProvider.getEntityManager().flush();
-                    }
                     tx.commit();
                     txResult.complete(null);
                 } catch (Exception e) {
@@ -345,7 +340,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         descriptor.describeProperty("transactionManager", transactionManager);
         descriptor.describeProperty("eventSerializer", eventSerializer);
         descriptor.describeProperty("upcasterChain", upcasterChain);
-        descriptor.describeProperty("explicitFlush", explicitFlush);
         descriptor.describeProperty("persistenceExceptionResolver", persistenceExceptionResolver);
         descriptor.describeProperty("legacyJpaOperations", legacyJpaOperations);
         descriptor.describeProperty("tokenOperations", tokenOperations);
@@ -436,13 +430,14 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
         private GapAwareTrackingToken cleanedToken(GapAwareTrackingToken lastToken) {
             if (lastToken != null && lastToken.getGaps().size() > gapCleaningThreshold) {
-                return tokenOperations.withGapsCleaned(lastToken, indexToTimestamp(lastToken));
+                return tokenOperations.withGapsCleaned(lastToken, indexAndTimestampBetweenGaps(lastToken));
             }
             return lastToken;
         }
 
-        private List<Object[]> indexToTimestamp(GapAwareTrackingToken lastToken) {
-            return transactionManager.fetchInTransaction(() -> legacyJpaOperations.indexToTimestamp(lastToken));
+        private List<Object[]> indexAndTimestampBetweenGaps(GapAwareTrackingToken lastToken) {
+            return transactionManager.fetchInTransaction(() -> legacyJpaOperations.indexAndTimestampBetweenGaps(
+                    lastToken));
         }
 
 
@@ -493,7 +488,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             PersistenceExceptionResolver persistenceExceptionResolver,
             int batchSize,
             Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate,
-            boolean explicitFlush,
             long lowestGlobalSequence,
             TokenGapsHandlingConfig tokenGapsHandling
     ) {
@@ -535,7 +529,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                     null,
                     DEFAULT_BATCH_SIZE,
                     null,
-                    DEFAULT_EXPLICIT_FLUSH,
                     DEFAULT_LOWEST_GLOBAL_SEQUENCE,
                     TokenGapsHandlingConfig.withDefaultValues()
             );
@@ -546,7 +539,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                      persistenceExceptionResolver,
                                      batchSize,
                                      finalAggregateBatchPredicate,
-                                     explicitFlush,
                                      lowestGlobalSequence,
                                      tokenGapsHandling
             );
@@ -557,7 +549,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                      persistenceExceptionResolver,
                                      batchSize,
                                      finalAggregateBatchPredicate,
-                                     explicitFlush,
                                      lowestGlobalSequence,
                                      tokenGapsHandling
             );
@@ -568,7 +559,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                      persistenceExceptionResolver,
                                      batchSize,
                                      finalAggregateBatchPredicate,
-                                     explicitFlush,
                                      lowestGlobalSequence,
                                      tokenGapsHandling
             );
@@ -580,7 +570,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                      persistenceExceptionResolver,
                                      batchSize,
                                      finalAggregateBatchPredicate,
-                                     explicitFlush,
                                      lowestGlobalSequence,
                                      tokenGapsHandling
             );
@@ -591,7 +580,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                      persistenceExceptionResolver,
                                      batchSize,
                                      finalAggregateBatchPredicate,
-                                     explicitFlush,
                                      lowestGlobalSequence,
                                      tokenGapsHandling
             );
@@ -602,7 +590,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                      persistenceExceptionResolver,
                                      batchSize,
                                      finalAggregateBatchPredicate,
-                                     explicitFlush,
                                      lowestGlobalSequence,
                                      configurationOverride.apply(tokenGapsHandling)
             );
@@ -613,7 +600,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                      persistenceExceptionResolver,
                                      batchSize,
                                      finalAggregateBatchPredicate,
-                                     explicitFlush,
                                      lowestGlobalSequence,
                                      tokenGapsHandling
             );

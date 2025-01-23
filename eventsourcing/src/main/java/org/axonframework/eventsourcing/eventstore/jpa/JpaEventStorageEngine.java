@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -190,7 +190,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
     }
 
     private List<Object[]> indexToTimestamp(GapAwareTrackingToken lastToken) {
-        return transactionManager.fetchInTransaction(() -> legacyJpaOperations.indexToTimestamp(lastToken));
+        return transactionManager.fetchInTransaction(() -> legacyJpaOperations.indexAndTimestampBetweenGaps(lastToken));
     }
 
     @Override
