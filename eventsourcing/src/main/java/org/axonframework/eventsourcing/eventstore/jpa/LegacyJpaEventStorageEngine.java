@@ -40,10 +40,8 @@ import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageNameResolver;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -97,7 +95,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     private final PersistenceExceptionResolver persistenceExceptionResolver;
     private final boolean explicitFlush;
 
-    private final MessageNameResolver messageNameResolver; // todo: use while upcasting implementing MessageName
     private final LegacyJpaEventStorageOperations legacyJpaOperations;
     private final BatchingEventStorageOperations batchingOperations;
     private final GapAwareTrackingTokenOperations tokenOperations;
@@ -114,7 +111,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
         var customization = configurationOverride.apply(Customization.withDefaultValues());
         this.upcasterChain = customization.upcasterChain();
-        this.messageNameResolver = customization.messageNameResolver();
         this.explicitFlush = customization.explicitFlush();
 
         this.legacyJpaOperations = new LegacyJpaEventStorageOperations(transactionManager,
@@ -351,7 +347,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         descriptor.describeProperty("upcasterChain", upcasterChain);
         descriptor.describeProperty("explicitFlush", explicitFlush);
         descriptor.describeProperty("persistenceExceptionResolver", persistenceExceptionResolver);
-        descriptor.describeProperty("messageNameResolver", messageNameResolver);
         descriptor.describeProperty("legacyJpaOperations", legacyJpaOperations);
         descriptor.describeProperty("tokenOperations", tokenOperations);
         descriptor.describeProperty("batchingOperations", batchingOperations);
@@ -498,7 +493,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             PersistenceExceptionResolver persistenceExceptionResolver,
             int batchSize,
             Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate,
-            MessageNameResolver messageNameResolver,
             boolean explicitFlush,
             long lowestGlobalSequence,
             TokenGapsHandlingConfig tokenGapsHandling
@@ -511,7 +505,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         public Customization {
             assertNonNull(upcasterChain, "EventUpcaster may not be null");
             assertThat(batchSize, size -> size > 0, "The batchSize must be a positive number");
-            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
             assertThat(lowestGlobalSequence,
                        number -> number > 0,
                        "The lowestGlobalSequence must be a positive number");
@@ -542,7 +535,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                     null,
                     DEFAULT_BATCH_SIZE,
                     null,
-                    new ClassBasedMessageNameResolver(),
                     DEFAULT_EXPLICIT_FLUSH,
                     DEFAULT_LOWEST_GLOBAL_SEQUENCE,
                     TokenGapsHandlingConfig.withDefaultValues()
@@ -554,7 +546,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                      persistenceExceptionResolver,
                                      batchSize,
                                      finalAggregateBatchPredicate,
-                                     messageNameResolver,
                                      explicitFlush,
                                      lowestGlobalSequence,
                                      tokenGapsHandling
@@ -566,7 +557,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                      persistenceExceptionResolver,
                                      batchSize,
                                      finalAggregateBatchPredicate,
-                                     messageNameResolver,
                                      explicitFlush,
                                      lowestGlobalSequence,
                                      tokenGapsHandling
@@ -578,7 +568,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                      persistenceExceptionResolver,
                                      batchSize,
                                      finalAggregateBatchPredicate,
-                                     messageNameResolver,
                                      explicitFlush,
                                      lowestGlobalSequence,
                                      tokenGapsHandling
@@ -591,19 +580,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                      persistenceExceptionResolver,
                                      batchSize,
                                      finalAggregateBatchPredicate,
-                                     messageNameResolver,
-                                     explicitFlush,
-                                     lowestGlobalSequence,
-                                     tokenGapsHandling
-            );
-        }
-
-        public Customization messageNameResolver(MessageNameResolver messageNameResolver) {
-            return new Customization(upcasterChain,
-                                     persistenceExceptionResolver,
-                                     batchSize,
-                                     finalAggregateBatchPredicate,
-                                     messageNameResolver,
                                      explicitFlush,
                                      lowestGlobalSequence,
                                      tokenGapsHandling
@@ -615,7 +591,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                      persistenceExceptionResolver,
                                      batchSize,
                                      finalAggregateBatchPredicate,
-                                     messageNameResolver,
                                      explicitFlush,
                                      lowestGlobalSequence,
                                      tokenGapsHandling
@@ -627,7 +602,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                      persistenceExceptionResolver,
                                      batchSize,
                                      finalAggregateBatchPredicate,
-                                     messageNameResolver,
                                      explicitFlush,
                                      lowestGlobalSequence,
                                      configurationOverride.apply(tokenGapsHandling)
@@ -639,7 +613,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                                      persistenceExceptionResolver,
                                      batchSize,
                                      finalAggregateBatchPredicate,
-                                     messageNameResolver,
                                      explicitFlush,
                                      lowestGlobalSequence,
                                      tokenGapsHandling
