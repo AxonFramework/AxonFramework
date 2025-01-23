@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -207,7 +207,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
     void eventsWithTagsNotMatchingCriteriaAreInsertedAtSequenceZero() {
         testSubject.appendEvents(AppendCondition.withCriteria(OTHER_AGGREGATE_CRITERIA),
                                  taggedEventMessage("event-4", TEST_AGGREGATE_CRITERIA.tags()),
-                                 taggedEventMessage("event-5", TEST_AGGREGATE_CRITERIA.tags()),
+                                              taggedEventMessage("event-5", TEST_AGGREGATE_CRITERIA.tags()),
                                  taggedEventMessage("event-6", TEST_AGGREGATE_CRITERIA.tags()))
                    .thenCompose(AppendTransaction::commit).join();
 
@@ -370,7 +370,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
 
     protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags) {
         return new GenericTaggedEventMessage<>(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload),
+                new GenericEventMessage<>(new MessageType("event"), payload),
                 tags
         );
     }

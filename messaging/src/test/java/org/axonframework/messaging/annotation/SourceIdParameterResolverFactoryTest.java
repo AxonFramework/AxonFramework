@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -64,7 +64,7 @@ class SourceIdParameterResolverFactoryTest {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
         final GenericDomainEventMessage<Object> eventMessage = new GenericDomainEventMessage<>(
-                "test", UUID.randomUUID().toString(), 0L, new QualifiedName("test", "event", "0.0.1"), "event"
+                "test", UUID.randomUUID().toString(), 0L, new MessageType("event"), "event"
         );
         assertTrue(resolver.matches(eventMessage, null));
         assertEquals(eventMessage.getAggregateIdentifier(), resolver.resolveParameterValue(eventMessage, null));
@@ -75,7 +75,7 @@ class SourceIdParameterResolverFactoryTest {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(sourceIdMethod, sourceIdMethod.getParameters(), 0);
         CommandMessage<Object> commandMessage =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test");
+                new GenericCommandMessage<>(new MessageType("command"), "test");
         assertFalse(resolver.matches(commandMessage, null));
     }
 

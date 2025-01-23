@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeAwareProvider;
@@ -209,9 +209,9 @@ public class DeadlineJob implements Job {
          */
         public static final String SERIALIZED_DEADLINE_SCOPE_CLASS_NAME = "serializedDeadlineScopeClassName";
         /**
-         * Key pointing to the {@link Message#name()} as a {@code String} of the deadline in the {@link JobDataMap}.
+         * Key pointing to the {@link Message#type()} as a {@code String} of the deadline in the {@link JobDataMap}.
          */
-        public static final String NAME = "name";
+        public static final String TYPE = "type";
 
         /**
          * Serializes the provided {@code deadlineMessage} and {@code deadlineScope} and puts them in a
@@ -239,7 +239,7 @@ public class DeadlineJob implements Job {
                                                Serializer serializer) {
             jobData.put(DEADLINE_NAME, deadlineMessage.getDeadlineName());
             jobData.put(MESSAGE_ID, deadlineMessage.getIdentifier());
-            jobData.put(NAME, deadlineMessage.name().toString());
+            jobData.put(TYPE, deadlineMessage.type().toString());
             jobData.put(MESSAGE_TIMESTAMP, deadlineMessage.getTimestamp().toString());
 
             SerializedObject<byte[]> serializedDeadlinePayload =
@@ -272,7 +272,7 @@ public class DeadlineJob implements Job {
             return (DeadlineMessage<T>) new GenericDeadlineMessage<>(
                     (String) jobDataMap.get(DEADLINE_NAME),
                     (String) jobDataMap.get(MESSAGE_ID),
-                    QualifiedName.fromString((String) jobDataMap.get(NAME)),
+                    MessageType.fromString((String) jobDataMap.get(TYPE)),
                     deserializeDeadlinePayload(serializer, jobDataMap),
                     deserializeDeadlineMetaData(serializer, jobDataMap),
                     retrieveDeadlineTimestamp(jobDataMap)

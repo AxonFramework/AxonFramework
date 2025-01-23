@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -76,10 +76,9 @@ public class FixtureTest_RegisteringMethodEnhancements {
                    })));
     }
 
-
     private static <P> EventMessage<P> asEventMessage(P event) {
         return new GenericEventMessage<>(
-                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
+                new GenericMessage<>(new MessageType(event.getClass()), event),
                 () -> GenericEventMessage.clock.instant()
         );
     }

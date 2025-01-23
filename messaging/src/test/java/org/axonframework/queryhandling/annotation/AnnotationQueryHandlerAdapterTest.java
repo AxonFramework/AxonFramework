@@ -17,8 +17,8 @@ package org.axonframework.queryhandling.annotation;
 
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
@@ -87,7 +87,7 @@ class AnnotationQueryHandlerAdapterTest {
     void handleQuery() throws Exception {
         String testResponse = "hello";
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), testResponse, instanceOf(String.class)
+                new MessageType("query"), testResponse, instanceOf(String.class)
         );
         Object result = testSubject.handleSync(testQuery);
 
@@ -97,7 +97,7 @@ class AnnotationQueryHandlerAdapterTest {
     @Test
     void handleQueryWithException() {
         QueryMessage<String, Integer> testQuery = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "hello", instanceOf(Integer.class)
+                new MessageType("query"), "hello", instanceOf(Integer.class)
         );
 
         assertThrows(MockException.class, () -> testSubject.handleSync(testQuery));
@@ -106,7 +106,7 @@ class AnnotationQueryHandlerAdapterTest {
     @Test
     void handleQueryWithEmptyOptional() throws Exception {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "noEcho", "hello", instanceOf(String.class)
+                new MessageType("query"), "noEcho", "hello", instanceOf(String.class)
         );
 
         assertNull(testSubject.handleSync(testQuery));
@@ -115,7 +115,7 @@ class AnnotationQueryHandlerAdapterTest {
     @Test
     void handleQueryWithProvidedOptional() throws Exception {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "Hello", "hello", instanceOf(String.class)
+                new MessageType("query"), "Hello", "hello", instanceOf(String.class)
         );
 
         assertEquals("hello", testSubject.handleSync(testQuery));
@@ -125,7 +125,7 @@ class AnnotationQueryHandlerAdapterTest {
     void handleQueryForCollection() throws Exception {
         int testResponse = 5;
         QueryMessage<Integer, List<String>> testQuery = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), testResponse, multipleInstancesOf(String.class)
+                new MessageType("query"), testResponse, multipleInstancesOf(String.class)
         );
 
         //noinspection unchecked
@@ -137,7 +137,7 @@ class AnnotationQueryHandlerAdapterTest {
     @Test
     void handleQueryThrowsNoHandlerForQueryException() {
         QueryMessage<Long, List<String>> testQuery = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), 42L, multipleInstancesOf(String.class)
+                new MessageType("query"), 42L, multipleInstancesOf(String.class)
         );
 
         assertThrows(NoHandlerForQueryException.class, () -> testSubject.handleSync(testQuery));
@@ -152,7 +152,7 @@ class AnnotationQueryHandlerAdapterTest {
         );
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "Hello", "Hi", instanceOf(String.class)
+                new MessageType("query"), "Hello", "Hi", instanceOf(String.class)
         );
 
         String result = (String) testSubject.handleSync(testQuery);
@@ -165,10 +165,10 @@ class AnnotationQueryHandlerAdapterTest {
     @Test
     void canHandleMessage() {
         QueryMessage<String, Integer> testIntegerQuery = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "hello", instanceOf(Integer.class)
+                new MessageType("query"), "hello", instanceOf(Integer.class)
         );
         QueryMessage<String, Long> testLongQuery = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "hello", instanceOf(Long.class)
+                new MessageType("query"), "hello", instanceOf(Long.class)
         );
 
         assertTrue(testSubject.canHandle(testIntegerQuery));
@@ -184,7 +184,7 @@ class AnnotationQueryHandlerAdapterTest {
         );
 
         QueryMessage<ArrayList<Object>, Object> testQuery = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), new ArrayList<>(), instanceOf(Object.class)
+                new MessageType("query"), new ArrayList<>(), instanceOf(Object.class)
         );
 
         Object result = testSubject.handleSync(testQuery);

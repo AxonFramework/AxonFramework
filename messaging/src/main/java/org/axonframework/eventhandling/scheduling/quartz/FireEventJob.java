@@ -20,7 +20,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -64,7 +64,7 @@ public class FireEventJob implements Job {
     /**
      * The key used to locate the MessageNameResolver in the scheduler context.
      */
-    public static final String MESSAGE_NAME_RESOLVER_KEY = MessageNameResolver.class.getName();
+    public static final String MESSAGE_TYPE_RESOLVER_KEY = MessageTypeResolver.class.getName();
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
@@ -78,9 +78,9 @@ public class FireEventJob implements Job {
 
             EventJobDataBinder jobDataBinder = (EventJobDataBinder) schedulerContext.get(EVENT_JOB_DATA_BINDER_KEY);
             Object event = jobDataBinder.fromJobData(jobData);
-            MessageNameResolver messageNameResolver = (MessageNameResolver) schedulerContext.get(
-                    MESSAGE_NAME_RESOLVER_KEY);
-            EventMessage<?> eventMessage = createMessage(event, messageNameResolver);
+            MessageTypeResolver messageTypeResolver = (MessageTypeResolver) schedulerContext.get(
+                    MESSAGE_TYPE_RESOLVER_KEY);
+            EventMessage<?> eventMessage = createMessage(event, messageTypeResolver);
 
             EventBus eventBus = (EventBus) schedulerContext.get(EVENT_BUS_KEY);
             TransactionManager txManager = (TransactionManager) schedulerContext.get(TRANSACTION_MANAGER_KEY);
@@ -106,14 +106,14 @@ public class FireEventJob implements Job {
      * generated, so that the timestamp will reflect the actual moment the trigger occurred.
      *
      * @param event The actual event (either a payload or an entire message) to create the message from
-     * @param messageNameResolver used to resolve the {@link QualifiedName} when publishing {@link EventMessage EventMessages}.
+     * @param messageTypeResolver used to resolve the {@link QualifiedName} when publishing {@link EventMessage EventMessages}.
      * @return the message to publish
      */
-    private EventMessage<?> createMessage(Object event, MessageNameResolver messageNameResolver) {
+    private EventMessage<?> createMessage(Object event, MessageTypeResolver messageTypeResolver) {
         return event instanceof EventMessage
-                ? new GenericEventMessage<>(((EventMessage<?>) event).name(),
+                ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
                                             ((EventMessage<?>) event).getPayload(),
                                             ((EventMessage<?>) event).getMetaData())
-                : new GenericEventMessage<>(messageNameResolver.resolve(event), event);
+                : new GenericEventMessage<>(messageTypeResolver.resolve(event), event);
     }
 }

@@ -19,7 +19,7 @@ package org.axonframework.eventhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.MessageType;
 
 public abstract class EventTestUtils {
 
@@ -46,7 +46,7 @@ public abstract class EventTestUtils {
             return new GenericEventMessage<>(message, GenericEventMessage.clock.instant());
         }
         return new GenericEventMessage<>(
-                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
+                new GenericMessage<>(new MessageType(event.getClass()), (P) event),
                 GenericEventMessage.clock.instant()
         );
     }

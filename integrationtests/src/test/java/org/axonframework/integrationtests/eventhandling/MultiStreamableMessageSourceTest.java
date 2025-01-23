@@ -29,7 +29,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.junit.jupiter.api.*;
 
@@ -108,7 +108,7 @@ class MultiStreamableMessageSourceTest {
     @Test
     void simplePublishAndConsumeDomainEventMessage() throws InterruptedException {
         EventMessage<?> publishedEvent = new GenericDomainEventMessage<>(
-                "Aggregate", "id", 0, new QualifiedName("test", "event", "0.0.1"), "Event1"
+                "Aggregate", "id", 0, new MessageType("event"), "Event1"
         );
 
         eventStoreA.publish(publishedEvent);

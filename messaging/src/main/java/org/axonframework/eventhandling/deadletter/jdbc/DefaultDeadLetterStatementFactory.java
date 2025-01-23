@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,7 +139,7 @@ public class DefaultDeadLetterStatementFactory<E extends EventMessage<?>> implem
         SerializedObject<byte[]> serializedMetaData = eventMessage.serializeMetaData(eventSerializer, byte[].class);
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getClass().getName());
         statement.setString(fieldIndex.getAndIncrement(), eventMessage.getIdentifier());
-        statement.setString(fieldIndex.getAndIncrement(), eventMessage.name().toString());
+        statement.setString(fieldIndex.getAndIncrement(), eventMessage.type().toString());
         statement.setString(fieldIndex.getAndIncrement(), DateTimeUtils.formatInstant(eventMessage.getTimestamp()));
         statement.setString(fieldIndex.getAndIncrement(), serializedPayload.getType().getName());
         statement.setString(fieldIndex.getAndIncrement(), serializedPayload.getType().getRevision());

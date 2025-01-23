@@ -26,7 +26,7 @@ import io.axoniq.axonserver.grpc.ProcessingKey;
 import io.axoniq.axonserver.grpc.query.QueryRequest;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.DefaultQueryBusSpanFactory;
 import org.axonframework.queryhandling.GenericQueryMessage;
@@ -100,7 +100,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void directQueryWhenRequesterDoesntSupportStreaming() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage =
-                new GenericQueryMessage<>(new QualifiedName("test", "query", "0.0.1"),
+                new GenericQueryMessage<>(new MessageType("query"),
                                           new FluxQuery(1000),
                                           publisherOf(String.class));
         QueryRequest request =
@@ -123,7 +123,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void queryProcessingTaskIsTraced() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage =
-                new GenericQueryMessage<>(new QualifiedName("test", "query", "0.0.1"),
+                new GenericQueryMessage<>(new MessageType("query"),
                                           new FluxQuery(1000),
                                           publisherOf(String.class));
         QueryRequest request =
@@ -143,7 +143,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void directQueryWhenRequesterDoesntSupportStreamingAndFlowControlMessagesComesBeforeQueryExecution() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage =
-                new GenericQueryMessage<>(new QualifiedName("test", "query", "0.0.1"),
+                new GenericQueryMessage<>(new MessageType("query"),
                                           new FluxQuery(1000),
                                           publisherOf(String.class));
         QueryRequest request =
@@ -166,7 +166,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void directQueryWhenRequesterDoesntSupportStreamingAndCancelMessagesComesBeforeQueryExecution() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage =
-                new GenericQueryMessage<>(new QualifiedName("test", "query", "0.0.1"),
+                new GenericQueryMessage<>(new MessageType("query"),
                                           new FluxQuery(1000),
                                           publisherOf(String.class));
         QueryRequest request =
@@ -188,7 +188,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void streamingQuery() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage =
-                new GenericQueryMessage<>(new QualifiedName("test", "query", "0.0.1"),
+                new GenericQueryMessage<>(new MessageType("query"),
                                           new FluxQuery(1000),
                                           publisherOf(String.class));
         QueryRequest request =
@@ -222,7 +222,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void streamingAList() {
         QueryMessage<ListQuery, List<String>> queryMessage = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), new ListQuery(1000), multipleInstancesOf(String.class)
+                new MessageType("query"), new ListQuery(1000), multipleInstancesOf(String.class)
         );
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -255,7 +255,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void streamingAListWhenReactorIsNotOnClasspath() {
         QueryMessage<ListQuery, List<String>> queryMessage = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), new ListQuery(1000), multipleInstancesOf(String.class)
+                new MessageType("query"), new ListQuery(1000), multipleInstancesOf(String.class)
         );
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -288,7 +288,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void streamingAListWhenReactorIsNotOnClasspathWithConcurrentRequests() throws InterruptedException {
         QueryMessage<ListQuery, List<String>> queryMessage = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), new ListQuery(1000), multipleInstancesOf(String.class)
+                new MessageType("query"), new ListQuery(1000), multipleInstancesOf(String.class)
         );
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -338,7 +338,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void streamingQueryWithConcurrentRequests() throws InterruptedException {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage =
-                new GenericQueryMessage<>(new QualifiedName("test", "query", "0.0.1"),
+                new GenericQueryMessage<>(new MessageType("query"),
                                           new FluxQuery(1000),
                                           publisherOf(String.class));
         QueryRequest request =
@@ -389,7 +389,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void streamingStringViaDirectQuery() {
         QueryMessage<InstanceQuery, String> queryMessage =
-                new GenericQueryMessage<>(new QualifiedName("test", "query", "0.0.1"),
+                new GenericQueryMessage<>(new MessageType("query"),
                                           new InstanceQuery(),
                                           instanceOf(String.class));
         QueryRequest request =
@@ -418,7 +418,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void multipleInstanceQueryShouldInvokeFlux() {
         QueryMessage<MultipleInstanceQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"),
+                new MessageType("query"),
                 new MultipleInstanceQuery(1000),
                 publisherOf(String.class)
         );
@@ -448,7 +448,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void cancellationOfStreamingFluxQuery() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage =
-                new GenericQueryMessage<>(new QualifiedName("test", "query", "0.0.1"),
+                new GenericQueryMessage<>(new MessageType("query"),
                                           new FluxQuery(1000),
                                           publisherOf(String.class));
         QueryRequest request =
@@ -478,7 +478,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void streamingFluxQueryWhenCancelMessageComesFirst() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage =
-                new GenericQueryMessage<>(new QualifiedName("test", "query", "0.0.1"),
+                new GenericQueryMessage<>(new MessageType("query"),
                                           new FluxQuery(1000),
                                           publisherOf(String.class));
         QueryRequest request =
@@ -502,7 +502,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void cancellationOfStreamingListQuery() {
         QueryMessage<ListQuery, List<String>> queryMessage = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), new ListQuery(1000), multipleInstancesOf(String.class)
+                new MessageType("query"), new ListQuery(1000), multipleInstancesOf(String.class)
         );
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -530,7 +530,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void streamingListQueryWhenCancelMessageComesFirst() {
         QueryMessage<ListQuery, List<String>> queryMessage = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), new ListQuery(1000), multipleInstancesOf(String.class)
+                new MessageType("query"), new ListQuery(1000), multipleInstancesOf(String.class)
         );
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -553,7 +553,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void fluxEmittingErrorAfterAWhile() {
         QueryMessage<ErrorAfterAWhileFluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"),
+                new MessageType("query"),
                 new ErrorAfterAWhileFluxQuery(),
                 publisherOf(String.class)
         );
@@ -582,7 +582,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void fluxEmittingErrorRightAway() {
         QueryMessage<ErrorFluxQuery, Publisher<String>> queryMessage =
-                new GenericQueryMessage<>(new QualifiedName("test", "query", "0.0.1"),
+                new GenericQueryMessage<>(new MessageType("query"),
                                           new ErrorFluxQuery(),
                                           publisherOf(String.class));
         QueryRequest request =
@@ -609,7 +609,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void fluxHandlerThrowingAnException() {
         QueryMessage<ThrowingExceptionFluxQuery, Publisher<String>> queryMessage = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"),
+                new MessageType("query"),
                 new ThrowingExceptionFluxQuery(),
                 publisherOf(String.class)
         );
@@ -637,7 +637,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void listHandlerThrowingAnException() {
         QueryMessage<ThrowingExceptionListQuery, List<String>> queryMessage = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"),
+                new MessageType("query"),
                 new ThrowingExceptionListQuery(),
                 multipleInstancesOf(String.class)
         );
@@ -665,7 +665,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void fluxStreamingQueryWhenRequestingTooMany() {
         QueryMessage<FluxQuery, Publisher<String>> queryMessage =
-                new GenericQueryMessage<>(new QualifiedName("test", "query", "0.0.1"),
+                new GenericQueryMessage<>(new MessageType("query"),
                                           new FluxQuery(1000),
                                           publisherOf(String.class));
         QueryRequest request =
@@ -692,7 +692,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void listStreamingQueryWhenRequestingTooMany() {
         QueryMessage<ListQuery, List<String>> queryMessage = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), new ListQuery(1000), multipleInstancesOf(String.class)
+                new MessageType("query"), new ListQuery(1000), multipleInstancesOf(String.class)
         );
         QueryRequest request =
                 querySerializer.serializeRequest(queryMessage, DIRECT_QUERY_NUMBER_OF_RESULTS, 1000, 1, true)
@@ -718,7 +718,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void responsePendingReturnsTrueForUncompletedTask() {
         QueryMessage<FluxQuery, Publisher<String>> testQuery = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"),
+                new MessageType("query"),
                 new FluxQuery(1000),
                 ResponseTypes.publisherOf(String.class)
         );
@@ -736,7 +736,7 @@ class QueryProcessingTaskIntegrationTest {
     @Test
     void responsePendingReturnsFalseForCompletedTask() {
         QueryMessage<FluxQuery, Publisher<String>> testQuery = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"),
+                new MessageType("query"),
                 new FluxQuery(1),
                 ResponseTypes.publisherOf(String.class)
         );

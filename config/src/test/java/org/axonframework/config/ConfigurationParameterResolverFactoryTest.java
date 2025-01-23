@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.junit.jupiter.api.*;
 
@@ -59,7 +59,7 @@ class ConfigurationParameterResolverFactoryTest {
     @Test
     void configurationContainsRequestedParameter() {
         ParameterResolver<?> actual = testSubject.createInstance(method, parameters, 1);
-        Message<String> testMessage = new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "test");
+        Message<String> testMessage = new GenericMessage<>(new MessageType("message"), "test");
 
         assertNotNull(actual);
         assertSame(commandBus, actual.resolveParameterValue(testMessage, null));

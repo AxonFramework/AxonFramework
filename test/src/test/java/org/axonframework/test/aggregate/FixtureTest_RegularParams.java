@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.modelling.command.AggregateNotFoundException;
 import org.axonframework.test.AxonAssertionError;
 import org.hamcrest.core.IsNull;
@@ -427,6 +427,6 @@ class FixtureTest_RegularParams {
     }
 
     private static <R> CommandResultMessage<R> asCommandResultMessage(Throwable exception) {
-        return new GenericCommandResultMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()), exception);
+        return new GenericCommandResultMessage<>(new MessageType(exception.getClass()), exception);
     }
 }

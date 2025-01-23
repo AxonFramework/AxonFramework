@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -37,11 +37,11 @@ class FilteringDomainEventStreamTest {
     @BeforeEach
     void setUp() throws Exception {
         event1 = new GenericDomainEventMessage<>("type", "1", 0L,
-                                                 new QualifiedName("test", "event", "0.0.1"), "Create type 1");
+                                                 new MessageType("event"), "Create type 1");
         event2 = new GenericDomainEventMessage<>("type2", "1", 0L,
-                                                 new QualifiedName("test", "event", "0.0.1"), "Create type 2");
+                                                 new MessageType("event"), "Create type 2");
         event3 = new GenericDomainEventMessage<>("type2", "1", 1L,
-                                                 new QualifiedName("test", "event", "0.0.1"), "Change type 2");
+                                                 new MessageType("event"), "Change type 2");
     }
 
     @Test

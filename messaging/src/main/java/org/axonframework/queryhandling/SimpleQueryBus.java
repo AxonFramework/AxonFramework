@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,20 @@ package org.axonframework.queryhandling;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -93,7 +103,7 @@ public class SimpleQueryBus implements QueryBus {
     private final List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>> handlerInterceptors = new CopyOnWriteArrayList<>();
     private final List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>> dispatchInterceptors = new CopyOnWriteArrayList<>();
     private final QueryBusSpanFactory spanFactory;
-    private final MessageNameResolver messageNameResolver;
+    private final MessageTypeResolver messageTypeResolver;
 
     private final QueryUpdateEmitter queryUpdateEmitter;
 
@@ -112,7 +122,7 @@ public class SimpleQueryBus implements QueryBus {
         this.queryUpdateEmitter = builder.queryUpdateEmitter;
         this.duplicateQueryHandlerResolver = builder.duplicateQueryHandlerResolver;
         this.spanFactory = builder.spanFactory;
-        this.messageNameResolver = builder.messageNameResolver;
+        this.messageTypeResolver = builder.messageTypeResolver;
     }
 
     /**
@@ -200,11 +210,11 @@ public class SimpleQueryBus implements QueryBus {
                         GenericQueryResponseMessage<R> queryResponseMessage =
                                 responseType.convertExceptional(resultMessage.exceptionResult())
                                             .map(exceptionalResult -> new GenericQueryResponseMessage<>(
-                                                    messageNameResolver.resolve(exceptionalResult),
+                                                    messageTypeResolver.resolve(exceptionalResult),
                                                     exceptionalResult
                                             ))
                                             .orElse(new GenericQueryResponseMessage<>(
-                                                    messageNameResolver.resolve(resultMessage.exceptionResult()),
+                                                    messageTypeResolver.resolve(resultMessage.exceptionResult()),
                                                     resultMessage.exceptionResult(),
                                                     responseType.responseMessagePayloadType()
                                             ));
@@ -550,27 +560,25 @@ public class SimpleQueryBus implements QueryBus {
             ResultMessage<R> resultMessage = (ResultMessage<R>) result;
             if (resultMessage.isExceptional()) {
                 Throwable cause = resultMessage.exceptionResult();
-                return new GenericQueryResponseMessage<>(messageNameResolver.resolve(cause), cause,
-                        resultMessage.getMetaData(),
-                        declaredType);
+                return new GenericQueryResponseMessage<>(messageTypeResolver.resolve(cause), cause,
+                                                         resultMessage.getMetaData(),
+                                                         declaredType);
             }
             return new GenericQueryResponseMessage<>(
-                    messageNameResolver.resolve(resultMessage.getPayload()),
+                    messageTypeResolver.resolve(resultMessage.getPayload()),
                     resultMessage.getPayload(),
                     resultMessage.getMetaData()
             );
         } else if (result instanceof Message) {
             //noinspection unchecked
             Message<R> message = (Message<R>) result;
-            return new GenericQueryResponseMessage<>(messageNameResolver.resolve(message.getPayload()),
-                    message.getPayload(),
-                    message.getMetaData());
+            return new GenericQueryResponseMessage<>(messageTypeResolver.resolve(message.getPayload()),
+                                                     message.getPayload(),
+                                                     message.getMetaData());
         } else {
-            QualifiedName name = result == null
-                    ? QualifiedNameUtils.fromDottedName("empty.query.response")
-                    : messageNameResolver.resolve(result.getClass());
+            MessageType type = messageTypeResolver.resolve(ObjectUtils.nullSafeTypeOf(result));
             //noinspection unchecked
-            return new GenericQueryResponseMessage<>(name, (R) result, declaredType);
+            return new GenericQueryResponseMessage<>(type, (R) result, declaredType);
         }
     }
 
@@ -607,17 +615,17 @@ public class SimpleQueryBus implements QueryBus {
         } else if (result instanceof ResultMessage) {
             ResultMessage<R> resultMessage = (ResultMessage<R>) result;
             return new GenericQueryResponseMessage<>(
-                    messageNameResolver.resolve(resultMessage.getPayload()),
+                    messageTypeResolver.resolve(resultMessage.getPayload()),
                     resultMessage.getPayload(),
                     resultMessage.getMetaData()
             );
         } else if (result instanceof Message) {
             Message<R> message = (Message<R>) result;
-            return new GenericQueryResponseMessage<>(messageNameResolver.resolve(message.getPayload()),
-                    message.getPayload(),
-                    message.getMetaData());
+            return new GenericQueryResponseMessage<>(messageTypeResolver.resolve(message.getPayload()),
+                                                     message.getPayload(),
+                                                     message.getMetaData());
         } else {
-            return new GenericQueryResponseMessage<>(messageNameResolver.resolve(result), (R) result);
+            return new GenericQueryResponseMessage<>(messageTypeResolver.resolve(result), (R) result);
         }
     }
 
@@ -728,7 +736,7 @@ public class SimpleQueryBus implements QueryBus {
         private QueryBusSpanFactory spanFactory = DefaultQueryBusSpanFactory.builder()
                                                                             .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                             .build();
-        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+        private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
         /**
          * Sets the {@link MessageMonitor} used to monitor query messages. Defaults to a {@link NoOpMessageMonitor}.
@@ -816,15 +824,15 @@ public class SimpleQueryBus implements QueryBus {
         }
 
         /**
-         * Sets the {@link MessageNameResolver} to be used in order to resolve QualifiedName for published Event messages.
-         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         * Sets the {@link MessageTypeResolver} to be used in order to resolve QualifiedName for published Event messages.
+         * If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
          *
-         * @param messageNameResolver which provides QualifiedName for Event messages
+         * @param messageTypeResolver which provides QualifiedName for Event messages
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
-            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
-            this.messageNameResolver = messageNameResolver;
+        public Builder messageNameResolver(MessageTypeResolver messageTypeResolver) {
+            assertNonNull(messageTypeResolver, "MessageNameResolver may not be null");
+            this.messageTypeResolver = messageTypeResolver;
             return this;
         }
 

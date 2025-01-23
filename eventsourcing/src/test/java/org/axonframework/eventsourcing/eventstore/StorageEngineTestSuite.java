@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.utils.AssertUtils;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
@@ -173,6 +173,13 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
     }
 
     @Test
+    void sourcingEventsReturnsEmptyStreamIfNoEventsInTheStore() {
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)).asFlux())
+                    .expectNextCount(0)
+                    .verifyComplete();
+    }
+
+    @Test
     void transactionRejectedWithConflictingEventsInStore() throws Exception {
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-0", TEST_CRITERIA.tags()),
@@ -303,22 +310,19 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         Instant now = Instant.now(); // assign now to a variable to not be impacted by time passing during test
         testSubject.appendEvents(AppendCondition.none(),
                                  new GenericTaggedEventMessage<>(new GenericEventMessage<>(UUID.randomUUID().toString(),
-                                                                                           QualifiedName.fromString(
-                                                                                                   "test:event:0.0.1"),
+                                                                                           new MessageType("event"),
                                                                                            "event-0",
                                                                                            Map.of(),
                                                                                            now.minusSeconds(10)),
                                                                  TEST_CRITERIA.tags()),
                                  new GenericTaggedEventMessage<>(new GenericEventMessage<>(UUID.randomUUID().toString(),
-                                                                                           QualifiedName.fromString(
-                                                                                                   "test:event:0.0.1"),
+                                                                                           new MessageType("event"),
                                                                                            "event-1",
                                                                                            Map.of(),
                                                                                            now),
                                                                  TEST_CRITERIA.tags()),
                                  new GenericTaggedEventMessage<>(new GenericEventMessage<>(UUID.randomUUID().toString(),
-                                                                                           QualifiedName.fromString(
-                                                                                                   "test:event:0.0.1"),
+                                                                                           new MessageType("event"),
                                                                                            "event-2",
                                                                                            Map.of(),
                                                                                            now.plusSeconds(10)),
@@ -360,7 +364,7 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
 
     protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags) {
         return new GenericTaggedEventMessage<>(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload),
+                new GenericEventMessage<>(new MessageType("event"), payload),
                 tags
         );
     }

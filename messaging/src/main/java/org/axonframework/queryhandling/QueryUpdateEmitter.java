@@ -19,8 +19,8 @@ package org.axonframework.queryhandling;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptorSupport;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ResultMessage;
 
 import java.util.Collections;
@@ -92,19 +92,19 @@ public interface QueryUpdateEmitter extends MessageDispatchInterceptorSupport<Su
             ResultMessage<U> resultMessage = (ResultMessage<U>) payload;
             if (resultMessage.isExceptional()) {
                 Throwable cause = resultMessage.exceptionResult();
-                return new GenericSubscriptionQueryUpdateMessage<>(QualifiedNameUtils.fromClassName(cause.getClass()),
+                return new GenericSubscriptionQueryUpdateMessage<>(
+                        new MessageType(cause.getClass()),
                         cause,
                         resultMessage.getMetaData(),
-                        resultMessage.getPayloadType());
+                        resultMessage.getPayloadType()
+                );
             }
             return new GenericSubscriptionQueryUpdateMessage<>(resultMessage);
         } else if (payload instanceof Message) {
             return new GenericSubscriptionQueryUpdateMessage<>((Message<U>) payload);
         }
         // TODO #3085 use MessageNameResolver below
-        return new GenericSubscriptionQueryUpdateMessage<>(
-                QualifiedNameUtils.fromClassName(payload.getClass()), (U) payload
-        );
+        return new GenericSubscriptionQueryUpdateMessage<>(new MessageType(payload.getClass()), (U) payload);
     }
 
     /**

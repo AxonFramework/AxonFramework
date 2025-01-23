@@ -23,8 +23,8 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.ReplayToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
-import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -41,12 +41,12 @@ class ReplayContextParameterResolverFactoryTest {
     private AnnotationEventHandlerAdapter testSubject;
     private ReplayToken replayToken;
     private GlobalSequenceTrackingToken regularToken;
-    private final MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+    private final MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
     @BeforeEach
     void setUp() {
         handler = new SomeHandler();
-        testSubject = new AnnotationEventHandlerAdapter(handler, messageNameResolver);
+        testSubject = new AnnotationEventHandlerAdapter(handler, messageTypeResolver);
         regularToken = new GlobalSequenceTrackingToken(1L);
         replayToken = (ReplayToken) ReplayToken.createReplayToken(regularToken,
                                                                   new GlobalSequenceTrackingToken(0),

@@ -19,9 +19,8 @@ package org.axonframework.test.saga;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.utils.CallbackBehavior;
@@ -49,7 +48,7 @@ class AnnotatedSagaTest {
 
     private static <P> EventMessage<P> asEventMessage(P event) {
         return new GenericEventMessage<>(
-                new GenericMessage<>(QualifiedNameUtils.fromClassName(event.getClass()), (P) event),
+                new GenericMessage<>(new MessageType(event.getClass()), (P) event),
                 () -> GenericEventMessage.clock.instant()
         );
     }
@@ -124,7 +123,7 @@ class AnnotatedSagaTest {
         SagaTestFixture<StubSaga> fixture = new SagaTestFixture<>(StubSaga.class);
         fixture.givenNoPriorActivity()
                .whenPublishingA(new GenericEventMessage<>(
-                       new QualifiedName("test", "event", "0.0.1"), new TriggerSagaStartEvent("id")
+                       new MessageType("event"), new TriggerSagaStartEvent("id")
                ))
                .expectActiveSagas(1)
                .expectAssociationWith("identifier", "id")

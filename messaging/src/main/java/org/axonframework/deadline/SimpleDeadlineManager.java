@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeAwareProvider;
@@ -110,7 +110,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         this.scheduledExecutorService = builder.scheduledExecutorService;
         this.transactionManager = builder.transactionManager;
         this.spanFactory = builder.spanFactory;
-        this.messageNameResolver = builder.messageNameResolver;
+        this.messageTypeResolver = builder.messageTypeResolver;
     }
 
     @Override
@@ -258,7 +258,7 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         private DeadlineManagerSpanFactory spanFactory = DefaultDeadlineManagerSpanFactory.builder()
                                                                                           .spanFactory(NoOpSpanFactory.INSTANCE)
                                                                                           .build();
-        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+        private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
         /**
          * Sets the {@link ScopeAwareProvider} which is capable of providing a stream of
@@ -317,15 +317,15 @@ public class SimpleDeadlineManager extends AbstractDeadlineManager implements Li
         }
 
         /**
-         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when scheduling {@link DeadlineMessage DeadlineMessages}.
-         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when scheduling {@link DeadlineMessage DeadlineMessages}.
+         * If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
          *
-         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for {@link DeadlineMessage DeadlineMessages}.
+         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for {@link DeadlineMessage DeadlineMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
-            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
-            this.messageNameResolver = messageNameResolver;
+        public Builder messageNameResolver(MessageTypeResolver messageTypeResolver) {
+            assertNonNull(messageTypeResolver, "MessageNameResolver may not be null");
+            this.messageTypeResolver = messageTypeResolver;
             return this;
         }
 

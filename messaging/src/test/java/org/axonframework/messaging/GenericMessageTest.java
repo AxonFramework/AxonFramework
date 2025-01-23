@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,26 +63,26 @@ class GenericMessageTest {
     @Test
     void containsDataAsExpected() {
         String testIdentifier = "testIdentifier";
-        QualifiedName testName = new QualifiedName("test", "message", "0.0.1");
+        MessageType testType = new MessageType("message");
         String testPayload = "payload";
         MetaData testMetaData = MetaData.emptyInstance();
 
-        Message<String> testSubject = new GenericMessage<>(testIdentifier, testName, testPayload, testMetaData);
+        Message<String> testSubject = new GenericMessage<>(testIdentifier, testType, testPayload, testMetaData);
 
         assertEquals(testIdentifier, testSubject.getIdentifier());
-        assertEquals(testName, testSubject.name());
+        assertEquals(testType, testSubject.type());
         assertEquals(testPayload, testSubject.getPayload());
         assertEquals(testMetaData, testSubject.getMetaData());
     }
 
     @Test
     void correlationDataAddedToNewMessage() {
-        Message<Object> testMessage = new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), new Object());
+        Message<Object> testMessage = new GenericMessage<>(new MessageType("message"), new Object());
         assertEquals(correlationData, new HashMap<>(testMessage.getMetaData()));
 
         MetaData newMetaData = MetaData.from(Collections.singletonMap("whatever", new Object()));
         Message<Object> testMessageWithMetaData =
-                new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), new Object(), newMetaData);
+                new GenericMessage<>(new MessageType("message"), new Object(), newMetaData);
         assertEquals(newMetaData.mergedWith(correlationData), testMessageWithMetaData.getMetaData());
     }
 
@@ -91,7 +91,7 @@ class GenericMessageTest {
         Map<String, String> metaDataMap = Collections.singletonMap("key", "value");
 
         Message<String> message =
-                new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "payload", metaDataMap);
+                new GenericMessage<>(new MessageType("message"), "payload", metaDataMap);
 
         JacksonSerializer jacksonSerializer = JacksonSerializer.builder().build();
 
@@ -111,13 +111,13 @@ class GenericMessageTest {
     @Test
     void whenCorrelationDataProviderThrowsException_thenCatchException() {
         unitOfWork = new DefaultUnitOfWork<>(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Input 1")
+                new GenericEventMessage<>(new MessageType("event"), "Input 1")
         );
         CurrentUnitOfWork.set(unitOfWork);
         unitOfWork.registerCorrelationDataProvider(new ThrowingCorrelationDataProvider());
         CannotConvertBetweenTypesException exception = new CannotConvertBetweenTypesException("foo");
 
-        Message<?> result = new GenericMessage<>(new QualifiedName("test", "exception", "0.0.1"), exception);
+        Message<?> result = new GenericMessage<>(new MessageType("exception"), exception);
 
         assertNotNull(result);
     }

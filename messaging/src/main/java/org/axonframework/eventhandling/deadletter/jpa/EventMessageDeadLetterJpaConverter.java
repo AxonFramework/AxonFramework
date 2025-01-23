@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
@@ -70,7 +70,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
         return new DeadLetterEventEntry(
                 message.getClass().getName(),
                 message.getIdentifier(),
-                message.name().toString(),
+                message.type().toString(),
                 message.getTimestamp().toString(),
                 serializedPayload.getType().getName(),
                 serializedPayload.getType().getRevision(),
@@ -111,7 +111,7 @@ public class EventMessageDeadLetterJpaConverter implements DeadLetterJpaConverte
                                                    entry.getAggregateIdentifier(),
                                                    entry.getSequenceNumber(),
                                                    serializedMessage.getIdentifier(),
-                                                   QualifiedName.fromString(entry.getName()),
+                                                   MessageType.fromString(entry.getType()),
                                                    serializedMessage.getPayload(),
                                                    serializedMessage.getMetaData(),
                                                    timestampSupplier.get());

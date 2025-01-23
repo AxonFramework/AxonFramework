@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import io.axoniq.axonserver.grpc.query.SubscriptionQuery;
 import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.query.GrpcBackedQueryMessage;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.SubscriptionQueryMessage;
 import org.axonframework.queryhandling.SubscriptionQueryResult;
@@ -83,8 +83,8 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
 
     @Nonnull
     @Override
-    public QualifiedName name() {
-        return grpcBackedQueryMessage.name();
+    public MessageType type() {
+        return grpcBackedQueryMessage.type();
     }
 
     @Nonnull

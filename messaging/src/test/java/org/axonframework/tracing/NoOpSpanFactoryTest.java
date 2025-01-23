@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.tracing;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class NoOpSpanFactoryTest {
 
     private static final EventMessage<String> TEST_EVENT =
-            new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "payload");
+            new GenericEventMessage<>(new MessageType("event"), "payload");
 
     @Test
     void createRootTraceReturnsNoOpSpan() {

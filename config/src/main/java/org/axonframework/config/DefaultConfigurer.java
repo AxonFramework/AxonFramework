@@ -55,9 +55,9 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -175,7 +175,7 @@ public class DefaultConfigurer implements Configurer {
     private final Component<EventUpcasterChain> upcasterChain = new Component<>(
             config, "eventUpcasterChain", this::defaultUpcasterChain
     );
-    private final MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+    private final MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
     private final Component<Function<Class<?>, HandlerDefinition>> handlerDefinition = new Component<>(
             config, "handlerDefinition",
@@ -356,7 +356,7 @@ public class DefaultConfigurer implements Configurer {
      */
     protected CommandGateway defaultCommandGateway(Configuration config) {
         return defaultComponent(CommandGateway.class, config)
-                .orElseGet(() -> new DefaultCommandGateway(config.commandBus(), messageNameResolver));
+                .orElseGet(() -> new DefaultCommandGateway(config.commandBus(), messageTypeResolver));
     }
 
     /**
@@ -848,7 +848,7 @@ public class DefaultConfigurer implements Configurer {
                                 commandHandler,
                                 config.parameterResolverFactory(),
                                 config.handlerDefinition(commandHandler.getClass()),
-                                messageNameResolver
+                                messageTypeResolver
                         ).subscribe(config.commandBus())
                 )
         ));
