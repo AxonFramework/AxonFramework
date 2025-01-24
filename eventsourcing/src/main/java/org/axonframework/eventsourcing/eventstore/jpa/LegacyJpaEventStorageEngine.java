@@ -27,6 +27,8 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
@@ -43,9 +45,9 @@ import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.upcasting.event.EventUpcaster;
-import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,8 +70,6 @@ import java.util.stream.StreamSupport;
 
 import static org.axonframework.common.BuilderUtils.*;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
-import static org.axonframework.eventhandling.EventUtils.upcastAndDeserializeTrackedEvents;
-import static org.axonframework.eventsourcing.EventStreamUtils.upcastAndDeserializeDomainEvents;
 import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils.*;
 import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils.resolveAggregateIdentifier;
 
@@ -91,7 +91,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     private final EntityManagerProvider entityManagerProvider;
     private final TransactionManager transactionManager;
     private final Serializer eventSerializer;
-    private final EventUpcaster upcasterChain;
     private final PersistenceExceptionResolver persistenceExceptionResolver;
 
     private final LegacyJpaEventStorageOperations legacyJpaOperations;
@@ -109,7 +108,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         this.eventSerializer = eventSerializer;
 
         var customization = configurationOverride.apply(Customization.withDefaultValues());
-        this.upcasterChain = customization.upcasterChain();
 
         this.legacyJpaOperations = new LegacyJpaEventStorageOperations(transactionManager,
                                                                        entityManagerProvider.getEntityManager(),
@@ -234,6 +232,58 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
     }
 
+    private EventMessage<byte[]> convertToMessage(DomainEventData<?> event) {
+        var payload = event.getPayload();
+        var qualifiedName = payload.getType().getName().split("\\.(?=[^.]*$)");
+        var namespace = qualifiedName[0];
+        var localName = qualifiedName[1];
+        var revision = payload.getType().getRevision();
+        var name = new QualifiedName(namespace,
+                                     localName,
+                                     revision == null ? "0.0.1" : revision); // todo: resolve qualified name
+        var identifier = event.getEventIdentifier();
+        var data = (byte[]) payload.getData();
+        var metadata = event.getMetaData();
+        MetaData metaData = eventSerializer.convert(metadata.getData(), MetaData.class);
+        try { // todo: how to serialize / deserliazie the payload and metadata!?
+            return new GenericEventMessage<>(
+                    identifier,
+                    name,
+                    data,
+                    metaData,
+                    event.getTimestamp()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private EventMessage<byte[]> convertToMessage(TrackedEventData<?> event) {
+        var payload = event.getPayload();
+        var qualifiedName = payload.getType().getName().split("\\.(?=[^.]*$)");
+        var namespace = qualifiedName[0];
+        var localName = qualifiedName[1];
+        var revision = payload.getType().getRevision();
+        var name = new QualifiedName(namespace,
+                                     localName,
+                                     revision == null ? "0.0.1" : revision); // todo: resolve qualified name
+        var identifier = event.getEventIdentifier();
+        var data = (byte[]) payload.getData();
+        var metadata = event.getMetaData();
+        MetaData metaData = eventSerializer.convert(metadata.getData(), MetaData.class);
+        try { // todo: how to serialize / deserliazie the payload and metadata!?
+            return new GenericEventMessage<>(
+                    identifier,
+                    name,
+                    data,
+                    metaData,
+                    event.getTimestamp()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
         var allCriteriaStream = condition
@@ -261,45 +311,45 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 condition.start(),
                 condition.end()
         );
-        var deserialized = upcastAndDeserializeDomainEvents(events, eventSerializer, upcasterChain);
         return MessageStream.fromStream(
-                deserialized.asStream(),
-                e -> e,
-                LegacyJpaEventStorageEngine::fillContextWith
+                events,
+                this::convertToMessage,
+                LegacyJpaEventStorageEngine::aggregateEventContext
         );
+    }
+
+    private static Context aggregateEventContext(DomainEventData<?> event) {
+        return Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
+                      .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getType())
+                      .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, event.getSequenceNumber())
+                      .withResource(
+                              ConsistencyMarker.RESOURCE_KEY,
+                              new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
+                                                                  event.getSequenceNumber())
+                      );
     }
 
     @Override
     public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
         var trackingToken = tokenOperations.assertGapAwareTrackingToken(condition.position());
         var events = batchingOperations.readEventData(trackingToken);
-        var deserialized = upcastAndDeserializeTrackedEvents(events, eventSerializer, upcasterChain);
         return MessageStream.fromStream(
-                deserialized,
-                e -> e,
-                LegacyJpaEventStorageEngine::fillContextWith
+                events,
+                this::convertToMessage,
+                LegacyJpaEventStorageEngine::streamEventContext
         );
     }
 
-    private static Context fillContextWith(Message<?> event) {
+    private static Context streamEventContext(TrackedEventData<?> trackedEventData) {
         var context = Context.empty();
-        if (event instanceof DomainEventMessage<?> trackedDomainEventData
+        if (trackedEventData instanceof TrackedDomainEventData<?> trackedDomainEventData
                 && trackedDomainEventData.getAggregateIdentifier() != null
-                && trackedDomainEventData.getType() != null) {
-            context = context.withResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY,
-                                           trackedDomainEventData.getAggregateIdentifier())
-                             .withResource(LegacyResources.AGGREGATE_TYPE_KEY, trackedDomainEventData.getType())
-                             .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY,
-                                           trackedDomainEventData.getSequenceNumber())
-                             .withResource(ConsistencyMarker.RESOURCE_KEY,
-                                           new AggregateBasedConsistencyMarker(trackedDomainEventData.getAggregateIdentifier(),
-                                                                               trackedDomainEventData.getSequenceNumber()));
+                && trackedDomainEventData.getType() != null
+        ) {
+            context = aggregateEventContext(trackedDomainEventData);
         }
-        if (event instanceof TrackedEventMessage<?> trackedEventMessage) {
-            var token = trackedEventMessage.trackingToken();
-            context = Context.with(TrackingToken.RESOURCE_KEY, token);
-        }
-        return context;
+        var trackingToken = trackedEventData.trackingToken();
+        return context.withResource(TrackingToken.RESOURCE_KEY, trackingToken);
     }
 
     @Override
@@ -339,7 +389,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         descriptor.describeProperty("entityManagerProvider", entityManagerProvider);
         descriptor.describeProperty("transactionManager", transactionManager);
         descriptor.describeProperty("eventSerializer", eventSerializer);
-        descriptor.describeProperty("upcasterChain", upcasterChain);
         descriptor.describeProperty("persistenceExceptionResolver", persistenceExceptionResolver);
         descriptor.describeProperty("legacyJpaOperations", legacyJpaOperations);
         descriptor.describeProperty("tokenOperations", tokenOperations);
@@ -484,7 +533,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
 
     public record Customization(
-            EventUpcaster upcasterChain,
             PersistenceExceptionResolver persistenceExceptionResolver,
             int batchSize,
             Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate,
@@ -494,10 +542,8 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
         private static final int DEFAULT_BATCH_SIZE = 100;
         private static final long DEFAULT_LOWEST_GLOBAL_SEQUENCE = 1;
-        private static final boolean DEFAULT_EXPLICIT_FLUSH = false;
 
         public Customization {
-            assertNonNull(upcasterChain, "EventUpcaster may not be null");
             assertThat(batchSize, size -> size > 0, "The batchSize must be a positive number");
             assertThat(lowestGlobalSequence,
                        number -> number > 0,
@@ -525,7 +571,6 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
         public static Customization withDefaultValues() {
             return new Customization(
-                    NoOpEventUpcaster.INSTANCE,
                     null,
                     DEFAULT_BATCH_SIZE,
                     null,
@@ -534,74 +579,55 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             );
         }
 
-        public Customization upcasterChain(EventUpcaster upcasterChain) {
-            return new Customization(upcasterChain,
-                                     persistenceExceptionResolver,
-                                     batchSize,
-                                     finalAggregateBatchPredicate,
-                                     lowestGlobalSequence,
-                                     tokenGapsHandling
-            );
-        }
-
         public Customization persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
-            return new Customization(upcasterChain,
-                                     persistenceExceptionResolver,
-                                     batchSize,
-                                     finalAggregateBatchPredicate,
-                                     lowestGlobalSequence,
-                                     tokenGapsHandling
+            return new Customization(
+                    persistenceExceptionResolver,
+                    batchSize,
+                    finalAggregateBatchPredicate,
+                    lowestGlobalSequence,
+                    tokenGapsHandling
             );
         }
 
         public Customization batchSize(int batchSize) {
-            return new Customization(upcasterChain,
-                                     persistenceExceptionResolver,
-                                     batchSize,
-                                     finalAggregateBatchPredicate,
-                                     lowestGlobalSequence,
-                                     tokenGapsHandling
+            return new Customization(
+                    persistenceExceptionResolver,
+                    batchSize,
+                    finalAggregateBatchPredicate,
+                    lowestGlobalSequence,
+                    tokenGapsHandling
             );
         }
 
         public Customization finalAggregateBatchPredicate(
-                Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate) {
-            return new Customization(upcasterChain,
-                                     persistenceExceptionResolver,
-                                     batchSize,
-                                     finalAggregateBatchPredicate,
-                                     lowestGlobalSequence,
-                                     tokenGapsHandling
+                Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate
+        ) {
+            return new Customization(
+                    persistenceExceptionResolver,
+                    batchSize,
+                    finalAggregateBatchPredicate,
+                    lowestGlobalSequence,
+                    tokenGapsHandling
             );
         }
 
         public Customization lowestGlobalSequence(long lowestGlobalSequence) {
-            return new Customization(upcasterChain,
-                                     persistenceExceptionResolver,
-                                     batchSize,
-                                     finalAggregateBatchPredicate,
-                                     lowestGlobalSequence,
-                                     tokenGapsHandling
+            return new Customization(
+                    persistenceExceptionResolver,
+                    batchSize,
+                    finalAggregateBatchPredicate,
+                    lowestGlobalSequence,
+                    tokenGapsHandling
             );
         }
 
         public Customization tokenGapsHandling(UnaryOperator<TokenGapsHandlingConfig> configurationOverride) {
-            return new Customization(upcasterChain,
-                                     persistenceExceptionResolver,
-                                     batchSize,
-                                     finalAggregateBatchPredicate,
-                                     lowestGlobalSequence,
-                                     configurationOverride.apply(tokenGapsHandling)
-            );
-        }
-
-        public Customization explicitFlush(boolean explicitFlush) {
-            return new Customization(upcasterChain,
-                                     persistenceExceptionResolver,
-                                     batchSize,
-                                     finalAggregateBatchPredicate,
-                                     lowestGlobalSequence,
-                                     tokenGapsHandling
+            return new Customization(
+                    persistenceExceptionResolver,
+                    batchSize,
+                    finalAggregateBatchPredicate,
+                    lowestGlobalSequence,
+                    tokenGapsHandling
             );
         }
     }
