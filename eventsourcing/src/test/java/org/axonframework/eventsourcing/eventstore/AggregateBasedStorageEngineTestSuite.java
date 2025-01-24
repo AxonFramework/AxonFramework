@@ -18,22 +18,20 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MetaData;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
 
 import java.util.*;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -199,6 +197,25 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         AppendCondition appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
         testSubject.appendEvents(appendCondition,
                                  taggedEventMessage("event-0", TEST_AGGREGATE_CRITERIA.tags())
+                   )
+                   .thenCompose(AppendTransaction::commit).join();
+
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA)).asFlux())
+                    .expectNextMatches(entryWithAggregateEvent("event-0", 0))
+                    .verifyComplete();
+    }
+
+    @Test
+    void sourcingEventsWithMetadata() {
+        AppendCondition appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
+        testSubject.appendEvents(appendCondition,
+                                 taggedEventMessage(
+                                         "event-0",
+                                         TEST_AGGREGATE_CRITERIA.tags(),
+                                         MetaData.with("key1", "value1")
+                                                 .and("key2", true)
+                                                 .and("key3", new ComplexObject("value1", false, 44))
+                                 )
                    )
                    .thenCompose(AppendTransaction::commit).join();
 
@@ -494,8 +511,12 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
     protected abstract EventMessage<String> convertPayload(EventMessage<?> original);
 
     protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags) {
+        return taggedEventMessage(payload, tags, MetaData.emptyInstance());
+    }
+
+    protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags, MetaData metaData) {
         return new GenericTaggedEventMessage<>(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload),
+                new GenericEventMessage<>(new MessageType("event"), payload, metaData),
                 tags
         );
     }
@@ -515,5 +536,9 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                                              int aggregateSequence) {
         return consistencyMarker instanceof AggregateBasedConsistencyMarker cm
                 && cm.positionOf(aggregateIdentifier) == aggregateSequence;
+    }
+
+    public record ComplexObject(String value1, boolean value2, int value3) {
+
     }
 }
