@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -36,7 +38,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
         String payload = "payload";
 
         SubscriptionQueryUpdateMessage<String> result = new GenericSubscriptionQueryUpdateMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), payload, String.class
+                new MessageType("query"), payload, String.class
         );
 
         assertEquals(payload, result.getPayload());
@@ -47,7 +49,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
         String payload = null;
 
         SubscriptionQueryUpdateMessage<String> result = new GenericSubscriptionQueryUpdateMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), payload, String.class
+                new MessageType("query"), payload, String.class
         );
 
         assertNull(result.getPayload());
@@ -57,7 +59,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     void andMetaData() {
         Map<String, String> metaData = Collections.singletonMap("k1", "v2");
         SubscriptionQueryUpdateMessage<Object> original = new GenericSubscriptionQueryUpdateMessage<>(
-                new GenericMessage<>(new QualifiedName("test", "query", "0.0.1"), "payload", metaData)
+                new GenericMessage<>(new MessageType("query"), "payload", metaData)
         );
 
         Map<String, String> newMetaData = Collections.singletonMap("k2", "v3");
@@ -73,7 +75,7 @@ class GenericSubscriptionQueryUpdateMessageTest {
     void withMetaData() {
         Map<String, String> metaData = Collections.singletonMap("k1", "v2");
         SubscriptionQueryUpdateMessage<Object> original = new GenericSubscriptionQueryUpdateMessage<>(
-                new GenericMessage<>(new QualifiedName("test", "query", "0.0.1"), "payload", metaData)
+                new GenericMessage<>(new MessageType("query"), "payload", metaData)
         );
 
         Map<String, String> newMetaData = Collections.singletonMap("k2", "v3");
@@ -82,5 +84,4 @@ class GenericSubscriptionQueryUpdateMessageTest {
         assertEquals(original.getPayload(), result.getPayload());
         assertEquals(newMetaData, result.getMetaData());
     }
-
 }

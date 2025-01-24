@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,13 +36,14 @@ class OnErrorContinueMessageStreamTest extends MessageStreamTest<Message<String>
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
                                                       Exception failure) {
         return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages)
-                                                               .concatWith(MessageStream.failed(new RuntimeException("Wrong failure"))),
+                                                               .concatWith(MessageStream.failed(new RuntimeException(
+                                                                       "Wrong failure"))),
                                                   error -> MessageStream.failed(failure));
     }
 
     @Override
     Message<String> createRandomMessage() {
-        return new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"),
+        return new GenericMessage<>(new MessageType("message"),
                                     "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 }

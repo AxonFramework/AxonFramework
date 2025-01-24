@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
@@ -80,7 +80,7 @@ class FixtureTest_Polymorphism {
     void commonCommandOnAggregate(String aggregateType) {
         String id = "id";
         DomainEventMessage<CreatedEvent> creationEvent = new GenericDomainEventMessage<>(
-                aggregateType, id, 0, new QualifiedName("test", "event", "0.0.1"), new CreatedEvent(id)
+                aggregateType, id, 0, new MessageType("event"), new CreatedEvent(id)
         );
         fixture.given(creationEvent)
                .when(new CommonCommand(id))

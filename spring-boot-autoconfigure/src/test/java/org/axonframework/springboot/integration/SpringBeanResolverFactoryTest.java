@@ -24,11 +24,11 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageNameResolver;
 import org.axonframework.messaging.MessageStream.Entry;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.spring.config.annotation.SpringBeanDependencyResolverFactory;
@@ -69,7 +69,7 @@ class SpringBeanResolverFactoryTest {
 
     private static final AtomicInteger COUNTER = new AtomicInteger();
     private static final EventMessage<Object> EVENT_MESSAGE = asEventMessage("Hi there");
-    private final MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+    private final MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
     private ProcessingContext processingContext;
 
@@ -91,7 +91,7 @@ class SpringBeanResolverFactoryTest {
                     context.getBean(AnnotatedEventHandlerWithResources.class);
 
             assertNotNull(annotatedHandler);
-            new AnnotationEventHandlerAdapter(annotatedHandler, parameterResolver, messageNameResolver)
+            new AnnotationEventHandlerAdapter(annotatedHandler, parameterResolver, messageTypeResolver)
                     .handle(EVENT_MESSAGE, processingContext);
             // make sure the invocation actually happened
             assertEquals(1, COUNTER.get());
@@ -103,7 +103,7 @@ class SpringBeanResolverFactoryTest {
         testApplicationContext.run(context -> {
             Object handler = context.getBean("prototypeResourceHandler");
             AnnotationEventHandlerAdapter adapter = new AnnotationEventHandlerAdapter(
-                    handler, context.getBean(ParameterResolverFactory.class), messageNameResolver
+                    handler, context.getBean(ParameterResolverFactory.class), messageTypeResolver
             );
             adapter.handle(EVENT_MESSAGE, processingContext);
             adapter.handle(asEventMessage("Hello2"), processingContext);
@@ -120,7 +120,7 @@ class SpringBeanResolverFactoryTest {
             // Generates a FixtureExecutionException due to the inclusion of axon-test,
             //  which includes the FixtureResourceParameterResolverFactory
             CompletableFuture<Message<Void>> result =
-                    new AnnotationEventHandlerAdapter(bean, parameterResolver, messageNameResolver)
+                    new AnnotationEventHandlerAdapter(bean, parameterResolver, messageTypeResolver)
                             .handle(EVENT_MESSAGE, processingContext)
                             .firstAsCompletableFuture()
                             .thenApply(Entry::message);
@@ -140,7 +140,7 @@ class SpringBeanResolverFactoryTest {
         testApplicationContext.run(context -> {
             ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
             new AnnotationEventHandlerAdapter(
-                    context.getBean("nullableResourceHandler"), parameterResolver, messageNameResolver
+                    context.getBean("nullableResourceHandler"), parameterResolver, messageTypeResolver
             ).handle(EVENT_MESSAGE, processingContext);
 
             assertEquals(1, COUNTER.get());
@@ -156,7 +156,7 @@ class SpringBeanResolverFactoryTest {
             // Generates a FixtureExecutionException due to the inclusion of axon-test,
             //  which includes the FixtureResourceParameterResolverFactory
             CompletableFuture<Message<Void>> result =
-                    new AnnotationEventHandlerAdapter(bean, parameterResolver, messageNameResolver)
+                    new AnnotationEventHandlerAdapter(bean, parameterResolver, messageTypeResolver)
                             .handle(EVENT_MESSAGE, processingContext)
                             .firstAsCompletableFuture()
                             .thenApply(Entry::message);
@@ -178,7 +178,7 @@ class SpringBeanResolverFactoryTest {
             Object bean = context.getBean("duplicateResourceHandlerWithPrimary");
             ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
 
-            new AnnotationEventHandlerAdapter(bean, parameterResolver, messageNameResolver)
+            new AnnotationEventHandlerAdapter(bean, parameterResolver, messageTypeResolver)
                     .handle(EVENT_MESSAGE, processingContext);
             assertEquals(1, COUNTER.get());
         });
@@ -191,7 +191,7 @@ class SpringBeanResolverFactoryTest {
             Object bean = context.getBean("duplicateResourceHandlerWithQualifier");
             ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
 
-            new AnnotationEventHandlerAdapter(bean, parameterResolver, messageNameResolver)
+            new AnnotationEventHandlerAdapter(bean, parameterResolver, messageTypeResolver)
                     .handle(EVENT_MESSAGE, processingContext);
             assertEquals(1, COUNTER.get());
         });
@@ -204,7 +204,7 @@ class SpringBeanResolverFactoryTest {
             Object bean = context.getBean("duplicateResourceHandlerWithQualifierAndPrimary");
             ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
 
-            new AnnotationEventHandlerAdapter(bean, parameterResolver, messageNameResolver)
+            new AnnotationEventHandlerAdapter(bean, parameterResolver, messageTypeResolver)
                     .handle(EVENT_MESSAGE, processingContext);
             assertEquals(1, COUNTER.get());
         });
@@ -218,7 +218,7 @@ class SpringBeanResolverFactoryTest {
             ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
             AnnotationEventHandlerAdapter adapter = new AnnotationEventHandlerAdapter(handler,
                                                                                       parameterResolver,
-                                                                                      messageNameResolver);
+                                                                                      messageTypeResolver);
 
             // Spring dependency resolution will resolve at time of execution
             CompletableFuture<Message<Void>> result = adapter.handle(EVENT_MESSAGE, processingContext)
@@ -242,7 +242,7 @@ class SpringBeanResolverFactoryTest {
             Object bean = context.getBean("duplicateResourceHandlerWithAutowiredAndQualifier");
             ParameterResolverFactory parameterResolver = context.getBean(ParameterResolverFactory.class);
 
-            new AnnotationEventHandlerAdapter(bean, parameterResolver, messageNameResolver).handle(EVENT_MESSAGE,
+            new AnnotationEventHandlerAdapter(bean, parameterResolver, messageTypeResolver).handle(EVENT_MESSAGE,
                                                                                                    processingContext);
             assertEquals(1, COUNTER.get());
         });
@@ -259,7 +259,7 @@ class SpringBeanResolverFactoryTest {
     }
 
     private static EventMessage<Object> asEventMessage(Object payload) {
-        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload);
+        return new GenericEventMessage<>(new MessageType("event"), payload);
     }
 
     public interface DuplicateResourceWithPrimary {

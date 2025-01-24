@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import org.axonframework.eventhandling.GenericDomainEventEntry;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedDomainEventData;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
@@ -57,7 +57,7 @@ class SingleEventUpcasterTest {
         String newValue = "newNameValue";
         MetaData metaData = MetaData.with("key", "value");
         DomainEventMessage<StubDomainEvent> testEvent = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, new QualifiedName("test", "event", "0.0.1"),
+                "test", "aggregateId", 0, new MessageType("event"),
                 new StubDomainEvent("oldName"), metaData
         );
         EventData<?> eventData = new TestDomainEventEntry(testEvent, serializer);
@@ -106,7 +106,7 @@ class SingleEventUpcasterTest {
     @Test
     void ignoresUnknownType() {
         DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, new QualifiedName("test", "event", "0.0.1"), "someString"
+                "test", "aggregateId", 0, new MessageType("event"), "someString"
         );
         EventData<?> eventData = new TestDomainEventEntry(
                 testEvent, serializer
@@ -123,7 +123,7 @@ class SingleEventUpcasterTest {
     @Test
     void ignoresWrongVersion() {
         DomainEventMessage<StubDomainEvent> testEvent = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, new QualifiedName("test", "event", "0.0.1"), new StubDomainEvent("oldName")
+                "test", "aggregateId", 0, new MessageType("event"), new StubDomainEvent("oldName")
         );
         EventData<?> eventData = new TestDomainEventEntry(testEvent, serializer);
         Upcaster<IntermediateEventRepresentation> upcaster = new StubEventUpcaster("whatever");

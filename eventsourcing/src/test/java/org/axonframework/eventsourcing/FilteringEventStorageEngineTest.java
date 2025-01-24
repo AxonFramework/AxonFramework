@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
@@ -67,7 +67,7 @@ class FilteringEventStorageEngineTest {
     @Test
     void storeSnapshotDelegated() {
         DomainEventMessage<Object> snapshot = new GenericDomainEventMessage<>(
-                "type", "id", 0, new QualifiedName("test", "snapshot", "0.0.1"), "fail"
+                "type", "id", 0, new MessageType("snapshot"), "fail"
         );
         testSubject.storeSnapshot(snapshot);
 

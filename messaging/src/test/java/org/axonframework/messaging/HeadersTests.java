@@ -133,7 +133,7 @@ class HeadersTests {
 
     private GenericDomainEventMessage<String> domainMessage() {
         return new GenericDomainEventMessage<>(
-                "Stub", "893612", 1L, new QualifiedName("test", "event", "0.0.1"), "Payload"
+                "Stub", "893612", 1L, new MessageType("event"), "Payload"
         );
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 
 package org.axonframework.queryhandling.annotation;
 
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -32,7 +33,6 @@ import org.junit.jupiter.api.*;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -71,7 +71,7 @@ class MethodQueryMessageHandlerDefinitionTest {
         assertEquals(String.class, handler.getResultType());
 
         GenericQueryMessage<String, String> message = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "mock", ResponseTypes.instanceOf(String.class)
+                new MessageType("query"), "mock", ResponseTypes.instanceOf(String.class)
         );
 
         assertTrue(handler.canHandle(message, null));
@@ -103,13 +103,10 @@ class MethodQueryMessageHandlerDefinitionTest {
     private static MessageStream<?> returnTypeConverter(Object result) {
         if (result instanceof CompletableFuture<?> future) {
             return MessageStream.fromFuture(future.thenApply(
-                    r -> new GenericMessage<>(fromClassName(r.getClass()), r)
+                    r -> new GenericMessage<>(new MessageType(r.getClass()), r)
             ));
         }
-        QualifiedName type = result != null
-                ? fromClassName(result.getClass())
-                : new QualifiedName("axon.framework", "empty.result", "0.0.1");
-        return MessageStream.just(new GenericMessage<>(type, result));
+        return MessageStream.just(new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }
 
     private <R> QueryHandlingMember<R> messageHandler(String methodName) {

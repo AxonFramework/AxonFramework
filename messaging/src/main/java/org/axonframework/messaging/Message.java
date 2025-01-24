@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Representation of a {@link Message}, containing a {@link QualifiedName name}, payload of type {@code T}, and
+ * Representation of a {@link Message}, containing a {@link MessageType type}, payload of type {@code T}, and
  * {@link MetaData}.
  * <p>
  * Typical examples of a {@code Messages} are {@link org.axonframework.commandhandling.CommandMessage commands},
@@ -36,7 +36,7 @@ import java.util.function.Function;
  * Instead of implementing {@code Message} directly, consider implementing {@code CommandMessage}, {@code EventMessage}
  * or {@code QueryMessage} instead.
  *
- * @param <P> The type of {@link #getPayload() payload} contained in this {@link Message}.
+ * @param <P> The type of {@link #getPayload() payload} contained in this {@code Message}.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @see org.axonframework.commandhandling.CommandMessage
@@ -47,40 +47,40 @@ import java.util.function.Function;
 public interface Message<P> extends Serializable {
 
     /**
-     * Returns the identifier of this {@link Message}.
+     * Returns the identifier of this {@code Message}.
      * <p>
      * Two messages with the same identifiers should be interpreted as different representations of the same conceptual
      * message. In such case, the {@link Message#getMetaData() metadata} may be different for both representations. The
      * {@link Message#getPayload() payload} <em>may</em> be identical.
      *
-     * @return The unique identifier of this {@link Message}.
+     * @return The unique identifier of this {@code Message}.
      */
     String getIdentifier();
 
     /**
-     * Returns the message {@link QualifiedName name} of this {@link Message}.
+     * Returns the message {@link QualifiedName qualifiedName} of this {@code Message}.
      *
-     * @return The message {@link QualifiedName name} of this {@link Message}.
+     * @return The message {@link QualifiedName qualifiedName} of this {@code Message}.
      */
     @Nonnull
-    QualifiedName name();
+    MessageType type();
 
     /**
-     * Returns the {@link MetaData} for this {@link Message}.
+     * Returns the {@link MetaData} for this {@code Message}.
      * <p>
      * The {@code MetaData} is a collection of key-value pairs, where the key is a {@link String}, and the value is a
      * serializable object.
      *
-     * @return The {@link MetaData} for this {@link Message}.
+     * @return The {@link MetaData} for this {@code Message}.
      */
     MetaData getMetaData();
 
     /**
-     * Returns the payload of this {@link Message}.
+     * Returns the payload of this {@code Message}.
      * <p>
      * The payload is the application-specific information.
      *
-     * @return The payload of this {@link Message}.
+     * @return The payload of this {@code Message}.
      */
     P getPayload();
 
@@ -93,30 +93,31 @@ public interface Message<P> extends Serializable {
      * @return the type of payload.
      * @deprecated Payloads are just jvm-internal representations. No need for matching against payload types
      */
-    @Deprecated // TODO #3085 - Replace for getMessageType once fully integrated
+    @Deprecated
+    // TODO #3085 - Replace for getMessageType once fully integrated
     Class<P> getPayloadType();
 
     /**
-     * Returns a copy of this {@link Message message (implementation)} with the given {@code metaData}.
+     * Returns a copy of this {@code Message message (implementation)} with the given {@code metaData}.
      * <p>
      * All others fields, like for example the {@link #getPayload()}, remain unchanged.
      * <p/>
      * While the implementation returned may be different than the implementation of {@code this}, implementations must
      * take special care in returning the same type of {@code Message}to prevent errors further downstream.
      *
-     * @param metaData The new metadata for the {@link Message}.
-     * @return A copy of this {@link Message message (implementation)} with the given {@code metaData}.
+     * @param metaData The new metadata for the {@code Message}.
+     * @return A copy of this {@code Message message (implementation)} with the given {@code metaData}.
      */
     Message<P> withMetaData(@Nonnull Map<String, ?> metaData);
 
     /**
-     * Returns a copy of this {@link Message message (implementation)} with its {@link Message#getMetaData() metadata}
+     * Returns a copy of this {@code Message message (implementation)} with its {@link Message#getMetaData() metadata}
      * merged with the given {@code metaData}.
      * <p>
      * All others fields, like for example the {@link #getPayload()}, remain unchanged.
      *
      * @param metaData The metadata to merge with.
-     * @return A copy of this {@link Message message (implementation)} with the given {@code metaData}.
+     * @return A copy of this {@code Message message (implementation)} with the given {@code metaData}.
      */
     Message<P> andMetaData(@Nonnull Map<String, ?> metaData);
 

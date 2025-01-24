@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package org.axonframework.eventsourcing.utils;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 
 import java.time.Instant;
 import java.util.List;
@@ -32,7 +32,7 @@ import java.util.stream.IntStream;
 // TODO - Discuss: Perfect candidate to move to a commons test utils module?
 public abstract class EventStoreTestUtils {
 
-    private static final QualifiedName NAME = new QualifiedName("test", "event", "0.0.1");
+    private static final MessageType TYPE = new MessageType("event");
     public static final String PAYLOAD = "payload";
     public static final String AGGREGATE = "aggregate";
     private static final String AGGREGATE_TYPE = "aggregateType";
@@ -75,7 +75,7 @@ public abstract class EventStoreTestUtils {
     public static DomainEventMessage<String> createEvent(long sequenceNumber, Instant timestamp) {
         return new GenericDomainEventMessage<>(
                 AGGREGATE_TYPE, IdentifierFactory.getInstance().generateIdentifier(), sequenceNumber,
-                IdentifierFactory.getInstance().generateIdentifier(), NAME,
+                IdentifierFactory.getInstance().generateIdentifier(), TYPE,
                 PAYLOAD, METADATA, timestamp
         );
     }
@@ -107,7 +107,7 @@ public abstract class EventStoreTestUtils {
                                                aggregateId,
                                                sequenceNumber,
                                                eventId,
-                                               NAME,
+                                               TYPE,
                                                payload,
                                                metaData,
                                                GenericDomainEventMessage.clock.instant());

@@ -28,11 +28,11 @@ import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -79,7 +79,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
     private final EventBus eventBus;
     private final EventJobDataBinder jobDataBinder;
     private final TransactionManager transactionManager;
-    private final MessageNameResolver messageNameResolver;
+    private final MessageTypeResolver messageTypeResolver;
 
     private String groupIdentifier = DEFAULT_GROUP_NAME;
     private volatile boolean initialized;
@@ -100,7 +100,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         eventBus = builder.eventBus;
         jobDataBinder = builder.jobDataBinderSupplier.get();
         transactionManager = builder.transactionManager;
-        messageNameResolver = builder.messageNameResolver;
+        messageTypeResolver = builder.messageTypeResolver;
 
         try {
             initialize();
@@ -113,7 +113,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         scheduler.getContext().put(EVENT_BUS_KEY, eventBus);
         scheduler.getContext().put(TRANSACTION_MANAGER_KEY, transactionManager);
         scheduler.getContext().put(EVENT_JOB_DATA_BINDER_KEY, jobDataBinder);
-        scheduler.getContext().put(MESSAGE_NAME_RESOLVER_KEY, messageNameResolver);
+        scheduler.getContext().put(MESSAGE_TYPE_RESOLVER_KEY, messageTypeResolver);
         initialized = true;
     }
 
@@ -156,7 +156,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
             return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
         }
         return new GenericEventMessage<>(
-                messageNameResolver.resolve(event),
+                messageTypeResolver.resolve(event),
                 (E) event,
                 MetaData.emptyInstance()
         );
@@ -256,9 +256,9 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
     public static class DirectEventJobDataBinder implements EventJobDataBinder {
 
         /**
-         * Key pointing to the {@link Message#name()} as a {@code String} of the deadline in the {@link JobDataMap}.
+         * Key pointing to the {@link Message#type()} as a {@code String} of the deadline in the {@link JobDataMap}.
          */
-        public static final String NAME = "name";
+        public static final String TYPE = "type";
 
         private final Serializer serializer;
 
@@ -279,7 +279,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
             EventMessage<?> eventMessage = (EventMessage<?>) event;
 
             jobData.put(MESSAGE_ID, eventMessage.getIdentifier());
-            jobData.put(NAME, eventMessage.name().toString());
+            jobData.put(TYPE, eventMessage.type().toString());
             jobData.put(MESSAGE_TIMESTAMP, eventMessage.getTimestamp().toString());
 
             SerializedObject<byte[]> serializedPayload =
@@ -298,7 +298,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         @Override
         public Object fromJobData(JobDataMap jobDataMap) {
             return new GenericEventMessage<>((String) jobDataMap.get(MESSAGE_ID),
-                                             QualifiedName.fromString((String) jobDataMap.get(NAME)),
+                                             MessageType.fromString((String) jobDataMap.get(TYPE)),
                                              deserializePayload(jobDataMap),
                                              deserializeMetaData(jobDataMap),
                                              retrieveDeadlineTimestamp(jobDataMap));
@@ -346,7 +346,7 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         private Supplier<EventJobDataBinder> jobDataBinderSupplier;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
         private Supplier<Serializer> serializer;
-        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+        private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
         /**
          * Sets the {@link Scheduler} used for scheduling and triggering purposes of the deadlines.
@@ -414,15 +414,16 @@ public class QuartzEventScheduler implements EventScheduler, Lifecycle {
         }
 
         /**
-         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when publishing {@link EventMessage EventMessages}.
-         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         * Sets the {@link MessageTypeResolver} used to resolve the {@link MessageType} when publishing
+         * {@link EventMessage EventMessages}. If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
          *
-         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for {@link EventMessage EventMessages}.
+         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link MessageType} for
+         *                            {@link EventMessage EventMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
-            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
-            this.messageNameResolver = messageNameResolver;
+        public Builder messageNameResolver(MessageTypeResolver messageTypeResolver) {
+            assertNonNull(messageTypeResolver, "MessageNameResolver may not be null");
+            this.messageTypeResolver = messageTypeResolver;
             return this;
         }
 

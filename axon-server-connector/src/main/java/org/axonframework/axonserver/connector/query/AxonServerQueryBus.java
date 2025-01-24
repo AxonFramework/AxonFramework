@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -408,7 +408,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                       R newPayload,
                                                       Class<R> expectedPayloadType) {
         GenericMessage<R> delegate = new GenericMessage<>(original.getIdentifier(),
-                                                          original.name(),
+                                                          original.type(),
                                                           newPayload,
                                                           original.getMetaData(),
                                                           expectedPayloadType);

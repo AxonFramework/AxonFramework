@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,8 @@ import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
@@ -178,8 +177,8 @@ class DefaultDeadLetterJdbcConverterTest {
         when(mock.getBytes(schema.metaDataColumn())).thenReturn(serializedMetaData);
         // Event Message mocking
         when(mock.getString(schema.eventIdentifierColumn())).thenReturn(UUID.randomUUID().toString());
-        when(mock.getString(schema.nameColumn()))
-                .thenReturn(new QualifiedName("test", "event", "0.0.1").toString());
+        when(mock.getString(schema.typeColumn()))
+                .thenReturn(new MessageType("event").toString());
         when(mock.getString(schema.timestampColumn())).thenReturn(timestamp);
         // Token mocking
         if (withToken) {

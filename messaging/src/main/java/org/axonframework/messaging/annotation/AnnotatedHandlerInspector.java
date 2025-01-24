@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,11 @@
 package org.axonframework.messaging.annotation;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -44,7 +46,6 @@ import java.util.stream.Stream;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.emptySortedSet;
-import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 
 /**
  * Inspector for a message handling target of type {@code T} that uses annotations on the target to inspect the
@@ -209,13 +210,10 @@ public class AnnotatedHandlerInspector<T> {
     private static MessageStream<?> returnTypeConverter(Object result) {
         if (result instanceof CompletableFuture<?> future) {
             return MessageStream.fromFuture(future.thenApply(
-                    r -> new GenericMessage<>(fromClassName(r.getClass()), r)
+                    r -> new GenericMessage<>(new MessageType(r.getClass()), r)
             ));
         }
-        QualifiedName type = result != null
-                ? fromClassName(result.getClass())
-                : new QualifiedName("axon.framework", "empty.result", "0.0.1");
-        return MessageStream.just(new GenericMessage<>(type, result));
+        return MessageStream.just(new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }
 
     @SuppressWarnings("unchecked")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.messaging.retry;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
 
 class MaxAttemptsPolicyTest {
 
-    private final Message<?> message = new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "test");
+    private final Message<?> message = new GenericMessage<>(new MessageType("message"), "test");
     private final MockException failure = new MockException("Simulating failure");
     private MaxAttemptsPolicy testSubject;
     private RetryPolicy mock;

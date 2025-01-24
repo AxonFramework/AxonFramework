@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.junit.jupiter.api.*;
 
@@ -100,6 +100,6 @@ class EventSinkTest {
 
     // TODO - Discuss: Perfect candidate to move to a commons test utils module?
     private static EventMessage<?> eventMessage(int seq) {
-        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Event[" + seq + "]");
+        return new GenericEventMessage<>(new MessageType("test", "event", "0.0.1"), "Event[" + seq + "]");
     }
 }

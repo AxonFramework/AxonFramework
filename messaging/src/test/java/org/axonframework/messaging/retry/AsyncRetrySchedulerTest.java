@@ -20,7 +20,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
 
 class AsyncRetrySchedulerTest {
 
-    private static final QualifiedName TEST_NAME = new QualifiedName("test", "message", "0.0.1");
+    private static final MessageType TEST_TYPE = new MessageType("message");
 
     private AsyncRetryScheduler testSubject;
     private RetryPolicy retryPolicy;
@@ -65,7 +65,7 @@ class AsyncRetrySchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldReturnFailedStreamIfPolicyOutcomeIsNoRetry() {
-        Message<Object> testMessage = new GenericMessage<>(TEST_NAME, "stub");
+        Message<Object> testMessage = new GenericMessage<>(TEST_TYPE, "stub");
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
 
         MessageStream<Message<?>> actual =
@@ -79,7 +79,7 @@ class AsyncRetrySchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldScheduleRetryIfPolicyOutcomeIsRetry() {
-        Message<Object> testMessage = new GenericMessage<>(TEST_NAME, "stub");
+        Message<Object> testMessage = new GenericMessage<>(TEST_TYPE, "stub");
         policyOutcome.set(RetryPolicy.Outcome.rescheduleIn(1, TimeUnit.SECONDS));
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
         when(dispatcher.dispatch(any(), any())).thenReturn(MessageStream.empty());
@@ -105,7 +105,7 @@ class AsyncRetrySchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldRescheduleAgainWhenRetryReturnsFailedStream() {
-        Message<Object> testMessage = new GenericMessage<>(TEST_NAME, "stub");
+        Message<Object> testMessage = new GenericMessage<>(TEST_TYPE, "stub");
         policyOutcome.set(RetryPolicy.Outcome.rescheduleIn(1, TimeUnit.SECONDS));
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
         when(dispatcher.dispatch(any(), any()))
@@ -136,8 +136,8 @@ class AsyncRetrySchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldReturnFailedStreamIfFailureIsNotFirstItemInStream() {
-        Message<Object> testMessage = new GenericMessage<>(TEST_NAME, "stub");
-        Message<String> responseMessage = new GenericMessage<>(TEST_NAME, "OK");
+        Message<Object> testMessage = new GenericMessage<>(TEST_TYPE, "stub");
+        Message<String> responseMessage = new GenericMessage<>(TEST_TYPE, "OK");
         policyOutcome.set(RetryPolicy.Outcome.rescheduleIn(1, TimeUnit.SECONDS));
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
         when(dispatcher.dispatch(any(), any())).thenAnswer(
@@ -166,7 +166,7 @@ class AsyncRetrySchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     void shouldNotScheduleAnotherRetryWhenPolicyIndicatesSo() {
-        Message<Object> testMessage = new GenericMessage<>(TEST_NAME, "stub");
+        Message<Object> testMessage = new GenericMessage<>(TEST_TYPE, "stub");
         policyOutcome.set(RetryPolicy.Outcome.rescheduleIn(1, TimeUnit.SECONDS));
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
         when(dispatcher.dispatch(any(), any())).thenAnswer(i -> MessageStream.failed(new MockException("Retry error")));

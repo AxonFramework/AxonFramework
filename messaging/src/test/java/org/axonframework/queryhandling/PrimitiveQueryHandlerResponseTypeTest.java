@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.junit.jupiter.api.*;
@@ -89,10 +89,10 @@ class PrimitiveQueryHandlerResponseTypeTest {
      */
     private <T> void test(final T value, final Class<T> boxed, final Class<T> primitive) {
         final QueryMessage<T, T> queryBoxed = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), value, ResponseTypes.instanceOf(boxed)
+                new MessageType("query"), value, ResponseTypes.instanceOf(boxed)
         );
         final QueryMessage<T, T> queryPrimitive = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), value, ResponseTypes.instanceOf(primitive)
+                new MessageType("query"), value, ResponseTypes.instanceOf(primitive)
         );
 
         final T responseBoxed = queryBus.query(queryBoxed).join().getPayload();

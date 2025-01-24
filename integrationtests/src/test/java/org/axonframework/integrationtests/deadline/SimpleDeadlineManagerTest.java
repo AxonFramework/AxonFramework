@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.SimpleDeadlineManager;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -41,7 +41,7 @@ class SimpleDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
         return SimpleDeadlineManager.builder()
                                     .scopeAwareProvider(new ConfigurationScopeAwareProvider(configuration))
                                     .spanFactory(configuration.getComponent(DeadlineManagerSpanFactory.class))
-                                    .messageNameResolver(new ClassBasedMessageNameResolver())
+                                    .messageNameResolver(new ClassBasedMessageTypeResolver())
                                     .build();
     }
 

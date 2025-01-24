@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.jupiter.api.*;
@@ -45,7 +45,7 @@ class ConcludesBatchParameterResolverFactoryTest {
     void onlyMatchesEventMessages() {
         assertTrue(testSubject.matches(asEventMessage("testEvent"), null));
         assertFalse(testSubject.matches(new GenericCommandMessage<>(
-                new QualifiedName("test", "command", "0.0.1"), "testCommand"), null
+                new MessageType("command"), "testCommand"), null
         ));
     }
 

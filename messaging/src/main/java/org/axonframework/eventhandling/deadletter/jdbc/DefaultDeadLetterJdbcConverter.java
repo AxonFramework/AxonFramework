@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.deadletter.Cause;
 import org.axonframework.messaging.deadletter.DeadLetter;
 import org.axonframework.messaging.deadletter.ThrowableCause;
@@ -120,12 +120,11 @@ public class DefaultDeadLetterJdbcConverter<E extends EventMessage<?>>
                 eventMessage = new GenericTrackedEventMessage<>(trackingToken, serializedMessage, timestampSupplier);
             }
         } else if (resultSet.getString(schema.aggregateIdentifierColumn()) != null) {
-            QualifiedName name = QualifiedName.fromString(resultSet.getString(schema.nameColumn()));
             eventMessage = new GenericDomainEventMessage<>(resultSet.getString(schema.aggregateTypeColumn()),
                                                            resultSet.getString(schema.aggregateIdentifierColumn()),
                                                            resultSet.getLong(schema.sequenceNumberColumn()),
                                                            serializedMessage.getIdentifier(),
-                                                           name,
+                                                           MessageType.fromString(resultSet.getString(schema.typeColumn())),
                                                            serializedMessage.getPayload(),
                                                            serializedMessage.getMetaData(),
                                                            timestampSupplier.get());

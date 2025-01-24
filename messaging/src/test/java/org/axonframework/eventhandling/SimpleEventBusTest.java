@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.eventhandling;
 
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -74,6 +74,6 @@ class SimpleEventBusTest {
     }
 
     private EventMessage<Object> newEvent() {
-        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new Object());
+        return new GenericEventMessage<>(new MessageType("event"), new Object());
     }
 }

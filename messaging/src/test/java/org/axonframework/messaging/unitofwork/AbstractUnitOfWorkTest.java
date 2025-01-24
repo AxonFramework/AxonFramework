@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package org.axonframework.messaging.unitofwork;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.correlation.ThrowingCorrelationDataProvider;
 import org.axonframework.utils.MockException;
@@ -52,7 +52,7 @@ class AbstractUnitOfWorkTest {
             CurrentUnitOfWork.get().rollback();
         }
         subject = spy(new DefaultUnitOfWork(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Input 1")
+                new GenericEventMessage<>(new MessageType("event"), "Input 1")
         ) {
             @Override
             public String toString() {

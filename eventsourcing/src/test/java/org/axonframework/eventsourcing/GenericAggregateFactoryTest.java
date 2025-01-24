@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.eventsourcing.utils.StubAggregate;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;
@@ -45,7 +45,7 @@ class GenericAggregateFactoryTest {
         GenericAggregateFactory<ExceptionThrowingAggregate> factory =
                 new GenericAggregateFactory<>(ExceptionThrowingAggregate.class);
         DomainEventMessage<Object> testEvent = new GenericDomainEventMessage<>(
-                "type", "", 0, new QualifiedName("test", "event", "0.0.1"), new Object()
+                "type", "", 0, new MessageType("event"), new Object()
         );
         try {
             factory.createAggregateRoot(UUID.randomUUID().toString(), testEvent);
@@ -59,7 +59,7 @@ class GenericAggregateFactoryTest {
     void initializeFromAggregateSnapshot() {
         StubAggregate aggregate = new StubAggregate("stubId");
         DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>(
-                "type", aggregate.getIdentifier(), 2, new QualifiedName("test", "event", "0.0.1"), aggregate
+                "type", aggregate.getIdentifier(), 2, new MessageType("event"), aggregate
         );
         GenericAggregateFactory<StubAggregate> factory = new GenericAggregateFactory<>(StubAggregate.class);
         assertSame(aggregate, factory.createAggregateRoot(aggregate.getIdentifier(), snapshotMessage));
@@ -72,7 +72,7 @@ class GenericAggregateFactoryTest {
     void initializeFromAggregateSnapshot_AvoidCallingDoCreateAggregate() {
         StubAggregate aggregate = new StubAggregate("stubId");
         DomainEventMessage<StubAggregate> snapshotMessage = new GenericDomainEventMessage<>(
-                "type", aggregate.getIdentifier(), 2, new QualifiedName("test", "event", "0.0.1"), aggregate
+                "type", aggregate.getIdentifier(), 2, new MessageType("event"), aggregate
         );
         AggregateFactory<StubAggregate> factory = new RogueAggregateFactory(StubAggregate.class);
         assertSame(aggregate, factory.createAggregateRoot(aggregate.getIdentifier(), snapshotMessage));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.time.Instant;
@@ -43,7 +43,7 @@ class DefaultEventMessageConverterTest {
     @Test
     void givenGenericEventMessageWhenConvertingTwiceThenResultingEventShouldBeTheSame() {
         String id = UUID.randomUUID().toString();
-        QualifiedName name = new QualifiedName("test", "event", "0.0.1");
+        MessageType name = new MessageType("event");
         EventPayload payload = new EventPayload("hello");
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("number", 100);
@@ -68,7 +68,7 @@ class DefaultEventMessageConverterTest {
     void givenDomainEventMessageWhenConvertingTwiceThenResultingEventShouldBeTheSame() {
         String aggId = UUID.randomUUID().toString();
         String id = UUID.randomUUID().toString();
-        QualifiedName name = new QualifiedName("test", "event", "0.0.1");
+        MessageType name = new MessageType("event");
         EventPayload payload = new EventPayload("hello");
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("number", 100);

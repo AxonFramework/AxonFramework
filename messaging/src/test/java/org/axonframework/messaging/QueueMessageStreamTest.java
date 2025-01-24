@@ -60,7 +60,7 @@ class QueueMessageStreamTest extends MessageStreamTest<EventMessage<String>> {
 
     @Override
     EventMessage<String> createRandomMessage() {
-        return new GenericEventMessage<>(new QualifiedName("test", "message", "0.0.1"),
+        return new GenericEventMessage<>(new MessageType("message"),
                                          "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 

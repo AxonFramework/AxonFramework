@@ -27,8 +27,8 @@ import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
-import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -66,7 +66,7 @@ public class SimpleEventScheduler implements EventScheduler, Lifecycle {
     private final ScheduledExecutorService scheduledExecutorService;
     private final EventBus eventBus;
     private final TransactionManager transactionManager;
-    private final MessageNameResolver messageNameResolver;
+    private final MessageTypeResolver messageTypeResolver;
 
     private final Map<String, Future<?>> tokens = new ConcurrentHashMap<>();
 
@@ -83,7 +83,7 @@ public class SimpleEventScheduler implements EventScheduler, Lifecycle {
         this.scheduledExecutorService = builder.scheduledExecutorService;
         this.eventBus = builder.eventBus;
         this.transactionManager = builder.transactionManager;
-        this.messageNameResolver = builder.messageNameResolver;
+        this.messageTypeResolver = builder.messageTypeResolver;
     }
 
     /**
@@ -148,7 +148,7 @@ public class SimpleEventScheduler implements EventScheduler, Lifecycle {
         private ScheduledExecutorService scheduledExecutorService;
         private EventBus eventBus;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
-        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+        private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
         /**
          * Sets the {@link EventBus} used to publish events on to, once the schedule has been met.
@@ -189,16 +189,16 @@ public class SimpleEventScheduler implements EventScheduler, Lifecycle {
         }
 
         /**
-         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when scheduling
-         * {@link EventMessage EventMessages}. If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when scheduling
+         * {@link EventMessage EventMessages}. If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
          *
-         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for
+         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for
          *                            {@link EventMessage EventMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
-            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
-            this.messageNameResolver = messageNameResolver;
+        public Builder messageNameResolver(MessageTypeResolver messageTypeResolver) {
+            assertNonNull(messageTypeResolver, "MessageNameResolver may not be null");
+            this.messageTypeResolver = messageTypeResolver;
             return this;
         }
 
@@ -258,10 +258,10 @@ public class SimpleEventScheduler implements EventScheduler, Lifecycle {
          */
         private EventMessage<?> createMessage() {
             return event instanceof EventMessage
-                    ? new GenericEventMessage<>(((EventMessage<?>) event).name(),
+                    ? new GenericEventMessage<>(((EventMessage<?>) event).type(),
                                                 ((EventMessage<?>) event).getPayload(),
                                                 ((EventMessage<?>) event).getMetaData())
-                    : new GenericEventMessage<>(messageNameResolver.resolve(event), event);
+                    : new GenericEventMessage<>(messageTypeResolver.resolve(event), event);
         }
     }
 }

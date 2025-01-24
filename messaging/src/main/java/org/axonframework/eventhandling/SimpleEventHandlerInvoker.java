@@ -19,8 +19,8 @@ package org.axonframework.eventhandling;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
-import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -206,7 +206,7 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         private HandlerDefinition handlerDefinition;
         private ListenerInvocationErrorHandler listenerInvocationErrorHandler = new LoggingErrorHandler();
         private SequencingPolicy<? super EventMessage<?>> sequencingPolicy = SequentialPerAggregatePolicy.instance();
-        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+        private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
         /**
          * Sets the {@code eventHandlers} this {@link EventHandlerInvoker} will forward all its events to. If an event
@@ -306,16 +306,16 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
         }
 
         /**
-         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when publishing
-         * {@link EventMessage EventMessages}. If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when publishing
+         * {@link EventMessage EventMessages}. If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
          *
-         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for
+         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for
          *                            {@link EventMessage EventMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public B messageNameResolver(MessageNameResolver messageNameResolver) {
-            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
-            this.messageNameResolver = messageNameResolver;
+        public B messageNameResolver(MessageTypeResolver messageTypeResolver) {
+            assertNonNull(messageTypeResolver, "MessageNameResolver may not be null");
+            this.messageTypeResolver = messageTypeResolver;
             //noinspection unchecked
             return (B) this;
         }
@@ -340,14 +340,14 @@ public class SimpleEventHandlerInvoker implements EventHandlerInvoker {
          */
         public AnnotationEventHandlerAdapter wrapEventMessageHandler(@Nonnull Object eventHandler) {
             if (parameterResolverFactory == null && handlerDefinition == null) {
-                return new AnnotationEventHandlerAdapter(eventHandler, messageNameResolver);
+                return new AnnotationEventHandlerAdapter(eventHandler, messageTypeResolver);
             } else if (parameterResolverFactory != null && handlerDefinition == null) {
-                return new AnnotationEventHandlerAdapter(eventHandler, parameterResolverFactory, messageNameResolver);
+                return new AnnotationEventHandlerAdapter(eventHandler, parameterResolverFactory, messageTypeResolver);
             } else {
                 return new AnnotationEventHandlerAdapter(eventHandler,
                                                          parameterResolverFactory,
                                                          handlerDefinition,
-                                                         messageNameResolver);
+                                                         messageTypeResolver);
             }
         }
 

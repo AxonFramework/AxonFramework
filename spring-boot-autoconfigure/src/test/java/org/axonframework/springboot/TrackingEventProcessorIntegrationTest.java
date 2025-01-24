@@ -35,7 +35,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -220,7 +220,7 @@ public class TrackingEventProcessorIntegrationTest {
     }
 
     private static EventMessage<Object> asEventMessage(Object payload) {
-        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload);
+        return new GenericEventMessage<>(new MessageType("event"), payload);
     }
 
     @Configuration

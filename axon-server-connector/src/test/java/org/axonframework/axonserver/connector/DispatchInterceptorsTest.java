@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.axonserver.connector;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -48,7 +48,7 @@ class DispatchInterceptorsTest {
                                                              return b;
                                                          }
         );
-        dispatchInterceptors.intercept(new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "payload"));
+        dispatchInterceptors.intercept(new GenericMessage<>(new MessageType("message"), "payload"));
         assertEquals("Interceptor One", results.get(0));
         assertEquals("Interceptor Two", results.get(1));
         assertEquals(2, results.size());

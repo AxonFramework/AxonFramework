@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.eventhandling.async;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.util.UUID;
@@ -42,7 +42,7 @@ class SequentialPerAggregatePolicyTest {
         Object id2 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(aggregateIdentifier));
         Object id3 = testSubject.getSequenceIdentifierFor(newStubDomainEvent(UUID.randomUUID().toString()));
         Object id4 = testSubject.getSequenceIdentifierFor(new GenericEventMessage<>(
-                new QualifiedName("test", "event", "0.0.1"), "bla"
+                new MessageType("event"), "bla"
         ));
 
         assertEquals(id1, id2);
@@ -53,7 +53,7 @@ class SequentialPerAggregatePolicyTest {
 
     private DomainEventMessage<Object> newStubDomainEvent(String aggregateIdentifier) {
         return new GenericDomainEventMessage<>(
-                "aggregateType", aggregateIdentifier, 0L, new QualifiedName("test", "event", "0.0.1"), new Object()
+                "aggregateType", aggregateIdentifier, 0L, new MessageType("event"), new Object()
         );
     }
 }

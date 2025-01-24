@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.queryhandling;
 
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.reactivestreams.Publisher;
@@ -56,7 +56,7 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void completingRegistrationOldApi() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                new MessageType("query"), "chatMessages", "some-payload",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
@@ -73,7 +73,7 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void concurrentUpdateEmitting() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                new MessageType("query"), "chatMessages", "some-payload",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
@@ -93,7 +93,7 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void concurrentUpdateEmitting_WithBackpressure() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                new MessageType("query"), "chatMessages", "some-payload",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
@@ -113,7 +113,7 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void cancelingRegistrationDoesNotCompleteFluxOfUpdatesOldApi() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                new MessageType("query"), "chatMessages", "some-payload",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
@@ -130,7 +130,7 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void completingRegistration() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                new MessageType("query"), "chatMessages", "some-payload",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
@@ -151,7 +151,7 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void queryUpdateEmitterIsTraced() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                new MessageType("query"), "chatMessages", "some-payload",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
@@ -175,7 +175,7 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void differentUpdateAreDisambiguatedAndWrongTypesAreFilteredBasedOnQueryTypes() {
         SubscriptionQueryMessage<String, List<String>, Integer> queryMessage = new GenericSubscriptionQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                new MessageType("query"), "chatMessages", "some-payload",
                 multipleInstancesOf(String.class), instanceOf(Integer.class)
         );
 
@@ -197,7 +197,7 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void updateResponseTypeFilteringWorksForMultipleInstanceOfWithArrayAndList() {
         SubscriptionQueryMessage<String, List<String>, List<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                new MessageType("query"), "chatMessages", "some-payload",
                 multipleInstancesOf(String.class), multipleInstancesOf(String.class)
         );
 
@@ -226,7 +226,7 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void updateResponseTypeFilteringWorksForOptionalInstanceOf() {
         SubscriptionQueryMessage<String, List<String>, Optional<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                new MessageType("query"), "chatMessages", "some-payload",
                 multipleInstancesOf(String.class), optionalInstanceOf(String.class)
         );
 
@@ -255,7 +255,7 @@ class SimpleQueryUpdateEmitterTest {
     @SuppressWarnings("unchecked")
     void updateResponseTypeFilteringWorksForPublisherOf() {
         SubscriptionQueryMessage<String, List<String>, Publisher<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                new MessageType("query"), "chatMessages", "some-payload",
                 multipleInstancesOf(String.class), publisherOf(String.class)
         );
 
@@ -311,7 +311,7 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void multipleInstanceUpdatesAreDelivered() {
         SubscriptionQueryMessage<String, List<String>, List<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                new MessageType("query"), "chatMessages", "some-payload",
                 multipleInstancesOf(String.class), multipleInstancesOf(String.class)
         );
 
@@ -333,7 +333,7 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void optionalUpdatesAreDelivered() {
         SubscriptionQueryMessage<String, Optional<String>, Optional<String>> queryMessage = new GenericSubscriptionQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                new MessageType("query"), "chatMessages", "some-payload",
                 optionalInstanceOf(String.class), optionalInstanceOf(String.class)
         );
 
@@ -355,7 +355,7 @@ class SimpleQueryUpdateEmitterTest {
     @Test
     void cancelingRegistrationDoesNotCompleteFluxOfUpdates() {
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), "chatMessages", "some-payload",
+                new MessageType("query"), "chatMessages", "some-payload",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 

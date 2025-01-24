@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ package org.axonframework.deadline.dbscheduler;
 
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -37,7 +38,7 @@ import static java.lang.String.format;
  * Pojo that contains the needed information for a {@link com.github.kagkarlsson.scheduler.task.Task} handling a
  * deadline, will be serialized and deserialized using the configured {@link Serializer} on the
  * {@link com.github.kagkarlsson.scheduler.Scheduler}. This object is used with the
- * {@link DbSchedulerDeadlineManager#binaryTask()}.
+ * {@code DbSchedulerDeadlineManager#binaryTask()}.
  *
  * @author Gerard Klijs
  * @since 4.8.0
@@ -46,7 +47,7 @@ import static java.lang.String.format;
 public class DbSchedulerBinaryDeadlineDetails implements Serializable {
 
     private String d;
-    private String n;
+    private String t;
     private byte[] s;
     private String sc;
     private byte[] p;
@@ -61,8 +62,8 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
     /**
      * Creates a new {@link DbSchedulerBinaryDeadlineDetails} object, likely based on a {@link DeadlineMessage}.
      *
-     * @param deadlineName         The {@link String} with the name of the deadline.
-     * @param name                 The {@link DeadlineMessage#name()} of the deadline.
+     * @param deadlineName         The {@link String} with the type of the deadline.
+     * @param type                 The {@link Message#type()} of the deadline.
      * @param scopeDescriptor      The {@link String} which tells what the scope is of the deadline.
      * @param scopeDescriptorClass The {@link String} which tells what the class of the scope descriptor is.
      * @param payload              The {@link String} with the payload. This can be null.
@@ -72,7 +73,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
      */
     @SuppressWarnings("squid:S107")
     public DbSchedulerBinaryDeadlineDetails(@Nonnull String deadlineName,
-                                            @Nonnull String name,
+                                            @Nonnull String type,
                                             @Nonnull byte[] scopeDescriptor,
                                             @Nonnull String scopeDescriptorClass,
                                             @Nullable byte[] payload,
@@ -80,7 +81,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
                                             @Nullable String payloadRevision,
                                             @Nullable byte[] metaData) {
         this.d = deadlineName;
-        this.n = name;
+        this.t = type;
         this.s = scopeDescriptor;
         this.sc = scopeDescriptorClass;
         this.p = payload;
@@ -110,7 +111,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
         SerializedObject<byte[]> serializedMetaData = serializer.serialize(message.getMetaData(), byte[].class);
 
         return new DbSchedulerBinaryDeadlineDetails(deadlineName,
-                                                    message.name().toString(),
+                                                    message.type().toString(),
                                                     serializedDescriptor.getData(),
                                                     serializedDescriptor.getType().getName(),
                                                     serializedPayload.getData(),
@@ -129,12 +130,12 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
     }
 
     /**
-     * Returns the {@link DeadlineMessage#name()} of this deadline.
+     * Returns the {@link Message#type()} of this deadline.
      *
-     * @return The {@link DeadlineMessage#name()} of this deadline.
+     * @return The {@link Message#type()} of this deadline.
      */
-    public String getN() {
-        return n;
+    public String getT() {
+        return t;
     }
 
     /**
@@ -200,7 +201,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
     @SuppressWarnings("rawtypes")
     public GenericDeadlineMessage asDeadLineMessage(Serializer serializer) {
         return new GenericDeadlineMessage<>(d,
-                                            QualifiedName.fromString(n),
+                                            MessageType.fromString(t),
                                             getDeserializedPayload(serializer),
                                             getDeserializedMetaData(serializer));
     }
@@ -232,19 +233,19 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
     @Override
     public String toString() {
         return format("DbScheduler deadline details, deadlineName: [%s], " +
-                              "name: [%s], " +
+                              "type: [%s], " +
                               "scopeDescriptor: [%s], " +
                               "scopeDescriptorClass: [%s], " +
                               "payload: [%s], " +
                               "payloadClass: [%s], " +
                               "payloadRevision: [%s], " +
                               "metadata: [%s]",
-                      d, n, Arrays.toString(s), sc, Arrays.toString(p), pc, r, Arrays.toString(m));
+                      d, t, Arrays.toString(s), sc, Arrays.toString(p), pc, r, Arrays.toString(m));
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(d, n, Arrays.hashCode(s), sc, Arrays.hashCode(p), pc, r, Arrays.hashCode(m));
+        return Objects.hash(d, t, Arrays.hashCode(s), sc, Arrays.hashCode(p), pc, r, Arrays.hashCode(m));
     }
 
     @Override
@@ -257,7 +258,7 @@ public class DbSchedulerBinaryDeadlineDetails implements Serializable {
         }
         final DbSchedulerBinaryDeadlineDetails other = (DbSchedulerBinaryDeadlineDetails) obj;
         return Objects.equals(this.d, other.d) &&
-                Objects.equals(this.n, other.n) &&
+                Objects.equals(this.t, other.t) &&
                 Arrays.equals(this.s, other.s) &&
                 Objects.equals(this.sc, other.sc) &&
                 Arrays.equals(this.p, other.p) &&

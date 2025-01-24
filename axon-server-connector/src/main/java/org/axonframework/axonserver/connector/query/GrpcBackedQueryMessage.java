@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,8 @@ import io.axoniq.axonserver.grpc.query.QueryRequest;
 import jakarta.annotation.Nonnull;
 import org.axonframework.axonserver.connector.util.GrpcMetaData;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.serialization.LazyDeserializingObject;
@@ -45,7 +44,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
     private final LazyDeserializingObject<P> serializedPayload;
     private final LazyDeserializingObject<ResponseType<R>> serializedResponseType;
     private final Supplier<MetaData> metaDataSupplier;
-    private final QualifiedName name;
+    private final MessageType type;
 
     /**
      * Instantiate a {@link GrpcBackedResponseMessage} with the given {@code queryRequest}, using the provided
@@ -65,29 +64,22 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getPayload()), messageSerializer),
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getResponseType()), serializer),
                 new GrpcMetaData(queryRequest.getMetaDataMap(), messageSerializer),
-                // TODO #3079 - For AF5, we should base the name on the query field, as that's the "old" queryName.
-                createName(new GrpcSerializedObject(queryRequest.getResponseType()), serializer)
+                new MessageType(serializer.classForType(
+                        new GrpcSerializedObject(queryRequest.getResponseType()).getType()
+                ))
         );
-    }
-
-    private static QualifiedName createName(GrpcSerializedObject serializedObject, Serializer serializer) {
-        Class<?> payloadClass = serializer.classForType(serializedObject.getType());
-        String revision = serializedObject.getType().getRevision();
-        return new QualifiedName(payloadClass.getPackageName(),
-                                 payloadClass.getSimpleName(),
-                                 revision != null ? revision : QualifiedNameUtils.DEFAULT_REVISION);
     }
 
     private GrpcBackedQueryMessage(QueryRequest queryRequest,
                                    LazyDeserializingObject<P> serializedPayload,
                                    LazyDeserializingObject<ResponseType<R>> serializedResponseType,
                                    Supplier<MetaData> metaDataSupplier,
-                                   QualifiedName name) {
+                                   MessageType type) {
         this.query = queryRequest;
         this.serializedPayload = serializedPayload;
         this.serializedResponseType = serializedResponseType;
         this.metaDataSupplier = metaDataSupplier;
-        this.name = name;
+        this.type = type;
     }
 
     @Override
@@ -97,8 +89,8 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
 
     @Nonnull
     @Override
-    public QualifiedName name() {
-        return this.name;
+    public MessageType type() {
+        return this.type;
     }
 
     @Override
@@ -132,7 +124,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
                                             serializedPayload,
                                             serializedResponseType,
                                             () -> MetaData.from(metaData),
-                                            name);
+                                            type);
     }
 
     @Override

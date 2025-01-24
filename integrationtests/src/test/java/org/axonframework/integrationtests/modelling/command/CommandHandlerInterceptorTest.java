@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,10 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.MessageNameResolver;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -57,7 +57,7 @@ import static org.mockito.Mockito.*;
  */
 class CommandHandlerInterceptorTest {
 
-    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
+    private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");
 
     private CommandGateway commandGateway;
     private EventStore eventStore;
@@ -69,7 +69,7 @@ class CommandHandlerInterceptorTest {
                                                                                .eventStore(eventStore)
                                                                                .build();
         CommandBus commandBus = new SimpleCommandBus();
-        MessageNameResolver nameResolver = new ClassBasedMessageNameResolver();
+        MessageTypeResolver nameResolver = new ClassBasedMessageTypeResolver();
         commandGateway = new DefaultCommandGateway(commandBus, nameResolver);
         AggregateAnnotationCommandHandler<MyAggregate> myAggregateCommandHandler =
                 AggregateAnnotationCommandHandler.<MyAggregate>builder()
@@ -85,9 +85,9 @@ class CommandHandlerInterceptorTest {
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptor() {
         CommandMessage<CreateMyAggregateCommand> createCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, new CreateMyAggregateCommand("id"));
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
         CommandMessage<UpdateMyAggregateStateCommand> updateCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, new UpdateMyAggregateStateCommand("id", "state"));
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new UpdateMyAggregateStateCommand("id", "state"));
 
         commandGateway.sendAndWait(createCommand);
         String result = commandGateway.sendAndWait(updateCommand, String.class);
@@ -109,9 +109,9 @@ class CommandHandlerInterceptorTest {
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorWithChainProceeding() {
         CommandMessage<CreateMyAggregateCommand> createCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, new CreateMyAggregateCommand("id"));
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
         CommandMessage<ClearMyAggregateStateCommand> updateCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, new ClearMyAggregateStateCommand("id", true));
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new ClearMyAggregateStateCommand("id", true));
 
         commandGateway.sendAndWait(createCommand);
         commandGateway.sendAndWait(updateCommand);
@@ -129,9 +129,9 @@ class CommandHandlerInterceptorTest {
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorWithoutChainProceeding() {
         CommandMessage<CreateMyAggregateCommand> createCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, new CreateMyAggregateCommand("id"));
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
         CommandMessage<ClearMyAggregateStateCommand> updateCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, new ClearMyAggregateStateCommand("id", false));
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new ClearMyAggregateStateCommand("id", false));
 
         commandGateway.sendAndWait(createCommand);
         commandGateway.sendAndWait(updateCommand);
@@ -147,9 +147,9 @@ class CommandHandlerInterceptorTest {
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorWithNestedEntity() {
         CommandMessage<CreateMyAggregateCommand> createCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, new CreateMyAggregateCommand("id"));
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
         CommandMessage<MyNestedCommand> nestedCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, new MyNestedCommand("id", "state"));
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new MyNestedCommand("id", "state"));
 
         commandGateway.sendAndWait(createCommand);
         commandGateway.sendAndWait(nestedCommand);
@@ -169,9 +169,9 @@ class CommandHandlerInterceptorTest {
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorWithNestedNestedEntity() {
         CommandMessage<CreateMyAggregateCommand> createCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, new CreateMyAggregateCommand("id"));
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
         CommandMessage<MyNestedNestedCommand> nestedCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, new MyNestedNestedCommand("id", "state"));
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new MyNestedNestedCommand("id", "state"));
 
         commandGateway.sendAndWait(createCommand);
         commandGateway.sendAndWait(nestedCommand);
@@ -212,9 +212,9 @@ class CommandHandlerInterceptorTest {
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void interceptorThrowingAnException() {
         CommandMessage<CreateMyAggregateCommand> createCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, new CreateMyAggregateCommand("id"));
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new CreateMyAggregateCommand("id"));
         CommandMessage<InterceptorThrowingCommand> interceptorCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, new InterceptorThrowingCommand("id"));
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, new InterceptorThrowingCommand("id"));
 
         commandGateway.sendAndWait(createCommand);
         assertThrows(InterceptorException.class, () -> commandGateway.sendAndWait(interceptorCommand));

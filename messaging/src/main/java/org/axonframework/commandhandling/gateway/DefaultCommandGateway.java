@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.retry.RetryScheduler;
@@ -46,7 +46,7 @@ import javax.annotation.Nullable;
 public class DefaultCommandGateway implements CommandGateway {
 
     private final CommandBus commandBus;
-    private final MessageNameResolver messageNameResolver;
+    private final MessageTypeResolver messageTypeResolver;
 
     /**
      * Initialize the {@link DefaultCommandGateway} to send commands through given {@code commandBus}. The
@@ -55,15 +55,15 @@ public class DefaultCommandGateway implements CommandGateway {
      * {@code nameResolver}.
      *
      * @param commandBus          The {@link CommandBus} to send commands on.
-     * @param messageNameResolver The {@link MessageNameResolver} resolving the
+     * @param messageTypeResolver The {@link MessageTypeResolver} resolving the
      *                            {@link org.axonframework.messaging.QualifiedName names} for
      *                            {@link org.axonframework.commandhandling.CommandMessage CommandMessages} being
      *                            dispatched on the {@code commandBus}.
      */
     public DefaultCommandGateway(@Nonnull CommandBus commandBus,
-                                 @Nonnull MessageNameResolver messageNameResolver) {
+                                 @Nonnull MessageTypeResolver messageTypeResolver) {
         this.commandBus = commandBus;
-        this.messageNameResolver = messageNameResolver;
+        this.messageTypeResolver = messageTypeResolver;
     }
 
     @Override
@@ -113,14 +113,14 @@ public class DefaultCommandGateway implements CommandGateway {
 
         if (command instanceof Message<?> message) {
             return new GenericCommandMessage<>(
-                    message.name(),
+                    message.type(),
                     (C) message.getPayload(),
                     message.getMetaData()
             );
         }
 
         return new GenericCommandMessage<>(
-                messageNameResolver.resolve(command),
+                messageTypeResolver.resolve(command),
                 (C) command,
                 metaData
         );

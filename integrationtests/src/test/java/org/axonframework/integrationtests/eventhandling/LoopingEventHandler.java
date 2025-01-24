@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.integrationtests.commandhandling.LoopingChangeDoneEvent;
 import org.axonframework.integrationtests.commandhandling.UpdateStubAggregateCommand;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 public class LoopingEventHandler {
@@ -36,7 +36,7 @@ public class LoopingEventHandler {
     public void handleLoopingEvent(LoopingChangeDoneEvent event) {
         UpdateStubAggregateCommand testPayload = new UpdateStubAggregateCommand(event.getAggregateIdentifier());
         GenericCommandMessage<UpdateStubAggregateCommand> testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), testPayload);
+                new GenericCommandMessage<>(new MessageType("command"), testPayload);
 
         commandBus.dispatch(testCommand, ProcessingContext.NONE);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,18 +35,18 @@ public abstract class AbstractMessage<P> implements Message<P> {
     private static final long serialVersionUID = -5847906865361406657L;
 
     private final String identifier;
-    private final QualifiedName name;
+    private final MessageType type;
 
     /**
-     * Initializes a new {@link Message} with given {@code identifier} and {@code name}.
+     * Initializes a new {@link Message} with given {@code identifier} and {@code type}.
      *
      * @param identifier The identifier of this {@link Message}.
-     * @param name       The {@link QualifiedName name} for this {@link Message}.
+     * @param type       The {@link MessageType type} for this {@link Message}.
      */
     public AbstractMessage(@Nonnull String identifier,
-                           @Nonnull QualifiedName name) {
+                           @Nonnull MessageType type) {
         this.identifier = identifier;
-        this.name = name;
+        this.type = type;
     }
 
     @Override
@@ -56,8 +56,8 @@ public abstract class AbstractMessage<P> implements Message<P> {
 
     @Nonnull
     @Override
-    public QualifiedName name() {
-        return this.name;
+    public MessageType type() {
+        return this.type;
     }
 
     @Override

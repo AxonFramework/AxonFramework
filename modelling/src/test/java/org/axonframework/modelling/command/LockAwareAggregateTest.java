@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.modelling.command;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -83,7 +83,7 @@ class LockAwareAggregateTest {
 
     @Test
     void handleMethodInvokesWrappedAggregateAndInspectsLock() throws Exception {
-        Message<?> testMessage = new GenericMessage<>(new QualifiedName("test", "message", "0.0.1"), "some-message");
+        Message<?> testMessage = new GenericMessage<>(new MessageType("message"), "some-message");
 
         testSubject.handle(testMessage);
 

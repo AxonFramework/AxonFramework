@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -53,7 +53,7 @@ class ExceptionHandlerTest {
     private static final String EVENT_HANDLER_INVOKED = "event";
     private static final String QUERY_HANDLER_INVOKED = "query";
 
-    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
+    private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");
 
     private AtomicReference<String> invokedHandler;
     private List<String> invokedExceptionHandlers;
@@ -74,7 +74,7 @@ class ExceptionHandlerTest {
     @Test
     void exceptionHandlerIsInvokedForAnCommandHandlerThrowingAnException() {
         CommandMessage<SomeCommand> command = new GenericCommandMessage<>(
-                TEST_COMMAND_NAME, new SomeCommand(() -> new RuntimeException("some-exception"))
+                TEST_COMMAND_TYPE, new SomeCommand(() -> new RuntimeException("some-exception"))
         );
 
         try {
@@ -107,7 +107,7 @@ class ExceptionHandlerTest {
     @Test
     void exceptionHandlerIsInvokedForAnQueryHandlerThrowingAnException() {
         QueryMessage<SomeQuery, SomeQueryResponse> query = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"),
+                new MessageType("query"),
                 new SomeQuery(() -> new RuntimeException("some-exception")),
                 ResponseTypes.instanceOf(SomeQueryResponse.class));
 
@@ -126,7 +126,7 @@ class ExceptionHandlerTest {
     @Disabled("TODO #3062 - Exception Handler support")
     void exceptionHandlersAreInvokedInHandlerPriorityOrder() {
         CommandMessage<SomeCommand> command = new GenericCommandMessage<>(
-                TEST_COMMAND_NAME, new SomeCommand(() -> new IllegalStateException("some-exception"))
+                TEST_COMMAND_TYPE, new SomeCommand(() -> new IllegalStateException("some-exception"))
         );
 
         assertThrows(IllegalStateException.class, () -> handle(command));

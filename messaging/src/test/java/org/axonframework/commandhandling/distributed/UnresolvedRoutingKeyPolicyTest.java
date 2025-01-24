@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class UnresolvedRoutingKeyPolicyTest {
 
     private final CommandMessage<String> testCommand =
-            new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "some-payload");
+            new GenericCommandMessage<>(new MessageType("command"), "some-payload");
 
     @Test
     void errorStrategy() {

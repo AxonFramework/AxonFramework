@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,9 @@ import jakarta.persistence.Lob;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.SimpleSerializedObject;
 
 import java.util.Arrays;
@@ -50,7 +51,7 @@ public class DeadLetterEventEntry {
     private String eventIdentifier;
 
     @Column(nullable = false)
-    private String name;
+    private String type;
 
     @Basic(optional = false)
     private String timeStamp;
@@ -100,8 +101,8 @@ public class DeadLetterEventEntry {
      *
      * @param eventType           The event type (required).
      * @param eventIdentifier     The identifier of the message (required).
-     * @param name                The {@link EventMessage#name()} as a {@code String}, based on the output of
-     *                            {@link QualifiedName#toString()}.
+     * @param type                The {@link Message#type()} as a {@code String}, based on the output of
+     *                            {@link org.axonframework.messaging.MessageType#toString()}.
      * @param messageTimestamp    The timestamp of the message (required).
      * @param payloadType         The payload's type of the message.
      * @param payloadRevision     The payload's revision of the message.
@@ -115,7 +116,7 @@ public class DeadLetterEventEntry {
      */
     public DeadLetterEventEntry(String eventType,
                                 String eventIdentifier,
-                                String name,
+                                String type,
                                 String messageTimestamp,
                                 String payloadType,
                                 String payloadRevision,
@@ -129,11 +130,11 @@ public class DeadLetterEventEntry {
         requireNonNull(eventType,
                        "Event type should be provided by the DeadLetterJpaConverter, otherwise it can never be converted back.");
         requireNonNull(eventIdentifier, "All EventMessage implementations require a message identifier.");
-        requireNonNull(name, "All EventMessage implementations require a name.");
+        requireNonNull(type, "All EventMessage implementations require a type.");
         requireNonNull(messageTimestamp, "All EventMessage implementations require a timestamp.");
         this.eventType = eventType;
         this.eventIdentifier = eventIdentifier;
-        this.name = name;
+        this.type = type;
         this.timeStamp = messageTimestamp;
         this.payloadType = payloadType;
         this.payloadRevision = payloadRevision;
@@ -168,14 +169,14 @@ public class DeadLetterEventEntry {
     }
 
     /**
-     * Returns the original {@link EventMessage#name() name} of the dead-letter, based on the
-     * {@link QualifiedName#toString()} output.
+     * Returns the original {@link Message#type() type} of the dead-letter, based on the {@link MessageType#toString()}
+     * output.
      *
-     * @return The original {@link EventMessage#name() name} of the dead-letter, based on the
-     * {@link QualifiedName#toString()} output.
+     * @return The original {@link Message#type() type} of the dead-letter, based on the {@link MessageType#toString()}
+     * output.
      */
-    public String getName() {
-        return name;
+    public String getType() {
+        return type;
     }
 
     /**
@@ -258,7 +259,7 @@ public class DeadLetterEventEntry {
         DeadLetterEventEntry that = (DeadLetterEventEntry) o;
         return Objects.equals(eventType, that.eventType)
                 && Objects.equals(eventIdentifier, that.eventIdentifier)
-                && Objects.equals(name, that.name)
+                && Objects.equals(type, that.type)
                 && Objects.equals(timeStamp, that.timeStamp)
                 && Objects.equals(payloadType, that.payloadType)
                 && Objects.equals(payloadRevision, that.payloadRevision)
@@ -275,7 +276,7 @@ public class DeadLetterEventEntry {
     public int hashCode() {
         return Objects.hash(eventType,
                             eventIdentifier,
-                            name,
+                            type,
                             timeStamp,
                             payloadType,
                             payloadRevision,
@@ -293,7 +294,7 @@ public class DeadLetterEventEntry {
         return "DeadLetterEventEntry{" +
                 "eventType='" + eventType + '\'' +
                 ", eventIdentifier='" + eventIdentifier + '\'' +
-                ", name='" + name + '\'' +
+                ", type='" + type + '\'' +
                 ", timeStamp='" + timeStamp + '\'' +
                 ", payloadType='" + payloadType + '\'' +
                 ", payloadRevision='" + payloadRevision + '\'' +

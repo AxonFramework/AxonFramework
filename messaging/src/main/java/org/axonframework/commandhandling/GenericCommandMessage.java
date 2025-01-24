@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package org.axonframework.commandhandling;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 
 import java.io.Serial;
 import java.util.Map;
@@ -43,35 +43,35 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
     private final String commandName;
 
     /**
-     * Constructs a {@link GenericCommandMessage} for the given {@code name} and {@code payload}.
+     * Constructs a {@code GenericCommandMessage} for the given {@code type} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
-     * @param name    The {@link QualifiedName name} for this {@link CommandMessage}.
+     * @param type    The {@link MessageType type} for this {@link CommandMessage}.
      * @param payload The payload of type {@code P} for this {@link CommandMessage}.
      */
-    public GenericCommandMessage(@Nonnull QualifiedName name,
+    public GenericCommandMessage(@Nonnull MessageType type,
                                  @Nonnull P payload) {
-        this(name, payload, MetaData.emptyInstance());
+        this(type, payload, MetaData.emptyInstance());
     }
 
     /**
-     * Constructs a {@link GenericCommandMessage} for the given {@code name}, {@code payload}, and {@code metaData}.
+     * Constructs a {@code GenericCommandMessage} for the given {@code type}, {@code payload}, and {@code metaData}.
      *
-     * @param name     The {@link QualifiedName name} for this {@link CommandMessage}.
+     * @param type     The {@link MessageType type} for this {@link CommandMessage}.
      * @param payload  The payload of type {@code P} for this {@link CommandMessage}.
      * @param metaData The metadata for this {@link CommandMessage}.
      */
-    public GenericCommandMessage(@Nonnull QualifiedName name,
+    public GenericCommandMessage(@Nonnull MessageType type,
                                  @Nonnull P payload,
                                  @Nonnull Map<String, ?> metaData) {
-        this(new GenericMessage<>(name, payload, metaData), payload.getClass().getName());
+        this(new GenericMessage<>(type, payload, metaData), payload.getClass().getName());
     }
 
     /**
-     * Constructs a {@link GenericCommandMessage} with given {@code delegate} and {@code commandName}.
+     * Constructs a {@code GenericCommandMessage} with given {@code delegate} and {@code commandName}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#name() name},
+     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() qualifiedName},
      * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
      * {@code GenericCommandMessage}.
      * <p>
@@ -79,9 +79,9 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      * of Work.
      *
      * @param delegate    The {@link Message} containing {@link Message#getPayload() payload},
-     *                    {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
+     *                    {@link Message#type() qualifiedName}, {@link Message#getIdentifier() identifier} and
      *                    {@link Message#getMetaData() metadata} for the {@link CommandMessage} to reconstruct.
-     * @param commandName The name for this {@link CommandMessage}.
+     * @param commandName The qualifiedName for this {@link CommandMessage}.
      */
     public GenericCommandMessage(@Nonnull Message<P> delegate,
                                  @Nonnull String commandName) {
@@ -109,7 +109,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
         // TODO - Once Message declares a convert method, use that
         Message<P> delegate = getDelegate();
         Message<C> transformed = new GenericMessage<>(delegate.getIdentifier(),
-                                                      delegate.name(),
+                                                      delegate.type(),
                                                       conversion.apply(delegate.getPayload()),
                                                       delegate.getMetaData());
         return new GenericCommandMessage<>(transformed, commandName);

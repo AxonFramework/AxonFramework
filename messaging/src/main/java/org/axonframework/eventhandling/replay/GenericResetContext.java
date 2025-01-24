@@ -22,8 +22,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 
 import java.io.Serial;
 import java.util.Map;
@@ -41,29 +41,29 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
     private static final long serialVersionUID = -6872386525166762225L;
 
     /**
-     * Constructs a {@link GenericResetContext} for the given {@code name} and {@code payload}.
+     * Constructs a {@link GenericResetContext} for the given {@code type} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
-     * @param name    The {@link QualifiedName name} for this {@link ResetContext}.
+     * @param type    The {@link MessageType type} for this {@link ResetContext}.
      * @param payload The payload of type {@code P} for this {@link ResetContext}.
      */
-    public GenericResetContext(@Nonnull QualifiedName name,
+    public GenericResetContext(@Nonnull MessageType type,
                                @Nullable P payload) {
-        this(name, payload, MetaData.emptyInstance());
+        this(type, payload, MetaData.emptyInstance());
     }
 
     /**
-     * Constructs a {@link GenericResetContext} for the given {@code name}, {@code payload}, and {@code metaData}.
+     * Constructs a {@link GenericResetContext} for the given {@code type}, {@code payload}, and {@code metaData}.
      *
-     * @param name     The {@link QualifiedName name} for this {@link ResetContext}.
+     * @param type     The {@link MessageType type} for this {@link ResetContext}.
      * @param payload  The payload of type {@code P} for this {@link ResetContext}.
      * @param metaData The metadata for this {@link ResetContext}.
      */
-    public GenericResetContext(@Nonnull QualifiedName name,
+    public GenericResetContext(@Nonnull MessageType type,
                                @Nullable P payload,
                                @Nonnull Map<String, ?> metaData) {
-        this(new GenericMessage<>(name, payload, metaData));
+        this(new GenericMessage<>(type, payload, metaData));
     }
 
     /**
@@ -73,7 +73,7 @@ public class GenericResetContext<P> extends MessageDecorator<P> implements Reset
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#name() name},
+     * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#type() type},
      *                 {@link Message#getIdentifier() identifier} and {@link Message#getMetaData() metadata} for the
      *                 {@link EventMessage} to reconstruct.
      */

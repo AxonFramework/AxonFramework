@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.junit.jupiter.api.*;
@@ -74,7 +74,7 @@ class GlobalMetricRegistryTest {
     void createCommandBusMonitor() {
         MessageMonitor<? super CommandMessage<?>> monitor = subject.registerCommandBus("commandBus");
 
-        monitor.onMessageIngested(new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test"))
+        monitor.onMessageIngested(new GenericCommandMessage<>(new MessageType("command"), "test"))
                .reportSuccess();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -92,6 +92,6 @@ class GlobalMetricRegistryTest {
     }
 
     private static EventMessage<Object> asEventMessage(String payload) {
-        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload);
+        return new GenericEventMessage<>(new MessageType("event"), payload);
     }
 }

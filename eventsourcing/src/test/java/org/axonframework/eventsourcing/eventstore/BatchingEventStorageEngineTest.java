@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,7 +44,7 @@ public abstract class BatchingEventStorageEngineTest<E extends BatchingEventStor
     protected void loadLargeAmountOfEventsFromAggregateStream() {
         int eventCount = testSubject.batchSize() + 10;
         testSubject.appendEvents(createEvents(eventCount));
-        testSubject.appendEvents(new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "test"));
+        testSubject.appendEvents(new GenericEventMessage<>(new MessageType("event"), "test"));
         assertEquals(eventCount, testSubject.readEvents(AGGREGATE).asStream().count());
         Optional<? extends DomainEventMessage<?>> resultEventMessage =
                 testSubject.readEvents(AGGREGATE).asStream().reduce((a, b) -> b);
@@ -57,7 +57,7 @@ public abstract class BatchingEventStorageEngineTest<E extends BatchingEventStor
         int eventCount = testSubject.batchSize() + 10;
         testSubject.appendEvents(createEvents(eventCount));
         GenericEventMessage<String> last =
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "test");
+                new GenericEventMessage<>(new MessageType("event"), "test");
         testSubject.appendEvents(last);
 
         Optional<? extends EventMessage<?>> resultEventMessage =

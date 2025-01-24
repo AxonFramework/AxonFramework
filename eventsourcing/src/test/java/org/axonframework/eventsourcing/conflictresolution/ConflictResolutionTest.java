@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.conflictresolution;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -36,7 +36,7 @@ class ConflictResolutionTest {
     private ConflictResolution subject;
     private ConflictResolver conflictResolver;
     private final CommandMessage<String> commandMessage =
-            new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test");
+            new GenericCommandMessage<>(new MessageType("command"), "test");
 
     @BeforeEach
     void setUp() throws Exception {

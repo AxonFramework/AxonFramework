@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,20 @@
 
 package org.axonframework.test.deadline;
 
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.Registration;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.ResultMessage;
+import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.test.FixtureExecutionException;
 
@@ -105,19 +114,18 @@ public class StubDeadlineManager implements DeadlineManager {
         return scheduledMessage.getIdentifier();
     }
 
+    @SuppressWarnings("unchecked")
     private static <P> DeadlineMessage<P> asDeadlineMessage(@Nonnull String deadlineName,
-                                                           @Nullable Object messageOrPayload,
-                                                           @Nonnull Instant expiryTime) {
+                                                            @Nullable Object messageOrPayload,
+                                                            @Nonnull Instant expiryTime) {
         if (messageOrPayload instanceof Message) {
-            return new GenericDeadlineMessage<>(deadlineName,
-                    (Message<P>) messageOrPayload,
-                    () -> expiryTime);
+            return new GenericDeadlineMessage<>(
+                    deadlineName, (Message<P>) messageOrPayload, () -> expiryTime
+            );
         }
-        QualifiedName name = messageOrPayload == null
-                ? QualifiedNameUtils.fromDottedName("empty.deadline.payload")
-                : QualifiedNameUtils.fromClassName(messageOrPayload.getClass());
+        MessageType type = new MessageType(ObjectUtils.nullSafeTypeOf(messageOrPayload));
         return new GenericDeadlineMessage<>(
-                deadlineName, new GenericMessage<>(name, (P) messageOrPayload), () -> expiryTime
+                deadlineName, new GenericMessage<>(type, (P) messageOrPayload), () -> expiryTime
         );
     }
 

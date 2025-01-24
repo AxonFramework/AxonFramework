@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.*;
 
 /**
@@ -41,19 +41,19 @@ class DefaultEventGatewayTest {
 
     @SuppressWarnings("unchecked")
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         mockEventBus = mock(EventBus.class);
         mockEventMessageTransformer = mock(MessageDispatchInterceptor.class);
 
         when(mockEventMessageTransformer.handle(isA(EventMessage.class)))
                 .thenAnswer(invocation -> invocation.getArguments()[0]);
         testSubject = DefaultEventGateway.builder()
-                .eventBus(mockEventBus)
-                .dispatchInterceptors(mockEventMessageTransformer)
-                .build();
+                                         .eventBus(mockEventBus)
+                                         .dispatchInterceptors(mockEventMessageTransformer)
+                                         .build();
     }
 
-    @SuppressWarnings({"unchecked", "serial"})
+    @SuppressWarnings({"unchecked"})
     @Test
     void publish() {
         testSubject.publish("Event1");
@@ -78,7 +78,7 @@ class DefaultEventGatewayTest {
     void publishMessage() {
         // when
         var payload = new TestPayload(UUID.randomUUID().toString());
-        var message = new GenericEventMessage<>(new QualifiedName("test", "TestPayload", "0.5.0"), payload)
+        var message = new GenericEventMessage<>(new MessageType("TestPayload"), payload)
                 .withMetaData(MetaData.with("key", "value"));
         testSubject.publish(message);
 
@@ -90,6 +90,6 @@ class DefaultEventGatewayTest {
     }
 
     private record TestPayload(String value) {
-    }
 
+    }
 }

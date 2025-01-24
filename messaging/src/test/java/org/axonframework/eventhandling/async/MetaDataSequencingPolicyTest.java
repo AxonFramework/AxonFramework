@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package org.axonframework.eventhandling.async;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -69,7 +69,7 @@ public class MetaDataSequencingPolicyTest {
 
     private DomainEventMessage<?> newStubDomainEvent(final Object payload, Map<String, String> metaData) {
         return new GenericDomainEventMessage<>(
-                "aggregateType", "A", 0L, new QualifiedName("test", "event", "0.0.1"), payload, MetaData.from(metaData)
+                "aggregateType", "A", 0L, new MessageType("event"), payload, MetaData.from(metaData)
         );
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -32,26 +32,26 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class GenericCommandMessageTest {
 
-    private static final QualifiedName TEST_NAME = new QualifiedName("test", "command", "0.0.1");
+    private static final MessageType TEST_TYPE = new MessageType("command");
 
     @Test
     void constructor() {
         Object testPayload = new Object();
         Map<String, Object> testMetaDataMap = Collections.singletonMap("key", "value");
         MetaData testMetaData = MetaData.from(testMetaDataMap);
-        CommandMessage<Object> message1 = new GenericCommandMessage<>(TEST_NAME, testPayload);
-        CommandMessage<Object> message2 = new GenericCommandMessage<>(TEST_NAME, testPayload, testMetaDataMap);
-        CommandMessage<Object> message3 = new GenericCommandMessage<>(TEST_NAME, testPayload, testMetaData);
+        CommandMessage<Object> message1 = new GenericCommandMessage<>(TEST_TYPE, testPayload);
+        CommandMessage<Object> message2 = new GenericCommandMessage<>(TEST_TYPE, testPayload, testMetaDataMap);
+        CommandMessage<Object> message3 = new GenericCommandMessage<>(TEST_TYPE, testPayload, testMetaData);
 
         assertSame(MetaData.emptyInstance(), message1.getMetaData());
-        assertEquals(TEST_NAME, message1.name());
+        assertEquals(TEST_TYPE, message1.type());
         assertEquals(Object.class, message1.getPayload().getClass());
 
-        assertEquals(TEST_NAME, message3.name());
+        assertEquals(TEST_TYPE, message3.type());
         assertSame(testMetaData, message3.getMetaData());
         assertEquals(Object.class, message3.getPayload().getClass());
 
-        assertEquals(TEST_NAME, message2.name());
+        assertEquals(TEST_TYPE, message2.type());
         assertNotSame(testMetaDataMap, message2.getMetaData());
         assertEquals(testMetaDataMap, message2.getMetaData());
         assertEquals(Object.class, message2.getPayload().getClass());
@@ -66,7 +66,7 @@ class GenericCommandMessageTest {
         Object payload = new Object();
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
-        GenericCommandMessage<Object> message = new GenericCommandMessage<>(TEST_NAME, payload, metaData);
+        GenericCommandMessage<Object> message = new GenericCommandMessage<>(TEST_TYPE, payload, metaData);
         GenericCommandMessage<Object> message1 = message.withMetaData(MetaData.emptyInstance());
         GenericCommandMessage<Object> message2 = message.withMetaData(
                 MetaData.from(Collections.singletonMap("key", (Object) "otherValue"))
@@ -82,7 +82,7 @@ class GenericCommandMessageTest {
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
         MetaData metaData = MetaData.from(metaDataMap);
 
-        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_NAME, payload, metaData);
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_TYPE, payload, metaData);
         CommandMessage<Object> command1 = command.andMetaData(MetaData.emptyInstance());
         CommandMessage<Object> command2 =
                 command.andMetaData(MetaData.from(Collections.singletonMap("key", (Object) "otherValue")));
@@ -95,7 +95,7 @@ class GenericCommandMessageTest {
 
     @Test
     void toStringIsAsExpected() {
-        String actual = new GenericCommandMessage<>(TEST_NAME, "MyPayload")
+        String actual = new GenericCommandMessage<>(TEST_TYPE, "MyPayload")
                 .andMetaData(MetaData.with("key", "value").and("key2", 13))
                 .toString();
 

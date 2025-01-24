@@ -21,7 +21,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
@@ -143,6 +143,6 @@ class AsyncEventStoreTest {
 
     // TODO - Discuss: Perfect candidate to move to a commons test utils module?
     private static EventMessage<?> eventMessage(int seq) {
-        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "Event[" + seq + "]");
+        return new GenericEventMessage<>(new MessageType("test", "event", "0.0.1"), "Event[" + seq + "]");
     }
 }

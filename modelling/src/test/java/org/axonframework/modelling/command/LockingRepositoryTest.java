@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -48,7 +48,7 @@ import static org.mockito.Mockito.*;
 class LockingRepositoryTest {
 
     private static final Message<?> MESSAGE =
-            new GenericMessage<Object>(new QualifiedName("test", "message", "0.0.1"), "test");
+            new GenericMessage<Object>(new MessageType("message"), "test");
 
     private EventBus eventBus;
     private LockFactory lockFactory;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,8 @@ import jakarta.annotation.Nullable;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
-import org.axonframework.messaging.ResultMessage;
 
 import java.io.Serial;
 import java.util.Map;
@@ -46,61 +44,61 @@ public class GenericSubscriptionQueryUpdateMessage<U>
     private static final long serialVersionUID = 5872479410321475147L;
 
     /**
-     * Constructs a {@link GenericSubscriptionQueryUpdateMessage} for the given {@code name} and {@code payload}.
+     * Constructs a {@code GenericSubscriptionQueryUpdateMessage} for the given {@code type} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
-     * @param name    The {@link QualifiedName name} for this {@link SubscriptionQueryUpdateMessage}.
-     * @param payload The payload of type {@code U} for this {@link GenericSubscriptionQueryUpdateMessage} representing
+     * @param type    The {@link MessageType type} for this {@link SubscriptionQueryUpdateMessage}.
+     * @param payload The payload of type {@code U} for this {@code GenericSubscriptionQueryUpdateMessage} representing
      *                an incremental update.
      */
-    public GenericSubscriptionQueryUpdateMessage(@Nonnull QualifiedName name,
+    public GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
                                                  @Nonnull U payload) {
-        this(new GenericMessage<>(name, payload, MetaData.emptyInstance()));
+        this(new GenericMessage<>(type, payload, MetaData.emptyInstance()));
     }
 
     /**
-     * Constructs a {@link GenericSubscriptionQueryUpdateMessage} for the given {@code name} and {@code payload}.
+     * Constructs a {@code GenericSubscriptionQueryUpdateMessage} for the given {@code type} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
-     * @param name    The {@link QualifiedName name} for this {@link SubscriptionQueryUpdateMessage}.
-     * @param payload The payload of type {@code U} for this {@link GenericSubscriptionQueryUpdateMessage} representing
+     * @param type    The {@link MessageType type} for this {@link SubscriptionQueryUpdateMessage}.
+     * @param payload The payload of type {@code U} for this {@code GenericSubscriptionQueryUpdateMessage} representing
      *                an incremental update.
-     * @deprecated In favor of {@link #GenericSubscriptionQueryUpdateMessage(QualifiedName, Object)} once the
+     * @deprecated In favor of {@link #GenericSubscriptionQueryUpdateMessage(MessageType, Object)} once the
      * {@code declaredPayloadType} is removed completely.
      */
     @Deprecated
-    public GenericSubscriptionQueryUpdateMessage(@Nonnull QualifiedName name,
+    public GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
                                                  @Nullable U payload,
                                                  @Deprecated Class<U> declaredType) {
-        this(name, payload, MetaData.emptyInstance(), declaredType);
+        this(type, payload, MetaData.emptyInstance(), declaredType);
     }
 
     /**
-     * Constructs a {@link GenericSubscriptionQueryUpdateMessage} for the given {@code name}, {@code payload}, and
+     * Constructs a {@code GenericSubscriptionQueryUpdateMessage} for the given {@code type}, {@code payload}, and
      * {@code metaData}.
      *
-     * @param name     The {@link QualifiedName name} for this {@link SubscriptionQueryUpdateMessage}.
-     * @param payload  The payload of type {@code U} for this {@link GenericSubscriptionQueryUpdateMessage} representing
+     * @param type     The {@link MessageType type} for this {@link SubscriptionQueryUpdateMessage}.
+     * @param payload  The payload of type {@code U} for this {@code GenericSubscriptionQueryUpdateMessage} representing
      *                 an incremental update.
      * @param metaData The metadata for this {@link SubscriptionQueryUpdateMessage}.
      * @deprecated Remove the {@code declaredPayloadType} once the {@code declaredPayloadType} is removed completely
      * from the base {@link Message}.
      */
     @Deprecated
-    public GenericSubscriptionQueryUpdateMessage(@Nonnull QualifiedName name,
+    public GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
                                                  @Nullable U payload,
                                                  @Nonnull Map<String, ?> metaData,
                                                  @Deprecated Class<U> declaredType) {
-        super(new GenericMessage<>(name, payload, metaData, declaredType));
+        super(new GenericMessage<>(type, payload, metaData, declaredType));
     }
 
     /**
-     * Constructs a {@link GenericSubscriptionQueryUpdateMessage} for the given {@code name}, {@code exception}, and
+     * Constructs a {@code GenericSubscriptionQueryUpdateMessage} for the given {@code type}, {@code exception}, and
      * {@code metaData}.
      *
-     * @param name      The {@link QualifiedName name} for this {@link SubscriptionQueryUpdateMessage}.
+     * @param type      The {@link MessageType type} for this {@link SubscriptionQueryUpdateMessage}.
      * @param exception The {@link Throwable} describing the error representing the response of this
      *                  {@link SubscriptionQueryUpdateMessage}.
      * @param metaData  The metadata for this {@link SubscriptionQueryUpdateMessage}.
@@ -108,11 +106,11 @@ public class GenericSubscriptionQueryUpdateMessage<U>
      * from the base {@link Message}.
      */
     @Deprecated
-    public GenericSubscriptionQueryUpdateMessage(@Nonnull QualifiedName name,
+    public GenericSubscriptionQueryUpdateMessage(@Nonnull MessageType type,
                                                  @Nonnull Throwable exception,
                                                  @Nonnull Map<String, ?> metaData,
                                                  @Deprecated Class<U> declaredType) {
-        super(new GenericMessage<>(name, null, metaData, declaredType), exception);
+        super(new GenericMessage<>(type, null, metaData, declaredType), exception);
     }
 
     /**
@@ -122,7 +120,7 @@ public class GenericSubscriptionQueryUpdateMessage<U>
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#name() name},
+     * @param delegate The {@link Message} containing {@link Message#getPayload() payload}, {@link Message#type() type},
      *                 {@link Message#getIdentifier() identifier} and {@link Message#getMetaData() metadata} for the
      *                 {@link QueryResponseMessage} to reconstruct.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import org.axonframework.commandhandling.distributed.PriorityResolver;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
@@ -84,7 +84,7 @@ public class AxonServerConnector implements Connector {
 
         return CompletableFuture.completedFuture(new GenericMessage<>(
                 commandResponse.getMessageIdentifier(),
-                new QualifiedName("axon.framework.placeholder", "generic.command.response", "5.0.0"),
+                new MessageType(commandResponse.getPayload().getType(), commandResponse.getPayload().getRevision()),
                 commandResponse.getPayload().getData().toByteArray(),
                 convertMap(commandResponse.getMetaDataMap(), this::convertToMetaDataValue)
         ));
@@ -191,7 +191,7 @@ public class AxonServerConnector implements Connector {
         return new GenericCommandMessage<>(
                 new GenericMessage<>(
                         command.getMessageIdentifier(),
-                        QualifiedName.fromString(command.getName()),
+                        new MessageType(commandPayload.getType(), commandPayload.getRevision()),
                         commandPayload.getData().toByteArray(),
                         convertMap(command.getMetaDataMap(), this::convertToMetaDataValue)
                 ),

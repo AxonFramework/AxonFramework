@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.utils.RecordingAppender;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.ConcurrencyException;
@@ -245,7 +245,7 @@ class AbstractSnapshotterTest {
                 return null;
             }
             return new GenericDomainEventMessage<>("test", aggregateIdentifier, lastIdentifier,
-                                                   new QualifiedName("test", "event", "0.0.1"), "Mock contents");
+                                                   new MessageType("event"), "Mock contents");
         }
 
         private long getLastIdentifierFrom(DomainEventStream eventStream) {

@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -73,7 +73,7 @@ class MessageIdentifierParameterResolverFactoryTest {
         ParameterResolver<String> resolver =
                 testSubject.createInstance(messageIdentifierMethod, messageIdentifierMethod.getParameters(), 0);
         CommandMessage<Object> commandMessage =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), "test");
+                new GenericCommandMessage<>(new MessageType("command"), "test");
         assertTrue(resolver.matches(commandMessage, null));
         assertEquals(commandMessage.getIdentifier(), resolver.resolveParameterValue(commandMessage,
                                                                                     null));

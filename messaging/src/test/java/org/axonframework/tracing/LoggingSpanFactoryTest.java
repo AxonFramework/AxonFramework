@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.jupiter.api.*;
 
@@ -33,8 +33,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class LoggingSpanFactoryTest {
 
     private static final EventMessage<String> TEST_EVENT =
-            new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), "payload");
-    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
+            new GenericEventMessage<>(new MessageType("event"), "payload");
+    private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");
 
     @Test
     void createRootTraceReturnsNoOpSpan() {
@@ -85,7 +85,7 @@ class LoggingSpanFactoryTest {
 
     @Test
     void internalSpanCanBeStartedAndEndedWithUnitOfWorkActive() {
-        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_NAME, "My command");
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "My command");
         DefaultUnitOfWork<CommandMessage<Object>> uow = new DefaultUnitOfWork<>(command);
         uow.start();
         assertDoesNotThrow(() -> {
@@ -119,7 +119,7 @@ class LoggingSpanFactoryTest {
 
     @Test
     void dispatchSpanCanBeStartedAndEnded() {
-        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_NAME, "My command");
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "My command");
         assertDoesNotThrow(() -> {
             Span trace = LoggingSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", command);
             trace.start()
@@ -130,7 +130,7 @@ class LoggingSpanFactoryTest {
 
     @Test
     void dispatchSpanCanBeStartedAndEndedWhileUnitOfWorkActive() {
-        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_NAME, "My command");
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "My command");
         DefaultUnitOfWork<CommandMessage<Object>> uow = new DefaultUnitOfWork<>(command);
         uow.start();
         assertDoesNotThrow(() -> {
@@ -154,7 +154,7 @@ class LoggingSpanFactoryTest {
 
     @Test
     void internalSpanWithMessageCanBeStartedAndEndedWhileUnitOfWorkActive() {
-        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_NAME, "My command");
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "My command");
         DefaultUnitOfWork<CommandMessage<Object>> uow = new DefaultUnitOfWork<>(command);
         uow.start();
         assertDoesNotThrow(() -> {

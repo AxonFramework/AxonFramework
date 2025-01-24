@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.scheduling.ScheduleToken;
 import org.axonframework.eventhandling.scheduling.SchedulingException;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.utils.AssertUtils;
@@ -226,6 +226,6 @@ class QuartzEventSchedulerTest {
     }
 
     private EventMessage<Object> buildTestEvent() {
-        return new GenericEventMessage<>(new QualifiedName("test", "message", "0.0.1"), new Object());
+        return new GenericEventMessage<>(new MessageType("message"), new Object());
     }
 }

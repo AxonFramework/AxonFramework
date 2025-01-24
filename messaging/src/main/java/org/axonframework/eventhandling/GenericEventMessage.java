@@ -20,8 +20,8 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDecorator;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.CachingSupplier;
 
 import java.io.Serial;
@@ -58,47 +58,47 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     public static Clock clock = Clock.systemUTC();
 
     /**
-     * Constructs a {@link GenericEventMessage} for the given {@code name} and {@code payload}.
+     * Constructs a {@link GenericEventMessage} for the given {@code type} and {@code payload}.
      * <p>
      * The {@link MetaData} defaults to an empty instance.
      *
-     * @param name    The {@link QualifiedName name} for this {@link EventMessage}.
+     * @param type    The {@link MessageType type} for this {@link EventMessage}.
      * @param payload The payload of type {@code P} for this {@link EventMessage}.
      */
-    public GenericEventMessage(@Nonnull QualifiedName name,
+    public GenericEventMessage(@Nonnull MessageType type,
                                @Nonnull P payload) {
-        this(name, payload, MetaData.emptyInstance());
+        this(type, payload, MetaData.emptyInstance());
     }
 
     /**
-     * Constructs a {@link GenericEventMessage} for the given {@code name}, {@code payload} and {@code metaData}.
+     * Constructs a {@link GenericEventMessage} for the given {@code type}, {@code payload} and {@code metaData}.
      *
-     * @param name     The {@link QualifiedName name} for this {@link EventMessage}.
+     * @param type     The {@link MessageType type} for this {@link EventMessage}.
      * @param payload  The payload of type {@code P} for this {@link EventMessage}.
      * @param metaData The metadata for this {@link EventMessage}.
      */
-    public GenericEventMessage(@Nonnull QualifiedName name,
+    public GenericEventMessage(@Nonnull MessageType type,
                                @Nonnull P payload,
                                @Nonnull Map<String, ?> metaData) {
-        this(new GenericMessage<>(name, payload, metaData), clock.instant());
+        this(new GenericMessage<>(type, payload, metaData), clock.instant());
     }
 
     /**
-     * Constructs a {@link GenericEventMessage} for the given {@code identifier}, {@code name}, {@code payload},
+     * Constructs a {@link GenericEventMessage} for the given {@code identifier}, {@code type}, {@code payload},
      * {@code metaData}, and {@code timestamp}.
      *
      * @param identifier The identifier of this {@link EventMessage}.
-     * @param name       The {@link QualifiedName name} for this {@link EventMessage}.
+     * @param type       The {@link MessageType type} for this {@link EventMessage}.
      * @param payload    The payload of type {@code P} for this {@link EventMessage}.
      * @param metaData   The metadata for this {@link EventMessage}.
      * @param timestamp  The {@link Instant timestamp} of this {@link EventMessage EventMessage's} creation.
      */
     public GenericEventMessage(@Nonnull String identifier,
-                               @Nonnull QualifiedName name,
+                               @Nonnull MessageType type,
                                @Nonnull P payload,
                                @Nonnull Map<String, ?> metaData,
                                @Nonnull Instant timestamp) {
-        this(new GenericMessage<>(identifier, name, payload, metaData), timestamp);
+        this(new GenericMessage<>(identifier, type, payload, metaData), timestamp);
     }
 
     /**
@@ -112,7 +112,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * of Work.
      *
      * @param delegate          The {@link Message} containing {@link Message#getPayload() payload},
-     *                          {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
+     *                          {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
      *                          {@link Message#getMetaData() metadata} for the {@link EventMessage} to reconstruct.
      * @param timestampSupplier {@link Supplier} for the {@link Instant timestamp} of the
      *                          {@link EventMessage EventMessage's} creation.
@@ -126,7 +126,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
     /**
      * Constructs a {@link GenericEventMessage} with given {@code delegate} and {@code timestamp}.
      * <p>
-     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#name() name},
+     * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
      * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
      * {@code GenericEventMessage}.
      * <p>
@@ -134,7 +134,7 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
      * of Work.
      *
      * @param delegate  The {@link Message} containing {@link Message#getPayload() payload},
-     *                  {@link Message#name() name}, {@link Message#getIdentifier() identifier} and
+     *                  {@link Message#type() type}, {@link Message#getIdentifier() identifier} and
      *                  {@link Message#getMetaData() metadata} for the {@link EventMessage} to reconstruct.
      * @param timestamp The {@link Instant timestamp} of this {@link EventMessage GenericEventMessage's} creation.
      */
@@ -186,6 +186,6 @@ public class GenericEventMessage<P> extends MessageDecorator<P> implements Event
             //noinspection unchecked
             return (EventMessage<C>) this;
         }
-        return new GenericEventMessage<>(this.getIdentifier(), this.name(), converted, getMetaData(), getTimestamp());
+        return new GenericEventMessage<>(this.getIdentifier(), this.type(), converted, getMetaData(), getTimestamp());
     }
 }

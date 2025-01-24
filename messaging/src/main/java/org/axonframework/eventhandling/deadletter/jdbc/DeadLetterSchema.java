@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.deadletter.jdbc;
 
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.Message;
 
 import java.util.function.Function;
 
@@ -40,7 +40,7 @@ public class DeadLetterSchema {
     // Event Message columns
     private final String eventTypeColumn;
     private final String eventIdentifierColumn;
-    private final String nameColumn;
+    private final String typeColumn;
     private final String timestampColumn;
     private final String payloadTypeColumn;
     private final String payloadRevisionColumn;
@@ -67,7 +67,7 @@ public class DeadLetterSchema {
                         schema.sequenceIndexColumn(),
                         schema.eventTypeColumn(),
                         schema.eventIdentifierColumn(),
-                        schema.nameColumn(),
+                        schema.typeColumn(),
                         schema.timestampColumn(),
                         schema.payloadTypeColumn(),
                         schema.payloadRevisionColumn(),
@@ -97,7 +97,7 @@ public class DeadLetterSchema {
         this.sequenceIndexColumn = builder.sequenceIndexColumn;
         this.eventTypeColumn = builder.eventTypeColumn;
         this.eventIdentifierColumn = builder.eventIdentifierColumn;
-        this.nameColumn = builder.nameColumn;
+        this.typeColumn = builder.typeColumn;
         this.timestampColumn = builder.timeStampColumn;
         this.payloadTypeColumn = builder.payloadTypeColumn;
         this.payloadRevisionColumn = builder.payloadRevisionColumn;
@@ -203,13 +203,13 @@ public class DeadLetterSchema {
     /**
      * Returns the configured {@code typeColumn} column name.
      * <p>
-     * Represents the {@link org.axonframework.eventhandling.EventMessage#name()} field, based on the
-     * {@link QualifiedName#toString()} output.
+     * Represents the {@link Message#type()} field, based on the
+     * {@link org.axonframework.messaging.MessageType#toString()} output.
      *
-     * @return The configured {@code typeColumn} column name.
+     * @return The configured {@code typeColumn} column qualifiedName.
      */
-    public String nameColumn() {
-        return nameColumn;
+    public String typeColumn() {
+        return typeColumn;
     }
 
     /**
@@ -381,7 +381,7 @@ public class DeadLetterSchema {
         private String sequenceIndexColumn = "sequenceIndex";
         private String eventTypeColumn = "eventType";
         private String eventIdentifierColumn = "eventIdentifier";
-        private String nameColumn = "name";
+        private String typeColumn = "type";
         private String timeStampColumn = "timestamp";
         private String payloadTypeColumn = "payloadType";
         private String payloadRevisionColumn = "payloadRevision";
@@ -484,14 +484,14 @@ public class DeadLetterSchema {
         }
 
         /**
-         * Sets the name of the {@code name} column. Defaults to {@code name}.
+         * Sets the name of the {@code type} column. Defaults to {@code type}.
          *
-         * @param nameColumn The name for the {@code name} column.
+         * @param typeColumn The qualifiedName for the {@code type} column.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder nameColumn(String nameColumn) {
-            assertNonEmpty(nameColumn, "The nameColumn should be not null or empty");
-            this.nameColumn = nameColumn;
+        public Builder typeColumn(String typeColumn) {
+            assertNonEmpty(typeColumn, "The typeColumn should be not null or empty");
+            this.typeColumn = typeColumn;
             return this;
         }
 

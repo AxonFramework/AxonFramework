@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.ResetNotSupportedException;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.NoMoreInterceptors;
 import org.axonframework.modelling.saga.metamodel.AnnotationSagaMetaModelFactory;
@@ -62,13 +62,13 @@ class AnnotatedSagaTest {
     void invokeSaga() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         testSubject.handleSync(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new RegularEvent("id"))
+                new GenericEventMessage<>(new MessageType("event"), new RegularEvent("id"))
         );
         testSubject.handleSync(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new RegularEvent("wrongId"))
+                new GenericEventMessage<>(new MessageType("event"), new RegularEvent("wrongId"))
         );
         testSubject.handleSync(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new Object())
+                new GenericEventMessage<>(new MessageType("event"), new Object())
         );
 
         assertEquals(1, testSaga.invocationCount);
@@ -95,11 +95,11 @@ class AnnotatedSagaTest {
         Map<String, Object> metaData = new HashMap<>();
         metaData.put("propertyName", "id");
         EventMessage<EventWithoutProperties> testEvent = new GenericEventMessage<>(
-                new QualifiedName("test", "event", "0.0.1"), new EventWithoutProperties(), new MetaData(metaData)
+                new MessageType("event"), new EventWithoutProperties(), new MetaData(metaData)
         );
         testSubject.handleSync(testEvent);
         testSubject.handleSync(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new EventWithoutProperties())
+                new GenericEventMessage<>(new MessageType("event"), new EventWithoutProperties())
         );
 
         assertEquals(1, testSaga.invocationCount);
@@ -117,13 +117,13 @@ class AnnotatedSagaTest {
     void endedAfterInvocationBeanProperty() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         testSubject.handleSync(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new RegularEvent("id"))
+                new GenericEventMessage<>(new MessageType("event"), new RegularEvent("id"))
         );
         testSubject.handleSync(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new Object())
+                new GenericEventMessage<>(new MessageType("event"), new Object())
         );
         testSubject.handleSync(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new SagaEndEvent("id"))
+                new GenericEventMessage<>(new MessageType("event"), new SagaEndEvent("id"))
         );
 
         assertEquals(2, testSaga.invocationCount);
@@ -141,13 +141,13 @@ class AnnotatedSagaTest {
 
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         testSubject.handleSync(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new RegularEvent("id"))
+                new GenericEventMessage<>(new MessageType("event"), new RegularEvent("id"))
         );
         testSubject.handleSync(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new Object())
+                new GenericEventMessage<>(new MessageType("event"), new Object())
         );
         testSubject.handleSync(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new SagaEndEvent("id"))
+                new GenericEventMessage<>(new MessageType("event"), new SagaEndEvent("id"))
         );
 
         assertEquals(2, testSaga.invocationCount);
@@ -158,13 +158,13 @@ class AnnotatedSagaTest {
     void endedAfterInvocationUniformAccessPrinciple() {
         testSubject.doAssociateWith(new AssociationValue("propertyName", "id"));
         testSubject.handleSync(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new UniformAccessEvent("id"))
+                new GenericEventMessage<>(new MessageType("event"), new UniformAccessEvent("id"))
         );
         testSubject.handleSync(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new Object())
+                new GenericEventMessage<>(new MessageType("event"), new Object())
         );
         testSubject.handleSync(
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), new SagaEndEvent("id"))
+                new GenericEventMessage<>(new MessageType("event"), new SagaEndEvent("id"))
         );
 
         assertEquals(2, testSaga.invocationCount);

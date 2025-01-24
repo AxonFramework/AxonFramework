@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.utils.TestSerializer;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.Serializer;
 import org.junit.jupiter.api.*;
 
@@ -47,7 +47,7 @@ class DomainEventEntryTest {
         String expectedAggregateType = "aggregateType";
         String expectedAggregateId = randomUUID().toString();
         long expectedSequenceNumber = 2L;
-        QualifiedName expectedType = new QualifiedName("test", "event", "0.0.1");
+        MessageType expectedType = new MessageType("event");
         String expectedPayload = "Payload";
         MetaData expectedMetaData = new MetaData(Collections.singletonMap("Key", "Value"));
         Instant expectedTimestamp = DateTimeUtils.parseInstant(DateTimeUtils.formatInstant(testTimestamp));

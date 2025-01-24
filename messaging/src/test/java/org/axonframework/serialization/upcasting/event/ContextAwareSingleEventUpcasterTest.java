@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,8 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedType;
@@ -79,7 +79,7 @@ class ContextAwareSingleEventUpcasterTest {
         MetaData testMetaData = MetaData.with("key", "value");
 
         DomainEventMessage<SecondStubEvent> firstTestEventMessage = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, new QualifiedName("test", "event", "0.0.1"),
+                "test", "aggregateId", 0, new MessageType("event"),
                 new SecondStubEvent(expectedContextEventString, expectedContextEventNumber), testMetaData
         );
         EventData<?> firstTestEventData = new TestDomainEventEntry(firstTestEventMessage, serializer);
@@ -87,7 +87,7 @@ class ContextAwareSingleEventUpcasterTest {
                 new InitialEventRepresentation(firstTestEventData, serializer);
 
         GenericDomainEventMessage<StubDomainEvent> secondTestEventMessage = new GenericDomainEventMessage<>(
-                "test", "aggregateId", 0, new QualifiedName("test", "event", "0.0.1"),
+                "test", "aggregateId", 0, new MessageType("event"),
                 new StubDomainEvent("oldName"), testMetaData
         );
         EventData<?> secondTestEventData = new TestDomainEventEntry(secondTestEventMessage, serializer);

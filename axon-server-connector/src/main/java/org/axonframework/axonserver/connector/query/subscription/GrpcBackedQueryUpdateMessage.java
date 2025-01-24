@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,8 @@ import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.GrpcMetaData;
 import org.axonframework.axonserver.connector.util.GrpcSerializedObject;
 import org.axonframework.messaging.IllegalPayloadAccessException;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.Serializer;
@@ -46,7 +45,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
     private final LazyDeserializingObject<U> serializedPayload;
     private final Throwable exception;
     private final Supplier<MetaData> metaDataSupplier;
-    private final QualifiedName name;
+    private final MessageType type;
 
     /**
      * Instantiate a {@link GrpcBackedQueryUpdateMessage} with the given {@code queryUpdate}, using the provided
@@ -69,18 +68,14 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
                            .convert(queryUpdate.getErrorMessage(), exceptionDetails)
                 : null;
         this.metaDataSupplier = new GrpcMetaData(queryUpdate.getMetaDataMap(), serializer);
-        // TODO #3079 - For AF5, we should base the name on the query field, as that's the "old" queryName.
         if (serializedPayload != null) {
-            GrpcSerializedObject serializedObject = new GrpcSerializedObject(queryUpdate.getPayload());
-            Class<?> payloadClass = serializer.classForType(serializedObject.getType());
-            String revision = serializedObject.getType().getRevision();
-            this.name = new QualifiedName(payloadClass.getPackageName(),
-                                          payloadClass.getSimpleName(),
-                                          revision != null ? revision : QualifiedNameUtils.DEFAULT_REVISION);
+            this.type = new MessageType(
+                    serializer.classForType(new GrpcSerializedObject(queryUpdate.getPayload()).getType())
+            );
         } else {
-            this.name = new QualifiedName("query.update.exception",
-                                          queryUpdate.getErrorCode(),
-                                          QualifiedNameUtils.DEFAULT_REVISION);
+            this.type = new MessageType(
+                    queryUpdate.getErrorCode()
+            );
         }
     }
 
@@ -88,12 +83,12 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
                                          LazyDeserializingObject<U> serializedPayload,
                                          Throwable exception,
                                          Supplier<MetaData> metaDataSupplier,
-                                         QualifiedName name) {
+                                         MessageType type) {
         this.queryUpdate = queryUpdate;
         this.serializedPayload = serializedPayload;
         this.exception = exception;
         this.metaDataSupplier = metaDataSupplier;
-        this.name = name;
+        this.type = type;
     }
 
     @Override
@@ -103,8 +98,8 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
 
     @Nonnull
     @Override
-    public QualifiedName name() {
-        return this.name;
+    public MessageType type() {
+        return this.type;
     }
 
     @Override
@@ -145,7 +140,7 @@ class GrpcBackedQueryUpdateMessage<U> implements SubscriptionQueryUpdateMessage<
                                                   serializedPayload,
                                                   exception,
                                                   () -> MetaData.from(metaData),
-                                                  name);
+                                                  type);
     }
 
     @Override

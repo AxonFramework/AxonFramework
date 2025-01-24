@@ -29,8 +29,8 @@ import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.serialization.Revision;
 import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.SerializedType;
@@ -55,7 +55,7 @@ class EventMessageDeadLetterJpaConverterTest {
     private final Serializer eventSerializer = TestSerializer.JACKSON.getSerializer();
     private final Serializer genericSerializer = TestSerializer.XSTREAM.getSerializer();
     private final ConverterTestEvent event = new ConverterTestEvent("myValue");
-    private final QualifiedName name = new QualifiedName("test", "event", "0.0.1");
+    private final MessageType type = new MessageType("event");
     private final MetaData metaData = MetaData.from(Collections.singletonMap("myMetadataKey", "myMetadataValue"));
 
     @Test
@@ -65,7 +65,7 @@ class EventMessageDeadLetterJpaConverterTest {
 
     @Test
     void canConvertDomainEventMessageAndBackCorrectly() {
-        testConversion(new GenericDomainEventMessage<>("MyType", "8239081092", 25L, name, event, metaData));
+        testConversion(new GenericDomainEventMessage<>("MyType", "8239081092", 25L, type, event, metaData));
     }
 
     @Test
@@ -74,7 +74,7 @@ class EventMessageDeadLetterJpaConverterTest {
                                                               "MyType",
                                                               "8239081092",
                                                               25L,
-                                                              new GenericEventMessage<>(name, event, metaData),
+                                                              new GenericEventMessage<>(type, event, metaData),
                                                               Instant::now));
     }
 
@@ -110,14 +110,14 @@ class EventMessageDeadLetterJpaConverterTest {
                                                               "MyType",
                                                               "8239081092",
                                                               25L,
-                                                              new GenericEventMessage<>(name, event, metaData),
+                                                              new GenericEventMessage<>(type, event, metaData),
                                                               Instant::now));
     }
 
     @Test
     void canConvertTrackedEventMessageWithGlobalSequenceTokenAndBackCorrectly() {
         testConversion(new GenericTrackedEventMessage<>(new GlobalSequenceTrackingToken(232323L),
-                                                        new GenericEventMessage<>(name, event, metaData),
+                                                        new GenericEventMessage<>(type, event, metaData),
                                                         Instant::now));
     }
 
@@ -126,7 +126,7 @@ class EventMessageDeadLetterJpaConverterTest {
     void canConvertTrackedEventMessageWithGapAwareTokenAndBackCorrectly() {
         TrackingToken testToken = new GapAwareTrackingToken(232323L, Arrays.asList(24L, 255L, 2225L));
         testConversion(new GenericTrackedEventMessage<>(testToken,
-                                                        new GenericEventMessage<>(name, event, metaData),
+                                                        new GenericEventMessage<>(type, event, metaData),
                                                         Instant::now));
     }
 

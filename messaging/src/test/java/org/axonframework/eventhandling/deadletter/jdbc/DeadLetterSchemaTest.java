@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -192,26 +192,26 @@ class DeadLetterSchemaTest {
     }
 
     @Test
-    void buildWithNameColumnReturnsConfiguredColumnName() {
+    void buildWithNameColumnReturnsConfiguredColumnType() {
         DeadLetterSchema result = DeadLetterSchema.builder()
-                                                  .nameColumn(TEST_COLUMN_NAME)
+                                                  .typeColumn(TEST_COLUMN_NAME)
                                                   .build();
 
-        assertEquals(TEST_COLUMN_NAME, result.nameColumn());
+        assertEquals(TEST_COLUMN_NAME, result.typeColumn());
     }
 
     @Test
-    void buildWithNullNameColumnThrowsAxonConfigurationException() {
+    void buildWithNullTypeColumnThrowsAxonConfigurationException() {
         DeadLetterSchema.Builder testBuilder = DeadLetterSchema.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.nameColumn(null));
+        assertThrows(AxonConfigurationException.class, () -> testBuilder.typeColumn(null));
     }
 
     @Test
-    void buildWithEmptyNameColumnThrowsAxonConfigurationException() {
+    void buildWithEmptyTypeColumnThrowsAxonConfigurationException() {
         DeadLetterSchema.Builder testBuilder = DeadLetterSchema.builder();
 
-        assertThrows(AxonConfigurationException.class, () -> testBuilder.nameColumn(""));
+        assertThrows(AxonConfigurationException.class, () -> testBuilder.typeColumn(""));
     }
 
     @Test

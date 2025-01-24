@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
 class MetaDataRoutingStrategyTest {
 
     private static final String META_DATA_KEY = "some-metadata-key";
-    private static final QualifiedName TEST_NAME = new QualifiedName("test", "command", "0.0.1");
+    private static final MessageType TEST_NAME = new MessageType("command");
 
     private MetaDataRoutingStrategy testSubject;
 
