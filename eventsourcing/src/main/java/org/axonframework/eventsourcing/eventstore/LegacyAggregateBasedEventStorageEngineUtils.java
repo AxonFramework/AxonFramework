@@ -56,8 +56,8 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
     }
 
     /**
-     * Resolves the aggregate identifier from the provided set of tags.
-     * The set must contain exactly one tag, and its value will be returned as the aggregate identifier.
+     * Resolves the aggregate identifier from the provided set of tags. The set must contain exactly one tag, and its
+     * value will be returned as the aggregate identifier.
      *
      * @param tags the set of tags to resolve the aggregate identifier from
      * @return the aggregate identifier, or {@code null} if the set is empty
@@ -75,8 +75,8 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
     }
 
     /**
-     * Resolves the aggregate type from the provided set of tags.
-     * The set must contain exactly one tag, and its key will be returned as the aggregate type.
+     * Resolves the aggregate type from the provided set of tags. The set must contain exactly one tag, and its key will
+     * be returned as the aggregate type.
      *
      * @param tags the set of tags to resolve the aggregate type from
      * @return the aggregate type, or {@code null} if the set is empty
@@ -94,12 +94,12 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
     }
 
     /**
-     * Translates a conflict exception into an {@link AppendEventsTransactionRejectedException}
-     * if the provided exception is identified as a conflict.
-     * If the exception is not a conflict, it recursively checks the cause of the exception.
+     * Translates a conflict exception into an {@link AppendEventsTransactionRejectedException} if the provided
+     * exception is identified as a conflict. If the exception is not a conflict, it recursively checks the cause of the
+     * exception.
      *
-     * @param consistencyMarker the consistency marker used to identify conflicting events
-     * @param e the exception to translate
+     * @param consistencyMarker   the consistency marker used to identify conflicting events
+     * @param e                   the exception to translate
      * @param isConflictException a predicate used to check if the exception is a conflict
      * @return the translated exception
      */
@@ -125,8 +125,8 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
     }
 
     /**
-     * Helper class that tracks the sequence of events for different aggregates and
-     * manages the consistency marker for the aggregates.
+     * Helper class that tracks the sequence of events for different aggregates and manages the consistency marker for
+     * the aggregates.
      */
     public static final class AggregateSequencer {
 
@@ -184,8 +184,8 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
     }
 
     /**
-     * Represents an empty append transaction. This transaction does nothing and always succeeds.
-     * It is used when there are no events to persist.
+     * Represents an empty append transaction. This transaction does nothing and always succeeds. It is used when there
+     * are no events to persist.
      *
      * @param appendCondition will be returned as commit result
      */
@@ -208,6 +208,12 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
         @Override
         public void rollback() {
             // No action needed
+        }
+    }
+
+    public class MessageConverter {
+
+        private MessageConverter() {
         }
     }
 }
