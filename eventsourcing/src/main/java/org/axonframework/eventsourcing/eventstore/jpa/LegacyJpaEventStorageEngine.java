@@ -30,7 +30,6 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
@@ -43,7 +42,6 @@ import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.Context;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
@@ -314,11 +312,11 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         return MessageStream.fromStream(
                 events,
                 this::convertToMessage,
-                LegacyJpaEventStorageEngine::aggregateEventContext
+                LegacyJpaEventStorageEngine::domainEventContext
         );
     }
 
-    private static Context aggregateEventContext(DomainEventData<?> event) {
+    private static Context domainEventContext(DomainEventData<?> event) {
         return Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
                       .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getType())
                       .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, event.getSequenceNumber())
@@ -336,17 +334,17 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         return MessageStream.fromStream(
                 events,
                 this::convertToMessage,
-                LegacyJpaEventStorageEngine::streamEventContext
+                LegacyJpaEventStorageEngine::trackedEventContext
         );
     }
 
-    private static Context streamEventContext(TrackedEventData<?> trackedEventData) {
+    private static Context trackedEventContext(TrackedEventData<?> trackedEventData) {
         var context = Context.empty();
         if (trackedEventData instanceof TrackedDomainEventData<?> trackedDomainEventData
                 && trackedDomainEventData.getAggregateIdentifier() != null
                 && trackedDomainEventData.getType() != null
         ) {
-            context = aggregateEventContext(trackedDomainEventData);
+            context = domainEventContext(trackedDomainEventData);
         }
         var trackingToken = trackedEventData.trackingToken();
         return context.withResource(TrackingToken.RESOURCE_KEY, trackingToken);
