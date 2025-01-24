@@ -23,8 +23,10 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
@@ -32,8 +34,8 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
 /**
  * The default {@link EventStoreTransaction}.
  * <p>
- * While {@link #source(SourcingCondition, ProcessingContext) sourcing} it will map the {@link SourcingCondition} into
- * an {@link AppendCondition} for {@link #appendEvent(EventMessage) appending}, taking into account several sourcing
+ * While {@link #source(SourcingCondition) sourcing} it will map the {@link SourcingCondition} into an
+ * {@link AppendCondition} for {@link #appendEvent(EventMessage) appending}, taking into account several sourcing
  * invocation might have occurred in the same {@link ProcessingContext}. During
  * {@link #appendEvent(EventMessage) appending} it will pass along a collection of {@link EventMessage events} to an
  * {@link AsyncEventStorageEngine} is part of the prepare commit phase of the {@link ProcessingContext}.
@@ -77,15 +79,34 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public MessageStream<? extends EventMessage<?>> source(@Nonnull SourcingCondition condition,
-                                                           @Nonnull ProcessingContext context) {
-        context.updateResource(
+    public MessageStream<? extends EventMessage<?>> source(@Nonnull SourcingCondition condition) {
+        var appendCondition = processingContext.updateResource(
                 appendConditionKey,
-                appendCondition -> appendCondition == null
+                ac -> ac == null
                         ? AppendCondition.withCriteria(condition.criteria())
-                        : appendCondition.orCriteria(condition.criteria())
+                        : ac.orCriteria(condition.criteria())
         );
-        return eventStorageEngine.source(condition);
+        MessageStream<EventMessage<?>> source = eventStorageEngine.source(condition);
+        if (appendCondition.consistencyMarker() == ConsistencyMarker.ORIGIN) {
+            AtomicReference<ConsistencyMarker> tracker = new AtomicReference<>(appendCondition.consistencyMarker());
+            return source.onNext(e -> {
+                ConsistencyMarker marker;
+                if ((marker = e.getResource(ConsistencyMarker.RESOURCE_KEY)) != null) {
+                    tracker.set(marker);
+                }
+            }).whenComplete(() -> {
+                // when reading is complete, we choose the lowest, non-ORIGIN appendPosition as our next appendPosition
+                // when reading multiple times, the lowest consistency marker that we received from those streams
+                // (usually the first), is the safest one to use
+                processingContext.updateResource(appendPositionKey,
+                                                 current -> current == null
+                                                         || current == ConsistencyMarker.ORIGIN
+                                                         ? tracker.get()
+                                                         : current.lowerBound(tracker.get()));
+            });
+        } else {
+            return source;
+        }
     }
 
     @Override
@@ -107,8 +128,15 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     private void attachAppendEventsStep() {
         processingContext.onPrepareCommit(
                 context -> {
+                    // we need to update the condition with the marker that we may have updated during reading
                     AppendCondition appendCondition =
-                            context.computeResourceIfAbsent(appendConditionKey, AppendCondition::none);
+                            context.updateResource(appendConditionKey, current -> {
+                                if (current == null) {
+                                    return AppendCondition.none();
+                                }
+                                return current.withMarker(getOrDefault(context.getResource(appendPositionKey),
+                                                                       current.consistencyMarker()));
+                            });
                     List<TaggedEventMessage<?>> eventQueue = context.getResource(eventQueueKey);
 
                     return eventStorageEngine.appendEvents(appendCondition, eventQueue)
@@ -123,8 +151,14 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     private CompletableFuture<ConsistencyMarker> doCommit(ProcessingContext commitContext,
                                                           AsyncEventStorageEngine.AppendTransaction tx) {
         return tx.commit()
-                 .whenComplete((position, exception) ->
-                                       commitContext.putResource(appendPositionKey, position));
+                 .whenComplete((position, exception) -> {
+                     if (position != null) {
+                         commitContext.updateResource(appendPositionKey,
+                                                      other -> position.upperBound(Objects.requireNonNullElse(
+                                                              other,
+                                                              ConsistencyMarker.ORIGIN)));
+                     }
+                 });
     }
 
     @Override
@@ -133,7 +167,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     @Override
-    public ConsistencyMarker appendPosition(@Nonnull ProcessingContext context) {
-        return getOrDefault(context.getResource(appendPositionKey), ConsistencyMarker.ORIGIN);
+    public ConsistencyMarker appendPosition() {
+        return getOrDefault(processingContext.getResource(appendPositionKey), ConsistencyMarker.ORIGIN);
     }
 }
