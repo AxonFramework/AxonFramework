@@ -48,6 +48,7 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Converter;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -118,7 +119,8 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
                     builder.setAggregateIdentifier(aggregateIdentifier).setAggregateType(aggregateType)
                            .setAggregateSequenceNumber(nextSequence);
                 }
-                buildMetaData(event.getMetaData(), builder.getMetaDataMap());
+                var modifiableMetaDataMap = new HashMap<>(builder.getMetaDataMap());
+                buildMetaData(event.getMetaData(), modifiableMetaDataMap);
                 Event message = builder.build();
                 tx.appendEvent(message);
             });
