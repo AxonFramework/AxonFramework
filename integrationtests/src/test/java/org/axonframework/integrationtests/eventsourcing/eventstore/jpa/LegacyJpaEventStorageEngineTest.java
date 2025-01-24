@@ -23,19 +23,18 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
-import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.LazyDeserializingObject;
-import org.axonframework.serialization.SerializedMessage;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.TestSerializer;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -52,7 +51,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
 
@@ -91,9 +89,15 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
 
     @Override
     protected EventMessage<String> convertPayload(EventMessage<?> original) {
-//        return original.withConvertedPayload(p -> TEST_SERIALIZER.convert(p, String.class));
-        return original.withConvertedPayload(p -> new String((byte[]) p, StandardCharsets.UTF_8).replaceAll("\"", ""));
-//        return original.withConvertedPayload(p -> TEST_SERIALIZER.convert(p, String.class).replaceAll("\"", ""));
+        var p = (byte[]) original.getPayload();
+        var obj = new LazyDeserializingObject<String>(() -> new SimpleSerializedObject<>(
+                p,
+                byte[].class,
+                new SimpleSerializedType("java.lang.String", null)),
+                                                      new SimpleSerializedType("java.lang.String", null),
+                                                      TEST_SERIALIZER
+        );
+        return original.withConvertedPayload(x -> obj.getObject());
     }
 
     @Test

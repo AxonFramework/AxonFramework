@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,8 +51,23 @@ public final class QualifiedNameUtils {
      * @return A {@link QualifiedName} based on the given {@code clazz}.
      */
     public static QualifiedName fromClassName(@Nonnull Class<?> clazz) {
+        return fromClassName(clazz, DEFAULT_REVISION);
+    }
+
+    /**
+     * Construct a {@link QualifiedName} based on the given {@code clazz}.
+     * <p>
+     * The {@link Class#getPackageName()} will become the {@link QualifiedName#namespace()}, and the
+     * {@link Class#getSimpleName()} will be the {@link QualifiedName#localName()}.
+     *
+     * @param clazz    The {@link Class} to extract a {@link QualifiedName#namespace()} and
+     *                 {@link QualifiedName#localName()} from.
+     * @param revision The {@link String} resulting in the {@link QualifiedName#revision()}.
+     * @return A {@link QualifiedName} based on the given {@code clazz}.
+     */
+    public static QualifiedName fromClassName(@Nonnull Class<?> clazz, @Nonnull String revision) {
         Assert.nonNull(clazz, () -> "Cannot construct a QualifiedName based on a null Class.");
-        return new QualifiedName(clazz.getPackageName(), clazz.getSimpleName(), DEFAULT_REVISION);
+        return new QualifiedName(clazz.getPackageName(), clazz.getSimpleName(), revision);
     }
 
     /**
