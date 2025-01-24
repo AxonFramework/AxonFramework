@@ -123,6 +123,7 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
                     readerType,
                     readerSchema,
                     writerSchema,
+                    schemaStore,
                     avroSerializerStrategyConfig.includeSchemasInStackTraces()
             );
         }
@@ -165,6 +166,7 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
                     readerType,
                     readerSchema,
                     writerSchema,
+                    schemaStore,
                     avroSerializerStrategyConfig.includeSchemasInStackTraces()
             );
         }

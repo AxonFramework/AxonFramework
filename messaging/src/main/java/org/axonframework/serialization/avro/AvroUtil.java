@@ -20,6 +20,7 @@ import org.apache.avro.*;
 import org.apache.avro.SchemaCompatibility.SchemaCompatibilityResult;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.message.BadHeaderException;
+import org.apache.avro.message.SchemaStore;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.axonframework.serialization.SerializationException;
@@ -30,6 +31,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.apache.avro.SchemaCompatibility.checkReaderWriterCompatibility;
@@ -194,26 +197,26 @@ public class AvroUtil {
      * @param readerType   intended reader type.
      * @param readerSchema schema available on the reader side.
      * @param writerSchema schema that was used to write the data.
+     * @param  schemaStore schema store. If instance of {@link IncompatibilityCachingSchemaStore} is provided, the
+     *                     check result is cached.
      * @throws SerializationException if the schema check has not passed.
      */
     public static void assertSchemaCompatibility(@Nonnull Class<?> readerType,
                                                  @Nonnull Schema readerSchema,
                                                  @Nonnull Schema writerSchema,
+                                                 @Nonnull SchemaStore schemaStore,
                                                  boolean includeSchemasInStackTraces
     ) throws SerializationException {
-        SchemaCompatibilityResult schemaPairCompatibilityResult = checkReaderWriterCompatibility(
-                readerSchema,
-                writerSchema
-        ).getResult();
-
-        if (schemaPairCompatibilityResult
-                .getCompatibility()
-                .equals(SchemaCompatibility.SchemaCompatibilityType.INCOMPATIBLE)
-        ) {
+        final List<SchemaCompatibility.Incompatibility> incompatibilities;
+        if (schemaStore instanceof IncompatibilityCachingSchemaStore) {
+            incompatibilities = ((IncompatibilityCachingSchemaStore) schemaStore).checkCompatibility(readerSchema, writerSchema);
+        } else {
+            incompatibilities = checkCompatibility(readerSchema, writerSchema);
+        }
+        if (!incompatibilities.isEmpty()) {
             // reader and writer are incompatible
             // this is a fatal error, let provide information for the developer
-            String incompatibilitiesMessage = schemaPairCompatibilityResult
-                    .getIncompatibilities()
+            String incompatibilitiesMessage = incompatibilities
                     .stream()
                     .map(AvroUtil::incompatibilityPrinter)
                     .collect(Collectors.joining(", "));
@@ -224,6 +227,30 @@ public class AvroUtil {
                     "[" + incompatibilitiesMessage + "]",
                     includeSchemasInStackTraces
             );
+        }
+    }
+
+    /**
+     * Checks compatibility between reader and writer schema.
+     * @param readerSchema reader schema.
+     * @param writerSchema writer schema.
+     * @return list of incompatibilities if any, or empty list if schemas are compatible.
+     */
+    public static List<SchemaCompatibility.Incompatibility> checkCompatibility(
+            @Nonnull Schema readerSchema,
+            @Nonnull Schema writerSchema
+    ) {
+        SchemaCompatibility.SchemaCompatibilityResult schemaPairCompatibilityResult = checkReaderWriterCompatibility(
+                readerSchema,
+                writerSchema
+        ).getResult();
+        if (schemaPairCompatibilityResult
+                .getCompatibility()
+                .equals(SchemaCompatibility.SchemaCompatibilityType.INCOMPATIBLE)
+        ) {
+            return schemaPairCompatibilityResult.getIncompatibilities();
+        } else {
+            return new ArrayList<>();
         }
     }
 

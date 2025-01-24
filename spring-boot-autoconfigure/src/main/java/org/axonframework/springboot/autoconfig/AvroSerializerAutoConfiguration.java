@@ -17,6 +17,7 @@
 package org.axonframework.springboot.autoconfig;
 
 import org.apache.avro.message.SchemaStore;
+import org.axonframework.serialization.avro.IncompatibilityCachingSchemaStore;
 import org.axonframework.spring.serialization.avro.AvroSchemaPackages;
 import org.axonframework.spring.serialization.avro.ClasspathAvroSchemaLoader;
 import org.axonframework.spring.serialization.avro.SpecificRecordBaseClasspathAvroSchemaLoader;
@@ -59,7 +60,7 @@ public class AvroSerializerAutoConfiguration {
     // TODO we need to handle missing bean condition too in order to make it replaceable.
     @Conditional({AvroConfiguredCondition.class})
     public SchemaStore defaultAxonSchemaStore(BeanFactory beanFactory, List<ClasspathAvroSchemaLoader> schemaLoader) {
-        SchemaStore.Cache cachingSchemaStore = new SchemaStore.Cache();
+        IncompatibilityCachingSchemaStore cachingSchemaStore = new IncompatibilityCachingSchemaStore();
         List<String> packagesCandidates = AvroSchemaPackages.get(beanFactory).getPackages();
         final List<String> packagesToScan = new ArrayList<>();
         if (packagesCandidates.isEmpty() && AutoConfigurationPackages.has(beanFactory)) {

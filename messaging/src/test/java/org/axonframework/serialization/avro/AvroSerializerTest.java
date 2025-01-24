@@ -63,13 +63,13 @@ public class AvroSerializerTest {
     private final RevisionResolver revisionResolver = payloadType -> null;
     private AvroSerializer testSubject;
     private Serializer serializer;
-    private SchemaStore.Cache store;
+    private IncompatibilityCachingSchemaStore store;
     private static final GenericRecordToByteArrayConverter toByteArrayConverter = new GenericRecordToByteArrayConverter();
 
     @BeforeEach
     void setUp() {
         serializer = spy(JacksonSerializer.defaultSerializer());
-        store = new SchemaStore.Cache();
+        store = new IncompatibilityCachingSchemaStore();
         testSubject = AvroSerializer
                 .builder()
                 .serializerDelegate(serializer)
@@ -330,13 +330,16 @@ public class AvroSerializerTest {
     void failToDeserializeFromIncompatibleSchema(
             SerializedObject<byte[]> serialized,
             AvroSerializer serializer,
-            String expectedMessage) {
+            String expectedMessage,
+            IncompatibilityCachingSchemaStore schemaStore) {
         assertEquals(expectedMessage,
                 assertThrows(
                         SerializationException.class,
                         () -> serializer.deserialize(serialized)
                 ).getMessage()
         );
+
+        assertEquals(1, schemaStore.getIncompatibilitiesCache().size());
     }
 
     static Stream<Arguments> serializerAndIncompatibleSerializedObject() {
@@ -349,7 +352,7 @@ public class AvroSerializerTest {
                 ).getResult().getIncompatibilities().get(0);
 
 
-        SchemaStore.Cache schemaStore = new SchemaStore.Cache();
+        IncompatibilityCachingSchemaStore schemaStore = new IncompatibilityCachingSchemaStore();
         schemaStore.addSchema(ComplexObject.getClassSchema());
         schemaStore.addSchema(writerSchema);
 
@@ -382,7 +385,8 @@ public class AvroSerializerTest {
                                 writerSchema,
                                 "[" + AvroUtil.incompatibilityPrinter(incompatibility) + "]",
                                 false
-                        ).getMessage()
+                        ).getMessage(),
+                        schemaStore
                 ),
                 Arguments.of(
                         serialized,
@@ -400,7 +404,8 @@ public class AvroSerializerTest {
                                 writerSchema,
                                 "[" + AvroUtil.incompatibilityPrinter(incompatibility) + "]",
                                 true
-                        ).getMessage()
+                        ).getMessage(),
+                        schemaStore
                 ),
                 Arguments.of(
                         serialized,
@@ -418,7 +423,8 @@ public class AvroSerializerTest {
                                 writerSchema,
                                 (Exception) null,
                                 false
-                        ).getMessage()
+                        ).getMessage(),
+                        schemaStore
                 ),
                 Arguments.of(
                         serialized,
@@ -436,7 +442,8 @@ public class AvroSerializerTest {
                                 writerSchema,
                                 (Exception) null,
                                 true
-                        ).getMessage()
+                        ).getMessage(),
+                        schemaStore
                 )
 
 
