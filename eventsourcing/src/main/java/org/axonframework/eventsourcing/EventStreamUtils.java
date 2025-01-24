@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.LazyDeserializingObject;
 import org.axonframework.serialization.SerializedMessage;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.SerializedType;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.InitialEventRepresentation;
@@ -32,6 +34,7 @@ import org.axonframework.serialization.upcasting.event.IntermediateEventRepresen
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.util.Spliterator.*;
@@ -76,10 +79,17 @@ public abstract class EventStreamUtils {
                     return result;
                 });
         Stream<? extends DomainEventMessage<?>> stream = upcastResult.map(ir -> {
+            SerializedType serializedType = ir.getType();
+            SerializedObject<?> getData = ir.getData();
+            LazyDeserializingObject<Object> objectLazyDeserializingObject = new LazyDeserializingObject<>(() -> getData,
+                                                                                                          serializedType,
+                                                                                                          serializer);
+            var obj = objectLazyDeserializingObject.getObject();
+            Class clazz = serializer.classForType(serializedType);
             SerializedMessage<?> serializedMessage = new SerializedMessage<>(
                     ir.getMessageIdentifier(),
-                    QualifiedNameUtils.fromClassName(serializer.classForType(ir.getType())),
-                    new LazyDeserializingObject<>(ir::getData, ir.getType(), serializer),
+                    QualifiedNameUtils.fromClassName(clazz),
+                    objectLazyDeserializingObject,
                     ir.getMetaData()
             );
             if (ir.getTrackingToken().isPresent()) {
