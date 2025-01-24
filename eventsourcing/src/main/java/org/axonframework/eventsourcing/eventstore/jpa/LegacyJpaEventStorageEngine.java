@@ -24,10 +24,13 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
+import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackingToken;
@@ -45,6 +48,7 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -230,56 +234,30 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
     }
 
-    private EventMessage<byte[]> convertToMessage(DomainEventData<?> event) {
-        var payload = event.getPayload();
-        var qualifiedName = payload.getType().getName().split("\\.(?=[^.]*$)");
-        var namespace = qualifiedName[0];
-        var localName = qualifiedName[1];
-        var revision = payload.getType().getRevision();
-        var name = new QualifiedName(namespace,
-                                     localName,
-                                     revision == null ? "0.0.1" : revision); // todo: resolve qualified name
-        var identifier = event.getEventIdentifier();
-        var data = (byte[]) payload.getData();
-        var metadata = event.getMetaData();
-        MetaData metaData = eventSerializer.convert(metadata.getData(), MetaData.class);
-        try { // todo: how to serialize / deserliazie the payload and metadata!?
-            return new GenericEventMessage<>(
-                    identifier,
-                    name,
-                    data,
-                    metaData,
-                    event.getTimestamp()
-            );
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    private GenericDomainEventMessage<?> convertToDomainEventMessage(DomainEventData<?> event) {
+        return new GenericDomainEventMessage<>(
+                event.getType(),
+                event.getAggregateIdentifier(),
+                event.getSequenceNumber(),
+                convertToEventMessage(event),
+                event.getTimestamp()
+        );
     }
 
-    private EventMessage<byte[]> convertToMessage(TrackedEventData<?> event) {
+    private GenericEventMessage<?> convertToEventMessage(EventData<?> event) {
         var payload = event.getPayload();
-        var qualifiedName = payload.getType().getName().split("\\.(?=[^.]*$)");
-        var namespace = qualifiedName[0];
-        var localName = qualifiedName[1];
         var revision = payload.getType().getRevision();
-        var name = new QualifiedName(namespace,
-                                     localName,
-                                     revision == null ? "0.0.1" : revision); // todo: resolve qualified name
-        var identifier = event.getEventIdentifier();
-        var data = (byte[]) payload.getData();
+        var name = QualifiedNameUtils.fromDottedName(payload.getType().getName(),
+                                                     revision == null ? "0.0.1" : revision);
         var metadata = event.getMetaData();
         MetaData metaData = eventSerializer.convert(metadata.getData(), MetaData.class);
-        try { // todo: how to serialize / deserliazie the payload and metadata!?
-            return new GenericEventMessage<>(
-                    identifier,
-                    name,
-                    data,
-                    metaData,
-                    event.getTimestamp()
-            );
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return new GenericEventMessage<>(
+                event.getEventIdentifier(),
+                name,
+                payload.getData(),
+                metaData,
+                event.getTimestamp()
+        );
     }
 
     @Override
@@ -311,7 +289,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         );
         return MessageStream.fromStream(
                 events,
-                this::convertToMessage,
+                this::convertToDomainEventMessage,
                 LegacyJpaEventStorageEngine::domainEventContext
         );
     }
@@ -333,9 +311,18 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         var events = batchingOperations.readEventData(trackingToken);
         return MessageStream.fromStream(
                 events,
-                this::convertToMessage,
+                this::convertToTrackedEventMessage,
                 LegacyJpaEventStorageEngine::trackedEventContext
         );
+    }
+
+    private EventMessage<?> convertToTrackedEventMessage(TrackedEventData<?> event) {
+        var trackingToken = event.trackingToken();
+        if (event instanceof TrackedDomainEventData<?> trackedDomainEventData) {
+            var domainEventMessage = convertToDomainEventMessage(trackedDomainEventData);
+            return new GenericTrackedDomainEventMessage<>(trackingToken, domainEventMessage);
+        }
+        return new GenericTrackedEventMessage<>(trackingToken, convertToEventMessage(event));
     }
 
     private static Context trackedEventContext(TrackedEventData<?> trackedEventData) {
