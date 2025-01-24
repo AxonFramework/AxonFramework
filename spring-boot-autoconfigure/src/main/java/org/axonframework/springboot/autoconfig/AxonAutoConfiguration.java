@@ -150,18 +150,25 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Primary
     @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "!eventSerializer,messageSerializer")
     public Serializer serializer(RevisionResolver revisionResolver) {
-        return buildSerializer(revisionResolver, serializerProperties.getGeneral());
+        if (SerializerProperties.SerializerType.AVRO.equals(serializerProperties.getGeneral())) {
+            throw new AxonConfigurationException(format(
+                    "Invalid serializer type [%s] configured as general serializer. "
+                            + "The Avro Serializer can be used as message or event serializer only.",
+                    serializerProperties.getGeneral().name()
+            ));
+        }
+        return buildSerializer(revisionResolver, serializerProperties.getGeneral(), null);
     }
 
     @Bean
     @Qualifier("messageSerializer")
     @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "messageSerializer")
-    public Serializer messageSerializer(Serializer genericSerializer, RevisionResolver revisionResolver) {
+    public Serializer messageSerializer(Serializer generalSerializer, RevisionResolver revisionResolver) {
         if (SerializerProperties.SerializerType.DEFAULT.equals(serializerProperties.getMessages())
                 || serializerProperties.getGeneral().equals(serializerProperties.getMessages())) {
-            return genericSerializer;
+            return generalSerializer;
         }
-        return buildSerializer(revisionResolver, serializerProperties.getMessages());
+        return buildSerializer(revisionResolver, serializerProperties.getMessages(), generalSerializer);
     }
 
     @Bean
@@ -176,7 +183,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         } else if (serializerProperties.getGeneral().equals(serializerProperties.getEvents())) {
             return generalSerializer;
         }
-        return buildSerializer(revisionResolver, serializerProperties.getEvents());
+        return buildSerializer(revisionResolver, serializerProperties.getEvents(), generalSerializer);
     }
 
     @Bean
@@ -191,7 +198,8 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     private Serializer buildSerializer(RevisionResolver revisionResolver,
-                                       SerializerProperties.SerializerType serializerType) {
+                                       SerializerProperties.SerializerType serializerType,
+                                       Serializer generalSerializer) {
         switch (serializerType) {
             case AVRO:
                 Map<String, SchemaStore> schemaStoreBeans = beansOfTypeIncludingAncestors(applicationContext,
@@ -200,15 +208,18 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                         ? schemaStoreBeans.get("defaultAxonSchemaStore")
                         : schemaStoreBeans.values().stream().findFirst()
                                           .orElseThrow(() -> new NoSuchBeanDefinitionException(SchemaStore.class));
-                // TODO: Instead of using jackson for the delegate serializer, we could use the configured general serializer instead (-> new issue)
-                Serializer delegateSerializer = buildSerializer(revisionResolver,
-                                                                SerializerProperties.SerializerType.JACKSON);
+
+                if (generalSerializer == null) {
+                    throw new AxonConfigurationException(
+                            "General serializer is mandatory as a fallback Avro Serializer, but none was provided."
+                    );
+                }
                 Map<String, AvroSerializerStrategy> serializationStrategies = beansOfTypeIncludingAncestors(
                         applicationContext,
                         AvroSerializerStrategy.class);
                 AvroSerializer.Builder builder = AvroSerializer.builder()
                                                                .schemaStore(schemaStore)
-                                                               .serializerDelegate(delegateSerializer)
+                                                               .serializerDelegate(generalSerializer)
                                                                .revisionResolver(revisionResolver);
                 serializationStrategies.values().forEach(builder::addSerializerStrategy);
                 return builder.build();
