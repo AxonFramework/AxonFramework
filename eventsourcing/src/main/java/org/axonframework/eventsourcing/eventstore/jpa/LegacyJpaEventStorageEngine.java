@@ -33,6 +33,7 @@ import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.eventhandling.GenericTrackedEventMessage;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
+import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
@@ -316,7 +317,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         );
     }
 
-    private EventMessage<?> convertToTrackedEventMessage(TrackedEventData<?> event) {
+    private TrackedEventMessage<?> convertToTrackedEventMessage(TrackedEventData<?> event) {
         var trackingToken = event.trackingToken();
         if (event instanceof TrackedDomainEventData<?> trackedDomainEventData) {
             var domainEventMessage = convertToDomainEventMessage(trackedDomainEventData);
