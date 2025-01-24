@@ -47,9 +47,8 @@ import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -220,7 +219,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                     aggregateIdentifier,
                     nextSequence,
                     event.getIdentifier(),
-                    event.name(),
+                    event.type(),
                     event.getPayload(),
                     event.getMetaData(),
                     event.getTimestamp()
@@ -248,15 +247,15 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     private GenericEventMessage<?> convertToEventMessage(EventData<?> event) {
         var payload = event.getPayload();
         var revision = payload.getType().getRevision();
-        Class<?> payloadClass = eventSerializer.classForType(payload.getType());
-        var name = revision == null
-                ? QualifiedNameUtils.fromClassName(payloadClass)
-                : QualifiedNameUtils.fromClassName(payloadClass, revision);
+        var payloadClass = eventSerializer.classForType(payload.getType());
+        var messageType = revision == null
+                ? new MessageType(payloadClass)
+                : new MessageType(payloadClass, revision);
         var metadata = event.getMetaData();
         MetaData metaData = eventSerializer.convert(metadata.getData(), MetaData.class);
         return new GenericEventMessage<>(
                 event.getEventIdentifier(),
-                name,
+                messageType,
                 payload.getData(),
                 metaData,
                 event.getTimestamp()
