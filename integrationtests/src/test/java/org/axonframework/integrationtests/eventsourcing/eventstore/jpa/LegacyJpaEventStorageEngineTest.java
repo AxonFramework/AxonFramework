@@ -16,6 +16,7 @@
 
 package org.axonframework.integrationtests.eventsourcing.eventstore.jpa;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
@@ -29,11 +30,6 @@ import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTes
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
-import org.axonframework.serialization.LazyDeserializingObject;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedObject;
-import org.axonframework.serialization.SimpleSerializedType;
-import org.axonframework.serialization.TestSerializer;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
@@ -51,6 +47,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 
@@ -61,7 +58,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSuite<LegacyJpaEventStorageEngine> {
 
-    public static final Serializer TEST_SERIALIZER = TestSerializer.JACKSON.getSerializer();
+    public static final JacksonSerializer TEST_SERIALIZER = JacksonSerializer.defaultSerializer();
+    public static final ObjectMapper OBJECT_MAPPER = TEST_SERIALIZER.getObjectMapper();
 
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
@@ -89,15 +87,13 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
 
     @Override
     protected EventMessage<String> convertPayload(EventMessage<?> original) {
-        var p = (byte[]) original.getPayload();
-        var obj = new LazyDeserializingObject<String>(() -> new SimpleSerializedObject<>(
-                p,
-                byte[].class,
-                new SimpleSerializedType("java.lang.String", null)),
-                                                      new SimpleSerializedType("java.lang.String", null),
-                                                      TEST_SERIALIZER
-        );
-        return original.withConvertedPayload(x -> obj.getObject());
+        return original.withConvertedPayload(payload -> {
+            try {
+                return OBJECT_MAPPER.readValue((byte[]) payload, String.class);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @Test
