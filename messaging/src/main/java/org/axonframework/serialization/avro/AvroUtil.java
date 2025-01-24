@@ -247,7 +247,7 @@ public class AvroUtil {
                 "Failed to deserialize single-object-encoded bytes to instance of "
                         + readerType.getCanonicalName()
                         + ", writer schema fingerprint is " + fingerprint(writerSchema)
-                        + (includeSchemasInStackTraces ? ", writer schema fingerprint is " + writerSchema : "")
+                        + (includeSchemasInStackTraces ? ", writer schema is " + writerSchema : "")
                         + " reader schema fingerprint is " + fingerprint(readerSchema)
                         + (includeSchemasInStackTraces ? ", reader schema is " + readerSchema : ""),
                 cause);
