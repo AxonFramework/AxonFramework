@@ -637,7 +637,8 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          * Defaults to an automatic replay since the start of the stream.
          * <p>
          * More specifically, it defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming
-         * from the {@link StreamableMessageSource#createHeadToken() tail} with the replay flag enabled.
+         * from the {@link StreamableMessageSource#createTailToken() tail} with the replay flag enabled until the
+         * {@link StreamableMessageSource#createHeadToken() head} at the moment of initialization is reached.
          *
          * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
          *                     {@link StreamableMessageSource}
