@@ -167,7 +167,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
      *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
-     *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createTailToken()}.</li>
+     *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createHeadToken()}.</li>
      *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@link MaxSegmentProvider} (used by {@link #maxCapacity()}) defaults to {@link MaxSegmentProvider#maxShort()}.</li>
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
@@ -637,8 +637,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor implem
          * Defaults to an automatic replay since the start of the stream.
          * <p>
          * More specifically, it defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming
-         * from the {@link StreamableMessageSource#createTailToken() tail} with the replay flag enabled until the
-         * {@link StreamableMessageSource#createHeadToken() head} at the moment of initialization is reached.
+         * from the {@link StreamableMessageSource#createHeadToken() tail} with the replay flag enabled.
          *
          * @param initialToken a {@link Function} generating the initial {@link TrackingToken} based on a given
          *                     {@link StreamableMessageSource}
