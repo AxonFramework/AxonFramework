@@ -35,8 +35,8 @@
     </description>
 
     <properties>
-        <jobrunr.version>7.3.2</jobrunr.version>
-        <mysql-connector-java.version>9.1.0</mysql-connector-java.version>
+        <jobrunr.version>7.4.0</jobrunr.version>
+        <mysql-connector-java.version>9.2.0</mysql-connector-java.version>
         <spring-boot-3.version>3.4.1</spring-boot-3.version>
         <!-- Build / Plugin -->
         <jacoco-maven.version>0.8.12</jacoco-maven.version>
@@ -147,7 +147,7 @@
         <dependency>
             <groupId>com.mchange</groupId>
             <artifactId>c3p0</artifactId>
-            <version>0.10.1</version>
+            <version>0.10.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
