@@ -40,7 +40,7 @@ public class DefaultPersistentStreamMessageSourceFactory implements PersistentSt
     ) {
         if (usedNames.contains(name)) {
             logger.warn(
-                    "A Persistent Stream connection with Axon Server is uniquely identified based on the name. Another Persistent Stream is started for a given name [{}]",
+                    "A Persistent Stream connection with Axon Server is uniquely identified based on the name. Another Persistent Stream is started for a given name [{}]. The new connection will overwrite the existing connection.",
                     name);
         }
         PersistentStreamMessageSource messageSource = new PersistentStreamMessageSource(
