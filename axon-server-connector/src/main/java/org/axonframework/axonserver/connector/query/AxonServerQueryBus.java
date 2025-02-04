@@ -185,7 +185,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         PriorityBlockingQueue<Runnable> queryProcessQueue = new PriorityBlockingQueue<>(QUERY_QUEUE_CAPACITY);
         queryExecutor = builder.queryExecutorServiceBuilder.apply(configuration, queryProcessQueue);
         PriorityBlockingQueue<Runnable> queryResponseProcessQueue = new PriorityBlockingQueue<>(QUERY_QUEUE_CAPACITY);
-        queryResponseExecutor = builder.queryExecutorServiceBuilder.apply(configuration, queryResponseProcessQueue);
+        queryResponseExecutor = builder.queryResponseExecutorServiceBuilder.apply(configuration, queryResponseProcessQueue);
         localSegmentAdapter = new LocalSegmentAdapter();
         this.localSegmentShortCut = builder.localSegmentShortCut;
     }
@@ -605,7 +605,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         private ExecutorServiceBuilder queryExecutorServiceBuilder =
                 ExecutorServiceBuilder.defaultQueryExecutorServiceBuilder();
         private ExecutorServiceBuilder queryResponseExecutorServiceBuilder =
-                ExecutorServiceBuilder.defaultQueryExecutorServiceBuilder();
+                ExecutorServiceBuilder.defaultQueryResponseExecutorServiceBuilder();
         private String defaultContext;
         private QueryBusSpanFactory spanFactory = DefaultQueryBusSpanFactory.builder()
                                                                             .spanFactory(NoOpSpanFactory.INSTANCE)
@@ -727,11 +727,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
          * Sets the {@link ExecutorServiceBuilder} which builds an {@link ExecutorService} based on a given
          * {@link AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used
          * to process incoming queries with. Defaults to a {@link ThreadPoolExecutor}, using the
-         * {@link AxonServerConfiguration#getQueryThreads()} for the pool size, a keep-alive-time of {@code 100ms}, the
-         * given BlockingQueue as the work queue and an {@link AxonThreadFactory}.
+         * {@link AxonServerConfiguration#getQueryThreads()} for the pool size, the
+         * given BlockingQueue as the work queue, and an {@link AxonThreadFactory}.
          * <p/>
          * Note that it is highly recommended to use the given BlockingQueue if you are to provide you own
-         * {@code executorServiceBuilder}, as it ensure the query's priority is taken into consideration. Defaults to
+         * {@code executorServiceBuilder}, as it ensures the query's priority is taken into consideration. Defaults to
          * {@link ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}.
          *
          * @param executorServiceBuilder an {@link ExecutorServiceBuilder} used to build an {@link ExecutorService}
@@ -749,12 +749,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
          * Sets the {@link ExecutorServiceBuilder} which builds an {@link ExecutorService} based on a given
          * {@link AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used
          * to process incoming queries with. Defaults to a {@link ThreadPoolExecutor}, using the
-         * {@link AxonServerConfiguration#getQueryThreads()} for the pool size, a keep-alive-time of {@code 100ms}, the
-         * given BlockingQueue as the work queue and an {@link AxonThreadFactory}.
+         * {@link AxonServerConfiguration#getQueryThreads()} for the pool size, the
+         * given BlockingQueue as the work queue, and an {@link AxonThreadFactory}.
          * <p/>
          * Note that it is highly recommended to use the given BlockingQueue if you are to provide you own
-         * {@code executorServiceBuilder}, as it ensure the query's priority is taken into consideration. Defaults to
-         * {@link ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}.
+         * {@code executorServiceBuilder}, as it ensures the query's priority is taken into consideration. Defaults to
+         * {@link ExecutorServiceBuilder#defaultQueryResponseExecutorServiceBuilder()}.
          *
          * @param executorServiceBuilder an {@link ExecutorServiceBuilder} used to build an {@link ExecutorService}
          *                               based on the {@link AxonServerConfiguration} and a {@link BlockingQueue}
@@ -772,11 +772,11 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
          * Sets the {@link ExecutorServiceBuilder} which builds an {@link ExecutorService} based on a given
          * {@link AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used
          * to process incoming query responses with. Defaults to a {@link ThreadPoolExecutor}, using the
-         * {@link AxonServerConfiguration#getQueryResponseThreads()} for the pool size, a keep-alive-time of
-         * {@code 100ms}, the given BlockingQueue as the work queue and an {@link AxonThreadFactory}.
+         * {@link AxonServerConfiguration#getQueryResponseThreads()} for the pool size, the given BlockingQueue as the
+         * work queue, and an {@link AxonThreadFactory}.
          * <p/>
          * Note that it is highly recommended to use the given BlockingQueue if you are to provide you own
-         * {@code executorServiceBuilder}, as it ensure the query's priority is taken into consideration. Defaults to
+         * {@code executorServiceBuilder}, as it ensures the query's priority is taken into consideration. Defaults to
          * {@link ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}.
          *
          * @param executorServiceBuilder an {@link ExecutorServiceBuilder} used to build an {@link ExecutorService}

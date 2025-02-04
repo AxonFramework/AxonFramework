@@ -39,13 +39,10 @@ import java.util.function.BiFunction;
 public interface ExecutorServiceBuilder extends
         BiFunction<AxonServerConfiguration, BlockingQueue<Runnable>, ExecutorService> {
 
-    long THREAD_KEEP_ALIVE_TIME = 100L;
-
     /**
      * Create a default ExecutorServiceBuilder used to create a {@link ThreadPoolExecutor} for processing incoming
-     * commands. Uses the {@link AxonServerConfiguration#getCommandThreads()} as the core and maximum pool size, a
-     * keep-alive time of {@code 100ms}, the given {@link BlockingQueue} as the {@code workQueue} and an {@link
-     * AxonThreadFactory}.
+     * commands. Uses the {@link AxonServerConfiguration#getCommandThreads()} as the core and maximum pool size,
+     * the given {@link BlockingQueue} as the {@code workQueue} and an {@link AxonThreadFactory}.
      *
      * @return a default ExecutorServiceBuilder to create an executor for processing commands
      */
@@ -53,7 +50,7 @@ public interface ExecutorServiceBuilder extends
         return (configuration, commandProcessQueue) -> new ThreadPoolExecutor(
                 configuration.getCommandThreads(),
                 configuration.getCommandThreads(),
-                THREAD_KEEP_ALIVE_TIME,
+                0L,
                 TimeUnit.MILLISECONDS,
                 commandProcessQueue,
                 new AxonThreadFactory("CommandProcessor")
@@ -62,9 +59,8 @@ public interface ExecutorServiceBuilder extends
 
     /**
      * Create a default ExecutorServiceBuilder used to create a {@link ThreadPoolExecutor} for processing incoming
-     * queries. Uses the {@link AxonServerConfiguration#getQueryThreads()} as the core and maximum pool size, a
-     * keep-alive time of {@code 100ms}, the given {@link BlockingQueue} as the {@code workQueue} and an {@link
-     * AxonThreadFactory}.
+     * queries. Uses the {@link AxonServerConfiguration#getQueryThreads()} as the core and maximum pool size,
+     * the given {@link BlockingQueue} as the {@code workQueue} and an {@link AxonThreadFactory}.
      *
      * @return a default ExecutorServiceBuilder to create an executor for processing queries
      */
@@ -72,7 +68,7 @@ public interface ExecutorServiceBuilder extends
         return (configuration, queryProcessQueue) -> new ThreadPoolExecutor(
                 configuration.getQueryThreads(),
                 configuration.getQueryThreads(),
-                THREAD_KEEP_ALIVE_TIME,
+                0L,
                 TimeUnit.MILLISECONDS,
                 queryProcessQueue,
                 new AxonThreadFactory("QueryProcessor")
@@ -83,9 +79,8 @@ public interface ExecutorServiceBuilder extends
     /**
      * Create a default ExecutorServiceBuilder used to create a {@link ThreadPoolExecutor} for processing incoming
      * query responses.
-     * Uses the {@link AxonServerConfiguration#getQueryResponseThreads()} as the core and maximum pool size, a
-     * keep-alive time of {@code 100ms}, the given {@link BlockingQueue} as the {@code workQueue} and an {@link
-     * AxonThreadFactory}.
+     * Uses the {@link AxonServerConfiguration#getQueryResponseThreads()} as the core and maximum pool size,
+     * the given {@link BlockingQueue} as the {@code workQueue} and an {@link AxonThreadFactory}.
      *
      * @return a default ExecutorServiceBuilder to create an executor for processing incoming query responses
      */
@@ -93,7 +88,7 @@ public interface ExecutorServiceBuilder extends
         return (configuration, queryResponseProcessQueue) -> new ThreadPoolExecutor(
                 configuration.getQueryResponseThreads(),
                 configuration.getQueryResponseThreads(),
-                THREAD_KEEP_ALIVE_TIME,
+                0L,
                 TimeUnit.MILLISECONDS,
                 queryResponseProcessQueue,
                 new AxonThreadFactory("QueryResponse")

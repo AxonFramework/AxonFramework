@@ -168,7 +168,7 @@ public class AxonServerConfiguration {
     private int queryThreads = 10;
 
     /**
-     * The number of threads handling query responses. Defaults to {@code 10} threads.
+     * The number of threads handling query responses. Defaults to {@code 5} threads.
      */
     private int queryResponseThreads = 5;
 
