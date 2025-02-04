@@ -41,8 +41,8 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
      * Validates the tags associated with a list of event messages. Ensures that no event has more than one tag, as the
      * Event Storage engine in Aggregate mode only supports a single tag per event.
      *
-     * @param events the list of tagged event messages to validate
-     * @throws TooManyTagsOnEventMessageException if any event has more than one tag
+     * @param events The list of tagged event messages to validate.
+     * @throws TooManyTagsOnEventMessageException if any event has more than one tag.
      */
     public static void assertValidTags(List<TaggedEventMessage<?>> events) {
         for (TaggedEventMessage<?> taggedEvent : events) {
@@ -59,9 +59,9 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
      * Resolves the aggregate identifier from the provided set of tags. The set must contain exactly one tag, and its
      * value will be returned as the aggregate identifier.
      *
-     * @param tags the set of tags to resolve the aggregate identifier from
-     * @return the aggregate identifier, or {@code null} if the set is empty
-     * @throws IllegalArgumentException if the set contains more than one tag
+     * @param tags The set of tags to resolve the aggregate identifier from.
+     * @return The aggregate identifier, or {@code null} if the set is empty.
+     * @throws IllegalArgumentException if the set contains more than one tag.
      */
     @Nullable
     public static String resolveAggregateIdentifier(Set<Tag> tags) {
@@ -78,9 +78,9 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
      * Resolves the aggregate type from the provided set of tags. The set must contain exactly one tag, and its key will
      * be returned as the aggregate type.
      *
-     * @param tags the set of tags to resolve the aggregate type from
-     * @return the aggregate type, or {@code null} if the set is empty
-     * @throws IllegalArgumentException if the set contains more than one tag
+     * @param tags The set of tags to resolve the aggregate type from.
+     * @return The aggregate type, or {@code null} if the set is empty.
+     * @throws IllegalArgumentException if the set contains more than one tag.
      */
     @Nullable
     public static String resolveAggregateType(Set<Tag> tags) {
@@ -94,14 +94,14 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
     }
 
     /**
-     * Translates a conflict exception into an {@link AppendEventsTransactionRejectedException} if the provided
-     * exception is identified as a conflict. If the exception is not a conflict, it recursively checks the cause of the
+     * Translates the given {@code Exception} into an {@link AppendEventsTransactionRejectedException} if it
+     * is identified as a conflict through the given {@code isConflictException} predicate. If the exception is not a conflict, it recursively checks the cause of the
      * exception.
      *
-     * @param consistencyMarker   the consistency marker used to identify conflicting events
-     * @param e                   the exception to translate
-     * @param isConflictException a predicate used to check if the exception is a conflict
-     * @return the translated exception
+     * @param consistencyMarker   The consistency marker used to identify conflicting events.
+     * @param e                   The exception to translate.
+     * @param isConflictException A predicate used to check if the exception is a conflict.
+     * @return The translated exception.
      */
     public static Throwable translateConflictException(
             ConsistencyMarker consistencyMarker,
@@ -136,8 +136,8 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
         /**
          * Constructs a new {@code AggregateSequencer} with the specified aggregate sequences and consistency marker.
          *
-         * @param aggregateSequences a map of aggregate identifiers to atomic sequences
-         * @param consistencyMarker  the consistency marker for this sequencer
+         * @param aggregateSequences A map of aggregate identifiers to atomic sequences.
+         * @param consistencyMarker  The consistency marker for this sequencer.
          */
         private AggregateSequencer(Map<String, AtomicLong> aggregateSequences,
                                    AggregateBasedConsistencyMarker consistencyMarker) {
@@ -148,8 +148,8 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
         /**
          * Creates a new {@code AggregateSequencer} with the provided consistency marker.
          *
-         * @param consistencyMarker the consistency marker for the new sequencer
-         * @return a new {@code AggregateSequencer}
+         * @param consistencyMarker The consistency marker for the new sequencer.
+         * @return A new {@code AggregateSequencer}.
          */
         public static AggregateSequencer with(AggregateBasedConsistencyMarker consistencyMarker) {
             return new AggregateSequencer(new HashMap<>(), consistencyMarker);
@@ -158,7 +158,7 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
         /**
          * Advances the consistency marker by resolving and forwarding the state of aggregate sequences.
          *
-         * @return the new consistency marker after forwarding
+         * @return The new consistency marker after forwarding.
          */
         public AggregateBasedConsistencyMarker forwarded() {
             var newConsistencyMarker = consistencyMarker;
@@ -174,8 +174,8 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
          * Resolves the sequence for the given aggregate identifier. If the aggregate does not exist, it is initialized
          * with the consistency marker's position for that identifier.
          *
-         * @param aggregateIdentifier the identifier of the aggregate to resolve the sequence for
-         * @return the atomic long sequence for the aggregate
+         * @param aggregateIdentifier The identifier of the aggregate to resolve the sequence for.
+         * @return The atomic long sequence for the aggregate.
          */
         public AtomicLong resolveBy(String aggregateIdentifier) {
             return aggregateSequences.computeIfAbsent(aggregateIdentifier,
