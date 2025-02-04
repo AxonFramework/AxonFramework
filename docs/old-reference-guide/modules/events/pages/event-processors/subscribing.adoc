@@ -158,7 +158,7 @@ For a specific Event Processor to be a Subscribing instance using a persistent s
 
 The `PersistentStreamMessageSource` requires a `PersistentStreamProperties` to set the initial properties to create the persistent stream. The properties contain:
 
-* `streamName`: The name of the persistent stream.
+* `streamName`: The name of the persistent stream. It's a unique identifier of the connection with Axon Sever. Usage of the same name will overwrite the existing connection.
 * `segments`: The initial number of segments.
 * `sequencingPolicyName`: The sequencing policy name.
 * `sequencingPolicyParameters`: List of parameters for the sequencing policy.
