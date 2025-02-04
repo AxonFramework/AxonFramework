@@ -71,8 +71,10 @@ public class PersistentStreamConnection {
 
     private final AtomicReference<PersistentStream> persistentStreamHolder = new AtomicReference<>();
 
-    private final AtomicReference<Consumer<List<? extends EventMessage<?>>>> consumer = new AtomicReference<>(events -> {
-    });
+    public static final Consumer<List<? extends EventMessage<?>>> NO_OP_CONSUMER = events -> {
+    };
+    private final AtomicReference<Consumer<List<? extends EventMessage<?>>>> consumer = new AtomicReference<>(
+            NO_OP_CONSUMER);
     private final ScheduledExecutorService scheduler;
     private final int batchSize;
     private final Map<Integer, SegmentConnection> segments = new ConcurrentHashMap<>();
@@ -128,12 +130,18 @@ public class PersistentStreamConnection {
 
 
     /**
-     * Initiates the connection to Axon Server to read events from the persistent stream.
+     * Initiates the connection to Axon Server to read events from the persistent stream. The stream can have only one
+     * consumer. If you invoke the method multiple times, the previous consumer is replaced with the new one.
      *
      * @param consumer The consumer of batches of event messages.
      */
     public void open(Consumer<List<? extends EventMessage<?>>> consumer) {
-        this.consumer.set(consumer);
+        Consumer<List<? extends EventMessage<?>>> previousConsumer = this.consumer.getAndSet(consumer);
+        if (!previousConsumer.equals(NO_OP_CONSUMER)) {
+            logger.warn(
+                    "{}: Persistent Stream can only have a single consumer. Consumer was already defined, so it's replaced with the new one",
+                    streamId);
+        }
         start();
     }
 
