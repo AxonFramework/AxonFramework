@@ -22,13 +22,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class DefaultPersistentStreamMessageSourceFactory implements PersistentStreamMessageSourceFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultPersistentStreamMessageSourceFactory.class);
-    private final Set<String> usedNames = ConcurrentHashMap.newKeySet();
+    private final Set<String> usedNames = new CopyOnWriteArraySet<>();
 
     @Override
     public PersistentStreamMessageSource build(String name,
