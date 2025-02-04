@@ -70,6 +70,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static java.util.Objects.*;
 import static org.axonframework.common.BuilderUtils.*;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils.*;
@@ -105,11 +106,12 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
             @Nonnull Serializer eventSerializer,
             @Nonnull UnaryOperator<Customization> configurationOverride
     ) {
-        this.entityManagerProvider = entityManagerProvider;
-        this.transactionManager = transactionManager;
-        this.eventSerializer = eventSerializer;
+        this.entityManagerProvider = requireNonNull(entityManagerProvider, "entityManagerProvider may not be null");
+        this.transactionManager = requireNonNull(transactionManager, "transactionManager may not be null");
+        this.eventSerializer = requireNonNull(eventSerializer, "eventSerializer may not be null");
 
-        var customization = configurationOverride.apply(Customization.withDefaultValues());
+        var customization = requireNonNull(configurationOverride, "configurationOverride may not be null")
+                .apply(Customization.withDefaultValues());
 
         this.legacyJpaOperations = new LegacyJpaEventStorageOperations(transactionManager,
                                                                        entityManagerProvider.getEntityManager(),
@@ -499,7 +501,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
             @Override
             public boolean tryAdvance(Consumer<? super T> action) {
-                Objects.requireNonNull(action);
+                requireNonNull(action);
                 if (iterator == null || !iterator.hasNext()) {
                     if (lastBatchFound) {
                         return false;
