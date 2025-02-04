@@ -15,6 +15,7 @@
  */
 package org.axonframework.axonserver.connector.event.axon;
 
+import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.common.Registration;
 import org.axonframework.config.Configuration;
@@ -39,7 +40,7 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
     /**
      * Instantiates a {@code PersistentStreamMessageSource}.
      *
-     * @param name                       The name of the event processor.
+     * @param name                       The name of the event processor. It's a unique identifier of the {@link PersistentStream} connection with Axon Sever.
      * @param configuration              Global configuration of Axon components.
      * @param persistentStreamProperties Properties for the persistent stream.
      * @param scheduler                  Scheduler thread pool to schedule tasks.
@@ -57,7 +58,7 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
     /**
      * Instantiates a {@code PersistentStreamMessageSource}.
      *
-     * @param name                       The name of the event processor.
+     * @param name                       The name of the event processor. It's a unique identifier of the {@link PersistentStream} connection with Axon Sever.
      * @param configuration              Global configuration of Axon components.
      * @param persistentStreamProperties Properties for the persistent stream.
      * @param scheduler                  Scheduler thread pool to schedule tasks.

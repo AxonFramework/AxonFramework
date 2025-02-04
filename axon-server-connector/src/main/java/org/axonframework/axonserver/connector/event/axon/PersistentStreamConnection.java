@@ -83,7 +83,7 @@ public class PersistentStreamConnection {
     /**
      * Instantiates a connection for a persistent stream.
      *
-     * @param streamId                   The identifier of the persistent stream.
+     * @param streamId                   The unique identifier of the persistent stream.
      * @param configuration              Global configuration of Axon components.
      * @param persistentStreamProperties Properties for the persistent stream.
      * @param scheduler                  Scheduler thread pool to schedule tasks.
@@ -105,7 +105,7 @@ public class PersistentStreamConnection {
     /**
      * Instantiates a connection for a persistent stream.
      *
-     * @param streamId                   The identifier of the persistent stream.
+     * @param streamId                   The unique identifier of the persistent stream.
      * @param configuration              Global configuration of Axon components.
      * @param persistentStreamProperties Properties for the persistent stream.
      * @param scheduler                  Scheduler thread pool to schedule tasks.
