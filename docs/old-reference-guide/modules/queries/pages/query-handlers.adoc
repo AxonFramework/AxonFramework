@@ -102,6 +102,58 @@ public class SubQueryHandler extends QueryHandler {
 
 In the example above, the handler method of `SubQueryHandler` will be invoked for queries for `QueryB` and result `MyResult` the handler methods of `QueryHandler` are invoked for queries for `QueryA` and `QueryC` and result `MyResult`.
 
+== Query handler chaining
+
+When you need information from another query to complete your query,
+you might call the `QueryGateway` or `QueryBus` from your query handler.
+This needs to be done with caution, as we create a dependency between two query handlers.
+
+[[chaining-local]]
+=== Local query handler
+
+When the secondary query handler is located in the same application,
+you can still use
+the `QueryGateway` or `QueryBus` to retrieve the information you need and keep the two components decoupled.
+This gives you the freedom to move the other query handler to a different application in the future.
+
+
+[WARNING]
+.Projection dependency
+====
+When a query handler depends on another query in the same application, this can indicate a design issue.
+Each projection processes events at their own pace, so two projections might not have the data in sync.
+This can lead to unexpected behavior.
+
+The proper solution is to create independent projections that contain all the data needed
+to function correctly.
+By duplicating data to the event processor locally,
+you are guaranteed to have up-to-date data when handling a query, as well as the flexibility to change it.
+====
+
+When using a distributed query bus, such as the `AxonServerQueryBus`, this secondary query will use a second thread to process in. If both queries block the thread, this could potentially lead to a deadlock.
+
+Example: You have configured the `AxonServerQueryBus` to have 1 thread, and you have query A and B in the same application.
+Query A calls query B. Because query A is waiting on a response of query B, and query B is waiting for a thread to free up, this has now caused a deadlock.
+
+You can take different routes to remedy this:
+
+1. Not chaining queries in this way, and instead duplicating the data locally based on the events.
+2. Returning a `CompletableFuture` from your query handlers, and using `thenCompose` to chain the queries. This will free up the thread to process other queries.
+3. Using the `localSegmentShortcut` configuration in the `AxonServerQueryBus` to prevent the second query from being sent over the network, and thus process it in the same thread.
+4. Configure your distributed query bus to have more threads available. This will reduce the chance of a deadlock, but it will not prevent it.
+
+=== Remote query handler
+
+Before Axon Framework 4.10.4, a thread deadlock could occur in the same manner,
+as processing the response of a query also required a thread.
+This was resolved in Axon Framework 4.10.4 by using a different thread pool to process the response of a query.
+
+If you use an older version of Axon Framework,
+you can still use the `QueryGateway` to retrieve the information you need,
+taking the same measures outlined in the previous section for the xref:#chaining-local[local query handlers].
+
+
+
 == Query handler return values
 
 Axon allows a multitude of return types for a query handler method, as defined <<writing-query-handler,earlier>> on this page. You should think of single objects and collections of objects, taking into account wildcards or generics too. Below we share a list of all the options which are supported and tested in the framework.
