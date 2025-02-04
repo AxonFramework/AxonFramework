@@ -94,9 +94,9 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
     }
 
     /**
-     * Translates the given {@code Exception} into an {@link AppendEventsTransactionRejectedException} if it
-     * is identified as a conflict through the given {@code isConflictException} predicate. If the exception is not a conflict, it recursively checks the cause of the
-     * exception.
+     * Translates the given {@code Exception} into an {@link AppendEventsTransactionRejectedException} if it is
+     * identified as a conflict through the given {@code isConflictException} predicate. If the exception is not a
+     * conflict, it recursively checks the cause of the exception.
      *
      * @param consistencyMarker   The consistency marker used to identify conflicting events.
      * @param e                   The exception to translate.
@@ -156,9 +156,10 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
         }
 
         /**
-         * Advances the consistency marker by resolving and forwarding the state of aggregate sequences.
+         * Forwarded the consistency marker by the state of aggregate sequences.
          *
-         * @return The new consistency marker after forwarding.
+         * @return The new consistency marker after forwarding
+         * @see AggregateBasedConsistencyMarker#forwarded(String, long)
          */
         public AggregateBasedConsistencyMarker forwarded() {
             var newConsistencyMarker = consistencyMarker;
@@ -171,15 +172,18 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
         }
 
         /**
-         * Resolves the sequence for the given aggregate identifier. If the aggregate does not exist, it is initialized
-         * with the consistency marker's position for that identifier.
+         * Get and increment the sequence for the given aggregate identifier. If the aggregate does not exist, it is
+         * initialized with the consistency marker's position for that identifier.
          *
-         * @param aggregateIdentifier The identifier of the aggregate to resolve the sequence for.
-         * @return The atomic long sequence for the aggregate.
+         * @param aggregateIdentifier The identifier of the aggregate to get and increment the sequence for
+         * @return The atomic long sequence for the aggregate
          */
-        public AtomicLong resolveBy(String aggregateIdentifier) {
-            return aggregateSequences.computeIfAbsent(aggregateIdentifier,
-                                                      i -> new AtomicLong(consistencyMarker.positionOf(i)));
+        public long incrementAndGetSequenceOf(String aggregateIdentifier) {
+            var aggregateSequence = aggregateSequences.computeIfAbsent(
+                    aggregateIdentifier,
+                    i -> new AtomicLong(consistencyMarker.positionOf(i))
+            );
+            return aggregateSequence.incrementAndGet();
         }
     }
 

@@ -115,7 +115,7 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
                 String aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
                 String aggregateType = resolveAggregateType(taggedEvent.tags());
                 if (aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty()) {
-                    long nextSequence = aggregateSequencer.resolveBy(aggregateIdentifier).incrementAndGet();
+                    long nextSequence = aggregateSequencer.incrementAndGetSequenceOf(aggregateIdentifier);
                     builder.setAggregateIdentifier(aggregateIdentifier).setAggregateType(aggregateType)
                            .setAggregateSequenceNumber(nextSequence);
                 }

@@ -57,7 +57,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterators;
 import java.util.concurrent.CompletableFuture;
@@ -215,7 +214,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         var isAggregateEvent =
                 aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty();
         if (isAggregateEvent) {
-            var nextSequence = aggregateSequencer.resolveBy(aggregateIdentifier).incrementAndGet();
+            var nextSequence = aggregateSequencer.incrementAndGetSequenceOf(aggregateIdentifier);
             return new GenericDomainEventMessage<>(
                     aggregateType,
                     aggregateIdentifier,
