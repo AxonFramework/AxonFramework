@@ -21,14 +21,14 @@ import org.axonframework.config.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class DefaultPersistentStreamMessageSourceFactory implements PersistentStreamMessageSourceFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultPersistentStreamMessageSourceFactory.class);
-    private final Set<String> usedNames = new HashSet<>();
+    private final Set<String> usedNames = ConcurrentHashMap.newKeySet();
 
     @Override
     public PersistentStreamMessageSource build(String name,
@@ -38,15 +38,13 @@ public class DefaultPersistentStreamMessageSourceFactory implements PersistentSt
                                                String context,
                                                Configuration configuration
     ) {
-        if (usedNames.contains(name)) {
+        if (!usedNames.add(name)) {
             logger.warn(
                     "A Persistent Stream connection with Axon Server is uniquely identified based on the name. Another Persistent Stream is started for a given name [{}]. The new connection will overwrite the existing connection.",
                     name);
         }
-        PersistentStreamMessageSource messageSource = new PersistentStreamMessageSource(
+        return new PersistentStreamMessageSource(
                 name, configuration, persistentStreamProperties, scheduler, batchSize, context
         );
-        usedNames.add(name);
-        return messageSource;
     }
 }
