@@ -168,8 +168,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
      *     <li>The {@link ErrorHandler} is defaulted to a {@link PropagatingErrorHandler}.</li>
      *     <li>The {@link MessageMonitor} defaults to a {@link NoOpMessageMonitor}.</li>
      *     <li>The {@code initialSegmentCount} defaults to {@code 16}.</li>
-     *     <li>The {@code initialToken} function defaults to {@link StreamableMessageSource#createHeadToken()}.</li>
-     *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
+     *     <li>The {@code initialToken} function defaults to a {@link org.axonframework.eventhandling.ReplayToken} that starts streaming from the {@link StreamableMessageSource#createTailToken() tail} with the replay flag enabled until the {@link StreamableMessageSource#createHeadToken() head} at the moment of initialization is reached.</li>     *     <li>The {@code tokenClaimInterval} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@link MaxSegmentProvider} (used by {@link #maxCapacity()}) defaults to {@link MaxSegmentProvider#maxShort()}.</li>
      *     <li>The {@code claimExtensionThreshold} defaults to {@code 5000} milliseconds.</li>
      *     <li>The {@code batchSize} defaults to {@code 1}.</li>
