@@ -144,7 +144,8 @@ You can take different routes to remedy this:
 
 === Remote query handler
 
-Before Axon Framework 4.10.4, a thread deadlock could occur in the same manner,
+When calling a remote query handler from your query handler before Axon Framework 4.10.4,
+a thread deadlock could occur in the same manner,
 as processing the response of a query also required a thread.
 This was resolved in Axon Framework 4.10.4 by using a different thread pool to process the response of a query.
 
