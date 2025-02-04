@@ -13,7 +13,6 @@ updates:
   milestone: 8
   reviewers:
     - "AxonFramework/framework-developers"
-    - "sandjelkovic"
   groups:
     github-dependencies:
       update-types:
@@ -33,7 +32,6 @@ updates:
   milestone: 8
   reviewers:
     - "AxonFramework/framework-developers"
-    - "sandjelkovic"
   groups:
     maven-dependencies:
       update-types:
