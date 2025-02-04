@@ -114,7 +114,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         this.legacyJpaOperations = new LegacyJpaEventStorageOperations(transactionManager,
                                                                        entityManagerProvider.getEntityManager(),
                                                                        DOMAIN_EVENT_ENTRY_ENTITY_NAME,
-                                                                       SnapshotEventEntry.class.getSimpleName());
+                                                                       "unused");
         this.tokenOperations = new GapAwareTrackingTokenOperations(
                 customization.tokenGapsHandling().timeout(),
                 logger
@@ -149,7 +149,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         return CompletableFuture.completedFuture(new AppendTransaction() {
 
             private final AtomicBoolean txFinished = new AtomicBoolean(false);
-            private final AggregateBasedConsistencyMarker beforeCommitConsistencyMarker = AggregateBasedConsistencyMarker.from(
+            private final AggregateBasedConsistencyMarker preCommitConsistencyMarker = AggregateBasedConsistencyMarker.from(
                     condition);
 
             @Override
@@ -158,7 +158,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                     return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
                 }
 
-                var aggregateSequencer = AggregateSequencer.with(beforeCommitConsistencyMarker);
+                var aggregateSequencer = AggregateSequencer.with(preCommitConsistencyMarker);
 
                 CompletableFuture<Void> txResult = new CompletableFuture<>();
                 var tx = transactionManager.startTransaction();
@@ -182,7 +182,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                         && t instanceof Exception ex
                         && persistenceExceptionResolver.isDuplicateKeyViolation(ex);
                 return LegacyAggregateBasedEventStorageEngineUtils
-                        .translateConflictException(beforeCommitConsistencyMarker, e, isConflictException);
+                        .translateConflictException(preCommitConsistencyMarker, e, isConflictException);
             }
 
             @Override
@@ -619,7 +619,3 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
     }
 }
-
-
-
-

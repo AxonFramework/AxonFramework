@@ -267,10 +267,10 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
                                   .orElse(null);
     }
 
-    private Optional<TrackingToken> gapAwareTrackingTokenOn(Long token) {
-        return token == null
+    private Optional<TrackingToken> gapAwareTrackingTokenOn(Long globalIndex) {
+        return globalIndex == null
                 ? Optional.empty()
-                : Optional.of(GapAwareTrackingToken.newInstance(token, Collections.emptySet()));
+                : Optional.of(GapAwareTrackingToken.newInstance(globalIndex, Collections.emptySet()));
     }
 
     /**

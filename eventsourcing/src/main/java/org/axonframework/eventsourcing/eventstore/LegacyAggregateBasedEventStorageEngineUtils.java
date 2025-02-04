@@ -211,9 +211,7 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
         }
     }
 
-    public class MessageConverter {
-
-        private MessageConverter() {
-        }
+    private LegacyAggregateBasedEventStorageEngineUtils() {
+        // Utility class
     }
 }
