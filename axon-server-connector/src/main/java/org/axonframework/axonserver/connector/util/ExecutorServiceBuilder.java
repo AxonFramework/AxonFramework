@@ -78,4 +78,25 @@ public interface ExecutorServiceBuilder extends
                 new AxonThreadFactory("QueryProcessor")
         );
     }
+
+
+    /**
+     * Create a default ExecutorServiceBuilder used to create a {@link ThreadPoolExecutor} for processing incoming
+     * query responses.
+     * Uses the {@link AxonServerConfiguration#getQueryResponseThreads()} as the core and maximum pool size, a
+     * keep-alive time of {@code 100ms}, the given {@link BlockingQueue} as the {@code workQueue} and an {@link
+     * AxonThreadFactory}.
+     *
+     * @return a default ExecutorServiceBuilder to create an executor for processing incoming query responses
+     */
+    static ExecutorServiceBuilder defaultQueryResponseExecutorServiceBuilder() {
+        return (configuration, queryResponseProcessQueue) -> new ThreadPoolExecutor(
+                configuration.getQueryResponseThreads(),
+                configuration.getQueryResponseThreads(),
+                THREAD_KEEP_ALIVE_TIME,
+                TimeUnit.MILLISECONDS,
+                queryResponseProcessQueue,
+                new AxonThreadFactory("QueryResponse")
+        );
+    }
 }

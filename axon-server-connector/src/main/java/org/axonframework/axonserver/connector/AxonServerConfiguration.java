@@ -168,6 +168,11 @@ public class AxonServerConfiguration {
     private int queryThreads = 10;
 
     /**
+     * The number of threads handling query responses. Defaults to {@code 10} threads.
+     */
+    private int queryResponseThreads = 5;
+
+    /**
      * The interval (in ms.) application sends status updates on event processors to Axon Server. Defaults to
      * {@code 500} milliseconds.
      */
@@ -783,6 +788,24 @@ public class AxonServerConfiguration {
      */
     public void setQueryThreads(int queryThreads) {
         this.queryThreads = queryThreads;
+    }
+
+    /**
+     * The number of threads executing query responses. Defaults to {@code 5} threads.
+     *
+     * @return The number of threads executing query responses.
+     */
+    public int getQueryResponseThreads() {
+        return queryResponseThreads;
+    }
+
+    /**
+     * Sets the number of threads executing query responses. Defaults to {@code 5} threads.
+     *
+     * @param queryResponseThreads The number of threads executing query responses.
+     */
+    public void setQueryResponseThreads(int queryResponseThreads) {
+        this.queryResponseThreads = queryResponseThreads;
     }
 
     /**
