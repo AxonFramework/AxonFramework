@@ -204,6 +204,26 @@ class JpaTokenStoreTest {
     }
 
     @Test
+    void deleteTokenDuringMergeOperation() {
+        jpaTokenStore.initializeSegment(null, "merge", 0);
+        jpaTokenStore.fetchToken("merge", 0);
+        jpaTokenStore.releaseClaim("merge", 0);
+        entityManager.flush();
+
+        JpaTokenStore.setMergeOperation(true);
+        try {
+            jpaTokenStore.deleteToken("merge", 0);
+        } finally {
+            JpaTokenStore.clearMergeOperation();
+        }
+        long count = (long) entityManager.createQuery("SELECT count(t) FROM TokenEntry t " +
+                "WHERE t.processorName = :processorName", Long.class)
+            .setParameter("processorName", "merge")
+            .getSingleResult();
+        assertEquals(0L, count);
+    }
+
+    @Test
     void claimAndUpdateToken() {
         jpaTokenStore.initializeTokenSegments("test", 1);
 
