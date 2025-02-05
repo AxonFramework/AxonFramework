@@ -70,6 +70,12 @@ public class JpaTokenStore implements TokenStore {
     private static final String PROCESSOR_NAME_PARAM = "processorName";
     private static final String SEGMENT_PARAM = "segment";
 
+    /**
+     * A thread-local flag to indicate that a merge operation is in progress.
+     * In merge mode the token deletion does not require an ownership check.
+     */
+    private static final ThreadLocal<Boolean> MERGE_OPERATION = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
     private final EntityManagerProvider entityManagerProvider;
     private final Serializer serializer;
     private final TemporalAmount claimTimeout;
@@ -187,21 +193,38 @@ public class JpaTokenStore implements TokenStore {
         return true;
     }
 
+    /**
+     * When a merge operation is in progress, the token deletion does not require an ownership check.
+     */
     @Override
     public void deleteToken(@Nonnull String processorName, int segment) throws UnableToClaimTokenException {
         EntityManager entityManager = entityManagerProvider.getEntityManager();
+        int updates;
+        if (MERGE_OPERATION.get()) {
+            // During a merge, the token has been released already, so delete without filtering by owner.
+            updates = entityManager.createQuery(
+                    "DELETE FROM TokenEntry te "
+                             + "WHERE te.processorName = :processorName "
+                             + "AND te.segment = :segment")
+                .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                .setParameter(SEGMENT_PARAM, segment)
+                .executeUpdate();
+            if (updates == 0) {
+                logger.warn("Merge operation: no token found for processor [{}] and segment [{}] to delete.", processorName, segment);
+            }
+        } else {
+            updates = entityManager.createQuery(
+                    "DELETE FROM TokenEntry te "
+                             + "WHERE te.owner = :owner AND te.processorName = :processorName "
+                             + "AND te.segment = :segment")
+                .setParameter(PROCESSOR_NAME_PARAM, processorName)
+                .setParameter(SEGMENT_PARAM, segment)
+                .setParameter(OWNER_PARAM, nodeId)
+                .executeUpdate();
 
-        int updates = entityManager.createQuery(
-                                           "DELETE FROM TokenEntry te " +
-                                                   "WHERE te.owner = :owner AND te.processorName = :processorName " +
-                                                   "AND te.segment = :segment")
-                                   .setParameter(PROCESSOR_NAME_PARAM, processorName)
-                                   .setParameter(SEGMENT_PARAM, segment)
-                                   .setParameter(OWNER_PARAM, nodeId)
-                                   .executeUpdate();
-
-        if (updates == 0) {
-            throw new UnableToClaimTokenException("Unable to remove token. It is not owned by " + nodeId);
+            if (updates == 0) {
+                throw new UnableToClaimTokenException("Unable to remove token. It is not owned by " + nodeId);
+            }
         }
     }
 
@@ -377,6 +400,23 @@ public class JpaTokenStore implements TokenStore {
      */
     public Serializer serializer() {
         return serializer;
+    }
+
+    /**
+     * Sets the merge operation flag for the current thread.
+     * In your merge coordination code, call this method before calling the merge operation, then clear it afterward.
+     *
+     * @param mergeOperation true if a merge is in progress
+     */
+    public static void setMergeOperation(boolean mergeOperation) {
+        MERGE_OPERATION.set(mergeOperation);
+    }
+
+    /**
+     * Clears the merge operation flag for the current thread.
+     */
+    public static void clearMergeOperation() {
+        MERGE_OPERATION.remove();
     }
 
     /**
