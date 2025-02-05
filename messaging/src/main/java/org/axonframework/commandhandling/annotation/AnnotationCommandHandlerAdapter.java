@@ -38,6 +38,8 @@ import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
+import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -127,22 +129,27 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
      */
     public Registration subscribe(CommandBus commandBus) {
 //        Collection<Registration> subscriptions =
-        supportedCommands().stream()
-                           .forEach(supportedCommand -> commandBus.subscribe(supportedCommand, this));
+        supportedCommands().forEach(supportedCommand -> commandBus.subscribe(supportedCommand, this));
 //                                   .collect(Collectors.toCollection(ArrayDeque::new));
 //        return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
         return () -> true;
     }
 
+    @Nonnull
     @Override
-    public MessageStream<CommandResultMessage<Object>> handle(@Nonnull CommandMessage<?> command,
-                                                              @Nonnull ProcessingContext processingContext) {
-        return model.getHandlers(target.getClass())
-                    .filter(ch -> ch.canHandle(command, processingContext))
-                    .findFirst()
-                    .map(handler -> handler.handle(command, processingContext, target)
-                                           .mapMessage(this::asCommandResultMessage))
-                    .orElseGet(() -> MessageStream.failed(new NoHandlerForCommandException(command)));
+    public MessageStream<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                         @Nonnull ProcessingContext processingContext) {
+        MessageHandlingMember<? super T> handler = model.getAllHandlers()
+                                                        .values()
+                                                        .stream()
+                                                        .flatMap(Collection::stream)
+                                                        .filter(ch -> ch.canHandle(command, processingContext))
+                                                        .findFirst()
+                                                        .orElseThrow(() -> new NoHandlerForCommandException(command));
+
+        MessageHandlerInterceptorMemberChain<T> interceptorMemberChain = model.chainedInterceptor(target.getClass());
+        MessageStream<?> result = interceptorMemberChain.handle(command, processingContext, target, handler);
+        return result.mapMessage(GenericCommandResultMessage::new);
     }
 
     @SuppressWarnings("unchecked")
