@@ -47,6 +47,7 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
 
     private final SchemaStore schemaStore;
     private final RevisionResolver revisionResolver;
+    private final SchemaIncompatibilityChecker schemaIncompatibilityChecker;
     private AvroSerializerStrategyConfig avroSerializerStrategyConfig = AvroSerializerStrategyConfig
             .builder()
             .build();
@@ -57,13 +58,16 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
      *
      * @param schemaStore      schema store to resolve schema from fingerprint.
      * @param revisionResolver revision resolver to find correct revision.
+     * @param schemaIncompatibilityChecker stateful utility to perform compatibility checks.
      */
     public SpecificRecordBaseSerializerStrategy(
             SchemaStore schemaStore,
-            RevisionResolver revisionResolver
+            RevisionResolver revisionResolver,
+            SchemaIncompatibilityChecker schemaIncompatibilityChecker
     ) {
         this.schemaStore = schemaStore;
         this.revisionResolver = revisionResolver;
+        this.schemaIncompatibilityChecker = schemaIncompatibilityChecker;
     }
 
     @Override
@@ -112,14 +116,8 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
         SpecificData readerSpecificData = SpecificData.getForClass(specificRecordBaseClass);
         Schema readerSchema = AvroUtil.getClassSchemaChecked(specificRecordBaseClass);
 
-        /*
-         * TODO smcvb I am guessing this logic is behind a gate, as checking the compatibility for every
-         *  serializedObject will take time, correct? If so, wouldn't it make sense to cache the readerSchema-to-writerSchema compatibility too?
-         *  Not that I find that a hard requirement for this PR by the way. Just checking if that's something you've thought about
-         */
         if (this.avroSerializerStrategyConfig.performAvroCompatibilityCheck()) {
-            // assert schema compatibility
-            AvroUtil.assertSchemaCompatibility(
+            schemaIncompatibilityChecker.assertSchemaCompatibility(
                     readerType,
                     readerSchema,
                     writerSchema,
@@ -160,8 +158,7 @@ public class SpecificRecordBaseSerializerStrategy implements AvroSerializerStrat
         Schema readerSchema = readerSpecificData.getSchema(readerType);
 
         if (avroSerializerStrategyConfig.performAvroCompatibilityCheck()) {
-            // assert schema compatibility
-            AvroUtil.assertSchemaCompatibility(
+            schemaIncompatibilityChecker.assertSchemaCompatibility(
                     readerType,
                     readerSchema,
                     writerSchema,

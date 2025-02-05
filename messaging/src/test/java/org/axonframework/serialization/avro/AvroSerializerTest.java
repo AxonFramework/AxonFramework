@@ -126,7 +126,8 @@ public class AvroSerializerTest {
                         .includeDefaultAvroSerializationStrategies(false)
                         .addSerializerStrategy(new SpecificRecordBaseSerializerStrategy(
                                 new SchemaStore.Cache(),
-                                c -> ""
+                                c -> "",
+                                new DefaultSchemaIncompatibilityChecker()
                         ))
                         .build()
         );
@@ -330,6 +331,7 @@ public class AvroSerializerTest {
     void failToDeserializeFromIncompatibleSchema(
             SerializedObject<byte[]> serialized,
             AvroSerializer serializer,
+            DefaultSchemaIncompatibilityChecker incompatibilityChecker,
             String expectedMessage) {
         assertEquals(expectedMessage,
                 assertThrows(
@@ -337,6 +339,8 @@ public class AvroSerializerTest {
                         () -> serializer.deserialize(serialized)
                 ).getMessage()
         );
+        // check the incompatibility remains in the cache
+        assertEquals(1, incompatibilityChecker.getIncompatibilitiesCache().size());
     }
 
     static Stream<Arguments> serializerAndIncompatibleSerializedObject() {
@@ -353,6 +357,7 @@ public class AvroSerializerTest {
         schemaStore.addSchema(ComplexObject.getClassSchema());
         schemaStore.addSchema(writerSchema);
 
+        DefaultSchemaIncompatibilityChecker incompatibilityChecker = new DefaultSchemaIncompatibilityChecker();
 
         GenericData.Record record = new GenericData.Record(writerSchema);
         record.put("value2", complexObject.getValue1());
@@ -375,7 +380,9 @@ public class AvroSerializerTest {
                                 .performSchemaCompatibilityCheck(true)
                                 .includeSchemasInStackTraces(false)
                                 .schemaStore(schemaStore)
+                                .schemaIncompatibilityChecker(incompatibilityChecker)
                                 .build(),
+                        incompatibilityChecker,
                         AvroUtil.createExceptionFailedToDeserialize(
                                 ComplexObject.class,
                                 ComplexObject.getClassSchema(),
@@ -394,6 +401,7 @@ public class AvroSerializerTest {
                                 .performSchemaCompatibilityCheck(true)
                                 .includeSchemasInStackTraces(true)
                                 .build(),
+                        incompatibilityChecker,
                         AvroUtil.createExceptionFailedToDeserialize(
                                 ComplexObject.class,
                                 ComplexObject.getClassSchema(),
@@ -412,6 +420,7 @@ public class AvroSerializerTest {
                                 .performSchemaCompatibilityCheck(false)
                                 .includeSchemasInStackTraces(false)
                                 .build(),
+                        incompatibilityChecker,
                         AvroUtil.createExceptionFailedToDeserialize(
                                 ComplexObject.class,
                                 ComplexObject.getClassSchema(),
@@ -430,6 +439,7 @@ public class AvroSerializerTest {
                                 .performSchemaCompatibilityCheck(false)
                                 .includeSchemasInStackTraces(true)
                                 .build(),
+                        incompatibilityChecker,
                         AvroUtil.createExceptionFailedToDeserialize(
                                 ComplexObject.class,
                                 ComplexObject.getClassSchema(),
@@ -438,8 +448,6 @@ public class AvroSerializerTest {
                                 true
                         ).getMessage()
                 )
-
-
         );
     }
 

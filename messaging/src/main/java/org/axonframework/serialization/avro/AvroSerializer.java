@@ -234,9 +234,11 @@ public class AvroSerializer implements Serializer {
                 .builder();
         private RevisionResolver revisionResolver;
         private SchemaStore schemaStore;
+        private SchemaIncompatibilityChecker schemaIncompatibilityChecker = new DefaultSchemaIncompatibilityChecker();
         private Serializer serializerDelegate;
         private Converter converter = new ChainingConverter();
         private boolean includeDefaultStrategies = true;
+
         /**
          * Sets revision resolver.
          *
@@ -258,6 +260,15 @@ public class AvroSerializer implements Serializer {
         public Builder schemaStore(@Nonnull SchemaStore schemaStore) {
             assertNonNull(schemaStore, "SchemaStore may not be null");
             this.schemaStore = schemaStore;
+            return this;
+        }
+
+        /**
+         * Sets schema compatibility checker.
+         */
+        public Builder schemaIncompatibilityChecker(@Nonnull SchemaIncompatibilityChecker incompatibilityChecker) {
+            assertNonNull(incompatibilityChecker, "SchemaIncompatibilityChecker may not be null");
+            this.schemaIncompatibilityChecker = incompatibilityChecker;
             return this;
         }
 
@@ -348,6 +359,7 @@ public class AvroSerializer implements Serializer {
             assertNonNull(revisionResolver, "RevisionResolver is mandatory");
             assertNonNull(schemaStore, "SchemaStore is mandatory");
             assertNonNull(serializerDelegate, "SerializerDelegate is mandatory");
+            assertNonNull(schemaIncompatibilityChecker, "SchemaIncompatibilityChecker is mandatory");
             assertThat(serializerStrategies, (strategies) -> !strategies.isEmpty(),
                        "At least one AvroSerializerStrategy must be provided.");
         }
@@ -362,7 +374,8 @@ public class AvroSerializer implements Serializer {
             if (includeDefaultStrategies) {
                 AvroSerializerStrategy defaultStrategy = new SpecificRecordBaseSerializerStrategy(
                         this.schemaStore,
-                        this.revisionResolver
+                        this.revisionResolver,
+                        this.schemaIncompatibilityChecker
                 );
                 this.addSerializerStrategy(defaultStrategy);
             }

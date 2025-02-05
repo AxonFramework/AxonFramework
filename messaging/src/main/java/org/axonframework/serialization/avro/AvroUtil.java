@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.apache.avro.SchemaCompatibility.checkReaderWriterCompatibility;
@@ -189,41 +191,26 @@ public class AvroUtil {
     }
 
     /**
-     * Checks schema compatibilities and throws exception if schemas are not compatible.
-     *
-     * @param readerType   intended reader type.
-     * @param readerSchema schema available on the reader side.
-     * @param writerSchema schema that was used to write the data.
-     * @throws SerializationException if the schema check has not passed.
+     * Checks compatibility between reader and writer schema.
+     * @param readerSchema reader schema.
+     * @param writerSchema writer schema.
+     * @return list of incompatibilities if any, or empty list if schemas are compatible.
      */
-    public static void assertSchemaCompatibility(@Nonnull Class<?> readerType,
-                                                 @Nonnull Schema readerSchema,
-                                                 @Nonnull Schema writerSchema,
-                                                 boolean includeSchemasInStackTraces
-    ) throws SerializationException {
-        SchemaCompatibilityResult schemaPairCompatibilityResult = checkReaderWriterCompatibility(
+    public static List<SchemaCompatibility.Incompatibility> checkCompatibility(
+            @Nonnull Schema readerSchema,
+            @Nonnull Schema writerSchema
+    ) {
+        SchemaCompatibility.SchemaCompatibilityResult schemaPairCompatibilityResult = checkReaderWriterCompatibility(
                 readerSchema,
                 writerSchema
         ).getResult();
-
         if (schemaPairCompatibilityResult
                 .getCompatibility()
                 .equals(SchemaCompatibility.SchemaCompatibilityType.INCOMPATIBLE)
         ) {
-            // reader and writer are incompatible
-            // this is a fatal error, let provide information for the developer
-            String incompatibilitiesMessage = schemaPairCompatibilityResult
-                    .getIncompatibilities()
-                    .stream()
-                    .map(AvroUtil::incompatibilityPrinter)
-                    .collect(Collectors.joining(", "));
-            throw createExceptionFailedToDeserialize(
-                    readerType,
-                    readerSchema,
-                    writerSchema,
-                    "[" + incompatibilitiesMessage + "]",
-                    includeSchemasInStackTraces
-            );
+            return schemaPairCompatibilityResult.getIncompatibilities();
+        } else {
+            return new ArrayList<>();
         }
     }
 
