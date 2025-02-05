@@ -22,7 +22,7 @@ import org.axonframework.messaging.QualifiedName;
 import java.util.Set;
 
 /**
- * TODO documentation
+ * Interface describing a registry of {@link CommandHandler command handlers}.
  *
  * @author Allard Buijze
  * @author Gerard Klijs
@@ -35,14 +35,14 @@ import java.util.Set;
 public interface CommandHandlerRegistry {
 
     /**
-     * Subscribe the given {@code handler} for messages of the given {@code names}.
-     * <p/>
+     * Subscribe the given {@code handler} for {@link CommandMessage commands} of the given {@code names}.
+     * <p>
      * If a subscription already exists for any {@link QualifiedName name} in the given set, the behavior is undefined.
      * Implementations may throw an exception to refuse duplicate subscription or alternatively decide whether the
      * existing or new {@code handler} gets the subscription.
      *
-     * @param names          The names of the message to subscribe the handler for.
-     * @param commandHandler The handler instance that handles messages for the given name.
+     * @param names          The names of the given {@code commandHandler} can handle.
+     * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given names.
      * @return This registry for fluent interfacing.
      */
     // TODO discuss if we want chaining, or Registration objects
@@ -53,14 +53,14 @@ public interface CommandHandlerRegistry {
     }
 
     /**
-     * Subscribe the given {@code handler} for messages of the given {@code name}.
-     * <p/>
+     * Subscribe the given {@code handler} for {@link CommandMessage commands} of the given {@code name}.
+     * <p>
      * If a subscription already exists for the {@code name}, the behavior is undefined. Implementations may throw an
      * exception to refuse duplicate subscription or alternatively decide whether the existing or new {@code handler}
      * gets the subscription.
      *
-     * @param name           The names of the message to subscribe the handler for.
-     * @param commandHandler The handler instance that handles messages for the given name.
+     * @param name           The name the given {@code commandHandler} can handle.
+     * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given name.
      * @return This registry for fluent interfacing.
      */
     // TODO discuss if we want chaining, or Registration objects

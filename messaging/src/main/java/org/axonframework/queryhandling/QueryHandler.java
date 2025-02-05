@@ -24,7 +24,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.stream.Stream;
 
 /**
- * TODO documentation
+ * Interface describing a handler of {@link QueryMessage queries}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -33,9 +33,14 @@ import java.util.stream.Stream;
 public /*non-sealed */interface QueryHandler extends MessageHandler {
 
     /**
-     * @param query
-     * @param context
-     * @return
+     * Handles the given {@code query} within the given {@code context}.
+     * <p>
+     * The resulting {@link MessageStream stream} may contain zero, one, or N
+     * {@link QueryResponseMessage response messages}.
+     *
+     * @param query   The query to handle.
+     * @param context The context to the given {@code command} is handled in.
+     * @return A {@code MessagesStream} of zero, one, or N {@link QueryResponseMessage response messages}.
      */
     @Nonnull
     MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,

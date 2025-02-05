@@ -21,8 +21,10 @@ import org.axonframework.messaging.QualifiedName;
 import java.util.Set;
 
 /**
- * TODO documentation
- * A {@code MessageHandlingComponent} specialization for {@code QueryHandlers}.
+ * Interface describing a group of {@code QueryHandlers} belonging to a single component.
+ * <p>
+ * As such, it allows registration of {@code QueryHandlers} through the {@code QueryHandlerRegistry}. Besides handling
+ * and registration, it specifies which {@link #supportedQueries() queries} it supports.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -30,7 +32,9 @@ import java.util.Set;
 public interface QueryHandlingComponent extends QueryHandler, QueryHandlerRegistry {
 
     /**
-     * @return The {@link Set} of {@link QualifiedName QualifiedNames} representing all supported queries.
+     * All supported {@link QueryMessage queries}, referenced through a {@link QualifiedName}.
+     *
+     * @return All supported {@link QueryMessage queries}, referenced through a {@link QualifiedName}.
      */
     Set<QualifiedName> supportedQueries();
 }

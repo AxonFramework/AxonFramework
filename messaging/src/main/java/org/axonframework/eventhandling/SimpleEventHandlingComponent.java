@@ -26,6 +26,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * TODO This should be regarded as a playground object to verify the API. Feel free to remove, adjust, or replicate this class to your needs.
+ *
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
 public class SimpleEventHandlingComponent implements EventHandlingComponent {
 
     private final ConcurrentHashMap<QualifiedName, EventHandler> eventHandlers;

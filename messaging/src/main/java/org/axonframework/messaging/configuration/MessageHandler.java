@@ -21,12 +21,12 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.queryhandling.QueryHandler;
 
 /**
- * TODO documentation
- * Interface for a component that processes Messages.
+ * Marker interface for a handlers or components of {@link org.axonframework.messaging.Message messages}.
  *
+ * @author Allard Buijze
  * @author Rene de Waele
  * @author Steven van Beelen
- * @since 3.0.o
+ * @since 3.0.0
  */
 // TODO change this into a proper sealed interface by adding module information. Without, all interfaces need to reside in the same package, which we do not desire.
 public /*sealed */interface MessageHandler/* permits CommandHandler, EventHandler, QueryHandler, MessageHandlingComponent */ {

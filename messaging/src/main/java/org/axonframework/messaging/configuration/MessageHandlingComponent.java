@@ -30,9 +30,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * A {@code MessageHandler} specialization for a group handlers. Besides handling a message, a
- * {@code MessageHandlingComponent} also specify which message it {@link #supportedMessages() supports}.
- * TODO documentation
+ * Interface describing a generic handling component that might contain command, event, and query handlers.
+ * <p>
+ * As such, it allows registration of {@code CommandHandlers}, {@code EventHandlers}, and {@code QueryHandlers} through
+ * the respective {@code CommandHandlingComponent}, {@code EventHandlingComponent}, and {@code QueryHandlingComponent}.
+ * Besides handling and registration, it specifies which {@link #supportedMessages() messages} it supports.
  *
  * @author Allard Buijze
  * @author Gerard Klijs
@@ -46,10 +48,43 @@ public /*non-sealed */interface MessageHandlingComponent
         extends CommandHandlingComponent, EventHandlingComponent, QueryHandlingComponent, MessageHandler {
 
     /**
-     * @param name
-     * @param handler
-     * @return
+     * Subscribe the given {@code handler} for {@link org.axonframework.messaging.Message messages} of the given
+     * {@code names}.
+     * <p>
+     * Will differentiate automatically whether the given {@code handler} is for commands, events, or queries.
+     * <p>
+     * If a subscription already exists for any {@link QualifiedName name} in the given set, the behavior is undefined.
+     * Implementations may throw an exception to refuse duplicate subscription or alternatively decide whether the
+     * existing or new {@code handler} gets the subscription.
+     *
+     * @param names   The names of the given {@code handler} can handle.
+     * @param handler The handler instance that handles {@link org.axonframework.messaging.Message messages} for the
+     *                given names.
+     * @return This registry for fluent interfacing.
      */
+    // TODO discuss if we want chaining, or Registration objects
+    default MessageHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
+                                               @Nonnull MessageHandler handler) {
+        names.forEach(n -> subscribe(n, handler));
+        return this;
+    }
+
+    /**
+     * Subscribe the given {@code handler} for {@link org.axonframework.messaging.Message messages} of the given
+     * {@code name}.
+     * <p>
+     * Will differentiate automatically whether the given {@code handler} is for commands, events, or queries.
+     * <p>
+     * If a subscription already exists for the {@code name}, the behavior is undefined. Implementations may throw an
+     * exception to refuse duplicate subscription or alternatively decide whether the existing or new {@code handler}
+     * gets the subscription.
+     *
+     * @param name    The name the given {@code handler} can handle.
+     * @param handler The handler instance that handles {@link org.axonframework.messaging.Message messages} for the
+     *                given name.
+     * @return This registry for fluent interfacing.
+     */
+    // TODO discuss if we want chaining, or Registration objects
     default MessageHandlingComponent subscribe(@Nonnull QualifiedName name,
                                                @Nonnull MessageHandler handler) {
         switch (handler) {
@@ -70,17 +105,6 @@ public /*non-sealed */interface MessageHandlingComponent
             default:
                 throw new IllegalStateException("Unexpected value: " + handler);
         }
-        return this;
-    }
-
-    /**
-     * @param names
-     * @param handler
-     * @return
-     */
-    default MessageHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
-                                               @Nonnull MessageHandler handler) {
-        names.forEach(n -> subscribe(n, handler));
         return this;
     }
 
@@ -115,7 +139,10 @@ public /*non-sealed */interface MessageHandlingComponent
     }
 
     /**
-     * @return The {@link Set} of {@link QualifiedName QualifiedNames} representing all supported message types.
+     * All supported {@link org.axonframework.messaging.Message messages}, referenced through a {@link QualifiedName}.
+     *
+     * @return All supported {@link org.axonframework.messaging.Message messages}, referenced through a
+     * {@link QualifiedName}.
      */
     default Set<QualifiedName> supportedMessages() {
         Set<QualifiedName> supportedCommandsAndEvents = CollectionUtils.merge(supportedCommands(),

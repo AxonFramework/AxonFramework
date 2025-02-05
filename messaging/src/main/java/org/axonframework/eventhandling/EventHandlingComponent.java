@@ -21,8 +21,10 @@ import org.axonframework.messaging.QualifiedName;
 import java.util.Set;
 
 /**
- * TODO documentation
- * A {@code MessageHandlingComponent} specialization for {@code EventHandlers}.
+ * Interface describing a group of {@code EventHandlers} belonging to a single component.
+ * <p>
+ * As such, it allows registration of {@code EventHandlers} through the {@code EventHandlerRegistry}. Besides
+ * handling and registration, it specifies which {@link #supportedEvents() events} it supports.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -30,7 +32,9 @@ import java.util.Set;
 public interface EventHandlingComponent extends EventHandler, EventHandlerRegistry {
 
     /**
-     * @return The {@link Set} of {@link QualifiedName QualifiedNames} representing all supported events.
+     * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
+     *
+     * @return All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
      */
     Set<QualifiedName> supportedEvents();
 }

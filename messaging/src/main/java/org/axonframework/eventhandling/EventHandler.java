@@ -25,18 +25,23 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * TODO documentation
+ * Interface describing a handler of {@link EventMessage events}.
  *
+ * @author Allard Buijze
  * @author Steven van Beelen
- * @since 5.0.0
+ * @since 0.1
  */
 @FunctionalInterface
 public /*non-sealed */interface EventHandler extends MessageHandler {
 
     /**
-     * @param event
-     * @param context
-     * @return
+     * Handles the given {@code event} within the given {@code context}.
+     * <p>
+     * The result of handling is an empty {@link MessageStream stream}.
+     *
+     * @param event   The event to handle.
+     * @param context The context to the given {@code event} is handled in.
+     * @return A {@code MessagesStream} containing {@link NoMessage}.
      */
     @Nonnull
     MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,

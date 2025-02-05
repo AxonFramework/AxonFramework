@@ -24,7 +24,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * TODO documentation
+ * Interface describing a handler of {@link CommandMessage commands}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -33,9 +33,14 @@ import java.util.concurrent.CompletableFuture;
 public /*non-sealed */interface CommandHandler extends MessageHandler {
 
     /**
-     * @param command
-     * @param context
-     * @return
+     * Handles the given {@code command} within the given {@code context}.
+     * <p>
+     * The {@link CommandResultMessage result message} in the returned {@link MessageStream stream} may be {@code null}.
+     * Only a single result message should ever be expected.
+     *
+     * @param command The command to handle.
+     * @param context The context to the given {@code command} is handled in.
+     * @return A {@code MessagesStream} of a {@link CommandResultMessage}.
      */
     @Nonnull
     MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,

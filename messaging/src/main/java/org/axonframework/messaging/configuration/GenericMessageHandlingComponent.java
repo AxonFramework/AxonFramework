@@ -37,7 +37,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * TODO This should be regarded as a playground object to verify the API.
+ * TODO This should be regarded as a playground object to verify the API. Feel free to remove, adjust, or replicate this class to your needs.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -52,7 +52,7 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
     // TODO I would expect component-level interceptors to reside here as well. So, the @MessageHandlerInterceptor, for example.
 
     /**
-     *
+     * Default constructor of the {@code GenericMessageHandlingComponent}.
      */
     public GenericMessageHandlingComponent() {
         this.commandHandlersByName = new ConcurrentHashMap<>();

@@ -21,14 +21,22 @@ import org.axonframework.messaging.QualifiedName;
 import java.util.Set;
 
 /**
- * MessageHandler specialization for handlers of Command Messages. Besides handling a message, CommandHandlingComponent
- * also specify which command names they support.
- * TODO documentation
+ * Interface describing a group of {@code CommandHandlers} belonging to a single component.
+ * <p>
+ * As such, it allows registration of {@code CommandHandlers} through the {@code CommandHandlerRegistry}. Besides
+ * handling and registration, it specifies which {@link #supportedCommands() commands} it supports.
+ *
+ * @author Allard Buijze
+ * @author Rene de Waele
+ * @author Steven van Beelen
+ * @since 3.0.0
  */
 public interface CommandHandlingComponent extends CommandHandler, CommandHandlerRegistry {
 
     /**
-     * @return The {@link Set} of {@link QualifiedName QualifiedNames} representing all supported commands.
+     * All supported {@link CommandMessage commands}, referenced through a {@link QualifiedName}.
+     *
+     * @return All supported {@link CommandMessage commands}, referenced through a {@link QualifiedName}.
      */
     Set<QualifiedName> supportedCommands();
 }
