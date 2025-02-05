@@ -56,7 +56,6 @@ public class SimpleCommandBus implements CommandBus {
     private static final Logger logger = LoggerFactory.getLogger(SimpleCommandBus.class);
 
     private final List<ProcessingLifecycleHandlerRegistrar> processingLifecycleHandlerRegistrars;
-    //    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>, ? extends Message<?>>> subscriptions = new ConcurrentHashMap<>();
     private final ConcurrentMap<QualifiedName, CommandHandler> subscriptions = new ConcurrentHashMap<>();
     // TODO - Instead of using an Executor, we should use a WorkerFactory to allow more flexible creation (and disposal) of workers
     private final Executor worker;
@@ -84,7 +83,7 @@ public class SimpleCommandBus implements CommandBus {
         return findCommandHandlerFor(command)
                 .map(handler -> handle(command, handler))
                 .orElseGet(() -> CompletableFuture.failedFuture(new NoHandlerForCommandException(format(
-                        "No handler was subscribed for command [%s].", command.getCommandName()))));
+                        "No handler was subscribed for command [%s].", command.type()))));
     }
 
     private Optional<CommandHandler> findCommandHandlerFor(CommandMessage<?> command) {
