@@ -162,12 +162,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      */
     public Registration subscribe(CommandBus commandBus) {
         /*List<Registration> subscriptions = */
-
-        supportedCommandsByName.forEach(
-                (key, value) -> value.forEach(
-                        messageHandler -> commandBus.subscribe(new QualifiedName(key), (CommandHandler) messageHandler)
-                )
-        );
+        // TODO Fix this in future PR
+//        supportedCommandsByName.forEach(
+//                (key, value) -> value.forEach(
+//                        messageHandler -> commandBus.subscribe(new QualifiedName(key), (CommandHandler) messageHandler)
+//                )
+//        );
 //                .filter(Objects::nonNull)
 //                .toList()
         return () -> true;
