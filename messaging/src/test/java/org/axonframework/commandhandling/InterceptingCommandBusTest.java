@@ -22,10 +22,10 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.utils.MockException;
@@ -145,9 +145,10 @@ class InterceptingCommandBusTest {
 
     @Test
     void handlerInterceptorsInvokedOnHandle() throws Exception {
+        QualifiedName testHandlerName = new QualifiedName("handler");
         CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "test");
         AtomicReference<CommandMessage<?>> handledMessage = new AtomicReference<>();
-        testSubject.subscribe(COMMAND_NAME,
+        testSubject.subscribe(testHandlerName,
                               (command, context) -> {
                                   handledMessage.set(command);
                                   return MessageStream.just(asCommandResultMessage("ok"));
@@ -155,7 +156,7 @@ class InterceptingCommandBusTest {
         );
 
         ArgumentCaptor<CommandHandler> handlerCaptor = ArgumentCaptor.forClass(CommandHandler.class);
-        verify(mockCommandBus).subscribe(eq(COMMAND_NAME), handlerCaptor.capture());
+        verify(mockCommandBus).subscribe(eq(testHandlerName), handlerCaptor.capture());
 
         CommandHandler actualHandler = handlerCaptor.getValue();
 
@@ -242,7 +243,7 @@ class InterceptingCommandBusTest {
      * @return the handler as wrapped by the surrounding command bus
      */
     private CommandHandler subscribeHandler(CommandHandler handler) {
-        QualifiedName name = COMMAND_NAME;
+        QualifiedName name = new QualifiedName("handler");
         testSubject.subscribe(name, handler);
 
         ArgumentCaptor<CommandHandler> handlerCaptor = ArgumentCaptor.forClass(CommandHandler.class);

@@ -26,6 +26,7 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -44,8 +45,6 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  */
 class DistributedCommandBusTest {
-
-    private static final QualifiedName COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
 
     private DistributedCommandBus testSubject;
 
@@ -81,39 +80,22 @@ class DistributedCommandBusTest {
 
     @Test
     void incomingCommandsAreDelegatedToSubscribedHandlers() {
-        GenericMessage<String> okMessage = new GenericMessage<>(new MessageType("command"), "OK");
-        testSubject.subscribe(String.class.getName(), new MessageHandler<>() {
-            @Override
-            public Object handleSync(CommandMessage<?> message) {
-                return "OK";
-            }
+        GenericCommandResultMessage<String> resultMessage =
+                new GenericCommandResultMessage<>(new MessageType("result"), "OK");
+        testSubject.subscribe(new QualifiedName(String.class), (command, context) -> MessageStream.just(resultMessage));
 
-            @Override
-            public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
-                                                              ProcessingContext processingContext) {
-                return MessageStream.just(okMessage);
-            }
-        });
         Connector.ResultCallback mockCallback = mock();
         connector.handler.get().accept(commandMessage, mockCallback);
 
-        verify(mockCallback).success(same(okMessage));
+        verify(mockCallback).success(same(resultMessage));
     }
 
     @Test
     @Disabled("TODO broken test, as registration is not there at the moment.")
     void incomingCommandsAreRejectedForCancelledHandlerSubscription() {
-        GenericMessage<String> okMessage = new GenericMessage<>(new MessageType("command"), "OK");
-        Registration registration = testSubject.subscribe(String.class.getName(),
-                                                          new MessageHandler<>() {
-                                                              @Override
-                                                              public Object handleSync(
-                                                                      CommandMessage<?> message) {
-                                                                  return "OK";
-                                                              }
-
-        testSubject.subscribe(QualifiedNameUtils.fromClassName(String.class),
-                              (message, processingContext) -> MessageStream.just(okMessage));
+        GenericCommandResultMessage<String> resultMessage =
+                new GenericCommandResultMessage<>(new MessageType("result"), "OK");
+        testSubject.subscribe(new QualifiedName(String.class), (message, context) -> MessageStream.just(resultMessage));
 
 //        assertTrue(registration.cancel());
         Connector.ResultCallback mockCallback = mock();
@@ -125,7 +107,7 @@ class DistributedCommandBusTest {
     @Test
     @Disabled("TODO broken test, as registration is not there at the moment.")
     void unregisterNonExistentCommandHandlerReturnsFalse() {
-        testSubject.subscribe(QualifiedNameUtils.fromClassName(String.class), mock());
+        testSubject.subscribe(new QualifiedName(String.class), mock());
 //        assertTrue(registration.cancel());
 //        assertFalse(registration.cancel());
     }

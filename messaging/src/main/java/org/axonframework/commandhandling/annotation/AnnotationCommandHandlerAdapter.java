@@ -33,6 +33,7 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -173,7 +174,7 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
                     .map(ch -> ch.unwrap(CommandMessageHandlingMember.class).orElse(null))
                     .filter(Objects::nonNull)
                     .map(CommandMessageHandlingMember::commandName)
-                    .map(QualifiedNameUtils::fromDottedName)
+                    .map(QualifiedName::new)
                     .collect(Collectors.toSet());
     }
 }

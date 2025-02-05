@@ -18,8 +18,8 @@ package org.axonframework.messaging.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 
 import java.util.Map;
 
@@ -27,7 +27,7 @@ public class NoMessage implements Message<Void> {
 
     public static final NoMessage INSTANCE = new NoMessage();
 
-    private static final QualifiedName NAME = new QualifiedName("axon", "no-message", "5.0.0");
+    private static final MessageType NAME = new MessageType("no-message");
 
     private NoMessage() {
     }
@@ -39,7 +39,7 @@ public class NoMessage implements Message<Void> {
 
     @Nonnull
     @Override
-    public QualifiedName name() {
+    public MessageType name() {
         return NAME;
     }
 

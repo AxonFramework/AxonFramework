@@ -162,15 +162,14 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      */
     public Registration subscribe(CommandBus commandBus) {
         /*List<Registration> subscriptions = */
-        supportedCommandsByName
-                .entrySet()
-                .forEach(entry -> entry.getValue().stream().map(
-                        messageHandler -> commandBus.subscribe(QualifiedNameUtils.fromDottedName(entry.getKey()),
-                                                               (CommandHandler) messageHandler)
-                ))
+
+        supportedCommandsByName.forEach(
+                (key, value) -> value.forEach(
+                        messageHandler -> commandBus.subscribe(new QualifiedName(key), (CommandHandler) messageHandler)
+                )
+        );
 //                .filter(Objects::nonNull)
 //                .toList()
-        ;
         return () -> true;
 //        return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
     }
@@ -295,7 +294,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     @Override
     public Set<QualifiedName> supportedCommands() {
         return supportedCommandNames.stream()
-                                    .map(QualifiedNameUtils::fromDottedName)
+                                    .map(QualifiedName::new)
                                     .collect(Collectors.toSet());
     }
 

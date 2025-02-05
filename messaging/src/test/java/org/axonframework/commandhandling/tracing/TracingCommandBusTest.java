@@ -23,9 +23,9 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.MockException;
@@ -38,8 +38,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class TracingCommandBusTest {
-
-    private static final QualifiedName COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
 
     private TracingCommandBus testSubject;
     private TestSpanFactory spanFactory;
@@ -85,7 +83,7 @@ class TracingCommandBusTest {
                                              i.getArgument(0, CommandMessage.class));
             return CompletableFuture.failedFuture(new RuntimeException("Some exception"));
         });
-        testSubject.subscribe(QualifiedNameUtils.fromClassName(String.class),
+        testSubject.subscribe(new QualifiedName(String.class),
                               (command, context) -> {
                                   throw new RuntimeException("Some exception");
                               });
@@ -103,9 +101,9 @@ class TracingCommandBusTest {
         CommandMessage<String> testCommand =
                 new GenericCommandMessage<>(new MessageType("command"), "Test");
         ArgumentCaptor<CommandHandler> captor = ArgumentCaptor.forClass(CommandHandler.class);
-        when(delegate.subscribe(anyString(), captor.capture())).thenReturn(null);
+        when(delegate.subscribe(any(QualifiedName.class), captor.capture())).thenReturn(null);
 
-        testSubject.subscribe("test",
+        testSubject.subscribe(testCommand.name().qualifiedName(),
                               (command, processingContext) -> {
                                   spanFactory.verifySpanActive("CommandBus.handleCommand");
                                   return MessageStream.just(new GenericCommandResultMessage<>(
@@ -121,9 +119,9 @@ class TracingCommandBusTest {
     void verifyHandlerSpansAreCompletedOnExceptionInHandlerInvocation() {
         CommandMessage<String> testCommand = new GenericCommandMessage<>(new MessageType("command"), "Test");
         ArgumentCaptor<CommandHandler> captor = ArgumentCaptor.forClass(CommandHandler.class);
-        when(delegate.subscribe(anyString(), captor.capture())).thenReturn(null);
+        when(delegate.subscribe(any(QualifiedName.class), captor.capture())).thenReturn(null);
 
-        testSubject.subscribe(COMMAND_NAME,
+        testSubject.subscribe(testCommand.name().qualifiedName(),
                               (command, processingContext) -> {
                                   spanFactory.verifySpanActive("CommandBus.handleCommand");
                                   throw new MockException("Simulating failure");

@@ -19,11 +19,10 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.StubExecutor;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
@@ -48,7 +47,7 @@ import static org.mockito.Mockito.*;
  */
 class SimpleCommandBusTest {
 
-    private static final QualifiedName COMMAND_NAME = new QualifiedName("axon", "test", "5.0.0");
+    private static final QualifiedName COMMAND_NAME = new QualifiedName("test");
     private static final String PAYLOAD = "Say hi!";
     private static final CommandMessage<String> TEST_COMMAND =
             new GenericCommandMessage<>(new MessageType("command"), PAYLOAD);
@@ -173,7 +172,7 @@ class SimpleCommandBusTest {
 
         var commandHandler = spy(new StubCommandHandler("ok"));
         CommandMessage<String> command = TEST_COMMAND;
-        testSubject.subscribe(command.name(), commandHandler);
+        testSubject.subscribe(command.name().qualifiedName(), commandHandler);
 
         var actual = testSubject.dispatch(command, ProcessingContext.NONE);
 
@@ -196,7 +195,7 @@ class SimpleCommandBusTest {
             }
         };
         CommandMessage<String> command = TEST_COMMAND;
-        testSubject.subscribe(command.name(), commandHandler);
+        testSubject.subscribe(command.name().qualifiedName(), commandHandler);
 
         CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(command, ProcessingContext.NONE);
 
@@ -210,7 +209,7 @@ class SimpleCommandBusTest {
     void exceptionalStreamFromHandlerReturnedInCompletableFuture() {
         var commandHandler = new StubCommandHandler(new MockException("Simulating exception"));
         CommandMessage<String> command = TEST_COMMAND;
-        testSubject.subscribe(command.name(), commandHandler);
+        testSubject.subscribe(command.name().qualifiedName(), commandHandler);
 
         CompletableFuture<? extends Message<?>> actual =
                 testSubject.dispatch(command, ProcessingContext.NONE);
@@ -237,7 +236,7 @@ class SimpleCommandBusTest {
 
         var commandHandler = new StubCommandHandler("ok");
         CommandMessage<String> command = TEST_COMMAND;
-        testSubject.subscribe(command.name(), commandHandler);
+        testSubject.subscribe(command.name().qualifiedName(), commandHandler);
 
         verify(lifecycleHandlerRegistrar, never()).registerHandlers(any());
 
@@ -273,8 +272,8 @@ class SimpleCommandBusTest {
         var handler1 = mock(CommandHandler.class);
         var handler2 = mock(CommandHandler.class);
         testSubject.subscribe(COMMAND_NAME, handler1);
-        QualifiedName handleTwoName = new QualifiedName("axon", "test2", "5.0.0");
-        testSubject.subscribe(handleTwoName, handler2);
+        QualifiedName handlerTwoName = new QualifiedName("test2");
+        testSubject.subscribe(handlerTwoName, handler2);
 
         ComponentDescriptor mockComponentDescriptor = mock(ComponentDescriptor.class);
         testSubject.describeTo(mockComponentDescriptor);
@@ -282,7 +281,7 @@ class SimpleCommandBusTest {
         verify(mockComponentDescriptor).describeProperty("worker", executor);
         verify(mockComponentDescriptor).describeProperty("lifecycleRegistrars", List.of(lifecycleHandlerRegistrar));
         verify(mockComponentDescriptor)
-                .describeProperty("subscriptions", Map.of(COMMAND_NAME, handler1, handleTwoName, handler2));
+                .describeProperty("subscriptions", Map.of(COMMAND_NAME, handler1, handlerTwoName, handler2));
     }
 
     private static class StubCommandHandler implements CommandHandler {
@@ -300,10 +299,12 @@ class SimpleCommandBusTest {
                 return MessageStream.failed(error);
             } else if (result instanceof CompletableFuture<?> future) {
                 return MessageStream.fromFuture(future.thenApply(
-                        r -> new GenericMessage<>(new MessageType(r.getClass()), r)
+                        r -> new GenericCommandResultMessage<>(new MessageType(r.getClass()), r)
                 ));
             } else {
-                return MessageStream.just(new GenericMessage<>(new MessageType(result.getClass()), result));
+                return MessageStream.just(
+                        new GenericCommandResultMessage<>(new MessageType(result.getClass()), result)
+                );
             }
         }
     }
