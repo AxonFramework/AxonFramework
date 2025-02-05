@@ -24,6 +24,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
@@ -105,7 +106,7 @@ class AnnotationCommandHandlerAdapterTest {
     void handlerDispatchingWithCustomCommandName() {
         CommandMessage<Long> testCommand =
                 new GenericCommandMessage<>(new GenericMessage<>(TEST_TYPE, 1L), "almostLong");
-        Object actualReturnValue = testSubject.handleSync(testCommand);
+        Object actualReturnValue = testSubject.handle(testCommand, mock(ProcessingContext.class));
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
@@ -115,7 +116,7 @@ class AnnotationCommandHandlerAdapterTest {
     @Test
     void handlerDispatchingThrowingException() {
         try {
-            testSubject.handleSync(new GenericCommandMessage<>(TEST_TYPE, new HashSet<>()));
+            testSubject.handle(new GenericCommandMessage<>(TEST_TYPE, new HashSet<>()), mock(ProcessingContext.class));
             fail("Expected exception");
         } catch (Exception ex) {
             assertEquals(Exception.class, ex.getClass());
@@ -128,11 +129,11 @@ class AnnotationCommandHandlerAdapterTest {
     void subscribe() {
         testSubject.subscribe(mockBus);
 
-        verify(mockBus).subscribe(QualifiedNameUtils.fromClassName(Long.class), testSubject);
-        verify(mockBus).subscribe(QualifiedNameUtils.fromClassName(String.class), testSubject);
-        verify(mockBus).subscribe(QualifiedNameUtils.fromClassName(HashSet.class), testSubject);
-        verify(mockBus).subscribe(QualifiedNameUtils.fromClassName(ArrayList.class), testSubject);
-        verify(mockBus).subscribe(QualifiedNameUtils.fromDottedName("almostLong"), testSubject);
+        verify(mockBus).subscribe(new QualifiedName(Long.class), testSubject);
+        verify(mockBus).subscribe(new QualifiedName(String.class), testSubject);
+        verify(mockBus).subscribe(new QualifiedName(HashSet.class), testSubject);
+        verify(mockBus).subscribe(new QualifiedName(ArrayList.class), testSubject);
+        verify(mockBus).subscribe(new QualifiedName("almostLong"), testSubject);
         verifyNoMoreInteractions(mockBus);
     }
 

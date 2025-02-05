@@ -19,6 +19,7 @@ package org.axonframework.test.utils;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
@@ -26,6 +27,7 @@ import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.ArrayList;

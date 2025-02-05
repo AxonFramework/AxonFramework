@@ -25,7 +25,6 @@ import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.FixedValueParameterResolver;
 import org.axonframework.messaging.annotation.MetaDataValue;
@@ -155,23 +154,23 @@ class AggregateAnnotationCommandHandlerTest {
     void supportedCommands() {
         Set<QualifiedName> actual = testSubject.supportedCommands();
         Set<QualifiedName> expected = new HashSet<>(Arrays.asList(
-                QualifiedNameUtils.fromClassName(CreateCommand.class),
-                QualifiedNameUtils.fromClassName(CreateOrUpdateCommand.class),
-                QualifiedNameUtils.fromClassName(AlwaysCreateCommand.class),
-                QualifiedNameUtils.fromClassName(CreateFactoryMethodCommand.class),
-                QualifiedNameUtils.fromClassName(UpdateCommandWithAnnotatedMethod.class),
-                QualifiedNameUtils.fromClassName(FailingCreateCommand.class),
-                QualifiedNameUtils.fromClassName(UpdateCommandWithAnnotatedMethodAndVersion.class),
-                QualifiedNameUtils.fromClassName(UpdateCommandWithAnnotatedField.class),
-                QualifiedNameUtils.fromClassName(UpdateCommandWithAnnotatedFieldAndVersion.class),
-                QualifiedNameUtils.fromClassName(UpdateCommandWithAnnotatedFieldAndIntegerVersion.class),
-                QualifiedNameUtils.fromClassName(FailingUpdateCommand.class),
+                new QualifiedName(CreateCommand.class),
+                new QualifiedName(CreateOrUpdateCommand.class),
+                new QualifiedName(AlwaysCreateCommand.class),
+                new QualifiedName(CreateFactoryMethodCommand.class),
+                new QualifiedName(UpdateCommandWithAnnotatedMethod.class),
+                new QualifiedName(FailingCreateCommand.class),
+                new QualifiedName(UpdateCommandWithAnnotatedMethodAndVersion.class),
+                new QualifiedName(UpdateCommandWithAnnotatedField.class),
+                new QualifiedName(UpdateCommandWithAnnotatedFieldAndVersion.class),
+                new QualifiedName(UpdateCommandWithAnnotatedFieldAndIntegerVersion.class),
+                new QualifiedName(FailingUpdateCommand.class),
                 // declared in the entities
-                QualifiedNameUtils.fromClassName(UpdateNestedEntityStateCommand.class),
-                QualifiedNameUtils.fromClassName(UpdateEntityStateCommand.class),
-                QualifiedNameUtils.fromClassName(UpdateEntityFromCollectionStateCommand.class),
-                QualifiedNameUtils.fromClassName(UpdateEntityFromMapStateCommand.class),
-                QualifiedNameUtils.fromClassName(UpdateAbstractEntityFromCollectionStateCommand.class)
+                new QualifiedName(UpdateNestedEntityStateCommand.class),
+                new QualifiedName(UpdateEntityStateCommand.class),
+                new QualifiedName(UpdateEntityFromCollectionStateCommand.class),
+                new QualifiedName(UpdateEntityFromMapStateCommand.class),
+                new QualifiedName(UpdateAbstractEntityFromCollectionStateCommand.class)
         ));
 
         assertEquals(expected, actual);
@@ -180,12 +179,12 @@ class AggregateAnnotationCommandHandlerTest {
     @Test
     @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerSubscribesToCommands() {
-        verify(commandBus).subscribe(eq(QualifiedNameUtils.fromClassName(CreateCommand.class)),
+        verify(commandBus).subscribe(eq(new QualifiedName(CreateCommand.class)),
                                      any(org.axonframework.commandhandling.CommandHandler.class));
         // Is subscribed two times because of the duplicate handler. This is good and indicates usage of the
         // DuplicateCommandHandlerResolver
         verify(commandBus, times(2)).subscribe(
-                eq(QualifiedNameUtils.fromClassName(UpdateCommandWithAnnotatedMethod.class)),
+                eq(new QualifiedName(UpdateCommandWithAnnotatedMethod.class)),
                 any(org.axonframework.commandhandling.CommandHandler.class)
         );
     }

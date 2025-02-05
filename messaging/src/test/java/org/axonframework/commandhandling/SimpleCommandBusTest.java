@@ -172,7 +172,7 @@ class SimpleCommandBusTest {
 
         var commandHandler = spy(new StubCommandHandler("ok"));
         CommandMessage<String> command = TEST_COMMAND;
-        testSubject.subscribe(command.name().qualifiedName(), commandHandler);
+        testSubject.subscribe(command.type().qualifiedName(), commandHandler);
 
         var actual = testSubject.dispatch(command, ProcessingContext.NONE);
 
@@ -195,7 +195,7 @@ class SimpleCommandBusTest {
             }
         };
         CommandMessage<String> command = TEST_COMMAND;
-        testSubject.subscribe(command.name().qualifiedName(), commandHandler);
+        testSubject.subscribe(command.type().qualifiedName(), commandHandler);
 
         CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(command, ProcessingContext.NONE);
 
@@ -209,7 +209,7 @@ class SimpleCommandBusTest {
     void exceptionalStreamFromHandlerReturnedInCompletableFuture() {
         var commandHandler = new StubCommandHandler(new MockException("Simulating exception"));
         CommandMessage<String> command = TEST_COMMAND;
-        testSubject.subscribe(command.name().qualifiedName(), commandHandler);
+        testSubject.subscribe(command.type().qualifiedName(), commandHandler);
 
         CompletableFuture<? extends Message<?>> actual =
                 testSubject.dispatch(command, ProcessingContext.NONE);
@@ -236,7 +236,7 @@ class SimpleCommandBusTest {
 
         var commandHandler = new StubCommandHandler("ok");
         CommandMessage<String> command = TEST_COMMAND;
-        testSubject.subscribe(command.name().qualifiedName(), commandHandler);
+        testSubject.subscribe(command.type().qualifiedName(), commandHandler);
 
         verify(lifecycleHandlerRegistrar, never()).registerHandlers(any());
 

@@ -49,7 +49,7 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
@@ -238,7 +238,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                           MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
-        commandBus.subscribe(QualifiedNameUtils.fromDottedName(commandName), (CommandHandler) commandHandler);
+        commandBus.subscribe(new QualifiedName(commandName), (CommandHandler) commandHandler);
         return this;
     }
 

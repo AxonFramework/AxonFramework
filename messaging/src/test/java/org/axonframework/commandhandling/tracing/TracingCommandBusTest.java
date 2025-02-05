@@ -103,7 +103,7 @@ class TracingCommandBusTest {
         ArgumentCaptor<CommandHandler> captor = ArgumentCaptor.forClass(CommandHandler.class);
         when(delegate.subscribe(any(QualifiedName.class), captor.capture())).thenReturn(null);
 
-        testSubject.subscribe(testCommand.name().qualifiedName(),
+        testSubject.subscribe(testCommand.type().qualifiedName(),
                               (command, processingContext) -> {
                                   spanFactory.verifySpanActive("CommandBus.handleCommand");
                                   return MessageStream.just(new GenericCommandResultMessage<>(
@@ -121,7 +121,7 @@ class TracingCommandBusTest {
         ArgumentCaptor<CommandHandler> captor = ArgumentCaptor.forClass(CommandHandler.class);
         when(delegate.subscribe(any(QualifiedName.class), captor.capture())).thenReturn(null);
 
-        testSubject.subscribe(testCommand.name().qualifiedName(),
+        testSubject.subscribe(testCommand.type().qualifiedName(),
                               (command, processingContext) -> {
                                   spanFactory.verifySpanActive("CommandBus.handleCommand");
                                   throw new MockException("Simulating failure");

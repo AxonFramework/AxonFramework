@@ -28,6 +28,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -51,9 +52,9 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class NewMessageHandlerRegistrationTest {
 
-    private static final QualifiedName COMMAND_NAME = new QualifiedName("command");
-    private static final QualifiedName EVENT_NAME = new QualifiedName("event");
-    private static final QualifiedName QUERY_NAME = new QualifiedName("query");
+    private static final MessageType COMMAND_TYPE = new MessageType("command");
+    private static final MessageType EVENT_TYPE = new MessageType("event");
+    private static final MessageType QUERY_TYPE = new MessageType("query");
 
     private AtomicBoolean commandHandlerInvoked;
     private AtomicBoolean eventHandlerInvoked;
@@ -69,15 +70,15 @@ class NewMessageHandlerRegistrationTest {
 
         testSubject = new GenericMessageHandlingComponent();
 
-        testSubject.subscribe(COMMAND_NAME, (CommandHandler) (command, context) -> {
+        testSubject.subscribe(COMMAND_TYPE.qualifiedName(), (CommandHandler) (command, context) -> {
                        commandHandlerInvoked.set(true);
                        return MessageStream.empty();
                    })
-                   .subscribe(EVENT_NAME, (EventHandler) (event, context1) -> {
+                   .subscribe(EVENT_TYPE.qualifiedName(), (EventHandler) (event, context1) -> {
                        eventHandlerInvoked.set(true);
                        return MessageStream.empty();
                    })
-                   .subscribe(QUERY_NAME, (QueryHandler) (event1, context2) -> {
+                   .subscribe(QUERY_TYPE.qualifiedName(), (QueryHandler) (event1, context2) -> {
                        queryHandlerInvoked.set(true);
                        return MessageStream.empty();
                    });
@@ -91,7 +92,7 @@ class NewMessageHandlerRegistrationTest {
         QueryModelComponent projector = new QueryModelComponent();
         GenericMessageHandlingComponent genericMHC = new GenericMessageHandlingComponent();
 
-        QualifiedName testName = new QualifiedName("axon", "test", "0.0.1");
+        QualifiedName testName = new QualifiedName("test");
 
         plainMHC.subscribe(testName, new TestCommandHandler())
                 .subscribe(testName, new TestEventHandler())
@@ -121,7 +122,7 @@ class NewMessageHandlerRegistrationTest {
 
     @Test
     void handlingCommandMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
-        CommandMessage<Object> testMessage = new GenericCommandMessage<>(COMMAND_NAME, COMMAND_NAME);
+        CommandMessage<Object> testMessage = new GenericCommandMessage<>(COMMAND_TYPE, COMMAND_TYPE);
 
         MessageStream<? extends Message<?>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
 
@@ -139,7 +140,7 @@ class NewMessageHandlerRegistrationTest {
 
     @Test
     void handlingEventMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
-        EventMessage<?> testMessage = new GenericEventMessage<>(EVENT_NAME, "payload");
+        EventMessage<?> testMessage = new GenericEventMessage<>(EVENT_TYPE, "payload");
 
         MessageStream<NoMessage> result = testSubject.handle(testMessage, ProcessingContext.NONE);
 
@@ -158,7 +159,7 @@ class NewMessageHandlerRegistrationTest {
     @Test
     void handlingQueryMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
         QueryMessage<?, ?> testMessage =
-                new GenericQueryMessage<>(QUERY_NAME, "payload", ResponseTypes.instanceOf(String.class));
+                new GenericQueryMessage<>(QUERY_TYPE, "payload", ResponseTypes.instanceOf(String.class));
 
         MessageStream<? extends QueryResponseMessage<?>> result =
                 testSubject.handle(testMessage, ProcessingContext.NONE);
@@ -177,10 +178,10 @@ class NewMessageHandlerRegistrationTest {
 
     @Test
     void subscribingMessageHandlingComponentEnsuresMessageDelegation() {
-        CommandMessage<?> testCommandMessage = new GenericCommandMessage<>(COMMAND_NAME, COMMAND_NAME);
-        EventMessage<?> testEventMessage = new GenericEventMessage<>(EVENT_NAME, "payload");
+        CommandMessage<?> testCommandMessage = new GenericCommandMessage<>(COMMAND_TYPE, COMMAND_TYPE);
+        EventMessage<?> testEventMessage = new GenericEventMessage<>(EVENT_TYPE, "payload");
         QueryMessage<?, ?> testQueryMessage =
-                new GenericQueryMessage<>(QUERY_NAME, "payload", ResponseTypes.instanceOf(String.class));
+                new GenericQueryMessage<>(QUERY_TYPE, "payload", ResponseTypes.instanceOf(String.class));
 
         MessageHandlingComponent testSubjectWithRegisteredMHC =
                 new GenericMessageHandlingComponent()
@@ -201,9 +202,7 @@ class NewMessageHandlerRegistrationTest {
         @Nonnull
         public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                        @Nonnull ProcessingContext context) {
-            return MessageStream.just(new GenericCommandResultMessage<>(
-                    new QualifiedName("axon", "command-response", "0.0.1"), "done!"
-            ));
+            return MessageStream.just(new GenericCommandResultMessage<>(new MessageType("command-response"), "done!"));
         }
     }
 
@@ -219,14 +218,16 @@ class NewMessageHandlerRegistrationTest {
 
     private static class TestQueryHandler implements QueryHandler {
 
+        private final MessageType responseType = new MessageType("query-response");
+
         @Nonnull
         @Override
         public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> message,
                                                              @Nonnull ProcessingContext context) {
             return MessageStream.fromIterable(Sets.newSet(
-                    new GenericQueryResponseMessage<>(new QualifiedName("test", "query-response", "0.0.1"), "one"),
-                    new GenericQueryResponseMessage<>(new QualifiedName("test", "query-response", "0.0.1"), "two"),
-                    new GenericQueryResponseMessage<>(new QualifiedName("test", "query-response", "0.0.1"), "three")
+                    new GenericQueryResponseMessage<>(responseType, "one"),
+                    new GenericQueryResponseMessage<>(responseType, "two"),
+                    new GenericQueryResponseMessage<>(responseType, "three")
             ));
         }
     }
