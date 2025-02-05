@@ -245,9 +245,10 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         });
     }
 
+    @Nonnull
     @Override
-    public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
-                                                         ProcessingContext processingContext) {
+    public MessageStream<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+                                                         @Nonnull ProcessingContext processingContext) {
         return handlers.stream()
                        .filter(ch -> ch.canHandle(message))
                        .findFirst()
