@@ -23,7 +23,7 @@ import org.axonframework.deadline.GenericDeadlineMessage;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
@@ -312,7 +312,7 @@ class FixtureTest_Deadlines {
                                                            Object payload,
                                                            Instant expiryTime) {
         return new GenericDeadlineMessage<>(
-                deadlineName, new GenericMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), (P) payload), () -> expiryTime
+                deadlineName, new GenericMessage<>(new MessageType(payload.getClass()), (P) payload), () -> expiryTime
         );
     }
 

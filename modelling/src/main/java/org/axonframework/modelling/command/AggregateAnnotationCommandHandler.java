@@ -27,15 +27,16 @@ import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageNameResolver;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -86,7 +87,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     private final Set<String> supportedCommandNames;
     private final Map<String, Set<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>>> supportedCommandsByName;
     private final Map<Class<? extends T>, CreationPolicyAggregateFactory<T>> factoryPerType;
-    private final MessageNameResolver messageNameResolver;
+    private final MessageTypeResolver messageTypeResolver;
 
     /**
      * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
@@ -124,7 +125,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         this.commandTargetResolver = builder.commandTargetResolver;
         this.supportedCommandNames = new HashSet<>();
         this.supportedCommandsByName = new HashMap<>();
-        this.messageNameResolver = builder.messageNameResolver;
+        this.messageTypeResolver = builder.messageTypeResolver;
         AggregateModel<T> aggregateModel = builder.buildAggregateModel();
         // Suppressing cast to Class<? extends T> as we are definitely dealing with implementations of T.
         //noinspection unchecked
@@ -253,22 +254,22 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
                        .findFirst()
                        .orElseThrow(() -> new NoHandlerForCommandException(message))
                        .handle(message, processingContext)
-                       .mapMessage(m -> asCommandResultMessage(m, messageNameResolver::resolve));
+                       .mapMessage(m -> asCommandResultMessage(m, messageTypeResolver::resolve));
     }
 
     @SuppressWarnings("unchecked")
-    private static <R> CommandResultMessage<R> asCommandResultMessage(@Nullable Object commandResult,
-                                                                      @Nonnull Function<Object, QualifiedName> nameResolver) {
+    private static <R> CommandResultMessage<R> asCommandResultMessage(
+            @Nullable Object commandResult,
+            @Nonnull Function<Object, MessageType> typeResolver
+    ) {
         if (commandResult instanceof CommandResultMessage) {
             return (CommandResultMessage<R>) commandResult;
         } else if (commandResult instanceof Message) {
             Message<R> commandResultMessage = (Message<R>) commandResult;
             return new GenericCommandResultMessage<>(commandResultMessage);
         }
-        QualifiedName name = commandResult == null
-                ? QualifiedNameUtils.fromDottedName("empty.command.result")
-                : nameResolver.apply(commandResult);
-        return new GenericCommandResultMessage<>(name, (R) commandResult);
+        MessageType type = typeResolver.apply(ObjectUtils.nullSafeTypeOf(commandResult));
+        return new GenericCommandResultMessage<>(type, (R) commandResult);
     }
 
     public boolean canHandle(CommandMessage<?> message) {
@@ -320,7 +321,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         private HandlerDefinition handlerDefinition;
         private AggregateModel<T> aggregateModel;
         private CreationPolicyAggregateFactory<T> creationPolicyAggregateFactory;
-        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+        private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
         /**
          * Sets the {@link Repository} used to add and load Aggregate instances of generic type {@code T} upon handling
@@ -426,17 +427,15 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         /**
-         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} when dispatching
-         * {@link CommandMessage CommandMessages}. If not set, a {@link ClassBasedMessageNameResolver} is used by
-         * default.
+         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when dispatching {@link CommandMessage CommandMessages}.
+         * If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
          *
-         * @param messageNameResolver The {@link MessageNameResolver} used to provide the {@link QualifiedName} for
-         *                            {@link CommandMessage CommandMessages}.
+         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for {@link CommandMessage CommandMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder<T> messageNameResolver(MessageNameResolver messageNameResolver) {
-            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
-            this.messageNameResolver = messageNameResolver;
+        public Builder<T> messageNameResolver(MessageTypeResolver messageTypeResolver) {
+            assertNonNull(messageTypeResolver, "MessageNameResolver may not be null");
+            this.messageTypeResolver = messageTypeResolver;
             return this;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import jakarta.validation.constraints.Pattern;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
@@ -54,7 +54,7 @@ class BeanValidationInterceptorTest {
     @Test
     void validateSimpleObject() throws Exception {
         uow.transformMessage(m -> new GenericMessage<>(
-                new QualifiedName("test", "message", "0.0.1"), "Simple instance"
+                new MessageType("message"), "Simple instance"
         ));
 
         testSubject.handle(uow, interceptorChain);
@@ -65,7 +65,7 @@ class BeanValidationInterceptorTest {
     @Test
     void validateAnnotatedObject_IllegalNullValue() throws Exception {
         uow.transformMessage(m -> new GenericMessage<>(
-                new QualifiedName("test", "message", "0.0.1"), new JSR303AnnotatedInstance(null)
+                new MessageType("message"), new JSR303AnnotatedInstance(null)
         ));
         try {
             testSubject.handle(uow, interceptorChain);
@@ -79,7 +79,7 @@ class BeanValidationInterceptorTest {
     @Test
     void validateAnnotatedObject_LegalValue() throws Exception {
         uow.transformMessage(m -> new GenericMessage<>(
-                new QualifiedName("test", "message", "0.0.1"), new JSR303AnnotatedInstance("abc")
+                new MessageType("message"), new JSR303AnnotatedInstance("abc")
         ));
 
         testSubject.handle(uow, interceptorChain);
@@ -90,7 +90,7 @@ class BeanValidationInterceptorTest {
     @Test
     void validateAnnotatedObject_IllegalValue() throws Exception {
         uow.transformMessage(m -> new GenericMessage<>(
-                new QualifiedName("test", "message", "0.0.1"), new JSR303AnnotatedInstance("bea")
+                new MessageType("message"), new JSR303AnnotatedInstance("bea")
         ));
 
         try {
@@ -105,7 +105,7 @@ class BeanValidationInterceptorTest {
 
     @Test
     void customValidatorFactory() throws Exception {
-        uow.transformMessage(m -> new GenericMessage<Object>(new QualifiedName("test", "message", "0.0.1"),
+        uow.transformMessage(m -> new GenericMessage<Object>(new MessageType("message"),
                                                              new JSR303AnnotatedInstance("abc")));
         ValidatorFactory mockValidatorFactory = spy(Validation.buildDefaultValidatorFactory());
         testSubject = new BeanValidationInterceptor<>(mockValidatorFactory);

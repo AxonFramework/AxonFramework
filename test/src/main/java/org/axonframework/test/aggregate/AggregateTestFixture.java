@@ -41,12 +41,13 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.ScopeDescriptor;
@@ -108,7 +109,6 @@ import javax.annotation.Nonnull;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.*;
-import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 
 /**
  * A test fixture that allows the execution of given-when-then style test cases. For detailed usage information, see
@@ -221,7 +221,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 annotatedCommandHandler,
                 getParameterResolverFactory(),
                 getHandlerDefinition(),
-                new ClassBasedMessageNameResolver()
+                new ClassBasedMessageTypeResolver()
         );
         adapter.subscribe(commandBus);
         return this;
@@ -409,7 +409,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                     type,
                     aggregateIdentifier,
                     sequenceNumber++,
-                    new GenericMessage<>(fromClassName(payload.getClass()), payload, metaData),
+                    new GenericMessage<>(new MessageType(payload.getClass()), payload, metaData),
                     deadlineManager.getCurrentDateTime()
             );
             this.givenEvents.add(eventMessage);
@@ -441,8 +441,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         finalizeConfiguration();
         for (Object command : commands) {
             CompletableFuture<Message<?>> result = new CompletableFuture<>();
-            CommandMessage<Object> commandMessage = new GenericCommandMessage<>(fromClassName(command.getClass()),
-                                                                                command);
+            CommandMessage<Object> commandMessage =
+                    new GenericCommandMessage<>(new MessageType(command.getClass()), command);
             executeAtSimulatedTime(() -> commandBus.dispatch(commandMessage, ProcessingContext.NONE)
                                                    .whenComplete(FutureUtils.alsoComplete(result)));
             result.join();
@@ -502,9 +502,8 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     @Override
     public ResultValidator<T> when(Object command, Map<String, ?> metaData) {
         return when(resultValidator -> {
-            CommandMessage<Object> commandMessage = new GenericCommandMessage<>(fromClassName(command.getClass()),
-                                                                                command,
-                                                                                metaData);
+            CommandMessage<Object> commandMessage =
+                    new GenericCommandMessage<>(new MessageType(command.getClass()), command, metaData);
             commandBus.dispatch(commandMessage, ProcessingContext.NONE)
                       .whenComplete((r, e) -> {
                           if (e == null) {
@@ -1053,7 +1052,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                                     aggregateIdentifier,
                                                                     oldEvent.getSequenceNumber(),
                                                                     oldEvent.getIdentifier(),
-                                                                    oldEvent.name(),
+                                                                    oldEvent.type(),
                                                                     oldEvent.getPayload(),
                                                                     oldEvent.getMetaData(),
                                                                     oldEvent.getTimestamp()));

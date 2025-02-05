@@ -22,10 +22,10 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.utils.MockException;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.*;
 
 class InterceptingCommandBusTest {
 
-    private static final QualifiedName COMMAND_NAME = new QualifiedName("axon", "test", "5.0.0");
+    private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");
 
     private InterceptingCommandBus testSubject;
     private CommandBus mockCommandBus;
@@ -69,7 +69,7 @@ class InterceptingCommandBusTest {
     @SuppressWarnings("unchecked")
     @Test
     void dispatchInterceptorsInvokedOnDispatch() throws Exception {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "test");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "test");
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(invocation -> CompletableFuture.completedFuture(
                 asCommandResultMessage("ok")));
 
@@ -91,10 +91,11 @@ class InterceptingCommandBusTest {
 
     @Test
     void earlyReturnAvoidsMessageDispatch() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "test");
-        doReturn(MessageStream.failed(new MockException("Simulating early return")))
-                .when(dispatchInterceptor2)
-                .interceptOnDispatch(any(), any(), any());
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "test");
+        doReturn(MessageStream.failed(new MockException("Simulating early return"))).when(dispatchInterceptor2)
+                                                                                    .interceptOnDispatch(any(),
+                                                                                                         any(),
+                                                                                                         any());
 
         CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, ProcessingContext.NONE);
 
@@ -107,7 +108,7 @@ class InterceptingCommandBusTest {
 
     @Test
     void dualProceedCausesDuplicateMessageDispatch() throws Exception {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "test");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "test");
         when(mockCommandBus.dispatch(any(), any())).thenAnswer(invocation -> CompletableFuture.completedFuture(
                 asCommandResultMessage("ok")));
 
@@ -129,7 +130,7 @@ class InterceptingCommandBusTest {
 
     @Test
     void exceptionsInDispatchInterceptorReturnFailedStream() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "test");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "test");
         doThrow(new MockException("Simulating failure in interceptor"))
                 .when(dispatchInterceptor2).interceptOnDispatch(any(), any(), any());
 
@@ -144,7 +145,7 @@ class InterceptingCommandBusTest {
 
     @Test
     void handlerInterceptorsInvokedOnHandle() throws Exception {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "test");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "test");
         AtomicReference<CommandMessage<?>> handledMessage = new AtomicReference<>();
         testSubject.subscribe(COMMAND_NAME,
                               (command, context) -> {
@@ -173,7 +174,7 @@ class InterceptingCommandBusTest {
 
     @Test
     void exceptionsInHandlerInterceptorReturnFailedStream() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "Request");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "Request");
         doThrow(new MockException("Simulating failure in interceptor"))
                 .when(handlerInterceptor2).interceptOnHandle(any(), any(), any());
 
@@ -192,7 +193,7 @@ class InterceptingCommandBusTest {
 
     @Test
     void dualProceedCausesDuplicateMessageHandling() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "test");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "test");
         doAnswer(i -> {
             i.callRealMethod();
             return i.callRealMethod();
@@ -250,7 +251,7 @@ class InterceptingCommandBusTest {
     }
 
     private static GenericCommandResultMessage<String> asCommandResultMessage(String payload) {
-        return new GenericCommandResultMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload);
+        return new GenericCommandResultMessage<>(new MessageType(payload.getClass()), payload);
     }
 
     private static class AddMetaDataCountInterceptor<M extends Message<?>>

@@ -22,7 +22,7 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.IllegalPayloadAccessException;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.GenericStreamingQueryMessage;
 import org.axonframework.queryhandling.QueryExecutionException;
@@ -161,7 +161,7 @@ class StreamingQueryEndToEndTest {
     @ValueSource(booleans = {true, false})
     void streamingFluxQuery(boolean supportsStreaming) {
         StreamingQueryMessage<FluxQuery, String> testQuery = new GenericStreamingQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), new FluxQuery(), String.class
+                new MessageType("query"), new FluxQuery(), String.class
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, supportsStreaming))
@@ -177,7 +177,7 @@ class StreamingQueryEndToEndTest {
 
         StepVerifier.create(Flux.range(0, count)
                                 .flatMap(i -> streamingQueryPayloads(
-                                        new GenericStreamingQueryMessage<>(new QualifiedName("test", "query", "0.0.1"),
+                                        new GenericStreamingQueryMessage<>(new MessageType("query"),
                                                                            new FluxQuery(),
                                                                            String.class),
                                         supportsStreaming
@@ -191,7 +191,7 @@ class StreamingQueryEndToEndTest {
     @ValueSource(booleans = {true, false})
     void streamingErrorFluxQuery(boolean supportsStreaming) {
         StreamingQueryMessage<ErrorFluxQuery, String> testQuery = new GenericStreamingQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), new ErrorFluxQuery(), String.class
+                new MessageType("query"), new ErrorFluxQuery(), String.class
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, supportsStreaming))
@@ -203,7 +203,7 @@ class StreamingQueryEndToEndTest {
     @Test
     void streamingHandlerErrorFluxQuery() {
         StreamingQueryMessage<HandlerErrorFluxQuery, String> testQuery = new GenericStreamingQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), new HandlerErrorFluxQuery(), String.class
+                new MessageType("query"), new HandlerErrorFluxQuery(), String.class
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, true))
@@ -216,7 +216,7 @@ class StreamingQueryEndToEndTest {
     @ValueSource(booleans = {true, false})
     void streamingListQuery(boolean supportsStreaming) {
         StreamingQueryMessage<ListQuery, String> testQuery = new GenericStreamingQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), new ListQuery(), String.class
+                new MessageType("query"), new ListQuery(), String.class
         );
 
         StepVerifier.create(streamingQueryPayloads(testQuery, supportsStreaming))
@@ -228,7 +228,7 @@ class StreamingQueryEndToEndTest {
     @ValueSource(booleans = {true, false})
     void listQuery(boolean supportsStreaming) throws Throwable {
         QueryMessage<ListQuery, List<String>> testQuery = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), new ListQuery(), multipleInstancesOf(String.class)
+                new MessageType("query"), new ListQuery(), multipleInstancesOf(String.class)
         );
 
         assertEquals(asList("a", "b", "c", "d"), directQueryPayload(testQuery, supportsStreaming));

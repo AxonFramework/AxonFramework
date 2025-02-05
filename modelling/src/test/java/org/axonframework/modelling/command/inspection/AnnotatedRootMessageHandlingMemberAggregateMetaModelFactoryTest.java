@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.modelling.command.AggregateMember;
@@ -96,7 +96,7 @@ import static org.mockito.Mockito.*;
  */
 class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
 
-    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
+    private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");
     private static final AggregateCreatedEvent AGGREGATE_EVENT = new AggregateCreatedEvent("some-id");
     private static final MemberCommand MEMBER_COMMAND = new MemberCommand("some-id");
 
@@ -161,7 +161,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     @Test
     void createdAggregateModelReturnsCommandHandlingFunctionFromParentAggregate() throws Exception {
         CommandMessage<MemberCommand> testMemberCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, MEMBER_COMMAND);
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, MEMBER_COMMAND);
         DefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();
@@ -179,7 +179,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     void createdAggregateModelReturnsCommandHandlingFunctionFromParentAggregateForPolymorphicAggregate()
             throws Exception {
         CommandMessage<MemberCommand> testMemberCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, MEMBER_COMMAND);
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, MEMBER_COMMAND);
         DefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();
@@ -201,7 +201,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
         int expectedNumberOfMemberCommandInterceptorInvocations = 3;
 
         CommandMessage<MemberCommand> testMemberCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, MEMBER_COMMAND);
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, MEMBER_COMMAND);
         DefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();
@@ -219,7 +219,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     void createdAggregateModelInvokesAllCommandInterceptorsForPolymorphicAggregate() throws Exception {
         int expectedNumberOfMemberCommandInterceptorInvocations = 3;
         CommandMessage<MemberCommand> testMemberCommand =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, MEMBER_COMMAND);
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, MEMBER_COMMAND);
         DefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();

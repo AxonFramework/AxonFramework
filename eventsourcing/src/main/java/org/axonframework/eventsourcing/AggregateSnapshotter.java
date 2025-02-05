@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     private final RepositoryProvider repositoryProvider;
     private final ParameterResolverFactory parameterResolverFactory;
     private final HandlerDefinition handlerDefinition;
-    private final MessageNameResolver messageNameResolver;
+    private final MessageTypeResolver messageTypeResolver;
 
     private final Map<Class<?>, AggregateModel<?>> aggregateModels = new ConcurrentHashMap<>();
 
@@ -76,7 +76,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         this.repositoryProvider = builder.repositoryProvider;
         this.parameterResolverFactory = builder.buildParameterResolverFactory();
         this.handlerDefinition = builder.buildHandlerDefinition();
-        this.messageNameResolver = builder.messageNameResolver;
+        this.messageTypeResolver = builder.messageTypeResolver;
     }
 
     /**
@@ -125,7 +125,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         return new GenericDomainEventMessage<>(aggregate.type(),
                                                aggregate.identifierAsString(),
                                                aggregate.version(),
-                                               messageNameResolver.resolve(aggregateType),
+                                               messageTypeResolver.resolve(aggregateType),
                                                aggregate.getAggregateRoot());
     }
 
@@ -175,7 +175,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         private RepositoryProvider repositoryProvider;
         private ParameterResolverFactory parameterResolverFactory;
         private HandlerDefinition handlerDefinition;
-        private MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+        private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
         @Override
         public Builder spanFactory(@Nonnull SnapshotterSpanFactory spanFactory) {
@@ -268,15 +268,15 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         }
 
         /**
-         * Sets the {@link MessageNameResolver} used to resolve the {@link QualifiedName} for snapshots.
-         * If not set, a {@link ClassBasedMessageNameResolver} is used by default.
+         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} for snapshots.
+         * If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
          *
-         * @param messageNameResolver The {@link MessageNameResolver} providing the {@link QualifiedName} for snapshots.
+         * @param messageTypeResolver The {@link MessageTypeResolver} providing the {@link QualifiedName} for snapshots.
          * @return The current Builder instance, for fluent interfacing.
          */
-        public Builder messageNameResolver(MessageNameResolver messageNameResolver) {
-            assertNonNull(messageNameResolver, "MessageNameResolver may not be null");
-            this.messageNameResolver = messageNameResolver;
+        public Builder messageNameResolver(MessageTypeResolver messageTypeResolver) {
+            assertNonNull(messageTypeResolver, "MessageNameResolver may not be null");
+            this.messageTypeResolver = messageTypeResolver;
             return this;
         }
 

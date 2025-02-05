@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.eventhandling.replay;
 
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -32,16 +32,16 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class GenericResetContextTest {
 
-    private static final QualifiedName TEST_NAME = new QualifiedName("test", "reset", "0.0.1");
+    private static final MessageType TEST_TYPE = new MessageType("reset");
     private static final Object TEST_PAYLOAD = new Object();
 
     @Test
     void constructor() {
-        ResetContext<Object> messageOne = new GenericResetContext<>(TEST_NAME, TEST_PAYLOAD);
+        ResetContext<Object> messageOne = new GenericResetContext<>(TEST_TYPE, TEST_PAYLOAD);
         Map<String, Object> metaDataMap = Collections.singletonMap("key", "value");
-        ResetContext<Object> messageTwo = new GenericResetContext<>(TEST_NAME, TEST_PAYLOAD, metaDataMap);
+        ResetContext<Object> messageTwo = new GenericResetContext<>(TEST_TYPE, TEST_PAYLOAD, metaDataMap);
         MetaData metaData = MetaData.from(metaDataMap);
-        ResetContext<Object> messageThree = new GenericResetContext<>(TEST_NAME, TEST_PAYLOAD, metaData);
+        ResetContext<Object> messageThree = new GenericResetContext<>(TEST_TYPE, TEST_PAYLOAD, metaData);
 
         assertSame(MetaData.emptyInstance(), messageOne.getMetaData());
         assertEquals(Object.class, messageOne.getPayload().getClass());
@@ -64,7 +64,7 @@ class GenericResetContextTest {
     @Test
     void withMetaData() {
         MetaData metaData = MetaData.from(Collections.<String, Object>singletonMap("key", "value"));
-        ResetContext<Object> startMessage = new GenericResetContext<>(TEST_NAME, TEST_PAYLOAD, metaData);
+        ResetContext<Object> startMessage = new GenericResetContext<>(TEST_TYPE, TEST_PAYLOAD, metaData);
 
         ResetContext<Object> messageOne = startMessage.withMetaData(MetaData.emptyInstance());
         ResetContext<Object> messageTwo =
@@ -77,7 +77,7 @@ class GenericResetContextTest {
     @Test
     void andMetaData() {
         MetaData metaData = MetaData.from(Collections.<String, Object>singletonMap("key", "value"));
-        ResetContext<Object> startMessage = new GenericResetContext<>(TEST_NAME, TEST_PAYLOAD, metaData);
+        ResetContext<Object> startMessage = new GenericResetContext<>(TEST_TYPE, TEST_PAYLOAD, metaData);
 
         ResetContext<Object> messageOne = startMessage.andMetaData(MetaData.emptyInstance());
         ResetContext<Object> messageTwo =
@@ -91,6 +91,6 @@ class GenericResetContextTest {
 
     @Test
     void describeType() {
-        assertEquals("GenericResetContext", new GenericResetContext<>(TEST_NAME, TEST_PAYLOAD).describeType());
+        assertEquals("GenericResetContext", new GenericResetContext<>(TEST_TYPE, TEST_PAYLOAD).describeType());
     }
 }

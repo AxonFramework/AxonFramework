@@ -22,9 +22,8 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
@@ -51,7 +50,7 @@ import static org.mockito.Mockito.*;
  */
 class AnnotationCommandHandlerAdapterTest {
 
-    private static final QualifiedName TEST_NAME = new QualifiedName("test", "command", "0.0.1");
+    private static final MessageType TEST_TYPE = new MessageType("command");
 
     private CommandBus mockBus;
     private MyCommandHandler mockTarget;
@@ -81,8 +80,8 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    void handlerDispatchingVoidReturnType() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_NAME, "");
+    void handlerDispatchingVoidReturnType() throws Exception {
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_TYPE, "");
 
         Object actualReturnValue = testSubject.handle(testCommand, mock(ProcessingContext.class));
 
@@ -92,8 +91,8 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    void handlerDispatchingWithReturnType() {
-        CommandMessage<Long> testCommand = new GenericCommandMessage<>(TEST_NAME, 1L);
+    void handlerDispatchingWithReturnType() throws Exception {
+        CommandMessage<Long> testCommand = new GenericCommandMessage<>(TEST_TYPE, 1L);
 
         Object actualReturnValue = testSubject.handle(testCommand, mock(ProcessingContext.class));
 
@@ -105,8 +104,8 @@ class AnnotationCommandHandlerAdapterTest {
     @Test
     void handlerDispatchingWithCustomCommandName() {
         CommandMessage<Long> testCommand =
-                new GenericCommandMessage<>(new GenericMessage<>(TEST_NAME, 1L), "almostLong");
-        Object actualReturnValue = testSubject.handle(testCommand, mock(ProcessingContext.class));
+                new GenericCommandMessage<>(new GenericMessage<>(TEST_TYPE, 1L), "almostLong");
+        Object actualReturnValue = testSubject.handleSync(testCommand);
         assertEquals(1L, actualReturnValue);
         assertEquals(0, mockTarget.voidHandlerInvoked);
         assertEquals(0, mockTarget.returningHandlerInvoked);
@@ -116,7 +115,7 @@ class AnnotationCommandHandlerAdapterTest {
     @Test
     void handlerDispatchingThrowingException() {
         try {
-            testSubject.handle(new GenericCommandMessage<>(TEST_NAME, new HashSet<>()), mock(ProcessingContext.class));
+            testSubject.handleSync(new GenericCommandMessage<>(TEST_TYPE, new HashSet<>()));
             fail("Expected exception");
         } catch (Exception ex) {
             assertEquals(Exception.class, ex.getClass());
@@ -139,15 +138,15 @@ class AnnotationCommandHandlerAdapterTest {
 
     @Test
     void handleNoHandlerForCommand() {
-        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_NAME, new LinkedList<>());
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_TYPE, new LinkedList<>());
 
         assertThrows(NoHandlerForCommandException.class,
                      () -> testSubject.handle(command, mock(ProcessingContext.class)));
     }
 
     @Test
-    void messageHandlerInterceptorAnnotatedMethodsAreSupportedForCommandHandlingComponents() {
-        CommandMessage<String> testCommandMessage = new GenericCommandMessage<>(TEST_NAME, "");
+    void messageHandlerInterceptorAnnotatedMethodsAreSupportedForCommandHandlingComponents() throws Exception {
+        CommandMessage<String> testCommandMessage = new GenericCommandMessage<>(TEST_TYPE, "");
         List<CommandMessage<?>> withInterceptor = new ArrayList<>();
         List<CommandMessage<?>> withoutInterceptor = new ArrayList<>();
         mockTarget = new MyInterceptingCommandHandler(withoutInterceptor, withInterceptor, new ArrayList<>());
@@ -164,7 +163,7 @@ class AnnotationCommandHandlerAdapterTest {
     @Test
     @Disabled("TODO #3062 - Exception Handler support")
     void exceptionHandlerAnnotatedMethodsAreSupportedForCommandHandlingComponents() {
-        CommandMessage<List<?>> testCommandMessage = new GenericCommandMessage<>(TEST_NAME, new ArrayList<>());
+        CommandMessage<List<?>> testCommandMessage = new GenericCommandMessage<>(TEST_TYPE, new ArrayList<>());
         List<Exception> interceptedExceptions = new ArrayList<>();
         mockTarget = new MyInterceptingCommandHandler(new ArrayList<>(), new ArrayList<>(), interceptedExceptions);
         testSubject = new AnnotationCommandHandlerAdapter<>(mockTarget);

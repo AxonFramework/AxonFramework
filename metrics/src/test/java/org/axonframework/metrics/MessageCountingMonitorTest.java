@@ -21,7 +21,7 @@ import com.codahale.metrics.Metric;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 
@@ -33,12 +33,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class MessageCountingMonitorTest {
 
     @Test
-    void messages(){
+    void messages() {
         MessageCountingMonitor testSubject = new MessageCountingMonitor();
         EventMessage<Object> foo = asEventMessage("foo");
         EventMessage<Object> bar = asEventMessage("bar");
         EventMessage<Object> baz = asEventMessage("baz");
-        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks = testSubject.onMessagesIngested(Arrays.asList(foo, bar, baz));
+        Map<? super Message<?>, MessageMonitor.MonitorCallback> callbacks =
+                testSubject.onMessagesIngested(Arrays.asList(foo, bar, baz));
         callbacks.get(foo).reportSuccess();
         callbacks.get(bar).reportFailure(null);
         callbacks.get(baz).reportIgnored();
@@ -59,6 +60,6 @@ class MessageCountingMonitorTest {
     }
 
     private static EventMessage<Object> asEventMessage(Object payload) {
-        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload);
+        return new GenericEventMessage<>(new MessageType("event"), payload);
     }
 }

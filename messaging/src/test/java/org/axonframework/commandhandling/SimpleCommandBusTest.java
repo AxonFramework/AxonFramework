@@ -19,10 +19,11 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.StubExecutor;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
@@ -36,7 +37,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -50,7 +50,8 @@ class SimpleCommandBusTest {
 
     private static final QualifiedName COMMAND_NAME = new QualifiedName("axon", "test", "5.0.0");
     private static final String PAYLOAD = "Say hi!";
-    private static final CommandMessage<String> TEST_COMMAND = new GenericCommandMessage<>(COMMAND_NAME, PAYLOAD);
+    private static final CommandMessage<String> TEST_COMMAND =
+            new GenericCommandMessage<>(new MessageType("command"), PAYLOAD);
 
     private SimpleCommandBus testSubject;
     private StubExecutor executor;
@@ -298,17 +299,17 @@ class SimpleCommandBusTest {
             if (result instanceof Throwable error) {
                 return MessageStream.failed(error);
             } else if (result instanceof CompletableFuture<?> future) {
-                return MessageStream.fromFuture(future.<CommandResultMessage<?>>thenApply(
-                        r -> new GenericCommandResultMessage<>(fromClassName(r.getClass()), r)
+                return MessageStream.fromFuture(future.thenApply(
+                        r -> new GenericMessage<>(new MessageType(r.getClass()), r)
                 ));
             } else {
-                return MessageStream.just(new GenericCommandResultMessage<>(fromClassName(result.getClass()), result));
+                return MessageStream.just(new GenericMessage<>(new MessageType(result.getClass()), result));
             }
         }
     }
 
     private static GenericCommandResultMessage<?> asCommandResultMessage(CommandMessage<?> message) {
         var payload = message.getPayload();
-        return new GenericCommandResultMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload);
+        return new GenericCommandResultMessage<>(new MessageType(payload.getClass()), payload);
     }
 }

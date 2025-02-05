@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.commandhandling.gateway;
 
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.serialization.Serializer;
 import org.junit.jupiter.api.*;
 
@@ -34,7 +34,7 @@ class ResultDeserializingCommandGatewayTest {
 
     private static final String HELLO_MESSAGE = "Hello, world!";
     private static final byte[] HELLO_BYTES = HELLO_MESSAGE.getBytes(StandardCharsets.UTF_8);
-    private static final QualifiedName TEST_NAME = new QualifiedName("test", "message", "0.0.1");
+    private static final MessageType TEST_TYPE = new MessageType("message");
 
     private Serializer mockSerializer;
     private CommandGateway mockDelegate;
@@ -50,7 +50,7 @@ class ResultDeserializingCommandGatewayTest {
     @Test
     void testResultIsDeserializedWhenRetrievedFromCommandResult() throws ExecutionException, InterruptedException {
         CommandResult stubResult = new FutureCommandResult(
-                CompletableFuture.completedFuture(new GenericMessage<>(TEST_NAME, HELLO_MESSAGE))
+                CompletableFuture.completedFuture(new GenericMessage<>(TEST_TYPE, HELLO_MESSAGE))
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
@@ -64,7 +64,7 @@ class ResultDeserializingCommandGatewayTest {
     @Test
     void testResultIsDeserializedWhenRetrievedDirectly() throws ExecutionException, InterruptedException {
         CommandResult stubResult = new FutureCommandResult(
-                CompletableFuture.completedFuture(new GenericMessage<>(TEST_NAME, HELLO_MESSAGE))
+                CompletableFuture.completedFuture(new GenericMessage<>(TEST_TYPE, HELLO_MESSAGE))
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
@@ -78,7 +78,7 @@ class ResultDeserializingCommandGatewayTest {
     @Test
     void testCommandResultProvidesAccessToOriginalMessage() throws ExecutionException, InterruptedException {
         CommandResult stubResult = new FutureCommandResult(
-                CompletableFuture.completedFuture(new GenericMessage<>(TEST_NAME, HELLO_MESSAGE))
+                CompletableFuture.completedFuture(new GenericMessage<>(TEST_TYPE, HELLO_MESSAGE))
         );
         when(mockDelegate.send(any(), any())).thenReturn(stubResult);
 
@@ -111,7 +111,7 @@ class ResultDeserializingCommandGatewayTest {
             invoked.set(true);
         });
 
-        completableFuture.complete(new GenericMessage<>(TEST_NAME, HELLO_MESSAGE));
+        completableFuture.complete(new GenericMessage<>(TEST_TYPE, HELLO_MESSAGE));
 
         assertTrue(actual.isDone());
         assertTrue(invoked.get());

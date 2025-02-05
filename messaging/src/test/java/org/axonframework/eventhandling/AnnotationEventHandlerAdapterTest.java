@@ -18,9 +18,9 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.common.AxonException;
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.MessageNameResolver;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MetaDataValue;
@@ -48,7 +48,7 @@ class AnnotationEventHandlerAdapterTest {
     private SomeHandler annotatedEventListener;
     private ParameterResolverFactory parameterResolverFactory;
     private AnnotationEventHandlerAdapter testSubject;
-    private final MessageNameResolver messageNameResolver = new ClassBasedMessageNameResolver();
+    private final MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
     @BeforeEach
     void setUp() {
@@ -59,7 +59,7 @@ class AnnotationEventHandlerAdapterTest {
         );
         testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener,
                                                         parameterResolverFactory,
-                                                        messageNameResolver);
+                                                        messageTypeResolver);
     }
 
     @Test
@@ -81,7 +81,7 @@ class AnnotationEventHandlerAdapterTest {
         SomeHandler annotatedEventListener = new SomeInterceptingHandler();
         testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener,
                                                         parameterResolverFactory,
-                                                        messageNameResolver);
+                                                        messageTypeResolver);
 
         testSubject.handleSync(asEventMessage("count"));
         assertEquals(3, annotatedEventListener.invocations.stream().filter("count"::equals).count());
@@ -96,7 +96,7 @@ class AnnotationEventHandlerAdapterTest {
         SomeExceptionHandler annotatedEventListener = new SomeExceptionHandler();
         testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener,
                                                         parameterResolverFactory,
-                                                        messageNameResolver);
+                                                        messageTypeResolver);
 
         try {
             testSubject.handleSync(testEventMessage);
@@ -117,7 +117,7 @@ class AnnotationEventHandlerAdapterTest {
         SomeMismatchingExceptionHandler annotatedEventListener = new SomeMismatchingExceptionHandler();
         testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener,
                                                         parameterResolverFactory,
-                                                        messageNameResolver);
+                                                        messageTypeResolver);
 
         try {
             testSubject.handleSync(testEventMessage);
@@ -133,7 +133,7 @@ class AnnotationEventHandlerAdapterTest {
         SomeResetHandlerWithContext annotatedEventListener = new SomeResetHandlerWithContext();
         testSubject = new AnnotationEventHandlerAdapter(annotatedEventListener,
                                                         parameterResolverFactory,
-                                                        messageNameResolver);
+                                                        messageTypeResolver);
 
         assertTrue(testSubject.canHandleType(Long.class));
         assertFalse(testSubject.canHandleType(String.class));
@@ -143,7 +143,7 @@ class AnnotationEventHandlerAdapterTest {
     @Test
     void replayNotSupportedOnSingleHandler() {
         SingleReplayBlockingHandler handler = new SingleReplayBlockingHandler();
-        testSubject = new AnnotationEventHandlerAdapter(handler, parameterResolverFactory, messageNameResolver);
+        testSubject = new AnnotationEventHandlerAdapter(handler, parameterResolverFactory, messageTypeResolver);
 
         assertTrue(testSubject.supportsReset());
     }
@@ -151,7 +151,7 @@ class AnnotationEventHandlerAdapterTest {
     @Test
     void replayNotSupportedOnClassLevel() {
         ReplayBlockedOnClassLevelHandler handler = new ReplayBlockedOnClassLevelHandler();
-        testSubject = new AnnotationEventHandlerAdapter(handler, parameterResolverFactory, messageNameResolver);
+        testSubject = new AnnotationEventHandlerAdapter(handler, parameterResolverFactory, messageTypeResolver);
 
         assertFalse(testSubject.supportsReset());
     }
@@ -159,7 +159,7 @@ class AnnotationEventHandlerAdapterTest {
     @Test
     void replayNotSupportedOnClassLevelWithHandlerLevelOverride() {
         ReplayBlockedOnClassLevelWithReplayCapableHandler handler = new ReplayBlockedOnClassLevelWithReplayCapableHandler();
-        testSubject = new AnnotationEventHandlerAdapter(handler, parameterResolverFactory, messageNameResolver);
+        testSubject = new AnnotationEventHandlerAdapter(handler, parameterResolverFactory, messageTypeResolver);
 
         assertTrue(testSubject.supportsReset());
     }

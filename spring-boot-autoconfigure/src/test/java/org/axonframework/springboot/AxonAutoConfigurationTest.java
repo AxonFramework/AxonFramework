@@ -40,8 +40,8 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.lifecycle.Lifecycle;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.FixedValueParameterResolver;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
@@ -131,9 +131,9 @@ class AxonAutoConfigurationTest {
         ApplicationContextRunner applicationContextRunner = new ApplicationContextRunner()
                 .withUserConfiguration(Context.class)
                 .withBean("gatewayOne", CommandGateway.class,
-                          () -> new DefaultCommandGateway(new SimpleCommandBus(), new ClassBasedMessageNameResolver()))
+                          () -> new DefaultCommandGateway(new SimpleCommandBus(), new ClassBasedMessageTypeResolver()))
                 .withBean("gatewayTwo", CommandGateway.class,
-                          () -> new DefaultCommandGateway(new SimpleCommandBus(), new ClassBasedMessageNameResolver()))
+                          () -> new DefaultCommandGateway(new SimpleCommandBus(), new ClassBasedMessageTypeResolver()))
                 .withPropertyValues("axon.axonserver.enabled=false");
 
         AxonConfigurationException actual = assertThrows(AxonConfigurationException.class, () -> {
@@ -178,11 +178,11 @@ class AxonAutoConfigurationTest {
                 .withUserConfiguration(Context.class)
                 .withBean("gatewayOne",
                           CommandGateway.class,
-                          () -> new DefaultCommandGateway(new SimpleCommandBus(), new ClassBasedMessageNameResolver()),
+                          () -> new DefaultCommandGateway(new SimpleCommandBus(), new ClassBasedMessageTypeResolver()),
                           beanDefinition -> beanDefinition.setPrimary(true))
                 .withBean("gatewayTwo",
                           CommandGateway.class,
-                          () -> new DefaultCommandGateway(new SimpleCommandBus(), new ClassBasedMessageNameResolver()),
+                          () -> new DefaultCommandGateway(new SimpleCommandBus(), new ClassBasedMessageTypeResolver()),
                           beanDefinition -> beanDefinition.setPrimary(true))
                 .withPropertyValues("axon.axonserver.enabled=false");
 
@@ -215,7 +215,7 @@ class AxonAutoConfigurationTest {
     }
 
     private static EventMessage<Object> asEventMessage(Object payload) {
-        return new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload);
+        return new GenericEventMessage<>(new MessageType("event"), payload);
     }
 
     @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class})

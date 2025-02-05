@@ -25,14 +25,14 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.Registration;
-import org.axonframework.messaging.ClassBasedMessageNameResolver;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
-import org.axonframework.messaging.MessageNameResolver;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -59,7 +59,7 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
-    private final MessageNameResolver messageNameResolver;
+    private final MessageTypeResolver messageTypeResolver;
 
     /**
      * Wraps the given {@code annotatedCommandHandler}, allowing it to be subscribed to a Command Bus.
@@ -81,7 +81,7 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
         this(annotatedCommandHandler,
              parameterResolverFactory,
              ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()),
-             new ClassBasedMessageNameResolver());
+             new ClassBasedMessageTypeResolver());
     }
 
     /**
@@ -90,7 +90,7 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
      * @param annotatedCommandHandler  The object containing the @CommandHandler annotated methods
      * @param parameterResolverFactory The strategy for resolving handler method parameter values
      * @param handlerDefinition        The handler definition used to create concrete handlers
-     * @param messageNameResolver      The {@link MessageNameResolver} resolving the
+     * @param messageTypeResolver      The {@link MessageTypeResolver} resolving the
      *                                 {@link org.axonframework.messaging.QualifiedName names} for
      *                                 {@link org.axonframework.commandhandling.CommandMessage CommandMessages}
      */
@@ -98,15 +98,15 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
     public AnnotationCommandHandlerAdapter(T annotatedCommandHandler,
                                            ParameterResolverFactory parameterResolverFactory,
                                            HandlerDefinition handlerDefinition,
-                                           MessageNameResolver messageNameResolver) {
+                                           MessageTypeResolver messageTypeResolver) {
         assertNonNull(annotatedCommandHandler, "The Annotated Command Handler may not be null");
-        assertNonNull(messageNameResolver, "The Message Name Resolver may not be null");
+        assertNonNull(messageTypeResolver, "The Message Name Resolver may not be null");
         this.model = AnnotatedHandlerInspector.inspectType((Class<T>) annotatedCommandHandler.getClass(),
                                                            parameterResolverFactory,
                                                            handlerDefinition);
 
         this.target = annotatedCommandHandler;
-        this.messageNameResolver = messageNameResolver;
+        this.messageTypeResolver = messageTypeResolver;
     }
 
     @Override
@@ -152,10 +152,8 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
             Message<R> commandResultMessage = (Message<R>) commandResult;
             return new GenericCommandResultMessage<>(commandResultMessage);
         }
-        QualifiedName name = commandResult == null
-                ? QualifiedNameUtils.fromDottedName("empty.command.result")
-                : messageNameResolver.resolve(commandResult);
-        return new GenericCommandResultMessage<>(name, (R) commandResult);
+        MessageType type = messageTypeResolver.resolve(ObjectUtils.nullSafeTypeOf(commandResult));
+        return new GenericCommandResultMessage<>(type, (R) commandResult);
     }
 
     public boolean canHandle(CommandMessage<?> message) {

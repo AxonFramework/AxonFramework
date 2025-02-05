@@ -25,7 +25,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -67,15 +67,15 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AnnotatedAggregateMetaModelFactoryTest {
 
-    private static final QualifiedName TEST_COMMAND_NAME = new QualifiedName("test", "command", "0.0.1");
+    private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");
 
     @Test
     void detectAllAnnotatedHandlers() throws Exception {
         AggregateModel<SomeAnnotatedHandlers> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedHandlers.class);
 
-        CommandMessage<?> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "ok");
-        CommandMessage<String> faultyCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "ko");
+        CommandMessage<?> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "ok");
+        CommandMessage<String> faultyCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "ko");
 
         assertEquals(true, getHandler(inspector, testCommand).handleSync(testCommand, new SomeAnnotatedHandlers()));
         assertEquals(false, getHandler(inspector, testCommand).handleSync(faultyCommand, new SomeAnnotatedHandlers()));
@@ -86,8 +86,8 @@ class AnnotatedAggregateMetaModelFactoryTest {
         AggregateModel<SomeSubclass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
-        CommandMessage<?> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "sub");
-        CommandMessage<String> faultyCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "ok");
+        CommandMessage<?> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "sub");
+        CommandMessage<String> faultyCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "ok");
         SomeSubclass target = new SomeSubclass();
 
         assertEquals(true, getHandler(inspector, testCommand).handleSync(testCommand, target));
@@ -99,7 +99,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
         AggregateModel<SomeAnnotatedFactoryMethodClass> inspector =
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeAnnotatedFactoryMethodClass.class);
 
-        CommandMessage<?> testCommand = new GenericCommandMessage<>(TEST_COMMAND_NAME, "string");
+        CommandMessage<?> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "string");
         final MessageHandlingMember<? super SomeAnnotatedFactoryMethodClass> messageHandlingMember =
                 getHandler(inspector, testCommand);
         final Optional<CommandMessageHandlingMember> unwrap =
@@ -235,7 +235,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
         AtomicLong payload = new AtomicLong();
 
         EventMessage<AtomicLong> testEvent =
-                new GenericEventMessage<>(new QualifiedName("test", "event", "0.0.1"), payload);
+                new GenericEventMessage<>(new MessageType("event"), payload);
         inspector.publish(testEvent, new SomeSubclass());
 
         assertEquals(2L, payload.get());
@@ -247,7 +247,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
         CommandMessage<?> message =
-                new GenericCommandMessage<>(TEST_COMMAND_NAME, BigDecimal.ONE);
+                new GenericCommandMessage<>(TEST_COMMAND_TYPE, BigDecimal.ONE);
         SomeSubclass target = new SomeSubclass();
         MessageHandlingMember<? super SomeSubclass> handler = getHandler(inspector, message);
         assertEquals("1", handler.handleSync(message, target));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.test.saga;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.matchers.AllFieldsFilter;
 import org.axonframework.test.utils.RecordingCommandBus;
@@ -81,7 +81,7 @@ class CommandValidatorTest {
 
     private List<CommandMessage<?>> listOfOneCommandMessage(Object msg) {
         return Collections.singletonList(
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), msg)
+                new GenericCommandMessage<>(new MessageType("command"), msg)
         );
     }
 

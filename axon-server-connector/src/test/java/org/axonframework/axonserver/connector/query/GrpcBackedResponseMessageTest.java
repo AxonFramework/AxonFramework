@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,11 @@ package org.axonframework.axonserver.connector.query;
 import io.axoniq.axonserver.grpc.query.QueryResponse;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.IllegalPayloadAccessException;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.ResultMessage;
 import org.axonframework.queryhandling.GenericQueryResponseMessage;
 import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.Serializer;
@@ -184,7 +188,7 @@ class GrpcBackedResponseMessageTest {
     }
 
     private static <R> QueryResponseMessage<R> asResponseMessage(Class<R> declaredType, Throwable exception) {
-        return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()),
+        return new GenericQueryResponseMessage<>(new MessageType(exception.getClass()),
                 exception,
                 declaredType);
     }
@@ -196,17 +200,17 @@ class GrpcBackedResponseMessageTest {
         } else if (result instanceof ResultMessage) {
             ResultMessage<R> resultMessage = (ResultMessage<R>) result;
             return new GenericQueryResponseMessage<>(
-                    QualifiedNameUtils.fromClassName(resultMessage.getPayload().getClass()),
+                    new MessageType(resultMessage.getPayload().getClass()),
                     resultMessage.getPayload(),
                     resultMessage.getMetaData()
             );
         } else if (result instanceof Message) {
             Message<R> message = (Message<R>) result;
-            return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(message.getPayload().getClass()),
-                    message.getPayload(),
-                    message.getMetaData());
+            return new GenericQueryResponseMessage<>(new MessageType(message.getPayload().getClass()),
+                                                     message.getPayload(),
+                                                     message.getMetaData());
         } else {
-            return new GenericQueryResponseMessage<>(QualifiedNameUtils.fromClassName(result.getClass()), (R) result);
+            return new GenericQueryResponseMessage<>(new MessageType(result.getClass()), (R) result);
         }
     }
 

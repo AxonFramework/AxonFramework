@@ -16,19 +16,19 @@
 
 package org.axonframework.messaging.annotation;
 
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.messaging.QualifiedNameUtils.fromClassName;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -106,13 +106,10 @@ class HandlerHierarchyTest {
     private static MessageStream<?> returnTypeConverter(Object result) {
         if (result instanceof CompletableFuture<?> future) {
             return MessageStream.fromFuture(future.thenApply(
-                    r -> new GenericMessage<>(fromClassName(r.getClass()), r)
+                    r -> new GenericMessage<>(new MessageType(r.getClass()), r)
             ));
         }
-        QualifiedName type = result != null
-                ? fromClassName(result.getClass())
-                : new QualifiedName("axon.framework", "empty.result", "0.0.1");
-        return MessageStream.just(new GenericMessage<>(type, result));
+        return MessageStream.just(new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }
 
     @Test

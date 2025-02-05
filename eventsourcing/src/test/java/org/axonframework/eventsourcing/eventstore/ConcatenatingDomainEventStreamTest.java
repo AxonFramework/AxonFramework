@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -40,15 +40,15 @@ class ConcatenatingDomainEventStreamTest {
     @BeforeEach
     void setUp() {
         event1 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 0,
-                                                 new QualifiedName("test", "event", "0.0.1"), "Mock contents 1");
+                                                 new MessageType("event"), "Mock contents 1");
         event2 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 1,
-                                                 new QualifiedName("test", "event", "0.0.1"), "Mock contents 2");
+                                                 new MessageType("event"), "Mock contents 2");
         event3 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 2,
-                                                 new QualifiedName("test", "event", "0.0.1"), "Mock contents 3");
+                                                 new MessageType("event"), "Mock contents 3");
         event4 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 3,
-                                                 new QualifiedName("test", "event", "0.0.1"), "Mock contents 4");
+                                                 new MessageType("event"), "Mock contents 4");
         event5 = new GenericDomainEventMessage<>("type", UUID.randomUUID().toString(), 4,
-                                                 new QualifiedName("test", "event", "0.0.1"), "Mock contents 5");
+                                                 new MessageType("event"), "Mock contents 5");
     }
 
     @Test

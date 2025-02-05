@@ -36,8 +36,8 @@ import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageE
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.QualifiedNameUtils;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
@@ -533,7 +533,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         var payload = new DeadlinePayload(FAKE_IDENTIFIER);
         return new GenericDeadlineMessage<>(
                 deadlineMessage.getDeadlineName(),
-                new GenericMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), payload),
+                new GenericMessage<>(new MessageType(payload.getClass()), payload),
                 deadlineMessage::getTimestamp
         );
     }
@@ -542,7 +542,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     private static <P> DeadlineMessage<P> asDeadlineMessage(String deadlineName,
                                                             Object payload,
                                                             Instant expiryTime) {
-        var name = QualifiedNameUtils.fromClassName(payload.getClass());
+        var name = new MessageType(payload.getClass());
         return new GenericDeadlineMessage<>(
                 deadlineName, new GenericMessage<>(name, (P) payload), () -> expiryTime
         );

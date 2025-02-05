@@ -17,15 +17,15 @@
 package org.axonframework.commandhandling.tracing;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.TestSpanFactory;
 import org.axonframework.utils.MockException;
@@ -58,7 +58,8 @@ class TracingCommandBusTest {
 
     @Test
     void dispatchIsCorrectlyTraced() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "Say hi!");
+        CommandMessage<String> testCommand =
+                new GenericCommandMessage<>(new MessageType("command"), "Say hi!");
 
         when(delegate.dispatch(any(), any())).thenAnswer(
                 i -> {
@@ -76,7 +77,8 @@ class TracingCommandBusTest {
 
     @Test
     void dispatchIsCorrectlyTracedDuringException() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "Say hi!");
+        CommandMessage<String> testCommand =
+                new GenericCommandMessage<>(new MessageType("command"), "Say hi!");
 
         when(delegate.dispatch(any(), any())).thenAnswer(i -> {
             spanFactory.verifySpanPropagated("CommandBus.dispatchCommand",
@@ -98,15 +100,16 @@ class TracingCommandBusTest {
 
     @Test
     void verifyHandlerSpansAreCreatedOnHandlerInvocation() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "Test");
+        CommandMessage<String> testCommand =
+                new GenericCommandMessage<>(new MessageType("command"), "Test");
         ArgumentCaptor<CommandHandler> captor = ArgumentCaptor.forClass(CommandHandler.class);
-        when(delegate.subscribe(any(QualifiedName.class), captor.capture())).thenReturn(null);
+        when(delegate.subscribe(anyString(), captor.capture())).thenReturn(null);
 
-        testSubject.subscribe(COMMAND_NAME,
+        testSubject.subscribe("test",
                               (command, processingContext) -> {
                                   spanFactory.verifySpanActive("CommandBus.handleCommand");
                                   return MessageStream.just(new GenericCommandResultMessage<>(
-                                          new QualifiedName("test", "message", "0.0.1"), "ok"
+                                          new MessageType("result"), "ok"
                                   ));
                               });
 
@@ -116,9 +119,9 @@ class TracingCommandBusTest {
 
     @Test
     void verifyHandlerSpansAreCompletedOnExceptionInHandlerInvocation() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(COMMAND_NAME, "Test");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(new MessageType("command"), "Test");
         ArgumentCaptor<CommandHandler> captor = ArgumentCaptor.forClass(CommandHandler.class);
-        when(delegate.subscribe(any(QualifiedName.class), captor.capture())).thenReturn(null);
+        when(delegate.subscribe(anyString(), captor.capture())).thenReturn(null);
 
         testSubject.subscribe(COMMAND_NAME,
                               (command, processingContext) -> {

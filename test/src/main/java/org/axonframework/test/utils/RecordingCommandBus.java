@@ -22,11 +22,12 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.common.ObjectUtils;
+import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.QualifiedNameUtils;
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.ArrayList;
@@ -79,10 +80,8 @@ public class RecordingCommandBus implements CommandBus {
             Message<R> commandResultMessage = (Message<R>) commandResult;
             return new GenericCommandResultMessage<>(commandResultMessage);
         }
-        QualifiedName name = commandResult == null
-                ? QualifiedNameUtils.fromDottedName("empty.command.result")
-                : QualifiedNameUtils.fromClassName(commandResult.getClass());
-        return new GenericCommandResultMessage<>(name, (R) commandResult);
+        MessageType type = new MessageType(ObjectUtils.nullSafeTypeOf(commandResult));
+        return new GenericCommandResultMessage<>(type, (R) commandResult);
     }
 
     /**

@@ -23,7 +23,6 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -46,6 +45,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     private final AsyncEventStorageEngine eventStorageEngine;
     private final ProcessingContext processingContext;
+    private final TagResolver tagResolver;
     private final List<Consumer<EventMessage<?>>> callbacks;
 
     private final ResourceKey<AppendCondition> appendConditionKey;
@@ -60,11 +60,15 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      *                           {@link #appendEvent(EventMessage) append events} with.
      * @param processingContext  The {@link ProcessingContext} from which to
      *                           {@link #appendEvent(EventMessage) append events} and attach resources to.
+     * @param tagResolver        The {@link TagResolver} used to resolve tags while
+     *                           {@link #appendEvent(EventMessage) appending events}.
      */
     public DefaultEventStoreTransaction(@Nonnull AsyncEventStorageEngine eventStorageEngine,
-                                        @Nonnull ProcessingContext processingContext) {
+                                        @Nonnull ProcessingContext processingContext,
+                                        @Nonnull TagResolver tagResolver) {
         this.eventStorageEngine = eventStorageEngine;
         this.processingContext = processingContext;
+        this.tagResolver = tagResolver;
         this.callbacks = new CopyOnWriteArrayList<>();
 
         this.appendConditionKey = ResourceKey.withLabel("appendCondition");
@@ -86,16 +90,16 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
     @Override
     public void appendEvent(@Nonnull EventMessage<?> eventMessage) {
-        List<TaggedEventMessage<?>> eventQueue = processingContext.computeResourceIfAbsent(
+        var eventQueue = processingContext.computeResourceIfAbsent(
                 eventQueueKey,
                 () -> {
                     attachAppendEventsStep();
                     return new CopyOnWriteArrayList<>();
                 }
         );
-        // TODO - Use a indexer function to define the indices to assign to each event
-        eventQueue.add(new GenericTaggedEventMessage<>(
-                eventMessage, Set.of()));
+
+        var tags = tagResolver.resolve(eventMessage);
+        eventQueue.add(new GenericTaggedEventMessage<>(eventMessage, tags));
 
         callbacks.forEach(callback -> callback.accept(eventMessage));
     }
@@ -117,7 +121,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     private CompletableFuture<ConsistencyMarker> doCommit(ProcessingContext commitContext,
-                                             AsyncEventStorageEngine.AppendTransaction tx) {
+                                                          AsyncEventStorageEngine.AppendTransaction tx) {
         return tx.commit()
                  .whenComplete((position, exception) ->
                                        commitContext.putResource(appendPositionKey, position));

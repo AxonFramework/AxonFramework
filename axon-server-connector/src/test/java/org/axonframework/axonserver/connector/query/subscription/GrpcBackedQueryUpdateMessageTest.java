@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ package org.axonframework.axonserver.connector.query.subscription;
 import io.axoniq.axonserver.grpc.query.QueryUpdate;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.IllegalPayloadAccessException;
+import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
 import org.axonframework.queryhandling.SubscriptionQueryUpdateMessage;
 import org.axonframework.serialization.Serializer;
@@ -143,15 +145,15 @@ class GrpcBackedQueryUpdateMessageTest {
     }
 
     private static <U> SubscriptionQueryUpdateMessage<U> asUpdateMessage(Class<U> declaredType, Throwable exception) {
-        return new GenericSubscriptionQueryUpdateMessage<>(QualifiedNameUtils.fromClassName(exception.getClass()),
-                exception,
-                MetaData.emptyInstance(),
-                declaredType);
+        return new GenericSubscriptionQueryUpdateMessage<>(new MessageType(exception.getClass()),
+                                                           exception,
+                                                           MetaData.emptyInstance(),
+                                                           declaredType);
     }
 
     @SuppressWarnings("unchecked")
     private static <U> SubscriptionQueryUpdateMessage<U> asUpdateMessage(Object payload) {
-        return new GenericSubscriptionQueryUpdateMessage<>(QualifiedNameUtils.fromClassName(payload.getClass()), (U) payload);
+        return new GenericSubscriptionQueryUpdateMessage<>(new MessageType(payload.getClass()), (U) payload);
     }
 
     private static class TestQueryUpdate {

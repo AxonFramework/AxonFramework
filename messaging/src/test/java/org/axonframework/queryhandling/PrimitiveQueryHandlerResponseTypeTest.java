@@ -16,7 +16,7 @@
 
 package org.axonframework.queryhandling;
 
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.annotation.AnnotationQueryHandlerAdapter;
 import org.axonframework.queryhandling.annotation.QueryHandler;
@@ -90,10 +90,10 @@ class PrimitiveQueryHandlerResponseTypeTest {
      */
     private <T> void test(final T value, final Class<T> boxed, final Class<T> primitive) {
         final QueryMessage<T, T> queryBoxed = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), value, ResponseTypes.instanceOf(boxed)
+                new MessageType("query"), value, ResponseTypes.instanceOf(boxed)
         );
         final QueryMessage<T, T> queryPrimitive = new GenericQueryMessage<>(
-                new QualifiedName("test", "query", "0.0.1"), value, ResponseTypes.instanceOf(primitive)
+                new MessageType("query"), value, ResponseTypes.instanceOf(primitive)
         );
 
         final T responseBoxed = queryBus.query(queryBoxed).join().getPayload();

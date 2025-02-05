@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -65,9 +65,9 @@ class EventPublicationOrderTest {
         String aggregateId = UUID.randomUUID().toString();
         UpdateStubAggregateWithExtraEventCommand testPayload = new UpdateStubAggregateWithExtraEventCommand(aggregateId);
         CommandMessage<UpdateStubAggregateWithExtraEventCommand> testCommand =
-                new GenericCommandMessage<>(new QualifiedName("test", "command", "0.0.1"), testPayload);
+                new GenericCommandMessage<>(new MessageType("command"), testPayload);
         DomainEventMessage<StubAggregateCreatedEvent> event = new GenericDomainEventMessage<>(
-                "test", aggregateId, 0, new QualifiedName("test", "event", "0.0.1"),
+                "test", aggregateId, 0, new MessageType("event"),
                 new StubAggregateCreatedEvent(aggregateId)
         );
         when(eventStore.readEvents(aggregateId)).thenReturn(DomainEventStream.of(event));
