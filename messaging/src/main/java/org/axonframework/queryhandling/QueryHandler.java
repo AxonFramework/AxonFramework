@@ -30,7 +30,7 @@ import java.util.stream.Stream;
  * @since 5.0.0
  */
 @FunctionalInterface
-public /*non-sealed */interface QueryHandler extends MessageHandler {
+public interface QueryHandler extends MessageHandler {
 
     /**
      * Handles the given {@code query} within the given {@code context}.

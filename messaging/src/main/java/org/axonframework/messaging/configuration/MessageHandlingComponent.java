@@ -44,7 +44,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public /*non-sealed */interface MessageHandlingComponent
+public interface MessageHandlingComponent
         extends CommandHandlingComponent, EventHandlingComponent, QueryHandlingComponent, MessageHandler {
 
     /**

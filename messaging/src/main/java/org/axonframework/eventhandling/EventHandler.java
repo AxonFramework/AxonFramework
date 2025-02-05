@@ -32,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
  * @since 0.1
  */
 @FunctionalInterface
-public /*non-sealed */interface EventHandler extends MessageHandler {
+public interface EventHandler extends MessageHandler {
 
     /**
      * Handles the given {@code event} within the given {@code context}.

@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
  * @since 5.0.0
  */
 @FunctionalInterface
-public /*non-sealed */interface CommandHandler extends MessageHandler {
+public interface CommandHandler extends MessageHandler {
 
     /**
      * Handles the given {@code command} within the given {@code context}.
