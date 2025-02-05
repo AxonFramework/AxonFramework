@@ -38,7 +38,7 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
     @Override
     public MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
                                            @Nonnull ProcessingContext context) {
-        QualifiedName name = event.name();
+        QualifiedName name = event.type().qualifiedName();
         // TODO add interceptor knowledge
         EventHandler handler = eventHandlers.get(name);
         if (handler == null) {

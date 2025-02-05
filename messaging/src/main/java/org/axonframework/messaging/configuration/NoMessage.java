@@ -27,7 +27,7 @@ public class NoMessage implements Message<Void> {
 
     public static final NoMessage INSTANCE = new NoMessage();
 
-    private static final MessageType NAME = new MessageType("no-message");
+    private static final MessageType TYPE = new MessageType("no-message");
 
     private NoMessage() {
     }
@@ -39,8 +39,8 @@ public class NoMessage implements Message<Void> {
 
     @Nonnull
     @Override
-    public MessageType name() {
-        return NAME;
+    public MessageType type() {
+        return TYPE;
     }
 
     @Override

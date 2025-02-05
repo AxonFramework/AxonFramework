@@ -51,9 +51,9 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class NewMessageHandlerRegistrationTest {
 
-    private static final QualifiedName COMMAND_NAME = new QualifiedName("axon", "command", "0.0.1");
-    private static final QualifiedName EVENT_NAME = new QualifiedName("axon", "event", "0.0.1");
-    private static final QualifiedName QUERY_NAME = new QualifiedName("axon", "query", "0.0.1");
+    private static final QualifiedName COMMAND_NAME = new QualifiedName("command");
+    private static final QualifiedName EVENT_NAME = new QualifiedName("event");
+    private static final QualifiedName QUERY_NAME = new QualifiedName("query");
 
     private AtomicBoolean commandHandlerInvoked;
     private AtomicBoolean eventHandlerInvoked;

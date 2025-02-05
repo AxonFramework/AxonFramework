@@ -115,7 +115,7 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
     @Override
     public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                    @Nonnull ProcessingContext context) {
-        QualifiedName messageType = command.name();
+        QualifiedName messageType = command.type().qualifiedName();
         // TODO add interceptor knowledge
         CommandHandler handler = commandHandlersByName.get(messageType);
         if (handler == null) {
@@ -131,7 +131,7 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
     @Override
     public MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
                                            @Nonnull ProcessingContext context) {
-        QualifiedName messageType = event.name();
+        QualifiedName messageType = event.type().qualifiedName();
         // TODO add interceptor knowledge
         EventHandler handler = eventHandlersByName.get(messageType);
         if (handler == null) {
@@ -147,7 +147,7 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
     @Override
     public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
                                                          @Nonnull ProcessingContext context) {
-        QualifiedName messageType = query.name();
+        QualifiedName messageType = query.type().qualifiedName();
         // TODO add interceptor knowledge
         QueryHandler handler = queryHandlersByName.get(messageType);
         if (handler == null) {

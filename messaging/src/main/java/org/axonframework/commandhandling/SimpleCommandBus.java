@@ -88,7 +88,7 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     private Optional<CommandHandler> findCommandHandlerFor(CommandMessage<?> command) {
-        return Optional.ofNullable(subscriptions.get(command.name()));
+        return Optional.ofNullable(subscriptions.get(command.type().qualifiedName()));
     }
 
     /**
