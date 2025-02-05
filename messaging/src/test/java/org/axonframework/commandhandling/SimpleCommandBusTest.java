@@ -47,10 +47,10 @@ import static org.mockito.Mockito.*;
  */
 class SimpleCommandBusTest {
 
-    private static final QualifiedName COMMAND_NAME = new QualifiedName("test");
     private static final String PAYLOAD = "Say hi!";
     private static final CommandMessage<String> TEST_COMMAND =
             new GenericCommandMessage<>(new MessageType("command"), PAYLOAD);
+    private static final QualifiedName COMMAND_NAME = TEST_COMMAND.type().qualifiedName();
 
     private SimpleCommandBus testSubject;
     private StubExecutor executor;
