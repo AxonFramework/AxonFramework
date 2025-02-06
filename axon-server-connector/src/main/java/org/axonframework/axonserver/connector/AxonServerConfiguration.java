@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -216,9 +212,15 @@ public class AxonServerConfiguration {
     private boolean suppressDownloadMessage = false;
 
     /**
-     * The gRPC max inbound message size. Defaults to {@code 0}, keeping the default value from the connector.
+     * The gRPC max inbound and outbound message size. Defaults to {@code 0}, keeping the default value (4,194,304 or 4MiB) from the connector.
+     * Upon messages exceeding this size, an exception is thrown to prevent unexpected disconnections.
      */
     private int maxMessageSize = 0;
+
+    /**
+     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to {@code 0.8}.
+     */
+    private double maxMessageSizeWarningThreshold = 0.8;
 
     /**
      * The timeout (in milliseconds) to wait for response on commit. Defaults to {@code 10_000} milliseconds.
@@ -918,6 +920,25 @@ public class AxonServerConfiguration {
      */
     public void setMaxMessageSize(int maxMessageSize) {
         this.maxMessageSize = maxMessageSize;
+    }
+
+    /**
+     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to {@code 0.8}.
+     *
+     * @return The threshold (in percentage of 0 to 1) of the max outbound message size at which a warning should be logged.
+     */
+    public double getMaxMessageSizeWarningThreshold() {
+        return maxMessageSizeWarningThreshold;
+    }
+
+    /**
+     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to {@code 0.8}.
+     *
+     * @param maxMessageSizeWarningThreshold The threshold (in percentage of 0 to 1) of the max outbound message size at
+     *                                       which a warning should be logged.
+     */
+    public void setMaxMessageSizeWarningThreshold(double maxMessageSizeWarningThreshold) {
+        this.maxMessageSizeWarningThreshold = maxMessageSizeWarningThreshold;
     }
 
     /**

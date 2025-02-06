@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,15 @@ import io.axoniq.axonserver.grpc.control.NodeInfo;
 import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
+import org.axonframework.axonserver.connector.util.GrpcMessageSizeInterceptor;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.config.TagsConfiguration;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 
+import javax.annotation.Nonnull;
+import javax.net.ssl.SSLException;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
@@ -39,8 +42,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
-import javax.net.ssl.SSLException;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -53,7 +54,6 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 4.0
  */
 public class AxonServerConnectionManager implements Lifecycle, ConnectionManager {
-
     private static final int DEFAULT_GRPC_PORT = 8124;
 
     private final Map<String, AxonServerConnection> connections = new ConcurrentHashMap<>();
@@ -350,6 +350,11 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
             if (axonServerConfiguration.getMaxMessageSize() > 0) {
                 builder.maxInboundMessageSize(axonServerConfiguration.getMaxMessageSize());
             }
+            builder.customize(managedChannelBuilder -> managedChannelBuilder.intercept(new GrpcMessageSizeInterceptor(
+                    axonServerConfiguration.getMaxMessageSize() > 0 ? axonServerConfiguration.getMaxMessageSize() : 4194304,
+                    axonServerConfiguration.getMaxMessageSizeWarningThreshold()
+            )));
+
             if (axonServerConfiguration.getKeepAliveTime() > 0) {
                 builder.usingKeepAlive(axonServerConfiguration.getKeepAliveTime(),
                                        axonServerConfiguration.getKeepAliveTimeout(),
