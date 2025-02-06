@@ -19,13 +19,13 @@ package org.axonframework.commandhandling.tracing;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.Span;
 
@@ -33,8 +33,12 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * A CommandBus wrapper that adds tracing for outgoing and incoming commands. It creates a span for Dispatching the
- * command as well as a separate span for handling it.
+ * A {@code CommandBus} wrapper that adds tracing for outgoing and incoming {@link CommandMessage commands}.
+ * <p>
+ * It creates a span for dispatching the command as well as a separate span for handling it.
+ *
+ * @author Allard Buijze
+ * @since 5.0.0
  */
 public class TracingCommandBus implements CommandBus {
 
@@ -42,22 +46,16 @@ public class TracingCommandBus implements CommandBus {
     private final CommandBusSpanFactory spanFactory;
 
     /**
-     * Initialize the TracingCommandBus to wrap the given {@code delegate} by recording traces on the given
-     * {@code spanFactory}
+     * Initialize the {@code TracingCommandBus} to wrap the given {@code delegate} by recording traces on the given
+     * {@code spanFactory}.
      *
-     * @param delegate    The Command Bus to delegate calls to
-     * @param spanFactory The Span Factory to create spans with
+     * @param delegate    The delegate {@code CommandBus} that will handle all dispatching and handling logic.
+     * @param spanFactory The {@code CommandBusSpanFactory} to create spans with.
      */
-    public TracingCommandBus(CommandBus delegate, CommandBusSpanFactory spanFactory) {
-        this.delegate = delegate;
-        this.spanFactory = spanFactory;
-    }
-
-    @Override
-    public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                            @Nullable ProcessingContext processingContext) {
-        Span span = spanFactory.createDispatchCommandSpan(command, false);
-        return span.runSupplierAsync(() -> delegate.dispatch(spanFactory.propagateContext(command), processingContext));
+    public TracingCommandBus(@Nonnull CommandBus delegate,
+                             @Nonnull CommandBusSpanFactory spanFactory) {
+        this.delegate = Objects.requireNonNull(delegate, "Given CommandBus delegate cannot be null.");
+        this.spanFactory = Objects.requireNonNull(spanFactory, "Given CommandBusSpanFactory cannot be null.");
     }
 
     @Override
@@ -65,6 +63,13 @@ public class TracingCommandBus implements CommandBus {
                                 @Nonnull CommandHandler handler) {
         delegate.subscribe(name, new TracingHandler(Objects.requireNonNull(handler, "Given handler cannot be null.")));
         return this;
+    }
+
+    @Override
+    public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                            @Nullable ProcessingContext processingContext) {
+        Span span = spanFactory.createDispatchCommandSpan(command, false);
+        return span.runSupplierAsync(() -> delegate.dispatch(spanFactory.propagateContext(command), processingContext));
     }
 
     @Override
