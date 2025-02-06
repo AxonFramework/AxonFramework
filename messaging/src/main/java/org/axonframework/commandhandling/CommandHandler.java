@@ -28,7 +28,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface CommandHandler extends MessageHandler {
+public non-sealed interface CommandHandler extends MessageHandler {
 
     /**
      * Handles the given {@code command} within the given {@code context}.

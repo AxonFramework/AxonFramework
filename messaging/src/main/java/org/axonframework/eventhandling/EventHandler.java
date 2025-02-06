@@ -30,7 +30,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * @since 0.1
  */
 @FunctionalInterface
-public interface EventHandler extends MessageHandler {
+public non-sealed interface EventHandler extends MessageHandler {
 
     /**
      * Handles the given {@code event} within the given {@code context}.
