@@ -6,6 +6,7 @@ Version and Dependency Compatibility
 * Spring Framework 5 is no longer supported. You should upgrade to Spring Framework 6 or higher.
 * Javax Persistence is completely replaced for Jakarta Persistence. This means the majority of `javax` reference no
   longer apply.
+* EhCache 2 (from group identifier `net.sf.ehcache`) has been faced out entirely in favor of EhCache 3 (from group identifier `org.ehcache`).
 
 Major API Changes
 =================
