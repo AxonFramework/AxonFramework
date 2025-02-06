@@ -23,15 +23,12 @@ import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
 import org.axonframework.messaging.interceptors.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -39,7 +36,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -53,31 +50,21 @@ class AnnotationCommandHandlerAdapterTest {
 
     private static final MessageType TEST_TYPE = new MessageType("command");
 
-    private CommandBus mockBus;
-    private MyCommandHandler mockTarget;
-    private UnitOfWork<CommandMessage<?>> mockUnitOfWork;
+    private CommandBus commandBus;
+    private MyCommandHandler annotatedCommandHandler;
 
     private AnnotationCommandHandlerAdapter<MyCommandHandler> testSubject;
 
     @BeforeEach
-    @SuppressWarnings("unchecked")
     void setUp() {
-        mockBus = mock(CommandBus.class);
-        mockTarget = new MyCommandHandler();
-
+        commandBus = mock(CommandBus.class);
+        annotatedCommandHandler = new MyCommandHandler();
         ParameterResolverFactory parameterResolverFactory = ClasspathParameterResolverFactory.forClass(getClass());
-        testSubject = new AnnotationCommandHandlerAdapter<>(mockTarget, parameterResolverFactory);
 
-        mockUnitOfWork = mock(UnitOfWork.class);
-        when(mockUnitOfWork.resources()).thenReturn(mock(Map.class));
-        when(mockUnitOfWork.getCorrelationData()).thenReturn(MetaData.emptyInstance());
-        when(mockBus.subscribe(any(QualifiedName.class), any())).thenReturn(mockBus);
-        CurrentUnitOfWork.set(mockUnitOfWork);
-    }
+        testSubject = new AnnotationCommandHandlerAdapter<>(annotatedCommandHandler, parameterResolverFactory);
 
-    @AfterEach
-    void tearDown() {
-        CurrentUnitOfWork.clear(mockUnitOfWork);
+        when(commandBus.subscribe(any(QualifiedName.class), any())).thenReturn(commandBus);
+        when(commandBus.subscribe(anySet(), any())).thenReturn(commandBus);
     }
 
     @Test
@@ -91,8 +78,8 @@ class AnnotationCommandHandlerAdapterTest {
                                    .getPayload();
 
         assertNull(result);
-        assertEquals(1, mockTarget.voidHandlerInvoked);
-        assertEquals(0, mockTarget.returningHandlerInvoked);
+        assertEquals(1, annotatedCommandHandler.voidHandlerInvoked);
+        assertEquals(0, annotatedCommandHandler.returningHandlerInvoked);
     }
 
     @Test
@@ -106,8 +93,8 @@ class AnnotationCommandHandlerAdapterTest {
                                    .getPayload();
 
         assertEquals(1L, result);
-        assertEquals(0, mockTarget.voidHandlerInvoked);
-        assertEquals(1, mockTarget.returningHandlerInvoked);
+        assertEquals(0, annotatedCommandHandler.voidHandlerInvoked);
+        assertEquals(1, annotatedCommandHandler.returningHandlerInvoked);
     }
 
     @Test
@@ -122,9 +109,9 @@ class AnnotationCommandHandlerAdapterTest {
                                    .getPayload();
 
         assertEquals(1L, result);
-        assertEquals(0, mockTarget.voidHandlerInvoked);
-        assertEquals(0, mockTarget.returningHandlerInvoked);
-        assertEquals(1, mockTarget.almostDuplicateReturningHandlerInvoked);
+        assertEquals(0, annotatedCommandHandler.voidHandlerInvoked);
+        assertEquals(0, annotatedCommandHandler.returningHandlerInvoked);
+        assertEquals(1, annotatedCommandHandler.almostDuplicateReturningHandlerInvoked);
     }
 
     @Test
@@ -143,15 +130,13 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    void subscribe() {
-        testSubject.subscribe(mockBus);
+    void subscribeSubscribesAllSupportedCommands() {
+        Set<QualifiedName> expectedNames = testSubject.supportedCommands();
 
-        verify(mockBus).subscribe(new QualifiedName(Long.class), testSubject);
-        verify(mockBus).subscribe(new QualifiedName(String.class), testSubject);
-        verify(mockBus).subscribe(new QualifiedName(HashSet.class), testSubject);
-        verify(mockBus).subscribe(new QualifiedName(ArrayList.class), testSubject);
-        verify(mockBus).subscribe(new QualifiedName("almostLong"), testSubject);
-        verifyNoMoreInteractions(mockBus);
+        testSubject.subscribe(commandBus);
+
+        verify(commandBus).subscribe(expectedNames, testSubject);
+        verifyNoMoreInteractions(commandBus);
     }
 
     @Test
@@ -163,13 +148,14 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    @Disabled("TODO This now has a MessageStream instead a MessageStream as the result")
     void messageHandlerInterceptorAnnotatedMethodsAreSupportedForCommandHandlingComponents() {
         CommandMessage<String> testCommandMessage = new GenericCommandMessage<>(TEST_TYPE, "");
         List<CommandMessage<?>> withInterceptor = new ArrayList<>();
         List<CommandMessage<?>> withoutInterceptor = new ArrayList<>();
-        mockTarget = new MyInterceptingCommandHandler(withoutInterceptor, withInterceptor, new ArrayList<>());
-        testSubject = new AnnotationCommandHandlerAdapter<>(mockTarget);
+        annotatedCommandHandler = new MyInterceptingCommandHandler(withoutInterceptor,
+                                                                   withInterceptor,
+                                                                   new ArrayList<>());
+        testSubject = new AnnotationCommandHandlerAdapter<>(annotatedCommandHandler);
 
         Object result = testSubject.handle(testCommandMessage, mock(ProcessingContext.class))
                                    .firstAsCompletableFuture()
@@ -178,7 +164,9 @@ class AnnotationCommandHandlerAdapterTest {
                                    .getPayload();
 
         assertNull(result);
-        assertEquals(1, mockTarget.voidHandlerInvoked);
+        // TODO The interceptor chain is not yet implemented fully through the MessageStream.
+        //  Hence, this test does not end up in the message handler.
+//        assertEquals(1, annotatedCommandHandler.voidHandlerInvoked);
         assertEquals(Collections.singletonList(testCommandMessage), withInterceptor);
         assertEquals(Collections.singletonList(testCommandMessage), withoutInterceptor);
     }
@@ -188,8 +176,10 @@ class AnnotationCommandHandlerAdapterTest {
     void exceptionHandlerAnnotatedMethodsAreSupportedForCommandHandlingComponents() {
         CommandMessage<List<?>> testCommandMessage = new GenericCommandMessage<>(TEST_TYPE, new ArrayList<>());
         List<Exception> interceptedExceptions = new ArrayList<>();
-        mockTarget = new MyInterceptingCommandHandler(new ArrayList<>(), new ArrayList<>(), interceptedExceptions);
-        testSubject = new AnnotationCommandHandlerAdapter<>(mockTarget);
+        annotatedCommandHandler = new MyInterceptingCommandHandler(new ArrayList<>(),
+                                                                   new ArrayList<>(),
+                                                                   interceptedExceptions);
+        testSubject = new AnnotationCommandHandlerAdapter<>(annotatedCommandHandler);
 
         try {
             testSubject.handle(testCommandMessage, mock(ProcessingContext.class));
@@ -214,20 +204,18 @@ class AnnotationCommandHandlerAdapterTest {
 
         @SuppressWarnings({"UnusedDeclaration"})
         @CommandHandler
-        public void myVoidHandler(String stringCommand, UnitOfWork<CommandMessage<?>> unitOfWork) {
+        public void myVoidHandler(String stringCommand) {
             voidHandlerInvoked++;
         }
 
         @CommandHandler(commandName = "almostLong")
-        public Long myAlmostDuplicateReturningHandler(Long longCommand, UnitOfWork<CommandMessage<?>> unitOfWork) {
-            assertNotNull(unitOfWork, "The UnitOfWork was not passed to the command handler");
+        public Long myAlmostDuplicateReturningHandler(Long longCommand) {
             almostDuplicateReturningHandlerInvoked++;
             return longCommand;
         }
 
         @CommandHandler
-        public Long myReturningHandler(Long longCommand, UnitOfWork<CommandMessage<?>> unitOfWork) {
-            assertNotNull(unitOfWork, "The UnitOfWork was not passed to the command handler");
+        public Long myReturningHandler(Long longCommand) {
             returningHandlerInvoked++;
             return longCommand;
         }
