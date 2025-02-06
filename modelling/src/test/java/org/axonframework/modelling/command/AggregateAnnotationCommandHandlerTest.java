@@ -599,7 +599,6 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void annotatedCollectionFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined(
             @Mock Repository<CollectionFieldWithoutGenerics> mockRepo
     ) {
@@ -740,7 +739,6 @@ class AggregateAnnotationCommandHandlerTest {
     }
 
     @Test
-    @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void duplicateCommandHandlerSubscriptionExceptionIsNotThrownForPolymorphicAggregateWithRootCommandHandler() {
         commandBus = new SimpleCommandBus();
 

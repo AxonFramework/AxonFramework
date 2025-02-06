@@ -18,7 +18,6 @@ package org.axonframework.modelling.command;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
-import org.axonframework.commandhandling.CommandHandlerRegistry;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
@@ -84,13 +83,13 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     private final CommandTargetResolver commandTargetResolver;
     // TODO replace these MessageHandlers for MessageHandlingMembers, as the latter dictate the use of annotations
     private final List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlers;
-    private final Set<String> supportedCommandNames;
+    private final Set<QualifiedName> supportedCommands;
     private final Map<String, Set<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>>> supportedCommandsByName;
     private final Map<Class<? extends T>, CreationPolicyAggregateFactory<T>> factoryPerType;
     private final MessageTypeResolver messageTypeResolver;
 
     /**
-     * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
+     * Instantiate a Builder to be able to create a {@code AggregateAnnotationCommandHandler}.
      * <p>
      * The {@link CommandTargetResolver} is defaulted to a {@link AnnotationCommandTargetResolver}. The
      * {@link Repository} is a <b>hard requirement</b> and as such should be provided. Next to that, this Builder's goal
@@ -99,15 +98,15 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      * {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the
      * AggregateModel <b>or</b> the {@code aggregateType} should be provided.
      *
-     * @param <T> the type of aggregate this {@link AggregateAnnotationCommandHandler} handles commands for
-     * @return a Builder to be able to create a {@link AggregateAnnotationCommandHandler}
+     * @param <T> the type of aggregate this {@code AggregateAnnotationCommandHandler} handles commands for
+     * @return a Builder to be able to create a {@code AggregateAnnotationCommandHandler}
      */
     public static <T> Builder<T> builder() {
         return new Builder<>();
     }
 
     /**
-     * Instantiate a {@link AggregateAnnotationCommandHandler} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@code AggregateAnnotationCommandHandler} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the {@link Repository} and {@link CommandTargetResolver} are not {@code null}, and will throw an
      * {@link AxonConfigurationException} if either of them is {@code null}. Next to that, the provided Builder's goal
@@ -117,13 +116,13 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      * AggregateModel <b>or</b> the {@code aggregateType} should be provided. An AxonConfigurationException is thrown if
      * this criteria is not met.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link AggregateAnnotationCommandHandler} instance
+     * @param builder the {@link Builder} used to instantiate a {@code AggregateAnnotationCommandHandler} instance
      */
     protected AggregateAnnotationCommandHandler(Builder<T> builder) {
         builder.validate();
         this.repository = builder.repository;
         this.commandTargetResolver = builder.commandTargetResolver;
-        this.supportedCommandNames = new HashSet<>();
+        this.supportedCommands = new HashSet<>();
         this.supportedCommandsByName = new HashMap<>();
         this.messageTypeResolver = builder.messageTypeResolver;
         AggregateModel<T> aggregateModel = builder.buildAggregateModel();
@@ -153,6 +152,14 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         return typeToFactory;
     }
 
+    @Override
+    public AggregateAnnotationCommandHandler<T> subscribe(@Nonnull QualifiedName name,
+                                                          @Nonnull CommandHandler commandHandler) {
+        throw new UnsupportedOperationException(
+                "This Command Handling Component does not support direct command handler registration."
+        );
+    }
+
     /**
      * Subscribe this command handler to the given {@code commandBus}. The command handler will be subscribed for each
      * of the supported commands.
@@ -161,25 +168,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      * @return A handle that can be used to unsubscribe
      */
     public Registration subscribe(CommandBus commandBus) {
-        /*List<Registration> subscriptions = */
-        // TODO Fix this in future PR
-//        supportedCommandsByName.forEach(
-//                (key, value) -> value.forEach(
-//                        messageHandler -> commandBus.subscribe(new QualifiedName(key), (CommandHandler) messageHandler)
-//                )
-//        );
-//                .filter(Objects::nonNull)
-//                .toList()
+        commandBus.subscribe(supportedCommands(), this);
         return () -> true;
-//        return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
-    }
-
-    @Override
-    public CommandHandlerRegistry subscribe(@Nonnull QualifiedName name,
-                                            @Nonnull CommandHandler commandHandler) {
-        throw new UnsupportedOperationException(
-                "This Command Handling Component implementation does not YET support direct command handler registration."
-        );
     }
 
     /**
@@ -241,7 +231,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
             }
             handlersFound.add(messageHandler);
             supportedCommandsByName.computeIfAbsent(cmh.commandName(), key -> new HashSet<>()).add(messageHandler);
-            supportedCommandNames.add(cmh.commandName());
+            supportedCommands.add(new QualifiedName(cmh.commandName()));
         });
     }
 
@@ -294,9 +284,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
     @Override
     public Set<QualifiedName> supportedCommands() {
-        return supportedCommandNames.stream()
-                                    .map(QualifiedName::new)
-                                    .collect(Collectors.toSet());
+        return Set.copyOf(supportedCommands);
     }
 
     /**
