@@ -188,6 +188,7 @@ class SimpleCommandBusTest {
     @Test
     void exceptionThrownFromHandlerReturnedInCompletableFuture() {
         var commandHandler = new StubCommandHandler("ok") {
+            @Nonnull
             @Override
             public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                            @Nonnull ProcessingContext processingContext) {
@@ -292,6 +293,7 @@ class SimpleCommandBusTest {
             this.result = result;
         }
 
+        @Nonnull
         @Override
         public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                        @Nonnull ProcessingContext processingContext) {
