@@ -36,34 +36,46 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
+/**
+ * A {@code CommandBus} wrapper that supports both {@link MessageHandlerInterceptor MessageHandlerInterceptors} and
+ * {@link MessageDispatchInterceptor MessageDispatchInterceptors}. Actual dispatching and handling of commands is done
+ * by a delegate.
+ *
+ * @author Allad Buijze
+ * @since 5.0.0
+ */
 public class InterceptingCommandBus implements CommandBus {
 
     private final CommandBus delegate;
     private final LinkedList<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors;
-    private final BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>> dispatcher;
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
+    private final BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>> dispatcher;
 
-    public InterceptingCommandBus(CommandBus delegate,
-                                  List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors,
-                                  List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
-        this.delegate = delegate;
+    /**
+     * Constructs a {@code InterceptingCommandBus}, delegating dispatching and handling logic to the given
+     * {@code delegate}. The given {@code handlerInterceptors} are wrapped around the
+     * {@link CommandHandler command handlers} when subscribing. The given {@code dispatchInterceptors} are invoked
+     * before dispatching is provided to the given {@code delegate}.
+     *
+     * @param delegate             The delegate {@code CommandBus} that will handle all dispatching and handling logic.
+     * @param handlerInterceptors  The interceptors to invoke before handling a command.
+     * @param dispatchInterceptors The interceptors to invoke before dispatching a command.
+     */
+    public InterceptingCommandBus(@Nonnull CommandBus delegate,
+                                  @Nonnull List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors,
+                                  @Nonnull List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
+        this.delegate = Objects.requireNonNull(delegate, "Given CommandBus delegate cannot be null.");
         this.handlerInterceptors = new LinkedList<>(handlerInterceptors);
         this.dispatchInterceptors = new ArrayList<>(dispatchInterceptors);
-        Iterator<MessageDispatchInterceptor<? super CommandMessage<?>>> di = new LinkedList<>(dispatchInterceptors).descendingIterator();
-        BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>> dis = (c, p) -> MessageStream.fromFuture(
-                delegate.dispatch(c, p));
+
+        Iterator<MessageDispatchInterceptor<? super CommandMessage<?>>> di =
+                new LinkedList<>(dispatchInterceptors).descendingIterator();
+        BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>> dis =
+                (c, p) -> MessageStream.fromFuture(delegate.dispatch(c, p));
         while (di.hasNext()) {
             dis = new Dispatcher(di.next(), dis);
         }
         this.dispatcher = dis;
-    }
-
-    @Override
-    public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                            @Nullable ProcessingContext processingContext) {
-        return dispatcher.apply(command, processingContext)
-                         .firstAsCompletableFuture()
-                         .thenApply(Entry::message);
     }
 
     @Override
@@ -80,24 +92,24 @@ public class InterceptingCommandBus implements CommandBus {
     }
 
     @Override
+    public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                            @Nullable ProcessingContext processingContext) {
+        return dispatcher.apply(command, processingContext)
+                         .firstAsCompletableFuture()
+                         .thenApply(Entry::message);
+    }
+
+    @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeWrapperOf(delegate);
         descriptor.describeProperty("handlerInterceptors", handlerInterceptors);
         descriptor.describeProperty("dispatchInterceptors", dispatchInterceptors);
     }
 
-    private static class InterceptedHandler implements
-            CommandHandler,
-            InterceptorChain<CommandMessage<?>, CommandResultMessage<?>> {
-
-        private final MessageHandlerInterceptor<? super CommandMessage<?>> interceptor;
-        private final CommandHandler next;
-
-        public InterceptedHandler(MessageHandlerInterceptor<? super CommandMessage<?>> interceptor,
-                                  CommandHandler next) {
-            this.interceptor = interceptor;
-            this.next = next;
-        }
+    private record InterceptedHandler(
+            MessageHandlerInterceptor<? super CommandMessage<?>> interceptor,
+            CommandHandler next
+    ) implements CommandHandler, InterceptorChain<CommandMessage<?>, CommandResultMessage<?>> {
 
         @Nonnull
         @Override
@@ -122,19 +134,11 @@ public class InterceptingCommandBus implements CommandBus {
         }
     }
 
-    private class Dispatcher implements
-            BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>>,
+    private record Dispatcher(
+            MessageDispatchInterceptor<? super CommandMessage<?>> interceptor,
+            BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>> next
+    ) implements BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>>,
             InterceptorChain<CommandMessage<?>, Message<?>> {
-
-        private final MessageDispatchInterceptor<? super CommandMessage<?>> interceptor;
-        private final BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>> next;
-
-        public Dispatcher(MessageDispatchInterceptor<? super CommandMessage<?>> interceptor,
-                          BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>> next) {
-
-            this.interceptor = interceptor;
-            this.next = next;
-        }
 
         @Override
         public MessageStream<? extends Message<?>> apply(CommandMessage<?> commandMessage,
