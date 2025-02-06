@@ -48,6 +48,9 @@ class MethodInvokingMessageHandlingMemberTest {
                     r -> new GenericMessage<>(new MessageType(r.getClass()), r)
             ));
         }
+        if (result instanceof MessageStream<?> stream) {
+            return stream;
+        }
         return MessageStream.just(new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }
 
