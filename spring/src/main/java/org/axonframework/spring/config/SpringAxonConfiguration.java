@@ -20,6 +20,8 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.spring.event.AxonStartedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -28,6 +30,7 @@ import org.springframework.context.SmartLifecycle;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.lang.NonNull;
 
+import java.lang.invoke.MethodHandles;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -45,6 +48,8 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class SpringAxonConfiguration
         implements FactoryBean<Configuration>, SmartLifecycle, ApplicationListener<ContextClosedEvent> {
+
+    private static final Logger logger = LoggerFactory.getLogger(SpringAxonConfiguration.class);
 
     /**
      * The {@link SmartLifecycle#getPhase()} value of this is set to be safely lower than the typical values listed in
@@ -94,6 +99,7 @@ public class SpringAxonConfiguration
     public void start() {
         if (isRunning.compareAndSet(false, true)) {
             getObject().start();
+            logger.info("Axon Configuration started");
             this.applicationContext.publishEvent(new AxonStartedEvent());
         }
     }
@@ -106,6 +112,7 @@ public class SpringAxonConfiguration
     @Override
     public void stop(@Nonnull Runnable callback) {
         new Thread(() -> {
+            logger.info("Axon Configuration is shutting down");
             try {
                 contextClosedLatch.await(30, TimeUnit.SECONDS); // todo: configure time?
             } catch (InterruptedException ignored) {
@@ -115,6 +122,7 @@ public class SpringAxonConfiguration
                 if (isRunning.compareAndSet(true, false) && c != null) {
                     c.shutdown();
                     callback.run();
+                    logger.info("Axon Configuration has been shut down");
                 }
             }
         }).start();
@@ -137,6 +145,7 @@ public class SpringAxonConfiguration
 
     @Override
     public void onApplicationEvent(@Nonnull ContextClosedEvent event) {
+        logger.info("Axon Configuration is being notified of Spring Context closing");
         contextClosedLatch.countDown();
     }
 }
