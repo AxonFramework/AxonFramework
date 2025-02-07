@@ -76,13 +76,13 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
     }
 
     @Override
-    protected long globalSequenceOfEvent(long eventNumber) {
-        return eventNumber;
+    protected long globalSequenceOfEvent(long position) {
+        return position;
     }
 
     @Override
-    protected TrackingToken trackingTokenOnPosition(long eventNumber) {
-        return GapAwareTrackingToken.newInstance(globalSequenceOfEvent(eventNumber), Collections.emptySet());
+    protected TrackingToken trackingTokenAt(long position) {
+        return GapAwareTrackingToken.newInstance(globalSequenceOfEvent(position), Collections.emptySet());
     }
 
     @Override

@@ -89,13 +89,13 @@ class LegacyAxonServerEventStorageEngineTest extends
     }
 
     @Override
-    protected long globalSequenceOfEvent(long eventNumber) {
-        return eventNumber - 1;
+    protected long globalSequenceOfEvent(long position) {
+        return position - 1;
     }
 
     @Override
-    protected TrackingToken trackingTokenOnPosition(long eventNumber) {
-        return new GlobalSequenceTrackingToken(globalSequenceOfEvent(eventNumber));
+    protected TrackingToken trackingTokenAt(long position) {
+        return new GlobalSequenceTrackingToken(globalSequenceOfEvent(position));
     }
 
     @Override

@@ -90,15 +90,15 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
     protected abstract ESE buildStorageEngine() throws Exception;
 
     /**
-     * Will translate eventNumber to global sequence position. It differs among the EventStore implementations. For
+     * Will translate position to global sequence index. It differs among the EventStore implementations. For
      * example: AxonServer starts the global stream from 0, whereas JPA implementations starts from 1.
      *
-     * @param eventNumber the event number to translate, first is 1
-     * @return the global index position for given event storage engine
+     * @param position the event order to translate, first is 1
+     * @return the global sequence index for given event storage engine
      */
-    protected abstract long globalSequenceOfEvent(long eventNumber);
+    protected abstract long globalSequenceOfEvent(long position);
 
-    protected abstract TrackingToken trackingTokenOnPosition(long eventNumber);
+    protected abstract TrackingToken trackingTokenAt(long position);
 
     @Test
     void streamingFromStartReturnsSelectedMessages() {
@@ -122,7 +122,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                    .join();
 
         MessageStream<EventMessage<?>> result =
-                testSubject.stream(StreamingCondition.startingFrom(trackingTokenOnPosition(0)));
+                testSubject.stream(StreamingCondition.startingFrom(trackingTokenAt(0)));
 
         StepVerifier.create(result.asFlux())
                     .assertNext(entry -> assertTrackedEntry(entry, expectedEventOne.event(), 1))
@@ -152,7 +152,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                 AppendTransaction::commit).join();
 
         MessageStream<EventMessage<?>> result =
-                testSubject.stream(StreamingCondition.startingFrom(trackingTokenOnPosition(2)));
+                testSubject.stream(StreamingCondition.startingFrom(trackingTokenAt(2)));
 
         StepVerifier.create(result.asFlux())
                     // we've skipped the first two
@@ -183,7 +183,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
                 AppendTransaction::commit).join();
 
         MessageStream<EventMessage<?>> result = testSubject.stream(StreamingCondition.startingFrom(
-                trackingTokenOnPosition(10)).or(expectedCriteria));
+                trackingTokenAt(10)).or(expectedCriteria));
 
         try {
             assertTrue(result.next().isEmpty());
