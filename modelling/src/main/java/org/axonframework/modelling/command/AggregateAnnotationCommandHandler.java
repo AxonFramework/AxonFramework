@@ -28,7 +28,6 @@ import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.Registration;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
@@ -158,18 +157,6 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         throw new UnsupportedOperationException(
                 "This Command Handling Component does not support direct command handler registration."
         );
-    }
-
-    /**
-     * Subscribe this command handler to the given {@code commandBus}. The command handler will be subscribed for each
-     * of the supported commands.
-     *
-     * @param commandBus The command bus instance to subscribe to
-     * @return A handle that can be used to unsubscribe
-     */
-    public Registration subscribe(CommandBus commandBus) {
-        commandBus.subscribe(supportedCommands(), this);
-        return () -> true;
     }
 
     /**

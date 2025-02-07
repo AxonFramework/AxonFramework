@@ -130,16 +130,6 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
-    void subscribeSubscribesAllSupportedCommands() {
-        Set<QualifiedName> expectedNames = testSubject.supportedCommands();
-
-        testSubject.subscribe(commandBus);
-
-        verify(commandBus).subscribe(expectedNames, testSubject);
-        verifyNoMoreInteractions(commandBus);
-    }
-
-    @Test
     void handleNoHandlerForCommand() {
         CommandMessage<Object> command = new GenericCommandMessage<>(TEST_TYPE, new LinkedList<>());
 

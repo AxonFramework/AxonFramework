@@ -113,8 +113,7 @@ class AggregateAnnotationCommandHandlerTest {
                                                        .repository(mockRepository)
                                                        .creationPolicyAggregateFactory(creationPolicyFactory)
                                                        .build();
-        //noinspection resource
-        testSubject.subscribe(commandBus);
+        commandBus.subscribe(testSubject);
     }
 
     @Test
@@ -690,8 +689,7 @@ class AggregateAnnotationCommandHandlerTest {
                                                        .repository(mockRepository)
                                                        .build();
 
-        //noinspection resource
-        assertThrows(DuplicateCommandHandlerSubscriptionException.class, () -> testSubject.subscribe(commandBus));
+        assertThrows(DuplicateCommandHandlerSubscriptionException.class, () -> commandBus.subscribe(testSubject));
     }
 
     @Test
@@ -756,8 +754,7 @@ class AggregateAnnotationCommandHandlerTest {
                                                  .aggregateModel(polymorphicAggregateModel)
                                                  .build();
 
-        //noinspection resource
-        assertDoesNotThrow(() -> polymorphicAggregateTestSubject.subscribe(commandBus));
+        assertDoesNotThrow(() -> commandBus.subscribe(polymorphicAggregateTestSubject));
     }
 
     @SuppressWarnings("unused")

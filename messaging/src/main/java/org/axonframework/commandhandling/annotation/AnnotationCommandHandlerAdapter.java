@@ -63,8 +63,8 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
     private final MessageTypeResolver messageTypeResolver;
 
     /**
-     * Wraps the given {@code annotatedCommandHandler}, allowing it to be {@link #subscribe(CommandBus) subscribed} to a
-     * {@link CommandBus}.
+     * Wraps the given {@code annotatedCommandHandler}, allowing it to be subscribed to a {@link CommandBus} as a
+     * {@link CommandHandlingComponent}.
      *
      * @param annotatedCommandHandler The object containing the {@link CommandHandler} annotated methods.
      */
@@ -73,8 +73,8 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
     }
 
     /**
-     * Wraps the given {@code annotatedCommandHandler}, allowing it to be {@link #subscribe(CommandBus) subscribed} to a
-     * {@link CommandBus}.
+     * Wraps the given {@code annotatedCommandHandler}, allowing it to be subscribed to a {@link CommandBus} as a
+     * {@link CommandHandlingComponent}.
      *
      * @param annotatedCommandHandler  The object containing the {@link CommandHandler} annotated methods.
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
@@ -88,8 +88,8 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
     }
 
     /**
-     * Wraps the given {@code annotatedCommandHandler}, allowing it to be {@link #subscribe(CommandBus) subscribed} to a
-     * {@link CommandBus}.
+     * Wraps the given {@code annotatedCommandHandler}, allowing it to be subscribed to a {@link CommandBus} as a
+     * {@link CommandHandlingComponent}.
      *
      * @param annotatedCommandHandler  The object containing the {@link CommandHandler} annotated methods.
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
@@ -116,18 +116,6 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
         throw new UnsupportedOperationException(
                 "This Command Handling Component does not support direct command handler registration."
         );
-    }
-
-    /**
-     * Subscribe this command handling component to the given {@code commandBus} for each of the
-     * {@link #supportedCommands() supported commands}.
-     *
-     * @param commandBus The {@code commandBus} instance to subscribe to.
-     * @return A handle that can be used to unsubscribe.
-     */
-    public Registration subscribe(CommandBus commandBus) {
-        commandBus.subscribe(supportedCommands(), this);
-        return () -> true;
     }
 
     @Nonnull
