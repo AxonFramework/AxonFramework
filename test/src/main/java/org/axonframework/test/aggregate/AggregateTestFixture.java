@@ -217,13 +217,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public synchronized FixtureConfiguration<T> registerAnnotatedCommandHandler(final Object annotatedCommandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
-        AnnotationCommandHandlerAdapter<?> adapter = new AnnotationCommandHandlerAdapter<>(
+        commandBus.subscribe(new AnnotationCommandHandlerAdapter<>(
                 annotatedCommandHandler,
                 getParameterResolverFactory(),
                 getHandlerDefinition(),
                 new ClassBasedMessageTypeResolver()
-        );
-        adapter.subscribe(commandBus);
+        ));
         return this;
     }
 
@@ -606,8 +605,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 builder.commandTargetResolver(commandTargetResolver);
             }
 
-            AggregateAnnotationCommandHandler<T> handler = builder.build();
-            handler.subscribe(commandBus);
+            commandBus.subscribe(builder.build());
         }
     }
 

@@ -75,7 +75,6 @@ public class SimpleCommandBus implements CommandBus {
         this(DirectExecutor.instance(), processingLifecycleHandlerRegistrars);
     }
 
-
     /**
      * Construct a {@code SimpleCommandBus}, using the given {@code processingLifecycleHandlerRegistrars} when
      * constructing a {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle} to handle commands in.
@@ -116,7 +115,7 @@ public class SimpleCommandBus implements CommandBus {
      *                                                      {@code name}.
      */
     @Override
-    public CommandBus subscribe(@Nonnull QualifiedName name, @Nonnull CommandHandler commandHandler) {
+    public SimpleCommandBus subscribe(@Nonnull QualifiedName name, @Nonnull CommandHandler commandHandler) {
         CommandHandler handler = requireNonNull(commandHandler, "Given command handler cannot be null.");
         logger.debug("Subscribing command with name [{}].", name);
         var existingHandler = subscriptions.putIfAbsent(name, handler);
@@ -124,7 +123,6 @@ public class SimpleCommandBus implements CommandBus {
         if (existingHandler != null && existingHandler != handler) {
             throw new DuplicateCommandHandlerSubscriptionException(name, existingHandler, handler);
         }
-        // TODO what about Registration object?
         return this;
     }
 

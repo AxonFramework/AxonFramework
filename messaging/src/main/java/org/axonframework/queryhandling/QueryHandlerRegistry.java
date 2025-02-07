@@ -46,7 +46,6 @@ public interface QueryHandlerRegistry {
      * @param queryHandler The handler instance that handles {@link QueryMessage queries} for the given names.
      * @return This registry for fluent interfacing.
      */
-    // TODO discuss if we want chaining, or Registration objects
     default QueryHandlerRegistry subscribe(@Nonnull Set<QualifiedName> names,
                                            @Nonnull QueryHandler queryHandler) {
         names.forEach(name -> subscribe(name, queryHandler));
@@ -64,7 +63,6 @@ public interface QueryHandlerRegistry {
      * @param queryHandler The handler instance that handles {@link QueryMessage queries} for the given name.
      * @return This registry for fluent interfacing.
      */
-    // TODO discuss if we want chaining, or Registration objects
     QueryHandlerRegistry subscribe(@Nonnull QualifiedName name,
                                    @Nonnull QueryHandler queryHandler);
 }

@@ -59,8 +59,8 @@ public class TracingCommandBus implements CommandBus {
     }
 
     @Override
-    public CommandBus subscribe(@Nonnull QualifiedName name,
-                                @Nonnull CommandHandler handler) {
+    public TracingCommandBus subscribe(@Nonnull QualifiedName name,
+                                       @Nonnull CommandHandler handler) {
         delegate.subscribe(name, new TracingHandler(Objects.requireNonNull(handler, "Given handler cannot be null.")));
         return this;
     }

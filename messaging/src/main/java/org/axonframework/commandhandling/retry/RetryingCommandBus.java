@@ -62,8 +62,8 @@ public class RetryingCommandBus implements CommandBus {
     }
 
     @Override
-    public CommandBus subscribe(@Nonnull QualifiedName name,
-                                @Nonnull CommandHandler handler) {
+    public RetryingCommandBus subscribe(@Nonnull QualifiedName name,
+                                        @Nonnull CommandHandler handler) {
         delegate.subscribe(name, handler);
         return this;
     }
