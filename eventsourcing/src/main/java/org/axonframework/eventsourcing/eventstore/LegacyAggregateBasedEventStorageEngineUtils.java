@@ -187,34 +187,6 @@ public class LegacyAggregateBasedEventStorageEngineUtils {
         }
     }
 
-    /**
-     * Represents an empty append transaction. This transaction does nothing and always succeeds. It is used when there
-     * are no events to persist.
-     *
-     * @param appendCondition will be returned as commit result
-     */
-    public record EmptyAppendTransaction(AppendCondition appendCondition)
-            implements AsyncEventStorageEngine.AppendTransaction {
-
-        /**
-         * Commits the empty append transaction. Always completes successfully with the provided consistency marker.
-         *
-         * @return a completed future with the consistency marker
-         */
-        @Override
-        public CompletableFuture<ConsistencyMarker> commit() {
-            return CompletableFuture.completedFuture(AggregateBasedConsistencyMarker.from(appendCondition));
-        }
-
-        /**
-         * Rolls back the empty append transaction. This does nothing as the transaction has no effect.
-         */
-        @Override
-        public void rollback() {
-            // No action needed
-        }
-    }
-
     private LegacyAggregateBasedEventStorageEngineUtils() {
         // Utility class
     }
