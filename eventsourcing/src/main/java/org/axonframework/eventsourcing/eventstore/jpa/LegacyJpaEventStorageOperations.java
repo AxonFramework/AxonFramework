@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore.jpa;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
@@ -45,7 +46,7 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
  */
 record LegacyJpaEventStorageOperations(
         TransactionManager transactionManager,
-        EntityManager entityManager,
+        EntityManagerProvider entityManagerProvider,
         String domainEventEntryEntityName,
         String snapshotEventEntryEntityName
 ) {
@@ -77,7 +78,7 @@ record LegacyJpaEventStorageOperations(
             long firstSequenceNumber,
             int batchSize
     ) {
-        return entityManager
+        return entityManager()
                 .createQuery(
                         "SELECT new org.axonframework.eventhandling.GenericDomainEventEntry(" +
                                 "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, e.timeStamp, "
@@ -100,7 +101,7 @@ record LegacyJpaEventStorageOperations(
         if (lastSequenceNumber == Long.MAX_VALUE) {
             return fetchDomainEvents(aggregateIdentifier, firstSequenceNumber, batchSize);
         }
-        return entityManager
+        return entityManager()
                 .createQuery(
                         "SELECT new org.axonframework.eventhandling.GenericDomainEventEntry(" +
                                 "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, e.timeStamp, "
@@ -154,7 +155,7 @@ record LegacyJpaEventStorageOperations(
     }
 
     List<Object[]> indexAndTimestampBetweenGaps(GapAwareTrackingToken token) {
-        return entityManager
+        return entityManager()
                 .createQuery(
                         "SELECT e.globalIndex, e.timeStamp FROM " + domainEventEntryEntityName() + " e "
                                 + "WHERE e.globalIndex >= :firstGapOffset "
@@ -168,7 +169,7 @@ record LegacyJpaEventStorageOperations(
 
     @SuppressWarnings("unchecked")
     List<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
-        return entityManager
+        return entityManager()
                 .createQuery(
                         "SELECT new org.axonframework.eventhandling.GenericDomainEventEntry("
                                 + "e.type, e.aggregateIdentifier, e.sequenceNumber, e.eventIdentifier, "
@@ -182,14 +183,14 @@ record LegacyJpaEventStorageOperations(
     }
 
     Optional<Long> maxGlobalIndex() {
-        var results = entityManager
+        var results = entityManager()
                 .createQuery("SELECT MAX(e.globalIndex) FROM " + domainEventEntryEntityName() + " e", Long.class)
                 .getResultList();
         return (results.isEmpty() || results.getFirst() == null) ? Optional.empty() : Optional.of(results.getFirst());
     }
 
     Optional<Long> globalIndexAt(Instant dateTime) {
-        var results = entityManager
+        var results = entityManager()
                 .createQuery(
                         "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e "
                                 + "WHERE e.timeStamp >= :dateTime", Long.class
@@ -200,14 +201,14 @@ record LegacyJpaEventStorageOperations(
     }
 
     Optional<Long> minGlobalIndex() {
-        var results = entityManager.createQuery(
+        var results = entityManager().createQuery(
                 "SELECT MIN(e.globalIndex) - 1 FROM " + domainEventEntryEntityName() + " e", Long.class
         ).getResultList();
         return (results.isEmpty() || results.getFirst() == null) ? Optional.empty() : Optional.of(results.getFirst());
     }
 
     void deleteSnapshots(String aggregateIdentifier, long sequenceNumber) {
-        entityManager
+        entityManager()
                 .createQuery(
                         "DELETE FROM " + snapshotEventEntryEntityName() + " e "
                                 + "WHERE e.aggregateIdentifier = :aggregateIdentifier "
@@ -219,14 +220,18 @@ record LegacyJpaEventStorageOperations(
     }
 
     Optional<Long> lastSequenceNumberFor(@Nonnull String aggregateIdentifier) {
-        List<Long> results = entityManager.createQuery(
-                                                  "SELECT MAX(e.sequenceNumber) FROM " + domainEventEntryEntityName()
-                                                          + " e WHERE e.aggregateIdentifier = :aggregateId", Long.class)
-                                          .setParameter("aggregateId", aggregateIdentifier)
-                                          .getResultList();
+        List<Long> results = entityManager().createQuery(
+                                                    "SELECT MAX(e.sequenceNumber) FROM " + domainEventEntryEntityName()
+                                                            + " e WHERE e.aggregateIdentifier = :aggregateId", Long.class)
+                                            .setParameter("aggregateId", aggregateIdentifier)
+                                            .getResultList();
         if (results.isEmpty()) {
             return Optional.empty();
         }
         return Optional.ofNullable(results.get(0));
+    }
+
+    private EntityManager entityManager() {
+        return entityManagerProvider.getEntityManager();
     }
 }

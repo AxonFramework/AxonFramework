@@ -113,7 +113,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 .apply(Customization.withDefaultValues());
 
         this.legacyJpaOperations = new LegacyJpaEventStorageOperations(transactionManager,
-                                                                       entityManagerProvider.getEntityManager(),
+                                                                       entityManagerProvider,
                                                                        DOMAIN_EVENT_ENTRY_ENTITY_NAME,
                                                                        "unused");
         this.tokenOperations = new GapAwareTrackingTokenOperations(
