@@ -79,8 +79,8 @@ public class InterceptingCommandBus implements CommandBus {
     }
 
     @Override
-    public CommandBus subscribe(@Nonnull QualifiedName name,
-                                @Nonnull CommandHandler commandHandler) {
+    public InterceptingCommandBus subscribe(@Nonnull QualifiedName name,
+                                            @Nonnull CommandHandler commandHandler) {
         CommandHandler handler = Objects.requireNonNull(commandHandler, "Given handler cannot be null.");
         Iterator<MessageHandlerInterceptor<? super CommandMessage<?>>> iter = handlerInterceptors.descendingIterator();
         CommandHandler interceptedHandler = handler;

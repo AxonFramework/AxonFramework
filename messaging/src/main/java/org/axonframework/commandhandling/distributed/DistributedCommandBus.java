@@ -70,8 +70,8 @@ public class DistributedCommandBus implements CommandBus {
     }
 
     @Override
-    public CommandBus subscribe(@Nonnull QualifiedName name,
-                                @Nonnull CommandHandler handler) {
+    public DistributedCommandBus subscribe(@Nonnull QualifiedName name,
+                                           @Nonnull CommandHandler handler) {
         CommandHandler commandHandler = Objects.requireNonNull(handler, "Given handler cannot be null.");
         delegate.subscribe(name, commandHandler);
         connector.subscribe(name.toString(), 100);
