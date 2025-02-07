@@ -88,22 +88,14 @@ public non-sealed interface MessageHandlingComponent
     default MessageHandlingComponent subscribe(@Nonnull QualifiedName name,
                                                @Nonnull MessageHandler handler) {
         switch (handler) {
-            case MessageHandlingComponent component:
-                component.supportedCommands().forEach(command -> subscribe(command, (CommandHandler) component));
-                component.supportedEvents().forEach(command -> subscribe(command, (EventHandler) component));
-                component.supportedQueries().forEach(command -> subscribe(command, (QueryHandler) component));
-                break;
-            case CommandHandler commandHandler:
-                subscribe(name, commandHandler);
-                break;
-            case EventHandler eventHandler:
-                subscribe(name, eventHandler);
-                break;
-            case QueryHandler queryHandler:
-                subscribe(name, queryHandler);
-                break;
-            default:
-                throw new IllegalStateException("Unexpected value: " + handler);
+            case MessageHandlingComponent component -> {
+                subscribe(component.supportedCommands(), (CommandHandler) component);
+                subscribe(component.supportedEvents(), (EventHandler) component);
+                subscribe(component.supportedQueries(), (QueryHandler) component);
+            }
+            case CommandHandler commandHandler -> subscribe(name, commandHandler);
+            case EventHandler eventHandler -> subscribe(name, eventHandler);
+            case QueryHandler queryHandler -> subscribe(name, queryHandler);
         }
         return this;
     }
