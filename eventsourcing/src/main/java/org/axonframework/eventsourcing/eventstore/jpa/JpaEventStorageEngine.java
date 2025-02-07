@@ -103,7 +103,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
         this.legacyJpaOperations = new LegacyJpaEventStorageOperations(
                 transactionManager,
-                entityManagerProvider.getEntityManager(),
+                entityManagerProvider,
                 domainEventEntryEntityName(),
                 snapshotEventEntryEntityName()
         );
