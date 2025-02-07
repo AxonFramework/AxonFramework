@@ -16,6 +16,7 @@
 
 package org.axonframework.spring.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.spring.event.AxonStartedEvent;
@@ -99,15 +100,24 @@ public class SpringAxonConfiguration
 
     @Override
     public void stop() {
-        try {
-            contextClosedLatch.await(30, TimeUnit.SECONDS); // Wait for graceful shutdown completion / different thread?
-        } catch (InterruptedException ignored) {
-        } finally {
-            Configuration c = this.configuration.get();
-            if (isRunning.compareAndSet(true, false) && c != null) {
-                c.shutdown();
+        throw new UnsupportedOperationException("Stop must not be invoked directly");
+    }
+
+    @Override
+    public void stop(@Nonnull Runnable callback) {
+        new Thread(() -> {
+            try {
+                contextClosedLatch.await(30, TimeUnit.SECONDS); // todo: configure time?
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            } finally {
+                Configuration c = this.configuration.get();
+                if (isRunning.compareAndSet(true, false) && c != null) {
+                    c.shutdown();
+                    callback.run();
+                }
             }
-        }
+        }).start();
     }
 
     @Override
@@ -126,7 +136,7 @@ public class SpringAxonConfiguration
     }
 
     @Override
-    public void onApplicationEvent(ContextClosedEvent event) {
-        contextClosedLatch.countDown(); // Signal that the web server is fully stopped
+    public void onApplicationEvent(@Nonnull ContextClosedEvent event) {
+        contextClosedLatch.countDown();
     }
 }
