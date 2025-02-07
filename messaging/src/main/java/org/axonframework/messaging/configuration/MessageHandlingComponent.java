@@ -62,7 +62,6 @@ public interface MessageHandlingComponent
      *                given names.
      * @return This registry for fluent interfacing.
      */
-    // TODO discuss if we want chaining, or Registration objects
     default MessageHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
                                                @Nonnull MessageHandler handler) {
         names.forEach(n -> subscribe(n, handler));
@@ -84,7 +83,6 @@ public interface MessageHandlingComponent
      *                given name.
      * @return This registry for fluent interfacing.
      */
-    // TODO discuss if we want chaining, or Registration objects
     default MessageHandlingComponent subscribe(@Nonnull QualifiedName name,
                                                @Nonnull MessageHandler handler) {
         switch (handler) {

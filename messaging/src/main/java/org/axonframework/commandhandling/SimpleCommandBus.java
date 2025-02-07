@@ -124,7 +124,6 @@ public class SimpleCommandBus implements CommandBus {
         if (existingHandler != null && existingHandler != handler) {
             throw new DuplicateCommandHandlerSubscriptionException(name, existingHandler, handler);
         }
-        // TODO what about Registration object?
         return this;
     }
 

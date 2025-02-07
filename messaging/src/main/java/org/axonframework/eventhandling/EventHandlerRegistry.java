@@ -45,7 +45,6 @@ public interface EventHandlerRegistry {
      * @param eventHandler The handler instance that handles {@link EventMessage events} for the given names.
      * @return This registry for fluent interfacing.
      */
-    // TODO discuss if we want chaining, or Registration objects
     default EventHandlerRegistry subscribe(@Nonnull Set<QualifiedName> names,
                                            @Nonnull EventHandler eventHandler) {
         names.forEach(name -> subscribe(name, eventHandler));
@@ -63,7 +62,6 @@ public interface EventHandlerRegistry {
      * @param eventHandler The handler instance that handles {@link EventMessage events} for the given name.
      * @return This registry for fluent interfacing.
      */
-    // TODO discuss if we want chaining, or Registration objects
     EventHandlerRegistry subscribe(@Nonnull QualifiedName name,
                                    @Nonnull EventHandler eventHandler);
 }

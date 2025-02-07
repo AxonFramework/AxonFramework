@@ -45,7 +45,6 @@ public interface CommandHandlerRegistry {
      * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given names.
      * @return This registry for fluent interfacing.
      */
-    // TODO discuss if we want chaining, or Registration objects
     default CommandHandlerRegistry subscribe(@Nonnull Set<QualifiedName> names,
                                              @Nonnull CommandHandler commandHandler) {
         names.forEach(name -> subscribe(name, commandHandler));
@@ -63,7 +62,6 @@ public interface CommandHandlerRegistry {
      * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given name.
      * @return This registry for fluent interfacing.
      */
-    // TODO discuss if we want chaining, or Registration objects
     CommandHandlerRegistry subscribe(@Nonnull QualifiedName name,
                                      @Nonnull CommandHandler commandHandler);
 }
