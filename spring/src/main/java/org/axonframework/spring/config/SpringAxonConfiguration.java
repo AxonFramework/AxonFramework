@@ -19,6 +19,8 @@ package org.axonframework.spring.config;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.spring.event.AxonStartedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -39,6 +41,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * @since 4.6.0
  */
 public class SpringAxonConfiguration implements FactoryBean<Configuration>, SmartLifecycle {
+
+    private static final Logger logger = LoggerFactory.getLogger(SpringAxonConfiguration.class);
 
     /**
      * The {@link SmartLifecycle#getPhase()} value of this is set to be safely lower than the typical
@@ -95,6 +99,7 @@ public class SpringAxonConfiguration implements FactoryBean<Configuration>, Smar
     public void stop() {
         Configuration c = this.configuration.get();
         if (isRunning.compareAndSet(true, false) && c != null) {
+            logger.info("Shutting down Axon Configuration");
             c.shutdown();
         }
     }
