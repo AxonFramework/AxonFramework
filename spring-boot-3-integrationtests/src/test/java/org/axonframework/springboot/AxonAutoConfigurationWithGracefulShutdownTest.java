@@ -52,12 +52,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "management.endpoint.shutdown.enabled=true",
         "spring.lifecycle.timeout-per-shutdown-phase=5s"
 })
-@Testcontainers
 class AxonAutoConfigurationWithGracefulShutdownTest {
-
-    @Container
-    @ServiceConnection
-    private final static AxonServerContainer axonServer = new AxonServerContainer().withDevMode(true);
 
     @Autowired
     private TestRestTemplate restTemplate;
