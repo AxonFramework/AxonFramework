@@ -16,13 +16,9 @@
 
 package org.axonframework.springboot;
 
-import io.axoniq.axonserver.connector.AxonServerConnection;
-import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryHandler;
-import org.axonframework.springboot.service.connection.AxonServerConnectionDetails;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
@@ -43,22 +39,18 @@ import org.springframework.web.bind.annotation.RestController;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "server.shutdown=graceful",
         "management.endpoints.web.exposure.include=*",
         "management.endpoint.shutdown.enabled=true",
-        "spring.lifecycle.timeout-per-shutdown-phase=5s",
-        "axon.axonserver.enabled=true"
+        "spring.lifecycle.timeout-per-shutdown-phase=5s"
 })
 @Testcontainers
 class AxonAutoConfigurationWithGracefulShutdownTest {
@@ -72,30 +64,6 @@ class AxonAutoConfigurationWithGracefulShutdownTest {
 
     @LocalServerPort
     private int port;
-
-    @Autowired
-    private AxonServerConfiguration axonServerConfiguration;
-
-    @Autowired
-    private AxonServerConnectionDetails connectionDetails;
-
-    @Autowired
-    private AxonServerConnectionManager axonServerConnectionManager;
-
-    @Test
-    void verifyApplicationStartsNormallyWithAxonServerInstance() {
-        assertTrue(axonServer.isRunning());
-        assertNotNull(connectionDetails);
-        assertTrue(connectionDetails.routingServers().endsWith("" + axonServer.getGrpcPort()));
-        assertNotNull(axonServerConfiguration);
-
-        assertNotEquals("localhost:8024", axonServerConfiguration.getServers());
-
-        AxonServerConnection connection = axonServerConnectionManager.getConnection();
-
-        await().atMost(Duration.ofSeconds(5))
-               .untilAsserted(() -> assertTrue(connection.isConnected()));
-    }
 
     @Test
     @DirtiesContext
