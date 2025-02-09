@@ -16,8 +16,13 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -27,23 +32,30 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.ResourceAccessException;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "server.shutdown=graceful",
         "management.endpoints.web.exposure.include=*",
-        "management.endpoint.shutdown.enabled=true"})
+        "management.endpoint.shutdown.enabled=true",
+        "spring.lifecycle.timeout-per-shutdown-phase=5s"
+})
 @Testcontainers
-public class AxonAutoConfigurationWithGracefulShutdownTest {
+class AxonAutoConfigurationWithGracefulShutdownTest {
 
     @Container
     @ServiceConnection
@@ -57,19 +69,54 @@ public class AxonAutoConfigurationWithGracefulShutdownTest {
 
     @Test
     @DirtiesContext
-    void testShutdown() {
+    void whenPostForActuatorShutdownThenShuttingDownIsStarted() {
+        // when
         ResponseEntity<Map<String, Object>> entity = asMapEntity(
                 this.restTemplate.postForEntity("http://localhost:" + port + "/actuator/shutdown", null, Map.class));
+
+        // then
         assertThat(entity.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(((String) entity.getBody().get("message"))).contains("Shutting down");
+        assertThat((String) entity.getBody().get("message")).contains("Shutting down");
     }
 
     @Test
-    void testSimpleEndpoint() {
-        ResponseEntity<String> response = this.restTemplate.getForEntity("http://localhost:" + port + "/simple", String.class);
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo("Simple message");
+    @DirtiesContext
+    void givenActiveRequestWhenTriggerShutdownThenWaitingForRequestsToComplete() throws Exception {
+        // given
+        CountDownLatch requestStarted = new CountDownLatch(1);
+        CompletableFuture<ResponseEntity<DummyQueryResponse>> requestActiveDuringShutdown = CompletableFuture.supplyAsync(() -> {
+            requestStarted.countDown();
+            return restTemplate.getForEntity("http://localhost:" + port + "/dummy", DummyQueryResponse.class);
+        });
+        assertThat(requestStarted.await(1, TimeUnit.SECONDS)).isTrue();
+
+        // when
+        ResponseEntity<Void> shutdownResponse = this.restTemplate.postForEntity("http://localhost:" + port + "/actuator/shutdown", null, Void.class);
+        assertThat(shutdownResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        // then
+        ResponseEntity<DummyQueryResponse> requestStartedBeforeShutdownResponse = requestActiveDuringShutdown.get(1, TimeUnit.SECONDS);
+        assertThat(requestStartedBeforeShutdownResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(requestStartedBeforeShutdownResponse.getBody()).isNotNull();
+        assertThat(requestStartedBeforeShutdownResponse.getBody().getValue()).isEqualTo("Successful response!");
     }
+
+//    @Test
+//    @DirtiesContext
+//    void givenShutdownIsTriggeredWhenSendARequestThenRequestFailed() throws InterruptedException {
+//        // given
+//        ResponseEntity<Void> shutdownRequest = this.restTemplate.postForEntity("http://localhost:" + port + "/actuator/shutdown", null, Void.class);
+//        assertThat(shutdownRequest.getStatusCode()).isEqualTo(HttpStatus.OK);
+//
+//        // when
+//        // Wait for grace period to expire (assuming 1 second)
+//        Thread.sleep(2000);  // Wait 2 seconds
+//
+//        // then
+//        assertThatThrownBy(() ->
+//                                   restTemplate.getForEntity("http://localhost:" + port + "/dummy", DummyQueryResponse.class)
+//        ).isInstanceOf(ResourceAccessException.class);
+//    }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     static <K, V> ResponseEntity<Map<K, V>> asMapEntity(ResponseEntity<Map> entity) {
@@ -77,20 +124,78 @@ public class AxonAutoConfigurationWithGracefulShutdownTest {
     }
 
     @TestConfiguration
-    public static class TestConfig {
+    static class TestConfig {
 
         @Bean
         public TestRestTemplate testRestTemplate() {
             return new TestRestTemplate();
         }
 
-        @RestController
-        public static class SimpleController {
+        @Component
+        static class DummyQueryHandler {
 
-            @GetMapping("/simple")
-            public ResponseEntity<String> getSimpleMessage() {
-                return ResponseEntity.ok("Simple message");
+            @QueryHandler(queryName = "dummy")
+            DummyQueryResponse handle(DummyQuery query) {
+                return new DummyQueryResponse("Successful response!");
             }
+        }
+
+
+        @RestController
+        static class DummyController {
+
+            private static final Logger logger = LoggerFactory.getLogger(DummyController.class);
+
+            private final QueryGateway queryGateway;
+
+            public DummyController(QueryGateway queryGateway) {
+                this.queryGateway = queryGateway;
+            }
+
+            @GetMapping("/dummy")
+            ResponseEntity<?> dummyQuery() throws InterruptedException {
+                logger.info("GRACEFUL SHUTDOWN TEST | Before sleep...");
+                Thread.sleep(1000);
+                logger.info("GRACEFUL SHUTDOWN TEST | After sleep...");
+                var dummyQuery = new DummyQuery();
+                try {
+                    var resultOpt = queryGateway.query(
+                            "dummy",
+                            dummyQuery,
+                            ResponseTypes.instanceOf(DummyQueryResponse.class)
+                    );
+                    var result = resultOpt.get(60L, TimeUnit.SECONDS);
+                    logger.info("GRACEFUL SHUTDOWN TEST | Query executed!");
+                    return ResponseEntity.ok(result);
+                } catch (Exception e) {
+                    logger.error("GRACEFUL SHUTDOWN TEST | error", e);
+                    return ResponseEntity.internalServerError().build();
+                }
+            }
+        }
+    }
+
+    record DummyQuery() {
+
+    }
+
+    static class DummyQueryResponse {
+
+        private String value;
+
+        public DummyQueryResponse() {
+        }
+
+        public DummyQueryResponse(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
         }
     }
 }
