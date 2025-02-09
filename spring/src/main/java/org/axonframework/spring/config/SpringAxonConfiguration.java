@@ -22,19 +22,15 @@ import org.axonframework.spring.event.AxonStartedEvent;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.SmartLifecycle;
-import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.lang.NonNull;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Factory Bean implementation that creates an Axon {@link Configuration} for a {@link Configurer}. This allows a
- * {@code Configuration} bean to be available in an Application Context that already defines a {@code Configurer}.
+ * Factory Bean implementation that creates an Axon {@link Configuration} for a {@link Configurer}. This allows a {@code
+ * Configuration} bean to be available in an Application Context that already defines a {@code Configurer}.
  * <p>
  * This factory bean will also ensure the {@code Configuration's} lifecycle is attached to the Spring Application
  * lifecycle.
@@ -42,13 +38,12 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Allard Buijze
  * @since 4.6.0
  */
-public class SpringAxonConfiguration
-        implements FactoryBean<Configuration>, SmartLifecycle, ApplicationListener<ContextClosedEvent> {
+public class SpringAxonConfiguration implements FactoryBean<Configuration>, SmartLifecycle {
 
     /**
-     * The {@link SmartLifecycle#getPhase()} value of this is set to be safely lower than the typical values listed in
-     * the Spring WebServer lifecycles.
-     * <p>
+     * The {@link SmartLifecycle#getPhase()} value of this is set to be safely lower than the typical
+     * values listed in the Spring WebServer lifecycles.
+     *
      * This means we make sure that:
      * - Axon is ready when the web server starts
      * - The web server is stopped before tearing down Axon
@@ -62,7 +57,6 @@ public class SpringAxonConfiguration
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final AtomicReference<Configuration> configuration = new AtomicReference<>();
     private ApplicationContext applicationContext;
-    private final CountDownLatch contextClosedLatch = new CountDownLatch(1);
 
     /**
      * Initialize this {@link Configuration} instance.
@@ -99,14 +93,9 @@ public class SpringAxonConfiguration
 
     @Override
     public void stop() {
-        try {
-            contextClosedLatch.await(30, TimeUnit.SECONDS); // Wait for graceful shutdown completion / different thread?
-        } catch (InterruptedException ignored) {
-        } finally {
-            Configuration c = this.configuration.get();
-            if (isRunning.compareAndSet(true, false) && c != null) {
-                c.shutdown();
-            }
+        Configuration c = this.configuration.get();
+        if (isRunning.compareAndSet(true, false) && c != null) {
+            c.shutdown();
         }
     }
 
@@ -123,10 +112,5 @@ public class SpringAxonConfiguration
     @Override
     public int getPhase() {
         return LIFECYCLE_PHASE;
-    }
-
-    @Override
-    public void onApplicationEvent(ContextClosedEvent event) {
-        contextClosedLatch.countDown(); // Signal that the web server is fully stopped
     }
 }
