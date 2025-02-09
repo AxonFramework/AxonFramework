@@ -572,6 +572,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
      * @return a completable future which is resolved once all query dispatching activities are completed
      */
     public CompletableFuture<Void> shutdownDispatching() {
+        logger.info("Shutdown initialized!");
         return shutdownLatch.initiateShutdown();
     }
 
