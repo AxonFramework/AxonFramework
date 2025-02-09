@@ -36,7 +36,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.ResourceAccessException;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -46,7 +45,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "server.shutdown=graceful",
@@ -95,28 +93,11 @@ class AxonAutoConfigurationWithGracefulShutdownTest {
         assertThat(shutdownResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // then
-        ResponseEntity<DummyQueryResponse> requestStartedBeforeShutdownResponse = requestActiveDuringShutdown.get(1, TimeUnit.SECONDS);
+        ResponseEntity<DummyQueryResponse> requestStartedBeforeShutdownResponse = requestActiveDuringShutdown.get(2, TimeUnit.SECONDS);
         assertThat(requestStartedBeforeShutdownResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(requestStartedBeforeShutdownResponse.getBody()).isNotNull();
         assertThat(requestStartedBeforeShutdownResponse.getBody().getValue()).isEqualTo("Successful response!");
     }
-
-//    @Test
-//    @DirtiesContext
-//    void givenShutdownIsTriggeredWhenSendARequestThenRequestFailed() throws InterruptedException {
-//        // given
-//        ResponseEntity<Void> shutdownRequest = this.restTemplate.postForEntity("http://localhost:" + port + "/actuator/shutdown", null, Void.class);
-//        assertThat(shutdownRequest.getStatusCode()).isEqualTo(HttpStatus.OK);
-//
-//        // when
-//        // Wait for grace period to expire (assuming 1 second)
-//        Thread.sleep(2000);  // Wait 2 seconds
-//
-//        // then
-//        assertThatThrownBy(() ->
-//                                   restTemplate.getForEntity("http://localhost:" + port + "/dummy", DummyQueryResponse.class)
-//        ).isInstanceOf(ResourceAccessException.class);
-//    }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     static <K, V> ResponseEntity<Map<K, V>> asMapEntity(ResponseEntity<Map> entity) {
@@ -164,7 +145,7 @@ class AxonAutoConfigurationWithGracefulShutdownTest {
                             dummyQuery,
                             ResponseTypes.instanceOf(DummyQueryResponse.class)
                     );
-                    var result = resultOpt.get(60L, TimeUnit.SECONDS);
+                    var result = resultOpt.get(1, TimeUnit.SECONDS);
                     logger.info("GRACEFUL SHUTDOWN TEST | Query executed!");
                     return ResponseEntity.ok(result);
                 } catch (Exception e) {
