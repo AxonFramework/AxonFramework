@@ -41,6 +41,10 @@ public class SpecificRecordBaseClasspathAvroSchemaLoader implements ClasspathAvr
 
     private final ClassPathScanningCandidateComponentProvider candidateProvider;
 
+    /**
+     * Constructs a new schema loader, using provided {@link ResourceLoader}
+     * @param resourceLoader resource loader used to load classes.
+     */
     public SpecificRecordBaseClasspathAvroSchemaLoader(ResourceLoader resourceLoader) {
         candidateProvider = new ClassPathScanningCandidateComponentProvider(false);
         candidateProvider.setResourceLoader(resourceLoader);
