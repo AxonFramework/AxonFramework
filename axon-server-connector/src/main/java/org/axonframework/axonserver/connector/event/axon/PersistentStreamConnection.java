@@ -71,7 +71,7 @@ public class PersistentStreamConnection {
 
     private final AtomicReference<PersistentStream> persistentStreamHolder = new AtomicReference<>();
 
-    public static final Consumer<List<? extends EventMessage<?>>> NO_OP_CONSUMER = events -> {
+    private static final Consumer<List<? extends EventMessage<?>>> NO_OP_CONSUMER = events -> {
     };
     private final AtomicReference<Consumer<List<? extends EventMessage<?>>>> consumer = new AtomicReference<>(
             NO_OP_CONSUMER);
@@ -130,17 +130,17 @@ public class PersistentStreamConnection {
 
 
     /**
-     * Initiates the connection to Axon Server to read events from the persistent stream. The stream can have only one
-     * consumer. If you invoke the method multiple times, the previous consumer is replaced with the new one.
+     * Initiates the connection to Axon Server to read events from the persistent stream. The stream can be opened just
+     * once with a single consumer. The connection is exclusive to that consumer. If you try to open it again, an
+     * {@link IllegalStateException} is thrown.
      *
      * @param consumer The consumer of batches of event messages.
+     * @throws IllegalStateException if the stream was already opened.
      */
     public void open(Consumer<List<? extends EventMessage<?>>> consumer) {
-        Consumer<List<? extends EventMessage<?>>> previousConsumer = this.consumer.getAndSet(consumer);
-        if (!previousConsumer.equals(NO_OP_CONSUMER)) {
-            logger.warn(
-                    "{}: Persistent Stream can only have a single consumer. Consumer was already defined, so it's replaced with the new one",
-                    streamId);
+        if (!this.consumer.compareAndSet(NO_OP_CONSUMER, consumer)) {
+            throw new IllegalStateException(
+                    String.format("%s: Persistent Stream has already been opened.", streamId));
         }
         start();
     }

@@ -52,6 +52,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -147,6 +148,19 @@ class PersistentStreamConnectionTest {
         mockPersistentStream.closeSegment(0);
     }
 
+    @Test
+    void givenAlreadyOpenedStreamWhenOpenOneMoreTimeThenException() {
+        // given
+        testSubject.open((e) -> {
+        });
+
+        // when - then
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            testSubject.open((e) -> {
+            });
+        });
+        assertEquals("stream-id: Persistent Stream has already been opened.", exception.getMessage());
+    }
 
     private static EventWithToken eventWithToken(int token,
                                                  @SuppressWarnings("SameParameterValue") String aggregateId,
