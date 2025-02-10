@@ -459,13 +459,13 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
     }
 
     @Test
-    void emptyTransactionAlwaysCommitSuccessfully() {
+    void emptyTransactionAlwaysCommitSuccessfullyAndReturnsOriginConsistencyMarker() {
         var appendCondition = AppendCondition.withCriteria(TEST_AGGREGATE_CRITERIA);
-
         var commit = testSubject.appendEvents(appendCondition, Collections.emptyList())
                                 .thenCompose(AppendTransaction::commit);
 
-        assertDoesNotThrow(commit::join);
+        var afterCommitConsistencyMarker = assertDoesNotThrow(commit::join);
+        assertEquals(ConsistencyMarker.ORIGIN, afterCommitConsistencyMarker);
     }
 
     @Test

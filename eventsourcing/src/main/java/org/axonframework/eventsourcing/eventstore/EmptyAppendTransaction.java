@@ -21,20 +21,19 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Represents an empty append transaction. This transaction does nothing and always succeeds. It is used when there are
  * no events to persist.
- *
- * @param appendCondition will be returned as commit result
  */
-public record EmptyAppendTransaction(AppendCondition appendCondition)
-        implements AsyncEventStorageEngine.AppendTransaction {
+public record EmptyAppendTransaction() implements AsyncEventStorageEngine.AppendTransaction {
+
+    public static final AsyncEventStorageEngine.AppendTransaction INSTANCE = new EmptyAppendTransaction();
 
     /**
      * Commits the empty append transaction. Always completes successfully with the provided consistency marker.
      *
-     * @return a completed future with the consistency marker
+     * @return always a completed future with the consistency marker {@link ConsistencyMarker#ORIGIN}
      */
     @Override
     public CompletableFuture<ConsistencyMarker> commit() {
-        return CompletableFuture.completedFuture(AggregateBasedConsistencyMarker.from(appendCondition));
+        return CompletableFuture.completedFuture(ConsistencyMarker.ORIGIN);
     }
 
     /**

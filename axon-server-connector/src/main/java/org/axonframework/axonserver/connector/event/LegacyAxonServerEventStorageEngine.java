@@ -94,7 +94,7 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
         }
 
         if (events.isEmpty()) {
-            return CompletableFuture.completedFuture(new EmptyAppendTransaction(condition));
+            return CompletableFuture.completedFuture(EmptyAppendTransaction.INSTANCE);
         }
 
         AggregateBasedConsistencyMarker consistencyMarker = AggregateBasedConsistencyMarker.from(condition);

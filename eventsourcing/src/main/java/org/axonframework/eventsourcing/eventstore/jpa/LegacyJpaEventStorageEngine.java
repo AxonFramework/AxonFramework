@@ -145,7 +145,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         }
 
         if (events.isEmpty()) {
-            return CompletableFuture.completedFuture(new EmptyAppendTransaction(condition));
+            return CompletableFuture.completedFuture(EmptyAppendTransaction.INSTANCE);
         }
 
         return CompletableFuture.completedFuture(new AppendTransaction() {
