@@ -30,6 +30,9 @@ import javax.annotation.Nonnull;
 
 /**
  * A {@link SubscribableMessageSource} that receives event from a persistent stream from Axon Server.
+ * The persistent stream is identified by a unique name, which serves as an identifier for the
+ * {@link PersistentStream} connection with Axon Server. Using the same name for different instances
+ * will overwrite the existing connection.
  *
  * @author Marc Gathier
  * @since 4.10.0
