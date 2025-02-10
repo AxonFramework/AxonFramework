@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public class AxonServerUtils {
      * @throws IOException when an error occurs communicating with AxonServer
      */
     public static void purgeEventsFromAxonServer(String hostname, int port, String context) throws IOException {
-        final URL url = URI.create(String.format("http://%s:%d/v1/public/purge-events?targetContext=%s", hostname, port,
+        final URL url = URI.create(String.format("http://%s:%d/v1/public/purge-events?context=%s", hostname, port,
                                                  URLEncoder.encode(context, StandardCharsets.UTF_8))).toURL();
         HttpURLConnection connection = null;
         try {
