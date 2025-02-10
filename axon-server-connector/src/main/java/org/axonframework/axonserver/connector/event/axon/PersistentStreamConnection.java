@@ -73,8 +73,8 @@ public class PersistentStreamConnection {
 
     private static final Consumer<List<? extends EventMessage<?>>> NO_OP_CONSUMER = events -> {
     };
-    private final AtomicReference<Consumer<List<? extends EventMessage<?>>>> consumer = new AtomicReference<>(
-            NO_OP_CONSUMER);
+    private final AtomicReference<Consumer<List<? extends EventMessage<?>>>> consumer =
+            new AtomicReference<>(NO_OP_CONSUMER);
     private final ScheduledExecutorService scheduler;
     private final int batchSize;
     private final Map<Integer, SegmentConnection> segments = new ConcurrentHashMap<>();

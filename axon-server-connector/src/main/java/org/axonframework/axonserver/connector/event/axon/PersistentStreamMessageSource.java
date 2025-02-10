@@ -24,6 +24,7 @@ import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
@@ -36,6 +37,11 @@ import javax.annotation.Nonnull;
 public class PersistentStreamMessageSource implements SubscribableMessageSource<EventMessage<?>> {
 
     private final PersistentStreamConnection persistentStreamConnection;
+
+    private final AtomicReference<Consumer<List<? extends EventMessage<?>>>> consumer =
+            new AtomicReference<>(NO_OP_CONSUMER);
+    private static final Consumer<List<? extends EventMessage<?>>> NO_OP_CONSUMER = events -> {
+    };
 
     /**
      * Instantiates a {@code PersistentStreamMessageSource}.
@@ -85,7 +91,9 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
 
     @Override
     public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> consumer) {
-        persistentStreamConnection.open(consumer);
+        if (!this.consumer.compareAndSet(NO_OP_CONSUMER, consumer)) {
+            persistentStreamConnection.open(consumer);
+        }
         return () -> {
             persistentStreamConnection.close();
             return true;
