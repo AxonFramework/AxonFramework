@@ -25,11 +25,33 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
 
+/**
+ * Default implementation of the {@link PersistentStreamMessageSourceFactory} that creates
+ * {@link PersistentStreamMessageSource} instances. Maintains a record of used stream names and provides warning logs
+ * when name conflicts occur.
+ *
+ * @author Mateusz Nowak
+ * @since 4.11
+ */
 public class DefaultPersistentStreamMessageSourceFactory implements PersistentStreamMessageSourceFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultPersistentStreamMessageSourceFactory.class);
     private final Set<String> usedNames = new CopyOnWriteArraySet<>();
 
+    /**
+     * Creates a new {@code PersistentStreamMessageSource}. This method tracks stream names and logs warnings when name
+     * conflicts are detected.
+     *
+     * @param name                       The name of the persistent stream. It's a unique identifier of the
+     *                                   PersistentStream connection with Axon Sever. Usage of the same name
+     *                                   will overwrite the existing connection.
+     * @param persistentStreamProperties The properties to create te persistent stream.
+     * @param scheduler                  Scheduler used for persistent stream operations.
+     * @param batchSize                  The batch size for collecting events.
+     * @param context                    The context in which this persistent stream exists (or needs to be created).
+     * @param configuration              Global configuration of Axon components.
+     * @return A new {@link PersistentStreamMessageSource} instance.
+     */
     @Override
     public PersistentStreamMessageSource build(String name,
                                                PersistentStreamProperties persistentStreamProperties,
