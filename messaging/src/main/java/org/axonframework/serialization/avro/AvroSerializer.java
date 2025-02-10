@@ -122,8 +122,6 @@ public class AvroSerializer implements Serializer {
                     .filter(it -> it.test(object.getClass()))
                     .findFirst();
 
-            // TODO smcvb I only ever use String from the other serializers. Then again, their format is human readable, which isn't the case for Avro, of course.
-            // TODO So, not really an enforcement from my end, just trying to understand this serializer.
             if (serializerStrategy.isPresent()) {
                 if (byte[].class.equals(expectedRepresentation)) {
                     return (SerializedObject<T>) serializerStrategy.get().serializeToSingleObjectEncoded(object);
