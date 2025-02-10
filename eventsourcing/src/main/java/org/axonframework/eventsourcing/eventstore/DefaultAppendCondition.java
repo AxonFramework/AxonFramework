@@ -53,6 +53,9 @@ record DefaultAppendCondition(
 
     @Override
     public AppendCondition withMarker(ConsistencyMarker consistencyMarker) {
+        if (this.consistencyMarker.equals(consistencyMarker)) {
+            return this;
+        }
         return new DefaultAppendCondition(consistencyMarker, criteria);
     }
 }
