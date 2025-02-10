@@ -224,6 +224,9 @@ public class AvroSerializer implements Serializer {
      *     <li>{@link Builder#revisionResolver(RevisionResolver)}, to resolve revisions of events</li>
      *     <li>{@link Builder#schemaStore(SchemaStore)}, to lookup schemas by their fingerprints</li>
      *     <li>{@link Builder#serializerDelegate(Serializer)}, to deserialize all non-Avro artifacts</li>
+     *     <li>at least one {@link AvroSerializerStrategy} either passed via 
+     *     {@link Builder#addSerializerStrategy(AvroSerializerStrategy)} or activated via 
+     *     {@link Builder#includeDefaultAvroSerializationStrategies(boolean)}</li>
      * </ul>
      * </p>
      */
