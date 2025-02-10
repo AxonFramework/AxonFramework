@@ -42,6 +42,11 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * Tests whether Axon Configuration is only shut down after processing active requests.
+ *
+ * @author Mateusz Nowak
+ */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "server.shutdown=graceful",
         "management.endpoints.web.exposure.include=*",
