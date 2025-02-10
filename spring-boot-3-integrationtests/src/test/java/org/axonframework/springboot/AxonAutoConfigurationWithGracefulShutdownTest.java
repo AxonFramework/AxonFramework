@@ -43,7 +43,8 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests whether Axon Configuration is only shut down after processing active requests.
+ * Tests whether {@link org.axonframework.config.Configurer} is only shut down after processing active requests if it is
+ * in graceful shutdown mode.
  *
  * @author Mateusz Nowak
  */
@@ -78,18 +79,21 @@ class AxonAutoConfigurationWithGracefulShutdownTest {
     void givenActiveRequestWhenTriggerShutdownThenWaitingForRequestsToComplete() throws Exception {
         // given
         CountDownLatch requestStarted = new CountDownLatch(1);
-        CompletableFuture<ResponseEntity<DummyQueryResponse>> requestActiveDuringShutdown = CompletableFuture.supplyAsync(() -> {
-            requestStarted.countDown();
-            return restTemplate.getForEntity("http://localhost:" + port + "/dummy", DummyQueryResponse.class);
-        });
+        CompletableFuture<ResponseEntity<DummyQueryResponse>> requestActiveDuringShutdown = CompletableFuture.supplyAsync(
+                () -> {
+                    requestStarted.countDown();
+                    return restTemplate.getForEntity("http://localhost:" + port + "/dummy", DummyQueryResponse.class);
+                });
         assertThat(requestStarted.await(1, TimeUnit.SECONDS)).isTrue();
 
         // when
-        ResponseEntity<Void> shutdownResponse = this.restTemplate.postForEntity("http://localhost:" + port + "/actuator/shutdown", null, Void.class);
+        ResponseEntity<Void> shutdownResponse = this.restTemplate.postForEntity(
+                "http://localhost:" + port + "/actuator/shutdown", null, Void.class);
         assertThat(shutdownResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         // then
-        ResponseEntity<DummyQueryResponse> requestStartedBeforeShutdownResponse = requestActiveDuringShutdown.get(2, TimeUnit.SECONDS);
+        ResponseEntity<DummyQueryResponse> requestStartedBeforeShutdownResponse = requestActiveDuringShutdown.get(2,
+                                                                                                                  TimeUnit.SECONDS);
         assertThat(requestStartedBeforeShutdownResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(requestStartedBeforeShutdownResponse.getBody()).isNotNull();
         assertThat(requestStartedBeforeShutdownResponse.getBody().getValue()).isEqualTo("Successful response!");
