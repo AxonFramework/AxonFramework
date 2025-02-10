@@ -129,24 +129,19 @@ class QueryThreadingIntegrationTest {
     @Test
     void canStillHandleQueryResponsesWhileManyQueriesHandling() throws InterruptedException {
         queryBus2.subscribe("query-b", String.class, query -> {
-            log.info("Query B received");
             while (secondaryQueryBlock.get()) {
                 try {
-                    log.info("Query B waiting");
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
             }
-            log.info("Query B done");
             return "b";
         });
 
         queryBus.subscribe("query-a", String.class, query -> {
-            log.info("Query A received");
             waitingQueries.incrementAndGet();
             QueryResponseMessage<String> b = queryBus.query(new GenericQueryMessage<>("start", "query-b", ResponseTypes.instanceOf(String.class))).get();
-            log.info("Query A done");
             waitingQueries.decrementAndGet();
             return "a" + b.getPayload();
         });
@@ -161,11 +156,11 @@ class QueryThreadingIntegrationTest {
 
         // Wait until all queries are waiting on the secondary query. Note that query 6 cannot be processed
         await().pollDelay(500, TimeUnit.MILLISECONDS)
-                .atMost(10, TimeUnit.SECONDS)
-                .until(() -> {
-                    log.info("Waiting queries: {}", waitingQueries.get());
-                    return waitingQueries.get() == 5;
-                });
+               .atMost(10, TimeUnit.SECONDS)
+               .until(() -> {
+                   log.info("Waiting queries: {}", waitingQueries.get());
+                   return waitingQueries.get() == 5;
+               });
 
         // We should still have the queries not done, it's waiting on the secondary one.
         assertFalse(query1.isDone());
