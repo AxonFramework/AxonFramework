@@ -3,6 +3,7 @@ org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
   org.axonframework.springboot.autoconfig.MicrometerMetricsAutoConfiguration,\
   org.axonframework.springboot.autoconfig.EventProcessingAutoConfiguration,\
   org.axonframework.springboot.autoconfig.AxonAutoConfiguration,\
+org.axonframework.springboot.autoconfig.AxonTimeoutAutoConfiguration, \
   org.axonframework.springboot.autoconfig.AxonJobRunrAutoConfiguration,\
   org.axonframework.springboot.autoconfig.AxonDbSchedulerAutoConfiguration,\
   org.axonframework.springboot.autoconfig.legacyjpa.JpaJavaxAutoConfiguration,\
