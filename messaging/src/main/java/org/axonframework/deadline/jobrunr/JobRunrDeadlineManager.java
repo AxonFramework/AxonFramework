@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,8 @@ import org.axonframework.tracing.Span;
 import org.axonframework.tracing.SpanFactory;
 import org.axonframework.tracing.SpanScope;
 import org.jobrunr.jobs.JobId;
+import org.jobrunr.jobs.states.IllegalJobStateChangeException;
+import org.jobrunr.jobs.states.StateName;
 import org.jobrunr.scheduling.JobBuilder;
 import org.jobrunr.scheduling.JobScheduler;
 import org.slf4j.Logger;
@@ -158,7 +160,23 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
     @Override
     public void cancelSchedule(@Nonnull String deadlineName, @Nonnull String scheduleId) {
         Span span = spanFactory.createCancelScheduleSpan(deadlineName, scheduleId);
-        runOnPrepareCommitOrNow(span.wrapRunnable(() -> jobScheduler.delete(toUuid(scheduleId), DELETE_REASON)));
+        runOnPrepareCommitOrNow(span.wrapRunnable(() -> {
+            try {
+                jobScheduler.delete(toUuid(scheduleId), DELETE_REASON);
+            } catch (IllegalJobStateChangeException e) {
+                if (!tryingToDeleteAlreadyDeletedJob(e.getFrom(), e.getTo())) {
+                    throw e;
+                }
+            }
+        }));
+    }
+
+    /**
+     * Protective measure to ensure that if the scheduled job was already deleted, we ignore a second try to delete the
+     * job.
+     */
+    private static boolean tryingToDeleteAlreadyDeletedJob(StateName from, StateName to) {
+        return from == StateName.DELETED && to == StateName.DELETED;
     }
 
     @Override
