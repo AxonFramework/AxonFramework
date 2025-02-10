@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,59 +41,16 @@ public sealed interface AsyncRepository<ID, T>
         permits AsyncRepository.LifecycleManagement {
 
     /**
-     * Constant for the default first position of an entity when loading. Set to {@code -1L}.
-     */
-    long START = -1L;
-    /**
-     * Constant for the default last position of an entity when loading. Set to {@link Long#MAX_VALUE}.
-     */
-    long END = Long.MAX_VALUE;
-
-    /**
      * Load the entity with the given unique identifier. No version checks are done when loading an entity, meaning that
      * concurrent access will not be checked for.
      *
      * @param identifier        The identifier of the entity to load.
      * @param processingContext The processing context in which to manage the lifecycle of the entity.
-     * @return A {@link CompletableFuture} resolving to the {@link ManagedEntity} with the given identifier, or
-     * {@code null} if it can't be found.
-     */
-    default CompletableFuture<ManagedEntity<ID, T>> load(@Nonnull ID identifier,
-                                                         @Nonnull ProcessingContext processingContext) {
-        return load(identifier, processingContext, START);
-    }
-
-    /**
-     * Load the entity with the given unique identifier. No version checks are done when loading an entity, meaning that
-     * concurrent access will not be checked for.
-     *
-     * @param identifier        The identifier of the entity to load.
-     * @param processingContext The processing context in which to manage the lifecycle of the entity.
-     * @param start             The position of the first event for the entity to load.
-     * @return A {@link CompletableFuture} resolving to the {@link ManagedEntity} with the given identifier, or
-     * {@code null} if it can't be found.
-     */
-    default CompletableFuture<ManagedEntity<ID, T>> load(@Nonnull ID identifier,
-                                                         @Nonnull ProcessingContext processingContext,
-                                                         long start) {
-        return load(identifier, processingContext, start, END);
-    }
-
-    /**
-     * Load the entity with the given unique identifier. No version checks are done when loading an entity, meaning that
-     * concurrent access will not be checked for.
-     *
-     * @param identifier        The identifier of the entity to load.
-     * @param processingContext The processing context in which to manage the lifecycle of the entity.
-     * @param start             The position of the first event for the entity to load.
-     * @param end               The position of the last event for the entity to load.
      * @return A {@link CompletableFuture} resolving to the {@link ManagedEntity} with the given identifier, or
      * {@code null} if it can't be found.
      */
     CompletableFuture<ManagedEntity<ID, T>> load(@Nonnull ID identifier,
-                                                 @Nonnull ProcessingContext processingContext,
-                                                 long start,
-                                                 long end);
+                                                         @Nonnull ProcessingContext processingContext);
 
     /**
      * Loads an entity from the repository. If the entity is not found it creates one using the specified
