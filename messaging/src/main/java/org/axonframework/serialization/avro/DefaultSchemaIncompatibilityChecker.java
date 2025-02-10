@@ -50,7 +50,7 @@ public class DefaultSchemaIncompatibilityChecker implements SchemaIncompatibilit
     }
 
     /**
-     * Retrieves a list of incompatibilities cased so far.
+     * Retrieves a list of incompatibilities cached so far.
      * Visible for testing.
      * @return copy of immutability map.
      */
