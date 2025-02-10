@@ -88,7 +88,6 @@ public class AvroSerializerAutoConfiguration {
     /**
      * An {@link AnyNestedCondition} implementation, to support the following use cases:
      * <ul>
-     *     <li>The {@code general} serializer property is set to {@code avro}</li>
      *     <li>The {@code messages} serializer property is set to {@code avro}</li>
      *     <li>The {@code events} serializer property is set to {@code avro}</li>
      * </ul>
