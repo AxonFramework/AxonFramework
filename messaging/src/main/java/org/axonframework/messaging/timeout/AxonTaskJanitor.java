@@ -1,6 +1,8 @@
 package org.axonframework.messaging.timeout;
 
 import org.axonframework.common.AxonThreadFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -16,11 +18,11 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 public class AxonTaskJanitor {
 
     public static final ScheduledExecutorService INSTANCE = createJanitorExecutorService();
+    public static final Logger LOGGER = LoggerFactory.getLogger("AxonTaskJanitor");
 
     private AxonTaskJanitor() {
         // Utility class
     }
-
 
     /**
      * Creates the ScheduledExecutorService used for scheduling the interrupting task. It only has one thread as the

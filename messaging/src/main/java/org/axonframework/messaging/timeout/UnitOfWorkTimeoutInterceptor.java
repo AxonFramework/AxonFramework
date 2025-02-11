@@ -80,8 +80,7 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
                     "UnitOfWork of " + componentName,
                     timeout,
                     warningThreshold,
-                    warningInterval,
-                    executorService
+                    warningInterval
             );
             taskTimeout.start();
             unitOfWork.afterCommit(u -> taskTimeout.complete());

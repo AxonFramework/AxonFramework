@@ -54,8 +54,7 @@ class TimeoutWrappedMessageHandlingMember<T> extends WrappedMessageHandlingMembe
                 taskName,
                 timeout,
                 warningThreshold,
-                warningInterval,
-                AxonTaskJanitor.INSTANCE
+                warningInterval
         );
         taskTimeout.start();
         try {
@@ -65,5 +64,31 @@ class TimeoutWrappedMessageHandlingMember<T> extends WrappedMessageHandlingMembe
         } finally {
             taskTimeout.complete();
         }
+    }
+
+    /**
+     * Returns the timeout of the message handler in milliseconds.
+     * @return the timeout of the message handler in milliseconds
+     */
+    public int getTimeout() {
+        return timeout;
+    }
+
+    /**
+     * Returns the threshold in milliseconds after which a warning is logged. Setting this to a value higher than
+     * {@link #getTimeout()} will disable warnings.
+     *
+     * @return the threshold in milliseconds after which a warning is logged
+     */
+    public int getWarningThreshold() {
+        return warningThreshold;
+    }
+
+    /**
+     * Returns the interval in milliseconds between warnings.
+     * @return the interval in milliseconds between warnings
+     */
+    public int getWarningInterval() {
+        return warningInterval;
     }
 }
