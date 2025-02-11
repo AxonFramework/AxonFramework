@@ -34,7 +34,8 @@ public interface CommandHandler extends MessageHandler {
      * Handles the given {@code command} within the given {@code context}.
      * <p>
      * The {@link CommandResultMessage result message} in the returned {@link MessageStream stream} may be {@code null}.
-     * Only a single result message should ever be expected.
+     * Only a {@link MessageStream#just(Message) single} or {@link MessageStream#empty() empty} result message should
+     * ever be expected.
      *
      * @param command The command to handle.
      * @param context The context to the given {@code command} is handled in.
