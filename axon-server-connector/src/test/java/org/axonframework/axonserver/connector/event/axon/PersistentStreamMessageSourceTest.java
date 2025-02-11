@@ -48,6 +48,9 @@ class PersistentStreamMessageSourceTest {
     private static ScheduledExecutorService TEST_SCHEDULER;
     private static ExecutorService CONCURRENT_TEST_EXECUTOR;
     private static final int THREAD_COUNT = 10;
+    private static final Configuration DEFAULT_CONFIGURATION = DefaultConfigurer
+            .defaultConfiguration()
+            .buildConfiguration();
 
     @Mock
     private Consumer<List<? extends EventMessage<?>>> eventConsumer;
@@ -69,11 +72,9 @@ class PersistentStreamMessageSourceTest {
     @BeforeEach
     void setUp() {
         String streamName = UUID.randomUUID().toString();
-        Configuration configurer = DefaultConfigurer.defaultConfiguration()
-                                                    .buildConfiguration();
         messageSource = new PersistentStreamMessageSource(
                 streamName,
-                configurer,
+                DEFAULT_CONFIGURATION,
                 new PersistentStreamProperties(streamName, 1, "example", Collections.emptyList(), "HEAD", null),
                 TEST_SCHEDULER,
                 1
