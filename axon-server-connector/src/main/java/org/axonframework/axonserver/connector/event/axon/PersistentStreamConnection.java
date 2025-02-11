@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,8 +62,6 @@ public class PersistentStreamConnection {
     private static final int MAX_RETRY_INTERVAL_SECONDS = 60;
     private static final int MIN_RETRY_INTERVAL_SECONDS = 1;
     private final Logger logger = LoggerFactory.getLogger(PersistentStreamConnection.class);
-
-    private static final int MAX_MESSAGES_PER_RUN = 10_000;
 
     private final String streamId;
     private final Configuration configuration;
@@ -174,11 +172,7 @@ public class PersistentStreamConnection {
     }
 
     private void segmentClosed(PersistentStreamSegment persistentStreamSegment) {
-        SegmentConnection segmentConnection = segments.remove(persistentStreamSegment.segment());
-        if (segmentConnection != null) {
-            segmentConnection.close();
-        }
-
+        segments.remove(persistentStreamSegment.segment());
         logger.info("Segment closed: {}", persistentStreamSegment);
     }
 
@@ -219,7 +213,6 @@ public class PersistentStreamConnection {
 
         private final AtomicBoolean processGate = new AtomicBoolean();
         private final AtomicBoolean doneConfirmed = new AtomicBoolean();
-        private final AtomicBoolean closed = new AtomicBoolean();
         private final PersistentStreamSegment persistentStreamSegment;
         private final GrpcMetaDataAwareSerializer serializer;
         private final AtomicReference<SegmentState> currentState = new AtomicReference<>(new ProcessingState());
@@ -269,45 +262,37 @@ public class PersistentStreamConnection {
 
                 if (logger.isTraceEnabled()) {
                     logger.trace("{}[{}] readMessagesFromSegment - closed: {}",
-                                 streamId, persistentStreamSegment.segment(), persistentStreamSegment.isClosed());
+                            streamId, persistentStreamSegment.segment(), persistentStreamSegment.isClosed());
                 }
 
                 try {
-                    int remaining = Math.max(MAX_MESSAGES_PER_RUN, batchSize);
-                    while (remaining > 0 && !closed.get()) {
+                    if (!persistentStreamSegment.isClosed()) {
                         List<PersistentStreamEvent> batch = readBatch(persistentStreamSegment);
-                        if (batch.isEmpty()) {
-                            break;
-                        }
-
-                        try {
-                            processBatch(batch);
-                            remaining -= batch.size();
-                        } catch (Exception ex) {
-                            logger.warn("{}: Exception while processing events for segment {}, retrying after {} second",
+                        if (!batch.isEmpty()) {
+                            try {
+                                processBatch(batch);
+                            } catch (Exception ex) {
+                                logger.warn("{}: Exception while processing events for segment {}, retrying after {} second",
                                         streamId, persistentStreamSegment.segment(), MIN_RETRY_INTERVAL_SECONDS, ex);
 
-                            currentState.set(new RetryState(batch));
-                            remaining = 0;
+                                currentState.set(new RetryState(batch));
+                            }
                         }
                     }
 
                     acknowledgeDoneWhenClosed(persistentStreamSegment);
                 } catch (StreamClosedException e) {
                     logger.debug("{}: Stream closed for segment {}", streamId, persistentStreamSegment.segment());
-                    close();
-                    // stop loop
                 } catch (Exception e) {
                     if (e instanceof InterruptedException) {
                         Thread.currentThread().interrupt();
                     }
                     persistentStreamSegment.error(e.getMessage());
                     logger.warn("{}: Exception while processing events for segment {}",
-                                streamId, persistentStreamSegment.segment(), e);
-                    close();
+                            streamId, persistentStreamSegment.segment(), e);
                 } finally {
                     processGate.set(false);
-                    if (!closed.get() && persistentStreamSegment.peek() != null) {
+                    if (!persistentStreamSegment.isClosed() && persistentStreamSegment.peek() != null) {
                         scheduler.submit(SegmentConnection.this::readMessagesFromSegment);
                     }
                 }
@@ -324,7 +309,7 @@ public class PersistentStreamConnection {
                 }
                 batch.add(event);
                 // allow next event to arrive within a small amount of time
-                while (batch.size() < batchSize && !closed.get()
+                while (batch.size() < batchSize && !persistentStreamSegment.isClosed()
                         && (event = persistentStreamSegment.nextIfAvailable(1, TimeUnit.MILLISECONDS)) != null) {
                     batch.add(event);
                 }
@@ -332,7 +317,7 @@ public class PersistentStreamConnection {
             }
 
             private void acknowledgeDoneWhenClosed(PersistentStreamSegment persistentStreamSegment) {
-                if (closed.get() && doneConfirmed.compareAndSet(false, true)) {
+                if (persistentStreamSegment.isClosed() && doneConfirmed.compareAndSet(false, true)) {
                     persistentStreamSegment.acknowledge(PENDING_WORK_DONE_MARKER);
                 }
             }
@@ -340,14 +325,14 @@ public class PersistentStreamConnection {
 
         private void processBatch(List<PersistentStreamEvent> batch) {
             List<TrackedEventMessage<?>> eventMessages = upcastAndDeserialize(batch);
-            if (!closed.get()) {
+            if (!persistentStreamSegment.isClosed()) {
                 long token = batch.get(batch.size() - 1).getEvent().getToken();
                 consumer.get().accept(eventMessages);
                 if (logger.isTraceEnabled()) {
                     logger.trace("{}/{} processed {} entries",
-                                 streamId,
-                                 persistentStreamSegment.segment(),
-                                 eventMessages.size());
+                            streamId,
+                            persistentStreamSegment.segment(),
+                            eventMessages.size());
                 }
                 persistentStreamSegment.acknowledge(token);
             }
@@ -385,10 +370,6 @@ public class PersistentStreamConnection {
             }
             return ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(event.getEvent().getToken() + 1),
                                                  new GlobalSequenceTrackingToken(event.getEvent().getToken()));
-        }
-
-        public void close() {
-            closed.set(true);
         }
     }
 }
