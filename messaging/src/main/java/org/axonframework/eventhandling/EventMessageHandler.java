@@ -32,7 +32,9 @@ import java.util.Objects;
  * @see DomainEventMessage
  * @see EventHandler
  * @since 0.1
+ * @deprecated Replace in favor of org.axonframework.eventhandling.EventHandler
  */
+@Deprecated // Replace in favor of org.axonframework.eventhandling.EventHandler
 public interface EventMessageHandler extends MessageHandler<EventMessage<?>, Message<Void>> {
 
     /**

@@ -17,6 +17,7 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
@@ -48,6 +49,7 @@ import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathHandlerEnhancerDefinition;
@@ -215,13 +217,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public synchronized FixtureConfiguration<T> registerAnnotatedCommandHandler(final Object annotatedCommandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
-        AnnotationCommandHandlerAdapter<?> adapter = new AnnotationCommandHandlerAdapter<>(
+        commandBus.subscribe(new AnnotationCommandHandlerAdapter<>(
                 annotatedCommandHandler,
                 getParameterResolverFactory(),
                 getHandlerDefinition(),
                 new ClassBasedMessageTypeResolver()
-        );
-        adapter.subscribe(commandBus);
+        ));
         return this;
     }
 
@@ -236,7 +237,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                                                           MessageHandler<CommandMessage<?>, CommandResultMessage<?>> commandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
-        commandBus.subscribe(commandName, commandHandler);
+        commandBus.subscribe(new QualifiedName(commandName), (CommandHandler) commandHandler);
         return this;
     }
 
@@ -604,8 +605,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                 builder.commandTargetResolver(commandTargetResolver);
             }
 
-            AggregateAnnotationCommandHandler<T> handler = builder.build();
-            handler.subscribe(commandBus);
+            commandBus.subscribe(builder.build());
         }
     }
 

@@ -71,13 +71,10 @@ class CommandHandlerInterceptorTest {
         CommandBus commandBus = new SimpleCommandBus();
         MessageTypeResolver nameResolver = new ClassBasedMessageTypeResolver();
         commandGateway = new DefaultCommandGateway(commandBus, nameResolver);
-        AggregateAnnotationCommandHandler<MyAggregate> myAggregateCommandHandler =
-                AggregateAnnotationCommandHandler.<MyAggregate>builder()
-                                                 .aggregateType(MyAggregate.class)
-                                                 .repository(myAggregateRepository)
-                                                 .build();
-
-        myAggregateCommandHandler.subscribe(commandBus);
+        commandBus.subscribe(AggregateAnnotationCommandHandler.<MyAggregate>builder()
+                                                              .aggregateType(MyAggregate.class)
+                                                              .repository(myAggregateRepository)
+                                                              .build());
     }
 
     @SuppressWarnings("unchecked")

@@ -95,8 +95,8 @@ class SpawningNewAggregateTest {
                                                  .aggregateType(Aggregate2.class)
                                                  .repository(aggregate2Repository)
                                                  .build();
-        aggregate1CommandHandler.subscribe(commandBus);
-        aggregate2CommandHandler.subscribe(commandBus);
+        commandBus.subscribe(aggregate1CommandHandler);
+        commandBus.subscribe(aggregate2CommandHandler);
     }
 
     @SuppressWarnings("unchecked")

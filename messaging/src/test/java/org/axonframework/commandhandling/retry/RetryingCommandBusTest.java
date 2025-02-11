@@ -17,14 +17,15 @@
 package org.axonframework.commandhandling.retry;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.utils.MockException;
@@ -127,10 +128,11 @@ class RetryingCommandBusTest {
 
     @Test
     void shouldDelegateHandlerSubscription() {
-        MessageHandler<? super CommandMessage<?>, ? extends Message<?>> mock = mock();
-        testSubject.subscribe("test", mock);
+        QualifiedName testHandlerName = new QualifiedName("handler");
+        CommandHandler handler = mock();
+        testSubject.subscribe(testHandlerName, handler);
 
-        verify(delegate).subscribe("test", mock);
+        verify(delegate).subscribe(testHandlerName, handler);
     }
 
     @Test
