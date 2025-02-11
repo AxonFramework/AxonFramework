@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,8 +49,33 @@ import org.axonframework.messaging.responsetypes.OptionalResponseType
 import org.axonframework.messaging.responsetypes.ResponseType
 import kotlin.reflect.KClass
 
-private val trackingTokenSerializer = PolymorphicSerializer(TrackingToken::class).nullable
+/**
+ * Serializer for Axon's [TrackingToken] class.
+ * Provides serialization and deserialization support for nullable instances of TrackingToken.
+ *
+ * @see TrackingToken
+ */
+val trackingTokenSerializer = PolymorphicSerializer(TrackingToken::class).nullable
 
+/**
+ * Serializer for the [ReplayToken.context], represented as a nullable String.
+ * This context is typically used to provide additional information during token replay operations.
+ *
+ * This serializer is used by [trackingTokenSerializer] to serialize the context field and now only [String] type or null value is supported!
+ * Sadly enough, there's no straightforward solution to support [Any]; not without adjusting the context field of the ReplayToken in Axon Framework itself.
+ * That is, however, a breaking change, and as such, cannot be done till version 5.0.0 of the Axon Framework.
+ * This also allow more complex objects as the context, although it requires the user to do the de-/serialization to/from String, instead of the Axon Framework itself.
+ * Look at AxonSerializersTest, case `replay token with complex object as String context` for an example how to handle that using Kotlin Serialization.
+ *
+ * @see ReplayToken.context
+ */
+val replayTokenContextSerializer = String.serializer().nullable
+
+/**
+ * Module defining serializers for Axon Framework's core event handling and messaging components.
+ * This module includes serializers for TrackingTokens, ScheduleTokens, and ResponseTypes, enabling
+ * seamless integration with Axon-based applications.
+ */
 val AxonSerializersModule = SerializersModule {
     contextual(ConfigToken::class) { ConfigTokenSerializer }
     contextual(GapAwareTrackingToken::class) { GapAwareTrackingTokenSerializer }
@@ -86,6 +111,11 @@ val AxonSerializersModule = SerializersModule {
     }
 }
 
+/**
+ * Serializer for [ConfigToken].
+ *
+ * @see ConfigToken
+ */
 object ConfigTokenSerializer : KSerializer<ConfigToken> {
 
     private val mapSerializer = MapSerializer(String.serializer(), String.serializer())
@@ -112,6 +142,11 @@ object ConfigTokenSerializer : KSerializer<ConfigToken> {
     }
 }
 
+/**
+ * Serializer for [GapAwareTrackingToken].
+ *
+ * @see GapAwareTrackingToken
+ */
 object GapAwareTrackingTokenSerializer : KSerializer<GapAwareTrackingToken> {
 
     private val setSerializer = SetSerializer(Long.serializer())
@@ -143,6 +178,11 @@ object GapAwareTrackingTokenSerializer : KSerializer<GapAwareTrackingToken> {
     }
 }
 
+/**
+ * Serializer for [MultiSourceTrackingToken].
+ *
+ * @see MultiSourceTrackingToken
+ */
 object MultiSourceTrackingTokenSerializer : KSerializer<MultiSourceTrackingToken> {
 
     private val mapSerializer = MapSerializer(String.serializer(), trackingTokenSerializer)
@@ -169,6 +209,11 @@ object MultiSourceTrackingTokenSerializer : KSerializer<MultiSourceTrackingToken
     }
 }
 
+/**
+ * Serializer for [MergedTrackingToken].
+ *
+ * @see MergedTrackingToken
+ */
 object MergedTrackingTokenSerializer : KSerializer<MergedTrackingToken> {
 
     override val descriptor = buildClassSerialDescriptor(MergedTrackingToken::class.java.name) {
@@ -199,36 +244,62 @@ object MergedTrackingTokenSerializer : KSerializer<MergedTrackingToken> {
     }
 }
 
+/**
+ * Serializer for [ReplayToken].
+ * The [ReplayToken.context] value can be only a String or null.
+ * This serializer uses [replayTokenContextSerializer] to serialize the context field and now only [String] type or null value is supported!
+ *
+ * @see ReplayToken
+ * @see [replayTokenContextSerializer]
+ */
 object ReplayTokenSerializer : KSerializer<ReplayToken> {
 
     override val descriptor = buildClassSerialDescriptor(ReplayToken::class.java.name) {
         element<TrackingToken>("tokenAtReset")
         element<TrackingToken>("currentToken")
+        element<String>("context")
     }
 
     override fun deserialize(decoder: Decoder) = decoder.decodeStructure(descriptor) {
         var tokenAtReset: TrackingToken? = null
         var currentToken: TrackingToken? = null
+        var context: String? = null
         while (true) {
             val index = decodeElementIndex(descriptor)
             if (index == CompositeDecoder.DECODE_DONE) break
             when (index) {
                 0 -> tokenAtReset = decodeSerializableElement(descriptor, index, trackingTokenSerializer)
                 1 -> currentToken = decodeSerializableElement(descriptor, index, trackingTokenSerializer)
+                2 -> context = decodeSerializableElement(descriptor, index, replayTokenContextSerializer)
             }
         }
-        ReplayToken(
+        ReplayToken.createReplayToken(
             tokenAtReset ?: throw SerializationException("Element 'tokenAtReset' is missing"),
             currentToken,
-        )
+            context
+        ) as ReplayToken
     }
 
     override fun serialize(encoder: Encoder, value: ReplayToken) = encoder.encodeStructure(descriptor) {
         encodeSerializableElement(descriptor, 0, trackingTokenSerializer, value.tokenAtReset)
         encodeSerializableElement(descriptor, 1, trackingTokenSerializer, value.currentToken)
+        encodeSerializableElement(
+            descriptor,
+            2,
+            replayTokenContextSerializer,
+            stringOrNullFrom(value.context())
+        )
     }
+
+    private fun stringOrNullFrom(obj: Any?): String? =
+        obj?.takeIf { it is String }?.let { it as String }
 }
 
+/**
+ * Serializer for [GlobalSequenceTrackingToken].
+ *
+ * @see GlobalSequenceTrackingToken
+ */
 object GlobalSequenceTrackingTokenSerializer : KSerializer<GlobalSequenceTrackingToken> {
 
     override val descriptor = buildClassSerialDescriptor(GlobalSequenceTrackingToken::class.java.name) {
@@ -254,6 +325,11 @@ object GlobalSequenceTrackingTokenSerializer : KSerializer<GlobalSequenceTrackin
     }
 }
 
+/**
+ * Serializer for [SimpleScheduleToken].
+ *
+ * @see SimpleScheduleToken
+ */
 object SimpleScheduleTokenSerializer : KSerializer<SimpleScheduleToken> {
 
     override val descriptor = buildClassSerialDescriptor(SimpleScheduleToken::class.java.name) {
@@ -279,6 +355,11 @@ object SimpleScheduleTokenSerializer : KSerializer<SimpleScheduleToken> {
     }
 }
 
+/**
+ * Serializer for [QuartzScheduleToken].
+ *
+ * @see QuartzScheduleToken
+ */
 object QuartzScheduleTokenSerializer : KSerializer<QuartzScheduleToken> {
 
     override val descriptor = buildClassSerialDescriptor(QuartzScheduleToken::class.java.name) {
@@ -334,14 +415,34 @@ abstract class ResponseTypeSerializer<R : ResponseType<*>>(kClass: KClass<R>, pr
     }
 }
 
+/**
+ * Serializer for [InstanceResponseType].
+ *
+ * @see InstanceResponseType
+ */
 object InstanceResponseTypeSerializer : KSerializer<InstanceResponseType<*>>,
     ResponseTypeSerializer<InstanceResponseType<*>>(InstanceResponseType::class, { InstanceResponseType(it) })
 
+/**
+ * Serializer for [OptionalResponseType].
+ *
+ * @see OptionalResponseType
+ */
 object OptionalResponseTypeSerializer : KSerializer<OptionalResponseType<*>>,
     ResponseTypeSerializer<OptionalResponseType<*>>(OptionalResponseType::class, { OptionalResponseType(it) })
 
+/**
+ * Serializer for [MultipleInstancesResponseType].
+ *
+ * @see MultipleInstancesResponseType
+ */
 object MultipleInstancesResponseTypeSerializer : KSerializer<MultipleInstancesResponseType<*>>,
     ResponseTypeSerializer<MultipleInstancesResponseType<*>>(MultipleInstancesResponseType::class, { MultipleInstancesResponseType(it) })
 
+/**
+ * Serializer for [ArrayResponseType].
+ *
+ * @see ArrayResponseType
+ */
 object ArrayResponseTypeSerializer : KSerializer<ArrayResponseType<*>>,
     ResponseTypeSerializer<ArrayResponseType<*>>(ArrayResponseType::class, { ArrayResponseType(it) })

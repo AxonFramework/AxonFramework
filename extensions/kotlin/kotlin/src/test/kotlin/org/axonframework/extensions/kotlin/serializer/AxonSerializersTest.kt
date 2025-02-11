@@ -15,6 +15,11 @@
  */
 package org.axonframework.extensions.kotlin.serializer
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.KotlinModule
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.axonframework.eventhandling.GapAwareTrackingToken
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken
@@ -36,7 +41,9 @@ import org.axonframework.messaging.responsetypes.ResponseType
 import org.axonframework.serialization.Serializer
 import org.axonframework.serialization.SimpleSerializedObject
 import org.axonframework.serialization.SimpleSerializedType
+import org.axonframework.serialization.json.JacksonSerializer
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 
 internal class AxonSerializersTest {
@@ -76,19 +83,47 @@ internal class AxonSerializersTest {
     }
 
     @Test
-    fun replayToken() {
-        val token = ReplayToken.createReplayToken(GlobalSequenceTrackingToken(15), GlobalSequenceTrackingToken(10))
-        val json = """{"tokenAtReset":{"type":"org.axonframework.eventhandling.GlobalSequenceTrackingToken","globalIndex":15},"currentToken":{"type":"org.axonframework.eventhandling.GlobalSequenceTrackingToken","globalIndex":10}}"""
+    fun `replay token with String context`() {
+        val token = ReplayToken.createReplayToken(
+            GlobalSequenceTrackingToken(15), GlobalSequenceTrackingToken(10), "someContext"
+        )
+        val json = """{"tokenAtReset":{"type":"org.axonframework.eventhandling.GlobalSequenceTrackingToken","globalIndex":15},"currentToken":{"type":"org.axonframework.eventhandling.GlobalSequenceTrackingToken","globalIndex":10},"context":"someContext"}""".trimIndent()
         assertEquals(json, serializer.serialize(token, String::class.java).data)
         assertEquals(token, serializer.deserializeTrackingToken(token.javaClass.name, json))
     }
 
     @Test
-    fun `replay token with currentToken with null value`() {
-        val token = ReplayToken.createReplayToken(GlobalSequenceTrackingToken(5), null)
-        val json = """{"tokenAtReset":{"type":"org.axonframework.eventhandling.GlobalSequenceTrackingToken","globalIndex":5},"currentToken":null}"""
+    fun `replay token with currentToken with null value and null context`() {
+        val token = ReplayToken.createReplayToken(GlobalSequenceTrackingToken(5), null, null)
+        val json = """{"tokenAtReset":{"type":"org.axonframework.eventhandling.GlobalSequenceTrackingToken","globalIndex":5},"currentToken":null,"context":null}"""
         assertEquals(json, serializer.serialize(token, String::class.java).data)
         assertEquals(token, serializer.deserializeTrackingToken(token.javaClass.name, json))
+    }
+
+    @Test
+    fun `replay token deserialize without context field`() {
+        val token = ReplayToken.createReplayToken(GlobalSequenceTrackingToken(5), null, null)
+        val json = """{"tokenAtReset":{"type":"org.axonframework.eventhandling.GlobalSequenceTrackingToken","globalIndex":5},"currentToken":null}"""
+        assertEquals(token, serializer.deserializeTrackingToken(token.javaClass.name, json))
+    }
+
+    @Test
+    fun `replay token with complex object as String context`() {
+        @Serializable
+        data class ComplexContext(val value1: String, val value2: Int, val value3: Boolean)
+        val complexContext = ComplexContext("value1", 2, false)
+
+        val token = ReplayToken.createReplayToken(
+            GlobalSequenceTrackingToken(15),
+            GlobalSequenceTrackingToken(10),
+            Json.encodeToString(complexContext)
+        )
+        val json = """{"tokenAtReset":{"type":"org.axonframework.eventhandling.GlobalSequenceTrackingToken","globalIndex":15},"currentToken":{"type":"org.axonframework.eventhandling.GlobalSequenceTrackingToken","globalIndex":10},"context":"{\"value1\":\"value1\",\"value2\":2,\"value3\":false}"}""".trimIndent()
+        assertEquals(json, serializer.serialize(token, String::class.java).data)
+        val deserializedToken = serializer.deserializeTrackingToken(token.javaClass.name, json) as ReplayToken
+        assertEquals(token, deserializedToken)
+        assertInstanceOf(String::class.java, deserializedToken.context())
+        assertEquals(complexContext, Json.decodeFromString<ComplexContext>(deserializedToken.context() as String))
     }
 
     @Test
