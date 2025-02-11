@@ -24,15 +24,13 @@ import org.axonframework.messaging.SubscribableMessageSource;
 
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 /**
- * A {@link SubscribableMessageSource} that receives event from a persistent stream from Axon Server.
- * The persistent stream is identified by a unique name, which serves as an identifier for the
- * {@link PersistentStream} connection with Axon Server. Using the same name for different instances
- * will overwrite the existing connection.
+ * A {@link SubscribableMessageSource} that receives event from a persistent stream from Axon Server. The persistent
+ * stream is identified by a unique name, which serves as an identifier for the {@link PersistentStream} connection with
+ * Axon Server. Using the same name for different instances will overwrite the existing connection.
  *
  * @author Marc Gathier
  * @since 4.10.0
@@ -40,9 +38,9 @@ import javax.annotation.Nonnull;
 public class PersistentStreamMessageSource implements SubscribableMessageSource<EventMessage<?>> {
 
     private final PersistentStreamConnection persistentStreamConnection;
+    private final String name;
 
-    private final AtomicReference<Consumer<List<? extends EventMessage<?>>>> consumer =
-            new AtomicReference<>(NO_OP_CONSUMER);
+    private Consumer<List<? extends EventMessage<?>>> consumer = NO_OP_CONSUMER;
     private static final Consumer<List<? extends EventMessage<?>>> NO_OP_CONSUMER = events -> {
     };
 
@@ -84,6 +82,7 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
                                          ScheduledExecutorService scheduler,
                                          int batchSize,
                                          String context) {
+        this.name = name;
         persistentStreamConnection = new PersistentStreamConnection(name,
                                                                     configuration,
                                                                     persistentStreamProperties,
@@ -94,12 +93,27 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
 
     @Override
     public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> consumer) {
-        if (!this.consumer.compareAndSet(NO_OP_CONSUMER, consumer)) {
-            persistentStreamConnection.open(consumer);
+        synchronized (this) {
+            boolean noConsumer = this.consumer.equals(NO_OP_CONSUMER);
+            if (noConsumer) {
+                persistentStreamConnection.open(consumer);
+                this.consumer = consumer;
+            } else {
+                boolean sameConsumer = this.consumer.equals(consumer);
+                if (!sameConsumer) {
+                    throw new IllegalStateException(
+                            String.format(
+                                    "%s: Cannot subscribe to PersistentStreamMessageSource with another consumer: there is already an active subscription.",
+                                    name));
+                }
+            }
         }
         return () -> {
-            persistentStreamConnection.close();
-            return true;
+            synchronized (this) {
+                persistentStreamConnection.close();
+                this.consumer = NO_OP_CONSUMER;
+                return true;
+            }
         };
     }
 }
