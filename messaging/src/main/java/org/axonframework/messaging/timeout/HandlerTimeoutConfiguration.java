@@ -20,36 +20,39 @@ package org.axonframework.messaging.timeout;
  * Configuration object for the timeout settings of handlers.
  *
  * @author Mitchell Herrijgers
- * @since 4.11
+ * @since 4.11.0
  */
 public class HandlerTimeoutConfiguration {
 
     /**
      * Timeout settings for events.
      */
-    private final TimeoutForType events;
+    private final TaskTimeoutSettings events;
 
     /**
      * Timeout settings for commands.
      */
-    private final TimeoutForType commands;
+    private final TaskTimeoutSettings commands;
 
     /**
      * Timeout settings for queries.
      */
-    private final TimeoutForType queries;
+    private final TaskTimeoutSettings queries;
 
     /**
      * Timeout settings for deadlines.
      */
-    private final TimeoutForType deadlines;
+    private final TaskTimeoutSettings deadlines;
 
     /**
      * Creates a new {@link HandlerTimeoutConfiguration} with default timeout settings. This means all message handlers
      * have a timeout of 10 seconds, with a warning threshold of 8 seconds and a warning interval of 1 second.
      */
     public HandlerTimeoutConfiguration() {
-        this(new TimeoutForType(), new TimeoutForType(), new TimeoutForType(), new TimeoutForType());
+        this(new TaskTimeoutSettings(),
+             new TaskTimeoutSettings(),
+             new TaskTimeoutSettings(),
+             new TaskTimeoutSettings());
     }
 
     /**
@@ -60,8 +63,10 @@ public class HandlerTimeoutConfiguration {
      * @param queries   the timeout settings for queries
      * @param deadlines the timeout settings for deadlines
      */
-    public HandlerTimeoutConfiguration(TimeoutForType events, TimeoutForType commands, TimeoutForType queries,
-                                       TimeoutForType deadlines) {
+    public HandlerTimeoutConfiguration(TaskTimeoutSettings events,
+                                       TaskTimeoutSettings commands,
+                                       TaskTimeoutSettings queries,
+                                       TaskTimeoutSettings deadlines) {
         this.events = events;
         this.commands = commands;
         this.queries = queries;
@@ -73,7 +78,7 @@ public class HandlerTimeoutConfiguration {
      *
      * @return the timeout settings for events
      */
-    public TimeoutForType getEvents() {
+    public TaskTimeoutSettings getEvents() {
         return events;
     }
 
@@ -82,7 +87,7 @@ public class HandlerTimeoutConfiguration {
      *
      * @return the timeout settings for commands
      */
-    public TimeoutForType getCommands() {
+    public TaskTimeoutSettings getCommands() {
         return commands;
     }
 
@@ -91,7 +96,7 @@ public class HandlerTimeoutConfiguration {
      *
      * @return the timeout settings for queries
      */
-    public TimeoutForType getQueries() {
+    public TaskTimeoutSettings getQueries() {
         return queries;
     }
 
@@ -100,67 +105,7 @@ public class HandlerTimeoutConfiguration {
      *
      * @return the timeout settings for deadlines
      */
-    public TimeoutForType getDeadlines() {
+    public TaskTimeoutSettings getDeadlines() {
         return deadlines;
-    }
-
-    /**
-     * Timeout settings for a specific message type.
-     */
-    public static class TimeoutForType {
-
-        private final int timeoutMs;
-        private final int warningThresholdMs;
-        private final int warningIntervalMs;
-
-        /**
-         * Creates a new {@link TimeoutForType} with default timeout settings. This means all message handlers have a
-         * timeout of 10 seconds, with a warning threshold of 8 seconds and a warning interval of 1 second.
-         */
-        public TimeoutForType() {
-            this(10000, 8000, 1000);
-        }
-
-        /**
-         * Creates a new {@link TimeoutForType} with the given timeout settings.
-         *
-         * @param timeoutMs          the timeout in milliseconds
-         * @param warningThresholdMs the threshold in milliseconds after which a warning is logged. Setting this to a
-         *                           value higher than {@code timeout} will disable warnings.
-         * @param warningIntervalMs  the interval in milliseconds between warnings
-         */
-        public TimeoutForType(int timeoutMs, int warningThresholdMs, int warningIntervalMs) {
-            this.timeoutMs = timeoutMs;
-            this.warningThresholdMs = warningThresholdMs;
-            this.warningIntervalMs = warningIntervalMs;
-        }
-
-        /**
-         * Retrieves the timeout in milliseconds.
-         *
-         * @return the timeout in milliseconds
-         */
-        public int getTimeoutMs() {
-            return timeoutMs;
-        }
-
-        /**
-         * Retrieves the threshold in milliseconds after which a warning is logged. Setting this to a value higher than
-         * the timeout will disable warnings.
-         *
-         * @return the threshold in milliseconds after which a warning is logged
-         */
-        public int getWarningThresholdMs() {
-            return warningThresholdMs;
-        }
-
-        /**
-         * Retrieves the interval in milliseconds between warnings.
-         *
-         * @return the interval in milliseconds between warnings
-         */
-        public int getWarningIntervalMs() {
-            return warningIntervalMs;
-        }
     }
 }

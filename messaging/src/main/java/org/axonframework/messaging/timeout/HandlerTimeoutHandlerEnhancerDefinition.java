@@ -36,19 +36,19 @@ import javax.annotation.Nonnull;
  * @author Mitchell Herrijgers
  * @see TimeoutWrappedMessageHandlingMember
  * @see HandlerTimeoutConfiguration
- * @since 4.11
+ * @since 4.11.0
  */
-public class TimeoutHandlerEnhancerDefinition implements HandlerEnhancerDefinition {
+public class HandlerTimeoutHandlerEnhancerDefinition implements HandlerEnhancerDefinition {
 
     private final HandlerTimeoutConfiguration configuration;
 
-    public TimeoutHandlerEnhancerDefinition(HandlerTimeoutConfiguration configuration) {
+    public HandlerTimeoutHandlerEnhancerDefinition(HandlerTimeoutConfiguration configuration) {
         this.configuration = configuration;
     }
 
     @Override
     public <T> MessageHandlingMember<T> wrapHandler(@Nonnull MessageHandlingMember<T> original) {
-        HandlerTimeoutConfiguration.TimeoutForType config = getConfigurationForMember(original);
+        TaskTimeoutSettings config = getConfigurationForMember(original);
         if (config == null) {
             // Unknown type of message. Don't enhance the handler.
             return original;
@@ -88,8 +88,9 @@ public class TimeoutHandlerEnhancerDefinition implements HandlerEnhancerDefiniti
      * @param original The original message handler
      * @return The configuration for the message handler
      */
-    private HandlerTimeoutConfiguration.TimeoutForType getConfigurationForMember(
-            @Nonnull MessageHandlingMember<?> original) {
+    private TaskTimeoutSettings getConfigurationForMember(
+            @Nonnull MessageHandlingMember<?> original
+    ) {
         if (original.canHandleMessageType(EventMessage.class)) {
             return configuration.getEvents();
         }

@@ -16,12 +16,19 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import org.axonframework.config.Configurer;
+import org.axonframework.config.ConfigurerModule;
 import org.axonframework.messaging.timeout.HandlerTimeoutConfiguration;
-import org.axonframework.messaging.timeout.TimeoutHandlerEnhancerDefinition;
+import org.axonframework.messaging.timeout.HandlerTimeoutHandlerEnhancerDefinition;
+import org.axonframework.messaging.timeout.TaskTimeoutSettings;
+import org.axonframework.messaging.timeout.UnitOfWorkTimeoutInterceptor;
 import org.axonframework.springboot.MessageHandlingTimeoutProperties;
+import org.axonframework.springboot.TransactionTimeoutProperties;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.annotation.Order;
 
 /**
  * Configures the timeout settings for message handlers.
@@ -31,6 +38,7 @@ import org.springframework.context.annotation.Bean;
  */
 @AutoConfiguration
 @EnableConfigurationProperties(value = {
+        TransactionTimeoutProperties.class,
         MessageHandlingTimeoutProperties.class,
 })
 public class AxonTimeoutAutoConfiguration {
@@ -42,9 +50,61 @@ public class AxonTimeoutAutoConfiguration {
     }
 
     @Bean
-    public TimeoutHandlerEnhancerDefinition messageTimeoutHandlerEnhancerDefinition(
+    public HandlerTimeoutHandlerEnhancerDefinition messageTimeoutHandlerEnhancerDefinition(
             HandlerTimeoutConfiguration handlerTimeoutConfiguration
     ) {
-        return new TimeoutHandlerEnhancerDefinition(handlerTimeoutConfiguration);
+        return new HandlerTimeoutHandlerEnhancerDefinition(handlerTimeoutConfiguration);
+    }
+
+    @Bean
+    public ConfigurerModule axonTimeoutConfigurerModule(TransactionTimeoutProperties properties) {
+        return new AxonTimeoutConfigurerModule(properties);
+    }
+
+    @Order()
+    private static class AxonTimeoutConfigurerModule implements ConfigurerModule {
+
+        private final TransactionTimeoutProperties properties;
+
+        public AxonTimeoutConfigurerModule(TransactionTimeoutProperties properties) {
+            this.properties = properties;
+        }
+
+        @Override
+        public void configureModule(@NotNull Configurer configurer) {
+            configurer.eventProcessing()
+                      .registerDefaultHandlerInterceptor((c, name) -> {
+                          TaskTimeoutSettings settings = getSettingsForProcessor(name);
+                          return new UnitOfWorkTimeoutInterceptor(
+                                  "EventProcessor " + name,
+                                  settings.getTimeoutMs(),
+                                  settings.getWarningThresholdMs(),
+                                  settings.getWarningIntervalMs()
+                          );
+                      });
+            configurer.onInitialize(c -> {
+                c.commandBus().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptor(
+                        c.commandBus().getClass().getSimpleName(),
+                        properties.getCommandBus().getTimeoutMs(),
+                        properties.getCommandBus().getWarningThresholdMs(),
+                        properties.getCommandBus().getWarningIntervalMs()
+                ));
+                c.queryBus().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptor(
+                        c.queryBus().getClass().getSimpleName(),
+                        properties.getQueryBus().getTimeoutMs(),
+                        properties.getQueryBus().getWarningThresholdMs(),
+                        properties.getQueryBus().getWarningIntervalMs()
+                ));
+            });
+        }
+
+        private TaskTimeoutSettings getSettingsForProcessor(String name) {
+            return properties.getEventProcessor().getOrDefault(name, properties.getEventProcessors());
+        }
+
+        @Override
+        public int order() {
+            return Integer.MIN_VALUE;
+        }
     }
 }

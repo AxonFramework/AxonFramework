@@ -4,16 +4,20 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.WrappedMessageHandlingMember;
 
-import java.util.concurrent.Callable;
+import java.util.concurrent.TimeoutException;
 import javax.annotation.Nonnull;
 
-import static org.axonframework.messaging.timeout.AxonTaskUtils.runTaskWithTimeout;
-
 /**
- * Represents a {@link MessageHandlingMember} that wraps the original handler in a timeout. It does this by running a
- * task via {@link AxonTaskUtils#runTaskWithTimeout(String, Callable, int, int, int)}.
+ * Represents a {@link MessageHandlingMember} that wraps another {@link MessageHandlingMember} and enforces a timeout on
+ * the invocation of the wrapped member. It does this by starting a {@link AxonTimeLimitedTask} and completes this upon
+ * completion. When the execution takes too long, it will throw a {@link TimeoutException}.
+ * <p>
+ * If the {@code warningThreshold} is lower than the timeout, warnings will be logged at the configured
+ * {@code warningInterval} before the timeout is reached.
  *
  * @param <T> The type of the target object
+ * @author Mitchell Herrijgers
+ * @since 4.11.0
  */
 class TimeoutWrappedMessageHandlingMember<T> extends WrappedMessageHandlingMember<T> {
 
@@ -43,14 +47,23 @@ class TimeoutWrappedMessageHandlingMember<T> extends WrappedMessageHandlingMembe
 
     @Override
     public Object handle(@Nonnull Message<?> message, T target) throws Exception {
-        return runTaskWithTimeout(
-                String.format("Message [%s] for handler [%s]",
-                              message.getPayloadType().getName(),
-                              target != null ? target.getClass().getName() : null),
-                () -> super.handle(message, target),
+        String taskName = String.format("Message [%s] for handler [%s]",
+                                        message.getPayloadType().getName(),
+                                        target != null ? target.getClass().getName() : null);
+        AxonTimeLimitedTask taskTimeout = new AxonTimeLimitedTask(
+                taskName,
                 timeout,
                 warningThreshold,
-                warningInterval
+                warningInterval,
+                AxonTaskJanitor.INSTANCE
         );
+        taskTimeout.start();
+        try {
+            return super.handle(message, target);
+        } catch (InterruptedException e) {
+            throw new TimeoutException(String.format("%s has timed out", taskName));
+        } finally {
+            taskTimeout.complete();
+        }
     }
 }
