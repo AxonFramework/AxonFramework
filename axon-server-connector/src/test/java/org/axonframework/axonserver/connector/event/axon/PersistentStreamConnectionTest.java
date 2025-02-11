@@ -155,11 +155,19 @@ class PersistentStreamConnectionTest {
         });
 
         // when - then
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            testSubject.open((e) -> {
-            });
-        });
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> testSubject.open((e) -> {
+        }));
         assertEquals("stream-id: Persistent Stream has already been opened.", exception.getMessage());
+    }
+
+    @Test
+    void givenAlreadyClosedStreamWhenOpenOneMoreTimeThenOpened() {
+        // given
+        testSubject.open((e) -> {});
+        testSubject.close();
+
+        // when - then
+        assertDoesNotThrow(() -> testSubject.open((e) -> {}));
     }
 
     private static EventWithToken eventWithToken(int token,

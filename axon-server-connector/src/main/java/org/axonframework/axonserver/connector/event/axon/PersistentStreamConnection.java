@@ -206,6 +206,7 @@ public class PersistentStreamConnection {
         PersistentStream persistentStream = persistentStreamHolder.getAndSet(null);
         if (persistentStream != null) {
             persistentStream.close();
+            this.consumer.set(NO_OP_CONSUMER);
         }
     }
 
