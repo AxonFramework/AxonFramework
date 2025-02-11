@@ -15,6 +15,7 @@
  */
 package org.axonframework.axonserver.connector.event.axon;
 
+import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.SubscribableMessageSourceDefinition;
@@ -45,7 +46,9 @@ public class PersistentStreamMessageSourceDefinition implements SubscribableMess
     /**
      * Instantiates a {@link PersistentStreamMessageSourceDefinition} instance based on the given parameters.
      *
-     * @param name                       The name of the persistent stream.
+     * @param name                       The name of the persistent stream. It's a unique identifier of the
+     *                                   {@link PersistentStream} connection with Axon Sever. Usage of the same name
+     *                                   will overwrite the existing connection.
      * @param persistentStreamProperties The properties to create te persistent stream.
      * @param scheduler                  Scheduler used for persistent stream operations.
      * @param batchSize                  The batch size for collecting events.

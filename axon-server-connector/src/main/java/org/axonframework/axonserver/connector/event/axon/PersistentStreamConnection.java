@@ -71,8 +71,10 @@ public class PersistentStreamConnection {
 
     private final AtomicReference<PersistentStream> persistentStreamHolder = new AtomicReference<>();
 
-    private final AtomicReference<Consumer<List<? extends EventMessage<?>>>> consumer = new AtomicReference<>(events -> {
-    });
+    private static final Consumer<List<? extends EventMessage<?>>> NO_OP_CONSUMER = events -> {
+    };
+    private final AtomicReference<Consumer<List<? extends EventMessage<?>>>> consumer =
+            new AtomicReference<>(NO_OP_CONSUMER);
     private final ScheduledExecutorService scheduler;
     private final int batchSize;
     private final Map<Integer, SegmentConnection> segments = new ConcurrentHashMap<>();
@@ -83,7 +85,7 @@ public class PersistentStreamConnection {
     /**
      * Instantiates a connection for a persistent stream.
      *
-     * @param streamId                   The identifier of the persistent stream.
+     * @param streamId                   The unique identifier of the persistent stream.
      * @param configuration              Global configuration of Axon components.
      * @param persistentStreamProperties Properties for the persistent stream.
      * @param scheduler                  Scheduler thread pool to schedule tasks.
@@ -105,7 +107,7 @@ public class PersistentStreamConnection {
     /**
      * Instantiates a connection for a persistent stream.
      *
-     * @param streamId                   The identifier of the persistent stream.
+     * @param streamId                   The unique identifier of the persistent stream.
      * @param configuration              Global configuration of Axon components.
      * @param persistentStreamProperties Properties for the persistent stream.
      * @param scheduler                  Scheduler thread pool to schedule tasks.
@@ -128,12 +130,18 @@ public class PersistentStreamConnection {
 
 
     /**
-     * Initiates the connection to Axon Server to read events from the persistent stream.
+     * Initiates the connection to Axon Server to read events from the persistent stream. The stream can be opened just
+     * once with a single consumer. The connection is exclusive to that consumer. If you try to open it again, an
+     * {@link IllegalStateException} is thrown.
      *
      * @param consumer The consumer of batches of event messages.
+     * @throws IllegalStateException if the stream was already opened.
      */
     public void open(Consumer<List<? extends EventMessage<?>>> consumer) {
-        this.consumer.set(consumer);
+        if (!this.consumer.compareAndSet(NO_OP_CONSUMER, consumer)) {
+            throw new IllegalStateException(
+                    String.format("%s: Persistent Stream has already been opened.", streamId));
+        }
         start();
     }
 
@@ -198,6 +206,7 @@ public class PersistentStreamConnection {
         PersistentStream persistentStream = persistentStreamHolder.getAndSet(null);
         if (persistentStream != null) {
             persistentStream.close();
+            this.consumer.set(NO_OP_CONSUMER);
         }
     }
 
