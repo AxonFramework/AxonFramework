@@ -19,6 +19,7 @@ package org.axonframework.springboot.autoconfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
 import com.thoughtworks.xstream.XStream;
+import org.apache.avro.message.SchemaStore;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandBusSpanFactory;
 import org.axonframework.commandhandling.DuplicateCommandHandlerResolver;
@@ -71,6 +72,8 @@ import org.axonframework.serialization.ChainingConverter;
 import org.axonframework.serialization.JavaSerializer;
 import org.axonframework.serialization.RevisionResolver;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.avro.AvroSerializer;
+import org.axonframework.serialization.avro.AvroSerializerStrategy;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.axonframework.spring.eventsourcing.SpringAggregateSnapshotter;
@@ -147,18 +150,25 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Primary
     @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "!eventSerializer,messageSerializer")
     public Serializer serializer(RevisionResolver revisionResolver) {
-        return buildSerializer(revisionResolver, serializerProperties.getGeneral());
+        if (SerializerProperties.SerializerType.AVRO.equals(serializerProperties.getGeneral())) {
+            throw new AxonConfigurationException(format(
+                    "Invalid serializer type [%s] configured as general serializer. "
+                            + "The Avro Serializer can be used as message or event serializer only.",
+                    serializerProperties.getGeneral().name()
+            ));
+        }
+        return buildSerializer(revisionResolver, serializerProperties.getGeneral(), null);
     }
 
     @Bean
     @Qualifier("messageSerializer")
     @ConditionalOnMissingQualifiedBean(beanClass = Serializer.class, qualifier = "messageSerializer")
-    public Serializer messageSerializer(Serializer genericSerializer, RevisionResolver revisionResolver) {
+    public Serializer messageSerializer(Serializer generalSerializer, RevisionResolver revisionResolver) {
         if (SerializerProperties.SerializerType.DEFAULT.equals(serializerProperties.getMessages())
                 || serializerProperties.getGeneral().equals(serializerProperties.getMessages())) {
-            return genericSerializer;
+            return generalSerializer;
         }
-        return buildSerializer(revisionResolver, serializerProperties.getMessages());
+        return buildSerializer(revisionResolver, serializerProperties.getMessages(), generalSerializer);
     }
 
     @Bean
@@ -173,7 +183,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
         } else if (serializerProperties.getGeneral().equals(serializerProperties.getEvents())) {
             return generalSerializer;
         }
-        return buildSerializer(revisionResolver, serializerProperties.getEvents());
+        return buildSerializer(revisionResolver, serializerProperties.getEvents(), generalSerializer);
     }
 
     @Bean
@@ -188,8 +198,32 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     private Serializer buildSerializer(RevisionResolver revisionResolver,
-                                       SerializerProperties.SerializerType serializerType) {
+                                       SerializerProperties.SerializerType serializerType,
+                                       Serializer generalSerializer) {
         switch (serializerType) {
+            case AVRO:
+                Map<String, SchemaStore> schemaStoreBeans = beansOfTypeIncludingAncestors(applicationContext,
+                                                                                          SchemaStore.class);
+                SchemaStore schemaStore = schemaStoreBeans.containsKey("defaultAxonSchemaStore")
+                        ? schemaStoreBeans.get("defaultAxonSchemaStore")
+                        : schemaStoreBeans.values().stream().findFirst()
+                                          .orElseThrow(() -> new NoSuchBeanDefinitionException(SchemaStore.class));
+
+                if (generalSerializer == null) {
+                    throw new AxonConfigurationException(
+                            "General serializer is mandatory as a fallback Avro Serializer, but none was provided."
+                    );
+                }
+                Map<String, AvroSerializerStrategy> serializationStrategies = beansOfTypeIncludingAncestors(
+                        applicationContext,
+                        AvroSerializerStrategy.class);
+                AvroSerializer.Builder builder = AvroSerializer.builder()
+                                                               .schemaStore(schemaStore)
+                                                               .serializerDelegate(generalSerializer)
+                                                               .revisionResolver(revisionResolver);
+                serializationStrategies.values().forEach(builder::addSerializerStrategy);
+                return builder.build();
+
             case JACKSON:
                 Map<String, ObjectMapper> objectMapperBeans = beansOfTypeIncludingAncestors(applicationContext,
                                                                                             ObjectMapper.class);
