@@ -179,7 +179,7 @@ public class SerializerConfiguration {
 
 [source,text]
 ----
-# Possible values for these keys are `default`, `xstream`, `java`, and `jackson`. `avro` should be used for `events` and `messages` only.
+# Possible values for these keys are `default`, `xstream`, `java`, and `jackson`. `avro` can be used for `events` and `messages` only.
 axon.serializer.general
 axon.serializer.events
 axon.serializer.messages
