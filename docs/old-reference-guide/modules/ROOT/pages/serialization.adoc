@@ -15,7 +15,7 @@ This `Serializer` implementation uses https://github.com/FasterXML/jackson[Jacks
 It produces a more compact serialized form, while requiring those classes to stick to Jackson's conventions (or configuration).
 The compact format makes it ideal for events, commands, and queries, as it minimizes the storage space and package size.
 
-The third option provided by the AxonFramework is the `AvroServializer`. The `Serializer` uses https://avro.apache.org/[Apache Avro] to serialize objects into and deserialize from https://avro.apache.org/docs/1.12.0/specification/#binary-encoding[binary single-object-encoded format]. The format is very compact, is based on the https://avro.apache.org/docs/1.12.0/specification/[Avro Schema Specification] and is ideal for messaging (serialization of commands, events and queries) and event storage. This serializer is designed to serve as payload `event`/`message` serializer and requires a `delegate` serializer to serialize everything else (here the best choice is `JacksonSerializer`). Since the entire serialization process is based on Apache Avro schema, a schema store is required. The framework provides a local `SchemaStore` which can be pre-filled manually or uses Spring Boot class path scanning to detect schemas located on the class path.
+The third option provided by the AxonFramework is the `AvroServializer`. The `Serializer` uses https://avro.apache.org/[Apache Avro] to serialize objects into and deserialize from https://avro.apache.org/docs/1.12.0/specification/#binary-encoding[binary single-object-encoded format]. The format is compact, is based on the https://avro.apache.org/docs/1.12.0/specification/[Avro Schema Specification] and is ideal for messaging (serialization of commands, events and queries) and event storage. This serializer is designed to serve as payload `event`/`message` serializer and requires a `delegate` serializer to serialize everything else (here the best choice is `JacksonSerializer`). Since the entire serialization process is based on Apache Avro schema, a schema store is required. The framework provides a local `SchemaStore` which can be pre-filled manually or uses SpringBoot class path scanning to detect  schemas located on the class path.
 
 You may also implement your own serializer simply by creating a class that implements `Serializer` and setting it within Axon's configuration for the desired infrastructure components.
 
@@ -302,7 +302,7 @@ public class SerializerConfiguration {
 ==== `AvroSerializer`
 
 Apache Avro addresses the issue of reading of old messages by checking compatibility between the reader and writer Avro Schema. By its nature,
-Apache Avro binary format is designed to be very permissive to schema additions, so no additional overhead is required to allow lenient deserialization.
+Apache Avro binary format is designed to be highly permissive to schema additions, so no additional overhead is required to allow lenient deserialization.
 
 === Generic types
 
