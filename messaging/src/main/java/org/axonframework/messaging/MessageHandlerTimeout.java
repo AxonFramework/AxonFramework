@@ -25,12 +25,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Sets the timeout for a message handler. Takes precedence over configuration through
- * {@link org.axonframework.messaging.timeout.HandlerTimeoutConfiguration}.
+ * Sets the timeout settings of a message handler. Takes precedence over configuration through
+ * {@link org.axonframework.messaging.timeout.HandlerTimeoutConfiguration}, for each property individually.
  * <p>
- * The {@code messageTimeout} attribute specifies the timeout for a single message. The {@code batchTimeout} attribute
- * specifies the timeout for a batch of messages, if applicable. A value of {@code -1} indicates that the default
- * timeout should be used.
+ * Any property set to {@code -1} will use the default value of the
+ * {@link org.axonframework.messaging.timeout.HandlerTimeoutConfiguration}. For example, setting the timeout to
+ * {@code -1}, and {@code warningThreshold} to {@code 1000}, will take the default timeout from the configuration, while
+ * setting the warning threshold to {@code 1000}.
  *
  * @author Mitchell Herrijgers
  * @since 4.11
@@ -42,26 +43,30 @@ import java.lang.annotation.Target;
 public @interface MessageHandlerTimeout {
 
     /**
-     * The timeout for a single message. A value of {@code -1} indicates that the default timeout should be used.
+     * The timeout for a single message in milliseconds. A value of {@code -1} indicates that the timeout should be used
+     * of the {@link org.axonframework.messaging.timeout.HandlerTimeoutConfiguration}.
      *
-     * @return the timeout for a single message handler
+     * @return the timeout for a single message handler in milliseconds
      */
     int timeout() default -1;
 
     /**
-     * The time after which a warning log message should be displayed that the message handler is taking too long. A
-     * value of {@code -1} indicates that the default warning threshold should be used. A value higher than the timeout
-     * will disable warnings.
+     * The time in milliseconds after which a warning message should be logged that the message handler is taking
+     * too long. A value of {@code -1} indicates that the default warning threshold should be used.
+     * <p>
+     * A value higher than the {@code timeout} (or the timeout from the configuration if is {@code -1} on the
+     * annotation), will disable warnings.
      *
-     * @return the time after which a warning log message should be displayed
+     * @return the time in milliseconds after which a warning message should be logged
      */
     int warningThreshold() default -1;
 
     /**
-     * The interval at which warning log messages should be displayed that the message handler is taking too long. A
-     * value of {@code -1} indicates that the default warning interval should be used.
+     * The interval in milliseconds at which warning messages should be logged that the message handler is taking too
+     * long. A value of {@code -1} indicates that the default warning interval should be used of the
+     * {@link org.axonframework.messaging.timeout.HandlerTimeoutConfiguration}.
      *
-     * @return the interval at which warning log messages should be displayed
+     * @return the interval in milliseconds at which warning log messages should be displayed
      */
     int warningInterval() default -1;
 }

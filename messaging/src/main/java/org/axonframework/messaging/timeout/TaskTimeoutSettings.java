@@ -28,7 +28,7 @@ public class TaskTimeoutSettings {
      *
      * @param timeoutMs          the timeout in milliseconds
      * @param warningThresholdMs the threshold in milliseconds after which a warning is logged. Setting this to a value
-     *                           higher than {@code timeout} will disable warnings.
+     *                           higher than or equal to {@code timeout} will disable warnings.
      * @param warningIntervalMs  the interval in milliseconds between warnings
      */
     public TaskTimeoutSettings(int timeoutMs, int warningThresholdMs, int warningIntervalMs) {
@@ -74,7 +74,7 @@ public class TaskTimeoutSettings {
 
     /**
      * Sets the threshold in milliseconds after which a warning is logged. Setting this to a value higher than
-     * {@code timeout} will disable warnings.
+     * or equal to {@code timeout} will disable warnings.
      *
      * @param warningThresholdMs the threshold in milliseconds after which a warning is logged
      */

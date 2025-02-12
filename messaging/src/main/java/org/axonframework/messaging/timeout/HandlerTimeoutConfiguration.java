@@ -17,7 +17,8 @@
 package org.axonframework.messaging.timeout;
 
 /**
- * Configuration object for the timeout settings of handlers.
+ * Configuration for the timeout settings of message handlers. Each specific message type can have its own timeout
+ * settings.
  *
  * @author Mitchell Herrijgers
  * @since 4.11.0
@@ -25,28 +26,28 @@ package org.axonframework.messaging.timeout;
 public class HandlerTimeoutConfiguration {
 
     /**
-     * Timeout settings for events.
+     * Timeout settings for event messages.
      */
     private final TaskTimeoutSettings events;
 
     /**
-     * Timeout settings for commands.
+     * Timeout settings for command messages.
      */
     private final TaskTimeoutSettings commands;
 
     /**
-     * Timeout settings for queries.
+     * Timeout settings for query messages.
      */
     private final TaskTimeoutSettings queries;
 
     /**
-     * Timeout settings for deadlines.
+     * Timeout settings for deadline messages.
      */
     private final TaskTimeoutSettings deadlines;
 
     /**
      * Creates a new {@link HandlerTimeoutConfiguration} with default timeout settings. This means all message handlers
-     * have a timeout of 10 seconds, with a warning threshold of 8 seconds and a warning interval of 1 second.
+     * have their timeouts disabled.
      */
     public HandlerTimeoutConfiguration() {
         this(new TaskTimeoutSettings(),

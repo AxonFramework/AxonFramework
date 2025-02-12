@@ -9,10 +9,13 @@ import java.util.concurrent.TimeUnit;
 /**
  * Represents a task with a timeout. The task will be interrupted when the {@code timeout} is reached. If the
  * {@code warningThreshold} is lower than the timeout, warnings will be logged at the configured {@code warningInterval}
- * until the timeout is reached.
+ * until the timeout is reached. All times are in milliseconds.
  * <p>
- * Logging will include the task's name and the current time taken by the task. The stack trace of the thread handling
- * the message will also be included in the log, up to the point where the task was started.
+ * Warning logging will include the task's name, the current time taken by the task and its remaining time to execute.
+ * The stack trace of the thread handling the message will also be included in the log, up to the point where the task was started.
+ * <p>
+ * Once the {@code timeout} is reached, a message will be logged with the current stack trace of the thread handling the message,
+ * and the thread will be interrupted. If the task is completed before the timeout, the task should be marked as completed.
  *
  * @author Mitchell Herrijgers
  * @since 4.11.0
@@ -97,6 +100,7 @@ class AxonTimeLimitedTask {
     /**
      * Starts the task, scheduling the first warning or immediate interrupt. Once the task is completed, the
      * {@link #complete()} method should be called.
+     * Once started, the task cannot be started again.
      */
     public void start() {
         if (startTimeMs != -1) {
@@ -113,7 +117,7 @@ class AxonTimeLimitedTask {
     }
 
     /**
-     * Marks the task as completed. Cancels the current scheduled future if it exists.
+     * Marks the task as completed. Cancels the current future warning or interrupt if any exists.
      */
     public void complete() {
         completed = true;
@@ -226,10 +230,22 @@ class AxonTimeLimitedTask {
         return sb.toString();
     }
 
+    /**
+     * Returns whether the task has been completed. If the task was still running, or was interrupted, this will return
+     * {@code false}.
+     *
+     * @return {@code true} if the task has been completed successfully, {@code false} otherwise
+     */
     public boolean isCompleted() {
         return completed;
     }
 
+    /**
+     * Returns whether the task has been interrupted. If the task was still running, or was completed, this will return
+     * {@code false}.
+     *
+     * @return {@code true} if the task has been interrupted, {@code false} otherwise
+     */
     public boolean isInterrupted() {
         return interrupted;
     }

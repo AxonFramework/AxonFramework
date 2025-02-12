@@ -12,7 +12,7 @@ import javax.annotation.Nonnull;
  * the invocation of the wrapped member. It does this by starting a {@link AxonTimeLimitedTask} and completes this upon
  * completion. When the execution takes too long, it will throw a {@link TimeoutException}.
  * <p>
- * If the {@code warningThreshold} is lower than the timeout, warnings will be logged at the configured
+ * If the {@code warningThreshold} is lower than the {@code timeout}, warnings will be logged at the configured
  * {@code warningInterval} before the timeout is reached.
  *
  * @param <T> The type of the target object
@@ -32,7 +32,7 @@ class TimeoutWrappedMessageHandlingMember<T> extends WrappedMessageHandlingMembe
      * @param original         The original handler to wrap
      * @param timeout          The timeout in milliseconds
      * @param warningThreshold The threshold in milliseconds after which a warning is logged. Setting this to a value
-     *                         higher than {@code timeout} will disable warnings.
+     *                         higher than or equal to {@code timeout} will disable warnings.
      * @param warningInterval  The interval in milliseconds between warnings.
      */
     TimeoutWrappedMessageHandlingMember(MessageHandlingMember<T> original,
@@ -68,6 +68,7 @@ class TimeoutWrappedMessageHandlingMember<T> extends WrappedMessageHandlingMembe
 
     /**
      * Returns the timeout of the message handler in milliseconds.
+     *
      * @return the timeout of the message handler in milliseconds
      */
     public int getTimeout() {
@@ -86,6 +87,7 @@ class TimeoutWrappedMessageHandlingMember<T> extends WrappedMessageHandlingMembe
 
     /**
      * Returns the interval in milliseconds between warnings.
+     *
      * @return the interval in milliseconds between warnings
      */
     public int getWarningInterval() {

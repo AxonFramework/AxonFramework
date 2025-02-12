@@ -4,6 +4,7 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.slf4j.Logger;
 
 import java.util.concurrent.ScheduledExecutorService;
 import javax.annotation.Nonnull;
@@ -26,12 +27,14 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
     private final int warningThreshold;
     private final int warningInterval;
     private final ScheduledExecutorService executorService;
+    private final Logger logger;
 
     /**
      * Creates a new {@link UnitOfWorkTimeoutInterceptor} for the given {@code componentName} with the given
      * {@code timeout}, {@code warningThreshold} and {@code warningInterval}. The warnings and timeout will be scheduled
-     * on the {@link AxonTaskJanitor#INSTANCE}. If you want to use a different {@link ScheduledExecutorService}, use the
-     * other {@link #UnitOfWorkTimeoutInterceptor(String, int, int, int, ScheduledExecutorService)}.
+     * on the {@link AxonTaskJanitor#INSTANCE}. If you want to use a different {@link ScheduledExecutorService} or
+     * {@link Logger} to log on, use the other
+     * {@link #UnitOfWorkTimeoutInterceptor(String, int, int, int, ScheduledExecutorService, Logger)}.
      *
      * @param componentName    The name of the component to be included in the logging
      * @param timeout          The timeout in milliseconds
@@ -44,7 +47,12 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
                                         int warningThreshold,
                                         int warningInterval
     ) {
-        this(componentName, timeout, warningThreshold, warningInterval, AxonTaskJanitor.INSTANCE);
+        this(componentName,
+             timeout,
+             warningThreshold,
+             warningInterval,
+             AxonTaskJanitor.INSTANCE,
+             AxonTaskJanitor.LOGGER);
     }
 
     /**
@@ -58,18 +66,21 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
      *                         higher than {@code timeout} will disable warnings.
      * @param warningInterval  The interval in milliseconds between warnings.
      * @param executorService  The executor service to schedule the timeout and warnings
+     * @param logger           The logger to log warnings and errors
      */
     public UnitOfWorkTimeoutInterceptor(String componentName,
                                         int timeout,
                                         int warningThreshold,
                                         int warningInterval,
-                                        ScheduledExecutorService executorService
+                                        ScheduledExecutorService executorService,
+                                        Logger logger
     ) {
         this.componentName = componentName;
         this.timeout = timeout;
         this.warningThreshold = warningThreshold;
         this.warningInterval = warningInterval;
         this.executorService = executorService;
+        this.logger = logger;
     }
 
     @Override
@@ -80,7 +91,9 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
                     "UnitOfWork of " + componentName,
                     timeout,
                     warningThreshold,
-                    warningInterval
+                    warningInterval,
+                    executorService,
+                    logger
             );
             taskTimeout.start();
             unitOfWork.afterCommit(u -> taskTimeout.complete());

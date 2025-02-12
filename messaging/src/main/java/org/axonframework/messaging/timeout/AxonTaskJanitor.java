@@ -9,7 +9,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
  * Unique instance of the ScheduledExecutorService used for scheduling interrupting tasks
- * for the {@link AxonTimeLimitedTask}.
+ * for the {@link AxonTimeLimitedTask}, and the default logger for janitor-related threads.
  *
  * @author Mitchell Herrijgers
  * @see AxonTimeLimitedTask
@@ -18,7 +18,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 public class AxonTaskJanitor {
 
     public static final ScheduledExecutorService INSTANCE = createJanitorExecutorService();
-    public static final Logger LOGGER = LoggerFactory.getLogger("AxonTaskJanitor");
+    public static final Logger LOGGER = LoggerFactory.getLogger("axon-janitor");
 
     private AxonTaskJanitor() {
         // Utility class
