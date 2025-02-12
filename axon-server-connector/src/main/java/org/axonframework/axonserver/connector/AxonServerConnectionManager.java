@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import io.axoniq.axonserver.grpc.control.NodeInfo;
 import io.grpc.Channel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
+import org.axonframework.axonserver.connector.util.GrpcMessageSizeInterceptor;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.config.TagsConfiguration;
@@ -55,6 +56,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 public class AxonServerConnectionManager implements Lifecycle, ConnectionManager {
 
     private static final int DEFAULT_GRPC_PORT = 8124;
+    private static final int DEFAULT_MAX_MESSAGE_SIZE = 4194304;
 
     private final Map<String, AxonServerConnection> connections = new ConcurrentHashMap<>();
     private final AxonServerConnectionFactory connectionFactory;
@@ -350,6 +352,13 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
             if (axonServerConfiguration.getMaxMessageSize() > 0) {
                 builder.maxInboundMessageSize(axonServerConfiguration.getMaxMessageSize());
             }
+            builder.customize(managedChannelBuilder -> managedChannelBuilder.intercept(new GrpcMessageSizeInterceptor(
+                    axonServerConfiguration.getMaxMessageSize() > 0
+                            ? axonServerConfiguration.getMaxMessageSize()
+                            : DEFAULT_MAX_MESSAGE_SIZE,
+                    axonServerConfiguration.getMaxMessageSizeWarningThreshold()
+            )));
+
             if (axonServerConfiguration.getKeepAliveTime() > 0) {
                 builder.usingKeepAlive(axonServerConfiguration.getKeepAliveTime(),
                                        axonServerConfiguration.getKeepAliveTimeout(),
