@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2010-2025. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.axonframework.messaging.timeout;
 
 import org.axonframework.messaging.InterceptorChain;
@@ -21,6 +36,8 @@ import javax.annotation.Nonnull;
  * @since 4.11.0
  */
 public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<Message<?>> {
+
+    public static final String TRANSACTION_TIME_LIMIT_RESOURCE_KEY = "_transactionTimeLimit";
 
     private final String componentName;
     private final int timeout;
@@ -86,7 +103,7 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
     @Override
     public Object handle(@Nonnull UnitOfWork<? extends Message<?>> unitOfWork,
                          @Nonnull InterceptorChain interceptorChain) throws Exception {
-        if (!unitOfWork.resources().containsKey("_transactionTimeLimit")) {
+        if (!unitOfWork.resources().containsKey(TRANSACTION_TIME_LIMIT_RESOURCE_KEY)) {
             AxonTimeLimitedTask taskTimeout = new AxonTimeLimitedTask(
                     "UnitOfWork of " + componentName,
                     timeout,
@@ -95,6 +112,7 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
                     executorService,
                     logger
             );
+            unitOfWork.resources().put(TRANSACTION_TIME_LIMIT_RESOURCE_KEY, taskTimeout);
             taskTimeout.start();
             unitOfWork.afterCommit(u -> taskTimeout.complete());
             unitOfWork.onRollback(u -> taskTimeout.complete());

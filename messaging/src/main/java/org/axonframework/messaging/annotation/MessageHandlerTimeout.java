@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging;
-
-import org.axonframework.messaging.annotation.HasHandlerAttributes;
+package org.axonframework.messaging.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -34,7 +32,7 @@ import java.lang.annotation.Target;
  * setting the warning threshold to {@code 1000}.
  *
  * @author Mitchell Herrijgers
- * @since 4.11
+ * @since 4.11.0
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -48,7 +46,7 @@ public @interface MessageHandlerTimeout {
      *
      * @return the timeout for a single message handler in milliseconds
      */
-    int timeout() default -1;
+    int timeoutMs() default -1;
 
     /**
      * The time in milliseconds after which a warning message should be logged that the message handler is taking
@@ -59,7 +57,7 @@ public @interface MessageHandlerTimeout {
      *
      * @return the time in milliseconds after which a warning message should be logged
      */
-    int warningThreshold() default -1;
+    int warningThresholdMs() default -1;
 
     /**
      * The interval in milliseconds at which warning messages should be logged that the message handler is taking too
@@ -68,5 +66,5 @@ public @interface MessageHandlerTimeout {
      *
      * @return the interval in milliseconds at which warning log messages should be displayed
      */
-    int warningInterval() default -1;
+    int warningIntervalMs() default -1;
 }

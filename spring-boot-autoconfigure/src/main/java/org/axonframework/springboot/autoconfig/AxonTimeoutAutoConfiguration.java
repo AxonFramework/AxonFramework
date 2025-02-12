@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,11 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.annotation.Order;
 
 /**
  * Configures the timeout settings for message handlers.
  *
- * @since 4.11
+ * @since 4.11.0
  * @author Mitchell Herrijgers
  */
 @AutoConfiguration
@@ -55,7 +54,6 @@ public class AxonTimeoutAutoConfiguration {
         return new AxonTimeoutConfigurerModule(properties);
     }
 
-    @Order()
     private static class AxonTimeoutConfigurerModule implements ConfigurerModule {
 
         private final TimeoutProperties.TransactionTimeoutProperties properties;
@@ -88,6 +86,12 @@ public class AxonTimeoutAutoConfiguration {
                         properties.getQueryBus().getTimeoutMs(),
                         properties.getQueryBus().getWarningThresholdMs(),
                         properties.getQueryBus().getWarningIntervalMs()
+                ));
+                c.deadlineManager().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptor(
+                        c.deadlineManager().getClass().getSimpleName(),
+                        properties.getDeadline().getTimeoutMs(),
+                        properties.getDeadline().getWarningThresholdMs(),
+                        properties.getDeadline().getWarningIntervalMs()
                 ));
             });
         }

@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlerTimeout;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.queryhandling.QueryMessage;
 
@@ -30,7 +31,7 @@ import javax.annotation.Nonnull;
  * timeout.
  * <p>
  * The timeout is determined by the {@link HandlerTimeoutConfiguration} and the
- * {@link org.axonframework.messaging.MessageHandlerTimeout} annotation on the message handler method. The annotation
+ * {@link MessageHandlerTimeout} annotation on the message handler method. The annotation
  * takes precedence over the configuration.
  *
  * @author Mitchell Herrijgers
@@ -42,6 +43,13 @@ public class HandlerTimeoutHandlerEnhancerDefinition implements HandlerEnhancerD
 
     private final HandlerTimeoutConfiguration configuration;
 
+    /**
+     * Creates a new {@link HandlerTimeoutHandlerEnhancerDefinition} with the given configuration. This configuration
+     * will be used as default, but can be overridden by the {@link MessageHandlerTimeout} annotation for individual
+     * message handlers.
+     *
+     * @param configuration The configuration for the timeout settings
+     */
     public HandlerTimeoutHandlerEnhancerDefinition(HandlerTimeoutConfiguration configuration) {
         this.configuration = configuration;
     }
@@ -68,7 +76,7 @@ public class HandlerTimeoutHandlerEnhancerDefinition implements HandlerEnhancerD
     }
 
     /**
-     * Gets the attribute or the {@link org.axonframework.messaging.MessageHandlerTimeout} annotation or the default
+     * Gets the attribute or the {@link MessageHandlerTimeout} annotation or the default
      * value if the attribute is not present or invalid.
      *
      * @param original The original message handler

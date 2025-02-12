@@ -1,5 +1,21 @@
+/*
+ * Copyright (c) 2010-2025. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.axonframework.springboot;
 
+import org.axonframework.messaging.annotation.MessageHandlerTimeout;
 import org.axonframework.messaging.timeout.HandlerTimeoutConfiguration;
 import org.axonframework.messaging.timeout.TaskTimeoutSettings;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -8,6 +24,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import java.util.HashMap;
 import java.util.Map;
+import javax.transaction.Transactional;
 
 /**
  * Configuration properties for time limits of processing transactions and handlers in Axon Framework.
@@ -19,8 +36,8 @@ import java.util.Map;
 public class TimeoutProperties {
 
     /**
-     * Whether timeouts are enabled. Defaults to {@code true}. Setting this to false disabled all timeouts, event the
-     * ones set through the {@link org.axonframework.messaging.MessageHandlerTimeout} annotations.
+     * Whether timeouts are enabled. Defaults to {@code true}. Setting this to false disabled all timeouts, even the
+     * ones set through the {@link MessageHandlerTimeout} annotations.
      */
     private boolean enabled = true;
 
@@ -37,8 +54,8 @@ public class TimeoutProperties {
     private MessageHandlerTimeoutProperties handler;
 
     /**
-     * Whether timeouts are enabled. Defaults to {@code true}. Setting this to false disabled all timeouts, event the
-     * ones set through the {@link org.axonframework.messaging.MessageHandlerTimeout} annotations.
+     * Whether timeouts are enabled. Defaults to {@code true}. Setting this to false disabled all timeouts, even the
+     * ones set through the {@link MessageHandlerTimeout} annotations.
      *
      * @return whether timeouts are enabled
      */

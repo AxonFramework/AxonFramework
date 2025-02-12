@@ -1,9 +1,24 @@
+/*
+ * Copyright (c) 2010-2025. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.axonframework.messaging.timeout;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.deadline.annotation.DeadlineHandler;
 import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.messaging.MessageHandlerTimeout;
+import org.axonframework.messaging.annotation.MessageHandlerTimeout;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
@@ -149,7 +164,7 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
 
     public static class QueryHandlerWithAnnotation {
 
-        @MessageHandlerTimeout(timeout = 100, warningThreshold = 50, warningInterval = 10)
+        @MessageHandlerTimeout(timeoutMs = 100, warningThresholdMs = 50, warningIntervalMs = 10)
         @QueryHandler
         public void handle(String message) {
         }
@@ -162,7 +177,7 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
 
     public static class EventHandlerWithAnnotation {
 
-        @MessageHandlerTimeout(timeout = 100, warningThreshold = 50, warningInterval = 10)
+        @MessageHandlerTimeout(timeoutMs = 100, warningThresholdMs = 50, warningIntervalMs = 10)
         @EventHandler
         public void handle(String message) {
         }
@@ -175,7 +190,7 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
 
     public static class CommandHandlerWithAnnotation {
 
-        @MessageHandlerTimeout(timeout = 100, warningThreshold = 50, warningInterval = 10)
+        @MessageHandlerTimeout(timeoutMs = 100, warningThresholdMs = 50, warningIntervalMs = 10)
         @CommandHandler
         public void handle(String message) {
         }
@@ -188,7 +203,7 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
 
     public static class DeadlineHandlerWithAnnotation {
 
-        @MessageHandlerTimeout(timeout = 100, warningThreshold = 50, warningInterval = 10)
+        @MessageHandlerTimeout(timeoutMs = 100, warningThresholdMs = 50, warningIntervalMs = 10)
         @DeadlineHandler
         public void handle(String message) {
         }
