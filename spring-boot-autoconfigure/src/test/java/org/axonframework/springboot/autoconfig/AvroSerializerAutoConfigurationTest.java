@@ -87,6 +87,31 @@ class AvroSerializerAutoConfigurationTest {
     }
 
     @Test
+    void avroSerializerAutoConfigurationSkipsToConstructSchemaStoreIfAlreadyPresent() {
+        testApplicationContext
+                .withUserConfiguration(ContextWithCustomSchemaStore.class)
+                .withPropertyValues(
+                        "axon.serializer.general=jackson",
+                        "axon.serializer.messages=jackson",
+                        "axon.serializer.events=avro"
+                )
+                .run(context -> {
+                    assertThat(context).hasSingleBean(SchemaStore.class);
+                    assertThat(context).getBean("defaultAxonSchemaStore").isInstanceOf(SchemaStore.class);
+                    SchemaStore schemaStore = (SchemaStore) context.getBean("defaultAxonSchemaStore");
+                    assertThat(schemaStore).isEqualTo(ContextWithCustomSchemaStore.store); // ours
+                    assertThat(
+                            schemaStore.findByFingerprint(
+                                    AvroUtil.fingerprint(ComplexObject.getClassSchema())
+                            )
+                    ).isEqualTo(ComplexObject.getClassSchema());
+                    assertThat(context).hasSingleBean(ClasspathAvroSchemaLoader.class);
+                    assertThat(context).getBean("specificRecordBaseClasspathAvroSchemaLoader")
+                            .isInstanceOf(ClasspathAvroSchemaLoader.class);
+                });
+    }
+
+    @Test
     void axonAutoConfigurationConstructsAvroSerializerThatIsAbleToSerializeBecauseOfAnnotationScanRegisteredSchema() {
         testApplicationContext
                 .withUserConfiguration(DefaultContext.class)
@@ -248,6 +273,32 @@ class AvroSerializerAutoConfigurationTest {
         @Bean
         private MainClass mainClass() {
             return new MainClass();
+        }
+
+        @SpringBootApplication
+        private static class MainClass {
+
+        }
+    }
+    @ContextConfiguration
+    @EnableAutoConfiguration
+    @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
+    private static class ContextWithCustomSchemaStore {
+
+        public static SchemaStore.Cache store = new SchemaStore.Cache();
+        static {
+            store.addSchema(org.axonframework.springboot.fixture.avro.test1.ComplexObject.SCHEMA$);
+            store.addSchema(org.axonframework.springboot.fixture.avro.test2.ComplexObject.SCHEMA$);
+        }
+
+        @Bean
+        private MainClass mainClass() {
+            return new MainClass();
+        }
+
+        @Bean
+        public SchemaStore defaultAxonSchemaStore() {
+            return store;
         }
 
         @SpringBootApplication
