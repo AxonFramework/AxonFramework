@@ -31,8 +31,6 @@ import org.axonframework.config.TagsConfiguration;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 
-import javax.annotation.Nonnull;
-import javax.net.ssl.SSLException;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
@@ -42,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
+import javax.net.ssl.SSLException;
 
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
@@ -54,7 +54,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @since 4.0
  */
 public class AxonServerConnectionManager implements Lifecycle, ConnectionManager {
+
     private static final int DEFAULT_GRPC_PORT = 8124;
+    private static final int DEFAULT_MAX_MESSAGE_SIZE = 4194304;
 
     private final Map<String, AxonServerConnection> connections = new ConcurrentHashMap<>();
     private final AxonServerConnectionFactory connectionFactory;
@@ -351,7 +353,9 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
                 builder.maxInboundMessageSize(axonServerConfiguration.getMaxMessageSize());
             }
             builder.customize(managedChannelBuilder -> managedChannelBuilder.intercept(new GrpcMessageSizeInterceptor(
-                    axonServerConfiguration.getMaxMessageSize() > 0 ? axonServerConfiguration.getMaxMessageSize() : 4194304,
+                    axonServerConfiguration.getMaxMessageSize() > 0
+                            ? axonServerConfiguration.getMaxMessageSize()
+                            : DEFAULT_MAX_MESSAGE_SIZE,
                     axonServerConfiguration.getMaxMessageSizeWarningThreshold()
             )));
 
