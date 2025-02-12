@@ -45,13 +45,13 @@ public class TimeoutProperties {
      * Timeout settings for transactions ({@link UnitOfWork}). Default to 10-second timeout, 8-second warning threshold
      * and a warning interval of 1 second for all types of transactions.
      */
-    private TransactionTimeoutProperties transaction;
+    private TransactionTimeoutProperties transaction = new TransactionTimeoutProperties();
 
     /**
      * Timeout settings for message handlers. Defaults to 10-second timeout, 8-second warning threshold and a warning
      * interval of 1 second for all types of message handlers.
      */
-    private MessageHandlerTimeoutProperties handler;
+    private MessageHandlerTimeoutProperties handler = new MessageHandlerTimeoutProperties();
 
     /**
      * Whether timeouts are enabled. Defaults to {@code true}. Setting this to false disabled all timeouts, even the

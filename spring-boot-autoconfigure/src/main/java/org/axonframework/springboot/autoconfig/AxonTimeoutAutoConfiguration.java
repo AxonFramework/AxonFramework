@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.messaging.timeout.HandlerTimeoutHandlerEnhancerDefinition;
@@ -74,7 +75,9 @@ public class AxonTimeoutAutoConfiguration {
                                   settings.getWarningIntervalMs()
                           );
                       });
-            configurer.onInitialize(c -> {
+            // Cannot use the configurer.onInitialize, as it creates a circular creation dependency
+            configurer.onStart(Integer.MIN_VALUE, () -> {
+                Configuration c = configurer.buildConfiguration();
                 c.commandBus().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptor(
                         c.commandBus().getClass().getSimpleName(),
                         properties.getCommandBus().getTimeoutMs(),
