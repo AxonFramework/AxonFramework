@@ -47,15 +47,12 @@ If we want to query our view model, the `List&lt;String&gt;`, we would do someth
 // <1>
 GenericQueryMessage<String, List<String>> query =
         new GenericQueryMessage<>("criteria", ResponseTypes.multipleInstancesOf(String.class));
-// <2> send a query message and print query response
+// <2>
 queryBus.query(query).thenAccept(System.out::println);
 
 ----
 
-<1> It is also possible to state the query name when we are building the query message,
-
-by default this is the fully qualified class name of the query payload.
-
+<1> It is also possible to state the query name when we are building the query message, by default this is the fully qualified class name of the query payload.
 <2> The response of sending a query is a Java `CompletableFuture`,
 
 which depending on the type of the query bus may be resolved immediately.
