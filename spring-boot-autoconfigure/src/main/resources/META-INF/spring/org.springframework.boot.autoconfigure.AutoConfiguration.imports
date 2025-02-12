@@ -1,5 +1,6 @@
 org.axonframework.springboot.autoconfig.AvroSerializerAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonAutoConfiguration
+org.axonframework.springboot.autoconfig.AxonTimeoutAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonDbSchedulerAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonJobRunrAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration
