@@ -20,13 +20,12 @@ import org.apache.avro.message.SchemaStore;
 import org.axonframework.spring.serialization.avro.AvroSchemaPackages;
 import org.axonframework.spring.serialization.avro.ClasspathAvroSchemaLoader;
 import org.axonframework.spring.serialization.avro.SpecificRecordBaseClasspathAvroSchemaLoader;
+import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.core.io.ResourceLoader;
@@ -56,8 +55,7 @@ public class AvroSerializerAutoConfiguration {
      * @return schema store instance.
      */
     @Bean("defaultAxonSchemaStore")
-    // TODO we need to handle missing bean condition too in order to make it replaceable.
-    @Conditional({AvroConfiguredCondition.class})
+    @Conditional({AvroConfiguredCondition.class, OnMissingDefaultSchemaStoreCondition.class})
     public SchemaStore defaultAxonSchemaStore(BeanFactory beanFactory, List<ClasspathAvroSchemaLoader> schemaLoader) {
         SchemaStore.Cache cachingSchemaStore = new SchemaStore.Cache();
         List<String> packagesCandidates = AvroSchemaPackages.get(beanFactory).getPackages();
@@ -107,6 +105,22 @@ public class AvroSerializerAutoConfiguration {
         @SuppressWarnings("unused")
         @ConditionalOnProperty(name = "axon.serializer.events", havingValue = "avro")
         static class EventsAvroCondition {
+
+        }
+    }
+
+    /**
+     * Condition checking if a schema store exists.
+     */
+    private static class OnMissingDefaultSchemaStoreCondition extends AllNestedConditions {
+
+        public OnMissingDefaultSchemaStoreCondition() {
+            super(ConfigurationPhase.REGISTER_BEAN);
+        }
+
+        @ConditionalOnMissingBean(SchemaStore.class)
+        @SuppressWarnings("unused")
+        static class SchemaStoreIsMissingCondition{
 
         }
     }
