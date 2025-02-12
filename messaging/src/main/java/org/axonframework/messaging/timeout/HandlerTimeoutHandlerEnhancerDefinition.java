@@ -63,9 +63,9 @@ public class HandlerTimeoutHandlerEnhancerDefinition implements HandlerEnhancerD
         }
 
         // We need to calculate the threshold and interval values based on configuration and annotation values.
-        int timeout = getAttribute(original, "timeout", config.getTimeoutMs());
-        int warning = getAttribute(original, "warningThreshold", config.getWarningThresholdMs());
-        int warningInterval = getAttribute(original, "warningInterval", config.getWarningIntervalMs());
+        int timeout = getAttribute(original, "timeoutMs", config.getTimeoutMs());
+        int warning = getAttribute(original, "warningThresholdMs", config.getWarningThresholdMs());
+        int warningInterval = getAttribute(original, "warningIntervalMs", config.getWarningIntervalMs());
 
         if (timeout < 0 && warning < 0) {
             // No timeout configuration found. Don't enhance the handler.
