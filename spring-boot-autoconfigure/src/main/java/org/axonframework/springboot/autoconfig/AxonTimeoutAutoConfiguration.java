@@ -18,14 +18,13 @@ package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
-import org.axonframework.messaging.timeout.HandlerTimeoutConfiguration;
 import org.axonframework.messaging.timeout.HandlerTimeoutHandlerEnhancerDefinition;
 import org.axonframework.messaging.timeout.TaskTimeoutSettings;
 import org.axonframework.messaging.timeout.UnitOfWorkTimeoutInterceptor;
-import org.axonframework.springboot.MessageHandlingTimeoutProperties;
-import org.axonframework.springboot.TransactionTimeoutProperties;
+import org.axonframework.springboot.TimeoutProperties;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.annotation.Order;
@@ -38,36 +37,31 @@ import org.springframework.core.annotation.Order;
  */
 @AutoConfiguration
 @EnableConfigurationProperties(value = {
-        TransactionTimeoutProperties.class,
-        MessageHandlingTimeoutProperties.class,
+        TimeoutProperties.class
 })
+@ConditionalOnProperty(prefix = "axon.timeout", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class AxonTimeoutAutoConfiguration {
-
-    @Bean
-    public HandlerTimeoutConfiguration messageHandlerTimeoutConfiguration(
-            MessageHandlingTimeoutProperties messageHandlingTimeoutProperties) {
-        return messageHandlingTimeoutProperties.toMessageHandlerTimeoutConfiguration();
-    }
-
     @Bean
     public HandlerTimeoutHandlerEnhancerDefinition messageTimeoutHandlerEnhancerDefinition(
-            HandlerTimeoutConfiguration handlerTimeoutConfiguration
+            TimeoutProperties properties
     ) {
-        return new HandlerTimeoutHandlerEnhancerDefinition(handlerTimeoutConfiguration);
+        return new HandlerTimeoutHandlerEnhancerDefinition(
+                properties.getHandler().toMessageHandlerTimeoutConfiguration()
+        );
     }
 
     @Bean
-    public ConfigurerModule axonTimeoutConfigurerModule(TransactionTimeoutProperties properties) {
+    public ConfigurerModule axonTimeoutConfigurerModule(TimeoutProperties properties) {
         return new AxonTimeoutConfigurerModule(properties);
     }
 
     @Order()
     private static class AxonTimeoutConfigurerModule implements ConfigurerModule {
 
-        private final TransactionTimeoutProperties properties;
+        private final TimeoutProperties.TransactionTimeoutProperties properties;
 
-        public AxonTimeoutConfigurerModule(TransactionTimeoutProperties properties) {
-            this.properties = properties;
+        public AxonTimeoutConfigurerModule(TimeoutProperties properties) {
+            this.properties = properties.getTransaction();
         }
 
         @Override
