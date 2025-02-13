@@ -36,8 +36,4 @@ public interface ComponentBuilder<C> {
      * @return A component of type {@code C} using the given {@code config} during construction.
      */
     C build(@Nonnull NewConfiguration config);
-
-    default ComponentBuilder<C> decorate(@Nonnull ComponentDecorator<C> decorator) {
-        return this;
-    }
 }
