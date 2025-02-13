@@ -150,7 +150,7 @@ Setting `timeoutMs` on the global configuration and the annotation to `-1` will 
 Similarly, setting `warningThresholdMs` to `-1` on both will disable the warning messages for that message handler.
 
 [#unit-of-work-timeouts]
-== Unit of Work timeouts
+== Unit of work timeouts
 
 The xref:unit-of-work.adoc[unit of work] is the context in which one or more messages are processed.
 While xref:#handler-timeouts[handler timeouts] only set timeouts for the invocation if the handler functions, the `UnitOfWork` timeout sets a timeout for the entire processing of the message.
