@@ -37,7 +37,7 @@ import javax.annotation.Nonnull;
  */
 public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<Message<?>> {
 
-    public static final String TRANSACTION_TIME_LIMIT_RESOURCE_KEY = "_transactionTimeLimit";
+    private static final String TRANSACTION_TIME_LIMIT_RESOURCE_KEY = "_transactionTimeLimit";
 
     private final String componentName;
     private final int timeout;
@@ -103,7 +103,8 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
     @Override
     public Object handle(@Nonnull UnitOfWork<? extends Message<?>> unitOfWork,
                          @Nonnull InterceptorChain interceptorChain) throws Exception {
-        if (!unitOfWork.resources().containsKey(TRANSACTION_TIME_LIMIT_RESOURCE_KEY)) {
+        UnitOfWork<?> root = unitOfWork.root();
+        if (!root.resources().containsKey(TRANSACTION_TIME_LIMIT_RESOURCE_KEY)) {
             AxonTimeLimitedTask taskTimeout = new AxonTimeLimitedTask(
                     "UnitOfWork of " + componentName,
                     timeout,
@@ -112,7 +113,7 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
                     executorService,
                     logger
             );
-            unitOfWork.resources().put(TRANSACTION_TIME_LIMIT_RESOURCE_KEY, taskTimeout);
+            root.resources().put(TRANSACTION_TIME_LIMIT_RESOURCE_KEY, taskTimeout);
             taskTimeout.start();
             unitOfWork.afterCommit(u -> taskTimeout.complete());
             unitOfWork.onRollback(u -> taskTimeout.complete());

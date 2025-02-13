@@ -24,8 +24,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
- * Unique instance of the ScheduledExecutorService used for scheduling interrupting tasks
- * for the {@link AxonTimeLimitedTask}, and the default logger for janitor-related threads.
+ * Container of unique {@link ScheduledExecutorService} and {@link Logger } instances for the
+ * {@link AxonTimeLimitedTask}.
  *
  * @author Mitchell Herrijgers
  * @see AxonTimeLimitedTask
@@ -33,7 +33,15 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
  */
 public class AxonTaskJanitor {
 
+    /**
+     * Unique instances of the {@link ScheduledExecutorService} for the {@link AxonTimeLimitedTask} to schedule warnings
+     * and interrupts.
+     */
     public static final ScheduledExecutorService INSTANCE = createJanitorExecutorService();
+
+    /**
+     * Unique instance of the {@link Logger} for the {@link AxonTimeLimitedTask} to log warnings and errors.
+     */
     public static final Logger LOGGER = LoggerFactory.getLogger("axon-janitor");
 
     private AxonTaskJanitor() {
@@ -47,8 +55,7 @@ public class AxonTaskJanitor {
      * @return The ScheduledExecutorService
      */
     private static ScheduledThreadPoolExecutor createJanitorExecutorService() {
-        ScheduledThreadPoolExecutor janitor = new ScheduledThreadPoolExecutor(1,
-                                                                                  new AxonThreadFactory("axon-janitor"));
+        ScheduledThreadPoolExecutor janitor = new ScheduledThreadPoolExecutor(1, new AxonThreadFactory("axon-janitor"));
         // Clean up tasks in the queue when canceled. Performance is equal but reduces memory pressure.
         janitor.setRemoveOnCancelPolicy(true);
         return janitor;

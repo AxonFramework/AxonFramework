@@ -103,6 +103,9 @@ class AxonTimeLimitedTask {
                                int warningInterval,
                                ScheduledExecutorService scheduledExecutorService,
                                Logger logger) {
+        if(taskName == null || taskName.isEmpty()) {
+            throw new IllegalArgumentException("Task name cannot be null or empty");
+        }
         this.taskName = taskName;
         this.timeout = timeout;
         this.warningThreshold = warningThreshold;
@@ -195,7 +198,7 @@ class AxonTimeLimitedTask {
     private void scheduleWarningOrInterrupt() {
         long takenTime = System.currentTimeMillis() - startTimeMs;
         logger.warn(
-                "{} is taking long time to process. Current time: [{}ms]. Will be interrupted in [{}ms].\nStacktrace of current thread:\n{}",
+                "{} is taking a long time to process. Current time: [{}ms]. Will be interrupted in [{}ms].\nStacktrace of current thread:\n{}",
                 taskName,
                 takenTime,
                 timeout - takenTime,

@@ -24,7 +24,7 @@ For example, a warning message could look like this:
 
 [source,text]
 ----
-2025-02-12T20:01:20.795Z  WARN 68040 --- [playground-correlation] [ axon-janitor-0] axon-janitor                             : Message [io.axoniq.playground.publisher.MyContinuousEvent] for handler [io.axoniq.playground.publisher.PersistentStreamEventProcessor] is taking long time to process. Current time: [5000ms]. Will be interrupted in [5000ms].
+2025-02-12T20:01:20.795Z  WARN 68040 --- [playground-correlation] [ axon-janitor-0] axon-janitor                             : Message [io.axoniq.playground.publisher.MyContinuousEvent] for handler [io.axoniq.playground.publisher.PersistentStreamEventProcessor] is taking a long time to process. Current time: [5000ms]. Will be interrupted in [5000ms].
 Stacktrace of current thread:
 java.base/java.lang.Thread.sleep0(Native Method)
 java.base/java.lang.Thread.sleep(Thread.java:509)
@@ -72,9 +72,9 @@ To disable timeouts and warnings for non-Spring Boot applications, you only have
 == Handler timeouts
 
 The method you define for Axon Framework to invoke is known as a message handler.
-These are the methods you annotate with `@CommandHandler`, `@EventHandler` or `@QueryHandler`.
+These are the methods you annotate with `@CommandHandler`, `@EventHandler`, `@QueryHandler`, or `@DeadlineHandler`.
 
-As of Axon Framework 4.11.0, you can set a timeout on all message handlers, depending on the message type.
+You can set a timeout on all message handlers, with unique configuration per message type.
 
 [tabs]
 ======
@@ -132,7 +132,7 @@ public class MyTimeoutConfigurerModule implements ConfigurerModule {
 --
 ======
 
-In addition, you can place a `@MessageHandlerTimeout` annotation on a message handler to override the default timeout, so that if you have a specific message handler that should have a different timeout, you can set it there.
+In addition, you can place a `@MessageHandlerTimeout` annotation on a message handler to override the default timeout. This allows you to have a specific timeout for a message handler that that you know should be faster or slower than the global configuration.
 
 [source,java]
 ----
@@ -152,7 +152,7 @@ Similarly, setting `warningThresholdMs` to `-1` on both will disable the warning
 [#unit-of-work-timeouts]
 == Unit of Work timeouts
 
-The `UnitOfWork` is the context in which one or more messages are processed.
+The xref:unit-of-work.adoc[unit of work] is the context in which one or more messages are processed.
 While xref:#handler-timeouts[handler timeouts] only set timeouts for the invocation if the handler functions, the `UnitOfWork` timeout sets a timeout for the entire processing of the message.
 This includes the loading of resources (such as the aggregate of the command), the invocation of the handler function, and the committing of the `UnitOfWork`.
 
