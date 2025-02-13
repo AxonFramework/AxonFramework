@@ -19,7 +19,12 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 
 /**
- * TODO
+ * A functional interface describing how to decorate a {@code delegate}.
+ * <p>
+ * Implementers of this interface can choose to wrap the {@code delegate} into a new instance of type {@code C} or to
+ * mutate the state of the {@code delegate}. The former solution is applicable for infrastructure components that
+ * support decorators. The latter form is suitable when customizing the configuration instance of an infrastructure
+ * component.
  *
  * @param <C> The component to be decorated.
  * @author Steven van Beelen
@@ -29,13 +34,22 @@ import jakarta.annotation.Nonnull;
 public interface ComponentDecorator<C> {
 
     /**
-     * TODO
+     * Decorates the given {@code delegate} into a mutated or replaced instance of type {@code C}.
+     * <p>
+     * Decorating can roughly take two angles. One, it may choose to wrap the {@code delegate} into a new instance of
+     * type {@code C}. Second, it could mutate the state of the {@code delegate}.
+     * <p>
+     * Option one would typically apply to infrastructure components that support decorators. An example of this is the
+     * {@link org.axonframework.commandhandling.CommandBus}, which can for example be decorated with the
+     * {@link org.axonframework.commandhandling.tracing.TracingCommandBus}.
+     * <p>
+     * The latter form is suitable when customizing the configuration instance of an infrastructure component.
      *
-     * @param config
-     * @param delegate
-     * @return
+     * @param config   The configuration of this Axon application. Provided to support retrieval of other
+     *                 {@link NewConfiguration#getComponent(Class) components} for construction or mutation of the given
+     *                 {@code delegate}.
+     * @param delegate The delegate of type {@code C} to be decorated.
+     * @return A decorated component of type {@code C}, typically based on the given {@code delegate}.
      */
-//    C decorate(@Nonnull NewConfiguration config, @Nonnull C delegate);
-
-    ComponentBuilder<C> decorateComponent(@Nonnull NewConfiguration config, @Nonnull C delegate);
+    C decorate(@Nonnull NewConfiguration config, @Nonnull C delegate);
 }
