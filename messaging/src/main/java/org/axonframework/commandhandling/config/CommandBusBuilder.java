@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.InterceptingCommandBus;
@@ -26,24 +27,30 @@ import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
 import org.axonframework.commandhandling.tracing.TracingCommandBus;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.configuration.ComponentBuilder;
+import org.axonframework.configuration.ComponentDecorator;
+import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class CommandBusBuilder /* implements ConfigurerModule or better ComponentConfigurer/ComponentProvider */ {
+import static java.util.Objects.requireNonNull;
+
+public class CommandBusBuilder implements ComponentBuilder<CommandBus> {
 
     private final Function<CommandBusBuilder, CommandBus> creator;
-    private List<ProcessingLifecycleHandlerRegistrar> processingLifecycleHandlerRegistrars = new ArrayList<>();
+    private final List<ProcessingLifecycleHandlerRegistrar> processingLifecycleHandlerRegistrars = new ArrayList<>();
     private Executor executor = DirectExecutor.INSTANCE;
-    private List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors = new ArrayList<>();
-    private List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors = new ArrayList<>();
-    private List<Function<CommandBus, CommandBus>> wrappers = new ArrayList<>();
+    private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors = new ArrayList<>();
+    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors = new ArrayList<>();
+    private final List<ComponentDecorator<CommandBus>> decorators = new ArrayList<>();
 
     private CommandBusBuilder(Function<CommandBusBuilder, CommandBus> creator) {
         this.creator = creator;
@@ -63,25 +70,27 @@ public class CommandBusBuilder /* implements ConfigurerModule or better Componen
         return this;
     }
 
-    public CommandBusBuilder withDispatchInterceptor(
-            MessageDispatchInterceptor<? super CommandMessage<?>> messageDispatchInterceptor) {
-        this.dispatchInterceptors.add(messageDispatchInterceptor);
-        return this;
-    }
-
     public CommandBusBuilder withHandlerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> messageHandlerInterceptor) {
+            MessageHandlerInterceptor<? super CommandMessage<?>> messageHandlerInterceptor
+    ) {
         this.handlerInterceptors.add(messageHandlerInterceptor);
         return this;
     }
 
+    public CommandBusBuilder withDispatchInterceptor(
+            MessageDispatchInterceptor<? super CommandMessage<?>> messageDispatchInterceptor
+    ) {
+        this.dispatchInterceptors.add(messageDispatchInterceptor);
+        return this;
+    }
+
     public CommandBusBuilder withTracing(CommandBusSpanFactory spanFactory) {
-        this.wrappers.add(c -> new TracingCommandBus(c, spanFactory));
+        this.decorators.add((config, delegate) -> new TracingCommandBus(delegate, spanFactory));
         return this;
     }
 
     public CommandBusBuilder distributedVia(Connector connector) {
-        this.wrappers.add(c -> new DistributedCommandBus(c, connector));
+        this.decorators.add((config, delegate) -> new DistributedCommandBus(delegate, connector));
         return this;
     }
 
@@ -92,14 +101,33 @@ public class CommandBusBuilder /* implements ConfigurerModule or better Componen
         return this;
     }
 
+    @Override
+    public CommandBusBuilder decorate(@Nonnull ComponentDecorator<CommandBus> decorator) {
+        decorators.add(requireNonNull(decorator, "Decorators cannot be null."));
+        return this;
+    }
+
     public CommandBus build() {
         var finalCreator = creator;
         if (!dispatchInterceptors.isEmpty() || !handlerInterceptors.isEmpty()) {
             finalCreator = b -> new InterceptingCommandBus(creator.apply(b), handlerInterceptors, dispatchInterceptors);
         }
-        for (Function<CommandBus, CommandBus> wrapper : wrappers) {
-            var previous = finalCreator;
-            finalCreator = b -> wrapper.apply(previous.apply(b));
+//        for (Function<CommandBus, CommandBus> wrapper : decorators) {
+//            var previous = finalCreator;
+//            finalCreator = b -> wrapper.apply(previous.apply(b));
+//        }
+        return finalCreator.apply(this);
+    }
+
+    @Override
+    public CommandBus build(@Nonnull NewConfiguration config) {
+        Function<CommandBusBuilder, CommandBus> finalCreator = creator;
+        if (!dispatchInterceptors.isEmpty() || !handlerInterceptors.isEmpty()) {
+            finalCreator = builder -> new InterceptingCommandBus(creator.apply(builder), handlerInterceptors, dispatchInterceptors);
+        }
+        for (ComponentDecorator<CommandBus> decorator : decorators) {
+            Function<CommandBusBuilder, CommandBus> previous = finalCreator;
+            finalCreator = b -> decorator.decorate(config, previous.apply(this));
         }
         return finalCreator.apply(this);
     }
