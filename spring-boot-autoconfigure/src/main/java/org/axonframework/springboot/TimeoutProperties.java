@@ -42,13 +42,13 @@ public class TimeoutProperties {
     private boolean enabled = true;
 
     /**
-     * Timeout settings for transactions ({@link UnitOfWork}). Default to 10-second timeout, 8-second warning threshold
+     * Timeout settings for transactions ({@link UnitOfWork}). Default to 30-second timeout, 10-second warning threshold
      * and a warning interval of 1 second for all types of transactions.
      */
     private TransactionTimeoutProperties transaction = new TransactionTimeoutProperties();
 
     /**
-     * Timeout settings for message handlers. Defaults to 10-second timeout, 8-second warning threshold and a warning
+     * Timeout settings for message handlers. Defaults to 30-second timeout, 10-second warning threshold and a warning
      * interval of 1 second for all types of message handlers.
      */
     private MessageHandlerTimeoutProperties handler = new MessageHandlerTimeoutProperties();
@@ -71,7 +71,7 @@ public class TimeoutProperties {
     }
 
     /**
-     * Timeout settings for transactions ({@link UnitOfWork}). Default to 10-second timeout, 8-second warning threshold
+     * Timeout settings for transactions ({@link UnitOfWork}). Default to 30-second timeout, 10-second warning threshold
      * and a warning interval of 1 second for all types of transactions.
      *
      * @return the timeout settings for transactions
@@ -90,7 +90,7 @@ public class TimeoutProperties {
     }
 
     /**
-     * Timeout settings for message handlers. Defaults to 10-second timeout, 8-second warning threshold and a warning
+     * Timeout settings for message handlers. Defaults to 30-second timeout, 10-second warning threshold and a warning
      * interval of 1 second for all types of message handlers.
      *
      * @return the timeout settings for message handlers
@@ -111,36 +111,36 @@ public class TimeoutProperties {
     public static class MessageHandlerTimeoutProperties {
 
         /**
-         * Timeout configuration for event handlers. Defaults to 10-second timeout, 8-second warning threshold and a
+         * Timeout configuration for event handlers. Defaults to 30-second timeout, 10-second warning threshold and a
          * warning interval of 1 second.
          */
         @NestedConfigurationProperty
-        private TaskTimeoutSettings events = new TaskTimeoutSettings(10000, 8000, 1000);
+        private TaskTimeoutSettings events = new TaskTimeoutSettings(30000, 10000, 1000);
 
         /**
-         * Timeout configuration for command handlers. Defaults to 10-second timeout, 8-second warning threshold and a
+         * Timeout configuration for command handlers. Defaults to 30-second timeout, 10-second warning threshold and a
          * warning interval of 1 second.
          */
         @NestedConfigurationProperty
-        private TaskTimeoutSettings commands = new TaskTimeoutSettings(10000, 8000, 1000);
+        private TaskTimeoutSettings commands = new TaskTimeoutSettings(30000, 10000, 1000);
 
         /**
-         * Timeout configuration for query handlers. Defaults to 10-second timeout, 8-second warning threshold and a
+         * Timeout configuration for query handlers. Defaults to 30-second timeout, 10-second warning threshold and a
          * warning interval of 1 second.
          */
         @NestedConfigurationProperty
-        private TaskTimeoutSettings queries = new TaskTimeoutSettings(10000, 8000, 1000);
+        private TaskTimeoutSettings queries = new TaskTimeoutSettings(30000, 10000, 1000);
 
         /**
-         * Timeout configuration for deadline handlers. Defaults to 10-second timeout, 8-second warning threshold and a
+         * Timeout configuration for deadline handlers. Defaults to 30-second timeout, 10-second warning threshold and a
          * warning interval of 1 second.
          */
         @NestedConfigurationProperty
-        private TaskTimeoutSettings deadlines = new TaskTimeoutSettings(10000, 8000, 1000);
+        private TaskTimeoutSettings deadlines = new TaskTimeoutSettings(30000, 10000, 1000);
 
         /**
-         * The timeout configuration for event handlers. Defaults to 10-second timeout, 8-second warning threshold and a
-         * warning interval of 1 second.
+         * The timeout configuration for event handlers. Defaults to 30-second timeout, 10-second warning threshold and
+         * a warning interval of 1 second.
          *
          * @return the timeout configuration for event handlers
          */
@@ -158,8 +158,8 @@ public class TimeoutProperties {
         }
 
         /**
-         * The timeout configuration for command handlers. Defaults to 10-second timeout, 8-second warning threshold and
-         * a warning interval of 1 second.
+         * The timeout configuration for command handlers. Defaults to 30-second timeout, 10-second warning threshold
+         * and a warning interval of 1 second.
          *
          * @return the timeout configuration for command handlers
          */
@@ -177,8 +177,8 @@ public class TimeoutProperties {
         }
 
         /**
-         * The timeout configuration for query handlers. Defaults to 10-second timeout, 8-second warning threshold and a
-         * warning interval of 1 second.
+         * The timeout configuration for query handlers. Defaults to 30-second timeout, 10-second warning threshold and
+         * a warning interval of 1 second.
          *
          * @return the timeout configuration for query handlers
          */
@@ -196,7 +196,7 @@ public class TimeoutProperties {
         }
 
         /**
-         * The timeout configuration for deadline handlers. Defaults to 10-second timeout, 8-second warning threshold
+         * The timeout configuration for deadline handlers. Defaults to 30-second timeout, 10-second warning threshold
          * and a warning interval of 1 second.
          *
          * @return the timeout configuration for deadline handlers
@@ -228,25 +228,25 @@ public class TimeoutProperties {
     public static class TransactionTimeoutProperties {
 
         /**
-         * Timeout settings for the command bus. Defaults to 10-second timeout, 8-second warning threshold and a warning
-         * interval of 1 second. This timeout is used for the entire command handling process.
+         * Timeout settings for the command bus. Defaults to 60-second timeout, 10-second warning threshold and a
+         * warning interval of 1 second. This timeout is used for the entire command handling process.
          */
         @NestedConfigurationProperty
-        private TaskTimeoutSettings commandBus = new TaskTimeoutSettings(10000, 8000, 1000);
+        private TaskTimeoutSettings commandBus = new TaskTimeoutSettings(60000, 10000, 1000);
 
         /**
-         * Timeout settings for the query bus. Defaults to 10-second timeout, 8-second warning threshold and a warning
+         * Timeout settings for the query bus. Defaults to 60-second timeout, 10-second warning threshold and a warning
          * interval of 1 second. This timeout is used for the entire query handling process.
          */
         @NestedConfigurationProperty
-        private TaskTimeoutSettings queryBus = new TaskTimeoutSettings(10000, 8000, 1000);
+        private TaskTimeoutSettings queryBus = new TaskTimeoutSettings(60000, 10000, 1000);
 
         /**
-         * Timeout settings for deadlines. Defaults to 10-second timeout, 8-second warning threshold and a warning
+         * Timeout settings for deadlines. Defaults to 60-second timeout, 10-second warning threshold and a warning
          * interval of 1 second. This timeout is used for the entire deadline handling process.
          */
         @NestedConfigurationProperty
-        private TaskTimeoutSettings deadline = new TaskTimeoutSettings(10000, 8000, 1000);
+        private TaskTimeoutSettings deadline = new TaskTimeoutSettings(60000, 10000, 1000);
 
         /**
          * Timeout settings for all event processors, unless a more specific setting is registered via the
@@ -254,7 +254,7 @@ public class TimeoutProperties {
          * interval of 1 second.
          */
         @NestedConfigurationProperty
-        private TaskTimeoutSettings eventProcessors = new TaskTimeoutSettings(10000, 8000, 1000);
+        private TaskTimeoutSettings eventProcessors = new TaskTimeoutSettings(60000, 10000, 1000);
 
         /**
          * Timeout settings for specific event processors. The key is the name of the event processor, the value is the
@@ -263,8 +263,8 @@ public class TimeoutProperties {
         private final Map<String, TaskTimeoutSettings> eventProcessor = new HashMap<>();
 
         /**
-         * Timeout settings for the command bus. Defaults to 10-second timeout, 8-second warning threshold and a warning
-         * interval of 1 second. This timeout is used for the entire command handling process.
+         * Timeout settings for the command bus. Defaults to 60-second timeout, 10-second warning threshold and a
+         * warning interval of 1 second. This timeout is used for the entire command handling process.
          *
          * @return the timeout settings for the command bus
          */
@@ -282,7 +282,7 @@ public class TimeoutProperties {
         }
 
         /**
-         * Timeout settings for the query bus. Defaults to 10-second timeout, 8-second warning threshold and a warning
+         * Timeout settings for the query bus. Defaults to 60-second timeout, 10-second warning threshold and a warning
          * interval of 1 second. This timeout is used for the entire query handling process.
          *
          * @return the timeout settings for the query bus
@@ -301,7 +301,7 @@ public class TimeoutProperties {
         }
 
         /**
-         * Timeout settings for deadlines. Defaults to 10-second timeout, 8-second warning threshold and a warning
+         * Timeout settings for deadlines. Defaults to 60-second timeout, 10-second warning threshold and a warning
          * interval of 1 second. This timeout is used for the entire deadline handling process.
          *
          * @return the timeout settings for deadlines
@@ -321,7 +321,7 @@ public class TimeoutProperties {
 
         /**
          * Timeout settings for all event processors, unless a more specific setting is registered via the
-         * {@code event-processor} property. Defaults to 5-second timeout, 2-second warning threshold and a warning
+         * {@code event-processor} property. Defaults to 60-second timeout, 10-second warning threshold and a warning
          * interval of 1 second.
          *
          * @return the timeout settings for event processors
