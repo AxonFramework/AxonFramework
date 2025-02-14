@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.annotations.EventTag;
 
@@ -25,17 +24,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
 /**
  * Implementation of {@link TagResolver} that processes {@link EventTag} annotations on fields and methods of event
- * payload objects to create {@link Tag} instances.
+ * payload objects to create {@link Tag} instances. Supports inherited fields and methods.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -55,11 +51,20 @@ public class AnnotationBasedTagResolver implements TagResolver {
     }
 
     private Set<Tag> resolveFieldTags(Object payload) {
-        return Arrays.stream(payload.getClass().getDeclaredFields())
-                     .filter(field -> field.isAnnotationPresent(EventTag.class))
-                     .map(field -> createTagFromField(field, payload))
-                     .filter(Objects::nonNull)
-                     .collect(Collectors.toSet());
+        Set<Tag> tags = new HashSet<>();
+        Class<?> currentClass = payload.getClass();
+
+        while (currentClass != null && !currentClass.equals(Object.class)) {
+            Arrays.stream(currentClass.getDeclaredFields())
+                  .filter(field -> field.isAnnotationPresent(EventTag.class))
+                  .map(field -> createTagFromField(field, payload))
+                  .filter(Objects::nonNull)
+                  .forEach(tags::add);
+
+            currentClass = currentClass.getSuperclass();
+        }
+
+        return tags;
     }
 
     private Tag createTagFromField(Field field, Object payload) {
@@ -79,12 +84,21 @@ public class AnnotationBasedTagResolver implements TagResolver {
     }
 
     private Set<Tag> resolveMethodTags(Object payload) {
-        return Arrays.stream(payload.getClass().getDeclaredMethods())
-                     .filter(method -> method.isAnnotationPresent(EventTag.class))
-                     .filter(this::assertValidTagMethod)
-                     .map(method -> createTagFromMethod(method, payload))
-                     .filter(Objects::nonNull)
-                     .collect(Collectors.toSet());
+        Set<Tag> tags = new HashSet<>();
+        Class<?> currentClass = payload.getClass();
+
+        while (currentClass != null && !currentClass.equals(Object.class)) {
+            Arrays.stream(currentClass.getDeclaredMethods())
+                  .filter(method -> method.isAnnotationPresent(EventTag.class))
+                  .filter(this::assertValidTagMethod)
+                  .map(method -> createTagFromMethod(method, payload))
+                  .filter(Objects::nonNull)
+                  .forEach(tags::add);
+
+            currentClass = currentClass.getSuperclass();
+        }
+
+        return tags;
     }
 
     private boolean assertValidTagMethod(Method method) {

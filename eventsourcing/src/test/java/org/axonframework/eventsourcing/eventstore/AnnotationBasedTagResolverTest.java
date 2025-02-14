@@ -90,7 +90,7 @@ class AnnotationBasedTagResolverTest {
     @Nested
     class ClassTests {
 
-        class TestClass {
+        static class TestClass {
 
             @EventTag
             private final String id;
@@ -263,7 +263,7 @@ class AnnotationBasedTagResolverTest {
         }
 
         @Test
-        void shouldHandleGetterMethodNaming() {
+        void shouldStripGetPartFromGetterMethods() {
             // given
             GetterMethodClass payload = new GetterMethodClass();
             EventMessage<?> event = anEventMessage(payload);
@@ -280,40 +280,38 @@ class AnnotationBasedTagResolverTest {
     }
 
     @Nested
-    class EdgeCases {
+    class InheritanceAndVisibilityTests {
 
-        static class PrivateMethodClass {
+        static class BaseClass {
 
             @EventTag
-            private String getPrivateValue() {
-                return "private";
+            private final String privateBaseField = "privateBaseValue";
+
+            @EventTag(key = "customBase")
+            protected String protectedBaseField = "protectedBaseValue";
+
+            @EventTag
+            private String getBaseValue() {
+                return "baseMethodValue";
             }
         }
 
-        static class InheritedTagClass extends PrivateMethodClass {
+        static class InheritedTagClass extends BaseClass {
 
             @EventTag
-            public String getValue() {
-                return "value";
+            private final String privateChildField = "privateChildValue";
+
+            @EventTag
+            public String publicChildField = "publicChildValue";
+
+            @EventTag
+            public String getChildValue() {
+                return "childMethodValue";
             }
         }
 
         @Test
-        void shouldHandlePrivateMethods() {
-            // given
-            PrivateMethodClass payload = new PrivateMethodClass();
-            EventMessage<?> event = anEventMessage(payload);
-
-            // when
-            Set<Tag> result = testSubject.resolve(event);
-
-            // then
-            assertEquals(1, result.size());
-            assertTrue(result.contains(new Tag("privateValue", "private")));
-        }
-
-        @Test
-        void shouldOnlyResolveDeclaredMethods() {
+        void shouldResolveAllFieldsAndMethodsRegardlessOfVisibility() {
             // given
             InheritedTagClass payload = new InheritedTagClass();
             EventMessage<?> event = anEventMessage(payload);
@@ -322,8 +320,15 @@ class AnnotationBasedTagResolverTest {
             Set<Tag> result = testSubject.resolve(event);
 
             // then
-            assertEquals(1, result.size());
-            assertTrue(result.contains(new Tag("value", "value")));
+            assertEquals(6, result.size());
+            // Parent class tags
+            assertTrue(result.contains(new Tag("privateBaseField", "privateBaseValue")));
+            assertTrue(result.contains(new Tag("customBase", "protectedBaseValue")));
+            assertTrue(result.contains(new Tag("baseValue", "baseMethodValue")));
+            // Child class tags
+            assertTrue(result.contains(new Tag("privateChildField", "privateChildValue")));
+            assertTrue(result.contains(new Tag("publicChildField", "publicChildValue")));
+            assertTrue(result.contains(new Tag("childValue", "childMethodValue")));
         }
     }
 
