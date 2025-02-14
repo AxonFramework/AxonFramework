@@ -110,7 +110,7 @@ class AnnotationBasedTagResolverTest {
                 this.nonTagged = nonTagged;
             }
 
-            @EventTag
+            @EventTag(key = "taggedMethod")
             public String getTaggedMethod() {
                 return "methodValue";
             }

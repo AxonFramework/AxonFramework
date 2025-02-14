@@ -26,10 +26,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Implementation of {@link TagResolver} that processes {@link EventTag} annotations on fields, methods, and record
@@ -39,28 +39,32 @@ import java.util.stream.Collectors;
  * @since 5.0.0
  */
 public class AnnotationBasedTagResolver implements TagResolver {
-
     @Override
     public Set<Tag> resolve(@Nonnull EventMessage<?> event) {
         Assert.notNull(event, () -> "Event cannot be null");
         Object payload = event.getPayload();
+        if (payload == null) {
+            return Set.of();
+        }
 
-        return switch (payload) {
-            case Record record -> resolveRecordTags(record);
-            case null -> Set.of();
-            default -> resolveClassTags(payload);
-        };
+        return payload.getClass().isRecord()
+                ? resolveRecordTags(payload)
+                : resolveClassTags(payload);
     }
 
-    private Set<Tag> resolveRecordTags(Record record) {
+    private Set<Tag> resolveRecordTags(Object record) {
         return Arrays.stream(record.getClass().getRecordComponents())
-                     .filter(component -> component.isAnnotationPresent(EventTag.class))
-                     .map(component -> createTagFromRecordComponent(component, record))
+                     .map(component -> resolveRecordComponentTag(component, record))
                      .filter(Objects::nonNull)
                      .collect(Collectors.toUnmodifiableSet());
     }
 
-    private Tag createTagFromRecordComponent(RecordComponent component, Record record) {
+    private Tag resolveRecordComponentTag(RecordComponent component, Object record) {
+        EventTag annotation = component.getAnnotation(EventTag.class);
+        if (annotation == null) {
+            return null;
+        }
+
         try {
             Method accessor = component.getAccessor();
             Object value = accessor.invoke(record);
@@ -68,7 +72,6 @@ public class AnnotationBasedTagResolver implements TagResolver {
                 return null;
             }
 
-            EventTag annotation = component.getAnnotation(EventTag.class);
             String key = annotation.key().isEmpty() ? component.getName() : annotation.key();
             return new Tag(key, value.toString());
         } catch (IllegalAccessException | InvocationTargetException e) {
@@ -77,10 +80,10 @@ public class AnnotationBasedTagResolver implements TagResolver {
     }
 
     private Set<Tag> resolveClassTags(Object payload) {
-        var tags = new HashSet<Tag>();
-        tags.addAll(resolveFieldTags(payload));
-        tags.addAll(resolveMethodTags(payload));
-        return Set.copyOf(tags);
+        Set<Tag> fieldTags = resolveFieldTags(payload);
+        Set<Tag> methodTags = resolveMethodTags(payload);
+        return Stream.concat(fieldTags.stream(), methodTags.stream())
+                     .collect(Collectors.toUnmodifiableSet());
     }
 
     private Set<Tag> resolveFieldTags(Object payload) {
@@ -95,14 +98,13 @@ public class AnnotationBasedTagResolver implements TagResolver {
         try {
             field.setAccessible(true);
             Object value = field.get(payload);
-            return switch (value) {
-                case null -> null;
-                default -> {
-                    EventTag annotation = field.getAnnotation(EventTag.class);
-                    String key = annotation.key().isEmpty() ? field.getName() : annotation.key();
-                    yield new Tag(key, value.toString());
-                }
-            };
+            if (value == null) {
+                return null;
+            }
+
+            EventTag annotation = field.getAnnotation(EventTag.class);
+            String key = annotation.key().isEmpty() ? field.getName() : annotation.key();
+            return new Tag(key, value.toString());
         } catch (IllegalAccessException e) {
             throw new TagResolutionException("Failed to resolve tag from field: " + field.getName(), e);
         }
@@ -126,14 +128,13 @@ public class AnnotationBasedTagResolver implements TagResolver {
         try {
             method.setAccessible(true);
             Object value = method.invoke(payload);
-            return switch (value) {
-                case null -> null;
-                default -> {
-                    EventTag annotation = method.getAnnotation(EventTag.class);
-                    String key = annotation.key().isEmpty() ? method.getName() : annotation.key();
-                    yield new Tag(key, value.toString());
-                }
-            };
+            if (value == null) {
+                return null;
+            }
+
+            EventTag annotation = method.getAnnotation(EventTag.class);
+            String key = annotation.key().isEmpty() ? method.getName() : annotation.key();
+            return new Tag(key, value.toString());
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new TagResolutionException("Failed to resolve tag from method: " + method.getName(), e);
         }
@@ -141,9 +142,6 @@ public class AnnotationBasedTagResolver implements TagResolver {
 
     /**
      * Exception thrown when tag resolution fails.
-     *
-     * @param message The error message
-     * @param cause   The underlying cause
      */
     public static class TagResolutionException extends RuntimeException {
 
