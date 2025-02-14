@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.annotations.EventTag;
+import org.axonframework.eventsourcing.annotations.EventTags;
 import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -381,7 +382,6 @@ class AnnotationBasedTagResolverTest {
             @EventTag(key = "amount")
             private final Integer value = 456;
 
-            @EventTag(key = "name")
             @EventTag // will use method name (without 'get')
             public String getName() {
                 return "test";
@@ -414,10 +414,120 @@ class AnnotationBasedTagResolverTest {
             assertTrue(result.contains(new Tag("amount", "456")));
             // Tags from getName method
             assertTrue(result.contains(new Tag("name", "test")));
-            assertTrue(result.contains(new Tag("name", "test")));
             // Tags from getCustomValue method
             assertTrue(result.contains(new Tag("customKey1", "customValue")));
             assertTrue(result.contains(new Tag("customKey2", "customValue")));
+        }
+    }
+
+    @Nested
+    class ContainerAnnotationTests {
+
+        static class ContainerAnnotationClass {
+
+            @EventTags({
+                    @EventTag(key = "identifier"),
+                    @EventTag // will use field name
+            })
+            private final String id = "123";
+
+            // Using repeatable syntax for comparison
+            @EventTag(key = "value")
+            @EventTag(key = "amount")
+            private final Integer value = 456;
+
+            @EventTags({
+                    @EventTag(key = "methodName"),
+                    @EventTag // will use method name (without 'get')
+            })
+            public String getName() {
+                return "test";
+            }
+        }
+
+        static class MixedAnnotationClass {
+
+            // Using container annotation
+            @EventTags({
+                    @EventTag(key = "first"),
+                    @EventTag(key = "second")
+            })
+            // Adding repeatable annotation
+            @EventTag(key = "third")
+            private final String mixedField = "mixedValue";
+
+            // Using container annotation
+            @EventTags({
+                    @EventTag(key = "one"),
+                    @EventTag(key = "two")
+            })
+            // Adding repeatable annotation
+            @EventTag(key = "three")
+            public String getMixedValue() {
+                return "mixed";
+            }
+        }
+
+        @Test
+        void shouldHandleContainerAnnotation() {
+            // given
+            var payload = new ContainerAnnotationClass();
+            var event = anEventMessage(payload);
+
+            // when
+            var result = tagResolver.resolve(event);
+
+            // then
+            assertEquals(6, result.size());
+            // Tags from container annotation on 'id' field
+            assertTrue(result.contains(new Tag("id", "123")));
+            assertTrue(result.contains(new Tag("identifier", "123")));
+            // Tags from repeatable annotations on 'value' field
+            assertTrue(result.contains(new Tag("value", "456")));
+            assertTrue(result.contains(new Tag("amount", "456")));
+            // Tags from container annotation on getName method
+            assertTrue(result.contains(new Tag("methodName", "test")));
+            assertTrue(result.contains(new Tag("name", "test")));
+        }
+
+        @Test
+        void shouldHandleMixedContainerAndRepeatableAnnotations() {
+            // given
+            var payload = new MixedAnnotationClass();
+            var event = anEventMessage(payload);
+
+            // when
+            var result = tagResolver.resolve(event);
+
+            // then
+            assertEquals(6, result.size());
+            // Tags from field with mixed annotations
+            assertTrue(result.contains(new Tag("first", "mixedValue")));
+            assertTrue(result.contains(new Tag("second", "mixedValue")));
+            assertTrue(result.contains(new Tag("third", "mixedValue")));
+            // Tags from method with mixed annotations
+            assertTrue(result.contains(new Tag("one", "mixed")));
+            assertTrue(result.contains(new Tag("two", "mixed")));
+            assertTrue(result.contains(new Tag("three", "mixed")));
+        }
+
+        static class InvalidContainerClass {
+
+            @EventTags({}) // Empty container
+            private final String emptyContainer = "value";
+        }
+
+        @Test
+        void shouldHandleEmptyContainer() {
+            // given
+            var payload = new InvalidContainerClass();
+            var event = anEventMessage(payload);
+
+            // when
+            var result = tagResolver.resolve(event);
+
+            // then
+            assertTrue(result.isEmpty());
         }
     }
 

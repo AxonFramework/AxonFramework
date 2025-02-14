@@ -38,7 +38,8 @@ import static java.lang.String.format;
  */
 public class AnnotationBasedTagResolver implements TagResolver {
 
-    public static final Class<EventTag> EVENT_TAG_ANNOTATION = EventTag.class;
+    private static final Class<EventTag> EVENT_TAG_ANNOTATION = EventTag.class;
+    private static final Class<EventTags> CONTAINING_ANNOTATION_TYPE = EventTags.class;
 
     @Override
     public Set<Tag> resolve(@Nonnull EventMessage<?> event) {
@@ -58,7 +59,7 @@ public class AnnotationBasedTagResolver implements TagResolver {
         while (currentClass != null && !currentClass.equals(Object.class)) {
             Arrays.stream(currentClass.getDeclaredFields())
                   .filter(field -> field.isAnnotationPresent(EVENT_TAG_ANNOTATION)
-                          || field.isAnnotationPresent(EventTags.class))
+                          || field.isAnnotationPresent(CONTAINING_ANNOTATION_TYPE))
                   .flatMap(field -> tagsFrom(field, payload).stream())
                   .filter(Objects::nonNull)
                   .forEach(tags::add);
@@ -98,7 +99,7 @@ public class AnnotationBasedTagResolver implements TagResolver {
         while (currentClass != null && !currentClass.equals(Object.class)) {
             Arrays.stream(currentClass.getDeclaredMethods())
                   .filter(method -> method.isAnnotationPresent(EVENT_TAG_ANNOTATION)
-                          || method.isAnnotationPresent(EventTags.class))
+                          || method.isAnnotationPresent(CONTAINING_ANNOTATION_TYPE))
                   .flatMap(method -> tagsFrom(method, payload).stream())
                   .filter(Objects::nonNull)
                   .forEach(tags::add);
