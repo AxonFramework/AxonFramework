@@ -20,14 +20,7 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.message.SchemaStore;
 import org.apache.avro.util.ClassUtils;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.serialization.ChainingConverter;
-import org.axonframework.serialization.Converter;
-import org.axonframework.serialization.RevisionResolver;
-import org.axonframework.serialization.SerializedObject;
-import org.axonframework.serialization.SerializedType;
-import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.SimpleSerializedType;
-import org.axonframework.serialization.UnknownSerializedType;
+import org.axonframework.serialization.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -93,17 +86,22 @@ public class AvroSerializer implements Serializer {
     }
 
     /**
-     * Creates a builder for Avro Serializer.
+     * Creates a builder for Avro Serializer with defaults applied.
+     * <p>
+     * The {@link RevisionResolver} defaults to {@link AnnotationRevisionResolver}, the {@link Converter} defaults
+     * to {@link ChainingConverter} and the default serialization strategies are enabled, which effectively activates
+     * the {@link SpecificRecordBaseSerializerStrategy}.
+     * </p>
      * <p>
      * The following fields are mandatory, to create the Serializer:
      * <ul>
-     *     <li>{@link Builder#revisionResolver(RevisionResolver)}, to resolve revisions of events</li>
      *     <li>{@link Builder#schemaStore(SchemaStore)}, to lookup schemas by their fingerprints</li>
      *     <li>{@link Builder#serializerDelegate(Serializer)}, to deserialize all non-Avro artifacts</li>
      *     <li>at least one {@link AvroSerializerStrategy} either passed via
-     *      {@link Builder#addSerializerStrategy(AvroSerializerStrategy)} or activated via
-     *      {@link Builder#includeDefaultAvroSerializationStrategies(boolean)}</li>
+     *     {@link Builder#addSerializerStrategy(AvroSerializerStrategy)} or activated via
+     *     {@link Builder#includeDefaultAvroSerializationStrategies(boolean)}, which is a default.</li>
      * </ul>
+     * </p>
      *
      * @return fluent builder instance.
      */
@@ -218,16 +216,18 @@ public class AvroSerializer implements Serializer {
     }
 
     /**
-     * Builder to set up Avro Serializer.
+     * Builder to set up Avro Serializer using some defaults.
+     * The {@link RevisionResolver} defaults to {@link AnnotationRevisionResolver}, the {@link Converter} defaults
+     * to {@link ChainingConverter} and the default serialization strategies are enabled, which effectively activates
+     * the {@link SpecificRecordBaseSerializerStrategy}.
      * <p>
      * The following fields are mandatory, to create the Serializer:
      * <ul>
-     *     <li>{@link Builder#revisionResolver(RevisionResolver)}, to resolve revisions of events</li>
      *     <li>{@link Builder#schemaStore(SchemaStore)}, to lookup schemas by their fingerprints</li>
      *     <li>{@link Builder#serializerDelegate(Serializer)}, to deserialize all non-Avro artifacts</li>
      *     <li>at least one {@link AvroSerializerStrategy} either passed via 
      *     {@link Builder#addSerializerStrategy(AvroSerializerStrategy)} or activated via 
-     *     {@link Builder#includeDefaultAvroSerializationStrategies(boolean)}</li>
+     *     {@link Builder#includeDefaultAvroSerializationStrategies(boolean)}, which is a default.</li>
      * </ul>
      * </p>
      */
@@ -236,7 +236,7 @@ public class AvroSerializer implements Serializer {
         private final List<AvroSerializerStrategy> serializerStrategies = new ArrayList<>();
         private final AvroSerializerStrategyConfig.Builder configurationBuilder = AvroSerializerStrategyConfig
                 .builder();
-        private RevisionResolver revisionResolver;
+        private RevisionResolver revisionResolver = new AnnotationRevisionResolver();
         private SchemaStore schemaStore;
         private SchemaIncompatibilityChecker schemaIncompatibilityChecker = new DefaultSchemaIncompatibilityChecker();
         private Serializer serializerDelegate;

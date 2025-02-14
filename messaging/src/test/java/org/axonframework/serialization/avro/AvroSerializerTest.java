@@ -80,17 +80,9 @@ public class AvroSerializerTest {
 
     @Test
     void testBuilderMandatoryValues() {
-        assertEquals("RevisionResolver is mandatory",
-                assertThrows(AxonConfigurationException.class,
-                        () -> AvroSerializer.builder().build())
-                        .getMessage()
-        );
-
-
         assertEquals("SchemaStore is mandatory",
                 assertThrows(AxonConfigurationException.class,
                         () -> AvroSerializer.builder()
-                                .revisionResolver(c -> "")
                                 .build())
                         .getMessage()
         );
@@ -98,7 +90,6 @@ public class AvroSerializerTest {
         assertEquals("SerializerDelegate is mandatory",
                 assertThrows(AxonConfigurationException.class,
                         () -> AvroSerializer.builder()
-                                .revisionResolver(c -> "")
                                 .schemaStore(new SchemaStore.Cache())
                                 .build())
                         .getMessage()
@@ -108,7 +99,6 @@ public class AvroSerializerTest {
                 assertThrows(AxonConfigurationException.class,
                         () -> AvroSerializer
                                 .builder()
-                                .revisionResolver(c -> "")
                                 .serializerDelegate(serializer)
                                 .schemaStore(new SchemaStore.Cache())
                                 .includeDefaultAvroSerializationStrategies(false)
