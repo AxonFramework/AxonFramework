@@ -20,23 +20,28 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.annotations.EventTag;
 import org.axonframework.messaging.MessageType;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Validates the behaviour of the {@link AnnotationBasedTagResolver}.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 class AnnotationBasedTagResolverTest {
 
-    private AnnotationBasedTagResolver testSubject;
+    private final AnnotationBasedTagResolver tagResolver = new AnnotationBasedTagResolver();
 
-    @BeforeEach
-    void setUp() {
-        testSubject = new AnnotationBasedTagResolver();
+    @Test
+    void shouldThrowExceptionOnNullEvent() {
+        // when/then
+        assertThrows(NullPointerException.class, () -> tagResolver.resolve(null));
     }
 
     @Nested
@@ -60,11 +65,11 @@ class AnnotationBasedTagResolverTest {
         @Test
         void shouldResolveTagsFromRecord() {
             // given
-            TestRecord payload = new TestRecord("123", "test", "ignored");
-            EventMessage<?> event = anEventMessage(payload);
+            var payload = new TestRecord("123", "test", "ignored");
+            var event = anEventMessage(payload);
 
             // when
-            Set<Tag> result = testSubject.resolve(event);
+            var result = tagResolver.resolve(event);
 
             // then
             assertEquals(2, result.size());
@@ -73,17 +78,17 @@ class AnnotationBasedTagResolverTest {
         }
 
         @Test
-        void shouldHandleNullValuesInRecord() {
+        void shouldIgnoreTagsWithNullValues() {
             // given
-            NullableRecord payload = new NullableRecord("123", null);
-            EventMessage<?> event = anEventMessage(payload);
+            var payload = new NullableRecord("123", null);
+            var event = anEventMessage(payload);
 
             // when
-            Set<Tag> result = testSubject.resolve(event);
+            var result = tagResolver.resolve(event);
 
             // then
-            assertEquals(1, result.size());
-            assertTrue(result.contains(new Tag("id", "123")));
+            var nullValueTagNotPresent = result.stream().noneMatch(it -> it.key().equals("nullValue"));
+            assertTrue(nullValueTagNotPresent);
         }
     }
 
@@ -96,11 +101,11 @@ class AnnotationBasedTagResolverTest {
             private final String id;
 
             @EventTag(key = "customField")
-            private final String value;
+            private final Integer value;
 
             private final String nonTagged;
 
-            TestClass(String id, String value, String nonTagged) {
+            TestClass(String id, Integer value, String nonTagged) {
                 this.id = id;
                 this.value = value;
                 this.nonTagged = nonTagged;
@@ -120,28 +125,31 @@ class AnnotationBasedTagResolverTest {
         @Test
         void shouldResolveTagsFromFieldsAndMethods() {
             // given
-            TestClass payload = new TestClass("123", "test", "ignored");
-            EventMessage<?> event = anEventMessage(payload);
+            var payload = new TestClass("123", 456, "ignored");
+            var event = anEventMessage(payload);
 
             // when
-            Set<Tag> result = testSubject.resolve(event);
+            var result = tagResolver.resolve(event);
 
             // then
             assertEquals(4, result.size());
             assertTrue(result.contains(new Tag("id", "123")));
-            assertTrue(result.contains(new Tag("customField", "test")));
+            assertTrue(result.contains(new Tag("customField", "456")));
             assertTrue(result.contains(new Tag("taggedMethod", "methodValue")));
             assertTrue(result.contains(new Tag("customMethod", "customMethodValue")));
         }
-    }
-
-    @Nested
-    class ErrorCases {
 
         @Test
-        void shouldThrowExceptionOnNullEvent() {
-            // when/then
-            assertThrows(NullPointerException.class, () -> testSubject.resolve(null));
+        void shouldNotResolveTagsFromNotAnnotatedMembers() {
+            // given
+            var payload = new TestClass("123", 456, "ignored");
+            var event = anEventMessage(payload);
+
+            // when
+            var result = tagResolver.resolve(event);
+
+            // then
+            assertFalse(result.contains(new Tag("nonTagged", "ignored")));
         }
     }
 
@@ -159,12 +167,12 @@ class AnnotationBasedTagResolverTest {
         @Test
         void shouldHandleComplexTypes() {
             // given
-            Map<String, Integer> items = Map.of("item1", 1, "item2", 2);
-            ComplexRecord payload = new ComplexRecord("123", items, 42);
-            EventMessage<?> event = anEventMessage(payload);
+            var items = Map.of("item1", 1, "item2", 2);
+            var payload = new ComplexRecord("123", items, 42);
+            var event = anEventMessage(payload);
 
             // when
-            Set<Tag> result = testSubject.resolve(event);
+            var result = tagResolver.resolve(event);
 
             // then
             assertEquals(3, result.size());
@@ -222,13 +230,13 @@ class AnnotationBasedTagResolverTest {
         @Test
         void shouldThrowExceptionForVoidMethod() {
             // given
-            VoidMethodClass payload = new VoidMethodClass();
-            EventMessage<?> event = anEventMessage(payload);
+            var payload = new VoidMethodClass();
+            var event = anEventMessage(payload);
 
             // when/then
-            AnnotationBasedTagResolver.TagResolutionException exception = assertThrows(
+            var exception = assertThrows(
                     AnnotationBasedTagResolver.TagResolutionException.class,
-                    () -> testSubject.resolve(event)
+                    () -> tagResolver.resolve(event)
             );
             assertTrue(exception.getMessage().contains("should not return void"));
         }
@@ -236,13 +244,13 @@ class AnnotationBasedTagResolverTest {
         @Test
         void shouldThrowExceptionForMethodWithParameters() {
             // given
-            InvalidMethodClass payload = new InvalidMethodClass();
-            EventMessage<?> event = anEventMessage(payload);
+            var payload = new InvalidMethodClass();
+            var event = anEventMessage(payload);
 
             // when/then
-            AnnotationBasedTagResolver.TagResolutionException exception = assertThrows(
+            var exception = assertThrows(
                     AnnotationBasedTagResolver.TagResolutionException.class,
-                    () -> testSubject.resolve(event)
+                    () -> tagResolver.resolve(event)
             );
             assertTrue(exception.getMessage().contains("should not contain any parameters"));
         }
@@ -250,13 +258,13 @@ class AnnotationBasedTagResolverTest {
         @Test
         void shouldWrapMethodInvocationException() {
             // given
-            ExceptionThrowingMethodClass payload = new ExceptionThrowingMethodClass();
-            EventMessage<?> event = anEventMessage(payload);
+            var payload = new ExceptionThrowingMethodClass();
+            var event = anEventMessage(payload);
 
             // when/then
-            AnnotationBasedTagResolver.TagResolutionException exception = assertThrows(
+            var exception = assertThrows(
                     AnnotationBasedTagResolver.TagResolutionException.class,
-                    () -> testSubject.resolve(event)
+                    () -> tagResolver.resolve(event)
             );
             assertTrue(exception.getMessage().contains("Failed to resolve tag from method"));
             assertInstanceOf(InvocationTargetException.class, exception.getCause());
@@ -265,11 +273,11 @@ class AnnotationBasedTagResolverTest {
         @Test
         void shouldStripGetPartFromGetterMethods() {
             // given
-            GetterMethodClass payload = new GetterMethodClass();
-            EventMessage<?> event = anEventMessage(payload);
+            var payload = new GetterMethodClass();
+            var event = anEventMessage(payload);
 
             // when
-            Set<Tag> result = testSubject.resolve(event);
+            var result = tagResolver.resolve(event);
 
             // then
             assertEquals(3, result.size());
@@ -313,11 +321,11 @@ class AnnotationBasedTagResolverTest {
         @Test
         void shouldResolveAllFieldsAndMethodsRegardlessOfVisibility() {
             // given
-            InheritedTagClass payload = new InheritedTagClass();
-            EventMessage<?> event = anEventMessage(payload);
+            var payload = new InheritedTagClass();
+            var event = anEventMessage(payload);
 
             // when
-            Set<Tag> result = testSubject.resolve(event);
+            var result = tagResolver.resolve(event);
 
             // then
             assertEquals(6, result.size());

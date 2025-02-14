@@ -25,7 +25,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -38,6 +37,8 @@ import static java.lang.String.format;
  */
 public class AnnotationBasedTagResolver implements TagResolver {
 
+    public static final Class<EventTag> EVENT_TAG_ANNOTATION = EventTag.class;
+
     @Override
     public Set<Tag> resolve(@Nonnull EventMessage<?> event) {
         Objects.requireNonNull(event, () -> "Event cannot be null");
@@ -46,18 +47,17 @@ public class AnnotationBasedTagResolver implements TagResolver {
         var tags = new HashSet<Tag>();
         tags.addAll(resolveFieldTags(payload));
         tags.addAll(resolveMethodTags(payload));
-
         return tags;
     }
 
     private Set<Tag> resolveFieldTags(Object payload) {
-        Set<Tag> tags = new HashSet<>();
-        Class<?> currentClass = payload.getClass();
+        var tags = new HashSet<Tag>();
+        var currentClass = payload.getClass();
 
         while (currentClass != null && !currentClass.equals(Object.class)) {
             Arrays.stream(currentClass.getDeclaredFields())
-                  .filter(field -> field.isAnnotationPresent(EventTag.class))
-                  .map(field -> createTagFromField(field, payload))
+                  .filter(field -> field.isAnnotationPresent(EVENT_TAG_ANNOTATION))
+                  .map(field -> tagFrom(field, payload))
                   .filter(Objects::nonNull)
                   .forEach(tags::add);
 
@@ -67,16 +67,16 @@ public class AnnotationBasedTagResolver implements TagResolver {
         return tags;
     }
 
-    private Tag createTagFromField(Field field, Object payload) {
+    private Tag tagFrom(Field field, Object payload) {
         try {
             field.setAccessible(true);
-            Object value = field.get(payload);
+            var value = field.get(payload);
             if (value == null) {
                 return null;
             }
 
-            EventTag annotation = field.getAnnotation(EventTag.class);
-            String key = annotation.key().isEmpty() ? field.getName() : annotation.key();
+            var annotation = field.getAnnotation(EVENT_TAG_ANNOTATION);
+            var key = annotation.key().isEmpty() ? field.getName() : annotation.key();
             return new Tag(key, value.toString());
         } catch (IllegalAccessException e) {
             throw new TagResolutionException("Failed to resolve tag from field: " + field.getName(), e);
@@ -84,14 +84,13 @@ public class AnnotationBasedTagResolver implements TagResolver {
     }
 
     private Set<Tag> resolveMethodTags(Object payload) {
-        Set<Tag> tags = new HashSet<>();
-        Class<?> currentClass = payload.getClass();
+        var tags = new HashSet<Tag>();
+        var currentClass = payload.getClass();
 
         while (currentClass != null && !currentClass.equals(Object.class)) {
             Arrays.stream(currentClass.getDeclaredMethods())
-                  .filter(method -> method.isAnnotationPresent(EventTag.class))
-                  .filter(this::assertValidTagMethod)
-                  .map(method -> createTagFromMethod(method, payload))
+                  .filter(method -> method.isAnnotationPresent(EVENT_TAG_ANNOTATION))
+                  .map(method -> tagFrom(method, payload))
                   .filter(Objects::nonNull)
                   .forEach(tags::add);
 
@@ -101,38 +100,38 @@ public class AnnotationBasedTagResolver implements TagResolver {
         return tags;
     }
 
-    private boolean assertValidTagMethod(Method method) {
-        if (method.getParameterCount() > 0) {
-            throw new TagResolutionException(format(
-                    "The @%s annotated method [%s] should not contain any parameters"
-                            + " as none are allowed on event Tag providers",
-                    EventTag.class.getSimpleName(), method
-            ));
-        }
-        if (void.class.equals(method.getReturnType())) {
-            throw new TagResolutionException(format(
-                    "The @%s annotated method [%s] should not return void",
-                    EventTag.class.getSimpleName(), method
-            ));
-        }
-        return true;
-    }
-
-    private Tag createTagFromMethod(Method method, Object payload) {
+    private Tag tagFrom(Method method, Object payload) {
+        assertValidTagMethod(method);
         try {
             method.setAccessible(true);
-            Object value = method.invoke(payload);
+            var value = method.invoke(payload);
             if (value == null) {
                 return null;
             }
 
-            EventTag annotation = method.getAnnotation(EventTag.class);
-            String key = annotation.key().isEmpty()
+            var annotation = method.getAnnotation(EVENT_TAG_ANNOTATION);
+            var key = annotation.key().isEmpty()
                     ? getMemberIdentifierName(method)
                     : annotation.key();
             return new Tag(key, value.toString());
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new TagResolutionException("Failed to resolve tag from method: " + method.getName(), e);
+        }
+    }
+
+    private void assertValidTagMethod(Method method) {
+        if (method.getParameterCount() > 0) {
+            throw new TagResolutionException(format(
+                    "The @%s annotated method [%s] should not contain any parameters"
+                            + " as none are allowed on event Tag providers",
+                    EVENT_TAG_ANNOTATION.getSimpleName(), method
+            ));
+        }
+        if (void.class.equals(method.getReturnType())) {
+            throw new TagResolutionException(format(
+                    "The @%s annotated method [%s] should not return void",
+                    EVENT_TAG_ANNOTATION.getSimpleName(), method
+            ));
         }
     }
 
@@ -144,7 +143,7 @@ public class AnnotationBasedTagResolver implements TagResolver {
      * @return the identifier name tied to the given {@code member}
      */
     private String getMemberIdentifierName(Member member) {
-        String identifierName = member.getName();
+        var identifierName = member.getName();
         return member instanceof Method && isGetterByConvention(identifierName)
                 ? stripGetterConvention(identifierName)
                 : identifierName;

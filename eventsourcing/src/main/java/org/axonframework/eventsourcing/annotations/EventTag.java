@@ -22,6 +22,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Field or method level annotation that marks a field or method providing the Tag for the Event. The member name will
+ * be used as the {@link org.axonframework.eventsourcing.eventstore.Tag#key}. The member value will be used as the
+ * {@link org.axonframework.eventsourcing.eventstore.Tag#value}.
+ * <p>
+ * For both fields and methods, the value is obtained by calling {@code toString()} on the field value or method return
+ * value. If the value is null, no tag will be created.
+ * <p>
+ * If placed on a method, that method must contain no parameters and returns non-void value.
+ * <p>
+ *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
@@ -30,20 +40,10 @@ import java.lang.annotation.Target;
 public @interface EventTag {
 
     /**
-     * The key of the Tag which will be assigned to the Event. Defaults to annotated property name.
+     * The key of the Tag which will be assigned to the Event. Optional. If left empty this defaults to the member name.
+     * If the member was named in a "getter" style, the {@code "get"} will be removed.
      *
      * @return The tag key
      */
     String key() default "";
 }
-
-/**
- * Get the name of the routing key property on commands and events that provides the identifier that should be used to
- * target the entity with the annotated member.
- * <p>
- * Optional. If left empty this defaults to the member name. If the member was named in a "getter" style, the
- * {@code "get"} will be removed.
- * <p>
- * Setting the {@code routingKey} is especially useful for annotated {@link java.lang.reflect.Method}s, which typically
- * have a different naming scheme than a field in a command/event.
- */
