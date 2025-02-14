@@ -36,3 +36,14 @@ public @interface EventTag {
      */
     String key() default "";
 }
+
+/**
+ * Get the name of the routing key property on commands and events that provides the identifier that should be used to
+ * target the entity with the annotated member.
+ * <p>
+ * Optional. If left empty this defaults to the member name. If the member was named in a "getter" style, the
+ * {@code "get"} will be removed.
+ * <p>
+ * Setting the {@code routingKey} is especially useful for annotated {@link java.lang.reflect.Method}s, which typically
+ * have a different naming scheme than a field in a command/event.
+ */

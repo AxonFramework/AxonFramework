@@ -21,10 +21,10 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.annotations.EventTag;
 import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,7 +40,6 @@ class AnnotationBasedTagResolverTest {
     }
 
     @Nested
-    @DisplayName("Record Tests")
     class RecordTests {
 
         record TestRecord(
@@ -59,11 +58,10 @@ class AnnotationBasedTagResolverTest {
         }
 
         @Test
-        @DisplayName("Should resolve tags from record components")
         void shouldResolveTagsFromRecord() {
             // given
             TestRecord payload = new TestRecord("123", "test", "ignored");
-            EventMessage<?> event = createEventMessage(payload);
+            EventMessage<?> event = anEventMessage(payload);
 
             // when
             Set<Tag> result = testSubject.resolve(event);
@@ -75,11 +73,10 @@ class AnnotationBasedTagResolverTest {
         }
 
         @Test
-        @DisplayName("Should handle null values in record components")
         void shouldHandleNullValuesInRecord() {
             // given
             NullableRecord payload = new NullableRecord("123", null);
-            EventMessage<?> event = createEventMessage(payload);
+            EventMessage<?> event = anEventMessage(payload);
 
             // when
             Set<Tag> result = testSubject.resolve(event);
@@ -91,7 +88,6 @@ class AnnotationBasedTagResolverTest {
     }
 
     @Nested
-    @DisplayName("Class Tests")
     class ClassTests {
 
         class TestClass {
@@ -122,11 +118,10 @@ class AnnotationBasedTagResolverTest {
         }
 
         @Test
-        @DisplayName("Should resolve tags from fields and methods")
         void shouldResolveTagsFromFieldsAndMethods() {
             // given
             TestClass payload = new TestClass("123", "test", "ignored");
-            EventMessage<?> event = createEventMessage(payload);
+            EventMessage<?> event = anEventMessage(payload);
 
             // when
             Set<Tag> result = testSubject.resolve(event);
@@ -141,20 +136,16 @@ class AnnotationBasedTagResolverTest {
     }
 
     @Nested
-    @DisplayName("Error Cases")
     class ErrorCases {
 
         @Test
-        @DisplayName("Should handle null event")
         void shouldThrowExceptionOnNullEvent() {
             // when/then
-            assertThrows(IllegalArgumentException.class, () -> testSubject.resolve(null));
+            assertThrows(NullPointerException.class, () -> testSubject.resolve(null));
         }
-
     }
 
     @Nested
-    @DisplayName("Complex Cases")
     class ComplexCases {
 
         record ComplexRecord(
@@ -166,12 +157,11 @@ class AnnotationBasedTagResolverTest {
         }
 
         @Test
-        @DisplayName("Should handle complex types")
         void shouldHandleComplexTypes() {
             // given
             Map<String, Integer> items = Map.of("item1", 1, "item2", 2);
             ComplexRecord payload = new ComplexRecord("123", items, 42);
-            EventMessage<?> event = createEventMessage(payload);
+            EventMessage<?> event = anEventMessage(payload);
 
             // when
             Set<Tag> result = testSubject.resolve(event);
@@ -184,7 +174,160 @@ class AnnotationBasedTagResolverTest {
         }
     }
 
-    private EventMessage<?> createEventMessage(Object payload) {
+    @Nested
+    class InvalidMethodTests {
+
+        static class InvalidMethodClass {
+
+            @EventTag
+            public String methodWithParameters(String param) {
+                return param;
+            }
+        }
+
+        static class VoidMethodClass {
+
+            @EventTag
+            public void voidMethod() {
+                // Method with void return type
+            }
+        }
+
+        static class ExceptionThrowingMethodClass {
+
+            @EventTag
+            private String methodThrowingException() {
+                throw new RuntimeException("Test exception");
+            }
+        }
+
+        static class GetterMethodClass {
+
+            @EventTag
+            public String getName() {
+                return "name";
+            }
+
+            @EventTag
+            public String getidentifier() { // doesn't follow getter convention (lowercase after 'get')
+                return "123";
+            }
+
+            @EventTag
+            public String get() { // too short to be a getter
+                return "value";
+            }
+        }
+
+        @Test
+        void shouldThrowExceptionForVoidMethod() {
+            // given
+            VoidMethodClass payload = new VoidMethodClass();
+            EventMessage<?> event = anEventMessage(payload);
+
+            // when/then
+            AnnotationBasedTagResolver.TagResolutionException exception = assertThrows(
+                    AnnotationBasedTagResolver.TagResolutionException.class,
+                    () -> testSubject.resolve(event)
+            );
+            assertTrue(exception.getMessage().contains("should not return void"));
+        }
+
+        @Test
+        void shouldThrowExceptionForMethodWithParameters() {
+            // given
+            InvalidMethodClass payload = new InvalidMethodClass();
+            EventMessage<?> event = anEventMessage(payload);
+
+            // when/then
+            AnnotationBasedTagResolver.TagResolutionException exception = assertThrows(
+                    AnnotationBasedTagResolver.TagResolutionException.class,
+                    () -> testSubject.resolve(event)
+            );
+            assertTrue(exception.getMessage().contains("should not contain any parameters"));
+        }
+
+        @Test
+        void shouldWrapMethodInvocationException() {
+            // given
+            ExceptionThrowingMethodClass payload = new ExceptionThrowingMethodClass();
+            EventMessage<?> event = anEventMessage(payload);
+
+            // when/then
+            AnnotationBasedTagResolver.TagResolutionException exception = assertThrows(
+                    AnnotationBasedTagResolver.TagResolutionException.class,
+                    () -> testSubject.resolve(event)
+            );
+            assertTrue(exception.getMessage().contains("Failed to resolve tag from method"));
+            assertInstanceOf(InvocationTargetException.class, exception.getCause());
+        }
+
+        @Test
+        void shouldHandleGetterMethodNaming() {
+            // given
+            GetterMethodClass payload = new GetterMethodClass();
+            EventMessage<?> event = anEventMessage(payload);
+
+            // when
+            Set<Tag> result = testSubject.resolve(event);
+
+            // then
+            assertEquals(3, result.size());
+            assertTrue(result.contains(new Tag("name", "name")));
+            assertTrue(result.contains(new Tag("getidentifier", "123"))); // not a proper getter
+            assertTrue(result.contains(new Tag("get", "value"))); // not a proper getter
+        }
+    }
+
+    @Nested
+    class EdgeCases {
+
+        static class PrivateMethodClass {
+
+            @EventTag
+            private String getPrivateValue() {
+                return "private";
+            }
+        }
+
+        static class InheritedTagClass extends PrivateMethodClass {
+
+            @EventTag
+            public String getValue() {
+                return "value";
+            }
+        }
+
+        @Test
+        void shouldHandlePrivateMethods() {
+            // given
+            PrivateMethodClass payload = new PrivateMethodClass();
+            EventMessage<?> event = anEventMessage(payload);
+
+            // when
+            Set<Tag> result = testSubject.resolve(event);
+
+            // then
+            assertEquals(1, result.size());
+            assertTrue(result.contains(new Tag("privateValue", "private")));
+        }
+
+        @Test
+        void shouldOnlyResolveDeclaredMethods() {
+            // given
+            InheritedTagClass payload = new InheritedTagClass();
+            EventMessage<?> event = anEventMessage(payload);
+
+            // when
+            Set<Tag> result = testSubject.resolve(event);
+
+            // then
+            assertEquals(1, result.size());
+            assertTrue(result.contains(new Tag("value", "value")));
+        }
+    }
+
+    private EventMessage<?> anEventMessage(Object payload) {
         return new GenericEventMessage<>(new MessageType("event"), payload);
     }
 }
