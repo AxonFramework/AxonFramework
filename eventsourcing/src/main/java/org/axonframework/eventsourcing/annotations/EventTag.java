@@ -26,8 +26,10 @@ import java.lang.annotation.Target;
  * be used as the {@link org.axonframework.eventsourcing.eventstore.Tag#key}. The member value will be used as the
  * {@link org.axonframework.eventsourcing.eventstore.Tag#value}.
  * <p>
+ * If the value is null, no tag will be created.
+ * <p>
  * For both fields and methods, the value is obtained by calling {@code toString()} on the field value or method return
- * value. If the value is null, no tag will be created.
+ * value.
  * <p>
  * If placed on a method, that method must contain no parameters and returns non-void value.
  * <p>
