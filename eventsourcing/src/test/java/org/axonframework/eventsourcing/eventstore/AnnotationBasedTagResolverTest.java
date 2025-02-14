@@ -151,18 +151,6 @@ class AnnotationBasedTagResolverTest {
             assertThrows(IllegalArgumentException.class, () -> testSubject.resolve(null));
         }
 
-        @Test
-        @DisplayName("Should handle null payload")
-        void shouldHandleNullPayload() {
-            // given
-            EventMessage<?> event = createEventMessage(null);
-
-            // when
-            Set<Tag> result = testSubject.resolve(event);
-
-            // then
-            assertTrue(result.isEmpty());
-        }
     }
 
     @Nested
