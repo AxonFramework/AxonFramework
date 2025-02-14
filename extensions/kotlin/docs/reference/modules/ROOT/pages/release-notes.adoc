@@ -4,7 +4,20 @@
 You can find the release notes for the Kotlin Extension of version 4.10.0 below.
 For earlier releases, please go to the link:https://legacydocs.axoniq.io/reference-guide/release-notes/rn-extensions/rn-kotlin[legacy documentation].
 
-== Release 4.10
+== Release 4.11.0
+
+=== _Enhancements_
+
+- [#368] `AxonSerializer` documentation and enforce `ReplayToken.context` to String link:https://github.com/AxonFramework/extension-kotlin/pull/370[#370]
+- `AxonSerializer` documentation and enforce `ReplayToken#context` to String link:https://github.com/AxonFramework/extension-kotlin/issues/368[#368]
+
+=== _Contributors_
+
+We'd like to thank all the contributors who worked on this release!
+
+- link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
+
+== Release 4.10.0
 
 . Upgrades the Kotlin Extension to be compatible with Axon Framework 4.10.0
 . Adds a serializer with `kotlin.serialization` support
