@@ -80,7 +80,7 @@
         <hsqldb.version>2.5.2</hsqldb.version><!-- Don't upgrade due to JDK8 -->
         <hsqldb.with11.version>2.7.2</hsqldb.with11.version><!-- Don't upgrade due to JDK8 -->
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
-        <hibernate-core.6.version>6.6.6.Final</hibernate-core.6.version>
+        <hibernate-core.6.version>6.6.7.Final</hibernate-core.6.version>
         <mysql-connector-java.version>9.2.0</mysql-connector-java.version>
         <postgresql.version>42.7.5</postgresql.version>
         <!-- Jakarta -->
@@ -105,19 +105,19 @@
         <slf4j.version>2.0.16</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.30</dropwizard.metrics.version>
-        <micrometer.version>1.14.3</micrometer.version>
+        <micrometer.version>1.14.4</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.17.0</byte-buddy.version>
+        <byte-buddy.version>1.17.1</byte-buddy.version>
         <commons-io.version>2.18.0</commons-io.version>
         <disruptor.version>3.4.4</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <!-- Reactive -->
-        <projectreactor.version>3.7.2</projectreactor.version>
+        <projectreactor.version>3.7.3</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Serialization -->
-        <avro.version>1.11.4</avro.version><!-- Don't upgrade due to JDK8, the JDK11+ version is defined in profile below -->
+        <avro.version>1.12.0</avro.version><!-- Don't upgrade due to JDK8, the JDK11+ version is defined in profile below -->
         <dom4j.version>2.1.4</dom4j.version>
         <gson.version>2.12.1</gson.version>
         <jackson.version>2.18.2</jackson.version>
