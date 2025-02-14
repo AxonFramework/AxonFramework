@@ -13,32 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.axonframework.eventsourcing.annotations;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
- * Field or method level annotation that marks a field or method providing the Tag for the Event. The member name will
- * be used as the {@link org.axonframework.eventsourcing.eventstore.Tag#key}. The member value will be used as the
- * {@link org.axonframework.eventsourcing.eventstore.Tag#value}.
+ * Field or method level annotation that marks a field or method providing the Tag for the Event.
+ * The member name will be used as the {@link org.axonframework.eventsourcing.eventstore.Tag#key}.
+ * The member value will be used as the {@link org.axonframework.eventsourcing.eventstore.Tag#value}.
  * <p>
- * If the value is null, no tag will be created.
- * <p>
- * For both fields and methods, the value is obtained by calling {@code toString()} on the field value or method return
- * value.
+ * For both fields and methods, the value is obtained by calling {@code toString()} on the field value
+ * or method return value. If the value is null, no tag will be created.
  * <p>
  * If placed on a method, that method must contain no parameters and returns non-void value.
  * <p>
+ * This annotation is repeatable, allowing multiple tags to be created from the same field or method.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
+@Repeatable(EventTags.class)
 public @interface EventTag {
 
     /**

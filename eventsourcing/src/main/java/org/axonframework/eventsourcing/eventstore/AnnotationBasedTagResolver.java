@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.annotations.EventTag;
+import org.axonframework.eventsourcing.annotations.EventTags;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -56,8 +57,9 @@ public class AnnotationBasedTagResolver implements TagResolver {
 
         while (currentClass != null && !currentClass.equals(Object.class)) {
             Arrays.stream(currentClass.getDeclaredFields())
-                  .filter(field -> field.isAnnotationPresent(EVENT_TAG_ANNOTATION))
-                  .map(field -> tagFrom(field, payload))
+                  .filter(field -> field.isAnnotationPresent(EVENT_TAG_ANNOTATION)
+                          || field.isAnnotationPresent(EventTags.class))
+                  .flatMap(field -> tagsFrom(field, payload).stream())
                   .filter(Objects::nonNull)
                   .forEach(tags::add);
 
@@ -67,17 +69,23 @@ public class AnnotationBasedTagResolver implements TagResolver {
         return tags;
     }
 
-    private Tag tagFrom(Field field, Object payload) {
+    private Set<Tag> tagsFrom(Field field, Object payload) {
         try {
             field.setAccessible(true);
             var value = field.get(payload);
             if (value == null) {
-                return null;
+                return Set.of();
             }
 
-            var annotation = field.getAnnotation(EVENT_TAG_ANNOTATION);
-            var key = annotation.key().isEmpty() ? field.getName() : annotation.key();
-            return new Tag(key, value.toString());
+            var tags = new HashSet<Tag>();
+            var annotations = field.getAnnotationsByType(EVENT_TAG_ANNOTATION);
+
+            for (var annotation : annotations) {
+                var key = annotation.key().isEmpty() ? field.getName() : annotation.key();
+                tags.add(new Tag(key, value.toString()));
+            }
+
+            return tags;
         } catch (IllegalAccessException e) {
             throw new TagResolutionException("Failed to resolve tag from field: " + field.getName(), e);
         }
@@ -89,8 +97,9 @@ public class AnnotationBasedTagResolver implements TagResolver {
 
         while (currentClass != null && !currentClass.equals(Object.class)) {
             Arrays.stream(currentClass.getDeclaredMethods())
-                  .filter(method -> method.isAnnotationPresent(EVENT_TAG_ANNOTATION))
-                  .map(method -> tagFrom(method, payload))
+                  .filter(method -> method.isAnnotationPresent(EVENT_TAG_ANNOTATION)
+                          || method.isAnnotationPresent(EventTags.class))
+                  .flatMap(method -> tagsFrom(method, payload).stream())
                   .filter(Objects::nonNull)
                   .forEach(tags::add);
 
@@ -100,20 +109,26 @@ public class AnnotationBasedTagResolver implements TagResolver {
         return tags;
     }
 
-    private Tag tagFrom(Method method, Object payload) {
+    private Set<Tag> tagsFrom(Method method, Object payload) {
         assertValidTagMethod(method);
         try {
             method.setAccessible(true);
             var value = method.invoke(payload);
             if (value == null) {
-                return null;
+                return Set.of();
             }
 
-            var annotation = method.getAnnotation(EVENT_TAG_ANNOTATION);
-            var key = annotation.key().isEmpty()
-                    ? getMemberIdentifierName(method)
-                    : annotation.key();
-            return new Tag(key, value.toString());
+            var tags = new HashSet<Tag>();
+            var annotations = method.getAnnotationsByType(EVENT_TAG_ANNOTATION);
+
+            for (var annotation : annotations) {
+                var key = annotation.key().isEmpty()
+                        ? getMemberIdentifierName(method)
+                        : annotation.key();
+                tags.add(new Tag(key, value.toString()));
+            }
+
+            return tags;
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new TagResolutionException("Failed to resolve tag from method: " + method.getName(), e);
         }

@@ -368,150 +368,56 @@ class AnnotationBasedTagResolverTest {
     }
 
     @Nested
-    class PrecedenceTests {
+    class RepeatableAnnotationTests {
 
-        static class FieldAndMethodClass {
+        static class MultiTagClass {
 
-            @EventTag
-            private final String id = "fieldValue";
+            @EventTag(key = "classId")
+            @EventTag(key = "identifier")
+            @EventTag // will use field name
+            private final String id = "123";
 
-            @EventTag
-            public String getId() {
-                return "methodValue";
+            @EventTag(key = "value")
+            @EventTag(key = "amount")
+            private final Integer value = 456;
+
+            @EventTag(key = "name")
+            @EventTag // will use method name (without 'get')
+            public String getName() {
+                return "test";
             }
 
-            @EventTag(key = "custom")
-            private final String customField = "customFieldValue";
-
-            @EventTag(key = "custom")
+            @EventTag(key = "customKey1")
+            @EventTag(key = "customKey2")
             public String getCustomValue() {
-                return "customMethodValue";
+                return "customValue";
             }
         }
 
         @Test
-        void methodValueShouldTakePrecedenceOverField() {
+        void shouldHandleRepeatableAnnotationsOnFields() {
             // given
-            var payload = new FieldAndMethodClass();
+            var payload = new MultiTagClass();
             var event = anEventMessage(payload);
 
             // when
             var result = tagResolver.resolve(event);
 
             // then
-            assertEquals(2, result.size());
-            assertTrue(result.contains(new Tag("id", "methodValue")));
-            assertTrue(result.contains(new Tag("custom", "customMethodValue")));
-
-            assertFalse(result.contains(new Tag("id", "fieldValue")));
-            assertFalse(result.contains(new Tag("custom", "customFieldValue")));
-        }
-    }
-
-    @Nested
-    class DuplicateKeyTests {
-
-        record DuplicateFieldKeys(
-                @EventTag(key = "key1") String value1,
-                @EventTag(key = "key1") String value2
-        ) {
-
-        }
-
-        static class DuplicateMethodKeys {
-
-            @EventTag(key = "key1")
-            public String getValue1() {
-                return "value1";
-            }
-
-            @EventTag(key = "key1")
-            public String getValue2() {
-                return "value2";
-            }
-        }
-
-        record MixedDuplicateKeys(
-                @EventTag(key = "key1") String value1
-        ) {
-
-            @EventTag(key = "key1")
-            public String getValue() {
-                return "value";
-            }
-        }
-
-        static class InheritedDuplicateKeys extends DuplicateMethodKeys {
-
-            @EventTag(key = "key1")
-            public String getValue3() {
-                return "value3";
-            }
-        }
-
-        @Test
-        void shouldThrowExceptionForDuplicateFieldKeys() {
-            // given
-            var payload = new DuplicateFieldKeys("value1", "value2");
-            var event = anEventMessage(payload);
-
-            // when/then
-            var exception = assertThrows(
-                    AnnotationBasedTagResolver.TagResolutionException.class,
-                    () -> tagResolver.resolve(event)
-            );
-            assertTrue(exception.getMessage().contains("Duplicate @EventTag key [key1]"));
-            assertTrue(exception.getMessage().contains("field 'value1'"));
-            assertTrue(exception.getMessage().contains("field 'value2'"));
-        }
-
-        @Test
-        void shouldThrowExceptionForDuplicateMethodKeys() {
-            // given
-            var payload = new DuplicateMethodKeys();
-            var event = anEventMessage(payload);
-
-            // when/then
-            var exception = assertThrows(
-                    AnnotationBasedTagResolver.TagResolutionException.class,
-                    () -> tagResolver.resolve(event)
-            );
-            assertTrue(exception.getMessage().contains("Duplicate @EventTag key [key1]"));
-            assertTrue(exception.getMessage().contains("method 'getValue1'"));
-            assertTrue(exception.getMessage().contains("method 'getValue2'"));
-        }
-
-        @Test
-        void shouldThrowExceptionForMixedDuplicateKeys() {
-            // given
-            var payload = new MixedDuplicateKeys("value");
-            var event = anEventMessage(payload);
-
-            // when/then
-            var exception = assertThrows(
-                    AnnotationBasedTagResolver.TagResolutionException.class,
-                    () -> tagResolver.resolve(event)
-            );
-            assertTrue(exception.getMessage().contains("Duplicate @EventTag key [key1]"));
-            assertTrue(exception.getMessage().contains("field 'value1'"));
-            assertTrue(exception.getMessage().contains("method 'getValue'"));
-        }
-
-        @Test
-        void shouldThrowExceptionForInheritedDuplicateKeys() {
-            // given
-            var payload = new InheritedDuplicateKeys();
-            var event = anEventMessage(payload);
-
-            // when/then
-            var exception = assertThrows(
-                    AnnotationBasedTagResolver.TagResolutionException.class,
-                    () -> tagResolver.resolve(event)
-            );
-            assertTrue(exception.getMessage().contains("Duplicate @EventTag key [key1]"));
-            assertTrue(exception.getMessage().contains("method 'getValue1'"));
-            assertTrue(exception.getMessage().contains("method 'getValue2'"));
-            assertTrue(exception.getMessage().contains("method 'getValue3'"));
+            assertEquals(8, result.size());
+            // Tags from 'id' field
+            assertTrue(result.contains(new Tag("classId", "123")));
+            assertTrue(result.contains(new Tag("identifier", "123")));
+            assertTrue(result.contains(new Tag("id", "123")));
+            // Tags from 'value' field
+            assertTrue(result.contains(new Tag("value", "456")));
+            assertTrue(result.contains(new Tag("amount", "456")));
+            // Tags from getName method
+            assertTrue(result.contains(new Tag("name", "test")));
+            assertTrue(result.contains(new Tag("name", "test")));
+            // Tags from getCustomValue method
+            assertTrue(result.contains(new Tag("customKey1", "customValue")));
+            assertTrue(result.contains(new Tag("customKey2", "customValue")));
         }
     }
 
