@@ -22,7 +22,7 @@
 
     <groupId>org.axonframework.extensions.kotlin</groupId>
     <artifactId>axon-kotlin-parent</artifactId>
-    <version>4.11.0</version>
+    <version>4.11.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -603,7 +603,7 @@
         <developerConnection>scm:git:git@github.com:AxonFramework/extension-kotlin.git
         </developerConnection>
         <url>https://github.com/AxonFramework/extension-kotlin</url>
-        <tag>axon-kotlin-4.11.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <developers>
