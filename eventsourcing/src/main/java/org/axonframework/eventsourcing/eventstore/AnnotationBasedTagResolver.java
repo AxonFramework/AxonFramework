@@ -26,6 +26,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -82,8 +83,7 @@ public class AnnotationBasedTagResolver implements TagResolver {
             var annotations = field.getAnnotationsByType(EVENT_TAG_ANNOTATION);
 
             for (var annotation : annotations) {
-                var key = annotation.key().isEmpty() ? field.getName() : annotation.key();
-                tags.add(new Tag(key, value.toString()));
+                tags.addAll(createTagsForValue(value, annotation.key().isEmpty() ? field.getName() : annotation.key()));
             }
 
             return tags;
@@ -123,16 +123,25 @@ public class AnnotationBasedTagResolver implements TagResolver {
             var annotations = method.getAnnotationsByType(EVENT_TAG_ANNOTATION);
 
             for (var annotation : annotations) {
-                var key = annotation.key().isEmpty()
-                        ? getMemberIdentifierName(method)
-                        : annotation.key();
-                tags.add(new Tag(key, value.toString()));
+                var key = annotation.key().isEmpty() ? getMemberIdentifierName(method) : annotation.key();
+                tags.addAll(createTagsForValue(value, key));
             }
 
             return tags;
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new TagResolutionException("Failed to resolve tag from method: " + method.getName(), e);
         }
+    }
+
+    private Set<Tag> createTagsForValue(Object value, String key) {
+        if (value instanceof Collection<?> collection) {
+            return collection.stream()
+                             .filter(Objects::nonNull)
+                             .map(item -> new Tag(key, item.toString()))
+                             .collect(Collectors.toSet());
+        }
+
+        return Set.of(new Tag(key, value.toString()));
     }
 
     private void assertValidTagMethod(Method method) {

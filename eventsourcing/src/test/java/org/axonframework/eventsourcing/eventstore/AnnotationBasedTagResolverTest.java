@@ -25,10 +25,12 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -163,10 +165,7 @@ class AnnotationBasedTagResolverTest {
         record ComplexRecord(
                 @EventTag String id,
                 @EventTag(key = "mapObject") Map<String, Integer> mapObject,
-                @EventTag(key = "listObject") List<Object> listObject,
-                @EventTag(key = "setObject") Set<Object> setObject,
-                @EventTag(key = "collectionObject") Collection<Object> collectionObject,
-                @EventTag(key = "iterableObject") Iterable<Object> iterableObject,
+                @EventTag(key = "iterableObject") Iterable<Integer> iterableObject,
                 @EventTag(key = "count") Integer count,
                 @EventTag(key = "complexTag") ComplexTag complexTag
         ) {
@@ -181,15 +180,11 @@ class AnnotationBasedTagResolverTest {
         void shouldHandleComplexTypes() {
             // given
             var mapObject = Map.of("item1", 1, "item2", 2);
-            var listObject = List.<Object>of("item1", 1, "item2", 2);
-            var setObject = Set.<Object>of("item1", 1, "item2", 2);
+            Iterable<Integer> iterableObject = () -> IntStream.range(1, 4).boxed().iterator();
             var complexTag = new ComplexTag("value1", true);
             var payload = new ComplexRecord("123",
                                             mapObject,
-                                            listObject,
-                                            setObject,
-                                            setObject,
-                                            setObject,
+                                            iterableObject,
                                             42,
                                             complexTag);
             var event = anEventMessage(payload);
@@ -198,15 +193,74 @@ class AnnotationBasedTagResolverTest {
             var result = tagResolver.resolve(event);
 
             // then
-            assertEquals(8, result.size());
+            assertEquals(5, result.size());
             assertTrue(result.contains(new Tag("id", "123")));
             assertTrue(result.contains(new Tag("mapObject", mapObject.toString())));
-            assertTrue(result.contains(new Tag("listObject", listObject.toString())));
-            assertTrue(result.contains(new Tag("setObject", setObject.toString())));
-            assertTrue(result.contains(new Tag("collectionObject", setObject.toString())));
-            assertTrue(result.contains(new Tag("iterableObject", setObject.toString())));
+            assertTrue(result.contains(new Tag("iterableObject", iterableObject.toString())));
             assertTrue(result.contains(new Tag("complexTag", complexTag.toString())));
             assertTrue(result.contains(new Tag("count", "42")));
+        }
+    }
+
+    @Nested
+    class CollectionTests {
+
+        static class CollectionTagClass {
+
+            @EventTag
+            private final List<Integer> numbers = List.of(1, 2, 3);
+
+            @EventTag(key = "customKey")
+            private final Set<String> words = Set.of("hello", "world");
+
+            @EventTag
+            public Collection<Double> getScores() {
+                return List.of(95.5, 87.3);
+            }
+        }
+
+        @Test
+        void shouldCreateTagsFromCollection() {
+            // given
+            var payload = new CollectionTagClass();
+            var event = anEventMessage(payload);
+
+            // when
+            var result = tagResolver.resolve(event);
+
+            // then
+            assertEquals(7, result.size());
+            // Tags from numbers list
+            assertTrue(result.contains(new Tag("numbers", "1")));
+            assertTrue(result.contains(new Tag("numbers", "2")));
+            assertTrue(result.contains(new Tag("numbers", "3")));
+            // Tags from words set with custom key
+            assertTrue(result.contains(new Tag("customKey", "hello")));
+            assertTrue(result.contains(new Tag("customKey", "world")));
+            // Tags from scores method
+            assertTrue(result.contains(new Tag("scores", "95.5")));
+            assertTrue(result.contains(new Tag("scores", "87.3")));
+        }
+
+        static class ListWithNullClass {
+
+            @EventTag
+            private final List<String> withNull = Arrays.asList("valid", null, "alsoValid");
+        }
+
+        @Test
+        void shouldSkipTagsWithNullValue() {
+            // given
+            var payload = new ListWithNullClass();
+            var event = anEventMessage(payload);
+
+            // when
+            var result = tagResolver.resolve(event);
+
+            // then
+            assertEquals(2, result.size());
+            assertTrue(result.contains(new Tag("withNull", "valid")));
+            assertTrue(result.contains(new Tag("withNull", "alsoValid")));
         }
     }
 
