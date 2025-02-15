@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -164,7 +165,6 @@ class AnnotationBasedTagResolverTest {
 
         record ComplexRecord(
                 @EventTag String id,
-                @EventTag(key = "mapObject") Map<String, Integer> mapObject,
                 @EventTag(key = "iterableObject") Iterable<Integer> iterableObject,
                 @EventTag(key = "count") Integer count,
                 @EventTag(key = "complexTag") ComplexTag complexTag
@@ -179,11 +179,9 @@ class AnnotationBasedTagResolverTest {
         @Test
         void shouldHandleComplexTypes() {
             // given
-            var mapObject = Map.of("item1", 1, "item2", 2);
             Iterable<Integer> iterableObject = () -> IntStream.range(1, 4).boxed().iterator();
             var complexTag = new ComplexTag("value1", true);
             var payload = new ComplexRecord("123",
-                                            mapObject,
                                             iterableObject,
                                             42,
                                             complexTag);
@@ -193,9 +191,8 @@ class AnnotationBasedTagResolverTest {
             var result = tagResolver.resolve(event);
 
             // then
-            assertEquals(5, result.size());
+            assertEquals(4, result.size());
             assertTrue(result.contains(new Tag("id", "123")));
-            assertTrue(result.contains(new Tag("mapObject", mapObject.toString())));
             assertTrue(result.contains(new Tag("iterableObject", iterableObject.toString())));
             assertTrue(result.contains(new Tag("complexTag", complexTag.toString())));
             assertTrue(result.contains(new Tag("count", "42")));
@@ -261,6 +258,94 @@ class AnnotationBasedTagResolverTest {
             assertEquals(2, result.size());
             assertTrue(result.contains(new Tag("withNull", "valid")));
             assertTrue(result.contains(new Tag("withNull", "alsoValid")));
+        }
+    }
+
+    @Nested
+    class MapTests {
+
+        static class MapTagClass {
+
+            @EventTag
+            private final Map<String, Integer> counts = Map.of(
+                    "apple", 5,
+                    "banana", 3
+            );
+
+            @EventTag(key = "fruit")
+            private final Map<String, String> fruits = Map.of(
+                    "color1", "red",
+                    "color2", "yellow"
+            );
+
+            @EventTag
+            public Map<String, Double> getPrices() {
+                return Map.of(
+                        "item1", 10.5,
+                        "item2", 20.75
+                );
+            }
+        }
+
+        @Test
+        void shouldUseMapKeysWhenNoAnnotationKeyProvided() {
+            // given
+            var payload = new MapTagClass();
+            var event = anEventMessage(payload);
+
+            // when
+            var result = tagResolver.resolve(event);
+
+            // then
+            assertEquals(6, result.size());
+            // Tags from counts map (using map keys, not property name)
+            assertTrue(result.contains(new Tag("apple", "5")));
+            assertTrue(result.contains(new Tag("banana", "3")));
+            // Tags from fruits map (using annotation key)
+            assertTrue(result.contains(new Tag("fruit", "red")));
+            assertTrue(result.contains(new Tag("fruit", "yellow")));
+            // Tags from prices method (using map keys, not method name)
+            assertTrue(result.contains(new Tag("item1", "10.5")));
+            assertTrue(result.contains(new Tag("item2", "20.75")));
+
+            // Verify property/method names are NOT used as keys
+            assertFalse(result.stream().anyMatch(tag -> tag.key().equals("counts")));
+            assertFalse(result.stream().anyMatch(tag -> tag.key().equals("prices")));
+        }
+
+        static class NullableMapClass {
+
+            @EventTag
+            private final Map<String, String> withNullValues = new HashMap<>() {{
+                put("key1", "value1");
+                put("key2", null);
+                put(null, "value3");
+            }};
+
+            @EventTag(key = "customKey")
+            private final Map<String, String> withCustomKey = new HashMap<>() {{
+                put("key1", "value1");
+                put("key2", null);
+                put(null, "value3");
+            }};
+        }
+
+        @Test
+        void shouldHandleNullKeysAndValues() {
+            // given
+            var payload = new NullableMapClass();
+            var event = anEventMessage(payload);
+
+            // when
+            var result = tagResolver.resolve(event);
+
+            // then
+            assertEquals(3, result.size());
+            // For map without custom key - use map keys, skip null entries
+            assertTrue(result.contains(new Tag("key1", "value1")));
+            // For map with custom key - use custom key, skip null values
+            assertTrue(result.contains(new Tag("customKey", "value1")));
+            assertTrue(result.contains(new Tag("customKey", "value3")));
         }
     }
 

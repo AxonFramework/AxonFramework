@@ -83,7 +83,7 @@ public class AnnotationBasedTagResolver implements TagResolver {
             var annotations = field.getAnnotationsByType(EVENT_TAG_ANNOTATION);
 
             for (var annotation : annotations) {
-                tags.addAll(createTagsForValue(value, annotation.key().isEmpty() ? field.getName() : annotation.key()));
+                tags.addAll(createTagsForValue(value, field.getName(), annotation.key()));
             }
 
             return tags;
@@ -123,8 +123,7 @@ public class AnnotationBasedTagResolver implements TagResolver {
             var annotations = method.getAnnotationsByType(EVENT_TAG_ANNOTATION);
 
             for (var annotation : annotations) {
-                var key = annotation.key().isEmpty() ? getMemberIdentifierName(method) : annotation.key();
-                tags.addAll(createTagsForValue(value, key));
+                tags.addAll(createTagsForValue(value, getMemberIdentifierName(method), annotation.key()));
             }
 
             return tags;
@@ -133,12 +132,27 @@ public class AnnotationBasedTagResolver implements TagResolver {
         }
     }
 
-    private Set<Tag> createTagsForValue(Object value, String key) {
+    private Set<Tag> createTagsForValue(Object value, String memberName, String annotationKey) {
+        var key = annotationKey.isEmpty() ? memberName : annotationKey;
         if (value instanceof Collection<?> collection) {
             return collection.stream()
                              .filter(Objects::nonNull)
                              .map(item -> new Tag(key, item.toString()))
                              .collect(Collectors.toSet());
+        }
+        if (value instanceof Map<?, ?> map) {
+            if (!annotationKey.isEmpty()) {
+                // If key provided in annotation, use it for all values
+                return map.values().stream()
+                          .filter(Objects::nonNull)
+                          .map(val -> new Tag(key, val.toString()))
+                          .collect(Collectors.toSet());
+            }
+            // If no key provided in annotation, use map keys regardless of property name
+            return map.entrySet().stream()
+                      .filter(entry -> entry.getKey() != null && entry.getValue() != null)
+                      .map(entry -> new Tag(entry.getKey().toString(), entry.getValue().toString()))
+                      .collect(Collectors.toSet());
         }
 
         return Set.of(new Tag(key, value.toString()));
