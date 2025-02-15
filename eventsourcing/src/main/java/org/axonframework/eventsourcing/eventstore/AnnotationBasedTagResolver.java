@@ -43,7 +43,7 @@ public class AnnotationBasedTagResolver implements TagResolver {
 
     @Override
     public Set<Tag> resolve(@Nonnull EventMessage<?> event) {
-        Objects.requireNonNull(event, () -> "Event cannot be null");
+        Objects.requireNonNull(event, "Event cannot be null");
         var payload = event.getPayload();
 
         var tags = new HashSet<Tag>();
