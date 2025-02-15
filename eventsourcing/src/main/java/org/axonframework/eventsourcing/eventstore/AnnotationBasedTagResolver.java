@@ -34,6 +34,7 @@ import static java.lang.String.format;
  * Implementation of {@link TagResolver} that processes {@link EventTag} annotations on fields and methods of event
  * payload objects to create {@link Tag} instances. Supports inherited fields and methods.
  *
+ * @see EventTag for more information on how to use the annotation
  * @author Mateusz Nowak
  * @since 5.0.0
  */

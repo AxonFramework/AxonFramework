@@ -19,11 +19,44 @@ import java.lang.annotation.*;
 
 /**
  * Field or method level annotation that marks a field or method providing the Tag for the Event.
- * The member name will be used as the {@link org.axonframework.eventsourcing.eventstore.Tag#key}.
- * The member value will be used as the {@link org.axonframework.eventsourcing.eventstore.Tag#value}.
+ * The member name will be used as the {@link org.axonframework.eventsourcing.eventstore.Tag#key}
+ * by default, except for Map values without an explicit key (see below).
  * <p>
  * For both fields and methods, the value is obtained by calling {@code toString()} on the field value
  * or method return value. If the value is null, no tag will be created.
+ * <p>
+ * Special handling is provided for Collections and Maps:
+ * <ul>
+ *     <li>For {@link java.util.Collection} values:
+ *         <ul>
+ *             <li>A separate tag is created for each non-null element in the collection</li>
+ *             <li>All tags use the same key (from annotation or member name)</li>
+ *             <li>The tag value is obtained by calling toString() on each element</li>
+ *             <li>Example: {@code @EventTag List<Integer> numbers = List.of(1, 2)} creates tags:
+ *                 {@code Tag("numbers", "1")} and {@code Tag("numbers", "2")}</li>
+ *         </ul>
+ *     </li>
+ *     <li>For {@link java.util.Map} values:
+ *         <ul>
+ *             <li>If no key is provided in the annotation:
+ *                 <ul>
+ *                     <li>Map keys are used as tag keys (member name is ignored)</li>
+ *                     <li>Map values are used as tag values</li>
+ *                     <li>Example: {@code @EventTag Map<String,String> map = Map.of("k1", "v1", "k2", "v2")}
+ *                         creates tags: {@code Tag("k1", "v1")} and {@code Tag("k2", "v2")}</li>
+ *                 </ul>
+ *             </li>
+ *             <li>If a key is provided in the annotation:
+ *                 <ul>
+ *                     <li>The provided key is used for all tags (map keys are ignored)</li>
+ *                     <li>A tag is created for each non-null value in the map</li>
+ *                     <li>Example: {@code @EventTag(key="custom") Map<String,String> map = Map.of("k1", "v1", "k2", "v2")}
+ *                         creates tags: {@code Tag("custom", "v1")} and {@code Tag("custom", "v2")}</li>
+ *                 </ul>
+ *             </li>
+ *         </ul>
+ *     </li>
+ * </ul>
  * <p>
  * If placed on a method, that method must contain no parameters and returns non-void value.
  * <p>
@@ -36,10 +69,12 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Repeatable(EventTags.class)
 public @interface EventTag {
-
     /**
-     * The key of the Tag which will be assigned to the Event. Optional. If left empty this defaults to the member name.
-     * If the member was named in a "getter" style, the {@code "get"} will be removed.
+     * The key of the Tag which will be assigned to the Event. Optional. If left empty:
+     * <ul>
+     *     <li>For Map values: map keys will be used as tag keys</li>
+     *     <li>For all other values: the member name will be used (with "get" stripped for getter methods)</li>
+     * </ul>
      *
      * @return The tag key
      */
