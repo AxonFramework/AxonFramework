@@ -35,6 +35,7 @@ import javax.annotation.Nonnull;
  * Entry point of the Axon Configuration API. TODO expand documentation
  *
  * @author Allard Buijze
+ * @author Steven van Beelen
  * @since 3.0.0
  */
 public interface NewConfigurer extends LifecycleOperations {
@@ -102,10 +103,6 @@ public interface NewConfigurer extends LifecycleOperations {
     <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
                                         Integer order,
                                         @Nonnull ComponentDecorator<C> componentBuilder);
-
-    <C> NewConfigurer registerCustomizer(@Nonnull Class<C> type,
-                                         Integer order,
-                                         @Nonnull UnaryOperator<Component<C>> componentCustomizer);
 
     /**
      * Registers an Axon module with this configuration. The module is initialized when the configuration is created and
