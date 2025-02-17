@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.annotations.EventTag;
 import org.axonframework.eventsourcing.annotations.EventTags;
 import org.axonframework.messaging.MessageType;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +29,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -165,7 +167,6 @@ class AnnotationBasedTagResolverTest {
 
         record ComplexRecord(
                 @EventTag String id,
-                @EventTag(key = "iterableObject") Iterable<Integer> iterableObject,
                 @EventTag(key = "count") Integer count,
                 @EventTag(key = "complexTag") ComplexTag complexTag
         ) {
@@ -179,10 +180,8 @@ class AnnotationBasedTagResolverTest {
         @Test
         void shouldHandleComplexTypes() {
             // given
-            Iterable<Integer> iterableObject = () -> IntStream.range(1, 4).boxed().iterator();
             var complexTag = new ComplexTag("value1", true);
             var payload = new ComplexRecord("123",
-                                            iterableObject,
                                             42,
                                             complexTag);
             var event = anEventMessage(payload);
@@ -191,9 +190,8 @@ class AnnotationBasedTagResolverTest {
             var result = tagResolver.resolve(event);
 
             // then
-            assertEquals(4, result.size());
+            assertEquals(3, result.size());
             assertTrue(result.contains(new Tag("id", "123")));
-            assertTrue(result.contains(new Tag("iterableObject", iterableObject.toString())));
             assertTrue(result.contains(new Tag("complexTag", complexTag.toString())));
             assertTrue(result.contains(new Tag("count", "42")));
         }
@@ -258,6 +256,49 @@ class AnnotationBasedTagResolverTest {
             assertEquals(2, result.size());
             assertTrue(result.contains(new Tag("withNull", "valid")));
             assertTrue(result.contains(new Tag("withNull", "alsoValid")));
+        }
+    }
+
+    @Nested
+    class IterableTests {
+
+        static class CustomIterable implements Iterable<String> {
+
+            @Override
+            public @NotNull Iterator<String> iterator() {
+                return Arrays.asList("one", "two", "three").iterator();
+            }
+        }
+
+        static class IterableTagClass {
+
+            @EventTag
+            private final CustomIterable customIterable = new CustomIterable();
+
+            @EventTag(key = "range")
+            private final Iterable<Integer> numberRange = () ->
+                    IntStream.range(1, 4).boxed().iterator();
+        }
+
+        @Test
+        void shouldHandleCustomIterables() {
+            // given
+            var payload = new IterableTagClass();
+            var event = anEventMessage(payload);
+
+            // when
+            var result = tagResolver.resolve(event);
+
+            // then
+            assertEquals(6, result.size());
+            // Tags from custom iterable
+            assertTrue(result.contains(new Tag("customIterable", "one")));
+            assertTrue(result.contains(new Tag("customIterable", "two")));
+            assertTrue(result.contains(new Tag("customIterable", "three")));
+            // Tags from number range
+            assertTrue(result.contains(new Tag("range", "1")));
+            assertTrue(result.contains(new Tag("range", "2")));
+            assertTrue(result.contains(new Tag("range", "3")));
         }
     }
 

@@ -25,11 +25,11 @@ import java.lang.annotation.*;
  * For both fields and methods, the value is obtained by calling {@code toString()} on the field value
  * or method return value. If the value is null, no tag will be created.
  * <p>
- * Special handling is provided for Collections and Maps:
+ * Special handling is provided for Iterable and Map:
  * <ul>
- *     <li>For {@link java.util.Collection} values:
+ *     <li>For {@link Iterable} values:
  *         <ul>
- *             <li>A separate tag is created for each non-null element in the collection</li>
+ *             <li>A separate tag is created for each non-null element in the iterable</li>
  *             <li>All tags use the same key (from annotation or member name)</li>
  *             <li>The tag value is obtained by calling toString() on each element</li>
  *             <li>Example: {@code @EventTag List<Integer> numbers = List.of(1, 2)} creates tags:

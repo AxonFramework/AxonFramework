@@ -27,6 +27,7 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
 
@@ -34,8 +35,8 @@ import static java.lang.String.format;
  * Implementation of {@link TagResolver} that processes {@link EventTag} annotations on fields and methods of event
  * payload objects to create {@link Tag} instances. Supports inherited fields and methods.
  *
- * @see EventTag for more information on how to use the annotation
  * @author Mateusz Nowak
+ * @see EventTag for more information on how to use the annotation
  * @since 5.0.0
  */
 public class AnnotationBasedTagResolver implements TagResolver {
@@ -135,11 +136,11 @@ public class AnnotationBasedTagResolver implements TagResolver {
 
     private Set<Tag> createTagsForValue(Object value, String memberName, String annotationKey) {
         var key = annotationKey.isEmpty() ? memberName : annotationKey;
-        if (value instanceof Collection<?> collection) {
-            return collection.stream()
-                             .filter(Objects::nonNull)
-                             .map(item -> new Tag(key, item.toString()))
-                             .collect(Collectors.toSet());
+        if (value instanceof Iterable<?> iterable) {
+            return StreamSupport.stream(iterable.spliterator(), false)
+                                .filter(Objects::nonNull)
+                                .map(item -> new Tag(key, item.toString()))
+                                .collect(Collectors.toSet());
         }
         if (value instanceof Map<?, ?> map) {
             if (!annotationKey.isEmpty()) {
