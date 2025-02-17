@@ -16,47 +16,74 @@
 
 package org.axonframework.configuration;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.SimpleCommandHandlingComponent;
-import org.axonframework.commandhandling.config.CommandBusBuilder;
-import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
-import org.axonframework.commandhandling.tracing.DefaultCommandBusSpanFactory;
-import org.axonframework.commandhandling.tracing.TracingCommandBus;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
+import org.springframework.context.annotation.Bean;
 
 class NewDefaultConfigurerTest {
 
     @Test
     void commandBusConfiguring() {
         NewDefaultConfigurer.configurer()
-                            // 1
-                            .registerCommandBus(
-                                    CommandBusBuilder.forSimpleCommandBus()
-                                                     .withTracing(DefaultCommandBusSpanFactory.builder().build())
-//                                                     .decorate((config, delegate) -> new TracingCommandBus(
-//                                                             delegate,
-//                                                             config.getComponent(CommandBusSpanFactory.class)
-//                                                     ))
-                            )
-                            // 2
-                            .registerDecorator(
+                            // We have a base configuration
+                            .registerComponent(AxonServerCommandBusConfiguration.class,
+                                               c -> new AxonServerCommandBusConfiguration())
+                            // Users can customize this configuration however many times they like
+
+                            .registerDecorator(AxonServerCommandBusConfiguration.class,
+                                               5,
+                                               (config, properties) -> properties.withTransactionTimeout(1000))
+
+                            // If the moon is aligned, we can also disable auto snapshots
+                            .registerDecorator(AxonServerCommandBusConfiguration.class,
+                                               500,
+                                               (config, properties) -> {
+                                                   if (Math.random() > 0.5) {
+                                                       return properties.withoutAutoSnapshot();
+                                                   }
+                                                   return properties;
+                                               })
+
+                            // The construction of the component can now use this configuration as a parameter
+                            .registerComponent(
                                     CommandBus.class,
-                                    5, // order
-                                    (config, delegate) -> c -> new TracingCommandBus(delegate,
-                                                                                     c.getComponent(CommandBusSpanFactory.class))
-                            )
-                            .registerCustomizer(
-                                    CommandBus.class,
-                                    6,
-                                    commandBusComponentBuilder -> commandBusComponentBuilder.decorate(
-                                            (config, delegate) -> c -> delegate
+                                    (c) -> new AxonServerCommandBus(
+                                            c.getComponent(AxonServerConnectionManager.class),
+                                            c.getComponent(AxonServerCommandBusConfiguration.class)
                                     )
                             )
 
-                            .registerCommandBus(config -> new SimpleCommandBus())
+
+                            // A decorator can do the same!
+                            .registerComponent(TracingCommandBusProperties.class,
+                                               c -> new TracingCommandBusProperties()
+                            )
+                            // And customize is at any point
+                            .registerDecorator(TracingCommandBusProperties.class,
+                                               Integer.MAX_VALUE,
+                                               (config, properties) -> properties.withHandleTraceName(
+                                                       "This trace is NOT awesome")
+                            )
+
+                            // We can register this decorator for the commabnd bus, with configuration
+                            .registerDecorator(
+                                    CommandBus.class,
+                                    50,
+                                    (c, delegate) ->
+                                            new TracingCommandBus(delegate,
+                                                                  c.getComponent(TracingCommandBusProperties.class)
+                                            )
+                            )
+
+                            // Ah wait - we also want a locking command bus, no need for configuration
+                            .registerDecorator(
+                                    CommandBus.class,
+                                    100,
+                                    (config, delegate) -> new LockingCommandBus(delegate)
+                            )
+
 
                             .registerCommandHandler(config -> new SimpleCommandHandlingComponent()
                                     .subscribe(
@@ -74,7 +101,111 @@ class NewDefaultConfigurerTest {
                             });
     }
 
+    // The cool thing is, this works AMAZING for bean definitions with properties:
+    @Bean
+    public ComponentDecorator<AxonServerCommandBusConfiguration> autoSnapshotAxonServerCommandBusConfiguration() {
+        return (config, properties) -> properties.withoutAutoSnapshot();
+    }
+
+    // Or to decorate components:
+    @Bean
+    public ComponentDecorator<CommandBus> myTracingCommandBus() {
+        return (config, delegate) -> new TracingCommandBus(delegate,
+                                                           config.getComponent(TracingCommandBusProperties.class));
+    }
+
     class TestCommand {
 
     }
+
+    public interface CommandBus {
+        // Empty for now
+    }
+
+
+    public class AxonServerCommandBus implements CommandBus {
+
+        private final AxonServerConnectionManager connectionManager;
+        private final AxonServerCommandBusConfiguration configuration;
+
+        public AxonServerCommandBus(AxonServerConnectionManager connectionManager,
+                                    AxonServerCommandBusConfiguration configuration) {
+            this.connectionManager = connectionManager;
+            this.configuration = configuration;
+        }
+    }
+
+    class AxonServerCommandBusConfiguration {
+
+        private int transactionTimeout = 30000;
+        private boolean autoSnapshot = true;
+
+        public AxonServerCommandBusConfiguration() {
+            // Defaults
+        }
+
+        private AxonServerCommandBusConfiguration(int transactionTimeout, boolean autoSnapshot) {
+            this.transactionTimeout = transactionTimeout;
+            this.autoSnapshot = autoSnapshot;
+        }
+
+        public int getTransactionTimeout() {
+            return transactionTimeout;
+        }
+
+        public AxonServerCommandBusConfiguration withoutAutoSnapshot() {
+            return new AxonServerCommandBusConfiguration(transactionTimeout, false);
+        }
+
+        public AxonServerCommandBusConfiguration withTransactionTimeout(int transactionTimeout) {
+            return new AxonServerCommandBusConfiguration(transactionTimeout, autoSnapshot);
+        }
+    }
+
+    class AxonServerConnectionManager {
+
+    }
+
+    class TracingCommandBusProperties {
+
+        private String handleTraceName = "This trace is awesome";
+
+        public TracingCommandBusProperties() {
+            // Defaults
+        }
+
+        private TracingCommandBusProperties(String handleTraceName) {
+            this.handleTraceName = handleTraceName;
+        }
+
+        public String getHandleTraceName() {
+            return handleTraceName;
+        }
+
+        public TracingCommandBusProperties withHandleTraceName(String handleTraceName) {
+            return new TracingCommandBusProperties(handleTraceName);
+        }
+    }
+
+    class TracingCommandBus implements CommandBus {
+
+        private final CommandBus delegate;
+        private final TracingCommandBusProperties properties;
+
+        TracingCommandBus(CommandBus delegate, TracingCommandBusProperties properties) {
+            this.delegate = delegate;
+            this.properties = properties;
+        }
+    }
+
+
+    class LockingCommandBus implements CommandBus {
+
+        private final CommandBus delegate;
+
+        LockingCommandBus(CommandBus delegate) {
+            this.delegate = delegate;
+        }
+    }
+
 }
