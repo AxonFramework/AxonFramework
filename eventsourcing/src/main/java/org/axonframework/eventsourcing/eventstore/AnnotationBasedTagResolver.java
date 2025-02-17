@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.annotations.EventTag;
 import org.axonframework.eventsourcing.annotations.EventTags;
@@ -120,19 +119,20 @@ public class AnnotationBasedTagResolver implements TagResolver {
     }
 
     private Set<Tag> createTagsForValue(Object value, String memberName, String annotationKey) {
-        var key = annotationKey.isEmpty() ? memberName : annotationKey;
         if (value instanceof Iterable<?> iterable) {
+            var key = annotationKeyOrMemberName(annotationKey, memberName);
             return StreamSupport.stream(iterable.spliterator(), false)
                                 .filter(Objects::nonNull)
                                 .map(item -> new Tag(key, item.toString()))
                                 .collect(Collectors.toSet());
         }
         if (value instanceof Map<?, ?> map) {
-            if (!annotationKey.isEmpty()) {
+            var annotationKeyProvided = !annotationKey.isBlank();
+            if (annotationKeyProvided) {
                 // If key provided in annotation, use it for all values
                 return map.values().stream()
                           .filter(Objects::nonNull)
-                          .map(val -> new Tag(key, val.toString()))
+                          .map(val -> new Tag(annotationKey, val.toString()))
                           .collect(Collectors.toSet());
             }
             // If no key provided in annotation, use map keys regardless of property name
@@ -142,7 +142,12 @@ public class AnnotationBasedTagResolver implements TagResolver {
                       .collect(Collectors.toSet());
         }
 
+        var key = annotationKeyOrMemberName(annotationKey, memberName);
         return Set.of(new Tag(key, value.toString()));
+    }
+
+    private static String annotationKeyOrMemberName(String annotationKey, String memberName) {
+        return annotationKey.isBlank() ? memberName : annotationKey;
     }
 
     private void assertValidTagMethod(Method method) {
