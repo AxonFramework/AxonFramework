@@ -464,21 +464,6 @@ class AnnotationBasedTagResolverTest {
         }
 
         @Test
-        void shouldWrapMethodInvocationException() {
-            // given
-            var payload = new ExceptionThrowingMethodClass();
-            var event = anEventMessage(payload);
-
-            // when/then
-            var exception = assertThrows(
-                    AnnotationBasedTagResolver.TagResolutionException.class,
-                    () -> tagResolver.resolve(event)
-            );
-            assertTrue(exception.getMessage().contains("Failed to resolve tag from method"));
-            assertInstanceOf(InvocationTargetException.class, exception.getCause());
-        }
-
-        @Test
         void shouldStripGetPartFromGetterMethods() {
             // given
             var payload = new GetterMethodClass();

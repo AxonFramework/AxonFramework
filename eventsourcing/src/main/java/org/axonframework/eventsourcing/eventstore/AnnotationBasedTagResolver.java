@@ -22,8 +22,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.annotations.EventTag;
 import org.axonframework.eventsourcing.annotations.EventTags;
 
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
+import static org.axonframework.common.ReflectionUtils.getMemberValue;
 
 /**
  * Implementation of {@link TagResolver} that processes {@link EventTag} annotations on fields and methods of event
@@ -57,16 +58,14 @@ public class AnnotationBasedTagResolver implements TagResolver {
     private Stream<Tag> resolveFieldTags(Object payload) {
         var fields = ReflectionUtils.fieldsOf(payload.getClass());
         return StreamSupport.stream(fields.spliterator(), false)
-                            .filter(field -> field.isAnnotationPresent(EVENT_TAG_ANNOTATION)
-                                    || field.isAnnotationPresent(CONTAINING_ANNOTATION_TYPE))
+                            .filter(AnnotationBasedTagResolver::hasEventTagAnnotation)
                             .flatMap(field -> tagsFrom(field, payload).stream())
                             .filter(Objects::nonNull);
     }
 
     private Set<Tag> tagsFrom(Field field, Object payload) {
         try {
-            ReflectionUtils.ensureAccessible(field);
-            var value = field.get(payload);
+            var value = getMemberValue(field, payload);
             if (value == null) {
                 return Set.of();
             }
@@ -79,7 +78,7 @@ public class AnnotationBasedTagResolver implements TagResolver {
             }
 
             return tags;
-        } catch (IllegalAccessException e) {
+        } catch (Exception e) {
             throw new TagResolutionException("Failed to resolve tag from field: " + field.getName(), e);
         }
     }
@@ -87,17 +86,20 @@ public class AnnotationBasedTagResolver implements TagResolver {
     private Stream<Tag> resolveMethodTags(Object payload) {
         var methods = ReflectionUtils.methodsOf(payload.getClass());
         return StreamSupport.stream(methods.spliterator(), false)
-                            .filter(field -> field.isAnnotationPresent(EVENT_TAG_ANNOTATION)
-                                    || field.isAnnotationPresent(CONTAINING_ANNOTATION_TYPE))
+                            .filter(AnnotationBasedTagResolver::hasEventTagAnnotation)
                             .flatMap(field -> tagsFrom(field, payload).stream())
                             .filter(Objects::nonNull);
+    }
+
+    private static boolean hasEventTagAnnotation(AnnotatedElement member) {
+        return member.isAnnotationPresent(EVENT_TAG_ANNOTATION)
+                || member.isAnnotationPresent(CONTAINING_ANNOTATION_TYPE);
     }
 
     private Set<Tag> tagsFrom(Method method, Object payload) {
         assertValidTagMethod(method);
         try {
-            ReflectionUtils.ensureAccessible(method);
-            var value = method.invoke(payload);
+            var value = getMemberValue(method, payload);
             if (value == null) {
                 return Set.of();
             }
@@ -110,7 +112,7 @@ public class AnnotationBasedTagResolver implements TagResolver {
             }
 
             return tags;
-        } catch (IllegalAccessException | InvocationTargetException e) {
+        } catch (Exception e) {
             throw new TagResolutionException("Failed to resolve tag from method: " + method.getName(), e);
         }
     }
