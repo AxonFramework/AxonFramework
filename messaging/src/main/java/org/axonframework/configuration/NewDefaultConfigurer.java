@@ -55,13 +55,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -293,7 +291,8 @@ public class NewDefaultConfigurer implements NewConfigurer {
                                                @Nonnull ComponentDecorator<C> decorator) {
         String name = type.getSimpleName();
         logger.debug("Registering decorator for [{}].", name);
-        components.get(type).decorate(decorator);
+        components.getComponent(type)
+                  .decorate(decorator);
         return this;
     }
 
@@ -303,7 +302,8 @@ public class NewDefaultConfigurer implements NewConfigurer {
                                                @Nonnull ComponentDecorator<C> decorator) {
         String name = type.getSimpleName();
         logger.debug("Registering decorator for [{}] at order #{}.", name, order);
-        components.get(type).decorate(order, decorator);
+        components.getComponent(type)
+                  .decorate(order, decorator);
         return this;
     }
 
@@ -324,12 +324,11 @@ public class NewDefaultConfigurer implements NewConfigurer {
 
     @Override
     public NewConfigurer registerCommandHandler(@Nonnull ComponentBuilder<CommandHandler> commandHandlerBuilder) {
-        components.get(CommandBus.class)
-                  .map(busComponent -> busComponent.decorate(
-                          (config, delegate) -> (CommandBus) delegate.subscribe(
-                                  new QualifiedName("TODO perhaps move QualifiedName to the method on the Configurer. Or, make the configurer into a CommandHandlerRegistry"),
-                                  commandHandlerBuilder.build(config)
-                          )
+        components.getComponent(CommandBus.class)
+                  .decorate((config, delegate) -> (CommandBus) delegate.subscribe(
+                          new QualifiedName(
+                                  "TODO perhaps move QualifiedName to the method on the Configurer. Or, make the configurer into a CommandHandlerRegistry"),
+                          commandHandlerBuilder.build(config)
                   ));
         return this;
     }
@@ -386,7 +385,6 @@ public class NewDefaultConfigurer implements NewConfigurer {
         if (!initialized) {
             verifyIdentifierFactory();
             prepareModules();
-//            prepareMessageHandlerRegistrars();
             invokeInitHandlers();
         }
         return config;
@@ -503,27 +501,6 @@ public class NewDefaultConfigurer implements NewConfigurer {
         currentLifecyclePhase = null;
     }
 
-    /**
-     * Returns the current Configuration object being built by this Configurer, without initializing it. Note that
-     * retrieving objects from this configuration may lead to premature initialization of certain components.
-     *
-     * @return The current Configuration object being built by this Configurer.
-     */
-    protected NewConfiguration getConfig() {
-        return config;
-    }
-
-    /**
-     * Returns a map of all registered components in this configuration. The key of the map is the registered component
-     * type (typically an interface), the value is a Component instance that wraps the actual implementation. Note that
-     * calling {@link Component#get()} may prematurely initialize a component.
-     *
-     * @return A map of all registered components in this configuration.
-     */
-    public Map<Class<?>, Component<?>> getComponents() {
-        return components.all();
-    }
-
     @Override
     public void onStart(int phase, LifecycleHandler startHandler) {
         onInitialize(cfg -> cfg.onStart(phase, startHandler));
@@ -550,17 +527,6 @@ public class NewDefaultConfigurer implements NewConfigurer {
     private class ConfigurationImpl implements NewConfiguration {
 
         @Override
-        public <T> T getComponent(@Nonnull Class<T> componentType, @Nonnull Supplier<T> defaultImpl) {
-            Object component = components.computeIfAbsent(
-                    componentType,
-                    type -> new Component<>(config,
-                                            componentType.getSimpleName(),
-                                            c -> defaultComponent(componentType, c).orElseGet(defaultImpl))
-            ).get();
-            return componentType.cast(component);
-        }
-
-        @Override
         public void start() {
             invokeStartHandlers();
         }
@@ -568,11 +534,6 @@ public class NewDefaultConfigurer implements NewConfigurer {
         @Override
         public void shutdown() {
             invokeShutdownHandlers();
-        }
-
-        @Override
-        public List<Module> getModules() {
-            return modules;
         }
 
         @Override
@@ -621,6 +582,27 @@ public class NewDefaultConfigurer implements NewConfigurer {
                 handlers.add(lifecycleHandler);
                 return handlers;
             });
+        }
+
+        @Override
+        public <T> Optional<T> getOptionalComponent(@Nonnull Class<T> type) {
+            return components.getOptional(type);
+        }
+
+        @Override
+        public <T> T getComponent(@Nonnull Class<T> type, @Nonnull Supplier<T> defaultImpl) {
+            Object component = components.computeIfAbsent(
+                    type,
+                    t -> new Component<>(config,
+                                         type.getSimpleName(),
+                                         c -> defaultComponent(type, c).orElseGet(defaultImpl))
+            ).get();
+            return type.cast(component);
+        }
+
+        @Override
+        public List<Module> getModules() {
+            return modules;
         }
     }
 }
