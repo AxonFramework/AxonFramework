@@ -16,6 +16,7 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.EventBus;
@@ -26,9 +27,9 @@ import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.annotation.Nonnull;
 
 /**
  * Interface describing the Global Configuration for Axon components. It provides access to the components configured,
@@ -66,12 +67,72 @@ public interface NewConfiguration extends LifecycleOperations {
      */
 
     /**
-     * Retrieves the Event Bus defined in this Configuration.
-     *
-     * @return the Event Bus defined in this Configuration
+     * Starts this configuration. All components defined in this Configuration will be started.
      */
-    default EventBus eventBus() {
-        return getComponent(EventBus.class);
+    void start();
+
+    /**
+     * Shuts down the components defined in this Configuration
+     */
+    void shutdown();
+
+    /**
+     * Returns the Component declared under the given {@code type}, typically the interface the component implements.
+     *
+     * @param type The type of component
+     * @param <T>  The type of component
+     * @return the component registered for the given type, or {@code null} if no such component exists
+     */
+    <T> Optional<T> getOptionalComponent(@Nonnull Class<T> type);
+
+    /**
+     * Returns the Component declared under the given {@code type}, typically the interface the component implements.
+     *
+     * @param type The type of component
+     * @param <T>  The type of component
+     * @return the component registered for the given type, or {@code null} if no such component exists
+     */
+    @Nonnull
+    default <T> T getComponent(@Nonnull Class<T> type) {
+        return getOptionalComponent(type).orElseThrow(() -> new NullPointerException("No component found for " + type));
+    }
+
+    /**
+     * Returns the Component declared under the given {@code type}, typically the interface the component implements,
+     * reverting to the given {@code defaultImpl} if no such component is defined.
+     * <p>
+     * When no component was previously registered, the default is then configured as the component for the given type.
+     *
+     * @param type        The type of component
+     * @param defaultImpl The supplier of the default to return if no component was registered
+     * @param <T>         The type of component
+     * @return the component registered for the given type, or the value returned by the {@code defaultImpl} supplier,
+     * if no component was registered
+     */
+    default <T> T getComponent(@Nonnull Class<T> type, @Nonnull Supplier<T> defaultImpl) {
+        return getOptionalComponent(type).orElse(defaultImpl.get());
+    }
+
+    /**
+     * Returns all modules that have been registered with this Configuration.
+     *
+     * @return all modules that have been registered with this Configuration
+     */
+    List<Module> getModules();
+
+    /**
+     * Finds all configuration modules of given {@code type} within this configuration.
+     *
+     * @param type The type of the configuration module
+     * @param <T>  The type of the configuration module
+     * @return configuration modules of {@code type} defined in this configuration
+     */
+    @SuppressWarnings("unchecked")
+    default <T extends Module> List<T> getModulesFor(@Nonnull Class<T> type) {
+        return getModules().stream()
+                           .filter(m -> m.isType(type))
+                           .map(m -> (T) m.unwrap())
+                           .collect(Collectors.toList());
     }
 
     /**
@@ -95,30 +156,27 @@ public interface NewConfiguration extends LifecycleOperations {
     }
 
     /**
-     * Finds all configuration modules of given {@code moduleType} within this configuration.
-     *
-     * @param moduleType The type of the configuration module
-     * @param <T>        The type of the configuration module
-     * @return configuration modules of {@code moduleType} defined in this configuration
-     */
-    @SuppressWarnings("unchecked")
-    default <T extends Module> List<T> findModules(@Nonnull Class<T> moduleType) {
-        return getModules().stream()
-                           .filter(m -> m.isType(moduleType))
-                           .map(m -> (T) m.unwrap())
-                           .collect(Collectors.toList());
-    }
-
-    /**
      * Returns the Command Bus defined in this Configuration. Note that this Configuration should be started (see
      * {@link #start()}) before sending Commands over the Command Bus.
      *
      * @return the CommandBus defined in this configuration
      */
+    @Nonnull
     default CommandBus commandBus() {
         return getComponent(CommandBus.class);
     }
 
+    /**
+     * Retrieves the Event Bus defined in this Configuration.
+     *
+     * @return the Event Bus defined in this Configuration
+     */
+    @Nonnull
+    default EventBus eventBus() {
+        return getComponent(EventBus.class);
+    }
+
+    @Nonnull
     default QueryBus queryBus() {
         return getComponent(QueryBus.class);
     }
@@ -129,6 +187,7 @@ public interface NewConfiguration extends LifecycleOperations {
      *
      * @return the QueryUpdateEmitter defined in this configuration
      */
+    @Nonnull
     default QueryUpdateEmitter queryUpdateEmitter() {
         return getComponent(QueryUpdateEmitter.class);
     }
@@ -139,8 +198,19 @@ public interface NewConfiguration extends LifecycleOperations {
      *
      * @return the CommandGateway defined in this configuration
      */
+    @Nonnull
     default CommandGateway commandGateway() {
         return getComponent(CommandGateway.class);
+    }
+
+    /**
+     * Returns the Event Gateway defined in this Configuration.
+     *
+     * @return the EventGateway defined in this configuration
+     */
+    @Nonnull
+    default EventGateway eventGateway() {
+        return getComponent(EventGateway.class);
     }
 
     /**
@@ -149,59 +219,8 @@ public interface NewConfiguration extends LifecycleOperations {
      *
      * @return the QueryGateway defined in this configuration
      */
+    @Nonnull
     default QueryGateway queryGateway() {
         return getComponent(QueryGateway.class);
     }
-
-    /**
-     * Returns the Event Gateway defined in this Configuration.
-     *
-     * @return the EventGateway defined in this configuration
-     */
-    default EventGateway eventGateway() {
-        return getComponent(EventGateway.class);
-    }
-
-    /**
-     * Returns the Component declared under the given {@code componentType}, typically the interface the component
-     * implements.
-     *
-     * @param componentType The type of component
-     * @param <T>           The type of component
-     * @return the component registered for the given type, or {@code null} if no such component exists
-     */
-    default <T> T getComponent(@Nonnull Class<T> componentType) {
-        return getComponent(componentType, () -> null);
-    }
-
-    /**
-     * Returns the Component declared under the given {@code componentType}, typically the interface the component
-     * implements, reverting to the given {@code defaultImpl} if no such component is defined.
-     * <p>
-     * When no component was previously registered, the default is then configured as the component for the given type.
-     *
-     * @param componentType The type of component
-     * @param defaultImpl   The supplier of the default to return if no component was registered
-     * @param <T>           The type of component
-     * @return the component registered for the given type, or the value returned by the {@code defaultImpl} supplier,
-     * if no component was registered
-     */
-    <T> T getComponent(@Nonnull Class<T> componentType, @Nonnull Supplier<T> defaultImpl);
-
-    /**
-     * Starts this configuration. All components defined in this Configuration will be started.
-     */
-    void start();
-
-    /**
-     * Shuts down the components defined in this Configuration
-     */
-    void shutdown();
-
-    /**
-     * Returns all modules that have been registered with this Configuration.
-     *
-     * @return all modules that have been registered with this Configuration
-     */
-    List<Module> getModules();
 }
