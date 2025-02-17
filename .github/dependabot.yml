@@ -20,8 +20,8 @@ updates:
           - "minor"
           - "major"
     ignore:
-      - dependency-name: "slackapi:slack-github-action"
-        versions: [ "[1.27.0,)" ]
+      - dependency-name: "slackapi/slack-github-action"
+        versions: [ "> 1.27.0" ]
 
   - package-ecosystem: maven
     directory: "/"
