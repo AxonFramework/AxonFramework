@@ -69,5 +69,5 @@ updates:
       versions: [ "[3.0.0,)" ]
     - dependency-name: "org.springframework.security:*"
       versions: [ "[6.0.0,)" ]
-    - dependency-name: "slack-github-action"
+    - dependency-name: "slackapi:slack-github-action"
       versions: [ "[1.27.0,)" ]
