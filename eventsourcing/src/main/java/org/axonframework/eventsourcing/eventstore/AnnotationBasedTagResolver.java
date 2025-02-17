@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.annotations.EventTag;
 import org.axonframework.eventsourcing.annotations.EventTags;
@@ -27,6 +28,7 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
@@ -48,34 +50,22 @@ public class AnnotationBasedTagResolver implements TagResolver {
     public Set<Tag> resolve(@Nonnull EventMessage<?> event) {
         Objects.requireNonNull(event, "Event cannot be null");
         var payload = event.getPayload();
-
-        var tags = new HashSet<Tag>();
-        tags.addAll(resolveFieldTags(payload));
-        tags.addAll(resolveMethodTags(payload));
-        return tags;
+        return Stream.concat(resolveFieldTags(payload), resolveMethodTags(payload))
+                     .collect(Collectors.toSet());
     }
 
-    private Set<Tag> resolveFieldTags(Object payload) {
-        var tags = new HashSet<Tag>();
-        var currentClass = payload.getClass();
-
-        while (currentClass != null && !currentClass.equals(Object.class)) {
-            Arrays.stream(currentClass.getDeclaredFields())
-                  .filter(field -> field.isAnnotationPresent(EVENT_TAG_ANNOTATION)
-                          || field.isAnnotationPresent(CONTAINING_ANNOTATION_TYPE))
-                  .flatMap(field -> tagsFrom(field, payload).stream())
-                  .filter(Objects::nonNull)
-                  .forEach(tags::add);
-
-            currentClass = currentClass.getSuperclass();
-        }
-
-        return tags;
+    private Stream<Tag> resolveFieldTags(Object payload) {
+        var fields = ReflectionUtils.fieldsOf(payload.getClass());
+        return StreamSupport.stream(fields.spliterator(), false)
+                            .filter(field -> field.isAnnotationPresent(EVENT_TAG_ANNOTATION)
+                                    || field.isAnnotationPresent(CONTAINING_ANNOTATION_TYPE))
+                            .flatMap(field -> tagsFrom(field, payload).stream())
+                            .filter(Objects::nonNull);
     }
 
     private Set<Tag> tagsFrom(Field field, Object payload) {
         try {
-            field.setAccessible(true);
+            ReflectionUtils.ensureAccessible(field);
             var value = field.get(payload);
             if (value == null) {
                 return Set.of();
@@ -94,28 +84,19 @@ public class AnnotationBasedTagResolver implements TagResolver {
         }
     }
 
-    private Set<Tag> resolveMethodTags(Object payload) {
-        var tags = new HashSet<Tag>();
-        var currentClass = payload.getClass();
-
-        while (currentClass != null && !currentClass.equals(Object.class)) {
-            Arrays.stream(currentClass.getDeclaredMethods())
-                  .filter(method -> method.isAnnotationPresent(EVENT_TAG_ANNOTATION)
-                          || method.isAnnotationPresent(CONTAINING_ANNOTATION_TYPE))
-                  .flatMap(method -> tagsFrom(method, payload).stream())
-                  .filter(Objects::nonNull)
-                  .forEach(tags::add);
-
-            currentClass = currentClass.getSuperclass();
-        }
-
-        return tags;
+    private Stream<Tag> resolveMethodTags(Object payload) {
+        var methods = ReflectionUtils.methodsOf(payload.getClass());
+        return StreamSupport.stream(methods.spliterator(), false)
+                            .filter(field -> field.isAnnotationPresent(EVENT_TAG_ANNOTATION)
+                                    || field.isAnnotationPresent(CONTAINING_ANNOTATION_TYPE))
+                            .flatMap(field -> tagsFrom(field, payload).stream())
+                            .filter(Objects::nonNull);
     }
 
     private Set<Tag> tagsFrom(Method method, Object payload) {
         assertValidTagMethod(method);
         try {
-            method.setAccessible(true);
+            ReflectionUtils.ensureAccessible(method);
             var value = method.invoke(payload);
             if (value == null) {
                 return Set.of();
