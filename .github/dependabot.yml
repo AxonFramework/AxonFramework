@@ -39,8 +39,6 @@ updates:
         - "minor"
         - "major"
   ignore:
-    - dependency-name: org.apache.avro
-      versions: [ "[1.11.4,)" ]
     - dependency-name: "com.github.kagkarlsson:db-scheduler"
       versions: [ "[14.0.0,)" ]
     - dependency-name: "com.fasterxml.jackson.core:jackson-databind"
@@ -51,6 +49,8 @@ updates:
       versions: [ "[3.0.0,)" ]
     - dependency-name: "jakarta.el:jakarta.el-api"
       versions: [ "[5.0.0,)" ]
+    - dependency-name: "org.apache.avro"
+      versions: [ "[1.11.4,)" ]
     - dependency-name: "org.apache.felix:maven-bundle-plugin"
       versions: [ "[6.0.0,)" ]
     - dependency-name: "org.hibernate:hibernate-validator"
