@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.annotations.EventTag;
 import org.axonframework.eventsourcing.annotations.EventTags;
@@ -33,6 +34,7 @@ import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.getMemberValue;
+import static org.axonframework.common.annotation.AnnotationUtils.*;
 
 /**
  * Implementation of {@link TagResolver} that processes {@link EventTag} annotations on fields and methods of event
@@ -58,7 +60,7 @@ public class AnnotationBasedTagResolver implements TagResolver {
     private Stream<Tag> resolveFieldTags(Object payload) {
         var fields = ReflectionUtils.fieldsOf(payload.getClass());
         return StreamSupport.stream(fields.spliterator(), false)
-                            .filter(AnnotationBasedTagResolver::hasEventTagAnnotation)
+                            .filter(AnnotationBasedTagResolver::isTagAnnotationPresent)
                             .flatMap(field -> tagsFrom(field, payload).stream())
                             .filter(Objects::nonNull);
     }
@@ -86,14 +88,14 @@ public class AnnotationBasedTagResolver implements TagResolver {
     private Stream<Tag> resolveMethodTags(Object payload) {
         var methods = ReflectionUtils.methodsOf(payload.getClass());
         return StreamSupport.stream(methods.spliterator(), false)
-                            .filter(AnnotationBasedTagResolver::hasEventTagAnnotation)
+                            .filter(AnnotationBasedTagResolver::isTagAnnotationPresent)
                             .flatMap(field -> tagsFrom(field, payload).stream())
                             .filter(Objects::nonNull);
     }
 
-    private static boolean hasEventTagAnnotation(AnnotatedElement member) {
-        return member.isAnnotationPresent(EVENT_TAG_ANNOTATION)
-                || member.isAnnotationPresent(CONTAINING_ANNOTATION_TYPE);
+    private static boolean isTagAnnotationPresent(AnnotatedElement member) {
+        return isAnnotationPresent(member, EVENT_TAG_ANNOTATION)
+                || isAnnotationPresent(member, CONTAINING_ANNOTATION_TYPE);
     }
 
     private Set<Tag> tagsFrom(Method method, Object payload) {
