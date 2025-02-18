@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,8 +177,8 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
-     * Create a stream that returns an {@link Entry entry} wrapping the {@link Message} from the given {@code future},
-     * once the given {@code future} completes.
+     * Create a stream that returns a single {@link Entry entry} wrapping the {@link Message} from the given
+     * {@code future}, once the given {@code future} completes.
      * <p>
      * The stream will contain at most a single entry. It may also contain no entries if the future returns
      * {@code null}. The stream will complete with an exception when the given {@code future} completes exceptionally.
@@ -187,13 +187,13 @@ public interface MessageStream<M extends Message<?>> {
      * @param <M>    The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return A stream containing at most one {@link Entry entry} from the given {@code future}.
      */
-    static <M extends Message<?>> MessageStream<M> fromFuture(@Nonnull CompletableFuture<M> future) {
+    static <M extends Message<?>> MessageStream.Single<M> fromFuture(@Nonnull CompletableFuture<M> future) {
         return fromFuture(future, message -> Context.empty());
     }
 
     /**
-     * Create a stream that returns an {@link Entry entry} wrapping the {@link Message} from the given {@code future},
-     * once the given {@code future} completes.
+     * Create a stream that returns a single {@link Entry entry} wrapping the {@link Message} from the given
+     * {@code future}, once the given {@code future} completes.
      * <p>
      * The automatically generated {@code Entry} will have the {@link Context} as given by the {@code contextSupplier}.
      * <p>
@@ -207,15 +207,15 @@ public interface MessageStream<M extends Message<?>> {
      * @return A stream containing at most one {@link Entry entry} from the given {@code future} with a {@link Context}
      * provided by the {@code contextSupplier}.
      */
-    static <M extends Message<?>> MessageStream<M> fromFuture(@Nonnull CompletableFuture<M> future,
-                                                              @Nonnull Function<M, Context> contextSupplier) {
-        return new SingleValueMessageStream<>(future.thenApply(message -> new SimpleEntry<>(message,
-                                                                                            contextSupplier.apply(
-                                                                                                    message))));
+    static <M extends Message<?>> MessageStream.Single<M> fromFuture(@Nonnull CompletableFuture<M> future,
+                                                                     @Nonnull Function<M, Context> contextSupplier) {
+        return new SingleValueMessageStream<>(
+                future.thenApply(message -> new SimpleEntry<>(message, contextSupplier.apply(message)))
+        );
     }
 
     /**
-     * Create a stream containing the given {@code message} automatically wrapped in an {@link Entry}.
+     * Create a stream containing the single given {@code message}, automatically wrapped in an {@link Entry}.
      * <p>
      * Once the {@code Entry} is consumed, the stream is considered completed.
      *
@@ -223,12 +223,12 @@ public interface MessageStream<M extends Message<?>> {
      * @param <M>     The type of {@link Message} given.
      * @return A stream consisting of a single {@link Entry entry} wrapping the given {@code message}.
      */
-    static <M extends Message<?>> MessageStream<M> just(@Nullable M message) {
+    static <M extends Message<?>> MessageStream.Single<M> just(@Nullable M message) {
         return just(message, m -> Context.empty());
     }
 
     /**
-     * Create a stream containing the given {@code message} automatically wrapped in an {@link Entry}.
+     * Create a stream containing the single given {@code message}, automatically wrapped in an {@link Entry}.
      * <p>
      * Once the {@code Entry} is consumed, the stream is considered completed.
      *
@@ -239,8 +239,8 @@ public interface MessageStream<M extends Message<?>> {
      * @return A stream consisting of a single {@link Entry entry} wrapping the given {@code message} with a
      * {@link Context} provided by the {@code contextSupplier}.
      */
-    static <M extends Message<?>> MessageStream<M> just(@Nullable M message,
-                                                        @Nonnull Function<M, Context> contextSupplier) {
+    static <M extends Message<?>> MessageStream.Single<M> just(@Nullable M message,
+                                                               @Nonnull Function<M, Context> contextSupplier) {
         return new SingleValueMessageStream<>(new SimpleEntry<>(message, contextSupplier.apply(message)));
     }
 
@@ -258,16 +258,31 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
-     * Create a stream that carries no {@link Entry entries} and is considered to be successfully completed.
+     * Create a stream that carries no {@link Entry} and is considered to be successfully completed. The type of an
+     * empty stream is forced to a {@link Message} containing a {@link Void}.
+     * <p>
+     * Any attempt to convert this stream to a component that requires an entry to be returned (such as
+     * {@link CompletableFuture}), will have it return {@code null}.
+     *
+     * @return An empty stream.
+     */
+    static MessageStream.Empty empty() {
+        return EmptyMessageStream.instance();
+    }
+
+    /**
+     * Create a stream that carries no {@link Entry} and is considered to be successfully completed. Differs from the
+     * {@link #empty()} method as it supports a generic type of {@code M} to be "contained" for chaining purposes with
+     * other {@code MessageStream} instances.
      * <p>
      * Any attempt to convert this stream to a component that requires an entry to be returned (such as
      * {@link CompletableFuture}), will have it return {@code null}.
      *
      * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
-     * @return An empty stream.
+     * @return An empty stream allowing generic type of {@code M} for chaining purposes.
      */
-    static <M extends Message<?>> MessageStream<M> empty() {
-        return EmptyMessageStream.instance();
+    static <M extends Message<?>> MessageStream<M> emptyOfType() {
+        return empty().map(entry -> null);
     }
 
     /**
@@ -500,5 +515,39 @@ public interface MessageStream<M extends Message<?>> {
 
         @Override
         <T> Entry<M> withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource);
+    }
+
+    /**
+     * A {@code MessageStream} implementation that returns <b>no</b> result. Any operations that would
+     * {@link #map(Function)} or {@link #reduce(Object, BiFunction)} the stream will do nothing at all for an empty
+     * {@code MessageStream}.
+     *
+     * @author Allard Buijze
+     * @author Mateusz Nowak
+     * @author Mitchell Herrijgers
+     * @author Steven van Beelen
+     * @see #empty()
+     * @since 5.0.0
+     */
+    interface Empty extends MessageStream<Message<Void>> {
+
+    }
+
+    /**
+     * A {@code MessageStream} implementation that returns a <b>single</b> result.
+     *
+     * @param <M> The type of {@link Message} contained in the singular {@link Entry} of this stream.
+     * @author Allard Buijze
+     * @author Mateusz Nowak
+     * @author Mitchell Herrijgers
+     * @author Steven van Beelen
+     * @see #fromFuture(CompletableFuture)
+     * @see #fromFuture(CompletableFuture, Function)
+     * @see #just(Message)
+     * @see #just(Message, Function)
+     * @since 5.0.0
+     */
+    interface Single<M extends Message<?>> extends MessageStream<M> {
+
     }
 }

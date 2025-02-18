@@ -58,7 +58,7 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
             @Nonnull CompletableFuture<MessageStream<M>> delegate) {
         CompletableFuture<MessageStream<M>> safeDelegate = delegate
                 .exceptionallyCompose(CompletableFuture::failedFuture)
-                .thenApply(ms -> Objects.requireNonNullElse(ms, EmptyMessageStream.instance()));
+                .thenApply(ms -> Objects.requireNonNullElse(ms, MessageStream.emptyOfType()));
         if (safeDelegate.isDone()) {
             try {
                 return delegate.get();

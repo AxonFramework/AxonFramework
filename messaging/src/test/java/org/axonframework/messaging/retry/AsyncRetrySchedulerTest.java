@@ -82,7 +82,7 @@ class AsyncRetrySchedulerTest {
         Message<Object> testMessage = new GenericMessage<>(TEST_TYPE, "stub");
         policyOutcome.set(RetryPolicy.Outcome.rescheduleIn(1, TimeUnit.SECONDS));
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
-        when(dispatcher.dispatch(any(), any())).thenReturn(MessageStream.empty());
+        when(dispatcher.dispatch(any(), any())).thenReturn(MessageStream.emptyOfType());
 
         MessageStream<Message<?>> actual =
                 testSubject.scheduleRetry(testMessage, null, new MockException("Simulating exception"), dispatcher);
@@ -110,7 +110,7 @@ class AsyncRetrySchedulerTest {
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
         when(dispatcher.dispatch(any(), any()))
                 .thenReturn(MessageStream.failed(new MockException("Repeated failure")))
-                .thenReturn(MessageStream.empty());
+                .thenReturn(MessageStream.emptyOfType());
 
         MessageStream<Message<?>> actual =
                 testSubject.scheduleRetry(testMessage, null, new MockException("Simulating exception"), dispatcher);

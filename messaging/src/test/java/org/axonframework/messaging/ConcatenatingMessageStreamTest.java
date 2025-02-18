@@ -30,10 +30,9 @@ class ConcatenatingMessageStreamTest extends MessageStreamTest<Message<String>> 
     @Override
     MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
         if (messages.isEmpty()) {
-            return new ConcatenatingMessageStream<>(MessageStream.empty(), MessageStream.empty());
+            return new ConcatenatingMessageStream<>(MessageStream.emptyOfType(), MessageStream.emptyOfType());
         } else if (messages.size() == 1) {
-            return new ConcatenatingMessageStream<>(MessageStream.just(messages.getFirst()),
-                                                    MessageStream.empty());
+            return new ConcatenatingMessageStream<>(MessageStream.just(messages.getFirst()), MessageStream.emptyOfType());
         }
         return new ConcatenatingMessageStream<>(
                 MessageStream.just(messages.getFirst()),

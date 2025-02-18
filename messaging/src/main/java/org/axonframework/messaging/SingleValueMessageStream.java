@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M> {
+class SingleValueMessageStream<M extends Message<?>> implements MessageStream.Single<M> {
 
     private final CompletableFuture<Entry<M>> source;
     private final AtomicBoolean read = new AtomicBoolean(false);

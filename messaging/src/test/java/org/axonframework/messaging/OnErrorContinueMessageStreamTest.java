@@ -29,7 +29,8 @@ class OnErrorContinueMessageStreamTest extends MessageStreamTest<Message<String>
 
     @Override
     MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
-        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages), error -> MessageStream.empty());
+        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages),
+                                                  error -> MessageStream.emptyOfType());
     }
 
     @Override

@@ -56,7 +56,7 @@ class AsyncEventStoreTest {
         appendedEventsReference = new AtomicReference<>();
         appendedEventsReference.set(new ArrayList<>());
 
-        testSubject = new DefaultEventStore(processingContextReference, contextReference, appendedEventsReference);
+        testSubject = new StubEventStore(processingContextReference, contextReference, appendedEventsReference);
     }
 
     @Test
@@ -77,15 +77,15 @@ class AsyncEventStoreTest {
         assertTrue(testAppendedEvents.contains(testEventTwo));
     }
 
-    static class DefaultEventStore implements AsyncEventStore {
+    static class StubEventStore implements AsyncEventStore {
 
         private final AtomicReference<ProcessingContext> processingContext;
         private final AtomicReference<String> context;
         private final AtomicReference<List<EventMessage<?>>> appendedEvents;
 
-        public DefaultEventStore(AtomicReference<ProcessingContext> processingContext,
-                                 AtomicReference<String> context,
-                                 AtomicReference<List<EventMessage<?>>> appendedEvents) {
+        public StubEventStore(AtomicReference<ProcessingContext> processingContext,
+                              AtomicReference<String> context,
+                              AtomicReference<List<EventMessage<?>>> appendedEvents) {
             this.processingContext = processingContext;
             this.context = context;
             this.appendedEvents = appendedEvents;
@@ -120,8 +120,7 @@ class AsyncEventStoreTest {
         }
 
         @Override
-        public MessageStream<EventMessage<?>> source(@NotNull SourcingCondition condition,
-                                                     @NotNull ProcessingContext context) {
+        public MessageStream<EventMessage<?>> source(@NotNull SourcingCondition condition) {
             throw new UnsupportedOperationException("We don't need this method to test the defaulted methods.");
         }
 
@@ -136,7 +135,7 @@ class AsyncEventStoreTest {
         }
 
         @Override
-        public ConsistencyMarker appendPosition(@NotNull ProcessingContext context) {
+        public ConsistencyMarker appendPosition() {
             throw new UnsupportedOperationException("We don't need this method to test the defaulted methods.");
         }
     }
