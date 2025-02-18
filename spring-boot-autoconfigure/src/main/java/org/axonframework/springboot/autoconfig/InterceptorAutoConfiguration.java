@@ -19,6 +19,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -106,13 +107,11 @@ public class InterceptorAutoConfiguration {
     }
 
     @Bean
-    public ConfigurerModule messageHandlerInterceptorConfigurer(
+    public InitializingBean messageHandlerInterceptorConfigurer(
+            EventProcessingConfigurer eventProcessingConfigurer,
             Optional<List<MessageHandlerInterceptor<? super EventMessage<?>>>> interceptors
     ) {
-        return configurer -> interceptors
-                .ifPresent(it -> it
-                        .forEach(i -> configurer.eventProcessing().registerDefaultHandlerInterceptor((c, n) -> i)
-                        )
-                );
+        return () -> interceptors
+                .ifPresent(it -> it.forEach(i -> eventProcessingConfigurer.registerDefaultHandlerInterceptor((c, n) -> i)));
     }
 }
