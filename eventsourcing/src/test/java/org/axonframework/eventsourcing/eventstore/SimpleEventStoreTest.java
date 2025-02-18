@@ -16,20 +16,33 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import junit.framework.AssertionFailedError;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.StubProcessingContext;
+import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -93,14 +106,12 @@ class SimpleEventStoreTest {
 
         @Test
         void headTokenThrowsIfContextDoesNotMatch() {
-            assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.headToken(NOT_MATCHING_CONTEXT));
+            assertThrows(IllegalArgumentException.class, () -> testSubject.headToken(NOT_MATCHING_CONTEXT));
         }
 
         @Test
         void tailTokenThrowsIfContextDoesNotMatch() {
-            assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.tailToken(NOT_MATCHING_CONTEXT));
+            assertThrows(IllegalArgumentException.class, () -> testSubject.tailToken(NOT_MATCHING_CONTEXT));
         }
 
         @Test
@@ -117,8 +128,8 @@ class SimpleEventStoreTest {
         @Test
         void publishDoesNotThrowIfContextMatches() {
             ProcessingContext mockProcessingContext = mock(ProcessingContext.class);
-            when(mockProcessingContext.computeResourceIfAbsent(any(), any()))
-                    .thenReturn(mock(EventStoreTransaction.class));
+            when(mockProcessingContext.computeResourceIfAbsent(any(),
+                                                               any())).thenReturn(mock(EventStoreTransaction.class));
 
             assertDoesNotThrow(() -> testSubject.publish(mockProcessingContext, MATCHING_CONTEXT, eventMessage(0)));
         }
@@ -165,7 +176,7 @@ class SimpleEventStoreTest {
         @Test
         void headTokenDelegatesToStorageEngine() {
             // given
-            CompletableFuture<TrackingToken> expectedFuture = CompletableFuture.completedFuture(aGlobalSequenceToken());
+            CompletableFuture<TrackingToken> expectedFuture = completedFuture(aGlobalSequenceToken());
             when(mockStorageEngine.headToken()).thenReturn(expectedFuture);
 
             // when
@@ -179,7 +190,7 @@ class SimpleEventStoreTest {
         @Test
         void tailTokenDelegatesToStorageEngine() {
             // given
-            CompletableFuture<TrackingToken> expectedFuture = CompletableFuture.completedFuture(aGlobalSequenceToken());
+            CompletableFuture<TrackingToken> expectedFuture = completedFuture(aGlobalSequenceToken());
             when(mockStorageEngine.tailToken()).thenReturn(expectedFuture);
 
             // when
@@ -194,7 +205,7 @@ class SimpleEventStoreTest {
         void tokenAtDelegatesToStorageEngine() {
             // given
             Instant timestamp = Instant.now();
-            CompletableFuture<TrackingToken> expectedFuture = CompletableFuture.completedFuture(aGlobalSequenceToken());
+            CompletableFuture<TrackingToken> expectedFuture = completedFuture(aGlobalSequenceToken());
             when(mockStorageEngine.tokenAt(timestamp)).thenReturn(expectedFuture);
 
             // when
@@ -203,6 +214,99 @@ class SimpleEventStoreTest {
             // then
             assertSame(expectedFuture, result);
             verify(mockStorageEngine).tokenAt(timestamp);
+        }
+    }
+
+    @Nested
+    class TransactionalAppend {
+
+        @Test
+        void appendingWithoutReadMustUseInfinityConsistencyMarker() throws Exception {
+            AsyncEventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(42);
+
+            AsyncUnitOfWork asyncUnitOfWork = new AsyncUnitOfWork();
+            when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+            when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
+            var result = asyncUnitOfWork.executeWithResult(pc -> {
+                EventStoreTransaction transaction = testSubject.transaction(pc, MATCHING_CONTEXT);
+                transaction.appendEvent(eventMessage(0));
+                return completedFuture(transaction);
+            });
+            var newAppendPosition = result.get(5, TimeUnit.SECONDS).appendPosition();
+
+            assertSame(newAppendPosition, markerAfterCommit);
+            verify(mockStorageEngine).appendEvents(argThat(c -> ConsistencyMarker.INFINITY.equals(c.consistencyMarker())),
+                                                   anyList());
+        }
+
+        @Test
+        void appendingAfterReadsUpdatesTheAppendCondition() throws Exception {
+            AsyncEventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(42);
+
+            AsyncUnitOfWork asyncUnitOfWork = new AsyncUnitOfWork();
+            when(mockStorageEngine.source(any())).thenReturn(messageStreamOf(10));
+            when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+            when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
+
+            var result = asyncUnitOfWork.executeWithResult(pc -> {
+                EventStoreTransaction transaction = testSubject.transaction(pc, MATCHING_CONTEXT);
+                doConsumeAll(transaction.source(SourcingCondition.conditionFor(EventCriteria.forAnyEventType()
+                                                                                            .withAnyTags())));
+                transaction.appendEvent(eventMessage(0));
+                return completedFuture(transaction);
+            });
+
+            var newAppendPosition = result.get(5, TimeUnit.SECONDS).appendPosition();
+
+            assertSame(newAppendPosition, markerAfterCommit);
+            verify(mockStorageEngine).appendEvents(argThat(c -> c.consistencyMarker()
+                                                                 .equals(new GlobalIndexConsistencyMarker(9))),
+                                                   anyList());
+        }
+
+        static Stream<Arguments> generateRandomNumbers() {
+            ThreadLocalRandom rnd = ThreadLocalRandom.current();
+            return Stream.iterate(0, i -> i < 5, i -> i + 1)
+                         .map(i -> Arguments.arguments(rnd.nextInt(1, 10),
+                                                       rnd.nextInt(1, 10),
+                                                       rnd.nextInt(1, 10)));
+        }
+
+        @ParameterizedTest
+        @MethodSource("generateRandomNumbers")
+        void readingMultipleTimesShouldKeepTheConsistencyMarkerAtTheSmallestPosition(int size1, int size2, int size3)
+                throws Exception {
+            AsyncEventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(101);
+
+            AsyncUnitOfWork asyncUnitOfWork = new AsyncUnitOfWork();
+            when(mockStorageEngine.source(any())).thenReturn(messageStreamOf(size1))
+                                                 .thenReturn(messageStreamOf(size2))
+                                                 .thenReturn(messageStreamOf(size3));
+            when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
+            when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
+            var result = asyncUnitOfWork.executeWithResult(pc -> {
+                EventStoreTransaction transaction = testSubject.transaction(pc, MATCHING_CONTEXT);
+                var firstStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.forAnyEventType()
+                                                                                                 .withAnyTags()));
+
+                var secondStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.forAnyEventType()
+                                                                                                  .withAnyTags()));
+                var thirdStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.forAnyEventType()
+                                                                                                 .withAnyTags()));
+                doConsumeAll(firstStream, secondStream, thirdStream);
+                transaction.appendEvent(eventMessage(0));
+                return completedFuture(transaction);
+            });
+            var newAppendPosition = result.get(5, TimeUnit.SECONDS).appendPosition();
+
+            assertSame(newAppendPosition, markerAfterCommit);
+            verify(mockStorageEngine).appendEvents(argThat(c -> c.consistencyMarker()
+                                                                 .equals(new GlobalIndexConsistencyMarker(
+                                                                         Math.min(Math.min(size1, size2), size3) - 1))),
+                                                   anyList());
         }
     }
 
@@ -218,6 +322,29 @@ class SimpleEventStoreTest {
         verify(descriptor).describeProperty("eventStorageEngine", mockStorageEngine);
         verify(descriptor).describeProperty("context", MATCHING_CONTEXT);
     }
+
+    private static @NotNull MessageStream<EventMessage<?>> messageStreamOf(int messageCount) {
+        return MessageStream.fromStream(IntStream.range(0, messageCount).boxed(),
+                                        SimpleEventStoreTest::eventMessage,
+                                        i -> Context.with(ConsistencyMarker.RESOURCE_KEY,
+                                                          new GlobalIndexConsistencyMarker(i)));
+    }
+
+    @SafeVarargs
+    private void doConsumeAll(MessageStream<? extends EventMessage<?>>... sources) {
+        try {
+            for (MessageStream<? extends EventMessage<?>> source : sources) {
+                source.reduce(new Object(), (o, m) -> m)
+                      .get(5, TimeUnit.SECONDS);
+            }
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            AssertionFailedError assertionFailedError = new AssertionFailedError(
+                    "Expected to be able to read from message stream");
+            assertionFailedError.addSuppressed(e);
+            throw assertionFailedError;
+        }
+    }
+
 
     // TODO - Discuss: @Steven - Perfect candidate to move to a commons test utils module?
     private static EventMessage<?> eventMessage(int seq) {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2010-2024. Axon Framework
+  ~ Copyright (c) 2010-2025. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -71,8 +71,7 @@
         <!-- Axon Server -->
         <axonserver-connector-java.version>2024.1.1</axonserver-connector-java.version>
         <!-- Caching -->
-        <ehcache.version>2.10.9.2</ehcache.version>
-        <ehcache3.version>3.10.8</ehcache3.version>
+        <ehcache.version>3.10.8</ehcache.version>
         <javax.cache-api.version>1.1.1</javax.cache-api.version>
         <!-- Database -->
         <c3p0.version>0.9.1.2</c3p0.version>
@@ -223,14 +222,9 @@
                 <version>${javax.cache-api.version}</version>
             </dependency>
             <dependency>
-                <groupId>net.sf.ehcache</groupId>
-                <artifactId>ehcache</artifactId>
-                <version>${ehcache.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.ehcache</groupId>
                 <artifactId>ehcache</artifactId>
-                <version>${ehcache3.version}</version>
+                <version>${ehcache.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.glassfish.jaxb</groupId>

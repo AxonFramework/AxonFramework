@@ -63,4 +63,25 @@ public class GlobalIndexConsistencyMarker extends AbstractConsistencyMarker<Glob
     protected ConsistencyMarker doUpperBound(GlobalIndexConsistencyMarker other) {
         return other.position > this.position ? other : this;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        GlobalIndexConsistencyMarker that = (GlobalIndexConsistencyMarker) o;
+        return position == that.position;
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(position);
+    }
+
+    @Override
+    public String toString() {
+        return "GlobalIndexConsistencyMarker{" +
+                "position=" + position +
+                '}';
+    }
 }

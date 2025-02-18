@@ -20,11 +20,11 @@ import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GapAwareTrackingToken;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
-import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.Tag;
-import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
+import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.serialization.Converter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
@@ -32,9 +32,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -51,7 +49,8 @@ class LegacyAxonServerEventStorageEngineTest extends
     static void beforeAll() {
         axonServerContainer.start();
         connection = AxonServerConnectionFactory.forClient("Test")
-                                                .routingServers(new ServerAddress(axonServerContainer.getHost(), axonServerContainer.getGrpcPort()))
+                                                .routingServers(new ServerAddress(axonServerContainer.getHost(),
+                                                                                  axonServerContainer.getGrpcPort()))
                                                 .build()
                                                 .connect("default");
     }
@@ -63,27 +62,12 @@ class LegacyAxonServerEventStorageEngineTest extends
     }
 
     @Test
-    void eventWithMultipleTagsIsReportedAsPartOfException() {
-        TaggedEventMessage<?> violatingEntry = taggedEventMessage("event2",
-                                                                  Set.of(new Tag("key1", "value1"),
-                                                                         new Tag("key2", "value2")));
-        CompletableFuture<AsyncEventStorageEngine.AppendTransaction> actual = testSubject.appendEvents(
-                AppendCondition.none(),
-                taggedEventMessage("event1", Set.of(new Tag("key1", "value1"))),
-                violatingEntry,
-                taggedEventMessage("event3", Set.of(new Tag("key1", "value1")))
+    void sourcingFromNonGlobalSequenceTrackingTokenShouldThrowException() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> testSubject.stream(StreamingCondition.startingFrom(new GapAwareTrackingToken(5,
+                                                                                                   Collections.emptySet())))
         );
-
-        assertTrue(actual.isDone());
-        assertTrue(actual.isCompletedExceptionally());
-
-        ExecutionException actualException = assertThrows(ExecutionException.class, actual::get);
-        if (actualException.getCause() instanceof TooManyTagsOnEventMessageException e) {
-            assertEquals(violatingEntry.tags(), e.tags());
-            assertEquals(violatingEntry.event(), e.eventMessage());
-        } else {
-            fail("Unexpected exception", actualException);
-        }
     }
 
     @Override
@@ -102,6 +86,16 @@ class LegacyAxonServerEventStorageEngineTest extends
                 return (T) original.toString().getBytes(StandardCharsets.UTF_8);
             }
         });
+    }
+
+    @Override
+    protected long globalSequenceOfEvent(long position) {
+        return position - 1;
+    }
+
+    @Override
+    protected TrackingToken trackingTokenAt(long position) {
+        return new GlobalSequenceTrackingToken(globalSequenceOfEvent(position));
     }
 
     @Override

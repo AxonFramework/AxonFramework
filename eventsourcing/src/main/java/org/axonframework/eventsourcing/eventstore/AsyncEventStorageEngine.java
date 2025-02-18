@@ -154,7 +154,9 @@ public interface AsyncEventStorageEngine extends DescribableComponent {
         /**
          * Commit any underlying transactions to make the appended events visible to consumers.
          *
-         * @return A {@code CompletableFuture} that completes with the new consistency marker for the transaction.
+         * @return A {@code CompletableFuture} that completes with the new consistency marker for the transaction. If
+         * the transaction is empty (without events to append) then returned consistency marker is always
+         * {@link ConsistencyMarker#ORIGIN}
          */
         CompletableFuture<ConsistencyMarker> commit();
 
