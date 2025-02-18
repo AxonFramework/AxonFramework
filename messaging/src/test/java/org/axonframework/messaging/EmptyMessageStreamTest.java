@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,12 +57,12 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
     void doesNothingOnErrorContinue() {
         AtomicBoolean invoked = new AtomicBoolean(false);
 
-        CompletableFuture<Entry<Message<?>>> result = MessageStream.empty()
-                                                                   .onErrorContinue(e -> {
-                                                                       invoked.set(true);
-                                                                       return MessageStream.empty();
-                                                                   })
-                                                                   .firstAsCompletableFuture();
+        CompletableFuture<Entry<Message<Void>>> result = MessageStream.empty()
+                                                                      .onErrorContinue(e -> {
+                                                                          invoked.set(true);
+                                                                          return MessageStream.empty();
+                                                                      })
+                                                                      .firstAsCompletableFuture();
         assertTrue(result.isDone());
         assertNull(result.join());
         assertFalse(invoked.get());

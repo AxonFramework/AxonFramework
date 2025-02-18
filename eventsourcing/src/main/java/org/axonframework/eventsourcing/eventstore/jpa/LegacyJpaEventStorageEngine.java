@@ -270,7 +270,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 .criteria()
                 .stream()
                 .map(criteria -> this.eventsForCriteria(condition, criteria))
-                .reduce(MessageStream.empty(), MessageStream::concatWith);
+                .reduce(MessageStream.emptyOfType(), MessageStream::concatWith);
 
         var consistencyMarker = new AtomicReference<ConsistencyMarker>();
         return allCriteriaStream.map(e -> {
