@@ -39,14 +39,14 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Interceptor autoconfiguration class for Axon Framework application. Discovers {@link MessageHandlerInterceptor}s and {@link MessageDispatchInterceptor}
- * and registers them with the respective buses and gateways.
+ * Interceptor autoconfiguration class for Axon Framework application. Discovers {@link MessageHandlerInterceptor}s and
+ * {@link MessageDispatchInterceptor} and registers them with the respective buses and gateways.
  * <p>
- * Note:
- * This class use a hack approach! Because some gateways/buses need an axonConfiguration to initialize, the usual way of
- * registering interceptors in the ConfigurerModule.onInitialize method does not work for the EventGateway.
- * This is due to a circular reference caused e.g. by JpaJavaxEventStoreAutoConfiguration.
- * So we register them by injecting gateway/bus components in to the InitializingBean function and register the interceptors there.
+ * Note: This class use a hack approach! Because some gateways/buses (or custom interceptors provided by the framework
+ * user) need an axonConfiguration to initialize, the usual way of registering interceptors in the
+ * ConfigurerModule.onInitialize method does not work for them. This is due to a circular reference caused e.g. by
+ * JpaJavaxEventStoreAutoConfiguration. So we register them by injecting gateway/bus components in to the
+ * InitializingBean function and register the interceptors there.
  *
  * @author Christian Thiel
  * @since 4.11.0
