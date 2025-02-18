@@ -88,11 +88,11 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
         );
         MessageStream<EventMessage<?>> source = eventStorageEngine.source(condition);
         if (appendCondition.consistencyMarker() == ConsistencyMarker.ORIGIN) {
-            AtomicReference<ConsistencyMarker> tracker = new AtomicReference<>(appendCondition.consistencyMarker());
+            AtomicReference<ConsistencyMarker> markerReference = new AtomicReference<>(appendCondition.consistencyMarker());
             return source.onNext(e -> {
                 ConsistencyMarker marker;
                 if ((marker = e.getResource(ConsistencyMarker.RESOURCE_KEY)) != null) {
-                    tracker.set(marker);
+                    markerReference.set(marker);
                 }
             }).whenComplete(() -> {
                 // when reading is complete, we choose the lowest, non-ORIGIN appendPosition as our next appendPosition
@@ -101,8 +101,8 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                 processingContext.updateResource(appendPositionKey,
                                                  current -> current == null
                                                          || current == ConsistencyMarker.ORIGIN
-                                                         ? tracker.get()
-                                                         : current.lowerBound(tracker.get()));
+                                                         ? markerReference.get()
+                                                         : current.lowerBound(markerReference.get()));
             });
         } else {
             return source;
@@ -131,7 +131,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                     // we need to update the condition with the marker that we may have updated during reading
                     AppendCondition appendCondition =
                             context.updateResource(appendConditionKey, current -> {
-                                if (current == null) {
+                                if (current == null || AppendCondition.none().equals(current)) {
                                     return AppendCondition.none();
                                 }
                                 return current.withMarker(getOrDefault(context.getResource(appendPositionKey),
