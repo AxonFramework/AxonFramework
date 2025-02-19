@@ -45,7 +45,7 @@ public class SimpleEventHandlingComponent implements EventHandlingComponent {
     public MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
                                            @Nonnull ProcessingContext context) {
         QualifiedName name = event.type().qualifiedName();
-        // TODO add interceptor knowledge
+        // TODO #3103 - add interceptor knowledge
         EventHandler handler = eventHandlers.get(name);
         if (handler == null) {
             // TODO this would benefit from a dedicate exception

@@ -116,7 +116,7 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
     public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                    @Nonnull ProcessingContext context) {
         QualifiedName messageType = command.type().qualifiedName();
-        // TODO add interceptor knowledge
+        // TODO #3103 - add interceptor knowledge
         CommandHandler handler = commandHandlersByName.get(messageType);
         if (handler == null) {
             // TODO this would benefit from a dedicate exception
@@ -132,7 +132,7 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
     public MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
                                            @Nonnull ProcessingContext context) {
         QualifiedName messageType = event.type().qualifiedName();
-        // TODO add interceptor knowledge
+        // TODO #3103 - add interceptor knowledge
         EventHandler handler = eventHandlersByName.get(messageType);
         if (handler == null) {
             // TODO this would benefit from a dedicate exception
@@ -148,7 +148,7 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
     public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
                                                          @Nonnull ProcessingContext context) {
         QualifiedName messageType = query.type().qualifiedName();
-        // TODO add interceptor knowledge
+        // TODO #3103 - add interceptor knowledge
         QueryHandler handler = queryHandlersByName.get(messageType);
         if (handler == null) {
             // TODO this would benefit from a dedicate exception

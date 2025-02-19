@@ -44,7 +44,7 @@ public class SimpleCommandHandlingComponent implements CommandHandlingComponent 
     public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                    @Nonnull ProcessingContext context) {
         QualifiedName name = command.type().qualifiedName();
-        // TODO add interceptor knowledge
+        // TODO #3103 - add interceptor knowledge
         CommandHandler handler = commandHandlers.get(name);
         if (handler == null) {
             // TODO this would benefit from a dedicate exception
