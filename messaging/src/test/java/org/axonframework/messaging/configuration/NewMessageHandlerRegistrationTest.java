@@ -75,7 +75,7 @@ class NewMessageHandlerRegistrationTest {
 
         testSubject.subscribe(COMMAND_TYPE.qualifiedName(), (CommandHandler) (command, context) -> {
                        commandHandlerInvoked.set(true);
-                       return MessageStream.empty();
+                       return MessageStream.just(null);
                    })
                    .subscribe(EVENT_TYPE.qualifiedName(), (EventHandler) (event, context1) -> {
                        eventHandlerInvoked.set(true);
@@ -103,7 +103,7 @@ class NewMessageHandlerRegistrationTest {
                 .subscribe(Set.of(testName), (MessageHandler) new TestMessageHandlingComponent());
 
         aggregate.subscribe(testName, new TestCommandHandler())
-                 .subscribe(testName, (CommandHandler) (command, context) -> MessageStream.empty())
+                 .subscribe(testName, (CommandHandler) (command, context) -> MessageStream.just(null))
                  .subscribe(testName, new TestEventHandler())
                  .subscribe(testName, (EventHandler) (event, context) -> MessageStream.empty());
 
@@ -115,7 +115,7 @@ class NewMessageHandlerRegistrationTest {
         /*.subscribe(Set.of(testName), new TestMessageHandlingComponent<>())*/;
 
         genericMHC.subscribe(testName, new TestCommandHandler())
-                  .subscribe(testName, (CommandHandler) (command, context) -> MessageStream.empty())
+                  .subscribe(testName, (CommandHandler) (command, context) -> MessageStream.just(null))
                   .subscribe(testName, new TestEventHandler())
                   .subscribe(testName, (EventHandler) (event, context) -> MessageStream.empty())
                   .subscribe(testName, new TestQueryHandler())
@@ -203,8 +203,8 @@ class NewMessageHandlerRegistrationTest {
 
         @Override
         @Nonnull
-        public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                                       @Nonnull ProcessingContext context) {
+        public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                              @Nonnull ProcessingContext context) {
             return MessageStream.just(new GenericCommandResultMessage<>(new MessageType("command-response"), "done!"));
         }
     }
@@ -277,9 +277,10 @@ class NewMessageHandlerRegistrationTest {
 
         @Nonnull
         @Override
-        public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                                       @Nonnull ProcessingContext context) {
-            return MessageStream.empty();
+        public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                              @Nonnull ProcessingContext context) {
+            return MessageStream.emptyOfType()
+                                .<MessageStream.Single<CommandResultMessage<?>>, CommandResultMessage<?>>cast();
         }
 
         @Nonnull

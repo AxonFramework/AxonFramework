@@ -476,8 +476,8 @@ public interface MessageStream<M extends Message<?>> {
      * @return This instance, cast to the given {@link Message} of type {@code T}.
      */
     @SuppressWarnings("unchecked")
-    default <T extends Message<?>> MessageStream<T> cast() {
-        return (MessageStream<T>) this;
+    default <S extends MessageStream<T>, T extends Message<?>> S cast() {
+        return (S) this;
     }
 
     /**
@@ -560,5 +560,17 @@ public interface MessageStream<M extends Message<?>> {
      */
     interface Single<M extends Message<?>> extends MessageStream<M> {
 
+        /**
+         * Create a stream that completed with given {@code failure}.
+         * <p>
+         * All attempts to read from this stream will propagate this error.
+         *
+         * @param failure The {@link Throwable} to propagate to consumers of the stream.
+         * @param <M>     The type of {@link Message} contained in the {@link Entry entries} of this stream.
+         * @return A stream that is completed exceptionally.
+         */
+        static <M extends Message<?>> MessageStream.Single<M> failed(@Nonnull Throwable failure) {
+            return new FailedSingleMessageStream<>(failure);
+        }
     }
 }

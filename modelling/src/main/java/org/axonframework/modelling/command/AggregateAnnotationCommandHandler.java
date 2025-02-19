@@ -224,14 +224,15 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
     @Nonnull
     @Override
-    public MessageStream<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
-                                                         @Nonnull ProcessingContext processingContext) {
+    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+                                                                @Nonnull ProcessingContext processingContext) {
         return handlers.stream()
                        .filter(ch -> ch.canHandle(message))
                        .findFirst()
                        .orElseThrow(() -> new NoHandlerForCommandException(message))
                        .handle(message, processingContext)
-                       .mapMessage(m -> asCommandResultMessage(m, messageTypeResolver::resolve));
+                       .mapMessage(m -> asCommandResultMessage(m, messageTypeResolver::resolve))
+                       .cast();
     }
 
     @SuppressWarnings("unchecked")

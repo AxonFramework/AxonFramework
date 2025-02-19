@@ -41,14 +41,14 @@ public class SimpleCommandHandlingComponent implements CommandHandlingComponent 
 
     @Nonnull
     @Override
-    public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                                   @Nonnull ProcessingContext context) {
+    public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                          @Nonnull ProcessingContext context) {
         QualifiedName name = command.type().qualifiedName();
         // TODO add interceptor knowledge
         CommandHandler handler = commandHandlers.get(name);
         if (handler == null) {
             // TODO this would benefit from a dedicate exception
-            return MessageStream.failed(new IllegalArgumentException(
+            return MessageStream.Single.failed(new IllegalArgumentException(
                     "No handler found for command with name [" + name + "]"
             ));
         }

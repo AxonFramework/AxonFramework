@@ -113,12 +113,14 @@ public class InterceptingCommandBus implements CommandBus {
 
         @Nonnull
         @Override
-        public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
-                                                                       @Nonnull ProcessingContext processingContext) {
+        public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+                                                                              @Nonnull ProcessingContext processingContext) {
             try {
-                return interceptor.interceptOnHandle(message, processingContext, this);
+                return interceptor.interceptOnHandle(message, processingContext, this)
+                                  // not pretty at all...
+                                  .<MessageStream.Single<CommandResultMessage<?>>, CommandResultMessage<?>>cast();
             } catch (RuntimeException e) {
-                return MessageStream.failed(e);
+                return MessageStream.Single.failed(e);
             }
         }
 

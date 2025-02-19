@@ -113,14 +113,14 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
 
     @Nonnull
     @Override
-    public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+    public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                    @Nonnull ProcessingContext context) {
         QualifiedName messageType = command.type().qualifiedName();
         // TODO add interceptor knowledge
         CommandHandler handler = commandHandlersByName.get(messageType);
         if (handler == null) {
             // TODO this would benefit from a dedicate exception
-            return MessageStream.failed(new IllegalArgumentException(
+            return MessageStream.Single.failed(new IllegalArgumentException(
                     "No handler found for message type [" + messageType + "]"
             ));
         }
