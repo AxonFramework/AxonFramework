@@ -15,12 +15,17 @@
  */
 package org.axonframework.springboot.autoconfig;
 
+import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.queryhandling.QueryBus;
+import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.spring.config.SpringConfigurer;
 import org.springframework.beans.factory.InitializingBean;
@@ -34,8 +39,14 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Interceptor autoconfiguration class for Axon Framework application. Discovers {@link MessageHandlerInterceptor}s and {@link MessageDispatchInterceptor}
- * and registers them with the respective buses and gateways.
+ * Interceptor autoconfiguration class for Axon Framework application. Discovers {@link MessageHandlerInterceptor}s and
+ * {@link MessageDispatchInterceptor} and registers them with the respective buses and gateways.
+ * <p>
+ * Note: This class use a hack approach! Because some gateways/buses (or custom interceptors provided by the framework
+ * user) need an axonConfiguration to initialize, the usual way of registering interceptors in the
+ * ConfigurerModule.onInitialize method does not work for them. This is due to a circular reference caused e.g. by
+ * JpaJavaxEventStoreAutoConfiguration. So we register them by injecting gateway/bus components in to the
+ * InitializingBean function and register the interceptors there.
  *
  * @author Christian Thiel
  * @since 4.11.0
@@ -53,68 +64,54 @@ public class InterceptorAutoConfiguration {
 
     @Bean
     @ConditionalOnBean(MessageDispatchInterceptor.class)
-    public ConfigurerModule commandDispatchInterceptorConfigurer(Optional<List<MessageDispatchInterceptor<? super CommandMessage<?>>>> interceptors) {
-        return configurer ->
-                configurer.onInitialize(configuration ->
-                        interceptors.ifPresent(it ->
-                                it.forEach(configuration.commandGateway()::registerDispatchInterceptor)
-                        )
-                );
-    }
-
-    //
-    // This is a hack! Because some eventGateways need an axonConfiguration to initialize, the usual way of
-    // registering interceptors in the ConfigurerModule.onInitialize method does not work for the EventGateway.
-    // This is due to a circular reference caused e.g. by JpaJavaxEventStoreAutoConfiguration.
-    //
-    @Bean
-    @ConditionalOnBean(MessageDispatchInterceptor.class)
-    public InitializingBean eventDispatchInterceptorConfigurer(EventGateway eventGateway, Optional<List<MessageDispatchInterceptor<? super EventMessage<?>>>> interceptors) {
-        return () ->
-                interceptors.ifPresent(it ->
-                        it.forEach(eventGateway::registerDispatchInterceptor)
-                );
+    public InitializingBean commandDispatchInterceptorConfigurer(
+            CommandGateway commandGateway,
+            Optional<List<MessageDispatchInterceptor<? super CommandMessage<?>>>> interceptors
+    ) {
+        return () -> interceptors.ifPresent(it -> it.forEach(commandGateway::registerDispatchInterceptor));
     }
 
     @Bean
     @ConditionalOnBean(MessageDispatchInterceptor.class)
-    public ConfigurerModule queryDispatchInterceptorConfigurer(Optional<List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>>> interceptors) {
-        return configurer ->
-                configurer.onInitialize(configuration ->
-                        interceptors.ifPresent(it ->
-                                it.forEach(configuration.queryGateway()::registerDispatchInterceptor)
-                        )
-                );
+    public InitializingBean eventDispatchInterceptorConfigurer(
+            EventGateway eventGateway,
+            Optional<List<MessageDispatchInterceptor<? super EventMessage<?>>>> interceptors
+    ) {
+        return () -> interceptors.ifPresent(it -> it.forEach(eventGateway::registerDispatchInterceptor));
+    }
+
+    @Bean
+    @ConditionalOnBean(MessageDispatchInterceptor.class)
+    public InitializingBean queryDispatchInterceptorConfigurer(
+            QueryGateway queryGateway,
+            Optional<List<MessageDispatchInterceptor<? super QueryMessage<?, ?>>>> interceptors
+    ) {
+        return () -> interceptors.ifPresent(it -> it.forEach(queryGateway::registerDispatchInterceptor));
     }
 
     @Bean
     @ConditionalOnBean(MessageHandlerInterceptor.class)
-    public ConfigurerModule commandHandlerInterceptorConfigurer(Optional<List<MessageHandlerInterceptor<? super CommandMessage<?>>>> interceptors) {
-        return configurer ->
-                configurer.onInitialize(configuration ->
-                        interceptors.ifPresent(it ->
-                                it.forEach(configuration.commandBus()::registerHandlerInterceptor)
-                        )
-                );
-    }
-
-    @Bean
-    public ConfigurerModule messageHandlerInterceptorConfigurer(Optional<List<MessageHandlerInterceptor<? super EventMessage<?>>>> interceptors) {
-        return configurer -> interceptors
-                .ifPresent(it -> it
-                        .forEach(i -> configurer.eventProcessing().registerDefaultHandlerInterceptor((c, n) -> i)
-                        )
-                );
+    public InitializingBean commandHandlerInterceptorConfigurer(
+            CommandBus commandBus,
+            Optional<List<MessageHandlerInterceptor<? super CommandMessage<?>>>> interceptors
+    ) {
+        return () -> interceptors.ifPresent(it -> it.forEach(commandBus::registerHandlerInterceptor));
     }
 
     @Bean
     @ConditionalOnBean(MessageHandlerInterceptor.class)
-    public ConfigurerModule queryHandlerInterceptorConfigurer(Optional<List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>>> interceptors) {
-        return configurer ->
-                configurer.onInitialize(configuration ->
-                        interceptors.ifPresent(it ->
-                                it.forEach(configuration.queryBus()::registerHandlerInterceptor)
-                        )
-                );
+    public InitializingBean queryHandlerInterceptorConfigurer(
+            QueryBus queryBus,
+            Optional<List<MessageHandlerInterceptor<? super QueryMessage<?, ?>>>> interceptors) {
+        return () -> interceptors.ifPresent(it -> it.forEach(queryBus::registerHandlerInterceptor));
+    }
+
+    @Bean
+    public InitializingBean messageHandlerInterceptorConfigurer(
+            EventProcessingConfigurer eventProcessingConfigurer,
+            Optional<List<MessageHandlerInterceptor<? super EventMessage<?>>>> interceptors
+    ) {
+        return () -> interceptors
+                .ifPresent(it -> it.forEach(i -> eventProcessingConfigurer.registerDefaultHandlerInterceptor((c, n) -> i)));
     }
 }
