@@ -79,8 +79,8 @@ public class CommandModelComponent implements CommandHandlingComponent, EventHan
 
     @Nonnull
     @Override
-    public MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
-                                           @Nonnull ProcessingContext context) {
+    public MessageStream.Empty handle(@Nonnull EventMessage<?> event,
+                                      @Nonnull ProcessingContext context) {
         return eventComponent.handle(event, context);
     }
 }

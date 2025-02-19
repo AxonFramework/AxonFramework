@@ -531,6 +531,17 @@ public interface MessageStream<M extends Message<?>> {
      */
     interface Empty extends MessageStream<Message<Void>> {
 
+        /**
+         * Create a stream that completed with given {@code failure}.
+         * <p>
+         * All attempts to read from this stream will propagate this error.
+         *
+         * @param failure The {@link Throwable} to propagate to consumers of the stream.
+         * @return A stream that is completed exceptionally.
+         */
+        static  Empty failed(@Nonnull Throwable failure) {
+            return new FailedEmptyMessageStream(failure);
+        }
     }
 
     /**
