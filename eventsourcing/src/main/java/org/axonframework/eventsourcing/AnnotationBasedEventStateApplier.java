@@ -31,11 +31,13 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
- * Implementation of {@link EventStateApplier} that applies state changes through {@code @EventSourcingHandler}
- * annotated methods using an {@link AnnotationEventHandlerAdapter}.
+ * Implementation of {@link EventStateApplier} that applies state changes through {@link EventSourcingHandler} annotated
+ * methods using an {@link AnnotationEventHandlerAdapter}.
  *
  * @param <M> The type of model to apply state changes to
  * @author Mateusz Nowak
+ * @see EventSourcingHandler
+ * @see AnnotationEventHandlerAdapter
  * @since 5.0.0
  */
 public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M> {
@@ -45,12 +47,12 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
     private final MessageTypeResolver messageTypeResolver;
 
     /**
-     * Initialize a new {@link AnnotationBasedEventStateApplier} for the given model type.
+     * Initialize a new {@link AnnotationBasedEventStateApplier}.
      *
      * @param modelType The type of model this instance will handle state changes for.
      */
     public AnnotationBasedEventStateApplier(@Nonnull Class<M> modelType) {
-        this(ClasspathParameterResolverFactory.forClass(modelType),
+        this(modelType, ClasspathParameterResolverFactory.forClass(modelType),
              new ClassBasedMessageTypeResolver());
     }
 
@@ -59,34 +61,41 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
      * {@code messageTypeResolver}.
      *
      * @param modelType           The type of model this instance will handle state changes for.
-     * @param messageTypeResolver The resolver to use for message types.
+     * @param messageTypeResolver The {@link MessageTypeResolver} resolving the
+     *                            {@link org.axonframework.messaging.MessageType types} for
+     *                            {@link org.axonframework.eventhandling.EventMessage EventMessages}
      */
     public AnnotationBasedEventStateApplier(@Nonnull Class<M> modelType,
                                             @Nonnull MessageTypeResolver messageTypeResolver) {
-        this(ClasspathParameterResolverFactory.forClass(modelType),
-             messageTypeResolver);
+        this(modelType, ClasspathParameterResolverFactory.forClass(modelType), messageTypeResolver);
     }
 
     /**
-     * Initialize a new {@link AnnotationBasedEventStateApplier} with the given {@code parameterResolverFactory}, and
-     * {@code messageTypeResolver}.
+     * Initialize a new {@link AnnotationBasedEventStateApplier}.
      *
-     * @param parameterResolverFactory The factory for resolving parameters.
-     * @param messageTypeResolver      The resolver to use for message types.
+     * @param modelType           The type of model this instance will handle state changes for.
+     * @param parameterResolverFactory the strategy for resolving handler method parameter values
+     * @param messageTypeResolver      The {@link MessageTypeResolver} resolving the
+     *                                 {@link org.axonframework.messaging.MessageType types} for
+     *                                 {@link org.axonframework.eventhandling.EventMessage EventMessages}
      */
-    private AnnotationBasedEventStateApplier(@Nonnull ParameterResolverFactory parameterResolverFactory,
-                                             @Nonnull MessageTypeResolver messageTypeResolver) {
+    private AnnotationBasedEventStateApplier(
+            @Nonnull Class<M> modelType,
+            @Nonnull ParameterResolverFactory parameterResolverFactory,
+            @Nonnull MessageTypeResolver messageTypeResolver) {
         this(parameterResolverFactory,
-             ClasspathHandlerDefinition.forClass(Object.class),
+             ClasspathHandlerDefinition.forClass(modelType),
              messageTypeResolver);
     }
 
     /**
-     * Initialize a fully configured {@link AnnotationBasedEventStateApplier}.
+     * Initialize a new {@link AnnotationBasedEventStateApplier}.
      *
-     * @param parameterResolverFactory The factory for resolving parameters
-     * @param handlerDefinition        The definition of handlers to use
-     * @param messageTypeResolver      The resolver to use for message types
+     * @param parameterResolverFactory the strategy for resolving handler method parameter values
+     * @param handlerDefinition        the handler definition used to create concrete handlers
+     * @param messageTypeResolver      The {@link MessageTypeResolver} resolving the
+     *                                 {@link org.axonframework.messaging.MessageType types} for
+     *                                 {@link org.axonframework.eventhandling.EventMessage EventMessages}
      */
     public AnnotationBasedEventStateApplier(@Nonnull ParameterResolverFactory parameterResolverFactory,
                                             @Nonnull HandlerDefinition handlerDefinition,
@@ -104,6 +113,8 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
         requireNonNull(model, "Model may not be null");
         requireNonNull(event, "Event Message may not be null");
 
+        // todo: should we create a new instance of AnnotationEventHandlerAdapter for each event?
+        // any idea how to cache that?
         var handlerAdapter = new AnnotationEventHandlerAdapter(
                 model,
                 parameterResolverFactory,
@@ -116,7 +127,9 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
             }
         } catch (Exception e) {
             // todo: I'm not sure about that, should we add Exception to the method signature and do not handle here?
-            throw new StateEvolvingException("Failed to apply event [" + event.type() + "]", e);
+            throw new StateEvolvingException(
+                    "Failed to apply event [" + event.type() + "] in order to evolve [" + model.getClass() + "] state",
+                    e);
         }
         return model;
     }

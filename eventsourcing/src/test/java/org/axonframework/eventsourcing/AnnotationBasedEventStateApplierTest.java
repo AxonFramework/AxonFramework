@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Test class validating the {@link AnnotationBasedEventStateApplier}.
  *
+ * @since 5.0.0
  * @author Mateusz Nowak
  */
 class AnnotationBasedEventStateApplierTest {
@@ -172,16 +173,17 @@ class AnnotationBasedEventStateApplierTest {
     class ErrorHandling {
 
         @Test
-        void throwsEventApplicationExceptionOnError() {
+        void throwsStateEvolvingExceptionOnExceptionInsideEventHandler() {
             // given
             var eventStateApplier = new AnnotationBasedEventStateApplier<>(ErrorThrowingState.class);
             var state = new ErrorThrowingState();
             var event = domainEvent(0);
 
-            // when/then
+            // when-then
             var exception = assertThrows(StateEvolvingException.class,
                                          () -> eventStateApplier.apply(state, event));
-            assertTrue(exception.getMessage().contains("Failed to apply event [java.lang.Integer]"));
+            assertEquals(exception.getMessage(),
+                         "Failed to apply event [event#0.0.1] in order to evolve [class org.axonframework.eventsourcing.AnnotationBasedEventStateApplierTest$ErrorThrowingState] state");
             assertInstanceOf(RuntimeException.class, exception.getCause());
             assertEquals("Simulated error for event: 0", exception.getCause().getMessage());
         }
@@ -191,7 +193,7 @@ class AnnotationBasedEventStateApplierTest {
             // given
             var event = domainEvent(0);
 
-            // when/then
+            // when-then
             assertThrows(NullPointerException.class,
                          () -> eventStateApplier.apply(null, event),
                          "Model may not be null");
@@ -202,7 +204,7 @@ class AnnotationBasedEventStateApplierTest {
             // given
             var state = new TestState();
 
-            // when/then
+            // when-then
             assertThrows(NullPointerException.class,
                          () -> eventStateApplier.apply(state, null),
                          "Event Message may not be null");
