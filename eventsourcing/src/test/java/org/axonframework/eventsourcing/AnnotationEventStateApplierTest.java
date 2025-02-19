@@ -17,14 +17,11 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MetaDataValue;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -37,174 +34,151 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AnnotationEventStateApplierTest {
 
-    private AnnotationEventStateApplier<AggregateState> testSubject;
-
-    @BeforeEach
-    void setUp() {
-        testSubject = new AnnotationEventStateApplier<>(AggregateState.class);
-    }
+    private static final EventStateApplier<TestState> eventStateApplier = new AnnotationEventStateApplier<>(TestState.class);
 
     @Nested
-    @DisplayName("Basic Event Handling")
     class BasicEventHandling {
+
+        // todo: should support records and returning new state from event handlers in the future
+        @Test
+        void mutatesStateIfClass() {
+            // given
+            var state = new TestState();
+            var event = domainEvent(0);
+
+            // when
+            eventStateApplier.apply(state, event);
+
+            // then
+            assertEquals("null-0", state.handledPayloads);
+        }
 
         @Test
         void handlesSimpleEvents() {
             // given
-            AggregateState state = new AggregateState();
+            var state = new TestState();
+            var event = domainEvent(0);
 
             // when
-            AggregateState result = testSubject.apply(state, domainEvent(0));
+            state = eventStateApplier.apply(state, event);
 
             // then
-            assertEquals("null-0", result.getState());
+            assertEquals("null-0", state.handledPayloads);
         }
 
         @Test
         void handlesSequenceOfEvents() {
             // given
-            AggregateState state = new AggregateState();
+            var state = new TestState();
 
             // when
-            state = testSubject.apply(state, domainEvent(0));
-            state = testSubject.apply(state, domainEvent(1));
-            state = testSubject.apply(state, domainEvent(2));
+            state = eventStateApplier.apply(state, domainEvent(0));
+            state = eventStateApplier.apply(state, domainEvent(1));
+            state = eventStateApplier.apply(state, domainEvent(2));
 
             // then
-            assertEquals("null-0-1-2", state.getState());
-            assertEquals(3, state.getHandledCount());
+            assertEquals("null-0-1-2", state.handledPayloads);
+            assertEquals(3, state.handledCount);
         }
     }
 
     @Nested
-    @DisplayName("Parameter Resolution")
     class ParameterResolution {
 
         @Test
-        void handlesEventWithMetaData() {
+        void resolvesMetadata() {
             // given
-            AggregateState state = new AggregateState();
-            DomainEventMessage<?> event = new GenericDomainEventMessage<>(
-                    "test", "id", 0,
-                    new MessageType("event"), 0,
-                    MetaData.with("version", "1.0").and("source", "test")
-            );
+            var state = new TestState();
+            var event = domainEvent(0, "sampleValue");
 
             // when
-            AggregateState result = testSubject.apply(state, event);
+            var result = eventStateApplier.apply(state, event);
 
             // then
-            assertEquals("null-0-v1.0", result.getState());
-            assertEquals("test", result.getLastSource());
-        }
-
-        @Test
-        void handlesEventWithMessage() {
-            // given
-            AggregateState state = new AggregateState();
-            DomainEventMessage<?> event = new GenericDomainEventMessage<>(
-                    "test", "id", 0,
-                    new MessageType("event"), 0,
-                    MetaData.with("key", "value")
-            );
-
-            // when
-            AggregateState result = testSubject.apply(state, event);
-
-            // then
-            assertNotNull(result.getLastMessage());
-            assertEquals(event.getIdentifier(), result.getLastMessage().getIdentifier());
-            assertEquals("null-0-value", result.getState());
+            assertEquals("null-0", result.handledPayloads);
+            assertEquals("null-sampleValue", result.handledMetadata);
         }
     }
 
     @Nested
-    @DisplayName("Error Handling")
     class ErrorHandling {
 
         @Test
         void throwsEventApplicationExceptionOnError() {
             // given
-            var stateApplier = new AnnotationEventStateApplier<>(ErrorThrowingState.class);
-            ErrorThrowingState state = new ErrorThrowingState();
-            EventMessage<?> event = domainEvent(0);
+            var eventStateApplier = new AnnotationEventStateApplier<>(ErrorThrowingState.class);
+            var state = new ErrorThrowingState();
+            var event = domainEvent(0);
 
             // when/then
-            EventApplicationException exception = assertThrows(EventApplicationException.class,
-                                                               () -> stateApplier.apply(state, event));
-            assertTrue(exception.getMessage().contains("Number"));
+            var exception = assertThrows(EventApplicationException.class,
+                                         () -> eventStateApplier.apply(state, event));
+            assertTrue(exception.getMessage().contains("Failed to apply event [java.lang.Integer]"));
         }
 
         @Test
         void rejectsNullModel() {
             // given
-            EventMessage<?> event = domainEvent(0);
+            var event = domainEvent(0);
 
             // when/then
             assertThrows(NullPointerException.class,
-                         () -> testSubject.apply(null, event),
+                         () -> eventStateApplier.apply(null, event),
                          "Model may not be null");
         }
 
         @Test
         void rejectsNullEvent() {
             // given
-            AggregateState state = new AggregateState();
+            var state = new TestState();
 
             // when/then
             assertThrows(NullPointerException.class,
-                         () -> testSubject.apply(state, null),
+                         () -> eventStateApplier.apply(state, null),
                          "Event Message may not be null");
         }
     }
 
     private static DomainEventMessage<?> domainEvent(int seq) {
-        return new GenericDomainEventMessage<>("test", "id", seq, new MessageType("event"), seq);
+        return domainEvent(seq, null);
     }
 
-    private static class AggregateState {
+    private static DomainEventMessage<?> domainEvent(int seq, String sampleMetaData) {
+        return new GenericDomainEventMessage<>(
+                "test",
+                "id",
+                seq,
+                new MessageType("event"),
+                seq, sampleMetaData == null ? MetaData.emptyInstance() : MetaData.with("sampleKey", sampleMetaData)
+        );
+    }
 
-        private String state = "null";
+    private static class TestState {
+
+        private String handledPayloads = "null";
+        private String handledMetadata = "null";
         private int handledCount = 0;
-        private String lastSource;
-        private Message<?> lastMessage;
 
         @EventSourcingHandler
-        public void handleNumber(Number event) {
-            this.state = state + "-" + event;
+        public void handlePayload(Number payload) {
+            this.handledPayloads = handledMetadata + "-" + payload;
             this.handledCount++;
         }
 
         @EventSourcingHandler
-        public void handleWithMetaData(Number event,
-                                       @MetaDataValue("version") String version,
-                                       @MetaDataValue("source") String source) {
-            this.state = state + "-" + event + "-v" + version;
-            this.lastSource = source;
+        public void handlePayloadWithMetadata(Number payload, @MetaDataValue("sampleKey") String metadata) {
+            this.handledPayloads = handledPayloads + "-" + payload;
+            this.handledMetadata = handledMetadata + "-" + metadata;
             this.handledCount++;
         }
 
         @EventSourcingHandler
-        public void handleWithMessage(Number event, Message<?> message, @MetaDataValue("key") String key) {
-            this.state = state + "-" + event + "-" + key;
-            this.lastMessage = message;
+        public void handleMessage(Message<Number> message) {
+            var payload = message.getPayload();
+            var metadata = message.getMetaData().get("sampleKey");
+            this.handledPayloads = handledPayloads + "-" + payload;
+            this.handledMetadata = handledMetadata + "-" + metadata;
             this.handledCount++;
-        }
-
-        public String getState() {
-            return state;
-        }
-
-        public int getHandledCount() {
-            return handledCount;
-        }
-
-        public String getLastSource() {
-            return lastSource;
-        }
-
-        public Message<?> getLastMessage() {
-            return lastMessage;
         }
     }
 
