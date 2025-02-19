@@ -38,9 +38,31 @@ import static org.axonframework.common.annotation.AnnotationUtils.*;
 /**
  * Implementation of {@link TagResolver} that processes {@link EventTag} annotations on fields and methods of event
  * payload objects to create {@link Tag} instances. Supports inherited fields and methods.
+ * <p>
+ * The {@link EventTag} annotation can be used in two ways:
+ * <ul>
+ *     <li>Directly on fields and methods using the repeatable syntax:
+ *         <pre>
+ *         {@literal @}EventTag
+ *         {@literal @}EventTag(key = "identifier")
+ *         private String id;
+ *         </pre>
+ *     </li>
+ *     <li>Using the container annotation {@link EventTags}:
+ *         <pre>
+ *         {@literal @}EventTags({
+ *             {@literal @}EventTag,
+ *             {@literal @}EventTag(key = "identifier")
+ *         })
+ *         private String id;
+ *         </pre>
+ *     </li>
+ * </ul>
+ * Both approaches are equivalent and will produce the same tags.
  *
  * @author Mateusz Nowak
  * @see EventTag for more information on how to use the annotation
+ * @see EventTags for more information on how to use the annotation
  * @since 5.0.0
  */
 public class AnnotationBasedTagResolver implements TagResolver {
@@ -195,11 +217,11 @@ public class AnnotationBasedTagResolver implements TagResolver {
      */
     public static class TagResolutionException extends RuntimeException {
 
-        public TagResolutionException(String message) {
+        private TagResolutionException(String message) {
             super(message);
         }
 
-        public TagResolutionException(String message, Throwable cause) {
+        private TagResolutionException(String message, Throwable cause) {
             super(message, cause);
         }
     }
