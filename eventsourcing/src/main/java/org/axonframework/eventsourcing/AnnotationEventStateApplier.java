@@ -16,32 +16,31 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import javax.annotation.Nonnull;
-import java.util.Optional;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
  * Implementation of {@link EventStateApplier} that applies state changes through {@code @EventSourcingHandler} and
- * {@code @EventHandler} annotated methods.
+ * {@code @EventHandler} annotated methods using an {@link AnnotationEventHandlerAdapter}.
  *
  * @param <M> The type of model to apply state changes to
- * @author Your Name
+ * @author Mateusz Nowak
  * @since 5.0.0
  */
 public class AnnotationEventStateApplier<M> implements EventStateApplier<M> {
 
-    private final AnnotatedHandlerInspector<Object> inspector;
+    private final ParameterResolverFactory parameterResolverFactory;
+    private final HandlerDefinition handlerDefinition;
     private final MessageTypeResolver messageTypeResolver;
 
     /**
@@ -50,8 +49,7 @@ public class AnnotationEventStateApplier<M> implements EventStateApplier<M> {
      * @param modelType The type of model this instance will handle state changes for
      */
     public AnnotationEventStateApplier(Class<M> modelType) {
-        this(modelType,
-             ClasspathParameterResolverFactory.forClass(modelType),
+        this(ClasspathParameterResolverFactory.forClass(modelType),
              new ClassBasedMessageTypeResolver());
     }
 
@@ -63,45 +61,39 @@ public class AnnotationEventStateApplier<M> implements EventStateApplier<M> {
      * @param messageTypeResolver The resolver to use for message types
      */
     public AnnotationEventStateApplier(Class<M> modelType, MessageTypeResolver messageTypeResolver) {
-        this(modelType,
-             ClasspathParameterResolverFactory.forClass(modelType),
+        this(ClasspathParameterResolverFactory.forClass(modelType),
              messageTypeResolver);
     }
 
     /**
-     * Initialize a new {@link AnnotationEventStateApplier} with the given {@code modelType},
+     * Initialize a new {@link AnnotationEventStateApplier} with the given
      * {@code parameterResolverFactory}, and {@code messageTypeResolver}.
      *
-     * @param modelType                The type of model this instance will handle state changes for
      * @param parameterResolverFactory The factory for resolving parameters
      * @param messageTypeResolver      The resolver to use for message types
      */
-    public AnnotationEventStateApplier(Class<M> modelType,
-                                       ParameterResolverFactory parameterResolverFactory,
+    public AnnotationEventStateApplier(ParameterResolverFactory parameterResolverFactory,
                                        MessageTypeResolver messageTypeResolver) {
-        this(modelType,
-             parameterResolverFactory,
-             ClasspathHandlerDefinition.forClass(modelType),
+        this(parameterResolverFactory,
+             ClasspathHandlerDefinition.forClass(Object.class),
              messageTypeResolver);
     }
 
     /**
      * Initialize a fully configured {@link AnnotationEventStateApplier}.
      *
-     * @param modelType                The type of model this instance will handle state changes for
      * @param parameterResolverFactory The factory for resolving parameters
      * @param handlerDefinition        The definition of handlers to use
      * @param messageTypeResolver      The resolver to use for message types
      */
-    public AnnotationEventStateApplier(Class<M> modelType,
-                                       ParameterResolverFactory parameterResolverFactory,
+    public AnnotationEventStateApplier(ParameterResolverFactory parameterResolverFactory,
                                        HandlerDefinition handlerDefinition,
                                        MessageTypeResolver messageTypeResolver) {
+        assertNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
+        assertNonNull(handlerDefinition, "HandlerDefinition may not be null");
         assertNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
-        assertNonNull(modelType, "Model Type may not be null");
-        this.inspector = AnnotatedHandlerInspector.inspectType(modelType,
-                                                               parameterResolverFactory,
-                                                               handlerDefinition);
+        this.parameterResolverFactory = parameterResolverFactory;
+        this.handlerDefinition = handlerDefinition;
         this.messageTypeResolver = messageTypeResolver;
     }
 
@@ -110,12 +102,17 @@ public class AnnotationEventStateApplier<M> implements EventStateApplier<M> {
         assertNonNull(model, "Model may not be null");
         assertNonNull(event, "Event Message may not be null");
 
-        Optional<MessageHandlingMember<? super Object>> handler =
-                inspector.getHandlers(model.getClass())
-                         .filter(h -> h.canHandle(event, null))
-                         .findFirst();
-
-        handler.ifPresent(messageHandlingMember -> messageHandlingMember.handle(event, null, model));
+        AnnotationEventHandlerAdapter handlerAdapter = new AnnotationEventHandlerAdapter(model,
+                                                                                         parameterResolverFactory,
+                                                                                         handlerDefinition,
+                                                                                         messageTypeResolver);
+        try {
+            if (handlerAdapter.canHandle(event)) {
+                handlerAdapter.handleSync(event);
+            }
+        } catch (Exception e) {
+            throw new EventApplicationException("Failed to apply event [" + event.getPayloadType().getName() + "]", e);
+        }
         return model;
     }
 }
