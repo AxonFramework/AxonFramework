@@ -31,65 +31,66 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
- * Implementation of {@link EventStateApplier} that applies state changes through {@code @EventSourcingHandler} and
- * {@code @EventHandler} annotated methods using an {@link AnnotationEventHandlerAdapter}.
+ * Implementation of {@link EventStateApplier} that applies state changes through {@code @EventSourcingHandler}
+ * annotated methods using an {@link AnnotationEventHandlerAdapter}.
  *
  * @param <M> The type of model to apply state changes to
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class AnnotationEventStateApplier<M> implements EventStateApplier<M> {
+public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M> {
 
     private final ParameterResolverFactory parameterResolverFactory;
     private final HandlerDefinition handlerDefinition;
     private final MessageTypeResolver messageTypeResolver;
 
     /**
-     * Initialize a new {@link AnnotationEventStateApplier} for the given model type.
+     * Initialize a new {@link AnnotationBasedEventStateApplier} for the given model type.
      *
-     * @param modelType The type of model this instance will handle state changes for
+     * @param modelType The type of model this instance will handle state changes for.
      */
-    public AnnotationEventStateApplier(Class<M> modelType) {
+    public AnnotationBasedEventStateApplier(@Nonnull Class<M> modelType) {
         this(ClasspathParameterResolverFactory.forClass(modelType),
              new ClassBasedMessageTypeResolver());
     }
 
     /**
-     * Initialize a new {@link AnnotationEventStateApplier} for the given model type using the provided
+     * Initialize a new {@link AnnotationBasedEventStateApplier} for the given model type using the provided
      * {@code messageTypeResolver}.
      *
-     * @param modelType           The type of model this instance will handle state changes for
-     * @param messageTypeResolver The resolver to use for message types
+     * @param modelType           The type of model this instance will handle state changes for.
+     * @param messageTypeResolver The resolver to use for message types.
      */
-    public AnnotationEventStateApplier(Class<M> modelType, MessageTypeResolver messageTypeResolver) {
+    public AnnotationBasedEventStateApplier(@Nonnull Class<M> modelType,
+                                            @Nonnull MessageTypeResolver messageTypeResolver) {
         this(ClasspathParameterResolverFactory.forClass(modelType),
              messageTypeResolver);
     }
 
     /**
-     * Initialize a new {@link AnnotationEventStateApplier} with the given {@code parameterResolverFactory}, and
+     * Initialize a new {@link AnnotationBasedEventStateApplier} with the given {@code parameterResolverFactory}, and
      * {@code messageTypeResolver}.
      *
-     * @param parameterResolverFactory The factory for resolving parameters
-     * @param messageTypeResolver      The resolver to use for message types
+     * @param parameterResolverFactory The factory for resolving parameters.
+     * @param messageTypeResolver      The resolver to use for message types.
      */
-    public AnnotationEventStateApplier(ParameterResolverFactory parameterResolverFactory,
-                                       MessageTypeResolver messageTypeResolver) {
+    private AnnotationBasedEventStateApplier(@Nonnull ParameterResolverFactory parameterResolverFactory,
+                                             @Nonnull MessageTypeResolver messageTypeResolver) {
         this(parameterResolverFactory,
              ClasspathHandlerDefinition.forClass(Object.class),
              messageTypeResolver);
     }
 
     /**
-     * Initialize a fully configured {@link AnnotationEventStateApplier}.
+     * Initialize a fully configured {@link AnnotationBasedEventStateApplier}.
      *
      * @param parameterResolverFactory The factory for resolving parameters
      * @param handlerDefinition        The definition of handlers to use
      * @param messageTypeResolver      The resolver to use for message types
      */
-    public AnnotationEventStateApplier(ParameterResolverFactory parameterResolverFactory,
-                                       HandlerDefinition handlerDefinition,
-                                       MessageTypeResolver messageTypeResolver) {
+    public AnnotationBasedEventStateApplier(@Nonnull ParameterResolverFactory parameterResolverFactory,
+                                            @Nonnull HandlerDefinition handlerDefinition,
+                                            @Nonnull MessageTypeResolver messageTypeResolver) {
         requireNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
         requireNonNull(handlerDefinition, "HandlerDefinition may not be null");
         requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
@@ -114,7 +115,8 @@ public class AnnotationEventStateApplier<M> implements EventStateApplier<M> {
                 handlerAdapter.handleSync(event);
             }
         } catch (Exception e) {
-            throw new EventApplicationException("Failed to apply event [" + event.getPayloadType().getName() + "]", e);
+            // todo: I'm not sure about that, should we add Exception to the method signature and do not handle here?
+            throw new StateEvolvingException("Failed to apply event [" + event.type() + "]", e);
         }
         return model;
     }
