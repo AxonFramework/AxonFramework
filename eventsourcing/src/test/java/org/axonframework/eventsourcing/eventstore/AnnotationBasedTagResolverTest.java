@@ -25,6 +25,10 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -119,7 +123,7 @@ class AnnotationBasedTagResolverTest {
                 this.nonTagged = nonTagged;
             }
 
-            @EventTag(key = "taggedMethod")
+            @EventTag
             public String getTaggedMethod() {
                 return "methodValue";
             }
@@ -692,6 +696,77 @@ class AnnotationBasedTagResolverTest {
 
             // then
             assertTrue(result.isEmpty());
+        }
+    }
+
+    @Nested
+    class MetaAnnotationTests {
+
+        @Target({ElementType.METHOD, ElementType.FIELD})
+        @Retention(RetentionPolicy.RUNTIME)
+        @EventTag(key = "aggregateId") @interface AggregateIdTag {
+
+        }
+
+        static class EventWithMetaAnnotation {
+
+            @AggregateIdTag
+            private final String id = "123";
+
+            @AggregateIdTag
+            public String getAnotherId() {
+                return "456";
+            }
+
+            // Mix of standard and custom annotations
+            @EventTag(key = "customKey")
+            @AggregateIdTag
+            private final String mixedId = "789";
+        }
+
+        static class InheritedMetaAnnotation extends EventWithMetaAnnotation {
+
+            @AggregateIdTag
+            private final String childId = "child123";
+        }
+
+        @Test
+        void shouldResolveMetaAnnotations() {
+            // given
+            var payload = new EventWithMetaAnnotation();
+            var event = anEventMessage(payload);
+
+            // when
+            var result = tagResolver.resolve(event);
+
+            // then
+            assertEquals(4, result.size());
+            // Tags from AggregateIdTag
+            assertTrue(result.contains(new Tag("aggregateId", "123")));
+            assertTrue(result.contains(new Tag("anotherId", "456")));
+            // Tags from mixed annotations
+            assertTrue(result.contains(new Tag("aggregateId", "789")));
+            assertTrue(result.contains(new Tag("customKey", "789")));
+        }
+
+        @Test
+        void shouldResolveInheritedMetaAnnotations() {
+            // given
+            var payload = new InheritedMetaAnnotation();
+            var event = anEventMessage(payload);
+
+            // when
+            var result = tagResolver.resolve(event);
+
+            // then
+            assertEquals(5, result.size());
+            // Tags from parent class
+            assertTrue(result.contains(new Tag("aggregateId", "123")));
+            assertTrue(result.contains(new Tag("anotherId", "456")));
+            assertTrue(result.contains(new Tag("aggregateId", "789")));
+            assertTrue(result.contains(new Tag("customKey", "789")));
+            // Tags from child class
+            assertTrue(result.contains(new Tag("aggregateId", "child123")));
         }
     }
 

@@ -36,8 +36,8 @@ import static org.axonframework.common.ReflectionUtils.getMemberValue;
 import static org.axonframework.common.annotation.AnnotationUtils.*;
 
 /**
- * Implementation of {@link TagResolver} that processes {@link EventTag} annotations on fields and methods of event
- * payload objects to create {@link Tag} instances. Supports inherited fields and methods.
+ * Implementation of {@link TagResolver} that processes {@link EventTag} and {@link EventTags} annotations on fields and
+ * methods of event payload objects to create {@link Tag} instances. Supports inherited fields and methods.
  * <p>
  * The {@link EventTag} annotation can be used in two ways:
  * <ul>
