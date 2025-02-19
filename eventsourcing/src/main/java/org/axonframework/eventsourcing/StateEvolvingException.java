@@ -22,24 +22,15 @@ package org.axonframework.eventsourcing;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class EventApplicationException extends RuntimeException {
-
-    /**
-     * Initialize the exception with the given {@code message}.
-     *
-     * @param message The message describing the exception
-     */
-    public EventApplicationException(String message) {
-        super(message);
-    }
+public class StateEvolvingException extends RuntimeException {
 
     /**
      * Initialize the exception with the given {@code message} and {@code cause}.
      *
-     * @param message The message describing the exception
-     * @param cause   The underlying cause of the exception
+     * @param message The message describing the exception.
+     * @param cause   The underlying cause of the exception.
      */
-    public EventApplicationException(String message, Throwable cause) {
+    public StateEvolvingException(String message, Throwable cause) {
         super(message, cause);
     }
 }
