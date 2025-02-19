@@ -18,12 +18,24 @@ package org.axonframework.eventsourcing.annotations;
 import java.lang.annotation.*;
 
 /**
- * Field or method level annotation that marks a field or method providing the Tag for the Event.
- * The member name will be used as the {@link org.axonframework.eventsourcing.eventstore.Tag#key}
- * by default, except for Map values without an explicit key (see below).
+ * Field or method level annotation that marks a field or method providing the Tag for the Event. The member name will
+ * be used as the {@link org.axonframework.eventsourcing.eventstore.Tag#key} by default, except for Map values without
+ * an explicit key (see below).
  * <p>
- * For both fields and methods, the value is obtained by calling {@code toString()} on the field value
- * or method return value. If the value is null, no tag will be created.
+ * For both fields and methods, the value is obtained by calling {@code toString()} on the field value or method return
+ * value. If the value (returned from {@code toString()} is null), no tag will be created. This means in the following
+ * example if a class contains the orderId field as below the created Tag will have key "orderId" and the value
+ * "Order:123".
+ * <pre>
+ * {@literal @}EventTag OrderId orderId = new OrderId("123")
+ *
+ * record OrderId(String id) {
+ *     {@literal @}Override
+ *     public String toString() {
+ *         return "Order" + ":" + id;
+ *     }
+ * }
+ * </pre>
  * <p>
  * Special handling is provided for Iterable and Map:
  * <ul>
@@ -69,6 +81,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Repeatable(EventTags.class)
 public @interface EventTag {
+
     /**
      * The key of the Tag which will be assigned to the Event. Optional. If left empty:
      * <ul>
