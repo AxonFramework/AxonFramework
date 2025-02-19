@@ -29,9 +29,9 @@ import java.lang.annotation.*;
  * <ul>
  *     <li>For {@link Iterable} values:
  *         <ul>
- *             <li>A separate tag is created for each non-null element in the iterable</li>
- *             <li>All tags use the same key (from annotation or member name)</li>
- *             <li>The tag value is obtained by calling toString() on each element</li>
+ *             <li>A separate tag is created for each non-null element in the iterable.</li>
+ *             <li>All tags use the same key (from annotation or member name).</li>
+ *             <li>The tag value is obtained by calling toString() on each element.</li>
  *             <li>Example: {@code @EventTag List<Integer> numbers = List.of(1, 2)} creates tags:
  *                 {@code Tag("numbers", "1")} and {@code Tag("numbers", "2")}</li>
  *         </ul>
@@ -40,8 +40,8 @@ import java.lang.annotation.*;
  *         <ul>
  *             <li>If no key is provided in the annotation:
  *                 <ul>
- *                     <li>Map keys are used as tag keys (member name is ignored)</li>
- *                     <li>Map values are used as tag values</li>
+ *                     <li>Map keys are used as tag keys (member name is ignored).</li>
+ *                     <li>Map values are used as tag values.</li>
  *                     <li>Example: {@code @EventTag Map<String,String> map = Map.of("k1", "v1", "k2", "v2")}
  *                         creates tags: {@code Tag("k1", "v1")} and {@code Tag("k2", "v2")}</li>
  *                 </ul>
@@ -72,11 +72,11 @@ public @interface EventTag {
     /**
      * The key of the Tag which will be assigned to the Event. Optional. If left empty:
      * <ul>
-     *     <li>For Map values: map keys will be used as tag keys</li>
-     *     <li>For all other values: the member name will be used (with "get" stripped for getter methods)</li>
+     *     <li>For Map values: map keys will be used as tag keys.</li>
+     *     <li>For all other values: the member name will be used (with "get" stripped for getter methods).</li>
      * </ul>
      *
-     * @return The tag key
+     * @return The tag key.
      */
     String key() default "";
 }
