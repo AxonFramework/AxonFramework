@@ -83,7 +83,7 @@ class NewMessageHandlerRegistrationTest {
                    })
                    .subscribe(QUERY_TYPE.qualifiedName(), (QueryHandler) (event1, context2) -> {
                        queryHandlerInvoked.set(true);
-                       return MessageStream.empty();
+                       return MessageStream.emptyOfType();
                    });
     }
 
@@ -110,7 +110,7 @@ class NewMessageHandlerRegistrationTest {
         projector.subscribe(testName, new TestEventHandler())
                  .subscribe(testName, (EventHandler) (event, context) -> MessageStream.empty())
                  .subscribe(testName, new TestQueryHandler())
-                 .subscribe(testName, (QueryHandler) (query, context) -> MessageStream.empty())
+                 .subscribe(testName, (QueryHandler) (query, context) -> MessageStream.emptyOfType())
 
         /*.subscribe(Set.of(testName), new TestMessageHandlingComponent<>())*/;
 
@@ -119,7 +119,7 @@ class NewMessageHandlerRegistrationTest {
                   .subscribe(testName, new TestEventHandler())
                   .subscribe(testName, (EventHandler) (event, context) -> MessageStream.empty())
                   .subscribe(testName, new TestQueryHandler())
-                  .subscribe(testName, (QueryHandler) (query, context) -> MessageStream.empty())
+                  .subscribe(testName, (QueryHandler) (query, context) -> MessageStream.emptyOfType())
                   .subscribe(Set.of(testName), (MessageHandler) new TestMessageHandlingComponent());
     }
 
@@ -135,6 +135,7 @@ class NewMessageHandlerRegistrationTest {
         assertFalse(resultFuture.isCompletedExceptionally());
         Entry<? extends Message<?>> resultEntry = resultFuture.get();
         assertNull(resultEntry);
+        //todo
 
         assertTrue(commandHandlerInvoked.get());
         assertFalse(eventHandlerInvoked.get());
@@ -294,7 +295,7 @@ class NewMessageHandlerRegistrationTest {
         @Override
         public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
                                                              @Nonnull ProcessingContext context) {
-            return MessageStream.empty();
+            return MessageStream.emptyOfType();
         }
     }
 }
