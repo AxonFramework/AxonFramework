@@ -33,7 +33,6 @@ import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.getMemberValue;
-import static org.axonframework.common.annotation.AnnotationUtils.*;
 
 /**
  * Implementation of {@link TagResolver} that processes {@link EventTag} and {@link EventTags} annotations on fields and
@@ -115,8 +114,8 @@ public class AnnotationBasedTagResolver implements TagResolver {
     }
 
     private static boolean isTagAnnotationPresent(AnnotatedElement member) {
-        return isAnnotationPresent(member, EVENT_TAG_ANNOTATION)
-                || isAnnotationPresent(member, CONTAINING_ANNOTATION_TYPE);
+        return member.isAnnotationPresent(EVENT_TAG_ANNOTATION)
+                || member.isAnnotationPresent(CONTAINING_ANNOTATION_TYPE);
     }
 
     private Set<Tag> tagsFrom(Method method, Object payload) {
