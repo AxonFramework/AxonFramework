@@ -27,7 +27,8 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import javax.annotation.Nonnull;
 
-import static org.axonframework.common.BuilderUtils.assertNonNull;
+import static java.util.Objects.requireNonNull;
+
 
 /**
  * Implementation of {@link EventStateApplier} that applies state changes through {@code @EventSourcingHandler} and
@@ -66,8 +67,8 @@ public class AnnotationEventStateApplier<M> implements EventStateApplier<M> {
     }
 
     /**
-     * Initialize a new {@link AnnotationEventStateApplier} with the given
-     * {@code parameterResolverFactory}, and {@code messageTypeResolver}.
+     * Initialize a new {@link AnnotationEventStateApplier} with the given {@code parameterResolverFactory}, and
+     * {@code messageTypeResolver}.
      *
      * @param parameterResolverFactory The factory for resolving parameters
      * @param messageTypeResolver      The resolver to use for message types
@@ -89,9 +90,9 @@ public class AnnotationEventStateApplier<M> implements EventStateApplier<M> {
     public AnnotationEventStateApplier(ParameterResolverFactory parameterResolverFactory,
                                        HandlerDefinition handlerDefinition,
                                        MessageTypeResolver messageTypeResolver) {
-        assertNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
-        assertNonNull(handlerDefinition, "HandlerDefinition may not be null");
-        assertNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
+        requireNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
+        requireNonNull(handlerDefinition, "HandlerDefinition may not be null");
+        requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
         this.parameterResolverFactory = parameterResolverFactory;
         this.handlerDefinition = handlerDefinition;
         this.messageTypeResolver = messageTypeResolver;
@@ -99,13 +100,15 @@ public class AnnotationEventStateApplier<M> implements EventStateApplier<M> {
 
     @Override
     public M apply(M model, @Nonnull EventMessage<?> event) {
-        assertNonNull(model, "Model may not be null");
-        assertNonNull(event, "Event Message may not be null");
+        requireNonNull(model, "Model may not be null");
+        requireNonNull(event, "Event Message may not be null");
 
-        AnnotationEventHandlerAdapter handlerAdapter = new AnnotationEventHandlerAdapter(model,
-                                                                                         parameterResolverFactory,
-                                                                                         handlerDefinition,
-                                                                                         messageTypeResolver);
+        var handlerAdapter = new AnnotationEventHandlerAdapter(
+                model,
+                parameterResolverFactory,
+                handlerDefinition,
+                messageTypeResolver
+        );
         try {
             if (handlerAdapter.canHandle(event)) {
                 handlerAdapter.handleSync(event);
