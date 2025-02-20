@@ -63,7 +63,7 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
      * @param modelType           The type of model this instance will handle state changes for.
      * @param messageTypeResolver The {@link MessageTypeResolver} resolving the
      *                            {@link org.axonframework.messaging.MessageType types} for
-     *                            {@link org.axonframework.eventhandling.EventMessage EventMessages}
+     *                            {@link org.axonframework.eventhandling.EventMessage EventMessages}.
      */
     public AnnotationBasedEventStateApplier(@Nonnull Class<M> modelType,
                                             @Nonnull MessageTypeResolver messageTypeResolver) {
@@ -74,10 +74,10 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
      * Initialize a new {@link AnnotationBasedEventStateApplier}.
      *
      * @param modelType           The type of model this instance will handle state changes for.
-     * @param parameterResolverFactory the strategy for resolving handler method parameter values
+     * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      * @param messageTypeResolver      The {@link MessageTypeResolver} resolving the
      *                                 {@link org.axonframework.messaging.MessageType types} for
-     *                                 {@link org.axonframework.eventhandling.EventMessage EventMessages}
+     *                                 {@link org.axonframework.eventhandling.EventMessage EventMessages}.
      */
     private AnnotationBasedEventStateApplier(
             @Nonnull Class<M> modelType,
@@ -100,16 +100,15 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
     public AnnotationBasedEventStateApplier(@Nonnull ParameterResolverFactory parameterResolverFactory,
                                             @Nonnull HandlerDefinition handlerDefinition,
                                             @Nonnull MessageTypeResolver messageTypeResolver) {
-        requireNonNull(parameterResolverFactory, "ParameterResolverFactory may not be null");
         requireNonNull(handlerDefinition, "HandlerDefinition may not be null");
-        requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
-        this.parameterResolverFactory = parameterResolverFactory;
+        this.parameterResolverFactory = requireNonNull(parameterResolverFactory,
+                                                       "ParameterResolverFactory may not be null");
         this.handlerDefinition = handlerDefinition;
-        this.messageTypeResolver = messageTypeResolver;
+        this.messageTypeResolver = requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
     }
 
     @Override
-    public M apply(M model, @Nonnull EventMessage<?> event) {
+    public M apply(@Nonnull M model, @Nonnull EventMessage<?> event) {
         requireNonNull(model, "Model may not be null");
         requireNonNull(event, "Event Message may not be null");
 
