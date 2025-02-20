@@ -37,8 +37,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Test class validating the {@link AnnotationBasedEventStateApplier}.
  *
- * @since 5.0.0
  * @author Mateusz Nowak
+ * @since 5.0.0
  */
 class AnnotationBasedEventStateApplierTest {
 
@@ -154,6 +154,20 @@ class AnnotationBasedEventStateApplierTest {
     class HandlerInvocationRules {
 
         @Test
+        void doNotHandleNotDeclaredEventType() {
+            // given
+            var eventStateApplier = new AnnotationBasedEventStateApplier<>(HandlingJustStringState.class);
+            var state = new HandlingJustStringState();
+            var event = domainEvent(0);
+
+            // when
+            state = eventStateApplier.apply(state, event);
+
+            // then
+            assertEquals(0, state.handledCount);
+        }
+
+        @Test
         void invokesOnlyMostSpecificHandler() {
             // given
             var state = new TestState();
@@ -236,7 +250,7 @@ class AnnotationBasedEventStateApplierTest {
         private boolean objectHandlerInvoked = false;
 
         @EventSourcingHandler
-        public void handle(
+        void handle(
                 Object payload
         ) {
             this.objectHandlerInvoked = true;
@@ -244,7 +258,7 @@ class AnnotationBasedEventStateApplierTest {
         }
 
         @EventSourcingHandler
-        public void handle(
+        void handle(
                 Integer payload,
                 @MetaDataValue("sampleKey") String metadata,
                 @SequenceNumber Long sequenceNumber,
@@ -265,6 +279,16 @@ class AnnotationBasedEventStateApplierTest {
         @EventSourcingHandler
         public void handle(Integer event) {
             throw new RuntimeException("Simulated error for event: " + event);
+        }
+    }
+
+    private static class HandlingJustStringState {
+
+        private int handledCount = 0;
+
+        @EventSourcingHandler
+        void handle(String event) {
+            this.handledCount++;
         }
     }
 }
