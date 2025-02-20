@@ -25,6 +25,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.SourceId;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +45,7 @@ class AnnotationBasedEventStateApplierTest {
 
     private static final EventStateApplier<TestState> eventStateApplier = new AnnotationBasedEventStateApplier<>(
             TestState.class);
+    private final ProcessingContext processingContext = ProcessingContext.NONE;
 
     @Nested
     class BasicEventHandling {
@@ -55,7 +57,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            eventStateApplier.apply(state, event);
+            eventStateApplier.apply(state, event, processingContext);
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -68,7 +70,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            state = eventStateApplier.apply(state, event);
+            state = eventStateApplier.apply(state, event, processingContext);
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -80,9 +82,9 @@ class AnnotationBasedEventStateApplierTest {
             var state = new TestState();
 
             // when
-            state = eventStateApplier.apply(state, domainEvent(0));
-            state = eventStateApplier.apply(state, domainEvent(1));
-            state = eventStateApplier.apply(state, domainEvent(2));
+            state = eventStateApplier.apply(state, domainEvent(0), processingContext);
+            state = eventStateApplier.apply(state, domainEvent(1), processingContext);
+            state = eventStateApplier.apply(state, domainEvent(2), processingContext);
 
             // then
             assertEquals("null-0-1-2", state.handledPayloads);
@@ -100,7 +102,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0, "sampleValue");
 
             // when
-            state = eventStateApplier.apply(state, event);
+            state = eventStateApplier.apply(state, event, processingContext);
 
             // then
             assertEquals("null-sampleValue", state.handledMetadata);
@@ -113,7 +115,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            state = eventStateApplier.apply(state, event);
+            state = eventStateApplier.apply(state, event, processingContext);
 
             // then
             assertEquals("null-0", state.handledSequences);
@@ -126,7 +128,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            state = eventStateApplier.apply(state, event);
+            state = eventStateApplier.apply(state, event, processingContext);
 
             // then
             assertEquals("null-id", state.handledSources);
@@ -142,7 +144,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            state = eventStateApplier.apply(state, event);
+            state = eventStateApplier.apply(state, event, processingContext);
 
             // then
             assertEquals("null-" + timestamp, state.handledTimestamps);
@@ -160,7 +162,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            state = eventStateApplier.apply(state, event);
+            state = eventStateApplier.apply(state, event, processingContext);
 
             // then
             assertEquals(0, state.handledCount);
@@ -173,7 +175,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            state = eventStateApplier.apply(state, event);
+            state = eventStateApplier.apply(state, event, processingContext);
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -209,7 +211,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            eventStateApplier.apply(state, event);
+            eventStateApplier.apply(state, event, processingContext);
 
             // then
             assertEquals("null", state.handledPayloads);
@@ -222,7 +224,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            state = eventStateApplier.apply(state, event);
+            state = eventStateApplier.apply(state, event, processingContext);
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -241,11 +243,11 @@ class AnnotationBasedEventStateApplierTest {
 
             // when-then
             var exception = assertThrows(StateEvolvingException.class,
-                                         () -> eventStateApplier.apply(state, event));
+                                         () -> eventStateApplier.apply(state, event, processingContext));
             assertEquals(exception.getMessage(),
                          "Failed to apply event [event#0.0.1] in order to evolve [class org.axonframework.eventsourcing.AnnotationBasedEventStateApplierTest$ErrorThrowingState] state");
             assertInstanceOf(RuntimeException.class, exception.getCause());
-            assertEquals("Simulated error for event: 0", exception.getCause().getMessage());
+            assertTrue(exception.getCause().getMessage().contains("Simulated error for event: 0"));
         }
 
         @Test
@@ -255,7 +257,7 @@ class AnnotationBasedEventStateApplierTest {
 
             // when-then
             assertThrows(NullPointerException.class,
-                         () -> eventStateApplier.apply(null, event),
+                         () -> eventStateApplier.apply(null, event, processingContext),
                          "Model may not be null");
         }
 
@@ -266,7 +268,7 @@ class AnnotationBasedEventStateApplierTest {
 
             // when-then
             assertThrows(NullPointerException.class,
-                         () -> eventStateApplier.apply(state, null),
+                         () -> eventStateApplier.apply(state, null, processingContext),
                          "Event Message may not be null");
         }
     }

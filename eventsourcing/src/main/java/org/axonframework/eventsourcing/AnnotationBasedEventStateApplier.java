@@ -17,10 +17,13 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 
 import static java.util.Objects.requireNonNull;
@@ -31,9 +34,9 @@ import static java.util.Objects.requireNonNull;
  * methods using an {@link AnnotatedHandlerInspector}.
  *
  * @param <M> The type of model to apply state changes to
+ * @author Mateusz Nowak
  * @see EventSourcingHandler
  * @see AnnotatedHandlerInspector
- * @author Mateusz Nowak
  * @since 5.0.0
  */
 public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M> {
@@ -57,8 +60,8 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
     /**
      * Initialize a new {@link AnnotationBasedEventStateApplier}.
      *
-     * @param modelType           The type of model this instance will handle state changes for.
-     * @param inspector           The inspector to use to find the annotated handlers on the model.
+     * @param modelType The type of model this instance will handle state changes for.
+     * @param inspector The inspector to use to find the annotated handlers on the model.
      */
     public AnnotationBasedEventStateApplier(@Nonnull Class<M> modelType,
                                             @Nonnull AnnotatedHandlerInspector<Object> inspector
@@ -69,15 +72,18 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
     }
 
     @Override
-    public M apply(@Nonnull M model, @Nonnull EventMessage<?> event) {
+    public M apply(@Nonnull M model, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext processingContext) {
         requireNonNull(model, "Model may not be null");
         requireNonNull(event, "Event Message may not be null");
 
         try {
-            var result = handle(model, event);
-            if (result != null && model.getClass().isAssignableFrom(result.getClass())) {
-                //noinspection unchecked
-                return (M) model.getClass().cast(result);
+            var result = handle(model, event, processingContext).join();
+            if (result != null) {
+                var resultPayload = result.message().getPayload();
+                if (resultPayload != null && model.getClass().isAssignableFrom(resultPayload.getClass())) {
+                    //noinspection unchecked
+                    return (M) model.getClass().cast(resultPayload);
+                }
             }
         } catch (Exception e) {
             throw new StateEvolvingException(
@@ -87,16 +93,21 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
         return model;
     }
 
-    private Object handle(M model, EventMessage<?> event) throws Exception {
+    private CompletableFuture<? extends MessageStream.Entry<?>> handle(
+            M model,
+            EventMessage<?> event,
+            ProcessingContext processingContext
+    ) {
         var listenerType = model.getClass();
         var handler =
                 inspector.getHandlers(listenerType)
-                         .filter(h -> h.canHandle(event, null))
+                         .filter(h -> h.canHandle(event, processingContext))
                          .findFirst();
         if (handler.isPresent()) {
             var interceptor = inspector.chainedInterceptor(listenerType);
-            return interceptor.handleSync(event, model, handler.get());
+            var stream = interceptor.handle(event, processingContext, model, handler.get());
+            return stream.firstAsCompletableFuture();
         }
-        return null;
+        return CompletableFuture.completedFuture(null);
     }
 }
