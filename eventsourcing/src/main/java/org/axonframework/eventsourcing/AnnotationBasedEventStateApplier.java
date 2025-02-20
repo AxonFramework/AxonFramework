@@ -41,7 +41,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M> {
 
-    private final AnnotatedHandlerInspector<Object> inspector;
+    private final AnnotatedHandlerInspector<M> inspector;
 
     /**
      * Initialize a new {@link AnnotationBasedEventStateApplier}.
@@ -64,7 +64,7 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
      * @param inspector The inspector to use to find the annotated handlers on the model.
      */
     public AnnotationBasedEventStateApplier(@Nonnull Class<M> modelType,
-                                            @Nonnull AnnotatedHandlerInspector<Object> inspector
+                                            @Nonnull AnnotatedHandlerInspector<M> inspector
     ) {
         requireNonNull(modelType, "Model Type may not be null");
         this.inspector = requireNonNull(inspector,
@@ -78,7 +78,7 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
 
         try {
             var eventHandlerResult = handle(model, event, processingContext).join();
-            return newModelInstance(model, eventHandlerResult);
+            return modelFromStreamResultOrUpdatedExisting(eventHandlerResult, model);
         } catch (Exception e) {
             throw new StateEvolvingException(
                     "Failed to apply event [" + event.type() + "] in order to evolve [" + model.getClass() + "] state",
@@ -86,15 +86,15 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
         }
     }
 
-    private M newModelInstance(M model, MessageStream.Entry<?> eventHandlerResult) {
-        if (eventHandlerResult != null) {
-            var resultPayload = eventHandlerResult.message().getPayload();
-            if (resultPayload != null && model.getClass().isAssignableFrom(resultPayload.getClass())) {
+    private M modelFromStreamResultOrUpdatedExisting(MessageStream.Entry<?> potentialModelFromStream, M existing) {
+        if (potentialModelFromStream != null) {
+            var resultPayload = potentialModelFromStream.message().getPayload();
+            if (resultPayload != null && existing.getClass().isAssignableFrom(resultPayload.getClass())) {
                 //noinspection unchecked
-                return (M) model.getClass().cast(resultPayload);
+                return (M) existing.getClass().cast(resultPayload);
             }
         }
-        return model;
+        return existing;
     }
 
     private CompletableFuture<? extends MessageStream.Entry<?>> handle(
