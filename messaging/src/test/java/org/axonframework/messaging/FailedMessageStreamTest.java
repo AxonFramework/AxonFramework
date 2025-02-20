@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.*;
 
 import java.util.List;
 
@@ -30,6 +30,18 @@ class FailedMessageStreamTest extends MessageStreamTest<Message<Void>> {
 
     @Override
     MessageStream<Message<Void>> completedTestSubject(List<Message<Void>> messages) {
+        Assumptions.abort("FailedMessageStream doesn't support successful streams");
+        return null;
+    }
+
+    @Override
+    MessageStream.Single<Message<Void>> completedSingleStreamTestSubject(Message<Void> message) {
+        Assumptions.abort("FailedMessageStream doesn't support successful streams");
+        return null;
+    }
+
+    @Override
+    MessageStream.Empty<Message<Void>> completedEmptyStreamTestSubject() {
         Assumptions.abort("FailedMessageStream doesn't support successful streams");
         return null;
     }

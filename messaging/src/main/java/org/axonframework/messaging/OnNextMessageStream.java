@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,7 @@ class OnNextMessageStream<M extends Message<?>> extends DelegatingMessageStream<
      * @param onNext   The {@link Consumer} to handle each consumed {@link Entry entry} from the given
      *                 {@code delegate}.
      */
-    OnNextMessageStream(@Nonnull MessageStream<M> delegate,
-                        @Nonnull Consumer<Entry<M>> onNext) {
+    OnNextMessageStream(@Nonnull MessageStream<M> delegate, @Nonnull Consumer<Entry<M>> onNext) {
         super(delegate);
         this.delegate = delegate;
         this.onNext = onNext;
@@ -56,5 +55,21 @@ class OnNextMessageStream<M extends Message<?>> extends DelegatingMessageStream<
         Optional<Entry<M>> next = delegate.next();
         next.ifPresent(onNext);
         return next;
+    }
+
+    static class Single<M extends Message<?>> extends OnNextMessageStream<M> implements MessageStream.Single<M> {
+
+        /**
+         * Construct an {@link MessageStream stream} that invokes the given {@code onNext} {@link Consumer} each time a
+         * new {@link Entry entry} is consumed by the given {@code delegate}.
+         *
+         * @param delegate The delegate {@link MessageStream stream} from which each consumed {@link Entry entry} is
+         *                 given to the {@code onNext} {@link Consumer}.
+         * @param onNext   The {@link Consumer} to handle each consumed {@link Entry entry} from the given
+         *                 {@code delegate}.
+         */
+        Single(@Nonnull MessageStream.Single<M> delegate, @Nonnull Consumer<Entry<M>> onNext) {
+            super(delegate, onNext);
+        }
     }
 }

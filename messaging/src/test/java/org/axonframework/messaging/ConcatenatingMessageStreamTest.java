@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging;
 
+import org.junit.jupiter.api.*;
+
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -30,14 +32,26 @@ class ConcatenatingMessageStreamTest extends MessageStreamTest<Message<String>> 
     @Override
     MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
         if (messages.isEmpty()) {
-            return new ConcatenatingMessageStream<>(MessageStream.emptyOfType(), MessageStream.emptyOfType());
+            return new ConcatenatingMessageStream<>(MessageStream.empty().cast(), MessageStream.empty().cast());
         } else if (messages.size() == 1) {
-            return new ConcatenatingMessageStream<>(MessageStream.just(messages.getFirst()), MessageStream.emptyOfType());
+            return new ConcatenatingMessageStream<>(MessageStream.just(messages.getFirst()), MessageStream.empty().cast());
         }
         return new ConcatenatingMessageStream<>(
                 MessageStream.just(messages.getFirst()),
                 MessageStream.fromIterable(messages.subList(1, messages.size()))
         );
+    }
+
+    @Override
+    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+        Assumptions.abort("ConcatenatingMessageStream doesn't support explicit single-value streams");
+        return null;
+    }
+
+    @Override
+    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+        Assumptions.abort("ConcatenatingMessageStream doesn't support explicitly empty streams");
+        return null;
     }
 
     @Override

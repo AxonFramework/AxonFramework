@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -108,7 +108,7 @@ public class SimpleCommandBus implements CommandBus {
         AsyncUnitOfWork unitOfWork = new AsyncUnitOfWork(command.getIdentifier(), worker);
         processingLifecycleHandlerRegistrars.forEach(it -> it.registerHandlers(unitOfWork));
 
-        var result = unitOfWork.executeWithResult(c -> handler.handle(command, c).firstAsCompletableFuture());
+        var result = unitOfWork.executeWithResult(c -> handler.handle(command, c).first().asCompletableFuture());
         if (logger.isDebugEnabled()) {
             result = result.whenComplete((r, e) -> {
                 if (e == null) {

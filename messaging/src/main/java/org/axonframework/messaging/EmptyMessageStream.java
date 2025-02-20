@@ -23,7 +23,6 @@ import reactor.core.publisher.Flux;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -33,12 +32,12 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class EmptyMessageStream implements MessageStream.Empty {
+class EmptyMessageStream implements MessageStream.Empty<Message<Void>> {
 
     private static final EmptyMessageStream INSTANCE = new EmptyMessageStream();
 
     private EmptyMessageStream() {
-        // No-arg constructor to enforce use of INSTANCE constant.
+        // Private no-arg constructor to enforce use of INSTANCE constant.
     }
 
     /**
@@ -46,12 +45,12 @@ class EmptyMessageStream implements MessageStream.Empty {
      *
      * @return The singular instance of the {@code EmptyMessageStream} to be used throughout.
      */
-    public static EmptyMessageStream instance() {
+    public static Empty<Message<Void>> instance() {
         return INSTANCE;
     }
 
     @Override
-    public CompletableFuture<Entry<Message<Void>>> firstAsCompletableFuture() {
+    public CompletableFuture<Entry<Message<Void>>> asCompletableFuture() {
         return FutureUtils.emptyCompletedFuture();
     }
 
@@ -91,41 +90,22 @@ class EmptyMessageStream implements MessageStream.Empty {
     }
 
     @Override
-    public <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<Entry<Message<Void>>, Entry<RM>> mapper) {
-        //noinspection unchecked
-        return (MessageStream<RM>) this;
-    }
-
-    @Override
-    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, Entry<Message<Void>>, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity, @Nonnull BiFunction<R, Entry<Message<Void>>, R> accumulator) {
         return CompletableFuture.completedFuture(identity);
     }
 
     @Override
-    public MessageStream<Message<Void>> onNext(@Nonnull Consumer<Entry<Message<Void>>> onNext) {
+    public MessageStream<Message<Void>> onErrorContinue(@Nonnull Function<Throwable, MessageStream<Message<Void>>> onError) {
         return this;
     }
 
     @Override
-    public MessageStream<Message<Void>> onErrorContinue(
-            @Nonnull Function<Throwable, MessageStream<Message<Void>>> onError
-    ) {
-        return this;
-    }
-
-    @Override
-    public MessageStream<Message<Void>> whenComplete(@Nonnull Runnable completeHandler) {
+    public Empty<Message<Void>> whenComplete(@Nonnull Runnable completeHandler) {
         try {
             completeHandler.run();
             return this;
         } catch (Exception e) {
             return MessageStream.failed(e);
         }
-    }
-
-    @Override
-    public MessageStream<Message<Void>> concatWith(@Nonnull MessageStream<Message<Void>> other) {
-        return other;
     }
 }

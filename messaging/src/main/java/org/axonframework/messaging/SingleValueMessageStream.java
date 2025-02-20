@@ -64,20 +64,27 @@ class SingleValueMessageStream<M extends Message<?>> implements MessageStream.Si
     }
 
     @Override
-    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
+    public CompletableFuture<Entry<M>> asCompletableFuture() {
         return source;
     }
 
     @Override
     public Flux<Entry<M>> asFlux() {
-        return Flux.from(Mono.fromFuture(source));
+        return Flux.from(asMono());
+    }
+
+    @Override
+    public Mono<Entry<M>> asMono() {
+        return Mono.fromFuture(source);
     }
 
     @Override
     public Optional<Entry<M>> next() {
-        Entry<M> current = source.getNow(null);
-        if (current != null && !read.getAndSet(true)) {
-            return Optional.of(current);
+        if (source.isDone() && !source.isCompletedExceptionally()) {
+            Entry<M> current = source.getNow(null);
+            if (read.compareAndSet(false, true)) {
+                return Optional.of(current);
+            }
         }
         return Optional.empty();
     }
@@ -87,9 +94,7 @@ class SingleValueMessageStream<M extends Message<?>> implements MessageStream.Si
         if (source.isDone()) {
             callback.run();
         } else {
-            source.whenComplete((entry, throwable) -> {
-                callback.run();
-            });
+            source.whenComplete((entry, throwable) -> callback.run());
         }
     }
 
@@ -116,7 +121,7 @@ class SingleValueMessageStream<M extends Message<?>> implements MessageStream.Si
     }
 
     @Override
-    public <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
+    public <RM extends Message<?>> Single<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         return new SingleValueMessageStream<>(source.thenApply(mapper));
     }
 

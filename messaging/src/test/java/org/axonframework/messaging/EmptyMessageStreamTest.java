@@ -17,8 +17,7 @@
 package org.axonframework.messaging;
 
 import org.axonframework.messaging.MessageStream.Entry;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -37,6 +36,17 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
     @Override
     MessageStream<Message<Void>> completedTestSubject(List<Message<Void>> messages) {
         Assumptions.assumeTrue(messages.isEmpty(), "EmptyMessageStream doesn't support content");
+        return MessageStream.empty();
+    }
+
+    @Override
+    MessageStream.Single<Message<Void>> completedSingleStreamTestSubject(Message<Void> message) {
+        Assumptions.abort("EmptyMessageStream doesn't support content");
+        return null;
+    }
+
+    @Override
+    MessageStream.Empty<Message<Void>> completedEmptyStreamTestSubject() {
         return MessageStream.empty();
     }
 
@@ -62,7 +72,8 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
                                                                           invoked.set(true);
                                                                           return MessageStream.empty();
                                                                       })
-                                                                      .firstAsCompletableFuture();
+                                                                      .first()
+                                                                      .asCompletableFuture();
         assertTrue(result.isDone());
         assertNull(result.join());
         assertFalse(invoked.get());
@@ -76,7 +87,8 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
                                                         .whenComplete(() -> {
                                                             throw expected;
                                                         })
-                                                        .firstAsCompletableFuture()
+                                                        .first()
+                                                        .asCompletableFuture()
                                                         .thenApply(Entry::message);
 
         assertTrue(result.isCompletedExceptionally());

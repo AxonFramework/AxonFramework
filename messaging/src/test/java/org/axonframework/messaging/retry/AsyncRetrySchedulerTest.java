@@ -71,7 +71,7 @@ class AsyncRetrySchedulerTest {
         MessageStream<Message<?>> actual =
                 testSubject.scheduleRetry(testMessage, null, new MockException("Simulating exception"), dispatcher);
 
-        assertTrue(actual.firstAsCompletableFuture().isCompletedExceptionally());
+        assertTrue(actual.first().asCompletableFuture().isCompletedExceptionally());
         verify(dispatcher, never()).dispatch(any(), any());
         verify(executor, never()).schedule(any(Runnable.class), anyLong(), any());
     }
@@ -82,14 +82,14 @@ class AsyncRetrySchedulerTest {
         Message<Object> testMessage = new GenericMessage<>(TEST_TYPE, "stub");
         policyOutcome.set(RetryPolicy.Outcome.rescheduleIn(1, TimeUnit.SECONDS));
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
-        when(dispatcher.dispatch(any(), any())).thenReturn(MessageStream.emptyOfType());
+        when(dispatcher.dispatch(any(), any())).thenReturn(MessageStream.empty().cast());
 
         MessageStream<Message<?>> actual =
                 testSubject.scheduleRetry(testMessage, null, new MockException("Simulating exception"), dispatcher);
         // make sure the policy as asked with the right details
         verify(retryPolicy).defineFor(eq(testMessage), isA(MockException.class), argThat(List::isEmpty));
 
-        assertFalse(actual.firstAsCompletableFuture().isDone());
+        assertFalse(actual.first().asCompletableFuture().isDone());
         ScheduledTask scheduledTask = scheduledTasks.poll();
         assertNotNull(scheduledTask, "Expected task to have been scheduled");
         assertEquals(1, scheduledTask.delay);
@@ -98,7 +98,7 @@ class AsyncRetrySchedulerTest {
         scheduledTask.task.run();
 
         verify(dispatcher).dispatch(eq(testMessage), any());
-        assertTrue(actual.firstAsCompletableFuture().isDone());
+        assertTrue(actual.first().asCompletableFuture().isDone());
         verifyNoMoreInteractions(retryPolicy);
     }
 
@@ -110,14 +110,14 @@ class AsyncRetrySchedulerTest {
         RetryScheduler.Dispatcher<Message<Object>, Message<?>> dispatcher = mock();
         when(dispatcher.dispatch(any(), any()))
                 .thenReturn(MessageStream.failed(new MockException("Repeated failure")))
-                .thenReturn(MessageStream.emptyOfType());
+                .thenReturn(MessageStream.empty().cast());
 
         MessageStream<Message<?>> actual =
                 testSubject.scheduleRetry(testMessage, null, new MockException("Simulating exception"), dispatcher);
 
         verify(retryPolicy).defineFor(eq(testMessage), isA(MockException.class), argThat(List::isEmpty));
 
-        assertFalse(actual.firstAsCompletableFuture().isDone());
+        assertFalse(actual.first().asCompletableFuture().isDone());
         ScheduledTask scheduledTask = scheduledTasks.poll();
         assertNotNull(scheduledTask, "Expected task to have been scheduled");
         assertEquals(1, scheduledTask.delay);
@@ -127,10 +127,10 @@ class AsyncRetrySchedulerTest {
         verify(retryPolicy).defineFor(eq(testMessage), isA(MockException.class), argThat(h -> h.size() == 1));
 
         verify(dispatcher, times(1)).dispatch(eq(testMessage), any());
-        assertFalse(actual.firstAsCompletableFuture().isDone());
+        assertFalse(actual.first().asCompletableFuture().isDone());
 
         scheduledTasks.remove().task.run();
-        assertTrue(actual.firstAsCompletableFuture().isDone());
+        assertTrue(actual.first().asCompletableFuture().isDone());
     }
 
     @SuppressWarnings("unchecked")
@@ -174,15 +174,15 @@ class AsyncRetrySchedulerTest {
         MessageStream<Message<?>> actual =
                 testSubject.scheduleRetry(testMessage, null, new MockException("Simulating exception"), dispatcher);
 
-        assertFalse(actual.firstAsCompletableFuture().isDone());
+        assertFalse(actual.first().asCompletableFuture().isDone());
         verify(dispatcher, never()).dispatch(any(), any());
 
         policyOutcome.set(RetryPolicy.Outcome.doNotReschedule());
         scheduledTasks.remove().task.run();
 
-        assertTrue(actual.firstAsCompletableFuture().isDone());
-        assertInstanceOf(MockException.class, actual.firstAsCompletableFuture().exceptionNow());
-        assertEquals("Retry error", actual.firstAsCompletableFuture().exceptionNow().getMessage());
+        assertTrue(actual.first().asCompletableFuture().isDone());
+        assertInstanceOf(MockException.class, actual.first().asCompletableFuture().exceptionNow());
+        assertEquals("Retry error", actual.first().asCompletableFuture().exceptionNow().getMessage());
 
         // no tasks have been scheduled for this failure
         assertTrue(scheduledTasks.isEmpty());

@@ -168,7 +168,7 @@ class InterceptingCommandBusTest {
                      "Expected command interceptors to be invoked in registered order");
 
         assertEquals(Map.of("handler1", "value-1", "handler2", "value-0"),
-                     result.firstAsCompletableFuture().get().message().getMetaData(),
+                     result.first().asCompletableFuture().get().message().getMetaData(),
                      "Expected result interceptors to be invoked in reverse order");
     }
 
@@ -183,8 +183,8 @@ class InterceptingCommandBusTest {
 
         ProcessingContext context = mock(ProcessingContext.class);
         var result = actualHandler.handle(testCommand, context);
-        assertTrue(result.firstAsCompletableFuture().isCompletedExceptionally());
-        assertInstanceOf(MockException.class, result.firstAsCompletableFuture().exceptionNow());
+        assertTrue(result.first().asCompletableFuture().isCompletedExceptionally());
+        assertInstanceOf(MockException.class, result.first().asCompletableFuture().exceptionNow());
 
         verify(handlerInterceptor1).interceptOnHandle(any(), eq(context), any());
         verify(handlerInterceptor2).interceptOnHandle(any(), eq(context), any());
@@ -209,7 +209,7 @@ class InterceptingCommandBusTest {
         ProcessingContext processingContext = mock(ProcessingContext.class);
         var result = actualHandler.handle(testCommand, processingContext);
 
-        assertTrue(result.firstAsCompletableFuture().isDone());
+        assertTrue(result.first().asCompletableFuture().isDone());
         verify(handlerInterceptor1).interceptOnHandle(any(), any(), any());
         verify(handlerInterceptor2, times(2)).interceptOnHandle(any(), any(), any());
         assertEquals(2, handledMessages.size());
@@ -219,7 +219,7 @@ class InterceptingCommandBusTest {
         assertEquals(Map.of("handler1", "value-0", "handler2", "value-1"),
                      handledMessages.get(1).getMetaData());
         assertEquals(Map.of("handler1", "value-1", "handler2", "value-0"),
-                     result.firstAsCompletableFuture().join().message().getMetaData());
+                     result.first().asCompletableFuture().join().message().getMetaData());
     }
 
     @Test
