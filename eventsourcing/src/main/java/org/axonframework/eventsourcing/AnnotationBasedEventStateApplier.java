@@ -89,7 +89,11 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
         );
 
         try {
-            handlerAdapter.handleSync(event);
+            var result = handlerAdapter.handleSync(event);
+            if (result != null && model.getClass().isAssignableFrom(result.getClass())) {
+                //noinspection unchecked
+                return (M) model.getClass().cast(result);
+            }
         } catch (Exception e) {
             throw new StateEvolvingException(
                     "Failed to apply event [" + event.type() + "] in order to evolve [" + model.getClass() + "] state",
