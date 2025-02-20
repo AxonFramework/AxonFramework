@@ -32,7 +32,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface CommandHandlerRegistry {
+public interface CommandHandlerRegistry<SELF extends CommandHandlerRegistry<SELF>> {
 
     /**
      * Subscribe the given {@code handler} for {@link CommandMessage commands} of the given {@code names}.
@@ -45,10 +45,10 @@ public interface CommandHandlerRegistry {
      * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given names.
      * @return This registry for fluent interfacing.
      */
-    default CommandHandlerRegistry subscribe(@Nonnull Set<QualifiedName> names,
+    default SELF subscribe(@Nonnull Set<QualifiedName> names,
                                              @Nonnull CommandHandler commandHandler) {
         names.forEach(name -> subscribe(name, commandHandler));
-        return this;
+        return self();
     }
 
     /**
@@ -62,6 +62,8 @@ public interface CommandHandlerRegistry {
      * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given name.
      * @return This registry for fluent interfacing.
      */
-    CommandHandlerRegistry subscribe(@Nonnull QualifiedName name,
-                                     @Nonnull CommandHandler commandHandler);
+    SELF subscribe(@Nonnull QualifiedName name,
+                   @Nonnull CommandHandler commandHandler);
+
+    SELF self();
 }

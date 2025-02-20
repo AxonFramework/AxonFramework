@@ -18,6 +18,7 @@ package org.axonframework.messaging.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandHandlerRegistry;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.common.CollectionUtils;
 import org.axonframework.eventhandling.EventHandler;
@@ -45,7 +46,8 @@ import java.util.Set;
  * @since 5.0.0
  */
 public interface MessageHandlingComponent
-        extends CommandHandlingComponent, EventHandlingComponent, QueryHandlingComponent, MessageHandler {
+        extends CommandHandlingComponent, CommandHandlerRegistry<MessageHandlingComponent>,
+        EventHandlingComponent, QueryHandlingComponent, MessageHandler {
 
     /**
      * Subscribe the given {@code handler} for {@link org.axonframework.messaging.Message messages} of the given
@@ -147,5 +149,10 @@ public interface MessageHandlingComponent
                                                                               supportedEvents(),
                                                                               HashSet::new);
         return CollectionUtils.merge(supportedCommandsAndEvents, supportedQueries(), HashSet::new);
+    }
+
+    @Override
+    default MessageHandlingComponent self() {
+        return this;
     }
 }

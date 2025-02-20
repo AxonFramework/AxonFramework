@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class SimpleCommandHandlingComponent implements CommandHandlingComponent {
+public class SimpleCommandHandlingComponent implements CommandHandlingComponent, CommandHandlerRegistry<SimpleCommandHandlingComponent> {
 
     private final ConcurrentHashMap<QualifiedName, CommandHandler> commandHandlers;
 
@@ -55,17 +55,20 @@ public class SimpleCommandHandlingComponent implements CommandHandlingComponent 
         return handler.handle(command, context);
     }
 
-    @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
                                                     @Nonnull CommandHandler handler) {
         names.forEach(name -> commandHandlers.put(name, Objects.requireNonNull(handler, "TODO")));
         return this;
     }
 
-    @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull QualifiedName name,
                                                     @Nonnull CommandHandler messageHandler) {
         return subscribe(Set.of(name), messageHandler);
+    }
+
+    @Override
+    public SimpleCommandHandlingComponent self() {
+        return this;
     }
 
     @Override

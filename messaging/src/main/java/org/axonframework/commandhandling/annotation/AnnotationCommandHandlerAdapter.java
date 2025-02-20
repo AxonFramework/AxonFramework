@@ -110,14 +110,6 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
         this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver may not be null");
     }
 
-    @Override
-    public AnnotationCommandHandlerAdapter<T> subscribe(@Nonnull QualifiedName name,
-                                                        @Nonnull org.axonframework.commandhandling.CommandHandler commandHandler) {
-        throw new UnsupportedOperationException(
-                "This Command Handling Component does not support direct command handler registration."
-        );
-    }
-
     @Nonnull
     @Override
     public MessageStream<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,

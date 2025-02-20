@@ -16,27 +16,26 @@
 
 package org.axonframework.commandhandling;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
 
 import java.util.Set;
 
 /**
- * Interface describing a group of {@code CommandHandlers} belonging to a single component.
- * <p>
- * As such, it allows registration of {@code CommandHandlers} through the {@code CommandHandlerRegistry}. Besides
- * handling and registration, it specifies which {@link #supportedCommands() commands} it supports.
+ * Interface describing a registry of {@link CommandHandler command handlers}.
  *
  * @author Allard Buijze
- * @author Rene de Waele
+ * @author Gerard Klijs
+ * @author Milan Savic
+ * @author Mitchell Herrijgers
+ * @author Sara Pellegrini
  * @author Steven van Beelen
- * @since 3.0.0
+ * @since 5.0.0
  */
-public interface CommandHandlingComponent extends CommandHandler {
+public interface HierarchicalCommandHandlerRegistry<SELF extends HierarchicalCommandHandlerRegistry<SELF>>
+        extends CommandHandlerRegistry<SELF> {
 
-    /**
-     * All supported {@link CommandMessage commands}, referenced through a {@link QualifiedName}.
-     *
-     * @return All supported {@link CommandMessage commands}, referenced through a {@link QualifiedName}.
-     */
-    Set<QualifiedName> supportedCommands();
+    SELF subscribeChildHandlingComponent(@Nonnull CommandHandlingComponent commandHandlingComponent);
+
+    SELF self();
 }

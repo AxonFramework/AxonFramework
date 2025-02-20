@@ -40,7 +40,7 @@ import javax.annotation.Nullable;
  * @author Allard Buijze
  * @since 0.5
  */
-public interface CommandBus extends CommandHandlerRegistry, DescribableComponent {
+public interface CommandBus extends CommandHandlerRegistry<CommandBus>, DescribableComponent {
 
     /**
      * Dispatch the given {@code command} to the {@link CommandHandler command handler}
@@ -71,7 +71,11 @@ public interface CommandBus extends CommandHandlerRegistry, DescribableComponent
      * @param handlingComponent The command handling component instance to subscribe with this bus.
      * @return This registry for fluent interfacing.
      */
-    default CommandHandlerRegistry subscribe(@Nonnull CommandHandlingComponent handlingComponent) {
+    default CommandBus subscribe(@Nonnull CommandHandlingComponent handlingComponent) {
         return subscribe(handlingComponent.supportedCommands(), handlingComponent);
+    }
+
+    default CommandBus self() {
+        return this;
     }
 }
