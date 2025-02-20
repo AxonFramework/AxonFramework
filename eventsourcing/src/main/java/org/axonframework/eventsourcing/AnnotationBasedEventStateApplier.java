@@ -52,9 +52,9 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
     public AnnotationBasedEventStateApplier(@Nonnull Class<M> modelType) {
         this(
                 modelType,
-                AnnotatedHandlerInspector.inspectType(modelType.getClass(),
+                AnnotatedHandlerInspector.inspectType(modelType,
                                                       ClasspathParameterResolverFactory.forClass(modelType),
-                                                      ClasspathHandlerDefinition.forClass(modelType.getClass())),
+                                                      ClasspathHandlerDefinition.forClass(modelType)),
                 new ClassBasedMessageTypeResolver()
         );
     }
