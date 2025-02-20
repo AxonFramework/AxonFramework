@@ -18,11 +18,11 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 
 import javax.annotation.Nonnull;
 
@@ -42,7 +42,6 @@ import static java.util.Objects.requireNonNull;
 public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M> {
 
     private final AnnotatedHandlerInspector<Object> inspector;
-    private final MessageTypeResolver messageTypeResolver;
 
     /**
      * Initialize a new {@link AnnotationBasedEventStateApplier}.
@@ -54,8 +53,7 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
                 modelType,
                 AnnotatedHandlerInspector.inspectType(modelType,
                                                       ClasspathParameterResolverFactory.forClass(modelType),
-                                                      ClasspathHandlerDefinition.forClass(modelType)),
-                new ClassBasedMessageTypeResolver()
+                                                      ClasspathHandlerDefinition.forClass(modelType))
         );
     }
 
@@ -69,12 +67,11 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
      *                            {@link org.axonframework.eventhandling.EventMessage EventMessages}.
      */
     public AnnotationBasedEventStateApplier(@Nonnull Class<M> modelType,
-                                            @Nonnull AnnotatedHandlerInspector<Object> inspector,
-                                            @Nonnull MessageTypeResolver messageTypeResolver) {
+                                            @Nonnull AnnotatedHandlerInspector<Object> inspector
+    ) {
         requireNonNull(modelType, "Model Type may not be null");
         this.inspector = requireNonNull(inspector,
                                         "Annotated Handler Inspector may not be null");
-        this.messageTypeResolver = requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
     }
 
     @Override
@@ -82,14 +79,8 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
         requireNonNull(model, "Model may not be null");
         requireNonNull(event, "Event Message may not be null");
 
-        var handlerAdapter = new AnnotationEventHandlerAdapter(
-                model,
-                this.inspector,
-                this.messageTypeResolver
-        );
-
         try {
-            var result = handlerAdapter.handleSync(event);
+            var result = handle(model, event);
             if (result != null && model.getClass().isAssignableFrom(result.getClass())) {
                 //noinspection unchecked
                 return (M) model.getClass().cast(result);
@@ -100,5 +91,18 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
                     e);
         }
         return model;
+    }
+
+    private Object handle(M model, EventMessage<?> event) throws Exception {
+        var listenerType = model.getClass();
+        var handler =
+                inspector.getHandlers(listenerType)
+                         .filter(h -> h.canHandle(event, null))
+                         .findFirst();
+        if (handler.isPresent()) {
+            MessageHandlerInterceptorMemberChain<Object> interceptor = inspector.chainedInterceptor(listenerType);
+            return interceptor.handleSync(event, model, handler.get());
+        }
+        return null;
     }
 }
