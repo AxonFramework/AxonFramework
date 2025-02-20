@@ -48,7 +48,6 @@ class AnnotationBasedEventStateApplierTest {
     @Nested
     class BasicEventHandling {
 
-        // todo: should support records and returning new state from event handlers in the future
         @Test
         void mutatesStateIfClass() {
             // given
@@ -180,6 +179,53 @@ class AnnotationBasedEventStateApplierTest {
             assertEquals("null-0", state.handledPayloads);
             assertFalse(state.objectHandlerInvoked);
             assertEquals(1, state.handledCount);
+        }
+    }
+
+    @Nested
+    class RecordSupport {
+
+        private record RecordState(String handledPayloads) {
+
+            private static RecordState empty() {
+                return new RecordState("null");
+            }
+
+            @EventSourcingHandler
+            RecordState evolve(
+                    Integer payload
+            ) {
+                return new RecordState(handledPayloads + "-" + payload);
+            }
+        }
+
+        private static final EventStateApplier<RecordState> eventStateApplier = new AnnotationBasedEventStateApplier<>(
+                RecordState.class);
+
+        @Test
+        void doNotMutateStateIfRecord() {
+            // given
+            var state = RecordState.empty();
+            var event = domainEvent(0);
+
+            // when
+            eventStateApplier.apply(state, event);
+
+            // then
+            assertEquals("null", state.handledPayloads);
+        }
+
+        @Test
+        void returnsNewObjectIfRecord() {
+            // given
+            var state = RecordState.empty();
+            var event = domainEvent(0);
+
+            // when
+            state = eventStateApplier.apply(state, event);
+
+            // then
+            assertEquals("null-0", state.handledPayloads);
         }
     }
 
