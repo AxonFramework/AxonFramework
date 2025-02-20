@@ -121,9 +121,7 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
                 messageTypeResolver
         );
         try {
-            if (handlerAdapter.canHandle(event)) {
-                handlerAdapter.handleSync(event);
-            }
+            handlerAdapter.handleSync(event);
         } catch (Exception e) {
             // todo: I'm not sure about that, should we add Exception to the method signature and do not handle here?
             throw new StateEvolvingException(
