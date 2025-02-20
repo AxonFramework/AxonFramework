@@ -46,7 +46,7 @@ public class CommandModelComponent
     private final SimpleEventHandlingComponent eventComponent;
 
     public CommandModelComponent() {
-        this.commandComponent = new SimpleCommandHandlingComponent();
+        this.commandComponent = SimpleCommandHandlingComponent.forComponent("CommandModelComponent");
         this.eventComponent = new SimpleEventHandlingComponent();
     }
 

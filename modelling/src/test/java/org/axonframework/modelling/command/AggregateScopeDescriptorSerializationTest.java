@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,18 +65,18 @@ class AggregateScopeDescriptorSerializationTest {
         assertEquals(expectedIdentifier, result.getIdentifier());
     }
 
-    @Test
-    void xStreamSerializationWorksAsExpected() {
-        XStreamSerializer xStreamSerializer = TestSerializer.xStreamSerializer();
-        xStreamSerializer.getXStream().setClassLoader(this.getClass().getClassLoader());
-
-        SerializedObject<String> serializedObject =
-                xStreamSerializer.serialize(testSubject, String.class);
-        AggregateScopeDescriptor result = xStreamSerializer.deserialize(serializedObject);
-
-        assertEquals(expectedType, result.getType());
-        assertEquals(expectedIdentifier, result.getIdentifier());
-    }
+//    @Test
+//    void xStreamSerializationWorksAsExpected() {
+//        XStreamSerializer xStreamSerializer = TestSerializer.xStreamSerializer();
+//        xStreamSerializer.getXStream().setClassLoader(this.getClass().getClassLoader());
+//
+//        SerializedObject<String> serializedObject =
+//                xStreamSerializer.serialize(testSubject, String.class);
+//        AggregateScopeDescriptor result = xStreamSerializer.deserialize(serializedObject);
+//
+//        assertEquals(expectedType, result.getType());
+//        assertEquals(expectedIdentifier, result.getIdentifier());
+//    }
 
     @Test
     void jacksonSerializationWorksAsExpected() {

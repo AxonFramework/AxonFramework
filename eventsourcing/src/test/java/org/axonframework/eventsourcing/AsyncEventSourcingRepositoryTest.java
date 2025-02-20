@@ -62,6 +62,7 @@ class AsyncEventSourcingRepositoryTest {
                 eventStore,
                 identifier -> TEST_MODEL_CRITERIA,
                 (currentState, event) -> currentState + "-" + event.getPayload(),
+                (id) -> id,
                 TEST_CONTEXT
         );
     }
@@ -187,7 +188,7 @@ class AsyncEventSourcingRepositoryTest {
                 .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate));
 
         CompletableFuture<ManagedEntity<String, String>> result =
-                testSubject.loadOrCreate("test", processingContext, () -> fail("This should not have been invoked"));
+                testSubject.loadOrCreate("test", processingContext);
 
         assertEquals("null-0-1", result.resultNow().entity());
     }
@@ -200,7 +201,7 @@ class AsyncEventSourcingRepositoryTest {
                 .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate));
 
         CompletableFuture<ManagedEntity<String, String>> loaded =
-                testSubject.loadOrCreate("test", processingContext, () -> "created");
+                testSubject.loadOrCreate("test", processingContext);
 
         assertTrue(loaded.isDone());
         assertFalse(loaded.isCompletedExceptionally());

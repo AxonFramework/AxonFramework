@@ -277,6 +277,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
                     Context context = Context.empty();
                     context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition));
                     context = Tag.addToContext(context, nextEvent.tags());
+                    context = context.withResource(ConsistencyMarker.RESOURCE_KEY, new GlobalIndexConsistencyMarker(currentPosition));
                     return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
                 }
                 currentPosition = position.get();

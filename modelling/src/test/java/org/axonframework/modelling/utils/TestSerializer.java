@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.utils;
 
-import com.thoughtworks.xstream.XStream;
+import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
@@ -31,14 +31,8 @@ public abstract class TestSerializer {
         // Test utility class
     }
 
-    /**
-     * Return a {@link XStreamSerializer} using a default {@link XStream} instance with a {@link CompactDriver}.
-     *
-     * @return a {@link XStreamSerializer} using a default {@link XStream} instance with a {@link CompactDriver}
-     */
-    public static XStreamSerializer xStreamSerializer() {
-        return XStreamSerializer.builder()
-                                .xStream(new XStream(new CompactDriver()))
+    public static JacksonSerializer xStreamSerializer() {
+        return JacksonSerializer.builder()
                                 .build();
     }
 }

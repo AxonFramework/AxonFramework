@@ -40,6 +40,11 @@ abstract class ConsistencyMarkers {
         public ConsistencyMarker upperBound(ConsistencyMarker other) {
             return other;
         }
+
+        @Override
+        public String toString() {
+            return "Origin";
+        }
     }
 
     static class InfinityConsistencyMarker implements ConsistencyMarker {

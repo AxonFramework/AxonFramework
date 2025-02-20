@@ -63,8 +63,7 @@ public sealed interface AsyncRepository<ID, T>
      * constructed entity instance based on the {@code factoryMethod}.
      */
     CompletableFuture<ManagedEntity<ID, T>> loadOrCreate(@Nonnull ID identifier,
-                                                         @Nonnull ProcessingContext processingContext,
-                                                         @Nonnull Supplier<T> factoryMethod);
+                                                         @Nonnull ProcessingContext processingContext);
 
     /**
      * Persists the given {@code entity} in this repository

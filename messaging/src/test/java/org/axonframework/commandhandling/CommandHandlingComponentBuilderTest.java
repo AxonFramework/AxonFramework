@@ -37,16 +37,20 @@ class CommandHandlingComponentBuilderTest {
         AtomicBoolean command2HandledChild = new AtomicBoolean(false);
         AtomicBoolean command3Handled = new AtomicBoolean(false);
 
-        CommandHandlingComponent handlingComponent = DefaultCommandHandlingComponent
+        CommandHandlingComponent handlingComponent = SimpleCommandHandlingComponent
                 .forComponent("MySuperComponent")
+                .registerInterceptor((uow, chain) -> {
+                    // Intercept
+                    return chain.proceedSync();
+                })
                 // Method one, factory of CommandHandlingComponent
-                .subscribeChildHandlingComponent(
+                .subscribe(
                         // Third-level layer
                         AnnotationBasedCommandHandlingComponentFactory
                                 .createHandlingComponent("MyAnnotatedCommandHandler", new MyAnnotatedCommandHandler())
                 )
                 // Method two, direct implementation of CommandHandlingComponent
-                .subscribeChildHandlingComponent(new AnnotatedCommandHandlingComponent<>(new MyAnnotatedCommandHandler()))
+                .subscribe(new AnnotatedCommandHandlingComponent<>(new MyAnnotatedCommandHandler()))
                 .subscribe(
                         new QualifiedName("Command1"),
                         (command, context) -> {
@@ -55,8 +59,8 @@ class CommandHandlingComponentBuilderTest {
                         }
                 )
                 // Second layer
-                .subscribeChildHandlingComponent(
-                        DefaultCommandHandlingComponent
+                .subscribe(
+                        SimpleCommandHandlingComponent
                                 .forComponent("MySubComponent")
                                 .subscribe(
                                         new QualifiedName("Command2"),
@@ -103,7 +107,7 @@ class CommandHandlingComponentBuilderTest {
     class AnnotationBasedCommandHandlingComponentFactory {
         static <T> CommandHandlingComponent createHandlingComponent(String name, T instance) {
             // Inspect
-            DefaultCommandHandlingComponent component = DefaultCommandHandlingComponent.forComponent(name);
+            SimpleCommandHandlingComponent component = SimpleCommandHandlingComponent.forComponent(name);
             // For every found handler, register. Might even use nesting here.
             return component;
         }

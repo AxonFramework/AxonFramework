@@ -31,6 +31,7 @@ import java.util.Set;
  * @author Sara Pellegrini
  * @author Steven van Beelen
  * @since 5.0.0
+ * @param <SELF> the type of the registry itself
  */
 public interface CommandHandlerRegistry<SELF extends CommandHandlerRegistry<SELF>> {
 
@@ -51,6 +52,20 @@ public interface CommandHandlerRegistry<SELF extends CommandHandlerRegistry<SELF
         return self();
     }
 
+
+    /**
+     * Subscribes the given {@code commandHandlingComponent} for all {@link CommandMessage commands} it supports.
+     * Specific implementations may choose to override this and prefer the handlers of this component over others, or
+     * vice versa.
+     *
+     * @param commandHandlingComponent The component to subscribe
+     * @return This registry for fluent interfacing.
+     */
+    default SELF subscribe(@Nonnull CommandHandlingComponent commandHandlingComponent) {
+        subscribe(commandHandlingComponent.supportedCommands(), commandHandlingComponent);
+        return self();
+    }
+
     /**
      * Subscribe the given {@code handler} for {@link CommandMessage commands} of the given {@code name}.
      * <p>
@@ -65,5 +80,10 @@ public interface CommandHandlerRegistry<SELF extends CommandHandlerRegistry<SELF
     SELF subscribe(@Nonnull QualifiedName name,
                    @Nonnull CommandHandler commandHandler);
 
+    /**
+     * Return a reference to this registry. Used for fluent interfacing on default interface methods.
+     *
+     * @return this registry
+     */
     SELF self();
 }

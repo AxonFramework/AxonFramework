@@ -151,14 +151,6 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         return typeToFactory;
     }
 
-    @Override
-    public AggregateAnnotationCommandHandler<T> subscribe(@Nonnull QualifiedName name,
-                                                          @Nonnull CommandHandler commandHandler) {
-        throw new UnsupportedOperationException(
-                "This Command Handling Component does not support direct command handler registration."
-        );
-    }
-
     /**
      * Initializes all the handlers. Handlers are deduplicated based on their signature. The signature includes the name
      * of the method and all parameter types. This is an effective override in the hierarchy.
