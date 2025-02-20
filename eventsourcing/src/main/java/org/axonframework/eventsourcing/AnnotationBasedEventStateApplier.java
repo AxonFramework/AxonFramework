@@ -77,18 +77,22 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
         requireNonNull(event, "Event Message may not be null");
 
         try {
-            var result = handle(model, event, processingContext).join();
-            if (result != null) {
-                var resultPayload = result.message().getPayload();
-                if (resultPayload != null && model.getClass().isAssignableFrom(resultPayload.getClass())) {
-                    //noinspection unchecked
-                    return (M) model.getClass().cast(resultPayload);
-                }
-            }
+            var eventHandlerResult = handle(model, event, processingContext).join();
+            return newModelInstance(model, eventHandlerResult);
         } catch (Exception e) {
             throw new StateEvolvingException(
                     "Failed to apply event [" + event.type() + "] in order to evolve [" + model.getClass() + "] state",
                     e);
+        }
+    }
+
+    private M newModelInstance(M model, MessageStream.Entry<?> eventHandlerResult) {
+        if (eventHandlerResult != null) {
+            var resultPayload = eventHandlerResult.message().getPayload();
+            if (resultPayload != null && model.getClass().isAssignableFrom(resultPayload.getClass())) {
+                //noinspection unchecked
+                return (M) model.getClass().cast(resultPayload);
+            }
         }
         return model;
     }
