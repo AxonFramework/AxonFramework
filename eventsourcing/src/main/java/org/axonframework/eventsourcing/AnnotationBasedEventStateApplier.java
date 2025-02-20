@@ -16,13 +16,10 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 
 import javax.annotation.Nonnull;
 
@@ -31,12 +28,12 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Implementation of {@link EventStateApplier} that applies state changes through {@link EventSourcingHandler} annotated
- * methods using an {@link AnnotationEventHandlerAdapter}.
+ * methods using an {@link AnnotatedHandlerInspector}.
  *
  * @param <M> The type of model to apply state changes to
- * @author Mateusz Nowak
  * @see EventSourcingHandler
- * @see AnnotationEventHandlerAdapter
+ * @see AnnotatedHandlerInspector
+ * @author Mateusz Nowak
  * @since 5.0.0
  */
 public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M> {
@@ -58,13 +55,10 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
     }
 
     /**
-     * Initialize a new {@link AnnotationBasedEventStateApplier} for the given model type using the provided
-     * {@code messageTypeResolver}.
+     * Initialize a new {@link AnnotationBasedEventStateApplier}.
      *
      * @param modelType           The type of model this instance will handle state changes for.
-     * @param messageTypeResolver The {@link MessageTypeResolver} resolving the
-     *                            {@link org.axonframework.messaging.MessageType types} for
-     *                            {@link org.axonframework.eventhandling.EventMessage EventMessages}.
+     * @param inspector           The inspector to use to find the annotated handlers on the model.
      */
     public AnnotationBasedEventStateApplier(@Nonnull Class<M> modelType,
                                             @Nonnull AnnotatedHandlerInspector<Object> inspector
@@ -100,7 +94,7 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
                          .filter(h -> h.canHandle(event, null))
                          .findFirst();
         if (handler.isPresent()) {
-            MessageHandlerInterceptorMemberChain<Object> interceptor = inspector.chainedInterceptor(listenerType);
+            var interceptor = inspector.chainedInterceptor(listenerType);
             return interceptor.handleSync(event, model, handler.get());
         }
         return null;
