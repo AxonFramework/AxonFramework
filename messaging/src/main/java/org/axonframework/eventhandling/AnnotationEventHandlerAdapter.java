@@ -113,12 +113,34 @@ public class AnnotationEventHandlerAdapter implements EventMessageHandler {
                                          ParameterResolverFactory parameterResolverFactory,
                                          HandlerDefinition handlerDefinition,
                                          MessageTypeResolver messageTypeResolver) {
+        this(annotatedEventListener,
+             AnnotatedHandlerInspector.inspectType(annotatedEventListener.getClass(),
+                                                   parameterResolverFactory,
+                                                   handlerDefinition),
+             messageTypeResolver
+        );
+    }
+
+    /**
+     * Wraps the given {@code annotatedEventListener}, allowing it to be subscribed to an Event Bus. The given
+     * {@code parameterResolverFactory} is used to resolve parameter values for handler methods. Handler definition is
+     * used to create concrete handlers.
+     *
+     * @param annotatedEventListener the annotated event listener
+     * @param inspector              the inspector to use to annotated find handlers
+     * @param messageTypeResolver    The {@link MessageTypeResolver} resolving the
+     *                               {@link org.axonframework.messaging.MessageType types} for
+     *                               {@link org.axonframework.eventhandling.EventMessage EventMessages}
+     */
+    public AnnotationEventHandlerAdapter(Object annotatedEventListener,
+                                         AnnotatedHandlerInspector<Object> inspector,
+                                         MessageTypeResolver messageTypeResolver
+    ) {
         assertNonNull(messageTypeResolver, "The Message Type Resolver may not be null");
+        assertNonNull(inspector, "The Annotated Handler Inspector may not be null");
         this.annotatedEventListener = annotatedEventListener;
         this.listenerType = annotatedEventListener.getClass();
-        this.inspector = AnnotatedHandlerInspector.inspectType(annotatedEventListener.getClass(),
-                                                               parameterResolverFactory,
-                                                               handlerDefinition);
+        this.inspector = inspector;
         this.messageTypeResolver = messageTypeResolver;
     }
 
