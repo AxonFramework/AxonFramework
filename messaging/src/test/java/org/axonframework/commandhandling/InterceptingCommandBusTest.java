@@ -42,6 +42,11 @@ import java.util.function.BiFunction;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link InterceptingCommandBus}.
+ *
+ * @author Allard Buijze
+ */
 class InterceptingCommandBusTest {
 
     private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");

@@ -75,15 +75,15 @@ class NewMessageHandlerRegistrationTest {
 
         testSubject.subscribe(COMMAND_TYPE.qualifiedName(), (CommandHandler) (command, context) -> {
                        commandHandlerInvoked.set(true);
-                       return MessageStream.empty();
+                       return MessageStream.empty().cast();
                    })
                    .subscribe(EVENT_TYPE.qualifiedName(), (EventHandler) (event, context1) -> {
                        eventHandlerInvoked.set(true);
-                       return MessageStream.empty();
+                       return MessageStream.empty().cast();
                    })
                    .subscribe(QUERY_TYPE.qualifiedName(), (QueryHandler) (event1, context2) -> {
                        queryHandlerInvoked.set(true);
-                       return MessageStream.empty();
+                       return MessageStream.empty().cast();
                    });
     }
 
@@ -103,23 +103,23 @@ class NewMessageHandlerRegistrationTest {
                 .subscribe(Set.of(testName), (MessageHandler) new TestMessageHandlingComponent());
 
         aggregate.subscribe(testName, new TestCommandHandler())
-                 .subscribe(testName, (CommandHandler) (command, context) -> MessageStream.empty())
+                 .subscribe(testName, (CommandHandler) (command, context) -> MessageStream.empty().cast())
                  .subscribe(testName, new TestEventHandler())
-                 .subscribe(testName, (EventHandler) (event, context) -> MessageStream.empty());
+                 .subscribe(testName, (EventHandler) (event, context) -> MessageStream.empty().cast());
 
         projector.subscribe(testName, new TestEventHandler())
-                 .subscribe(testName, (EventHandler) (event, context) -> MessageStream.empty())
+                 .subscribe(testName, (EventHandler) (event, context) -> MessageStream.empty().cast())
                  .subscribe(testName, new TestQueryHandler())
-                 .subscribe(testName, (QueryHandler) (query, context) -> MessageStream.empty())
+                 .subscribe(testName, (QueryHandler) (query, context) -> MessageStream.empty().cast())
 
         /*.subscribe(Set.of(testName), new TestMessageHandlingComponent<>())*/;
 
         genericMHC.subscribe(testName, new TestCommandHandler())
-                  .subscribe(testName, (CommandHandler) (command, context) -> MessageStream.empty())
+                  .subscribe(testName, (CommandHandler) (command, context) -> MessageStream.empty().cast())
                   .subscribe(testName, new TestEventHandler())
-                  .subscribe(testName, (EventHandler) (event, context) -> MessageStream.empty())
+                  .subscribe(testName, (EventHandler) (event, context) -> MessageStream.empty().cast())
                   .subscribe(testName, new TestQueryHandler())
-                  .subscribe(testName, (QueryHandler) (query, context) -> MessageStream.empty())
+                  .subscribe(testName, (QueryHandler) (query, context) -> MessageStream.empty().cast())
                   .subscribe(Set.of(testName), (MessageHandler) new TestMessageHandlingComponent());
     }
 
@@ -129,7 +129,7 @@ class NewMessageHandlerRegistrationTest {
 
         MessageStream<? extends Message<?>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
 
-        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.firstAsCompletableFuture();
+        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.first().asCompletableFuture();
 
         assertTrue(resultFuture.isDone());
         assertFalse(resultFuture.isCompletedExceptionally());
@@ -147,7 +147,7 @@ class NewMessageHandlerRegistrationTest {
 
         MessageStream<NoMessage> result = testSubject.handle(testMessage, ProcessingContext.NONE);
 
-        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.firstAsCompletableFuture();
+        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.first().asCompletableFuture();
 
         assertTrue(resultFuture.isDone());
         assertFalse(resultFuture.isCompletedExceptionally());
@@ -167,7 +167,7 @@ class NewMessageHandlerRegistrationTest {
         MessageStream<? extends QueryResponseMessage<?>> result =
                 testSubject.handle(testMessage, ProcessingContext.NONE);
 
-        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.firstAsCompletableFuture();
+        CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.first().asCompletableFuture();
 
         assertTrue(resultFuture.isDone());
         assertFalse(resultFuture.isCompletedExceptionally());
@@ -215,7 +215,7 @@ class NewMessageHandlerRegistrationTest {
         @Nonnull
         public MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
                                                @Nonnull ProcessingContext context) {
-            return MessageStream.empty();
+            return MessageStream.empty().cast();
         }
     }
 
@@ -279,21 +279,21 @@ class NewMessageHandlerRegistrationTest {
         @Override
         public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                        @Nonnull ProcessingContext context) {
-            return MessageStream.empty();
+            return MessageStream.empty().cast();
         }
 
         @Nonnull
         @Override
         public MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
                                                @Nonnull ProcessingContext context) {
-            return MessageStream.empty();
+            return MessageStream.empty().cast();
         }
 
         @Nonnull
         @Override
         public MessageStream<QueryResponseMessage<?>> handle(@Nonnull QueryMessage<?, ?> query,
                                                              @Nonnull ProcessingContext context) {
-            return MessageStream.empty();
+            return MessageStream.empty().cast();
         }
     }
 }
