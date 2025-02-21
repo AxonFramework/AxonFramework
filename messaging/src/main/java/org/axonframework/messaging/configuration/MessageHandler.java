@@ -16,6 +16,10 @@
 
 package org.axonframework.messaging.configuration;
 
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.queryhandling.QueryHandler;
+
 /**
  * Marker interface for a handlers or components of {@link org.axonframework.messaging.Message messages}.
  *
@@ -24,6 +28,6 @@ package org.axonframework.messaging.configuration;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface MessageHandler {
+public sealed interface MessageHandler permits CommandHandler, EventHandler, QueryHandler, MessageHandlingComponent {
 
 }
