@@ -16,27 +16,28 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlerRegistry;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 /**
- * Interface describing a registry of {@link CommandHandler command handlers}.
+ * Interface describing a registry of {@link StatefulCommandHandler StatefulCommandHandlers} belonging to a single
+ * component. During handling of commands, the stateful command handlers can access a model through a {@link ModelContainer}.
+ * That container is filled based on the models registered to this registry through the {@link #registerModel(String, Class, Function, BiFunction)}
  *
- * @author Allard Buijze
- * @author Gerard Klijs
- * @author Milan Savic
- * @author Mitchell Herrijgers
- * @author Sara Pellegrini
- * @author Steven van Beelen
- * @since 5.0.0
- * @param <T> The type of entity this registry will handle
  * @param <SELF> the type of the registry itself
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
+ * @author Mateusz Nowak
+ * @since 5.0.0
  */
-public interface StatefulCommandHandlerRegistry<T, SELF extends StatefulCommandHandlerRegistry<T, SELF>>
+public interface StatefulCommandHandlerRegistry<SELF extends StatefulCommandHandlerRegistry<SELF>>
         extends CommandHandlerRegistry<SELF> {
 
     /**
@@ -46,11 +47,51 @@ public interface StatefulCommandHandlerRegistry<T, SELF extends StatefulCommandH
      * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given name.
      * @return This registry for fluent interfacing.
      */
-    SELF subscribe(@Nonnull QualifiedName name, @Nonnull StatefulCommandHandler<T> commandHandler);
+    SELF subscribe(@Nonnull QualifiedName name, @Nonnull StatefulCommandHandler commandHandler);
+
 
     /**
-     * Subscribe the given {@code commandHandler} for a {@link QualifiedName name}.
-     * @return This registry for fluent interfacing.
+     * Registers a model that can be resolved for registered {@link StatefulCommandHandler StatefulCommandHandlers}.
+     * Will register this model under the simple name of the given {@code modelClass}. As each combination of a
+     * {@code name} and {@code modelClass} can only be registered once, use {@link #registerModel(String, Class, Function, BiFunction)}
+     * if you have need for multiple models of the same type to be registered.
+     *
+     * @param modelClass        The class of the model to register
+     * @param commandIdResolver The function to resolve the identifier of the model based on a command. Returning
+     *                          {@code null} from this function will result in an exception when trying to load this
+     *                          model.
+     * @param loadFunction      The function to load the model based on the identifier and the
+     *                          {@link ProcessingContext}.
+     * @param <ID>              The type of the identifier of the model
+     * @param <T>               The type of the model
+     * @return This registry for fluent interfacing
      */
-    SELF self();
+    default <ID, T> SELF registerModel(
+            Class<T> modelClass,
+            Function<CommandMessage<?>, ID> commandIdResolver,
+            BiFunction<ID, ProcessingContext, CompletableFuture<T>> loadFunction
+    ) {
+        return registerModel(modelClass.getSimpleName(), modelClass, commandIdResolver, loadFunction);
+    }
+
+    /**
+     * Registers a model that can be resolved for registered {@link StatefulCommandHandler StatefulCommandHandlers}.
+     * Each {@code name} and {@code modelClass} combination can only be registered once.
+     *
+     * @param name              The name of the model to register
+     * @param modelClass        The class of the model to register
+     * @param commandIdResolver The function to resolve the identifier of the model based on a command. Returning
+     *                          {@code null} from this function will result in an exception when trying to load this
+     *                          model.
+     * @param loadFunction      The function to load the model based on the identifier and the
+     *                          {@link ProcessingContext}.
+     * @param <ID>              The type of the identifier of the model
+     * @param <T>               The type of the model
+     * @return This registry for fluent interfacing
+     */
+    <ID, T> SELF registerModel(String name,
+                               Class<T> modelClass,
+                               Function<CommandMessage<?>, ID> commandIdResolver,
+                               BiFunction<ID, ProcessingContext, CompletableFuture<T>> loadFunction
+    );
 }

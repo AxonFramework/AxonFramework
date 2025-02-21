@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -89,20 +90,27 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
         MessageStream<EventMessage<?>> source = eventStorageEngine.source(condition);
         if (appendCondition.consistencyMarker() == ConsistencyMarker.ORIGIN) {
             AtomicReference<ConsistencyMarker> markerReference = new AtomicReference<>(appendCondition.consistencyMarker());
+            AtomicBoolean loadedEvent = new AtomicBoolean(false);
             return source.onNext(e -> {
                 ConsistencyMarker marker;
                 if ((marker = e.getResource(ConsistencyMarker.RESOURCE_KEY)) != null) {
                     markerReference.set(marker);
                 }
+                loadedEvent.set(true);
             }).whenComplete(() -> {
                 // when reading is complete, we choose the lowest, non-ORIGIN appendPosition as our next appendPosition
                 // when reading multiple times, the lowest consistency marker that we received from those streams
                 // (usually the first), is the safest one to use
                 processingContext.updateResource(appendPositionKey,
-                                                 current -> current == null
-                                                         || current == ConsistencyMarker.ORIGIN
-                                                         ? markerReference.get()
-                                                         : current.lowerBound(markerReference.get()));
+                                                 current -> {
+                                                     if (!loadedEvent.get()) {
+                                                         return current;
+                                                     }
+                                                     return current == null
+                                                             || current == ConsistencyMarker.ORIGIN
+                                                             ? markerReference.get()
+                                                             : current.lowerBound(markerReference.get());
+                                                 });
             });
         } else {
             return source;

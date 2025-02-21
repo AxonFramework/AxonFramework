@@ -20,7 +20,6 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 
 /**
@@ -58,7 +57,6 @@ public sealed interface AsyncRepository<ID, T>
      *
      * @param identifier        The identifier of the entity to load.
      * @param processingContext The processing context in which to manage the lifecycle of the entity.
-     * @param factoryMethod     The method to create an instance if not found.
      * @return A {@link CompletableFuture} resolving to the {@link ManagedEntity} with the given identifier, or a newly
      * constructed entity instance based on the {@code factoryMethod}.
      */

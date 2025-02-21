@@ -94,7 +94,10 @@ public class SimpleCommandHandlingComponent implements
                 .findFirst();
 
         if (optionalSubHandler.isPresent()) {
-            return optionalSubHandler.get().handle(command, context);
+            return invokeWithInterceptors(command,
+                                          context,
+                                          optionalSubHandler.get(),
+                                          new CopyOnWriteArrayList<>(interceptors));
         }
 
 

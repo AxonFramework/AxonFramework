@@ -47,7 +47,7 @@ public class GlobalIndexConsistencyMarker extends AbstractConsistencyMarker<Glob
         if (consistencyMarker instanceof GlobalIndexConsistencyMarker gicm) {
             return gicm.position;
         } else if (consistencyMarker == ConsistencyMarker.ORIGIN) {
-            return 0;
+            return -1;
         } else if (consistencyMarker == ConsistencyMarker.INFINITY) {
             return Integer.MAX_VALUE;
         }
