@@ -260,7 +260,8 @@ public interface MessageStream<M extends Message<?>> {
 
     /**
      * Create a stream that carries no {@link Entry} and is considered to be successfully completed. The type of an
-     * empty stream is forced to a {@link Message} containing a {@link Void}.
+     * empty stream is forced to a {@link Message} containing a {@link Void}. To declare empty streams of another type,
+     * call {@link #cast()} on the returned Empty stream.
      * <p>
      * Any attempt to convert this stream to a component that requires an entry to be returned (such as
      * {@link CompletableFuture}), will have it return {@code null}.
@@ -335,6 +336,10 @@ public interface MessageStream<M extends Message<?>> {
     /**
      * Closes this stream, freeing any possible resources occupied by the underlying stream. After invocation, some
      * {@link Entry entries} may still be available for reading.
+     * <p>
+     * Implementations must always release resources when a stream is completed, either with an error or normally.
+     * Therefore, it is only required to {@code close()} a Stream if the consumer decides to not read until the end.
+     *
      */
     void close();
 
