@@ -22,7 +22,9 @@ import reactor.core.publisher.Mono;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 
@@ -36,17 +38,18 @@ import java.util.function.BiFunction;
  */
 public class DelayedMessageStream<M extends Message<?>> implements MessageStream<M> {
 
-    private final CompletableFuture<MessageStream<M>> delegate;
+    private final CompletableFuture<? extends MessageStream<M>> delegate;
 
-    private DelayedMessageStream(@Nonnull CompletableFuture<MessageStream<M>> delegate) {
+    private DelayedMessageStream(@Nonnull CompletableFuture<? extends MessageStream<M>> delegate) {
         this.delegate = delegate;
     }
+
     /**
      * Creates a {@link MessageStream stream} that delays actions to its {@code delegate} when it becomes available.
      * <p>
      * If the given {@code delegate} has already {@link CompletableFuture#isDone() completed}, it returns the
-     * {@code MessageStream} immediately from it. Otherwise, it returns a DelayedMessageStream instance wrapping
-     * the given {@code delegate}.
+     * {@code MessageStream} immediately from it. Otherwise, it returns a DelayedMessageStream instance wrapping the
+     * given {@code delegate}.
      *
      * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream stream} to delegate to
      *                 when it becomes available.
@@ -55,14 +58,15 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
      * available.
      */
     public static <M extends Message<?>> MessageStream<M> create(
-            @Nonnull CompletableFuture<MessageStream<M>> delegate) {
+            @Nonnull CompletableFuture<? extends MessageStream<M>> delegate) {
         CompletableFuture<MessageStream<M>> safeDelegate = delegate
                 .exceptionallyCompose(CompletableFuture::failedFuture)
-                .thenApply(ms -> Objects.requireNonNullElse(ms, EmptyMessageStream.instance()));
+                .thenApply(ms -> Objects.requireNonNullElse(ms, MessageStream.empty().cast()));
         if (safeDelegate.isDone()) {
             try {
                 return delegate.get();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 return new DelayedMessageStream<>(safeDelegate);
             } catch (ExecutionException e) {
                 return MessageStream.failed(e.getCause());
@@ -72,18 +76,13 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
     }
 
     @Override
-    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
-        return delegate.thenCompose(MessageStream::firstAsCompletableFuture);
-    }
-
-    @Override
     public Flux<Entry<M>> asFlux() {
         return Mono.fromFuture(delegate).flatMapMany(MessageStream::asFlux);
     }
 
     @Override
     public Optional<Entry<M>> next() {
-        if (delegate.isDone()) {
+        if (delegate.isDone() && !delegate.isCompletedExceptionally()) {
             return delegate.getNow(null).next();
         }
         return Optional.empty();
@@ -103,10 +102,15 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
     @Override
     public Optional<Throwable> error() {
         if (delegate.isDone()) {
-            if (delegate.isCompletedExceptionally()) {
+            if (delegate.isCompletedExceptionally() && !delegate.isCancelled()) {
+                // unfortunately, CompletableFuture's don't treat cancellations the same way as other exceptions
                 return Optional.of(delegate.exceptionNow());
             } else {
-                return delegate.getNow(null).error();
+                try {
+                    return delegate.getNow(null).error();
+                } catch (CancellationException | CompletionException e) {
+                    return Optional.of(e);
+                }
             }
         }
         return Optional.empty();
@@ -114,25 +118,65 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
 
     @Override
     public boolean isCompleted() {
-        return delegate.isDone() && delegate.getNow(null).isCompleted();
+        return delegate.isDone() && (delegate.isCompletedExceptionally() || delegate.getNow(null).isCompleted());
     }
 
     @Override
     public boolean hasNextAvailable() {
-        return delegate.isDone() && (delegate.isCompletedExceptionally() || delegate.getNow(null).hasNextAvailable());
+        return delegate.isDone() && !delegate.isCompletedExceptionally() && delegate.getNow(null).hasNextAvailable();
     }
 
     @Override
     public void close() {
-        if (!delegate.isDone()) {
-            delegate.cancel(false);
+        if (delegate.isDone()) {
+            if (!delegate.isCompletedExceptionally()) {
+                delegate.getNow(null).close();
+            }
         } else {
-            delegate.getNow(null).close();
+            delegate.cancel(false);
         }
     }
 
     @Override
     public <R> CompletableFuture<R> reduce(@Nonnull R identity, @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
         return delegate.thenCompose(delegateStream -> delegateStream.reduce(identity, accumulator));
+    }
+
+    /**
+     * An implementation of the {@link DelayedMessageStream} that expects a message stream with only a
+     * {@link org.axonframework.messaging.MessageStream.Single entry}.
+     *
+     * @param <M> The type of {@link Message} contained in the {@link Entry} of this stream.
+     */
+    static class Single<M extends Message<?>> extends DelayedMessageStream<M> implements MessageStream.Single<M> {
+
+        /**
+         * Construct a {@code DelayedMessageStream.Single} for the given {@code delegate}.
+         *
+         * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream.Single stream} to
+         *                 delegate to when it becomes available.
+         */
+        Single(@Nonnull CompletableFuture<MessageStream.Single<M>> delegate) {
+            super(delegate);
+        }
+    }
+
+    /**
+     * An implementation of the {@link DelayedMessageStream} that expects a message stream
+     * {@link org.axonframework.messaging.MessageStream.Empty without} any entry.
+     *
+     * @param <M> The type of {@link Message} for the empty {@link Entry} of this stream.
+     */
+    static class Empty<M extends Message<?>> extends DelayedMessageStream<M> implements MessageStream.Empty<M> {
+
+        /**
+         * Construct a {@code DelayedMessageStream.Empty} for the given {@code delegate}.
+         *
+         * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream.Empty stream} to
+         *                 delegate to when it becomes available.
+         */
+        Empty(@Nonnull CompletableFuture<MessageStream.Empty<M>> delegate) {
+            super(delegate);
+        }
     }
 }

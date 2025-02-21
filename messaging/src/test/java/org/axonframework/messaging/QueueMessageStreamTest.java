@@ -22,6 +22,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -38,9 +39,30 @@ class QueueMessageStreamTest extends MessageStreamTest<EventMessage<String>> {
     }
 
     @Override
-    protected QueueMessageStream<EventMessage<String>> uncompletedTestSubject(List<EventMessage<String>> messages) {
+    MessageStream.Single<EventMessage<String>> completedSingleStreamTestSubject(EventMessage<String> message) {
+        Assumptions.abort("QueueMessageStream does not support explicit single-item streams");
+        return null;
+    }
+
+    @Override
+    MessageStream.Empty<EventMessage<String>> completedEmptyStreamTestSubject() {
+        Assumptions.abort("QueueMessageStream does not support explicit zero-item streams");
+        return null;
+    }
+
+    @Override
+    protected QueueMessageStream<EventMessage<String>> uncompletedTestSubject(List<EventMessage<String>> messages,
+                                                                              CompletableFuture<Void> completionCallback) {
         QueueMessageStream<EventMessage<String>> testSubject = new QueueMessageStream<>();
         messages.forEach(m -> testSubject.offer(m, Context.empty()));
+
+        completionCallback.whenComplete((r, e) -> {
+            if (e != null) {
+                testSubject.completeExceptionally(e);
+            } else {
+                testSubject.complete();
+            }
+        });
         return testSubject;
     }
 
@@ -66,7 +88,8 @@ class QueueMessageStreamTest extends MessageStreamTest<EventMessage<String>> {
 
     @Test
     void shouldInvokeConsumeCallbackWhenMessageIsConsumed() {
-        QueueMessageStream<EventMessage<String>> testSubject = uncompletedTestSubject(List.of(createRandomMessage()));
+        QueueMessageStream<EventMessage<String>> testSubject = uncompletedTestSubject(List.of(createRandomMessage()),
+                                                                                      new CompletableFuture<>());
 
         AtomicBoolean invoked = new AtomicBoolean(false);
         testSubject.onConsumeCallback(() -> invoked.set(true));
