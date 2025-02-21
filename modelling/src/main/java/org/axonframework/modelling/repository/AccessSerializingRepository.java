@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,20 @@
 
 package org.axonframework.modelling.repository;
 
-import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
 /**
  * Repository implementation that ensures safe concurrent access to entities stored in it. It delegates the actual
@@ -70,12 +70,10 @@ public class AccessSerializingRepository<ID, T>
 
     @Override
     public CompletableFuture<ManagedEntity<ID, T>> load(@Nonnull ID identifier,
-                                                        @Nonnull ProcessingContext processingContext,
-                                                        long start,
-                                                        long end) {
+                                                        @Nonnull ProcessingContext processingContext) {
         return awaitTurn(identifier,
                          processingContext,
-                         () -> delegate.load(identifier, processingContext, start, end));
+                         () -> delegate.load(identifier, processingContext));
     }
 
     @Override

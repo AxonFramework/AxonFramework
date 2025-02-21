@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ class AccessSerializingRepositoryTest {
         //noinspection unchecked
         delegate = mock();
         AtomicInteger concurrentCounter = new AtomicInteger();
-        when(delegate.load(eq(AGGREGATE_ID), any(), anyLong(), anyLong())).thenAnswer(invocation -> {
+        when(delegate.load(eq(AGGREGATE_ID), any())).thenAnswer(invocation -> {
             invocation.getArgument(1, ProcessingContext.class)
                       .runOnAfterCommit(pc -> concurrentCounter.decrementAndGet());
             return CompletableFuture.completedFuture(new StubEntity("instance" + concurrentCounter.incrementAndGet()));
@@ -98,7 +98,7 @@ class AccessSerializingRepositoryTest {
         assertEquals("instance1", result1.resultNow());
         assertEquals("instance1", result2.resultNow());
         // Load is invoked once as the entity was still present from the first operation.
-        verify(delegate, times(1)).load(eq(AGGREGATE_ID), any(), anyLong(), anyLong());
+        verify(delegate, times(1)).load(eq(AGGREGATE_ID), any());
     }
 
     @Test
@@ -156,7 +156,7 @@ class AccessSerializingRepositoryTest {
         assertInstanceOf(TimeoutException.class, result2.exceptionNow());
         assertEquals("instance1", result3.resultNow());
         // Load is invoked twice since the middle operation failed.
-        verify(delegate, times(2)).load(eq(AGGREGATE_ID), any(), anyLong(), anyLong());
+        verify(delegate, times(2)).load(eq(AGGREGATE_ID), any());
     }
 
     private record StubEntity(String entity) implements ManagedEntity<String, String> {

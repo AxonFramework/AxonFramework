@@ -97,15 +97,13 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
 
     @Override
     public CompletableFuture<ManagedEntity<ID, M>> load(@Nonnull ID identifier,
-                                                        @Nonnull ProcessingContext processingContext,
-                                                        long start,
-                                                        long end) {
+                                                        @Nonnull ProcessingContext processingContext) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
                 identifier,
                 id -> eventStore.transaction(processingContext, context)
-                                .source(SourcingCondition.conditionFor(start, end, criteriaResolver.resolve(id)))
+                                .source(SourcingCondition.conditionFor(criteriaResolver.resolve(id)))
                                 .reduce(new EventSourcedEntity<>(identifier, (M) null), (entity, entry) -> {
                                     entity.applyStateChange(entry.message(), eventStateApplier);
                                     return entity;
