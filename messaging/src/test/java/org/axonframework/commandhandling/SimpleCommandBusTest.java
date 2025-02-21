@@ -116,22 +116,6 @@ class SimpleCommandBusTest {
     }
 
     @Test
-    @Disabled("TODO Investigation on registration")
-    void dispatchCommandHandlerUnsubscribed() {
-        StubCommandHandler commandHandler = new StubCommandHandler("Not important");
-        testSubject.subscribe(COMMAND_NAME, commandHandler);
-        //TODO Investigation on registration
-//        subscription.cancel();
-
-        var actual = testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
-
-        assertTrue(actual.isCompletedExceptionally());
-        ExecutionException actualException = assertThrows(ExecutionException.class, actual::get);
-        assertInstanceOf(NoHandlerForCommandException.class,
-                         actualException.getCause());
-    }
-
-    @Test
     void asyncHandlerCompletion() throws Exception {
         var ourFutureIsBright = new CompletableFuture<>();
         testSubject.subscribe(COMMAND_NAME, new StubCommandHandler(ourFutureIsBright));

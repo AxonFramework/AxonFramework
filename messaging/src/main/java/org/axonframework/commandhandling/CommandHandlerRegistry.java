@@ -66,7 +66,7 @@ public interface CommandHandlerRegistry {
                                      @Nonnull CommandHandler commandHandler);
 
     /**
-     * Subscribe the given {@code handlingComponent} with this command bus.
+     * Subscribe the given {@code handlingComponent} with this registry.
      * <p>
      * Typically invokes {@link #subscribe(Set, CommandHandler)}, using the
      * {@link CommandHandlingComponent#supportedCommands()} as the set of compatible {@link QualifiedName names} the
@@ -76,7 +76,7 @@ public interface CommandHandlerRegistry {
      * is undefined. Implementations may throw an exception to refuse duplicate subscription or alternatively decide
      * whether the existing or new {@code handler} gets the subscription.
      *
-     * @param handlingComponent The command handling component instance to subscribe with this bus.
+     * @param handlingComponent The command handling component instance to subscribe with this registry.
      * @return This registry for fluent interfacing.
      */
     default CommandHandlerRegistry subscribe(@Nonnull CommandHandlingComponent handlingComponent) {
