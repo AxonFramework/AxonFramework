@@ -35,6 +35,7 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -57,6 +58,7 @@ class DefaultEventStoreTransactionTest {
 
     private final Context.ResourceKey<EventStoreTransaction> testEventStoreTransactionKey =
             Context.ResourceKey.withLabel("eventStoreTransaction");
+    private final AsyncInMemoryEventStorageEngine eventStorageEngine = new AsyncInMemoryEventStorageEngine();
 
     @Nested
     class AppendEvent {
@@ -140,6 +142,58 @@ class DefaultEventStoreTransactionTest {
                         .assertNext(entry -> assertTagsPositionAndEvent(entry, TEST_AGGREGATE_CRITERIA, 0, event1))
                         .assertNext(entry -> assertTagsPositionAndEvent(entry, TEST_AGGREGATE_CRITERIA, 1, event2))
                         .verifyComplete();
+        }
+
+        @Test
+        void appendCommitsOfNonExistentTagWhenOfTwoNonOverlappingTagsOneYieldedNoEvents() {
+
+            Tag nonExistentTag = new Tag("nonExistent", "tag");
+            EventCriteria nonExistingCriteria = EventCriteria.forAnyEventType().withTags(nonExistentTag);
+            Tag existentTag = new Tag("existent", "tag");
+            EventCriteria existingCriteria = EventCriteria.forAnyEventType().withTags(existentTag);
+
+            appendExistingEventForTag(existentTag);
+            testCanCommitTag(nonExistingCriteria, existingCriteria, nonExistentTag);
+        }
+
+        @Test
+        void appendCommitsOfExistentTagWhenOfTwoNonOverlappingTagsOneYieldedNoEvents() {
+
+            Tag nonExistentTag = new Tag("nonExistent", "tag");
+            EventCriteria nonExistingCriteria = EventCriteria.forAnyEventType().withTags(nonExistentTag);
+            Tag existentTag = new Tag("existent", "tag");
+            EventCriteria existingCriteria = EventCriteria.forAnyEventType().withTags(existentTag);
+
+            appendExistingEventForTag(existentTag);
+            testCanCommitTag(nonExistingCriteria, existingCriteria, existentTag);
+        }
+
+        private ConsistencyMarker appendExistingEventForTag(Tag existentTag) {
+            return eventStorageEngine.appendEvents(AppendCondition.none(),
+                                                   new GenericTaggedEventMessage<>(
+                                                           new GenericEventMessage<>(new MessageType(String.class),
+                                                                                     "my payload"),
+                                                           Set.of(existentTag)
+                                                   )).join().commit().join();
+        }
+
+        private void testCanCommitTag(EventCriteria nonExistingCriteria, EventCriteria existingCriteria,
+                                      Tag tagToCommitOn) {
+
+            var uow = new AsyncUnitOfWork();
+            awaitCompletion(uow.executeWithResult(context -> {
+                // Transaction which will result in even being appended for non-existent tag
+                EventStoreTransaction transaction = defaultEventStoreTransactionFor(context,
+                                                                                    m -> Set.of(tagToCommitOn));
+
+                // Read both streams, with non-existing empty
+                transaction.source(SourcingCondition.conditionFor(nonExistingCriteria)).asFlux().blockLast();
+                transaction.source(SourcingCondition.conditionFor(existingCriteria)).asFlux().blockLast();
+
+                transaction.appendEvent(new GenericEventMessage<>(new MessageType(String.class), "my payload"));
+
+                return MessageStream.empty().firstAsCompletableFuture();
+            }));
         }
     }
 
@@ -319,12 +373,18 @@ class DefaultEventStoreTransactionTest {
         return completion.join();
     }
 
+
     private EventStoreTransaction defaultEventStoreTransactionFor(ProcessingContext processingContext) {
+        return defaultEventStoreTransactionFor(processingContext, m -> Set.of(AGGREGATE_ID_TAG));
+    }
+
+    private EventStoreTransaction defaultEventStoreTransactionFor(ProcessingContext processingContext,
+                                                                  TagResolver tagResolver) {
         return processingContext.computeResourceIfAbsent(testEventStoreTransactionKey,
                                                          () -> new DefaultEventStoreTransaction(
-                                                                 new AsyncInMemoryEventStorageEngine(),
+                                                                 eventStorageEngine,
                                                                  processingContext,
-                                                                 m -> Set.of(AGGREGATE_ID_TAG)
+                                                                 tagResolver
                                                          )
         );
     }
