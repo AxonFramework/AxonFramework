@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -129,8 +130,8 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
 
     @Nonnull
     @Override
-    public MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
-                                           @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
+                                                     @Nonnull ProcessingContext context) {
         QualifiedName messageType = event.type().qualifiedName();
         // TODO #3103 - add interceptor knowledge
         EventHandler handler = eventHandlersByName.get(messageType);

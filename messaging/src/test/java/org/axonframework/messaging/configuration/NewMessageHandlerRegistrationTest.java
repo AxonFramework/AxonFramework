@@ -145,7 +145,7 @@ class NewMessageHandlerRegistrationTest {
     void handlingEventMessageReturnsExpectedMessageStream() throws ExecutionException, InterruptedException {
         EventMessage<?> testMessage = new GenericEventMessage<>(EVENT_TYPE, "payload");
 
-        MessageStream<NoMessage> result = testSubject.handle(testMessage, ProcessingContext.NONE);
+        MessageStream.Empty<Message<Void>> result = testSubject.handle(testMessage, ProcessingContext.NONE);
 
         CompletableFuture<? extends Entry<? extends Message<?>>> resultFuture = result.first().asCompletableFuture();
 
@@ -213,9 +213,9 @@ class NewMessageHandlerRegistrationTest {
 
         @Override
         @Nonnull
-        public MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
-                                               @Nonnull ProcessingContext context) {
-            return MessageStream.empty().cast();
+        public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
+                                                         @Nonnull ProcessingContext context) {
+            return MessageStream.empty();
         }
     }
 
@@ -284,9 +284,9 @@ class NewMessageHandlerRegistrationTest {
 
         @Nonnull
         @Override
-        public MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
-                                               @Nonnull ProcessingContext context) {
-            return MessageStream.empty().cast();
+        public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
+                                                         @Nonnull ProcessingContext context) {
+            return MessageStream.empty();
         }
 
         @Nonnull

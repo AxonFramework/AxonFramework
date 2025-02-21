@@ -17,6 +17,7 @@
 package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.configuration.MessageHandler;
 import org.axonframework.messaging.configuration.NoMessage;
@@ -42,6 +43,6 @@ public interface EventHandler extends MessageHandler {
      * @return A {@code MessagesStream} containing {@link NoMessage}.
      */
     @Nonnull
-    MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
-                                    @Nonnull ProcessingContext context);
+    MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
+                                              @Nonnull ProcessingContext context);
 }

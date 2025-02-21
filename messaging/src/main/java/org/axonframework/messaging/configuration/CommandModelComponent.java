@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventHandlingComponent;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -79,8 +80,8 @@ public class CommandModelComponent implements CommandHandlingComponent, EventHan
 
     @Nonnull
     @Override
-    public MessageStream<NoMessage> handle(@Nonnull EventMessage<?> event,
-                                           @Nonnull ProcessingContext context) {
+    public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
+                                                     @Nonnull ProcessingContext context) {
         return eventComponent.handle(event, context);
     }
 }
