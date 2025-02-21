@@ -46,6 +46,17 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
     }
 
     @Override
+    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+        return new OnNextMessageStream.Single<>(MessageStream.just(message), NO_OP_ON_NEXT);
+    }
+
+    @Override
+    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+        Assumptions.abort("OnNextMessageStream does not support empty streams");
+        return null;
+    }
+
+    @Override
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
                                                       Exception failure) {
         return new OnNextMessageStream<>(MessageStream.fromIterable(messages)
@@ -62,10 +73,10 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
     @Test
     void onNextNotInvokedOnEmptyStream() {
         //noinspection unchecked
-        Consumer<Entry<Message<?>>> handler = mock();
-        MessageStream<Message<?>> testSubject = MessageStream.empty().onNext(handler);
+        Consumer<Entry<Message<Void>>> handler = mock();
+        MessageStream<Message<Void>> testSubject = MessageStream.empty().onNext(handler);
 
-        testSubject.firstAsCompletableFuture().isDone();
+        testSubject.first().asCompletableFuture().isDone();
         verify(handler, never()).accept(any());
     }
 
@@ -77,7 +88,8 @@ class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
 
         CompletableFuture<Message<String>> actual = MessageStream.fromIterable(messages)
                                                                  .onNext(seen::add)
-                                                                 .firstAsCompletableFuture()
+                                                                 .first()
+                                                                 .asCompletableFuture()
                                                                  .thenApply(Entry::message);
 
         assertTrue(actual.isDone());

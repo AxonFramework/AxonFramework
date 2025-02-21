@@ -23,49 +23,44 @@ import reactor.core.publisher.Flux;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
  * A {@link MessageStream stream} implementation that contains no {@link Entry entries} at all.
  *
- * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class EmptyMessageStream<M extends Message<?>> implements MessageStream<M> {
+class EmptyMessageStream implements MessageStream.Empty<Message<Void>> {
 
-    @SuppressWarnings("rawtypes")
-    private static final EmptyMessageStream INSTANCE = new EmptyMessageStream<>();
+    private static final EmptyMessageStream INSTANCE = new EmptyMessageStream();
 
     private EmptyMessageStream() {
-        // No-arg constructor to enforce use of INSTANCE constant.
+        // Private no-arg constructor to enforce use of INSTANCE constant.
     }
 
     /**
      * Return a singular instance of the {@code EmptyMessageStream} to be used throughout.
      *
-     * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return The singular instance of the {@code EmptyMessageStream} to be used throughout.
      */
-    public static <M extends Message<?>> EmptyMessageStream<M> instance() {
-        //noinspection unchecked
+    public static Empty<Message<Void>> instance() {
         return INSTANCE;
     }
 
     @Override
-    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
+    public CompletableFuture<Entry<Message<Void>>> asCompletableFuture() {
         return FutureUtils.emptyCompletedFuture();
     }
 
     @Override
-    public Flux<Entry<M>> asFlux() {
+    public Flux<Entry<Message<Void>>> asFlux() {
         return Flux.empty();
     }
 
     @Override
-    public Optional<Entry<M>> next() {
+    public Optional<Entry<Message<Void>>> next() {
         return Optional.empty();
     }
 
@@ -95,39 +90,22 @@ class EmptyMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     @Override
-    public <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
-        //noinspection unchecked
-        return (MessageStream<RM>) this;
-    }
-
-    @Override
-    public <R> CompletableFuture<R> reduce(@Nonnull R identity,
-                                           @Nonnull BiFunction<R, Entry<M>, R> accumulator) {
+    public <R> CompletableFuture<R> reduce(@Nonnull R identity, @Nonnull BiFunction<R, Entry<Message<Void>>, R> accumulator) {
         return CompletableFuture.completedFuture(identity);
     }
 
     @Override
-    public MessageStream<M> onNext(@Nonnull Consumer<Entry<M>> onNext) {
+    public MessageStream<Message<Void>> onErrorContinue(@Nonnull Function<Throwable, MessageStream<Message<Void>>> onError) {
         return this;
     }
 
     @Override
-    public MessageStream<M> onErrorContinue(@Nonnull Function<Throwable, MessageStream<M>> onError) {
-        return this;
-    }
-
-    @Override
-    public MessageStream<M> whenComplete(@Nonnull Runnable completeHandler) {
+    public Empty<Message<Void>> whenComplete(@Nonnull Runnable completeHandler) {
         try {
             completeHandler.run();
             return this;
         } catch (Exception e) {
             return MessageStream.failed(e);
         }
-    }
-
-    @Override
-    public MessageStream<M> concatWith(@Nonnull MessageStream<M> other) {
-        return other;
     }
 }

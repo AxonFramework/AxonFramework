@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,10 @@ import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static org.axonframework.common.FutureUtils.unwrap;
 
@@ -71,7 +71,7 @@ public class RetryingCommandBus implements CommandBus {
                                                        ProcessingContext processingContext,
                                                        Throwable e) {
         return retryScheduler.scheduleRetry(command, processingContext, e, this::redispatch)
-                             .firstAsCompletableFuture()
+                             .first().asCompletableFuture()
                              .thenApply(Entry::message);
     }
 

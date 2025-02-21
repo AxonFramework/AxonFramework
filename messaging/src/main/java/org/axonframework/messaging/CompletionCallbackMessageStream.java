@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,16 +56,6 @@ class CompletionCallbackMessageStream<M extends Message<?>> extends DelegatingMe
     }
 
     @Override
-    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
-        return delegate.firstAsCompletableFuture()
-                       .whenComplete((result, exception) -> {
-                           if (exception == null) {
-                               completeHandler.run();
-                           }
-                       });
-    }
-
-    @Override
     public Flux<Entry<M>> asFlux() {
         return delegate.asFlux()
                        .doOnComplete(completeHandler);
@@ -103,7 +93,7 @@ class CompletionCallbackMessageStream<M extends Message<?>> extends DelegatingMe
     @Override
     public boolean hasNextAvailable() {
         boolean b = delegate.hasNextAvailable();
-        if (!b) {
+        if (!b && delegate().isCompleted()) {
             invokeOnCompleted();
         }
         return b;
@@ -118,5 +108,49 @@ class CompletionCallbackMessageStream<M extends Message<?>> extends DelegatingMe
                                completeHandler.run();
                            }
                        });
+    }
+
+    /**
+     * A {@link CompletionCallbackMessageStream} implementation completing on only the first
+     * {@link org.axonframework.messaging.MessageStream.Entry} of this stream.
+     *
+     * @param <M> The type of {@link Message} contained in the {@link Entry} of this stream.
+     */
+    static class Single<M extends Message<?>> extends CompletionCallbackMessageStream<M>
+            implements MessageStream.Single<M> {
+
+        /**
+         * Construct a {@link MessageStream stream} invoking the given {@code completeHandler} when the given
+         * {@code delegate} completes.
+         *
+         * @param delegate        The {@link MessageStream stream} that once completed results in the invocation of the
+         *                        given {@code completeHandler}.
+         * @param completeHandler The {@link Runnable} to invoke when the given {@code delegate} completes.
+         */
+        Single(@Nonnull MessageStream.Single<M> delegate, @Nonnull Runnable completeHandler) {
+            super(delegate, completeHandler);
+        }
+    }
+
+    /**
+     * A {@link CompletionCallbackMessageStream} implementation completing on no
+     * {@link org.axonframework.messaging.MessageStream.Entry} of this stream.
+     *
+     * @param <M> The type of {@link Message} for the empty {@link Entry} of this stream.
+     */
+    static class Empty<M extends Message<?>> extends CompletionCallbackMessageStream<M>
+            implements MessageStream.Empty<M> {
+
+        /**
+         * Construct a {@link MessageStream stream} invoking the given {@code completeHandler} when the given
+         * {@code delegate} completes.
+         *
+         * @param delegate        The {@link MessageStream stream} that once completed results in the invocation of the
+         *                        given {@code completeHandler}.
+         * @param completeHandler The {@link Runnable} to invoke when the given {@code delegate} completes.
+         */
+        Empty(@Nonnull MessageStream.Empty<M> delegate, @Nonnull Runnable completeHandler) {
+            super(delegate, completeHandler);
+        }
     }
 }

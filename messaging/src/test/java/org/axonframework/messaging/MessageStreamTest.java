@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test suite used to validate implementations of the {@link MessageStream}.
@@ -52,8 +53,28 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     abstract MessageStream<M> completedTestSubject(List<M> messages);
 
     /**
-     * Construct a test subject using the given {@code messages} as the source. The resulting stream should not report
-     * as completed if given messages are consumed.
+     * Construct a test subject with a {@link MessageStream.Single single} entry using the given {@code message} as the
+     * source.
+     * <p>
+     * It is the task of the implementer of this method to map th {@code messages} to an {@link Entry} for the
+     * {@link MessageStream.Single stream} under test.
+     *
+     * @param message The {@link Message} of type {@code M} acting as the source for the
+     *                {@link MessageStream.Single single-entry-stream} under construction.
+     * @return A {@link MessageStream.Single single-entry-stream} to use for testing.
+     */
+    abstract MessageStream.Single<M> completedSingleStreamTestSubject(M message);
+
+    /**
+     * Construct an {@link MessageStream.Empty empty} test subject.
+     *
+     * @return An {@link MessageStream.Empty empty stream} to use for testing.
+     */
+    abstract MessageStream.Empty<M> completedEmptyStreamTestSubject();
+
+    /**
+     * Construct a test subject using the given {@code messages} as the source. The resulting stream must not report as
+     * completed if given messages are consumed until the given {@code completionMarker} completes.
      * <p>
      * It is the task of the implementer of this method to map the {@code messages} to {@link Entry entries} for the
      * {@link MessageStream stream} under test.
@@ -62,8 +83,13 @@ public abstract class MessageStreamTest<M extends Message<?>> {
      *                 {@link MessageStream stream} under construction.
      * @return A {@link MessageStream stream} to use for testing.
      */
-    protected MessageStream<M> uncompletedTestSubject(List<M> messages) {
-        return completedTestSubject(messages).concatWith(MessageStream.fromFuture(new CompletableFuture<>()));
+    protected MessageStream<M> uncompletedTestSubject(List<M> messages, CompletableFuture<Void> completionMarker) {
+        return completedTestSubject(messages)
+                .concatWith(
+                        DelayedMessageStream.create(completionMarker.thenApply(e -> MessageStream.empty())
+                                                                    .exceptionally(MessageStream::failed))
+                                            .cast()
+                );
     }
 
     /**
@@ -123,8 +149,17 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
-    void shouldNotInvokeOnAvailableCallbackWhenNotCompleted() {
-        MessageStream<M> testSubject = uncompletedTestSubject(List.of());
+    void shouldReturnEmptyNextAndNoAvailableMessagesOnError() {
+        MessageStream<M> testSubject = failingTestSubject(List.of(), new RuntimeException("Oops"));
+
+        assertFalse(testSubject.hasNextAvailable());
+        assertFalse(testSubject.next().isPresent());
+        assertTrue(testSubject.isCompleted());
+    }
+
+    @Test
+    void shouldNotInvokeOnAvailableCallbackUntilCompleted() {
+        MessageStream<M> testSubject = uncompletedTestSubject(List.of(), new CompletableFuture<>());
 
         AtomicBoolean invoked = new AtomicBoolean(false);
         testSubject.onAvailable(() -> invoked.set(true));
@@ -133,8 +168,90 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
+    void shouldInvokeCompletionCallbackWhenNextIsRequestedAfterCompletion() {
+        CompletableFuture<Void> completionMarker = new CompletableFuture<>();
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        MessageStream<M> testSubject = uncompletedTestSubject(List.of(), completionMarker)
+                .whenComplete(() -> invoked.set(true));
+
+
+        while (testSubject.next().isPresent()) {
+            assertFalse(invoked.get());
+        }
+
+        completionMarker.complete(null);
+
+        assertFalse(testSubject.next().isPresent());
+        assertTrue(invoked.get());
+    }
+
+    @Test
+    void shouldInvokeCompletionCallbackWhenOnAvailableIsRequestedAfterCompletion() {
+        CompletableFuture<Void> completionMarker = new CompletableFuture<>();
+        AtomicBoolean invoked = new AtomicBoolean(false);
+
+        MessageStream<M> testSubject = uncompletedTestSubject(List.of(), completionMarker)
+                .whenComplete(() -> invoked.set(true));
+
+        while (testSubject.hasNextAvailable()) {
+            assertFalse(invoked.get());
+            testSubject.next();
+        }
+
+        completionMarker.complete(null);
+        // streams _may_ notify their listeners at this point
+
+        assertFalse(testSubject.hasNextAvailable());
+
+        assertTrue(invoked.get());
+    }
+
+    @Test
+    void shouldInvokeCompletionCallbackOnceAllMessagesHaveBeenConsumed() {
+        CompletableFuture<Void> completionMarker = new CompletableFuture<>();
+        AtomicBoolean invoked = new AtomicBoolean(false);
+
+        MessageStream<M> testSubject = uncompletedTestSubject(List.of(createRandomMessage()), completionMarker)
+                .whenComplete(() -> invoked.set(true));
+
+        completionMarker.complete(null);
+        // streams _must not_ have notified their listeners at this point
+        assertFalse(invoked.get());
+
+        testSubject.next();
+        // consuming the last message must not trigger the completion callback. The next interaction with the stream will.
+
+        assertFalse(invoked.get());
+
+        assertFalse(testSubject.hasNextAvailable());
+        assertTrue(invoked.get());
+    }
+
+    @Test
+    void shouldInvokeCompletionCallbackImmediatelyOnCompletedEmptyStream() {
+        AtomicBoolean invoked = new AtomicBoolean(false);
+
+        completedEmptyStreamTestSubject().whenComplete(() -> invoked.set(true));
+
+        assertTrue(invoked.get());
+    }
+
+    @Test
+    void shouldInvokeCompletionCallbackWhenStreamCompletesEmpty() {
+        AtomicBoolean invoked = new AtomicBoolean(false);
+
+        CompletableFuture<Void> completionMarker = new CompletableFuture<>();
+        uncompletedTestSubject(List.of(), completionMarker).whenComplete(() -> invoked.set(true));
+
+        assertFalse(invoked.get());
+        completionMarker.complete(null);
+        assertTrue(invoked.get());
+    }
+
+    @Test
     void shouldNotInvokeOnAvailableCallbackWhenNotCompletedAndAvailableMessageIsConsumed() {
-        MessageStream<M> testSubject = uncompletedTestSubject(List.of(createRandomMessage()));
+        MessageStream<M> testSubject = uncompletedTestSubject(List.of(createRandomMessage()),
+                                                              new CompletableFuture<>());
 
         assertTrue(testSubject.next().isPresent());
         assertFalse(testSubject.next().isPresent());
@@ -147,7 +264,8 @@ public abstract class MessageStreamTest<M extends Message<?>> {
 
     @Test
     void shouldNotInvokeOnAvailableCallbackWhenNotCompletedAndAvailableMessagesAreConsumed() {
-        MessageStream<M> testSubject = uncompletedTestSubject(List.of(createRandomMessage(), createRandomMessage()));
+        MessageStream<M> testSubject = uncompletedTestSubject(List.of(createRandomMessage(), createRandomMessage()),
+                                                              new CompletableFuture<>());
 
         assertTrue(testSubject.next().isPresent());
         assertTrue(testSubject.next().isPresent());
@@ -161,7 +279,8 @@ public abstract class MessageStreamTest<M extends Message<?>> {
 
     @Test
     void shouldInvokeOnAvailableCallbackWhenNotCompletedAndNotAllAvailableMessagesAreConsumed() {
-        MessageStream<M> testSubject = uncompletedTestSubject(List.of(createRandomMessage(), createRandomMessage()));
+        MessageStream<M> testSubject = uncompletedTestSubject(List.of(createRandomMessage(), createRandomMessage()),
+                                                              new CompletableFuture<>());
 
         assertTrue(testSubject.next().isPresent());
 
@@ -175,7 +294,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     void shouldEmitOriginalExceptionAsFailure() {
         MessageStream<M> testSubject = failingTestSubject(List.of(), new MockException());
 
-        CompletableFuture<Entry<M>> actual = testSubject.firstAsCompletableFuture();
+        CompletableFuture<Entry<M>> actual = testSubject.first().asCompletableFuture();
 
         assertTrue(actual.isCompletedExceptionally());
         assertInstanceOf(MockException.class, actual.exceptionNow());
@@ -185,7 +304,16 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     void shouldCompleteWithNullOnEmptyList() {
         MessageStream<M> testSubject = completedTestSubject(Collections.emptyList());
 
-        CompletableFuture<Entry<M>> actual = testSubject.firstAsCompletableFuture();
+        CompletableFuture<Entry<M>> actual = testSubject.first().asCompletableFuture();
+
+        assertNull(actual.resultNow());
+    }
+
+    @Test
+    void shouldCompleteWithNullOnEmptyStream() {
+        MessageStream.Empty<M> testSubject = completedEmptyStreamTestSubject();
+
+        CompletableFuture<Entry<M>> actual = testSubject.first().asCompletableFuture();
 
         assertNull(actual.resultNow());
     }
@@ -198,7 +326,22 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> testSubject = completedTestSubject(List.of(in));
 
         var actual = testSubject.map(entry -> entry.map(input -> out))
-                                .firstAsCompletableFuture()
+                                .first().asCompletableFuture()
+                                .join()
+                                .message();
+
+        assertSame(out, actual);
+    }
+
+    @Test
+    void shouldMapSingleEntry_asCompletableFuture_ExplicitlyDeclaredSingle() {
+        M in = createRandomMessage();
+        M out = createRandomMessage();
+
+        MessageStream.Single<M> testSubject = completedSingleStreamTestSubject(in);
+
+        var actual = testSubject.map(entry -> entry.map(input -> out))
+                                .first().asCompletableFuture()
                                 .join()
                                 .message();
 
@@ -213,7 +356,22 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> testSubject = completedTestSubject(List.of(in));
 
         var actual = testSubject.mapMessage(input -> out)
-                                .firstAsCompletableFuture()
+                                .first().asCompletableFuture()
+                                .join()
+                                .message();
+
+        assertSame(out, actual);
+    }
+
+    @Test
+    void shouldMapSingleMessage_asCompletableFuture_ExplicitlyDeclaredSingle() {
+        M in = createRandomMessage();
+        M out = createRandomMessage();
+
+        MessageStream.Single<M> testSubject = completedSingleStreamTestSubject(in);
+
+        var actual = testSubject.mapMessage(input -> out)
+                                .first().asCompletableFuture()
                                 .join()
                                 .message();
 
@@ -233,6 +391,18 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
+    void shouldMapSingleEntry_asMono() {
+        M in = createRandomMessage();
+        M out = createRandomMessage();
+
+        MessageStream.Single<M> testSubject = completedSingleStreamTestSubject(in);
+
+        StepVerifier.create(testSubject.map(entry -> entry.map(input -> out)).asMono())
+                    .expectNextMatches(entry -> entry.message().equals(out))
+                    .verifyComplete();
+    }
+
+    @Test
     void shouldMapSingleMessage_asFlux() {
         M in = createRandomMessage();
         M out = createRandomMessage();
@@ -240,6 +410,18 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> testSubject = completedTestSubject(List.of(in));
 
         StepVerifier.create(testSubject.mapMessage(input -> out).asFlux())
+                    .expectNextMatches(entry -> entry.message().equals(out))
+                    .verifyComplete();
+    }
+
+    @Test
+    void shouldMapSingleMessage_asMono() {
+        M in = createRandomMessage();
+        M out = createRandomMessage();
+
+        MessageStream.Single<M> testSubject = completedSingleStreamTestSubject(in);
+
+        StepVerifier.create(testSubject.mapMessage(input -> out).asMono())
                     .expectNextMatches(entry -> entry.message().equals(out))
                     .verifyComplete();
     }
@@ -314,7 +496,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                     return entry;
                 });
 
-        Entry<M> actual = testSubject.firstAsCompletableFuture().join();
+        Entry<M> actual = testSubject.first().asCompletableFuture().join();
 
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
         assertNull(actual, "Expected null value from empty stream");
@@ -330,7 +512,23 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                     return message;
                 });
 
-        Entry<M> actual = testSubject.firstAsCompletableFuture().join();
+        Entry<M> actual = testSubject.first().asCompletableFuture().join();
+
+        assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
+        assertNull(actual, "Expected null value from empty stream");
+    }
+
+    @Test
+    void shouldNotCallMapperForEmptyStream_asCompletableFuture_ExplicitlyDeclaredEmpty() {
+        AtomicBoolean invoked = new AtomicBoolean();
+
+        MessageStream.Empty<M> testSubject = completedEmptyStreamTestSubject()
+                .map(entry -> {
+                    invoked.set(true);
+                    return entry;
+                });
+
+        Entry<M> actual = testSubject.first().asCompletableFuture().join();
 
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
         assertNull(actual, "Expected null value from empty stream");
@@ -352,6 +550,36 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
+    void shouldNotCallMapperForEmptyStream_asFlux_ExplicitlyDeclaredEmpty() {
+        AtomicBoolean invoked = new AtomicBoolean();
+
+        MessageStream.Empty<M> testSubject = completedEmptyStreamTestSubject()
+                .map(entry -> {
+                    invoked.set(true);
+                    return entry;
+                });
+
+        StepVerifier.create(testSubject.asFlux())
+                    .verifyComplete();
+        assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
+    }
+
+    @Test
+    void shouldNotCallMapperForEmptyStream_asMono_ExplicitlyDeclaredEmpty() {
+        AtomicBoolean invoked = new AtomicBoolean();
+
+        MessageStream.Empty<M> testSubject = completedEmptyStreamTestSubject()
+                .map(entry -> {
+                    invoked.set(true);
+                    return entry;
+                });
+
+        StepVerifier.create(testSubject.asMono())
+                    .verifyComplete();
+        assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
+    }
+
+    @Test
     void shouldNotCallMessageMapperForEmptyStream_asFlux() {
         AtomicBoolean invoked = new AtomicBoolean();
 
@@ -367,6 +595,36 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
+    void shouldNotCallMessageMapperForEmptyStream_asFlux_ExplicitlyDeclaredEmpty() {
+        AtomicBoolean invoked = new AtomicBoolean();
+
+        MessageStream.Empty<M> testSubject = completedEmptyStreamTestSubject()
+                .mapMessage(message -> {
+                    invoked.set(true);
+                    return message;
+                });
+
+        StepVerifier.create(testSubject.asFlux())
+                    .verifyComplete();
+        assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
+    }
+
+    @Test
+    void shouldNotCallMessageMapperForEmptyStream_asMono_ExplicitlyDeclaredEmpty() {
+        AtomicBoolean invoked = new AtomicBoolean();
+
+        MessageStream.Empty<M> testSubject = completedEmptyStreamTestSubject()
+                .mapMessage(message -> {
+                    invoked.set(true);
+                    return message;
+                });
+
+        StepVerifier.create(testSubject.asMono())
+                    .verifyComplete();
+        assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
+    }
+
+    @Test
     void shouldNotCallMapperForFailedStream() {
         AtomicBoolean invoked = new AtomicBoolean();
 
@@ -376,7 +634,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                     return entry;
                 });
 
-        assertTrue(testSubject.firstAsCompletableFuture().isCompletedExceptionally());
+        assertTrue(testSubject.first().asCompletableFuture().isCompletedExceptionally());
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
     }
 
@@ -390,7 +648,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                     return message;
                 });
 
-        assertTrue(testSubject.firstAsCompletableFuture().isCompletedExceptionally());
+        assertTrue(testSubject.first().asCompletableFuture().isCompletedExceptionally());
         assertFalse(invoked.get(), "Mapper function should not be invoked for empty streams");
     }
 
@@ -479,7 +737,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> testSubject = completedTestSubject(List.of(expected));
 
         CompletableFuture<Entry<M>> result = testSubject.onNext(entry -> invoked.set(true))
-                                                        .firstAsCompletableFuture();
+                                                        .first().asCompletableFuture();
         assertTrue(result.isDone());
         assertEquals(expected, result.join().message());
         assertTrue(invoked.get());
@@ -512,7 +770,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
                                assertEquals(expectedError, FutureUtils.unwrap(error));
                                return onErrorStream;
                            })
-                           .firstAsCompletableFuture();
+                           .first().asCompletableFuture();
 
         assertTrue(result.isDone());
         assertEquals(expected, result.join().message());
@@ -545,7 +803,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> firstStream = completedTestSubject(List.of(expected));
 
         CompletableFuture<Entry<M>> result = firstStream.concatWith(secondStream)
-                                                        .firstAsCompletableFuture();
+                                                        .first().asCompletableFuture();
         assertTrue(result.isDone());
         assertEquals(expected, result.join().message());
     }
@@ -558,7 +816,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> firstStream = completedTestSubject(List.of());
 
         CompletableFuture<Entry<M>> result = firstStream.concatWith(secondStream)
-                                                        .firstAsCompletableFuture();
+                                                        .first().asCompletableFuture();
         assertTrue(result.isDone());
         assertEquals(expected, result.join().message());
     }
@@ -584,7 +842,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> testSubject = completedTestSubject(List.of());
 
         testSubject.whenComplete(() -> invoked.set(true))
-                   .firstAsCompletableFuture()
+                   .first().asCompletableFuture()
                    .join();
 
         assertTrue(invoked.get());
@@ -598,7 +856,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         MessageStream<M> testSubject = failingTestSubject(List.of(), expected);
 
         CompletableFuture<Entry<M>> result = testSubject.whenComplete(() -> invoked.set(true))
-                                                        .firstAsCompletableFuture();
+                                                        .first().asCompletableFuture();
         assertTrue(result.isCompletedExceptionally());
         assertEquals(expected, result.exceptionNow());
         assertFalse(invoked.get());
@@ -617,6 +875,19 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
+    void shouldInvokeCompletionCallback_asMono() {
+        AtomicBoolean invoked = new AtomicBoolean();
+
+        MessageStream.Single<M> testSubject = completedSingleStreamTestSubject(createRandomMessage());
+
+        StepVerifier.create(testSubject.whenComplete(() -> invoked.set(true))
+                                       .asMono())
+                    .expectNextCount(1)
+                    .verifyComplete();
+        assertTrue(invoked.get());
+    }
+
+    @Test
     void shouldNotInvokeCompletionCallbackForFailedStream_asFlux() {
         AtomicBoolean invoked = new AtomicBoolean();
 
@@ -630,18 +901,17 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     }
 
     @Test
-    void shouldResultInFailedStreamWhenCompletionCallbackThrowsAnException_asCompletableFuture() {
-        RuntimeException expected = new RuntimeException("oops");
+    void shouldNotInvokeCompletionCallbackForFailedStream_asMono() {
+        AtomicBoolean invoked = new AtomicBoolean();
 
-        MessageStream<M> testSubject = completedTestSubject(List.of(createRandomMessage()));
+        RuntimeException oops = new RuntimeException("oops");
+        MessageStream<M> testSubject = failingTestSubject(List.of(), oops);
+        Assumptions.assumeTrue(testSubject instanceof MessageStream.Single<M>);
 
-        CompletableFuture<Entry<M>> result = testSubject.whenComplete(() -> {
-                                                            throw expected;
-                                                        })
-                                                        .firstAsCompletableFuture();
-
-        assertTrue(result.isCompletedExceptionally());
-        assertEquals(expected, result.exceptionNow());
+        StepVerifier.create(((MessageStream.Single<M>) testSubject).whenComplete(() -> invoked.set(true))
+                                                                   .asMono())
+                    .verifyErrorMatches(e -> e == oops);
+        assertFalse(invoked.get());
     }
 
     @Test
@@ -663,7 +933,7 @@ public abstract class MessageStreamTest<M extends Message<?>> {
     void shouldInvokeCallbackOnceAdditionalMessagesBecomeAvailable() {
         AtomicBoolean invoked = new AtomicBoolean();
 
-        MessageStream<M> testSubject = uncompletedTestSubject(List.of());
+        MessageStream<M> testSubject = uncompletedTestSubject(List.of(), new CompletableFuture<>());
         testSubject.onAvailable(() -> invoked.set(true));
 
         assertFalse(invoked.get());
@@ -671,4 +941,35 @@ public abstract class MessageStreamTest<M extends Message<?>> {
         assertTrue(invoked.get());
     }
 
+    @Test
+    void shouldCallCloseWhenConsumingOnlyTheFirstMessage() {
+        //noinspection unchecked
+        MessageStream<M> mock = mock();
+        MessageStream<M> testSubject = completedTestSubject(List.of(createRandomMessage(),
+                                                                    createRandomMessage())).concatWith(mock);
+        MessageStream.Single<M> first = testSubject.first();
+        assertTrue(first.next().isPresent());
+        assertFalse(first.hasNextAvailable());
+        assertFalse(first.error().isPresent());
+        assertFalse(first.next().isPresent());
+        assertFalse(first.hasNextAvailable());
+        assertFalse(first.next().isPresent());
+        assertTrue(first.isCompleted());
+
+        verify(mock).close();
+    }
+
+    @Test
+    void shouldCallCloseWhenConsumingFirstAsCompletableFuture() {
+        //noinspection unchecked
+        MessageStream<M> mock = mock();
+        MessageStream<M> testSubject = completedTestSubject(List.of(createRandomMessage(),
+                                                                    createRandomMessage()))
+                .concatWith(mock);
+        CompletableFuture<Entry<M>> first = testSubject.first().asCompletableFuture();
+        assertTrue(first.isDone());
+        assertNotNull(first.getNow(null));
+
+        verify(mock).close();
+    }
 }

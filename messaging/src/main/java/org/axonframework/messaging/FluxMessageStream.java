@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,11 +57,6 @@ class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
      */
     FluxMessageStream(@Nonnull Flux<Entry<M>> source) {
         this.source = source;
-    }
-
-    @Override
-    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
-        return source.singleOrEmpty().toFuture();
     }
 
     @Override
@@ -169,8 +164,4 @@ class FluxMessageStream<M extends Message<?>> implements MessageStream<M> {
         return new FluxMessageStream<>(source.onErrorResume(exception -> onError.apply(exception).asFlux()));
     }
 
-    @Override
-    public MessageStream<M> whenComplete(@Nonnull Runnable completeHandler) {
-        return new FluxMessageStream<>(source.doOnComplete(completeHandler));
-    }
 }

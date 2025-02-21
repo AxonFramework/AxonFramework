@@ -70,11 +70,11 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.util.Objects.*;
-import static org.axonframework.common.BuilderUtils.*;
+import static java.util.Objects.requireNonNull;
+import static org.axonframework.common.BuilderUtils.assertPositive;
+import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils.*;
-import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils.resolveAggregateIdentifier;
 
 
 /**
@@ -270,7 +270,7 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 .criteria()
                 .stream()
                 .map(criteria -> this.eventsForCriteria(condition, criteria))
-                .reduce(MessageStream.empty(), MessageStream::concatWith);
+                .reduce(MessageStream.empty().cast(), MessageStream::concatWith);
 
         var consistencyMarker = new AtomicReference<ConsistencyMarker>();
         return allCriteriaStream.map(e -> {

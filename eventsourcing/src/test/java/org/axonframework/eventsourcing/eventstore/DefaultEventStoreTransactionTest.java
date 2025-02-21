@@ -96,7 +96,7 @@ class DefaultEventStoreTransactionTest {
             awaitCompletion(uow.execute());
 
             // then
-            assertNull(beforeCommitEvents.get().firstAsCompletableFuture().join());
+            assertNull(beforeCommitEvents.get().first().asCompletableFuture().join());
             StepVerifier.create(afterCommitEvents.get().asFlux())
                         .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 0, event1))
                         .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 1, event2))

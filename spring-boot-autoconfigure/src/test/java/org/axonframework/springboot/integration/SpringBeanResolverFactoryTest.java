@@ -20,10 +20,10 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream.Entry;
@@ -122,7 +122,8 @@ class SpringBeanResolverFactoryTest {
             CompletableFuture<Message<Void>> result =
                     new AnnotationEventHandlerAdapter(bean, parameterResolver, messageTypeResolver)
                             .handle(EVENT_MESSAGE, processingContext)
-                            .firstAsCompletableFuture()
+                            .first()
+                            .asCompletableFuture()
                             .thenApply(Entry::message);
             assertTrue(result.isCompletedExceptionally());
             assertThrows(FixtureExecutionException.class, () -> {
@@ -158,7 +159,8 @@ class SpringBeanResolverFactoryTest {
             CompletableFuture<Message<Void>> result =
                     new AnnotationEventHandlerAdapter(bean, parameterResolver, messageTypeResolver)
                             .handle(EVENT_MESSAGE, processingContext)
-                            .firstAsCompletableFuture()
+                            .first()
+                            .asCompletableFuture()
                             .thenApply(Entry::message);
             assertTrue(result.isCompletedExceptionally());
             assertThrows(FixtureExecutionException.class, () -> {
@@ -222,7 +224,8 @@ class SpringBeanResolverFactoryTest {
 
             // Spring dependency resolution will resolve at time of execution
             CompletableFuture<Message<Void>> result = adapter.handle(EVENT_MESSAGE, processingContext)
-                                                             .firstAsCompletableFuture()
+                                                             .first()
+                                                             .asCompletableFuture()
                                                              .thenApply(Entry::message);
             assertTrue(result.isCompletedExceptionally());
             assertThrows(NoUniqueBeanDefinitionException.class, () -> {

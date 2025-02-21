@@ -17,6 +17,7 @@
 package org.axonframework.messaging;
 
 import org.axonframework.messaging.MessageStream.Entry;
+import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -34,7 +35,21 @@ class MappedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
+        if (messages.size() == 1) {
+            return new MappedMessageStream.Single<>(MessageStream.just(messages.getFirst()), NO_OP_MAPPER);
+        }
         return new MappedMessageStream<>(MessageStream.fromIterable(messages), NO_OP_MAPPER);
+    }
+
+    @Override
+    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+        return new MappedMessageStream.Single<>(MessageStream.just(message), NO_OP_MAPPER);
+    }
+
+    @Override
+    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+        Assumptions.abort("MappedMessageStream does not support empty streams");
+        return null;
     }
 
     @Override

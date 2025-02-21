@@ -21,6 +21,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -40,10 +41,31 @@ class FluxMessageStreamTest extends MessageStreamTest<Message<String>> {
     }
 
     @Override
-    protected MessageStream<Message<String>> uncompletedTestSubject(List<Message<String>> messages) {
-        return MessageStream.fromFlux(Flux.fromIterable(messages).concatWith(Flux.create(emitter -> {
-            // does nothing to keep it lingering
-        })));
+    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+        Assumptions.abort("FluxMessageStream doesn't support explicit single-value streams");
+        return null;
+    }
+
+    @Override
+    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+        Assumptions.abort("FluxMessageStream doesn't support explicitly empty streams");
+        return null;
+    }
+
+
+    @Override
+    protected MessageStream<Message<String>> uncompletedTestSubject(List<Message<String>> messages,
+                                                                    CompletableFuture<Void> completionMarker) {
+        return MessageStream.fromFlux(Flux.fromIterable(messages).concatWith(
+                Flux.create(emitter -> completionMarker.whenComplete(
+                        (v, e) -> {
+                            if (e != null) {
+                                emitter.error(e);
+                            } else {
+                                emitter.complete();
+                            }
+                        })))
+        );
     }
 
     @Override

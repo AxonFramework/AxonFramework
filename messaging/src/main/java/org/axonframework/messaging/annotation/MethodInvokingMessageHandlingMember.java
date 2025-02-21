@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,7 +151,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
     @Override
     public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
         try {
-            return handle(message, ProcessingContext.NONE, target).firstAsCompletableFuture().get()
+            return handle(message, ProcessingContext.NONE, target).first().asCompletableFuture().get()
                                                                   .message().getPayload();
         } catch (ExecutionException e) {
             if (e.getCause() instanceof Exception ex) {

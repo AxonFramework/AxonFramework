@@ -180,7 +180,7 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
                 .criteria()
                 .stream()
                 .map(criteria -> this.eventsForCriteria(condition, criteria))
-                .reduce(MessageStream.empty(), MessageStream::concatWith);
+                .reduce(MessageStream.empty().cast(), MessageStream::concatWith);
 
         AtomicReference<ConsistencyMarker> consistencyMarker = new AtomicReference<>();
         return resultingStream.map(e -> {

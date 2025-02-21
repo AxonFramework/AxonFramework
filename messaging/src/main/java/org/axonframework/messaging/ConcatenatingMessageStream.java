@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,15 +51,6 @@ class ConcatenatingMessageStream<M extends Message<?>> implements MessageStream<
                                @Nonnull MessageStream<M> second) {
         this.first = first;
         this.second = second;
-    }
-
-    @Override
-    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
-        return first.firstAsCompletableFuture()
-                    .thenCompose(message -> message == null
-                            ? second.firstAsCompletableFuture()
-                            : CompletableFuture.completedFuture(message)
-                    );
     }
 
     @Override
