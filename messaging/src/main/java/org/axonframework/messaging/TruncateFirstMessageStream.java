@@ -21,7 +21,20 @@ import jakarta.annotation.Nonnull;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-class TruncateFirstMessageStream<M extends Message<?>> extends DelegatingMessageStream<M, M> implements MessageStream.Single<M> {
+/**
+ * Implementation of the {@link MessageStream} that truncates all {@link Entry entries} of the {@code delegate} stream
+ * except for the first entry.
+ * <p>
+ * This allows users to define a {@code MessageStream} of any type and force it to a
+ * {@link org.axonframework.messaging.MessageStream.Single} stream instance.
+ *
+ * @param <M> The type of {@link Message} contained in the singular {@link Entry} of this stream.
+ * @author Allard Buijze
+ * @since 5.0.0
+ */
+class TruncateFirstMessageStream<M extends Message<?>>
+        extends DelegatingMessageStream<M, M>
+        implements MessageStream.Single<M> {
 
     private final AtomicBoolean consumed = new AtomicBoolean(false);
 
@@ -45,13 +58,12 @@ class TruncateFirstMessageStream<M extends Message<?>> extends DelegatingMessage
     }
 
     @Override
-    public boolean hasNextAvailable() {
-        return !consumed.get() && super.hasNextAvailable();
-    }
-
-    @Override
-    public boolean isCompleted() {
-        return consumed.get() || super.isCompleted();
+    public void onAvailable(@Nonnull Runnable callback) {
+        super.onAvailable(() -> {
+            if (!consumed.get()) {
+                callback.run();
+            }
+        });
     }
 
     @Override
@@ -60,11 +72,12 @@ class TruncateFirstMessageStream<M extends Message<?>> extends DelegatingMessage
     }
 
     @Override
-    public void onAvailable(@Nonnull Runnable callback) {
-        super.onAvailable(() -> {
-            if (!consumed.get()) {
-                callback.run();
-            }
-        });
+    public boolean isCompleted() {
+        return consumed.get() || super.isCompleted();
+    }
+
+    @Override
+    public boolean hasNextAvailable() {
+        return !consumed.get() && super.hasNextAvailable();
     }
 }

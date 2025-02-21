@@ -142,15 +142,39 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
         return delegate.thenCompose(delegateStream -> delegateStream.reduce(identity, accumulator));
     }
 
+    /**
+     * An implementation of the {@link DelayedMessageStream} that expects a message stream with only a
+     * {@link org.axonframework.messaging.MessageStream.Single entry}.
+     *
+     * @param <M> The type of {@link Message} contained in the {@link Entry} of this stream.
+     */
     static class Single<M extends Message<?>> extends DelayedMessageStream<M> implements MessageStream.Single<M> {
 
+        /**
+         * Construct a {@code DelayedMessageStream.Single} for the given {@code delegate}.
+         *
+         * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream.Single stream} to
+         *                 delegate to when it becomes available.
+         */
         Single(@Nonnull CompletableFuture<MessageStream.Single<M>> delegate) {
             super(delegate);
         }
     }
 
+    /**
+     * An implementation of the {@link DelayedMessageStream} that expects a message stream
+     * {@link org.axonframework.messaging.MessageStream.Empty without} any entry.
+     *
+     * @param <M> The type of {@link Message} for the empty {@link Entry} of this stream.
+     */
     static class Empty<M extends Message<?>> extends DelayedMessageStream<M> implements MessageStream.Empty<M> {
 
+        /**
+         * Construct a {@code DelayedMessageStream.Empty} for the given {@code delegate}.
+         *
+         * @param delegate A {@link CompletableFuture} providing access to the {@link MessageStream.Empty stream} to
+         *                 delegate to when it becomes available.
+         */
         Empty(@Nonnull CompletableFuture<MessageStream.Empty<M>> delegate) {
             super(delegate);
         }

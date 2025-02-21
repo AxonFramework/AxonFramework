@@ -31,7 +31,7 @@ import java.util.function.Function;
  * A {@link MessageStream} implementation using a single {@link Entry entry} or {@link CompletableFuture} completing to
  * an entry as the source.
  *
- * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
+ * @param <M> The type of {@link Message} contained in the singular {@link Entry} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0

@@ -52,8 +52,24 @@ public abstract class MessageStreamTest<M extends Message<?>> {
      */
     abstract MessageStream<M> completedTestSubject(List<M> messages);
 
+    /**
+     * Construct a test subject with a {@link MessageStream.Single single} entry using the given {@code message} as the
+     * source.
+     * <p>
+     * It is the task of the implementer of this method to map th {@code messages} to an {@link Entry} for the
+     * {@link MessageStream.Single stream} under test.
+     *
+     * @param message The {@link Message} of type {@code M} acting as the source for the
+     *                {@link MessageStream.Single single-entry-stream} under construction.
+     * @return A {@link MessageStream.Single single-entry-stream} to use for testing.
+     */
     abstract MessageStream.Single<M> completedSingleStreamTestSubject(M message);
 
+    /**
+     * Construct an {@link MessageStream.Empty empty} test subject.
+     *
+     * @return An {@link MessageStream.Empty empty stream} to use for testing.
+     */
     abstract MessageStream.Empty<M> completedEmptyStreamTestSubject();
 
     /**
@@ -69,9 +85,11 @@ public abstract class MessageStreamTest<M extends Message<?>> {
      */
     protected MessageStream<M> uncompletedTestSubject(List<M> messages, CompletableFuture<Void> completionMarker) {
         return completedTestSubject(messages)
-                .concatWith(DelayedMessageStream.create(completionMarker.thenApply(e -> MessageStream.empty())
-                                                                        .exceptionally(MessageStream::failed))
-                                                .cast());
+                .concatWith(
+                        DelayedMessageStream.create(completionMarker.thenApply(e -> MessageStream.empty())
+                                                                    .exceptionally(MessageStream::failed))
+                                            .cast()
+                );
     }
 
     /**

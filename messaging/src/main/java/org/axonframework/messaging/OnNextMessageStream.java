@@ -57,15 +57,21 @@ class OnNextMessageStream<M extends Message<?>> extends DelegatingMessageStream<
         return next;
     }
 
+    /**
+     * An implementation of the {@link OnNextMessageStream} that expects a message stream with only a
+     * {@link org.axonframework.messaging.MessageStream.Single entry}.
+     *
+     * @param <M> The type of {@link Message} contained in the {@link Entry} of this stream.
+     */
     static class Single<M extends Message<?>> extends OnNextMessageStream<M> implements MessageStream.Single<M> {
 
         /**
-         * Construct an {@link MessageStream stream} that invokes the given {@code onNext} {@link Consumer} each time a
-         * new {@link Entry entry} is consumed by the given {@code delegate}.
+         * Construct an {@link MessageStream stream} that invokes the given {@code onNext} {@link Consumer} once, for
+         * when the first new {@link Entry entry} is consumed by the given {@code delegate}.
          *
-         * @param delegate The delegate {@link MessageStream stream} from which each consumed {@link Entry entry} is
+         * @param delegate The delegate {@link MessageStream stream} from which the first consumed {@link Entry} is
          *                 given to the {@code onNext} {@link Consumer}.
-         * @param onNext   The {@link Consumer} to handle each consumed {@link Entry entry} from the given
+         * @param onNext   The {@link Consumer} to handle the singular consumed {@link Entry} from the given
          *                 {@code delegate}.
          */
         Single(@Nonnull MessageStream.Single<M> delegate, @Nonnull Consumer<Entry<M>> onNext) {

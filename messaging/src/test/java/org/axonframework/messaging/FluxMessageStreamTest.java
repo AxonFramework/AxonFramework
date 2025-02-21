@@ -59,14 +59,13 @@ class FluxMessageStreamTest extends MessageStreamTest<Message<String>> {
         return MessageStream.fromFlux(Flux.fromIterable(messages).concatWith(
                 Flux.create(emitter -> completionMarker.whenComplete(
                         (v, e) -> {
-                            if (e
-                                    != null) {
-                                emitter.error(
-                                        e);
+                            if (e != null) {
+                                emitter.error(e);
                             } else {
                                 emitter.complete();
                             }
-                        }))));
+                        })))
+        );
     }
 
     @Override

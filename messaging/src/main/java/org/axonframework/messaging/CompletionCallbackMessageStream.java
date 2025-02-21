@@ -110,8 +110,14 @@ class CompletionCallbackMessageStream<M extends Message<?>> extends DelegatingMe
                        });
     }
 
-    static class Single<M extends Message<?>> extends CompletionCallbackMessageStream<M> implements
-            MessageStream.Single<M> {
+    /**
+     * A {@link CompletionCallbackMessageStream} implementation completing on only the first
+     * {@link org.axonframework.messaging.MessageStream.Entry} of this stream.
+     *
+     * @param <M> The type of {@link Message} contained in the {@link Entry} of this stream.
+     */
+    static class Single<M extends Message<?>> extends CompletionCallbackMessageStream<M>
+            implements MessageStream.Single<M> {
 
         /**
          * Construct a {@link MessageStream stream} invoking the given {@code completeHandler} when the given
@@ -126,8 +132,14 @@ class CompletionCallbackMessageStream<M extends Message<?>> extends DelegatingMe
         }
     }
 
-    static class Empty<M extends Message<?>> extends CompletionCallbackMessageStream<M> implements
-            MessageStream.Empty<M> {
+    /**
+     * A {@link CompletionCallbackMessageStream} implementation completing on no
+     * {@link org.axonframework.messaging.MessageStream.Entry} of this stream.
+     *
+     * @param <M> The type of {@link Message} for the empty {@link Entry} of this stream.
+     */
+    static class Empty<M extends Message<?>> extends CompletionCallbackMessageStream<M>
+            implements MessageStream.Empty<M> {
 
         /**
          * Construct a {@link MessageStream stream} invoking the given {@code completeHandler} when the given
