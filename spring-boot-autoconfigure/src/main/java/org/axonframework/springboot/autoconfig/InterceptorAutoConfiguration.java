@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.axonframework.springboot.autoconfig;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.gateway.EventGateway;
