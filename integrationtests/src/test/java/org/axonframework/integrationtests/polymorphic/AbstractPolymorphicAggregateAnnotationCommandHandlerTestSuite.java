@@ -89,8 +89,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
                                                  .aggregateModel(model)
                                                  .repository(repository)
                                                  .build();
-        //noinspection resource
-        ch.subscribe(commandBus);
+        commandBus.subscribe(ch);
     }
 
     /**
@@ -221,8 +220,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
                                                  .aggregateModel(model)
                                                  .repository(repository)
                                                  .build();
-        //noinspection resource
-        ch.subscribe(commandBus);
+        commandBus.subscribe(ch);
 
         String simpleAggregateId = "id";
         String child1AggregateId = "child1" + simpleAggregateId;

@@ -16,14 +16,16 @@
 
 package org.axonframework.commandhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.utils.MockException;
@@ -36,12 +38,15 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link InterceptingCommandBus}.
+ *
+ * @author Allard Buijze
+ */
 class InterceptingCommandBusTest {
 
     private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");
@@ -143,21 +148,22 @@ class InterceptingCommandBusTest {
         verify(dispatchInterceptor2).interceptOnDispatch(any(), any(), any());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void handlerInterceptorsInvokedOnHandle() throws Exception {
+        QualifiedName testHandlerName = new QualifiedName("handler");
         CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "test");
         AtomicReference<CommandMessage<?>> handledMessage = new AtomicReference<>();
-        testSubject.subscribe("test", message -> {
-            handledMessage.set(message);
-            return asCommandResultMessage("ok");
-        });
+        testSubject.subscribe(testHandlerName,
+                              (command, context) -> {
+                                  handledMessage.set(command);
+                                  return MessageStream.just(asCommandResultMessage("ok"));
+                              }
+        );
 
-        ArgumentCaptor<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlerCaptor = ArgumentCaptor.forClass(
-                MessageHandler.class);
-        verify(mockCommandBus).subscribe(eq("test"), handlerCaptor.capture());
+        ArgumentCaptor<CommandHandler> handlerCaptor = ArgumentCaptor.forClass(CommandHandler.class);
+        verify(mockCommandBus).subscribe(eq(testHandlerName), handlerCaptor.capture());
 
-        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> actualHandler = handlerCaptor.getValue();
+        CommandHandler actualHandler = handlerCaptor.getValue();
 
         ProcessingContext processingContext = mock(ProcessingContext.class);
         var result = actualHandler.handle(testCommand, processingContext);
@@ -178,8 +184,9 @@ class InterceptingCommandBusTest {
         doThrow(new MockException("Simulating failure in interceptor"))
                 .when(handlerInterceptor2).interceptOnHandle(any(), any(), any());
 
-        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> actualHandler = subscribeHandler(
-                message -> asCommandResultMessage("ok"));
+        CommandHandler actualHandler = subscribeHandler(
+                (command, context) -> MessageStream.just(asCommandResultMessage("ok"))
+        );
 
         ProcessingContext context = mock(ProcessingContext.class);
         var result = actualHandler.handle(testCommand, context);
@@ -200,10 +207,10 @@ class InterceptingCommandBusTest {
 
         List<CommandMessage<?>> handledMessages = new ArrayList<>();
 
-        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> actualHandler = subscribeHandler(
-                message -> {
-                    handledMessages.add(message);
-                    return asCommandResultMessage("ok");
+        CommandHandler actualHandler = subscribeHandler(
+                (command, context) -> {
+                    handledMessages.add(command);
+                    return MessageStream.just(asCommandResultMessage("ok"));
                 });
 
         ProcessingContext processingContext = mock(ProcessingContext.class);
@@ -240,14 +247,12 @@ class InterceptingCommandBusTest {
      * @param handler The handling logic for the command
      * @return the handler as wrapped by the surrounding command bus
      */
-    @SuppressWarnings("unchecked")
-    private MessageHandler<CommandMessage<?>, CommandResultMessage<?>> subscribeHandler(
-            MessageHandler<CommandMessage<?>, CommandResultMessage<?>> handler) {
-        testSubject.subscribe("test", handler);
+    private CommandHandler subscribeHandler(CommandHandler handler) {
+        QualifiedName name = new QualifiedName("handler");
+        testSubject.subscribe(name, handler);
 
-        ArgumentCaptor<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlerCaptor = ArgumentCaptor.forClass(
-                MessageHandler.class);
-        verify(mockCommandBus).subscribe(eq("test"), handlerCaptor.capture());
+        ArgumentCaptor<CommandHandler> handlerCaptor = ArgumentCaptor.forClass(CommandHandler.class);
+        verify(mockCommandBus).subscribe(eq(name), handlerCaptor.capture());
         return handlerCaptor.getValue();
     }
 

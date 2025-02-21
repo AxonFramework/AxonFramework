@@ -19,13 +19,11 @@ package org.axonframework.commandhandling.distributed;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -47,15 +45,16 @@ import static org.mockito.Mockito.*;
  */
 class DistributedCommandBusTest {
 
-    private DistributedCommandBus testSubject;
+    private CommandMessage<?> testCommand;
 
     private StubConnector connector;
-    private CommandMessage<?> commandMessage;
     private SimpleCommandBus delegate;
+    private DistributedCommandBus testSubject;
 
     @BeforeEach
     void setUp() {
-        commandMessage = new GenericCommandMessage<>(new MessageType("command"), "test");
+        testCommand = new GenericCommandMessage<>(new MessageType("command"), "test");
+
         connector = new StubConnector();
         delegate = new SimpleCommandBus();
         testSubject = new DistributedCommandBus(delegate, connector);
@@ -63,10 +62,9 @@ class DistributedCommandBusTest {
 
     @Test
     void publishedCommandsAreSentToConnector() {
-        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(commandMessage,
-                                                                              null);
+        CompletableFuture<? extends Message<?>> result = testSubject.dispatch(testCommand, null);
 
-        assertSame(result, connector.getDispatchedCommands().get(commandMessage));
+        assertSame(result, connector.getDispatchedCommands().get(testCommand));
         // the connector doesn't actually dispatch commands, so we expect the CompletableFuture to remain unfinished
         assertFalse(result.isDone());
     }
@@ -74,64 +72,22 @@ class DistributedCommandBusTest {
     @Test
     void incomingCommandsAreRejectedWhenNoHandlerRegistered() {
         Connector.ResultCallback mockCallback = mock();
-        connector.handler.get().accept(commandMessage, mockCallback);
+        connector.handler.get().accept(testCommand, mockCallback);
 
         verify(mockCallback).error(isA(NoHandlerForCommandException.class));
     }
 
     @Test
     void incomingCommandsAreDelegatedToSubscribedHandlers() {
-        GenericMessage<String> okMessage = new GenericMessage<>(new MessageType("command"), "OK");
-        testSubject.subscribe(String.class.getName(), new MessageHandler<>() {
-            @Override
-            public Object handleSync(CommandMessage<?> message) {
-                return "OK";
-            }
+        GenericCommandResultMessage<String> resultMessage =
+                new GenericCommandResultMessage<>(new MessageType("result"), "OK");
+        testSubject.subscribe(testCommand.type().qualifiedName(),
+                              (command, context) -> MessageStream.just(resultMessage));
 
-            @Override
-            public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
-                                                              ProcessingContext processingContext) {
-                return MessageStream.just(okMessage);
-            }
-        });
         Connector.ResultCallback mockCallback = mock();
-        connector.handler.get().accept(commandMessage, mockCallback);
+        connector.handler.get().accept(testCommand, mockCallback);
 
-        verify(mockCallback).success(same(okMessage));
-    }
-
-    @Test
-    void incomingCommandsAreRejectedForCancelledHandlerSubscription() {
-        GenericMessage<String> okMessage = new GenericMessage<>(new MessageType("command"), "OK");
-        Registration registration = testSubject.subscribe(String.class.getName(),
-                                                          new MessageHandler<>() {
-                                                              @Override
-                                                              public Object handleSync(
-                                                                      CommandMessage<?> message) {
-                                                                  return "OK";
-                                                              }
-
-                                                              @Override
-                                                              public MessageStream<? extends Message<?>> handle(
-                                                                      CommandMessage<?> message,
-                                                                      ProcessingContext processingContext) {
-                                                                  return MessageStream.just(
-                                                                          okMessage);
-                                                              }
-                                                          });
-
-        assertTrue(registration.cancel());
-        Connector.ResultCallback mockCallback = mock();
-        connector.handler.get().accept(commandMessage, mockCallback);
-
-        verify(mockCallback).error(isA(NoHandlerForCommandException.class));
-    }
-
-    @Test
-    void unregisterNonExistentCommandHandlerReturnsFalse() {
-        Registration registration = testSubject.subscribe(String.class.getName(), mock());
-        assertTrue(registration.cancel());
-        assertFalse(registration.cancel());
+        verify(mockCallback).success(same(resultMessage));
     }
 
     @Test

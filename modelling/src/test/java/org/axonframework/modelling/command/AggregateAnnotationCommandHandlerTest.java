@@ -16,15 +16,15 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.DuplicateCommandHandlerSubscriptionException;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Priority;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.FixedValueParameterResolver;
 import org.axonframework.messaging.annotation.MetaDataValue;
@@ -113,8 +113,7 @@ class AggregateAnnotationCommandHandlerTest {
                                                        .repository(mockRepository)
                                                        .creationPolicyAggregateFactory(creationPolicyFactory)
                                                        .build();
-        //noinspection resource
-        testSubject.subscribe(commandBus);
+        commandBus.subscribe(testSubject);
     }
 
     @Test
@@ -152,25 +151,26 @@ class AggregateAnnotationCommandHandlerTest {
     @Test
     @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void supportedCommands() {
-        Set<String> actual = testSubject.supportedCommandNames();
-        Set<String> expected = new HashSet<>(Arrays.asList(
-                CreateCommand.class.getName(),
-                CreateOrUpdateCommand.class.getName(),
-                AlwaysCreateCommand.class.getName(),
-                CreateFactoryMethodCommand.class.getName(),
-                UpdateCommandWithAnnotatedMethod.class.getName(),
-                FailingCreateCommand.class.getName(),
-                UpdateCommandWithAnnotatedMethodAndVersion.class.getName(),
-                UpdateCommandWithAnnotatedField.class.getName(),
-                UpdateCommandWithAnnotatedFieldAndVersion.class.getName(),
-                UpdateCommandWithAnnotatedFieldAndIntegerVersion.class.getName(),
-                FailingUpdateCommand.class.getName(),
+        Set<QualifiedName> actual = testSubject.supportedCommands();
+        Set<QualifiedName> expected = new HashSet<>(Arrays.asList(
+                new QualifiedName(CreateCommand.class),
+                new QualifiedName(CreateOrUpdateCommand.class),
+                new QualifiedName(AlwaysCreateCommand.class),
+                new QualifiedName(CreateFactoryMethodCommand.class),
+                new QualifiedName(UpdateCommandWithAnnotatedMethod.class),
+                new QualifiedName(FailingCreateCommand.class),
+                new QualifiedName(UpdateCommandWithAnnotatedMethodAndVersion.class),
+                new QualifiedName(UpdateCommandWithAnnotatedField.class),
+                new QualifiedName(UpdateCommandWithAnnotatedFieldAndVersion.class),
+                new QualifiedName(UpdateCommandWithAnnotatedFieldAndIntegerVersion.class),
+                new QualifiedName(FailingUpdateCommand.class),
                 // declared in the entities
-                UpdateNestedEntityStateCommand.class.getName(),
-                UpdateEntityStateCommand.class.getName(),
-                UpdateEntityFromCollectionStateCommand.class.getName(),
-                UpdateEntityFromMapStateCommand.class.getName(),
-                UpdateAbstractEntityFromCollectionStateCommand.class.getName()));
+                new QualifiedName(UpdateNestedEntityStateCommand.class),
+                new QualifiedName(UpdateEntityStateCommand.class),
+                new QualifiedName(UpdateEntityFromCollectionStateCommand.class),
+                new QualifiedName(UpdateEntityFromMapStateCommand.class),
+                new QualifiedName(UpdateAbstractEntityFromCollectionStateCommand.class)
+        ));
 
         assertEquals(expected, actual);
     }
@@ -178,14 +178,14 @@ class AggregateAnnotationCommandHandlerTest {
     @Test
     @Disabled("TODO #3068 - Revise Aggregate Modelling")
     void commandHandlerSubscribesToCommands() {
-        //noinspection resource
-        verify(commandBus).subscribe(eq(CreateCommand.class.getName()),
-                                     any(MessageHandler.class));
+        verify(commandBus).subscribe(eq(new QualifiedName(CreateCommand.class)),
+                                     any(org.axonframework.commandhandling.CommandHandler.class));
         // Is subscribed two times because of the duplicate handler. This is good and indicates usage of the
         // DuplicateCommandHandlerResolver
-        //noinspection resource
-        verify(commandBus, times(2)).subscribe(eq(UpdateCommandWithAnnotatedMethod.class.getName()),
-                                               any(MessageHandler.class));
+        verify(commandBus, times(2)).subscribe(
+                eq(new QualifiedName(UpdateCommandWithAnnotatedMethod.class)),
+                any(org.axonframework.commandhandling.CommandHandler.class)
+        );
     }
 
     @Test
@@ -689,8 +689,7 @@ class AggregateAnnotationCommandHandlerTest {
                                                        .repository(mockRepository)
                                                        .build();
 
-        //noinspection resource
-        assertThrows(DuplicateCommandHandlerSubscriptionException.class, () -> testSubject.subscribe(commandBus));
+        assertThrows(DuplicateCommandHandlerSubscriptionException.class, () -> commandBus.subscribe(testSubject));
     }
 
     @Test
@@ -755,8 +754,7 @@ class AggregateAnnotationCommandHandlerTest {
                                                  .aggregateModel(polymorphicAggregateModel)
                                                  .build();
 
-        //noinspection resource
-        assertDoesNotThrow(() -> polymorphicAggregateTestSubject.subscribe(commandBus));
+        assertDoesNotThrow(() -> commandBus.subscribe(polymorphicAggregateTestSubject));
     }
 
     @SuppressWarnings("unused")

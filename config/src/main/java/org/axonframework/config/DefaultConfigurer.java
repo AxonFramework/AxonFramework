@@ -844,12 +844,19 @@ public class DefaultConfigurer implements Configurer {
                 configuration -> new MessageHandlerRegistrar(
                         () -> configuration,
                         commandHandlerBuilder,
-                        (config, commandHandler) -> new AnnotationCommandHandlerAdapter<>(
-                                commandHandler,
-                                config.parameterResolverFactory(),
-                                config.handlerDefinition(commandHandler.getClass()),
-                                messageTypeResolver
-                        ).subscribe(config.commandBus())
+                        (config, commandHandler) -> {
+                            config.commandBus()
+                                  .subscribe(new AnnotationCommandHandlerAdapter<>(
+                                          commandHandler,
+                                          config.parameterResolverFactory(),
+                                          config.handlerDefinition(commandHandler.getClass()),
+                                          messageTypeResolver
+                                  ));
+                            // TODO AnnotationCommandHandlerAdapter#subscribe does not use a Registration anymore
+                            // If we support automated unsubscribe, we need to figure out another way.
+                            // Enforced to a no-op Registration object for now.
+                            return () -> true;
+                        }
                 )
         ));
         return this;
