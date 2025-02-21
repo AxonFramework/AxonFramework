@@ -533,10 +533,17 @@ public interface MessageStream<M extends Message<?>> {
             return map(e -> e.map(mapper));
         }
 
+        /**
+         * Creates a Mono that emits the element emitted by this stream and completes the same way (normally or with
+         * error) as this stream.
+         *
+         * @return a Mono that emits the same elements and completes the way this stream does.
+         */
         default Mono<Entry<M>> asMono() {
             return asFlux().singleOrEmpty();
         }
 
+        @Override
         default <R extends Message<?>> Single<R> cast() {
             //noinspection unchecked
             return (Single<R>) this;
