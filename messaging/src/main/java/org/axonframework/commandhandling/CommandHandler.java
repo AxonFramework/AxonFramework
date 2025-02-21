@@ -40,7 +40,7 @@ public interface CommandHandler extends MessageHandler {
      *
      * @param command The command to handle.
      * @param context The context to the given {@code command} is handled in.
-     * @return A {@code MessagesStream} of a {@link CommandResultMessage}.
+     * @return A {@code MessagesStream.Single} of a {@link CommandResultMessage}.
      */
     @Nonnull
     MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
