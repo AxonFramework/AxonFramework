@@ -77,7 +77,7 @@ class DefaultEventStoreTransactionTest {
             var uow = new AsyncUnitOfWork();
             uow.runOnPreInvocation(context -> {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-                   beforeCommitEvents.set(transaction.source(sourcingCondition, context));
+                   beforeCommitEvents.set(transaction.source(sourcingCondition));
                })
                .runOnPostInvocation(context -> {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
@@ -89,14 +89,14 @@ class DefaultEventStoreTransactionTest {
                // Hence, we retrieve the sourced set after that.
                .runOnAfterCommit(context -> {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-                   afterCommitEvents.set(transaction.source(sourcingCondition, context));
+                   afterCommitEvents.set(transaction.source(sourcingCondition));
 
-                   consistencyMarker.set(transaction.appendPosition(context));
+                   consistencyMarker.set(transaction.appendPosition());
                });
             awaitCompletion(uow.execute());
 
             // then
-            assertNull(beforeCommitEvents.get().firstAsCompletableFuture().join());
+            assertNull(beforeCommitEvents.get().first().asCompletableFuture().join());
             StepVerifier.create(afterCommitEvents.get().asFlux())
                         .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 0, event1))
                         .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 1, event2))
@@ -123,11 +123,11 @@ class DefaultEventStoreTransactionTest {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
                    transaction.appendEvent(event1);
                    transaction.appendEvent(event2);
-                   beforeCommitEvents.set(transaction.source(sourcingCondition, context));
+                   beforeCommitEvents.set(transaction.source(sourcingCondition));
                })
                .runOnAfterCommit(context -> {
                    EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-                   afterCommitEvents.set(transaction.source(sourcingCondition, context));
+                   afterCommitEvents.set(transaction.source(sourcingCondition));
                });
             awaitCompletion(uow.execute());
 
@@ -202,7 +202,7 @@ class DefaultEventStoreTransactionTest {
             var uow = new AsyncUnitOfWork();
             uow.runOnAfterCommit(context -> {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-                result.set(transaction.appendPosition(context));
+                result.set(transaction.appendPosition());
             });
             awaitCompletion(uow.execute());
 
@@ -223,7 +223,7 @@ class DefaultEventStoreTransactionTest {
                 transaction.appendEvent(eventMessage(3));
             }).runOnAfterCommit(context -> {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-                result.set(transaction.appendPosition(context));
+                result.set(transaction.appendPosition());
             });
             awaitCompletion(uow.execute());
 
@@ -263,7 +263,7 @@ class DefaultEventStoreTransactionTest {
             var eventsAfterRollback = new AtomicReference<MessageStream<? extends EventMessage<?>>>();
             verificationUow.runOnPreInvocation(context -> {
                 EventStoreTransaction transaction = defaultEventStoreTransactionFor(context);
-                eventsAfterRollback.set(transaction.source(sourcingCondition, context));
+                eventsAfterRollback.set(transaction.source(sourcingCondition));
             });
             awaitCompletion(verificationUow.execute());
 
@@ -315,7 +315,7 @@ class DefaultEventStoreTransactionTest {
     private static <R> R awaitException(CompletableFuture<R> completion) {
         await().atMost(Duration.ofMillis(500)).pollDelay(Duration.ofMillis(25)).untilAsserted(() -> assertTrue(
                 completion.isCompletedExceptionally(),
-                () -> "Expected exception but none occurred"));
+                "Expected exception but none occurred"));
         return completion.join();
     }
 

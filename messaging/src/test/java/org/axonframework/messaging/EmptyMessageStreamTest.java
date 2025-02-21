@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
 package org.axonframework.messaging;
 
 import org.axonframework.messaging.MessageStream.Entry;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -41,6 +40,17 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
     }
 
     @Override
+    MessageStream.Single<Message<Void>> completedSingleStreamTestSubject(Message<Void> message) {
+        Assumptions.abort("EmptyMessageStream doesn't support content");
+        return null;
+    }
+
+    @Override
+    MessageStream.Empty<Message<Void>> completedEmptyStreamTestSubject() {
+        return MessageStream.empty();
+    }
+
+    @Override
     MessageStream<Message<Void>> failingTestSubject(List<Message<Void>> messages,
                                                     Exception failure) {
         Assumptions.abort("EmptyMessageStream doesn't support failed streams");
@@ -57,12 +67,13 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
     void doesNothingOnErrorContinue() {
         AtomicBoolean invoked = new AtomicBoolean(false);
 
-        CompletableFuture<Entry<Message<?>>> result = MessageStream.empty()
-                                                                   .onErrorContinue(e -> {
-                                                                       invoked.set(true);
-                                                                       return MessageStream.empty();
-                                                                   })
-                                                                   .firstAsCompletableFuture();
+        CompletableFuture<Entry<Message<Void>>> result = MessageStream.empty()
+                                                                      .onErrorContinue(e -> {
+                                                                          invoked.set(true);
+                                                                          return MessageStream.empty();
+                                                                      })
+                                                                      .first()
+                                                                      .asCompletableFuture();
         assertTrue(result.isDone());
         assertNull(result.join());
         assertFalse(invoked.get());
@@ -76,7 +87,8 @@ class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
                                                         .whenComplete(() -> {
                                                             throw expected;
                                                         })
-                                                        .firstAsCompletableFuture()
+                                                        .first()
+                                                        .asCompletableFuture()
                                                         .thenApply(Entry::message);
 
         assertTrue(result.isCompletedExceptionally());

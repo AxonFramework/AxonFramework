@@ -25,7 +25,6 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.common.Registration;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
@@ -120,8 +119,8 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
 
     @Nonnull
     @Override
-    public MessageStream<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                         @Nonnull ProcessingContext processingContext) {
+    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                @Nonnull ProcessingContext processingContext) {
         MessageHandlingMember<? super T> handler = model.getAllHandlers()
                                                         .values()
                                                         .stream()
@@ -132,7 +131,9 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
 
         return model.chainedInterceptor(target.getClass())
                     .handle(command, processingContext, target, handler)
-                    .mapMessage(this::asCommandResultMessage);
+                    .mapMessage(this::asCommandResultMessage)
+                    .first()
+                    .cast();
     }
 
     public boolean canHandle(CommandMessage<?> message) {

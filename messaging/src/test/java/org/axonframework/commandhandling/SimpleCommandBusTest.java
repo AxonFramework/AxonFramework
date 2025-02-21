@@ -116,22 +116,6 @@ class SimpleCommandBusTest {
     }
 
     @Test
-    @Disabled("TODO Investigation on registration")
-    void dispatchCommandHandlerUnsubscribed() {
-        StubCommandHandler commandHandler = new StubCommandHandler("Not important");
-        testSubject.subscribe(COMMAND_NAME, commandHandler);
-        //TODO Investigation on registration
-//        subscription.cancel();
-
-        var actual = testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
-
-        assertTrue(actual.isCompletedExceptionally());
-        ExecutionException actualException = assertThrows(ExecutionException.class, actual::get);
-        assertInstanceOf(NoHandlerForCommandException.class,
-                         actualException.getCause());
-    }
-
-    @Test
     void asyncHandlerCompletion() throws Exception {
         var ourFutureIsBright = new CompletableFuture<>();
         testSubject.subscribe(COMMAND_NAME, new StubCommandHandler(ourFutureIsBright));
@@ -190,8 +174,8 @@ class SimpleCommandBusTest {
         var commandHandler = new StubCommandHandler("ok") {
             @Nonnull
             @Override
-            public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                                           @Nonnull ProcessingContext processingContext) {
+            public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                                  @Nonnull ProcessingContext processingContext) {
                 throw new MockException("Simulating exception");
             }
         };
@@ -295,8 +279,8 @@ class SimpleCommandBusTest {
 
         @Nonnull
         @Override
-        public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                                       @Nonnull ProcessingContext processingContext) {
+        public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                              @Nonnull ProcessingContext processingContext) {
             if (result instanceof Throwable error) {
                 return MessageStream.failed(error);
             } else if (result instanceof CompletableFuture<?> future) {

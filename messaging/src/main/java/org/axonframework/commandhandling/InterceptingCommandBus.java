@@ -95,7 +95,8 @@ public class InterceptingCommandBus implements CommandBus {
     public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
                                                             @Nullable ProcessingContext processingContext) {
         return dispatcher.apply(command, processingContext)
-                         .firstAsCompletableFuture()
+                         .first()
+                         .asCompletableFuture()
                          .thenApply(Entry::message);
     }
 
@@ -113,10 +114,11 @@ public class InterceptingCommandBus implements CommandBus {
 
         @Nonnull
         @Override
-        public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
-                                                                       @Nonnull ProcessingContext processingContext) {
+        public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+                                                                              @Nonnull ProcessingContext processingContext) {
             try {
-                return interceptor.interceptOnHandle(message, processingContext, this);
+                return interceptor.interceptOnHandle(message, processingContext, this)
+                                  .first();
             } catch (RuntimeException e) {
                 return MessageStream.failed(e);
             }

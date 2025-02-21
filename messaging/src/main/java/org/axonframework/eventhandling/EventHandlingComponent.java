@@ -23,11 +23,12 @@ import java.util.Set;
 /**
  * Interface describing a group of {@code EventHandlers} belonging to a single component.
  * <p>
- * As such, it allows registration of {@code EventHandlers} through the {@code EventHandlerRegistry}. Besides
- * handling and registration, it specifies which {@link #supportedEvents() events} it supports.
+ * As such, it allows registration of {@code EventHandlers} through the {@code EventHandlerRegistry}. Besides handling
+ * and registration, it specifies which {@link #supportedEvents() events} it supports.
  *
+ * @author Rene de Waele
  * @author Steven van Beelen
- * @since 5.0.0
+ * @since 3.0.0
  */
 public interface EventHandlingComponent extends EventHandler, EventHandlerRegistry {
 

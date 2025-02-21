@@ -38,6 +38,11 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link RetryingCommandBus}.
+ *
+ * @author Allard Buijze
+ */
 class RetryingCommandBusTest {
 
     private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");

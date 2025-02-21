@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.messaging;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -177,8 +178,8 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
-     * Create a stream that returns an {@link Entry entry} wrapping the {@link Message} from the given {@code future},
-     * once the given {@code future} completes.
+     * Create a stream that returns a single {@link Entry entry} wrapping the {@link Message} from the given
+     * {@code future}, once the given {@code future} completes.
      * <p>
      * The stream will contain at most a single entry. It may also contain no entries if the future returns
      * {@code null}. The stream will complete with an exception when the given {@code future} completes exceptionally.
@@ -187,13 +188,13 @@ public interface MessageStream<M extends Message<?>> {
      * @param <M>    The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return A stream containing at most one {@link Entry entry} from the given {@code future}.
      */
-    static <M extends Message<?>> MessageStream<M> fromFuture(@Nonnull CompletableFuture<M> future) {
+    static <M extends Message<?>> Single<M> fromFuture(@Nonnull CompletableFuture<M> future) {
         return fromFuture(future, message -> Context.empty());
     }
 
     /**
-     * Create a stream that returns an {@link Entry entry} wrapping the {@link Message} from the given {@code future},
-     * once the given {@code future} completes.
+     * Create a stream that returns a single {@link Entry entry} wrapping the {@link Message} from the given
+     * {@code future}, once the given {@code future} completes.
      * <p>
      * The automatically generated {@code Entry} will have the {@link Context} as given by the {@code contextSupplier}.
      * <p>
@@ -207,15 +208,15 @@ public interface MessageStream<M extends Message<?>> {
      * @return A stream containing at most one {@link Entry entry} from the given {@code future} with a {@link Context}
      * provided by the {@code contextSupplier}.
      */
-    static <M extends Message<?>> MessageStream<M> fromFuture(@Nonnull CompletableFuture<M> future,
-                                                              @Nonnull Function<M, Context> contextSupplier) {
-        return new SingleValueMessageStream<>(future.thenApply(message -> new SimpleEntry<>(message,
-                                                                                            contextSupplier.apply(
-                                                                                                    message))));
+    static <M extends Message<?>> Single<M> fromFuture(@Nonnull CompletableFuture<M> future,
+                                                       @Nonnull Function<M, Context> contextSupplier) {
+        return new SingleValueMessageStream<>(
+                future.thenApply(message -> new SimpleEntry<>(message, contextSupplier.apply(message)))
+        );
     }
 
     /**
-     * Create a stream containing the given {@code message} automatically wrapped in an {@link Entry}.
+     * Create a stream containing the single given {@code message}, automatically wrapped in an {@link Entry}.
      * <p>
      * Once the {@code Entry} is consumed, the stream is considered completed.
      *
@@ -223,12 +224,12 @@ public interface MessageStream<M extends Message<?>> {
      * @param <M>     The type of {@link Message} given.
      * @return A stream consisting of a single {@link Entry entry} wrapping the given {@code message}.
      */
-    static <M extends Message<?>> MessageStream<M> just(@Nullable M message) {
+    static <M extends Message<?>> Single<M> just(@Nullable M message) {
         return just(message, m -> Context.empty());
     }
 
     /**
-     * Create a stream containing the given {@code message} automatically wrapped in an {@link Entry}.
+     * Create a stream containing the single given {@code message}, automatically wrapped in an {@link Entry}.
      * <p>
      * Once the {@code Entry} is consumed, the stream is considered completed.
      *
@@ -239,8 +240,8 @@ public interface MessageStream<M extends Message<?>> {
      * @return A stream consisting of a single {@link Entry entry} wrapping the given {@code message} with a
      * {@link Context} provided by the {@code contextSupplier}.
      */
-    static <M extends Message<?>> MessageStream<M> just(@Nullable M message,
-                                                        @Nonnull Function<M, Context> contextSupplier) {
+    static <M extends Message<?>> Single<M> just(@Nullable M message,
+                                                 @Nonnull Function<M, Context> contextSupplier) {
         return new SingleValueMessageStream<>(new SimpleEntry<>(message, contextSupplier.apply(message)));
     }
 
@@ -253,35 +254,23 @@ public interface MessageStream<M extends Message<?>> {
      * @param <M>     The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return A stream that is completed exceptionally.
      */
-    static <M extends Message<?>> MessageStream<M> failed(@Nonnull Throwable failure) {
+    static <M extends Message<?>> Empty<M> failed(@Nonnull Throwable failure) {
         return new FailedMessageStream<>(failure);
     }
 
     /**
-     * Create a stream that carries no {@link Entry entries} and is considered to be successfully completed.
+     * Create a stream that carries no {@link Entry} and is considered to be successfully completed. The type of the
+     * empty stream is forced to a {@link Message} containing a {@link Void}.
+     * <p>
+     * To declare empty streams of another type, call {@link #cast()} on the returned {@code Empty} stream.
      * <p>
      * Any attempt to convert this stream to a component that requires an entry to be returned (such as
      * {@link CompletableFuture}), will have it return {@code null}.
      *
-     * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
      * @return An empty stream.
      */
-    static <M extends Message<?>> MessageStream<M> empty() {
+    static Empty<Message<Void>> empty() {
         return EmptyMessageStream.instance();
-    }
-
-    /**
-     * Returns a {@link CompletableFuture} that completes with the <b>first</b> {@link Entry entry} contained in this
-     * MessageStream, or exceptionally if the stream completes with an error before returning any entries.
-     * <p>
-     * If the stream completes successfully before returning any entries, the {@code CompletableFuture} completes with a
-     * {@code null} value.
-     *
-     * @return A {@link CompletableFuture} that completes with the first {@link Entry entry}, {@code null} if it is
-     * empty, or exceptionally if the stream propagates an error.
-     */
-    default CompletableFuture<Entry<M>> firstAsCompletableFuture() {
-        return MessageStreamUtils.firstAsCompletableFuture(this);
     }
 
     /**
@@ -294,6 +283,19 @@ public interface MessageStream<M extends Message<?>> {
      */
     default Flux<Entry<M>> asFlux() {
         return MessageStreamUtils.asFlux(this);
+    }
+
+    /**
+     * Returns a {@link Single stream} that includes only the first message of {@code this} stream, unless it completes
+     * without delivering any messages, in which case is completes the same way.
+     * <p>
+     * When the first message is delivered, the returned stream completes normally, independently of how this stream
+     * completes. Upon consuming the first message, this stream is {@link #close()} immediately.
+     *
+     * @return A {@link Single stream} that includes only the first message of {@code this} stream.
+     */
+    default Single<M> first() {
+        return new TruncateFirstMessageStream<>(this);
     }
 
     /**
@@ -348,6 +350,9 @@ public interface MessageStream<M extends Message<?>> {
     /**
      * Closes this stream, freeing any possible resources occupied by the underlying stream. After invocation, some
      * {@link Entry entries} may still be available for reading.
+     * <p>
+     * Implementations must always release resources when a stream is completed, either with an error or normally.
+     * Therefore, it is only required to {@code close()} a stream if the consumer decides to not read until the end.
      */
     void close();
 
@@ -500,5 +505,137 @@ public interface MessageStream<M extends Message<?>> {
 
         @Override
         <T> Entry<M> withResource(@Nonnull ResourceKey<T> key, @Nonnull T resource);
+    }
+
+    /**
+     * A {@code MessageStream} implementation that returns at most a <b>single</b> result before completing.
+     *
+     * @param <M> The type of {@link Message} contained in the singular {@link Entry} of this stream.
+     * @author Allard Buijze
+     * @author Mateusz Nowak
+     * @author Mitchell Herrijgers
+     * @author Steven van Beelen
+     * @see #fromFuture(CompletableFuture)
+     * @see #fromFuture(CompletableFuture, Function)
+     * @see #just(Message)
+     * @see #just(Message, Function)
+     * @since 5.0.0
+     */
+    interface Single<M extends Message<?>> extends MessageStream<M> {
+
+        @Override
+        default Single<M> first() {
+            return this;
+        }
+
+        @Override
+        default <RM extends Message<?>> Single<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
+            return new MappedMessageStream.Single<>(this, mapper);
+        }
+
+        @Override
+        default <RM extends Message<?>> Single<RM> mapMessage(@Nonnull Function<M, RM> mapper) {
+            return map(e -> e.map(mapper));
+        }
+
+        @Override
+        default Single<M> onNext(@Nonnull Consumer<Entry<M>> onNext) {
+            return new OnNextMessageStream.Single<>(this, onNext);
+        }
+
+        @Override
+        default Single<M> whenComplete(@Nonnull Runnable completeHandler) {
+            return new CompletionCallbackMessageStream.Single<>(this, completeHandler);
+        }
+
+        @Override
+        default <R extends Message<?>> Single<R> cast() {
+            //noinspection unchecked
+            return (Single<R>) this;
+        }
+
+        /**
+         * Returns a {@link CompletableFuture} that completes with the <b>first</b> {@link Entry entry} contained in
+         * this {@code MessageStream}, or exceptionally if the stream completes with an error before returning any
+         * entries.
+         * <p>
+         * If the stream completes successfully before returning any entries, the {@code CompletableFuture} completes
+         * with a {@code null} value.
+         * <p>
+         * The underlying stream is {@link #close() closed}  as soon as the first element is returned.
+         *
+         * @return A {@link CompletableFuture} that completes with the first {@link Entry entry}, {@code null} if it is
+         * empty, or exceptionally if the stream propagates an error.
+         */
+        default CompletableFuture<Entry<M>> asCompletableFuture() {
+            return MessageStreamUtils.asCompletableFuture(this);
+        }
+
+        /**
+         * Creates a {@link Mono} that consumes the singular {@link Entry} from this stream.
+         * <p>
+         * The returned {@code Mono} will complete successfully if the stream does so, and exceptionally if the stream
+         * completed with an error.
+         *
+         * @return A {@link Mono} carrying the singular {@link Entry} of this stream.
+         */
+        default Mono<Entry<M>> asMono() {
+            return asFlux().singleOrEmpty();
+        }
+    }
+
+    /**
+     * A {@code MessageStream} implementation that completes normally or with an error without returning any elements.
+     * <p>
+     * Any operations that would {@link #map(Function)} or {@link #reduce(Object, BiFunction)} the stream will do
+     * nothing at all for an empty {@code MessageStream}.
+     *
+     * @param <M> The type of {@link Message} for the empty {@link Entry} of this stream.
+     * @author Allard Buijze
+     * @author Mateusz Nowak
+     * @author Mitchell Herrijgers
+     * @author Steven van Beelen
+     * @see #empty()
+     * @see #failed(Throwable)
+     * @since 5.0.0
+     */
+    interface Empty<M extends Message<?>> extends Single<M> {
+
+        @Override
+        default Empty<M> first() {
+            return this;
+        }
+
+        @Override
+        default <RM extends Message<?>> Empty<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
+            return cast();
+        }
+
+        @Override
+        default <RM extends Message<?>> Empty<RM> mapMessage(@Nonnull Function<M, RM> mapper) {
+            return cast();
+        }
+
+        @Override
+        default Empty<M> onNext(@Nonnull Consumer<Entry<M>> onNext) {
+            // Empty streams can never have their onNext called.
+            return this;
+        }
+
+        @Override
+        default MessageStream<M> concatWith(@Nonnull MessageStream<M> other) {
+            return other;
+        }
+
+        @Override
+        default Empty<M> whenComplete(@Nonnull Runnable completeHandler) {
+            return new CompletionCallbackMessageStream.Empty<>(this, completeHandler);
+        }
+
+        @Override
+        default <T extends Message<?>> Empty<T> cast() {
+            //noinspection unchecked
+            return (Empty<T>) this;
+        }
     }
 }

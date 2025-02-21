@@ -120,11 +120,13 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         TrackingToken tokenOfFirstMessage = testSubject.tailToken()
                                                        .thenApply(StreamingCondition::startingFrom)
                                                        .thenApply(testSubject::stream)
-                                                       .thenCompose(MessageStream::firstAsCompletableFuture)
+                                                       .thenApply(MessageStream::first)
+                                                       .thenCompose(MessageStream.Single::asCompletableFuture)
                                                        .thenApply(r -> r.getResource(TrackingToken.RESOURCE_KEY)).get(5,
                                                                                                                       TimeUnit.SECONDS);
 
-        StepVerifier.create(testSubject.stream(StreamingCondition.startingFrom(tokenOfFirstMessage).or(TEST_CRITERIA)).asFlux())
+        StepVerifier.create(testSubject.stream(StreamingCondition.startingFrom(tokenOfFirstMessage).or(TEST_CRITERIA))
+                                       .asFlux())
                     // we've skipped the first one
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventTwo.event()))
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventThree.event()))
@@ -186,10 +188,11 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
                                  taggedEventMessage("event-1", TEST_CRITERIA.tags()))
                    .thenApply(AppendTransaction::commit).get(5, TimeUnit.SECONDS);
 
-        CompletableFuture<ConsistencyMarker> actual = testSubject.appendEvents(AppendCondition.withCriteria(TEST_CRITERIA),
-                                                                  taggedEventMessage("event-2",
-                                                                                     TEST_CRITERIA.tags()))
-                                                    .thenCompose(AppendTransaction::commit);
+        CompletableFuture<ConsistencyMarker> actual = testSubject.appendEvents(AppendCondition.withCriteria(
+                                                                                       TEST_CRITERIA),
+                                                                               taggedEventMessage("event-2",
+                                                                                                  TEST_CRITERIA.tags()))
+                                                                 .thenCompose(AppendTransaction::commit);
 
         ExecutionException actualException = assertThrows(ExecutionException.class,
                                                           () -> actual.get(1, TimeUnit.SECONDS));
@@ -234,7 +237,8 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
 
         ConsistencyMarker actualIndex = firstCommit.get(5, TimeUnit.SECONDS);
         assertNotNull(actualIndex);
-        assertEquals(GlobalIndexConsistencyMarker.position(actualIndex) + 1, GlobalIndexConsistencyMarker.position(secondCommit.get(5, TimeUnit.SECONDS)));
+        assertEquals(GlobalIndexConsistencyMarker.position(actualIndex) + 1,
+                     GlobalIndexConsistencyMarker.position(secondCommit.get(5, TimeUnit.SECONDS)));
     }
 
     @Test
@@ -285,7 +289,7 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         MessageStream<EventMessage<?>> stream = testSubject.tailToken().thenApply(StreamingCondition::startingFrom)
                                                            .thenApply(testSubject::stream).get(5, TimeUnit.SECONDS);
 
-        MessageStream.Entry<EventMessage<?>> actualEntry = stream.firstAsCompletableFuture().get(5, TimeUnit.SECONDS);
+        MessageStream.Entry<EventMessage<?>> actualEntry = stream.first().asCompletableFuture().get(5, TimeUnit.SECONDS);
         assertEvent(actualEntry.message(), firstEvent.event());
     }
 

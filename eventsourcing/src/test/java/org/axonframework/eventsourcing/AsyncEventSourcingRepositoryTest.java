@@ -24,7 +24,6 @@ import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -72,7 +71,7 @@ class AsyncEventSourcingRepositoryTest {
         ProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStoreTransaction)
-                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate));
 
         CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
 
@@ -81,7 +80,7 @@ class AsyncEventSourcingRepositoryTest {
         verify(eventStore, times(2)).transaction(processingContext, TEST_CONTEXT);
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)
-                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate));
 
         assertEquals("null-0-1", result.resultNow().entity());
     }
@@ -116,7 +115,7 @@ class AsyncEventSourcingRepositoryTest {
         ProcessingContext processingContext2 = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStoreTransaction)
-                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate));
 
         ManagedEntity<String, String> result = testSubject.load("test", processingContext).get();
 
@@ -131,7 +130,7 @@ class AsyncEventSourcingRepositoryTest {
         ProcessingContext processingContext2 = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStoreTransaction)
-                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate));
 
         ManagedEntity<String, String> result = testSubject.load("test", processingContext).get();
 
@@ -161,7 +160,7 @@ class AsyncEventSourcingRepositoryTest {
         ProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStoreTransaction)
-                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate));
 
         CompletableFuture<ManagedEntity<String, String>> result = testSubject.load("test", processingContext);
 
@@ -170,7 +169,7 @@ class AsyncEventSourcingRepositoryTest {
         verify(eventStore, times(2)).transaction(processingContext, TEST_CONTEXT);
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)
-                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate));
         //noinspection unchecked
         ArgumentCaptor<Consumer<EventMessage<?>>> callback = ArgumentCaptor.forClass(Consumer.class);
         verify(eventStoreTransaction).onAppend(callback.capture());
@@ -185,7 +184,7 @@ class AsyncEventSourcingRepositoryTest {
         ProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.fromStream(Stream.of(domainEvent(0), domainEvent(1))))
                 .when(eventStoreTransaction)
-                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate));
 
         CompletableFuture<ManagedEntity<String, String>> result =
                 testSubject.loadOrCreate("test", processingContext, () -> fail("This should not have been invoked"));
@@ -198,7 +197,7 @@ class AsyncEventSourcingRepositoryTest {
         StubProcessingContext processingContext = new StubProcessingContext();
         doReturn(MessageStream.empty())
                 .when(eventStoreTransaction)
-                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate));
 
         CompletableFuture<ManagedEntity<String, String>> loaded =
                 testSubject.loadOrCreate("test", processingContext, () -> "created");
@@ -208,7 +207,7 @@ class AsyncEventSourcingRepositoryTest {
         verify(eventStore, times(2)).transaction(processingContext, TEST_CONTEXT);
         verify(eventStoreTransaction).onAppend(any());
         verify(eventStoreTransaction)
-                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate), eq(processingContext));
+                .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate));
 
         assertEquals("created", loaded.resultNow().entity());
     }

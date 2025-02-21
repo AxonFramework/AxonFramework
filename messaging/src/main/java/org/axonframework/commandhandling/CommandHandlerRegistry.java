@@ -64,4 +64,22 @@ public interface CommandHandlerRegistry {
      */
     CommandHandlerRegistry subscribe(@Nonnull QualifiedName name,
                                      @Nonnull CommandHandler commandHandler);
+
+    /**
+     * Subscribe the given {@code handlingComponent} with this registry.
+     * <p>
+     * Typically invokes {@link #subscribe(Set, CommandHandler)}, using the
+     * {@link CommandHandlingComponent#supportedCommands()} as the set of compatible {@link QualifiedName names} the
+     * component in question can deal with.
+     * <p>
+     * If a subscription already exists for any {@link QualifiedName name} in the supported command names, the behavior
+     * is undefined. Implementations may throw an exception to refuse duplicate subscription or alternatively decide
+     * whether the existing or new {@code handler} gets the subscription.
+     *
+     * @param handlingComponent The command handling component instance to subscribe with this registry.
+     * @return This registry for fluent interfacing.
+     */
+    default CommandHandlerRegistry subscribe(@Nonnull CommandHandlingComponent handlingComponent) {
+        return subscribe(handlingComponent.supportedCommands(), handlingComponent);
+    }
 }
