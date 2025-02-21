@@ -277,6 +277,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
                     Context context = Context.empty();
                     context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition));
                     context = Tag.addToContext(context, nextEvent.tags());
+                    context = ConsistencyMarker.addToContext(context, new GlobalIndexConsistencyMarker(end));
                     return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
                 }
                 currentPosition = position.get();
@@ -287,7 +288,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
         @Override
         public void onAvailable(@Nonnull Runnable callback) {
             this.callback.set(callback);
-            if (eventStorage.containsKey(position.get())) {
+            if (eventStorage.isEmpty() || eventStorage.containsKey(position.get())) {
                 callback.run();
             }
         }
