@@ -10,7 +10,7 @@ updates:
     labels:
       - "Type: Dependency Upgrade"
       - "Priority 1: Must"
-    milestone: 109
+    milestone: 110
     reviewers:
       - "AxonFramework/framework-developers"
     groups:
@@ -32,7 +32,7 @@ updates:
     labels:
       - "Type: Dependency Upgrade"
       - "Priority 1: Must"
-    milestone: 109
+    milestone: 110
     reviewers:
       - "AxonFramework/framework-developers"
     groups:

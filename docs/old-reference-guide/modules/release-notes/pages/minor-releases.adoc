@@ -3,6 +3,26 @@
 
 Any patch release made for an Axon project is tailored towards resolving bugs. This page aims to provide a dedicated overview of patch releases per project.
 
+== Release 4.11
+
+=== Release 4.11.1
+
+==== Bug fixes
+
+- [#3283] fix: Auto-register `MessageHandlerInterceptors` with Spring Boot fails for interceptors which depends on Axon components link:https://github.com/AxonFramework/AxonFramework/pull/3290[#3290]
+- Auto-register `MessageHandlerInterceptors` with Spring Boot fails for interceptors which depends on Axon components link:https://github.com/AxonFramework/AxonFramework/issues/3283[#3283]
+
+==== Dependency upgrades
+
+- Bump the maven-dependencies group with 8 updates link:https://github.com/AxonFramework/AxonFramework/pull/3282[#3282]
+- Bump slackapi/slack-github-action from 1.27.0 to 2.0.0 in the github-dependencies group link:https://github.com/AxonFramework/AxonFramework/pull/3281[#3281]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release:
+
+- link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
+
 == Release 4.10
 
 === Release 4.10.3
