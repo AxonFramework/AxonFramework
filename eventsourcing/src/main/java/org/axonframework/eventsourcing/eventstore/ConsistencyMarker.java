@@ -74,4 +74,15 @@ public interface ConsistencyMarker {
      * @return a ConsistencyMarker that represents the upper bound of two other markers
      */
     ConsistencyMarker upperBound(ConsistencyMarker other);
+
+    /**
+     * Adds the given {@code consistencyMarker} to the given {@code context} using the {@link #RESOURCE_KEY}.
+     *
+     * @param context           The {@link Context} to add the given {@code token} to.
+     * @param consistencyMarker The {@code consistencyMarker} to add to the given {@code context} using the
+     *                          {@link #RESOURCE_KEY}.
+     */
+    static Context addToContext(Context context, ConsistencyMarker consistencyMarker) {
+        return context.withResource(RESOURCE_KEY, consistencyMarker);
+    }
 }
