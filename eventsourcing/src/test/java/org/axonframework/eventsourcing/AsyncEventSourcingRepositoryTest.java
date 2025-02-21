@@ -61,7 +61,7 @@ class AsyncEventSourcingRepositoryTest {
         testSubject = new AsyncEventSourcingRepository<>(
                 eventStore,
                 identifier -> TEST_MODEL_CRITERIA,
-                (currentState, event) -> currentState + "-" + event.getPayload(),
+                (currentState, event, __) -> currentState + "-" + event.getPayload(),
                 TEST_CONTEXT
         );
     }
