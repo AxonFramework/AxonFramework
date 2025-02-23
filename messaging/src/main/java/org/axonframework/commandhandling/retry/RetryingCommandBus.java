@@ -16,32 +16,27 @@
 
 package org.axonframework.commandhandling.retry;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import static org.axonframework.common.FutureUtils.unwrap;
 
 /**
- * A {@code CommandBus} wrapper that will retry dispatching {@link CommandMessage commands} that resulted in a failure.
- * <p>
- * A {@link RetryScheduler} is used to determine if and how retries are performed.
- *
- * @author Allard Buijze
- * @since 5.0.0
+ * CommandBus wrapper that will retry dispatching Commands that resulted in a failure. A {@link RetryScheduler} is used
+ * to determine if and how retries are performed.
  */
 public class RetryingCommandBus implements CommandBus {
 
@@ -49,23 +44,15 @@ public class RetryingCommandBus implements CommandBus {
     private final RetryScheduler retryScheduler;
 
     /**
-     * Initialize the {@code RetryingCommandBus} to dispatch commands on given {@code delegate} and perform retries
-     * using the given {@code retryScheduler}.
+     * Initialize the RetryingCommandBus to dispatch Commands on given {@code delegate} and perform retries using the
+     * given {@code retryScheduler}
      *
-     * @param delegate       The delegate {@code CommandBus} that will handle all dispatching and handling logic.
-     * @param retryScheduler The retry scheduler to use to reschedule failed commands.
+     * @param delegate       The delegate to dispatch Commands to
+     * @param retryScheduler The retry scheduler to use to reschedule failed Commands
      */
-    public RetryingCommandBus(@Nonnull CommandBus delegate,
-                              @Nonnull RetryScheduler retryScheduler) {
-        this.delegate = Objects.requireNonNull(delegate, "Given CommandBus delegate cannot be null.");
-        this.retryScheduler = Objects.requireNonNull(retryScheduler, "Given RetryScheduler cannot be null.");
-    }
-
-    @Override
-    public RetryingCommandBus subscribe(@Nonnull QualifiedName name,
-                                        @Nonnull CommandHandler handler) {
-        delegate.subscribe(name, handler);
-        return this;
+    public RetryingCommandBus(CommandBus delegate, RetryScheduler retryScheduler) {
+        this.delegate = delegate;
+        this.retryScheduler = retryScheduler;
     }
 
     @Override
@@ -84,12 +71,18 @@ public class RetryingCommandBus implements CommandBus {
                                                        ProcessingContext processingContext,
                                                        Throwable e) {
         return retryScheduler.scheduleRetry(command, processingContext, e, this::redispatch)
-                             .firstAsCompletableFuture()
+                             .first().asCompletableFuture()
                              .thenApply(Entry::message);
     }
 
     private MessageStream<Message<?>> redispatch(CommandMessage<?> cmd, ProcessingContext ctx) {
         return MessageStream.fromFuture(dispatchToDelegate(cmd, ctx));
+    }
+
+    @Override
+    public Registration subscribe(@Nonnull String commandName,
+                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
+        return delegate.subscribe(commandName, handler);
     }
 
     @Override
