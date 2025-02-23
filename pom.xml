@@ -80,7 +80,7 @@
         <hsqldb.version>2.5.2</hsqldb.version><!-- Don't upgrade due to JDK8 -->
         <hsqldb.with11.version>2.7.2</hsqldb.with11.version><!-- Don't upgrade due to JDK8 -->
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
-        <hibernate-core.6.version>6.6.8.Final</hibernate-core.6.version>
+        <hibernate-core.6.version>6.6.9.Final</hibernate-core.6.version>
         <mysql-connector-java.version>9.2.0</mysql-connector-java.version>
         <postgresql.version>42.7.5</postgresql.version>
         <!-- Jakarta -->
@@ -131,10 +131,10 @@
         <spring.boot.version>2.7.18</spring.boot.version>
         <spring-security.version>5.8.16</spring-security.version>
         <!-- Testing -->
-        <awaitility.version>4.2.2</awaitility.version>
+        <awaitility.version>4.3.0</awaitility.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit4.version>4.13.2</junit4.version>
-        <junit.jupiter.version>5.11.4</junit.jupiter.version>
+        <junit.jupiter.version>5.12.0</junit.jupiter.version>
         <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.19.3</testcontainers.version>
         <!-- Validation -->
