@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.utils;
 
-import org.axonframework.serialization.json.JacksonSerializer;
+import com.thoughtworks.xstream.XStream;
 import org.axonframework.serialization.xml.CompactDriver;
 import org.axonframework.serialization.xml.XStreamSerializer;
 
@@ -31,8 +31,14 @@ public abstract class TestSerializer {
         // Test utility class
     }
 
-    public static JacksonSerializer xStreamSerializer() {
-        return JacksonSerializer.builder()
+    /**
+     * Return a {@link XStreamSerializer} using a default {@link XStream} instance with a {@link CompactDriver}.
+     *
+     * @return a {@link XStreamSerializer} using a default {@link XStream} instance with a {@link CompactDriver}
+     */
+    public static XStreamSerializer xStreamSerializer() {
+        return XStreamSerializer.builder()
+                                .xStream(new XStream(new CompactDriver()))
                                 .build();
     }
 }

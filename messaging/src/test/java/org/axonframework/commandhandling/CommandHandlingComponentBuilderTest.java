@@ -95,7 +95,7 @@ class CommandHandlingComponentBuilderTest {
     }
 
 
-    class MyAnnotatedCommandHandler {
+    static class MyAnnotatedCommandHandler {
 
         @org.axonframework.commandhandling.annotation.CommandHandler(commandName = "MyCommand")
         public void handle(String command) {
@@ -104,7 +104,7 @@ class CommandHandlingComponentBuilderTest {
     }
 
 
-    class AnnotationBasedCommandHandlingComponentFactory {
+    static class AnnotationBasedCommandHandlingComponentFactory {
         static <T> CommandHandlingComponent createHandlingComponent(String name, T instance) {
             // Inspect
             SimpleCommandHandlingComponent component = SimpleCommandHandlingComponent.forComponent(name);

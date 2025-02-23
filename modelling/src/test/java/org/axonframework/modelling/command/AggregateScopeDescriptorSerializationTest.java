@@ -65,18 +65,18 @@ class AggregateScopeDescriptorSerializationTest {
         assertEquals(expectedIdentifier, result.getIdentifier());
     }
 
-//    @Test
-//    void xStreamSerializationWorksAsExpected() {
-//        XStreamSerializer xStreamSerializer = TestSerializer.xStreamSerializer();
-//        xStreamSerializer.getXStream().setClassLoader(this.getClass().getClassLoader());
-//
-//        SerializedObject<String> serializedObject =
-//                xStreamSerializer.serialize(testSubject, String.class);
-//        AggregateScopeDescriptor result = xStreamSerializer.deserialize(serializedObject);
-//
-//        assertEquals(expectedType, result.getType());
-//        assertEquals(expectedIdentifier, result.getIdentifier());
-//    }
+    @Test
+    void xStreamSerializationWorksAsExpected() {
+        XStreamSerializer xStreamSerializer = TestSerializer.xStreamSerializer();
+        xStreamSerializer.getXStream().setClassLoader(this.getClass().getClassLoader());
+
+        SerializedObject<String> serializedObject =
+                xStreamSerializer.serialize(testSubject, String.class);
+        AggregateScopeDescriptor result = xStreamSerializer.deserialize(serializedObject);
+
+        assertEquals(expectedType, result.getType());
+        assertEquals(expectedIdentifier, result.getIdentifier());
+    }
 
     @Test
     void jacksonSerializationWorksAsExpected() {
