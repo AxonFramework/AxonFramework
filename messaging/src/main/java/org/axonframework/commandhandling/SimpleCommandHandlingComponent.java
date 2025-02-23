@@ -132,11 +132,6 @@ public class SimpleCommandHandlingComponent implements
     }
 
     @Override
-    public SimpleCommandHandlingComponent self() {
-        return this;
-    }
-
-    @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("commandHandlers", commandHandlers);

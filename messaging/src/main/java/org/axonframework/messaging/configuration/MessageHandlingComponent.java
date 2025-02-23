@@ -150,9 +150,4 @@ public interface MessageHandlingComponent
                                                                               HashSet::new);
         return CollectionUtils.merge(supportedCommandsAndEvents, supportedQueries(), HashSet::new);
     }
-
-    @Override
-    default MessageHandlingComponent self() {
-        return this;
-    }
 }

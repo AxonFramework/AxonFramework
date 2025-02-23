@@ -49,7 +49,8 @@ public interface CommandHandlerRegistry<SELF extends CommandHandlerRegistry<SELF
     default SELF subscribe(@Nonnull Set<QualifiedName> names,
                                              @Nonnull CommandHandler commandHandler) {
         names.forEach(name -> subscribe(name, commandHandler));
-        return self();
+        //noinspection unchecked
+        return (SELF) this;
     }
 
 
@@ -63,7 +64,8 @@ public interface CommandHandlerRegistry<SELF extends CommandHandlerRegistry<SELF
      */
     default SELF subscribe(@Nonnull CommandHandlingComponent commandHandlingComponent) {
         subscribe(commandHandlingComponent.supportedCommands(), commandHandlingComponent);
-        return self();
+        //noinspection unchecked
+        return (SELF) this;
     }
 
     /**
@@ -79,11 +81,4 @@ public interface CommandHandlerRegistry<SELF extends CommandHandlerRegistry<SELF
      */
     SELF subscribe(@Nonnull QualifiedName name,
                    @Nonnull CommandHandler commandHandler);
-
-    /**
-     * Return a reference to this registry. Used for fluent interfacing on default interface methods.
-     *
-     * @return this registry
-     */
-    SELF self();
 }

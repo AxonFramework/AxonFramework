@@ -40,12 +40,4 @@ public interface CommandHandlerInterceptorSupportingComponent<SELF extends Comma
      * @return the instance of the implementing class
      */
     SELF registerInterceptor(MessageHandlerInterceptor<? super CommandMessage<?>> interceptor);
-
-    /**
-     * Returns the instance of the implementing class. This is to allow for fluent interfacing when using default
-     * methods.
-     *
-     * @return the instance of the implementing class
-     */
-    SELF self();
 }

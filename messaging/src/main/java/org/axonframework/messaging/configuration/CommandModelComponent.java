@@ -57,11 +57,6 @@ public class CommandModelComponent
     }
 
     @Override
-    public CommandModelComponent self() {
-        return this;
-    }
-
-    @Override
     public CommandModelComponent subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
         eventComponent.subscribe(name, eventHandler);
         return this;

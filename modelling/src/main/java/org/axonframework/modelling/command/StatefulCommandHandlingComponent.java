@@ -105,11 +105,6 @@ public class StatefulCommandHandlingComponent implements
         return this;
     }
 
-    @Override
-    public StatefulCommandHandlingComponent self() {
-        return this;
-    }
-
 
     @Override
     public Set<QualifiedName> supportedCommands() {
