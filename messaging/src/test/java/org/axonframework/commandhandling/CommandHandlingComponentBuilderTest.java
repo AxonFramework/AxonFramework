@@ -55,7 +55,7 @@ class CommandHandlingComponentBuilderTest {
                         new QualifiedName("Command1"),
                         (command, context) -> {
                             command1Handled.set(true);
-                            return MessageStream.empty();
+                            return MessageStream.empty().cast();
                         }
                 )
                 // Second layer
@@ -66,14 +66,14 @@ class CommandHandlingComponentBuilderTest {
                                         new QualifiedName("Command2"),
                                         (command, context) -> {
                                             command2HandledChild.set(true);
-                                            return MessageStream.empty();
+                                            return MessageStream.empty().cast();
                                         }
                                 )
                                 .subscribe(
                                         new QualifiedName("Command3"),
                                         (command, context) -> {
                                             command3Handled.set(true);
-                                            return MessageStream.empty();
+                                            return MessageStream.empty().cast();
                                         }
                                 )
                 );

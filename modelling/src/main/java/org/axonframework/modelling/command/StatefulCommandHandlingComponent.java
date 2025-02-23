@@ -93,7 +93,7 @@ public class StatefulCommandHandlingComponent implements
 
     @Nonnull
     @Override
-    public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+    public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                    @Nonnull ProcessingContext context) {
         return handlingComponent.handle(command, context);
     }

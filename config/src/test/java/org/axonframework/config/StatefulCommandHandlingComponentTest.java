@@ -126,7 +126,7 @@ class StatefulCommandHandlingComponentTest {
                                       .appendEvent(new GenericEventMessage<>(
                                               new MessageType(StudentNameChangedEvent.class),
                                               new StudentNameChangedEvent(student.id, payload.name())));
-                            return MessageStream.empty();
+                            return MessageStream.empty().cast();
                         });
 
         updateStudentName(component, "my-studentId-1", "name-1");
@@ -157,7 +157,7 @@ class StatefulCommandHandlingComponentTest {
                                               new StudentNameChangedEvent(
                                                       student.id,
                                                       payload.name())));
-                            return MessageStream.empty();
+                            return MessageStream.empty().cast();
                         })
                 .registerModel(
                         "CourseModel",
@@ -187,7 +187,7 @@ class StatefulCommandHandlingComponentTest {
                                                                              new StudentEnrolledEvent(
                                                                                      payload.studentId(),
                                                                                      payload.courseId())));
-                            return MessageStream.empty();
+                            return MessageStream.empty().cast();
                         });
 
         updateStudentName(component, "my-studentId-1", "name-1");
@@ -227,7 +227,7 @@ class StatefulCommandHandlingComponentTest {
             GenericCommandMessage<T> command = new GenericCommandMessage<>(
                     new MessageType(payload.getClass()),
                     payload);
-            return component.handle(command, context).firstAsCompletableFuture();
+            return component.handle(command, context).first().asCompletableFuture();
         }).get();
     }
 

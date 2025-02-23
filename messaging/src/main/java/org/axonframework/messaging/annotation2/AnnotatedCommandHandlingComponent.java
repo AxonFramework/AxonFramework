@@ -68,7 +68,7 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
 
     @Nonnull
     @Override
-    public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+    public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                    @Nonnull ProcessingContext context) {
         var handler = commandHandlers.get(command.type().qualifiedName());
         if (handler == null) {
@@ -92,11 +92,11 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
         }
 
         @Override
-        public MessageStream<? extends CommandResultMessage<?>> handle(CommandMessage<?> commandMessage,
+        public MessageStream.Single<? extends CommandResultMessage<?>> handle(CommandMessage<?> commandMessage,
                                                                        ProcessingContext processingContext) {
             try {
                 Object result = method.invoke(target, commandMessage);
-                if (result instanceof MessageStream<?> resultStream) {
+                if (result instanceof MessageStream.Single<?> resultStream) {
                     return resultStream.mapMessage(r -> {
                         if (r instanceof CommandResultMessage<?> cr) {
                             return cr;
@@ -104,7 +104,7 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
                         throw new IllegalArgumentException("Expected CommandResultMessage but got: " + r);
                     });
                 }
-                return (MessageStream<? extends CommandResultMessage<?>>) result;
+                return (MessageStream.Single<? extends CommandResultMessage<?>>) result;
             } catch (Exception e) {
                 return MessageStream.failed(e);
             }

@@ -95,7 +95,7 @@ class StatefulSingleCommandHandlingComponentTest {
                                               new StudentNameChangedEvent(student.id, payload.name())));
 
                             logger.info("Model after: {}", model);
-                            return MessageStream.empty();
+                            return MessageStream.empty().cast();
                         });
 
         updateName("name-1", component);
@@ -112,7 +112,7 @@ class StatefulSingleCommandHandlingComponentTest {
             GenericCommandMessage<ChangeStudentNameCommand> command = new GenericCommandMessage<>(
                     new MessageType(ChangeStudentNameCommand.class),
                     new ChangeStudentNameCommand("my-studentId", name2));
-            return component.handle(command, context).firstAsCompletableFuture();
+            return component.handle(command, context).first().asCompletableFuture();
         }).get();
     }
 

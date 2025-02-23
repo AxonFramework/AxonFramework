@@ -115,7 +115,7 @@ public class SimpleCommandHandlingComponent implements
         );
     }
 
-    private MessageStream<? extends CommandResultMessage<?>> invokeWithInterceptors(@Nonnull CommandMessage<?> command,
+    private MessageStream.Single<? extends CommandResultMessage<?>> invokeWithInterceptors(@Nonnull CommandMessage<?> command,
                                                                                     @Nonnull ProcessingContext context,
                                                                                     @Nonnull CommandHandler commandHandler,
                                                                                     List<MessageHandlerInterceptor<? super CommandMessage<?>>> remainingInterceptors
@@ -127,7 +127,7 @@ public class SimpleCommandHandlingComponent implements
         List<MessageHandlerInterceptor<? super CommandMessage<?>>> remaining = remainingInterceptors.subList(1,
                                                                                                              remainingInterceptors.size());
         // TODO: Why is this cast necessary?
-        return (MessageStream<? extends CommandResultMessage<?>>)
+        return (MessageStream.Single<? extends CommandResultMessage<?>>)
                 interceptor.interceptOnHandle(command, context, () -> invokeWithInterceptors(command, context, commandHandler, remaining));
     }
 
