@@ -27,12 +27,12 @@ import java.util.function.Function;
 /**
  * A {@link MessageStream} implementation that completes exceptionally through the given {@code error}.
  *
- * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
+ * @param <M> The type of {@link Message} for the empty {@link Entry} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class FailedMessageStream<M extends Message<?>> implements MessageStream<M> {
+class FailedMessageStream<M extends Message<?>> implements MessageStream.Empty<M> {
 
     private final Throwable error;
 
@@ -46,7 +46,7 @@ class FailedMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     @Override
-    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
+    public CompletableFuture<Entry<M>> asCompletableFuture() {
         return CompletableFuture.failedFuture(error);
     }
 
@@ -86,7 +86,7 @@ class FailedMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     @Override
-    public <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
+    public <RM extends Message<?>> Empty<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         //noinspection unchecked
         return (FailedMessageStream<RM>) this;
     }
@@ -98,7 +98,7 @@ class FailedMessageStream<M extends Message<?>> implements MessageStream<M> {
     }
 
     @Override
-    public MessageStream<M> whenComplete(@Nonnull Runnable completeHandler) {
+    public Empty<M> whenComplete(@Nonnull Runnable completeHandler) {
         return this;
     }
 

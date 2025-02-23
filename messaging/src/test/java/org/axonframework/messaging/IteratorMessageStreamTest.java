@@ -35,6 +35,18 @@ class IteratorMessageStreamTest extends MessageStreamTest<Message<String>> {
     }
 
     @Override
+    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+        Assumptions.abort("IteratorMessageStream doesn't support explicit single-value streams");
+        return null;
+    }
+
+    @Override
+    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+        Assumptions.abort("IteratorMessageStream doesn't support explicitly empty streams");
+        return null;
+    }
+
+    @Override
     MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages,
                                                       Exception failure) {
         Assumptions.abort("IterableMessageStream doesn't support failures");

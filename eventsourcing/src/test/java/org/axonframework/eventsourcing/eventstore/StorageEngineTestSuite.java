@@ -124,7 +124,8 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         TrackingToken tokenOfFirstMessage = testSubject.tailToken()
                                                        .thenApply(StreamingCondition::startingFrom)
                                                        .thenApply(testSubject::stream)
-                                                       .thenCompose(MessageStream::firstAsCompletableFuture)
+                                                       .thenApply(MessageStream::first)
+                                                       .thenCompose(MessageStream.Single::asCompletableFuture)
                                                        .thenApply(r -> r.getResource(TrackingToken.RESOURCE_KEY)).get(5,
                                                                                                                       TimeUnit.SECONDS);
 
@@ -321,7 +322,7 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         MessageStream<EventMessage<?>> stream = testSubject.tailToken().thenApply(StreamingCondition::startingFrom)
                                                            .thenApply(testSubject::stream).get(5, TimeUnit.SECONDS);
 
-        MessageStream.Entry<EventMessage<?>> actualEntry = stream.firstAsCompletableFuture().get(5, TimeUnit.SECONDS);
+        MessageStream.Entry<EventMessage<?>> actualEntry = stream.first().asCompletableFuture().get(5, TimeUnit.SECONDS);
         assertEvent(actualEntry.message(), firstEvent.event());
     }
 

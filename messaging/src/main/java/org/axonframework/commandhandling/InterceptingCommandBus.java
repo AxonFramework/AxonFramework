@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,23 @@ package org.axonframework.commandhandling;
 
 import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.InterceptorChain;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageHandler;
+import org.axonframework.messaging.MessageHandlerInterceptor;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class InterceptingCommandBus implements CommandBus {
 
@@ -57,7 +62,8 @@ public class InterceptingCommandBus implements CommandBus {
     public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
                                                             @Nullable ProcessingContext processingContext) {
         return dispatcher.apply(command, processingContext)
-                         .firstAsCompletableFuture()
+                         .first()
+                         .asCompletableFuture()
                          .thenApply(Entry::message);
     }
 
@@ -98,7 +104,7 @@ public class InterceptingCommandBus implements CommandBus {
 
         @Override
         public MessageStream<? extends Message<?>> handle(CommandMessage<?> message,
-                                                                       ProcessingContext processingContext) {
+                                                          ProcessingContext processingContext) {
             try {
                 return interceptor.interceptOnHandle(message, processingContext, this);
             } catch (RuntimeException e) {
@@ -113,7 +119,7 @@ public class InterceptingCommandBus implements CommandBus {
 
         @Override
         public MessageStream<? extends Message<?>> proceed(CommandMessage<?> message,
-                                                                        ProcessingContext processingContext) {
+                                                           ProcessingContext processingContext) {
             return next.handle(message, processingContext);
         }
     }
@@ -134,7 +140,7 @@ public class InterceptingCommandBus implements CommandBus {
 
         @Override
         public MessageStream<? extends Message<?>> apply(CommandMessage<?> commandMessage,
-                                                                      ProcessingContext processingContext) {
+                                                         ProcessingContext processingContext) {
             try {
                 return interceptor.interceptOnDispatch(commandMessage, processingContext, this);
             } catch (RuntimeException e) {
@@ -149,7 +155,7 @@ public class InterceptingCommandBus implements CommandBus {
 
         @Override
         public MessageStream<? extends Message<?>> proceed(CommandMessage<?> message,
-                                                                        ProcessingContext processingContext) {
+                                                           ProcessingContext processingContext) {
             return next.apply(message, processingContext);
         }
     }
