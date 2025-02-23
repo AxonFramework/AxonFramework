@@ -88,8 +88,8 @@ public class TracingCommandBus implements CommandBus {
 
         @Nonnull
         @Override
-        public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
-                                                                       @Nonnull ProcessingContext processingContext) {
+        public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+                                                                              @Nonnull ProcessingContext processingContext) {
             return spanFactory.createHandleCommandSpan(message, false)
                               .runSupplier(() -> handler.handle(message, processingContext));
         }

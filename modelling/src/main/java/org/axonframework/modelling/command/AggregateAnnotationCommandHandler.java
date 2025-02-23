@@ -216,14 +216,16 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
     @Nonnull
     @Override
-    public MessageStream<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
-                                                         @Nonnull ProcessingContext processingContext) {
+    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+                                                                @Nonnull ProcessingContext processingContext) {
         return handlers.stream()
                        .filter(ch -> ch.canHandle(message))
                        .findFirst()
                        .orElseThrow(() -> new NoHandlerForCommandException(message))
                        .handle(message, processingContext)
-                       .mapMessage(m -> asCommandResultMessage(m, messageTypeResolver::resolve));
+                       .mapMessage(m -> asCommandResultMessage(m, messageTypeResolver::resolve))
+                       .first()
+                       .cast();
     }
 
     @SuppressWarnings("unchecked")
@@ -394,10 +396,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         /**
-         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when dispatching {@link CommandMessage CommandMessages}.
-         * If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
+         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when dispatching
+         * {@link CommandMessage CommandMessages}. If not set, a {@link ClassBasedMessageTypeResolver} is used by
+         * default.
          *
-         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for {@link CommandMessage CommandMessages}.
+         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for
+         *                            {@link CommandMessage CommandMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder<T> messageNameResolver(MessageTypeResolver messageTypeResolver) {

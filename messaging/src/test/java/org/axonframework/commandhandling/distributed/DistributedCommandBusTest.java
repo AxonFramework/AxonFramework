@@ -26,7 +26,6 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -89,28 +88,6 @@ class DistributedCommandBusTest {
         connector.handler.get().accept(testCommand, mockCallback);
 
         verify(mockCallback).success(same(resultMessage));
-    }
-
-    @Test
-    @Disabled("TODO broken test, as registration is not there at the moment.")
-    void incomingCommandsAreRejectedForCancelledHandlerSubscription() {
-        GenericCommandResultMessage<String> resultMessage =
-                new GenericCommandResultMessage<>(new MessageType("result"), "OK");
-        testSubject.subscribe(new QualifiedName(String.class), (message, context) -> MessageStream.just(resultMessage));
-
-//        assertTrue(registration.cancel());
-        Connector.ResultCallback mockCallback = mock();
-        connector.handler.get().accept(testCommand, mockCallback);
-
-        verify(mockCallback).error(isA(NoHandlerForCommandException.class));
-    }
-
-    @Test
-    @Disabled("TODO broken test, as registration is not there at the moment.")
-    void unregisterNonExistentCommandHandlerReturnsFalse() {
-        testSubject.subscribe(new QualifiedName(String.class), mock());
-//        assertTrue(registration.cancel());
-//        assertFalse(registration.cancel());
     }
 
     @Test

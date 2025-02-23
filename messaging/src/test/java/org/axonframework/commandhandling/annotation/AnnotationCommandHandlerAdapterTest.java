@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -72,7 +71,8 @@ class AnnotationCommandHandlerAdapterTest {
         CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_TYPE, "");
 
         Object result = testSubject.handle(testCommand, mock(ProcessingContext.class))
-                                   .firstAsCompletableFuture()
+                                   .first()
+                                   .asCompletableFuture()
                                    .join()
                                    .message()
                                    .getPayload();
@@ -87,7 +87,8 @@ class AnnotationCommandHandlerAdapterTest {
         CommandMessage<Long> testCommand = new GenericCommandMessage<>(TEST_TYPE, 1L);
 
         Object result = testSubject.handle(testCommand, mock(ProcessingContext.class))
-                                   .firstAsCompletableFuture()
+                                   .first()
+                                   .asCompletableFuture()
                                    .join()
                                    .message()
                                    .getPayload();
@@ -103,7 +104,8 @@ class AnnotationCommandHandlerAdapterTest {
                 new GenericCommandMessage<>(new GenericMessage<>(TEST_TYPE, 1L), "almostLong");
 
         Object result = testSubject.handle(testCommand, mock(ProcessingContext.class))
-                                   .firstAsCompletableFuture()
+                                   .first()
+                                   .asCompletableFuture()
                                    .join()
                                    .message()
                                    .getPayload();
@@ -118,7 +120,8 @@ class AnnotationCommandHandlerAdapterTest {
     void handlerDispatchingThrowingException() {
         try {
             testSubject.handle(new GenericCommandMessage<>(TEST_TYPE, new HashSet<>()), mock(ProcessingContext.class))
-                       .firstAsCompletableFuture()
+                       .first()
+                       .asCompletableFuture()
                        .join();
 
             fail("Expected exception");
@@ -148,7 +151,8 @@ class AnnotationCommandHandlerAdapterTest {
         testSubject = new AnnotationCommandHandlerAdapter<>(annotatedCommandHandler);
 
         Object result = testSubject.handle(testCommandMessage, mock(ProcessingContext.class))
-                                   .firstAsCompletableFuture()
+                                   .first()
+                                   .asCompletableFuture()
                                    .join()
                                    .message()
                                    .getPayload();

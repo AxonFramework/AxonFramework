@@ -83,9 +83,10 @@ public class SimpleCommandHandlingComponent implements
 
     @Nonnull
     @Override
-    public MessageStream<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                                   @Nonnull ProcessingContext context) {
+    public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                          @Nonnull ProcessingContext context) {
         QualifiedName name = command.type().qualifiedName();
+        // TODO #3103 - add interceptor knowledge
         Optional<CommandHandlingComponent> optionalSubHandler = subComponents
                 .stream()
                 .filter(subComponent ->

@@ -64,4 +64,18 @@ public interface EventHandlerRegistry {
      */
     EventHandlerRegistry subscribe(@Nonnull QualifiedName name,
                                    @Nonnull EventHandler eventHandler);
+
+    /**
+     * Subscribe the given {@code handlingComponent} with this registry.
+     * <p>
+     * Typically invokes {@link #subscribe(Set, EventHandler)}, using the
+     * {@link EventHandlingComponent#supportedEvents()} as the set of compatible {@link QualifiedName names} the
+     * component in question can deal with.
+     *
+     * @param handlingComponent The event handling component instance to subscribe with this registry.
+     * @return This registry for fluent interfacing.
+     */
+    default EventHandlerRegistry subscribe(@Nonnull EventHandlingComponent handlingComponent) {
+        return subscribe(handlingComponent.supportedEvents(), handlingComponent);
+    }
 }

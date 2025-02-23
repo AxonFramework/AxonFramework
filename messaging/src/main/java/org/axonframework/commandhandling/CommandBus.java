@@ -16,16 +16,15 @@
 
 package org.axonframework.commandhandling;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * The mechanism that dispatches {@link CommandMessage commands} to their appropriate

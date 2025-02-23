@@ -65,4 +65,18 @@ public interface QueryHandlerRegistry {
      */
     QueryHandlerRegistry subscribe(@Nonnull QualifiedName name,
                                    @Nonnull QueryHandler queryHandler);
+
+    /**
+     * Subscribe the given {@code handlingComponent} with this registry.
+     * <p>
+     * Typically invokes {@link #subscribe(Set, QueryHandler)}, using the
+     * {@link QueryHandlingComponent#supportedQueries()} as the set of compatible {@link QualifiedName names} the
+     * component in question can deal with.
+     *
+     * @param handlingComponent The query handling component instance to subscribe with this registry.
+     * @return This registry for fluent interfacing.
+     */
+    default QueryHandlerRegistry subscribe(@Nonnull QueryHandlingComponent handlingComponent) {
+        return subscribe(handlingComponent.supportedQueries(), handlingComponent);
+    }
 }
