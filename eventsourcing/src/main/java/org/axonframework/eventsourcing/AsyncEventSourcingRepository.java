@@ -106,7 +106,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
                 identifier,
                 id -> eventStore.transaction(processingContext, context)
                                 .source(SourcingCondition.conditionFor(criteriaResolver.resolve(id)))
-                                .reduce(new EventSourcedEntity<>(identifier, (M) factoryMethod.apply(identifier)),
+                                .reduce(new EventSourcedEntity<>(identifier, factoryMethod.apply(identifier)),
                                         (entity, entry) -> {
                                     entity.applyStateChange(entry.message(), eventStateApplier);
                                     return entity;
