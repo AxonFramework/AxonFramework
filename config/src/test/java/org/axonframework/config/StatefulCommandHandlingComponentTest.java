@@ -35,8 +35,6 @@ import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,19 +43,20 @@ import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Tests the fluent interface for the configuration of a {@link StatefulCommandHandlingComponent}.
+ */
 class StatefulCommandHandlingComponentTest {
 
     public static final String DEFAULT_CONTEXT = "default";
-    private final Logger logger = LoggerFactory.getLogger(StatefulCommandHandlingComponentTest.class);
 
-
-    SimpleEventStore eventStore = new SimpleEventStore(
+    private final SimpleEventStore eventStore = new SimpleEventStore(
             new AsyncInMemoryEventStorageEngine(),
             DEFAULT_CONTEXT,
             new AnnotationBasedTagResolver()
     );
 
-    EventStateApplier<Student> studentEventStateApplier = (model, em) -> {
+    private final EventStateApplier<Student> studentEventStateApplier = (model, em) -> {
         if (em.getPayload() instanceof StudentNameChangedEvent e) {
             model.handle(e);
         }
@@ -67,7 +66,7 @@ class StatefulCommandHandlingComponentTest {
         return model;
     };
 
-    AsyncEventSourcingRepository<String, Student> studentRepository = new AsyncEventSourcingRepository<>(
+    private final AsyncEventSourcingRepository<String, Student> studentRepository = new AsyncEventSourcingRepository<>(
             eventStore,
             myModelId -> EventCriteria.forAnyEventType().withTags(new Tag("Student", myModelId)),
             studentEventStateApplier,
@@ -76,13 +75,13 @@ class StatefulCommandHandlingComponentTest {
     );
 
 
-    EventStateApplier<Course> courseEventStateApplier = (model, em) -> {
+    private final EventStateApplier<Course> courseEventStateApplier = (model, em) -> {
         if (em.getPayload() instanceof StudentEnrolledEvent e) {
             model.handle(e);
         }
         return model;
     };
-    AsyncEventSourcingRepository<String, Course> courseRepository = new AsyncEventSourcingRepository<>(
+    private final AsyncEventSourcingRepository<String, Course> courseRepository = new AsyncEventSourcingRepository<>(
             eventStore,
             myModelId -> EventCriteria.forAnyEventType().withTags(new Tag("Course", myModelId)),
             courseEventStateApplier,
@@ -90,7 +89,7 @@ class StatefulCommandHandlingComponentTest {
             DEFAULT_CONTEXT
     );
 
-    Function<CommandMessage<?>, String> studentCommandIdResolver = command -> {
+    private final Function<CommandMessage<?>, String> studentCommandIdResolver = command -> {
         if (command.getPayload() instanceof ChangeStudentNameCommand(String id, String name)) {
             return id;
         }
@@ -100,13 +99,16 @@ class StatefulCommandHandlingComponentTest {
         return null;
     };
 
-    Function<CommandMessage<?>, String> courseCommandIdResolver = command -> {
+    private final Function<CommandMessage<?>, String> courseCommandIdResolver = command -> {
         if (command.getPayload() instanceof EnrollStudentToCourseCommand esc) {
             return esc.courseId();
         }
         return null;
     };
 
+    /**
+     * Tests that the {@link StatefulCommandHandlingComponent} can handle a singular model command.
+     */
     @Test
     void canHandleSingularModelCommand() throws ExecutionException, InterruptedException {
         var component = StatefulCommandHandlingComponent
@@ -136,6 +138,10 @@ class StatefulCommandHandlingComponentTest {
         updateStudentName(component, "my-studentId-2", "name-5");
     }
 
+    /**
+     * Tests that the {@link StatefulCommandHandlingComponent} can handle a command that targets multiple models at
+     * the same time, in the same transaction.
+     */
     @Test
     void canHandleCommandThatTargetsMultipleModels() throws ExecutionException, InterruptedException {
         var component = StatefulCommandHandlingComponent
