@@ -1094,6 +1094,7 @@ class Coordinator {
                         } else {
                             logger.debug("Work packages have aborted successfully.");
                         }
+                        processingGate.set(false);
                         logger.debug("Scheduling new coordination task to run in {}ms", errorWaitBackOff);
                         // Construct a new CoordinationTask, thus abandoning the old task and it's progress entirely.
                         CoordinationTask task = new CoordinationTask();
