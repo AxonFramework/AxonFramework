@@ -20,7 +20,6 @@ import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdap
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotation2.AnnotatedCommandHandlingComponent;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
