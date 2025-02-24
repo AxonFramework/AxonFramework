@@ -114,7 +114,9 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
     private void initializeHandlersBasedOnModel() {
         model.getAllHandlers()
              .forEach((modelClass, handlers) -> {
-                 handlers.forEach(this::registerHandler);
+                 handlers.stream()
+                         .filter(h -> h.canHandleMessageType(CommandMessage.class))
+                         .forEach(this::registerHandler);
              });
     }
 
