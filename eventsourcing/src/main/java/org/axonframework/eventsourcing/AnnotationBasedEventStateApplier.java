@@ -109,7 +109,7 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
         if (handler.isPresent()) {
             var interceptor = inspector.chainedInterceptor(listenerType);
             var stream = interceptor.handle(event, processingContext, model, handler.get());
-            return stream.firstAsCompletableFuture();
+            return stream.first().asCompletableFuture();
         }
         return CompletableFuture.completedFuture(null);
     }
