@@ -47,14 +47,7 @@ class IgnoreMessageStream<M extends Message<?>>
 
     @Override
     public Optional<Entry<Message<Void>>> next() {
-        // Consume the delegate's entry but return empty
-        delegate().next();
-        return Optional.empty();
+        return delegate().next().flatMap(r -> Optional.empty());
     }
 
-    @Override
-    public boolean hasNextAvailable() {
-        // Even if delegate has next, we always return false as we're ignoring all entries
-        return false;
-    }
 }

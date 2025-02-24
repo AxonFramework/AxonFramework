@@ -120,10 +120,9 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         if (handler.isPresent()) {
             var interceptor = model.chainedInterceptor(listenerType);
             var result = interceptor.handle(event, context, target, handler.get());
-            result.first().asCompletableFuture().join();
-            return MessageStream.empty();
-
-//            return result.first().ignore();
+//            result.first().asCompletableFuture().join();
+//            return MessageStream.empty();
+            return result.ignored();
         }
         return MessageStream.empty();
     }

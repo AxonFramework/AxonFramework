@@ -299,12 +299,11 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
-     * Returns a stream that ignores all messages and returns an empty stream. Useful when you need to execute the
-     * stream but don't care about the results.
+     * Returns a stream that process all messages, but ignores the results and returns an empty stream.
      *
-     * @return An Empty stream that ignores all messages
+     * @return An Empty stream that ignores all results
      */
-    default Empty<Message<Void>> ignore() {
+    default Empty<Message<Void>> ignored() {
         return new IgnoreMessageStream<>(this);
     }
 
