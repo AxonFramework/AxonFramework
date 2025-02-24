@@ -32,7 +32,7 @@ import java.util.Optional;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class IgnoreMessageStream<M extends Message<?>>
+class IgnoredMessageResultsStream<M extends Message<?>>
         extends DelegatingMessageStream<M, Message<Void>>
         implements MessageStream.Empty<Message<Void>> {
 
@@ -41,7 +41,7 @@ class IgnoreMessageStream<M extends Message<?>>
      *
      * @param delegate The instance to delegate calls to.
      */
-    public IgnoreMessageStream(@Nonnull MessageStream<M> delegate) {
+    public IgnoredMessageResultsStream(@Nonnull MessageStream<M> delegate) {
         super(delegate);
     }
 

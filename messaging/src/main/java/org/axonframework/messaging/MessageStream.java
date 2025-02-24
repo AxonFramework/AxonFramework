@@ -304,7 +304,7 @@ public interface MessageStream<M extends Message<?>> {
      * @return An Empty stream that ignores all results
      */
     default Empty<Message<Void>> ignored() {
-        return new IgnoreMessageStream<>(this);
+        return new IgnoredMessageResultsStream<>(this);
     }
 
     /**
