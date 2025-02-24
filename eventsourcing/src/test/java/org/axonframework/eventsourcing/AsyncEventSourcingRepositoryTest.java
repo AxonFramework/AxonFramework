@@ -83,7 +83,7 @@ class AsyncEventSourcingRepositoryTest {
         verify(eventStoreTransaction)
                 .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate));
 
-        assertEquals("null-0-1", result.resultNow().entity());
+        assertEquals("test-0-1", result.resultNow().entity());
     }
 
     @Test
@@ -174,10 +174,10 @@ class AsyncEventSourcingRepositoryTest {
         //noinspection unchecked
         ArgumentCaptor<Consumer<EventMessage<?>>> callback = ArgumentCaptor.forClass(Consumer.class);
         verify(eventStoreTransaction).onAppend(callback.capture());
-        assertEquals("null-0-1", result.resultNow().entity());
+        assertEquals("test-0-1", result.resultNow().entity());
 
         callback.getValue().accept(new GenericEventMessage<>(new MessageType("event"), "live"));
-        assertEquals("null-0-1-live", result.resultNow().entity());
+        assertEquals("test-0-1-live", result.resultNow().entity());
     }
 
     @Test
@@ -190,7 +190,7 @@ class AsyncEventSourcingRepositoryTest {
         CompletableFuture<ManagedEntity<String, String>> result =
                 testSubject.loadOrCreate("test", processingContext);
 
-        assertEquals("null-0-1", result.resultNow().entity());
+        assertEquals("test-0-1", result.resultNow().entity());
     }
 
     @Test
@@ -210,7 +210,7 @@ class AsyncEventSourcingRepositoryTest {
         verify(eventStoreTransaction)
                 .source(argThat(AsyncEventSourcingRepositoryTest::conditionPredicate));
 
-        assertEquals("created", loaded.resultNow().entity());
+        assertEquals("test", loaded.resultNow().entity());
     }
 
     private static boolean conditionPredicate(SourcingCondition condition) {
