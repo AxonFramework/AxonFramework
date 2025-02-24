@@ -299,6 +299,16 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
+     * Returns a stream that ignores all messages and returns an empty stream. Useful when you need to execute the
+     * stream but don't care about the results.
+     *
+     * @return An Empty stream that ignores all messages
+     */
+    default Empty<Message<Void>> ignore() {
+        return new IgnoreMessageStream<>(this);
+    }
+
+    /**
      * Returns an Optional carrying the next {@link Entry entry} from the stream, if such entry was available. If no
      * entry is available for reading, this method returns an empty Optional.
      * <p>

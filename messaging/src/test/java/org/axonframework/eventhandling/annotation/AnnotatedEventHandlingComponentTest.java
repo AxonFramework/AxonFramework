@@ -28,8 +28,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.SourceId;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -48,9 +47,15 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AnnotatedEventHandlingComponentTest {
 
-    private static final EventHandlingComponent eventHandlingComponent = new AnnotatedEventHandlingComponent<>(
-            new TestState());
+    private TestState state;
+    private EventHandlingComponent eventHandlingComponent;
     private final ProcessingContext processingContext = ProcessingContext.NONE;
+
+    @BeforeEach
+    void beforeEach() {
+        state = new TestState();
+        eventHandlingComponent = new AnnotatedEventHandlingComponent<>(state);
+    }
 
     @Test
     void supportedEvents() {
@@ -68,7 +73,6 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void mutatesStateOnOriginalInstanceIfEventHandlerDoNotReturnsTheModelType() {
             // given
-            var state = new TestState();
             var event = domainEvent(0);
 
             // when
@@ -81,7 +85,6 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void returnsStateAfterHandlingEvent() {
             // given
-            var state = new TestState();
             var event = domainEvent(0);
 
             // when
@@ -93,9 +96,6 @@ class AnnotatedEventHandlingComponentTest {
 
         @Test
         void handlesSequenceOfEvents() {
-            // given
-            var state = new TestState();
-
             // when
             var result1 = eventHandlingComponent.handle(domainEvent(0), processingContext);
             var result2 = eventHandlingComponent.handle(domainEvent(1), processingContext);
@@ -113,7 +113,6 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void resolvesMetadata() {
             // given
-            var state = new TestState();
             var event = domainEvent(0, "sampleValue");
 
             // when
@@ -126,7 +125,6 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void resolvesSequenceNumber() {
             // given
-            var state = new TestState();
             var event = domainEvent(0);
 
             // when
@@ -139,7 +137,6 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void resolvesSources() {
             // given
-            var state = new TestState();
             var event = domainEvent(0);
 
             // when
@@ -155,7 +152,6 @@ class AnnotatedEventHandlingComponentTest {
             GenericEventMessage.clock = Clock.fixed(timestamp, ZoneId.systemDefault());
 
             // given
-            var state = new TestState();
             var event = domainEvent(0);
 
             // when
@@ -172,12 +168,12 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void doNotHandleNotDeclaredEventType() {
             // given
-            var eventStateApplier = new AnnotatedEventHandlingComponent<>(HandlingJustStringState.class);
             var state = new HandlingJustStringState();
+            var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(state);
             var event = domainEvent(0);
 
             // when
-            var result = eventStateApplier.handle(event, processingContext);
+            var result = eventHandlingComponent.handle(event, processingContext);
 
             // then
             assertEquals(0, state.handledCount);
@@ -186,7 +182,6 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void invokesOnlyMostSpecificHandler() {
             // given
-            var state = new TestState();
             var event = domainEvent(0);
 
             // when
@@ -217,17 +212,16 @@ class AnnotatedEventHandlingComponentTest {
             }
         }
 
-        private static final EventHandlingComponent eventStateApplier = new AnnotatedEventHandlingComponent<>(
-                RecordState.class);
+        private static final RecordState state = RecordState.empty();
+        private static final EventHandlingComponent eventHandlingComponent = new AnnotatedEventHandlingComponent<>(state);
 
         @Test
         void doNotMutateStateIfRecord() {
             // given
-            var state = RecordState.empty();
             var event = domainEvent(0);
 
             // when
-            eventStateApplier.handle(event, processingContext);
+            eventHandlingComponent.handle(event, processingContext);
 
             // then
             assertEquals("null", state.handledPayloads);
@@ -236,11 +230,10 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void returnsNewObjectIfRecord() {
             // given
-            var state = RecordState.empty();
             var event = domainEvent(0);
 
             // when
-            var result = eventStateApplier.handle(event, processingContext);
+            var result = eventHandlingComponent.handle(event, processingContext);
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -253,39 +246,32 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void throwsStateEvolvingExceptionOnExceptionInsideEventHandler() {
             // given
-            var eventStateApplier = new AnnotatedEventHandlingComponent<>(ErrorThrowingState.class);
             var state = new ErrorThrowingState();
+            var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(state);
             var event = domainEvent(0);
 
             // when-then
             var exception = assertThrows(RuntimeException.class,
-                                         () -> eventStateApplier.handle(event, processingContext));
-            assertEquals(exception.getMessage(),
-                         "Failed to apply event [event#0.0.1] in order to evolve [class org.axonframework.eventsourcing.AnnotationBasedEventStateApplierTest$ErrorThrowingState] state");
+                                         () -> eventHandlingComponent.handle(event, processingContext));
+            assertEquals("java.lang.RuntimeException: Simulated error for event: 0", exception.getMessage());
             assertInstanceOf(RuntimeException.class, exception.getCause());
             assertTrue(exception.getCause().getMessage().contains("Simulated error for event: 0"));
         }
 
         @Test
-        void rejectsNullModel() {
-            // given
-            var event = domainEvent(0);
-
-            // when-then
-            assertThrows(NullPointerException.class,
-                         () -> eventHandlingComponent.handle(event, processingContext),
-                         "Model may not be null");
-        }
-
-        @Test
         void rejectsNullEvent() {
-            // given
-            var state = new TestState();
-
             // when-then
             assertThrows(NullPointerException.class,
                          () -> eventHandlingComponent.handle(null, processingContext),
                          "Event Message may not be null");
+        }
+
+        @Test
+        void rejectsNullProcessingContext() {
+            // when-then
+            assertThrows(NullPointerException.class,
+                         () -> eventHandlingComponent.handle(domainEvent(0), null),
+                         "Processing Context may not be null");
         }
     }
 

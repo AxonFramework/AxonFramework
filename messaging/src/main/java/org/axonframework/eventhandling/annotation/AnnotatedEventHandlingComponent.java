@@ -111,6 +111,8 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     @Override
     public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
                                                      @Nonnull ProcessingContext context) {
+        requireNonNull(event, "Event Message may not be null");
+        requireNonNull(context, "Processing Context may not be null");
         var listenerType = target.getClass();
         var handler = model.getHandlers(listenerType)
                            .filter(h -> h.canHandle(event, context))
@@ -118,7 +120,10 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         if (handler.isPresent()) {
             var interceptor = model.chainedInterceptor(listenerType);
             var result = interceptor.handle(event, context, target, handler.get());
-            return MessageStream.empty(); // todo: consume the stream!
+            result.first().asCompletableFuture().join();
+            return MessageStream.empty();
+
+//            return result.first().ignore();
         }
         return MessageStream.empty();
     }
