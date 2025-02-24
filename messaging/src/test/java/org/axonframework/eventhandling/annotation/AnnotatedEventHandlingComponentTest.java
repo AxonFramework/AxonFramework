@@ -22,6 +22,8 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.SequenceNumber;
 import org.axonframework.eventhandling.Timestamp;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
@@ -76,9 +78,10 @@ class AnnotatedEventHandlingComponentTest {
             var event = domainEvent(0);
 
             // when
-            eventHandlingComponent.handle(event, processingContext);
+            var result = eventHandlingComponent.handle(event, processingContext);
 
             // then
+            assertSuccessfulStream(result);
             assertEquals("null-0", state.handledPayloads);
         }
 
@@ -91,6 +94,7 @@ class AnnotatedEventHandlingComponentTest {
             var result = eventHandlingComponent.handle(event, processingContext);
 
             // then
+            assertSuccessfulStream(result);
             assertEquals("null-0", state.handledPayloads);
         }
 
@@ -102,6 +106,9 @@ class AnnotatedEventHandlingComponentTest {
             var result3 = eventHandlingComponent.handle(domainEvent(2), processingContext);
 
             // then
+            assertSuccessfulStream(result1);
+            assertSuccessfulStream(result2);
+            assertSuccessfulStream(result3);
             assertEquals("null-0-1-2", state.handledPayloads);
             assertEquals(3, state.handledCount);
         }
@@ -119,6 +126,7 @@ class AnnotatedEventHandlingComponentTest {
             var result = eventHandlingComponent.handle(event, processingContext);
 
             // then
+            assertSuccessfulStream(result);
             assertEquals("null-sampleValue", state.handledMetadata);
         }
 
@@ -131,6 +139,7 @@ class AnnotatedEventHandlingComponentTest {
             var result = eventHandlingComponent.handle(event, processingContext);
 
             // then
+            assertSuccessfulStream(result);
             assertEquals("null-0", state.handledSequences);
         }
 
@@ -143,6 +152,7 @@ class AnnotatedEventHandlingComponentTest {
             var result = eventHandlingComponent.handle(event, processingContext);
 
             // then
+            assertSuccessfulStream(result);
             assertEquals("null-id", state.handledSources);
         }
 
@@ -158,8 +168,13 @@ class AnnotatedEventHandlingComponentTest {
             var result = eventHandlingComponent.handle(event, processingContext);
 
             // then
+            assertSuccessfulStream(result);
             assertEquals("null-" + timestamp, state.handledTimestamps);
         }
+    }
+
+    private static void assertSuccessfulStream(MessageStream.Empty<Message<Void>> result) {
+        assertTrue(result.error().isEmpty());
     }
 
     @Nested
@@ -176,6 +191,7 @@ class AnnotatedEventHandlingComponentTest {
             var result = eventHandlingComponent.handle(event, processingContext);
 
             // then
+            assertSuccessfulStream(result);
             assertEquals(0, state.handledCount);
         }
 
@@ -188,55 +204,10 @@ class AnnotatedEventHandlingComponentTest {
             var result = eventHandlingComponent.handle(event, processingContext);
 
             // then
+            assertSuccessfulStream(result);
             assertEquals("null-0", state.handledPayloads);
             assertFalse(state.objectHandlerInvoked);
             assertEquals(1, state.handledCount);
-        }
-    }
-
-    // feel free to drop the support in case of some changed in EventHandling logic (like Empty stream always returned from event handling component)
-    @Nested
-    class RecordSupport {
-
-        private record RecordState(String handledPayloads) {
-
-            private static RecordState empty() {
-                return new RecordState("null");
-            }
-
-            @EventHandler
-            RecordState evolve(
-                    Integer payload
-            ) {
-                return new RecordState(handledPayloads + "-" + payload);
-            }
-        }
-
-        private static final RecordState state = RecordState.empty();
-        private static final EventHandlingComponent eventHandlingComponent = new AnnotatedEventHandlingComponent<>(state);
-
-        @Test
-        void doNotMutateStateIfRecord() {
-            // given
-            var event = domainEvent(0);
-
-            // when
-            eventHandlingComponent.handle(event, processingContext);
-
-            // then
-            assertEquals("null", state.handledPayloads);
-        }
-
-        @Test
-        void returnsNewObjectIfRecord() {
-            // given
-            var event = domainEvent(0);
-
-            // when
-            var result = eventHandlingComponent.handle(event, processingContext);
-
-            // then
-            assertEquals("null-0", state.handledPayloads);
         }
     }
 
@@ -244,18 +215,20 @@ class AnnotatedEventHandlingComponentTest {
     class ErrorHandling {
 
         @Test
-        void throwsStateEvolvingExceptionOnExceptionInsideEventHandler() {
+        void returnsFailedMessageStreamIfExceptionThrownInsideEventHandler() {
             // given
             var state = new ErrorThrowingState();
             var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(state);
             var event = domainEvent(0);
 
-            // when-then
-            var exception = assertThrows(RuntimeException.class,
-                                         () -> eventHandlingComponent.handle(event, processingContext));
-            assertEquals("java.lang.RuntimeException: Simulated error for event: 0", exception.getMessage());
-            assertInstanceOf(RuntimeException.class, exception.getCause());
-            assertTrue(exception.getCause().getMessage().contains("Simulated error for event: 0"));
+            // when
+            var result = eventHandlingComponent.handle(event, processingContext);
+
+            // then
+            assertTrue(result.error().isPresent());
+            var exception = result.error().get();
+            assertInstanceOf(RuntimeException.class, exception);
+            assertEquals("Simulated error for event: 0", exception.getMessage());
         }
 
         @Test
