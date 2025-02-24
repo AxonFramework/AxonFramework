@@ -21,6 +21,8 @@ import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandHandlingComponent;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -35,32 +37,55 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * A {@link CommandHandlingComponent} implementation which allows for stateful handling of commands. Models can be
- * registered to it, which can be loaded and used by the command handlers.
+ * A {@link CommandHandlingComponent} implementation which allows for stateful handling of commands.
+ * <p>
+ * Models can be registered to this component through the {@link #registerModel(String, Class, Function, BiFunction)}
+ * method. These models can be resolved during the handling of commands by the {@link StatefulCommandHandler StatefulCommandHandlers}
+ * that are subscribed to this component. The models are resolved based on the command that is being handled.
+ * <p>
+ * Can load the models eagerly, meaning that all models are loaded when the command is handled and the resolved
+ * identifier is non-null, or lazily, meaning that
+ * the models are only loaded when they are requested.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
 public class StatefulCommandHandlingComponent implements
         CommandHandlingComponent,
-        StatefulCommandHandlerRegistry<StatefulCommandHandlingComponent> {
+        StatefulCommandHandlerRegistry<StatefulCommandHandlingComponent>,
+        DescribableComponent {
 
+    private final String name;
     private final SimpleCommandHandlingComponent handlingComponent;
     private final List<ModelDefinition<?, ?>> modelDefinitions = new CopyOnWriteArrayList<>();
-    private boolean loadEagerly = false;
+    private boolean loadModelsEagerly = false;
 
-    private StatefulCommandHandlingComponent(
-            String name
-    ) {
-        this.handlingComponent = SimpleCommandHandlingComponent.forComponent(name); // TODO: Name in constructor
+    /**
+     * Initializes a new stateful command handling component with the given {@code name}.
+     * @param name The name of the component
+     */
+    private StatefulCommandHandlingComponent(String name) {
+        this.name = name;
+        this.handlingComponent = SimpleCommandHandlingComponent.forComponent(name);
     }
 
+    /**
+     * Creates a new stateful command handling component with the given {@code name}.
+     * @param name The name of the component
+     * @return A new stateful command handling component with the given {@code name}
+     */
     public static StatefulCommandHandlingComponent forName(String name) {
         return new StatefulCommandHandlingComponent(name);
     }
 
+    /**
+     * Tells this component to load models eagerly. This means that all models are loaded when the command is handled
+     * and the resolved identifier is non-null.
+     *
+     * @return this component for fluent interfacing
+     */
     public StatefulCommandHandlingComponent loadModelsEagerly() {
-        loadEagerly = true;
+        loadModelsEagerly = true;
         return this;
     }
 
@@ -72,23 +97,17 @@ public class StatefulCommandHandlingComponent implements
     ) {
         handlingComponent.subscribe(name, ((command, context) -> {
             try {
-                var models = createModelContainer(command, context);
+                var models = new StatefulCommandModelModelContainer(
+                        command,
+                        context,
+                        loadModelsEagerly
+                );
                 return commandHandler.handle(command, models, context);
             } catch (Exception e) {
                 return MessageStream.failed(e);
             }
         }));
         return this;
-    }
-
-    private ModelContainer createModelContainer(CommandMessage<?> command,
-                                                ProcessingContext context) {
-        if (loadEagerly) {
-            return new EagerLoadingStatefulCommandModelModelContainer(command, context);
-        }
-        return new LazyLoadingStatefulCommandModelModelContainer(
-                command,
-                context);
     }
 
     @Nonnull
@@ -105,7 +124,6 @@ public class StatefulCommandHandlingComponent implements
         return this;
     }
 
-
     @Override
     public Set<QualifiedName> supportedCommands() {
         return handlingComponent.supportedCommands();
@@ -116,12 +134,20 @@ public class StatefulCommandHandlingComponent implements
             String name,
             Class<M> modelClass,
             Function<CommandMessage<?>, ID> commandIdResolver,
-            BiFunction<ID, ProcessingContext, CompletableFuture<M>> loadFunction) {
+            ModelLoader<ID, M> loadFunction) {
         if (modelDefinitions.stream().anyMatch(md -> md.name().equals(name) && md.modelClass().equals(modelClass))) {
             throw new IllegalStateException("Model with name " + name + " already registered");
         }
         modelDefinitions.add(new ModelDefinition<>(name, modelClass, commandIdResolver, loadFunction));
         return this;
+    }
+
+    @Override
+    public void describeTo(ComponentDescriptor descriptor) {
+        descriptor.describeProperty("name", name);
+        descriptor.describeProperty("loadModelsEagerly", loadModelsEagerly);
+        descriptor.describeProperty("handlingComponent", handlingComponent);
+        descriptor.describeProperty("modelDefinitions", modelDefinitions);
     }
 
     /**
@@ -132,19 +158,22 @@ public class StatefulCommandHandlingComponent implements
             String name,
             Class<M> modelClass,
             Function<CommandMessage<?>, ID> commandIdResolver,
-            BiFunction<ID, ProcessingContext, CompletableFuture<M>> loadFunction
+            ModelLoader<ID, M> loader
     ) {
 
     }
 
     /**
-     * A container for models that are lazily loaded when requested. This container is used to load models for command
-     * handlers that require them.
+     * A container for models that either loads models lazily or eagerly. Used during the handling of commands by the
+     * stateful command handlers.
+     * <p>
+     * Any defined model will only be initialized once per command handling process.
      */
-    private class LazyLoadingStatefulCommandModelModelContainer implements ModelContainer {
+    private class StatefulCommandModelModelContainer implements ModelContainer {
 
         private final CommandMessage<?> command;
         private final ProcessingContext context;
+        private final List<LoadedModelDefinition<?, ?>> loadedModels = new CopyOnWriteArrayList<>();
 
         /**
          * Initializes a new {@link ModelContainer} for the given {@code command} and {@code context} that lazily loads
@@ -153,80 +182,75 @@ public class StatefulCommandHandlingComponent implements
          * @param command The command to load models for
          * @param context The context in which the command is handled
          */
-        private LazyLoadingStatefulCommandModelModelContainer(CommandMessage<?> command, ProcessingContext context) {
+        private StatefulCommandModelModelContainer(CommandMessage<?> command, ProcessingContext context,
+                                                   boolean loadEagerly) {
             this.command = command;
             this.context = context;
+
+            if (loadEagerly) {
+                modelDefinitions.forEach(this::eagerLoadModelIfHasIdentifier);
+            }
         }
 
         @Override
         public <T> T modelOf(@Nonnull Class<T> modelType, String name) {
+            T loadedModel = alreadyLoadedModelOf(modelType, name);
+            if (loadedModel != null) {
+                return loadedModel;
+            }
+
             ModelDefinition<?, T> definition = getModelDefinitionFor(modelType, name);
             return loadModel(definition);
         }
 
         private <ID, T> T loadModel(ModelDefinition<ID, T> definition) {
-            return definition.loadFunction().apply(definition.commandIdResolver().apply(command), context).join();
-        }
-    }
-
-    /**
-     * A container for models that are eagerly loaded before the command handler is invoked.
-     */
-    private class EagerLoadingStatefulCommandModelModelContainer implements ModelContainer {
-
-        private final CommandMessage<?> command;
-        private final ProcessingContext context;
-        private final List<LoadedModelDefinition<?, ?>> loadedModels = new CopyOnWriteArrayList<>();
-
-        /**
-         * Initializes a new {@link ModelContainer} for the given {@code command} and {@code context} that lazily loads
-         * the models. The models are only loaded if the {@link ModelDefinition#commandIdResolver()} returns a non-null
-         * value.
-         *
-         * @param command The command to load models for
-         * @param context The context in which the command is handled
-         */
-        private EagerLoadingStatefulCommandModelModelContainer(CommandMessage<?> command, ProcessingContext context) {
-            this.command = command;
-            this.context = context;
-
-            modelDefinitions.forEach(this::loadModelIfApplicable);
+            ID id = definition.commandIdResolver().apply(command);
+            if (id == null) {
+                throw new IllegalStateException(
+                        "No identifier found for model of type " + definition.modelClass() + " with name "
+                                + definition.name());
+            }
+            T model = definition.loader().load(id, context).join();
+            loadedModels.add(new LoadedModelDefinition<>(definition.name(), definition.modelClass(), id, model));
+            return model;
         }
 
-        private <ID, T> void loadModelIfApplicable(ModelDefinition<ID, T> definition) {
+        private <ID, T> void eagerLoadModelIfHasIdentifier(ModelDefinition<ID, T> definition) {
             ID id = definition.commandIdResolver().apply(command);
             if (id != null) {
-                T model = loadModel(definition);
-                loadedModels.add(new LoadedModelDefinition<>(definition.name(), definition.modelClass(), model));
+                loadModel(definition);
             }
         }
 
-        @Override
-        @SuppressWarnings("unchecked") // The cast is checked in the stream
-        public <T> T modelOf(@Nonnull Class<T> modelType, String name) {
-            List<? extends LoadedModelDefinition<?, T>> matchingModels = loadedModels
+        private <T> T alreadyLoadedModelOf(@Nonnull Class<T> modelType, String name) {
+            //noinspection unchecked // The cast is checked in the stream
+            List<? extends LoadedModelDefinition<?, T>> matchingLoadedModel = loadedModels
                     .stream()
                     .filter(lmd -> lmd.modelClass().equals(modelType))
                     .map(lmd -> (LoadedModelDefinition<?, T>) lmd)
                     .filter(md -> name == null || md.name().equals(name))
                     .toList();
-
-            if (matchingModels.size() > 1) {
-                throw new IllegalStateException("Multiple model definitions found for model type: " + modelType);
+            if (matchingLoadedModel.size() > 1) {
+                throw new IllegalStateException("Multiple model definitions found for model type: %s%s".formatted(
+                        modelType, name != null ? (" and name: " + name) : "")
+                );
             }
-            if (matchingModels.isEmpty()) {
-                throw new IllegalStateException("No model definition found for model type: " + modelType);
+            if (matchingLoadedModel.isEmpty()) {
+                throw new IllegalStateException(
+                        "No model definition found for model type: %s and name: %s".formatted(
+                                modelType, name != null ? (" and name: " + name) : "")
+                );
             }
-            return matchingModels.getFirst().model();
+            return matchingLoadedModel.getFirst().model();
         }
 
-        private <ID, T> T loadModel(ModelDefinition<ID, T> definition) {
-            return definition.loadFunction().apply(definition.commandIdResolver().apply(command), context).join();
-        }
-
+        /**
+         * Represents an already loaded model for this container. Used to keep track of the loaded models.
+         */
         private record LoadedModelDefinition<ID, M>(
                 String name,
                 Class<M> modelClass,
+                ID resolverIdentifier,
                 M model
         ) {
 
@@ -249,10 +273,15 @@ public class StatefulCommandHandlingComponent implements
         var definitions = getModelDefinitionsFor(modelType, name);
 
         if (definitions.size() > 1) {
-            throw new IllegalStateException("Multiple model definitions found for model type: " + modelType);
+            throw new IllegalStateException(
+                    "Multiple model definitions found for model type: %s and name: %s".formatted(
+                            modelType, name != null ? (" and name: " + name) : ""));
         }
         if (definitions.isEmpty()) {
-            throw new IllegalStateException("No model definition found for model type: " + modelType);
+            throw new IllegalStateException(
+                    "No model definition found for model type: %s and name: %s".formatted(
+                            modelType, name != null ? (" and name: " + name) : "")
+            );
         }
         return definitions.getFirst();
     }

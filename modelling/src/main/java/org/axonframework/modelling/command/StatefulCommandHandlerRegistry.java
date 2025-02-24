@@ -22,14 +22,13 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 /**
  * Interface describing a registry of {@link StatefulCommandHandler StatefulCommandHandlers} belonging to a single
  * component. During handling of commands, the stateful command handlers can access a model through a {@link ModelContainer}.
- * That container is filled based on the models registered to this registry through the {@link #registerModel(String, Class, Function, BiFunction)}
+ * That container is filled based on the models registered to this registry through the {@link #registerModel(String, Class, Function, ModelLoader)}
  *
  * @param <SELF> the type of the registry itself
  * @author Mitchell Herrijgers
@@ -53,7 +52,7 @@ public interface StatefulCommandHandlerRegistry<SELF extends StatefulCommandHand
     /**
      * Registers a model that can be resolved for registered {@link StatefulCommandHandler StatefulCommandHandlers}.
      * Will register this model under the simple name of the given {@code modelClass}. As each combination of a
-     * {@code name} and {@code modelClass} can only be registered once, use {@link #registerModel(String, Class, Function, BiFunction)}
+     * {@code name} and {@code modelClass} can only be registered once, use {@link #registerModel(String, Class, Function, ModelLoader)}
      * if you have need for multiple models of the same type to be registered.
      *
      * @param modelClass        The class of the model to register
@@ -69,7 +68,7 @@ public interface StatefulCommandHandlerRegistry<SELF extends StatefulCommandHand
     default <ID, T> SELF registerModel(
             Class<T> modelClass,
             Function<CommandMessage<?>, ID> commandIdResolver,
-            BiFunction<ID, ProcessingContext, CompletableFuture<T>> loadFunction
+            ModelLoader<ID, T> loadFunction
     ) {
         return registerModel(modelClass.getSimpleName(), modelClass, commandIdResolver, loadFunction);
     }
@@ -92,6 +91,21 @@ public interface StatefulCommandHandlerRegistry<SELF extends StatefulCommandHand
     <ID, T> SELF registerModel(String name,
                                Class<T> modelClass,
                                Function<CommandMessage<?>, ID> commandIdResolver,
-                               BiFunction<ID, ProcessingContext, CompletableFuture<T>> loadFunction
+                               ModelLoader<ID, T> loadFunction
     );
+
+    /**
+     * Function that can load a model based on an identifier and a {@link ProcessingContext}.
+     *
+     * @param <ID> The type of the identifier of the model
+     * @param <T>  The type of the model
+     *
+     * @since 5.0.0
+     * @author Mitchell Herrijgers
+     */
+    @FunctionalInterface
+    interface ModelLoader<ID, T> {
+
+        CompletableFuture<T> load(ID id, ProcessingContext context);
+    }
 }
