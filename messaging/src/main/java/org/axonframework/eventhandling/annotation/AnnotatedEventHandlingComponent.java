@@ -24,7 +24,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
@@ -90,9 +89,6 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
      *                                 methods.
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      * @param handlerDefinition        The handler definition used to create concrete handlers.
-     * @param messageTypeResolver      The {@link MessageTypeResolver} resolving the
-     *                                 {@link org.axonframework.messaging.QualifiedName names} for
-     *                                 {@link org.axonframework.eventhandling.EventMessage EventMessages}.
      */
     @SuppressWarnings("unchecked")
     public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
@@ -115,21 +111,21 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     @Override
     public MessageStream.Empty<Message<Void>> handle(@Nonnull EventMessage<?> event,
                                                      @Nonnull ProcessingContext context) {
-        var listenerType = model.getClass();
+        var listenerType = target.getClass();
         var handler = model.getHandlers(listenerType)
                            .filter(h -> h.canHandle(event, context))
                            .findFirst();
         if (handler.isPresent()) {
             var interceptor = model.chainedInterceptor(listenerType);
-            //noinspection unchecked
-            return (MessageStream.Empty<Message<Void>>) interceptor.handle(event, context, target, handler.get());
+            var result = interceptor.handle(event, context, target, handler.get());
+            return MessageStream.empty(); // todo: consume the stream!
         }
         return MessageStream.empty();
     }
 
     @Override
     public Set<QualifiedName> supportedEvents() {
-        var listenerType = model.getClass();
+        var listenerType = target.getClass();
         return model.getHandlers(listenerType)
                     .filter(Objects::nonNull)
                     .map(MessageHandlingMember::payloadType)
