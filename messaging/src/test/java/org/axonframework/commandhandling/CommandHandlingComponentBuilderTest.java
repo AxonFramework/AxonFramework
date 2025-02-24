@@ -16,6 +16,7 @@
 
 package org.axonframework.commandhandling;
 
+import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
@@ -39,10 +40,6 @@ class CommandHandlingComponentBuilderTest {
 
         CommandHandlingComponent handlingComponent = SimpleCommandHandlingComponent
                 .forComponent("MySuperComponent")
-                .registerInterceptor((uow, chain) -> {
-                    // Intercept
-                    return chain.proceedSync();
-                })
                 // Method one, factory of CommandHandlingComponent
                 .subscribe(
                         // Third-level layer
@@ -50,7 +47,7 @@ class CommandHandlingComponentBuilderTest {
                                 .createHandlingComponent("MyAnnotatedCommandHandler", new MyAnnotatedCommandHandler())
                 )
                 // Method two, direct implementation of CommandHandlingComponent
-                .subscribe(new AnnotatedCommandHandlingComponent<>(new MyAnnotatedCommandHandler()))
+                .subscribe(new AnnotationCommandHandlerAdapter<>(new MyAnnotatedCommandHandler()))
                 .subscribe(
                         new QualifiedName("Command1"),
                         (command, context) -> {

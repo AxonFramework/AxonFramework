@@ -26,11 +26,9 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * A simple implementation of the {@link CommandHandlingComponent} interface, allowing for easy registration of
@@ -48,13 +46,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SimpleCommandHandlingComponent implements
         CommandHandlingComponent,
         CommandHandlerRegistry<SimpleCommandHandlingComponent>,
-        CommandHandlerInterceptorSupportingComponent<SimpleCommandHandlingComponent>,
         DescribableComponent {
 
     private final String name;
     private final Map<QualifiedName, CommandHandler> commandHandlers = new HashMap<>();
     private final Set<CommandHandlingComponent> subComponents = new HashSet<>();
-    private final List<MessageHandlerInterceptor<? super CommandMessage<?>>> interceptors = new CopyOnWriteArrayList<>();
 
     public static SimpleCommandHandlingComponent forComponent(String name) {
         return new SimpleCommandHandlingComponent(name);
@@ -67,10 +63,6 @@ public class SimpleCommandHandlingComponent implements
     @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull QualifiedName name,
                                                     @Nonnull CommandHandler commandHandler) {
-        if (commandHandlers.containsKey(name)) {
-            // TODO: Duplicate handler resolver?
-            throw new IllegalArgumentException("CommandHandlerRegistry already contains a handler for " + name);
-        }
         commandHandlers.put(name, commandHandler);
         return this;
     }
@@ -95,40 +87,20 @@ public class SimpleCommandHandlingComponent implements
                 .findFirst();
 
         if (optionalSubHandler.isPresent()) {
-            return invokeWithInterceptors(command,
-                                          context,
-                                          optionalSubHandler.get(),
-                                          new CopyOnWriteArrayList<>(interceptors));
+            return optionalSubHandler.get().handle(command, context);
         }
 
 
         if (commandHandlers.containsKey(name)) {
-            return invokeWithInterceptors(command,
-                                          context,
-                                          commandHandlers.get(name),
-                                          new CopyOnWriteArrayList<>(interceptors));
+            return commandHandlers.get(name).handle(command, context);
         }
         return MessageStream.failed(new NoHandlerForCommandException(
-                "No handler was subscribed for command with qualified name[%s] on component [%s]".formatted(
+                "No handler was subscribed for command with qualified name[%s] on component [%s]. Registered handlers: [%s]".formatted(
                         name.fullName(),
-                        this.getClass().getName()))
+                        this.getClass().getName(),
+                        commandHandlers.keySet()
+                ))
         );
-    }
-
-    private MessageStream.Single<? extends CommandResultMessage<?>> invokeWithInterceptors(@Nonnull CommandMessage<?> command,
-                                                                                    @Nonnull ProcessingContext context,
-                                                                                    @Nonnull CommandHandler commandHandler,
-                                                                                    List<MessageHandlerInterceptor<? super CommandMessage<?>>> remainingInterceptors
-    ) {
-        if (remainingInterceptors.isEmpty()) {
-            return commandHandler.handle(command, context);
-        }
-        MessageHandlerInterceptor<? super CommandMessage<?>> interceptor = remainingInterceptors.getFirst();
-        List<MessageHandlerInterceptor<? super CommandMessage<?>>> remaining = remainingInterceptors.subList(1,
-                                                                                                             remainingInterceptors.size());
-        // TODO: Why is this cast necessary?
-        return (MessageStream.Single<? extends CommandResultMessage<?>>)
-                interceptor.interceptOnHandle(command, context, () -> invokeWithInterceptors(command, context, commandHandler, remaining));
     }
 
     @Override
@@ -143,12 +115,5 @@ public class SimpleCommandHandlingComponent implements
         var combinedNames = new HashSet<>(commandHandlers.keySet());
         subComponents.forEach(subComponent -> combinedNames.addAll(subComponent.supportedCommands()));
         return combinedNames;
-    }
-
-    @Override
-    public SimpleCommandHandlingComponent registerInterceptor(
-            MessageHandlerInterceptor<? super CommandMessage<?>> interceptor) {
-        interceptors.add(interceptor);
-        return this;
     }
 }
