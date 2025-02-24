@@ -206,7 +206,7 @@ class AnnotationBasedEventStateApplierTest {
                 RecordState.class);
 
         @Test
-        void doNotMutateStateIfRecord() {
+        void doNotMutateGivenStateIfRecord() {
             // given
             var state = RecordState.empty();
             var event = domainEvent(0);
