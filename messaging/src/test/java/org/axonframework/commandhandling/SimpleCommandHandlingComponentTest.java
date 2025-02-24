@@ -28,10 +28,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-class CommandHandlingComponentBuilderTest {
+class SimpleCommandHandlingComponentTest {
 
     @Test
-    void name() {
+    void handlesTheMostSpecificRegisteredHandler() {
         AtomicBoolean command1Handled = new AtomicBoolean(false);
         AtomicBoolean command2HandledParent = new AtomicBoolean(false);
         AtomicBoolean command2HandledChild = new AtomicBoolean(false);
@@ -39,13 +39,6 @@ class CommandHandlingComponentBuilderTest {
 
         CommandHandlingComponent handlingComponent = SimpleCommandHandlingComponent
                 .forComponent("MySuperComponent")
-                // Method one, factory of CommandHandlingComponent
-                .subscribe(
-                        // Third-level layer
-                        AnnotationBasedCommandHandlingComponentFactory
-                                .createHandlingComponent("MyAnnotatedCommandHandler", new MyAnnotatedCommandHandler())
-                )
-                // Method two, direct implementation of CommandHandlingComponent
                 .subscribe(new AnnotationCommandHandlerAdapter<>(new MyAnnotatedCommandHandler()))
                 .subscribe(
                         new QualifiedName("Command1"),
@@ -54,7 +47,6 @@ class CommandHandlingComponentBuilderTest {
                             return MessageStream.empty().cast();
                         }
                 )
-                // Second layer
                 .subscribe(
                         SimpleCommandHandlingComponent
                                 .forComponent("MySubComponent")
@@ -95,18 +87,7 @@ class CommandHandlingComponentBuilderTest {
 
         @org.axonframework.commandhandling.annotation.CommandHandler(commandName = "MyCommand")
         public void handle(String command) {
-            // Bla
+            // Nothing to do here
         }
     }
-
-
-    static class AnnotationBasedCommandHandlingComponentFactory {
-        static <T> CommandHandlingComponent createHandlingComponent(String name, T instance) {
-            // Inspect
-            SimpleCommandHandlingComponent component = SimpleCommandHandlingComponent.forComponent(name);
-            // For every found handler, register. Might even use nesting here.
-            return component;
-        }
-    }
-
 }

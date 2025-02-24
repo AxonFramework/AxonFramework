@@ -29,9 +29,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -39,7 +37,7 @@ import javax.annotation.Nullable;
 /**
  * A {@link CommandHandlingComponent} implementation which allows for stateful handling of commands.
  * <p>
- * Models can be registered to this component through the {@link #registerModel(String, Class, Function, BiFunction)}
+ * Models can be registered to this component through the {@link #registerModel(String, Class, Function, ModelLoader)}
  * method. These models can be resolved during the handling of commands by the {@link StatefulCommandHandler StatefulCommandHandlers}
  * that are subscribed to this component. The models are resolved based on the command that is being handled.
  * <p>

@@ -53,21 +53,6 @@ public interface CommandHandlerRegistry<SELF extends CommandHandlerRegistry<SELF
         return (SELF) this;
     }
 
-
-    /**
-     * Subscribes the given {@code commandHandlingComponent} for all {@link CommandMessage commands} it supports.
-     * Specific implementations may choose to override this and prefer the handlers of this component over others, or
-     * vice versa.
-     *
-     * @param commandHandlingComponent The component to subscribe
-     * @return This registry for fluent interfacing.
-     */
-    default SELF subscribe(@Nonnull CommandHandlingComponent commandHandlingComponent) {
-        subscribe(commandHandlingComponent.supportedCommands(), commandHandlingComponent);
-        //noinspection unchecked
-        return (SELF) this;
-    }
-
     /**
      * Subscribe the given {@code handler} for {@link CommandMessage commands} of the given {@code name}.
      * <p>
@@ -81,4 +66,23 @@ public interface CommandHandlerRegistry<SELF extends CommandHandlerRegistry<SELF
      */
     SELF subscribe(@Nonnull QualifiedName name,
                    @Nonnull CommandHandler commandHandler);
+
+
+    /**
+     * Subscribe the given {@code handlingComponent} with this command bus.
+     * <p>
+     * Typically invokes {@link #subscribe(Set, CommandHandler)}, using the
+     * {@link CommandHandlingComponent#supportedCommands()} as the set of compatible {@link QualifiedName names} the
+     * component in question can deal with.
+     * <p>
+     * If a subscription already exists for any {@link QualifiedName name} in the supported command names, the behavior
+     * is undefined. Implementations may throw an exception to refuse duplicate subscription or alternatively decide
+     * whether the existing or new {@code handler} gets the subscription.
+     *
+     * @param handlingComponent The command handling component instance to subscribe with this bus.
+     * @return This registry for fluent interfacing.
+     */
+    default SELF subscribe(@Nonnull CommandHandlingComponent handlingComponent) {
+        return subscribe(handlingComponent.supportedCommands(), handlingComponent);
+    }
 }

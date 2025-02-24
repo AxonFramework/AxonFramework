@@ -106,6 +106,13 @@ public interface StatefulCommandHandlerRegistry<SELF extends StatefulCommandHand
     @FunctionalInterface
     interface ModelLoader<ID, T> {
 
+        /**
+         * Load a model based on the given {@code id} and {@link ProcessingContext}.
+         *
+         * @param id      The identifier of the model to load
+         * @param context The context to load the model in
+         * @return A {@link CompletableFuture} containing the loaded model
+         */
         CompletableFuture<T> load(ID id, ProcessingContext context);
     }
 }

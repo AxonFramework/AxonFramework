@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests the fluent interface for the configuration of a {@link StatefulCommandHandlingComponent}.
  */
-class StatefulCommandHandlingComponentTest {
+class SimpleStatefulCommandHandlingComponentTest {
 
     public static final String DEFAULT_CONTEXT = "default";
 

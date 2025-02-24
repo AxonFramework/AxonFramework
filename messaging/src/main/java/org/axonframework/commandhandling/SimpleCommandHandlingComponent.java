@@ -32,16 +32,15 @@ import java.util.Set;
 
 /**
  * A simple implementation of the {@link CommandHandlingComponent} interface, allowing for easy registration of
- * {@link CommandHandler}s and {@link CommandHandlingComponent}s. It also supports the registration of
- * {@link MessageHandlerInterceptor}s.
+ * {@link CommandHandler}s and other {@link CommandHandlingComponent}s.
+ * <p>
+ * Registered subcomponents are preferred over registered command handlers when handling a command.
  *
  * @since 5.0.0
  * @author Allard Buijze
- * @author Gerard Klijs
- * @author Milan Savic
  * @author Mitchell Herrijgers
- * @author Sara Pellegrini
  * @author Steven van Beelen
+ * @author Mateusz Nowak
  */
 public class SimpleCommandHandlingComponent implements
         CommandHandlingComponent,
@@ -52,10 +51,22 @@ public class SimpleCommandHandlingComponent implements
     private final Map<QualifiedName, CommandHandler> commandHandlers = new HashMap<>();
     private final Set<CommandHandlingComponent> subComponents = new HashSet<>();
 
+    /**
+     * Instantiates a simple {@link CommandHandlingComponent} that is able to handle commands and delegate them to
+     * subcomponents.
+     *
+     * @param name the name of the component
+     */
     public static SimpleCommandHandlingComponent forComponent(String name) {
         return new SimpleCommandHandlingComponent(name);
     }
 
+    /**
+     * Instantiates a simple {@link CommandHandlingComponent} that is able to handle commands and delegate them to
+     * subcomponents.
+     *
+     * @param name the name of the component
+     */
     private SimpleCommandHandlingComponent(String name) {
         this.name = name;
     }
