@@ -105,7 +105,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
                 id -> eventStore.transaction(processingContext, context)
                                 .source(SourcingCondition.conditionFor(criteriaResolver.resolve(id)))
                                 .reduce(new EventSourcedEntity<>(identifier, (M) null), (entity, entry) -> {
-                                    entity.applyStateChange(entry.message(), eventStateApplier);
+                                    entity.applyStateChange(entry.message(), eventStateApplier, processingContext);
                                     return entity;
                                 })
                                 .whenComplete((entity, exception) -> {
@@ -154,7 +154,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
      */
     private void updateActiveModel(EventSourcedEntity<ID, M> entity, ProcessingContext processingContext) {
         eventStore.transaction(processingContext, context)
-                  .onAppend(event -> entity.applyStateChange(event, eventStateApplier));
+                  .onAppend(event -> entity.applyStateChange(event, eventStateApplier, processingContext));
     }
 
     @Override
@@ -202,8 +202,9 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
             return currentState.updateAndGet(change);
         }
 
-        private M applyStateChange(EventMessage<?> event, EventStateApplier<M> applier) {
-            return currentState.updateAndGet(current -> applier.changeState(current, event));
+        private M applyStateChange(EventMessage<?> event, EventStateApplier<M> applier,
+                                   ProcessingContext processingContext) {
+            return currentState.updateAndGet(current -> applier.apply(current, event, processingContext));
         }
     }
 }
