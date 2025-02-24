@@ -61,7 +61,7 @@ class TimeoutWrappedMessageHandlingMember<T> extends WrappedMessageHandlingMembe
     }
 
     @Override
-    public Object handle(@Nonnull Message<?> message, T target) throws Exception {
+    public Object handleSync(@Nonnull Message<?> message, T target) throws Exception {
         String taskName = String.format("Message [%s] for handler [%s]",
                                         message.getPayloadType().getName(),
                                         target != null ? target.getClass().getName() : null);
@@ -73,7 +73,7 @@ class TimeoutWrappedMessageHandlingMember<T> extends WrappedMessageHandlingMembe
         );
         taskTimeout.start();
         try {
-            return super.handle(message, target);
+            return super.handleSync(message, target);
         } catch (InterruptedException e) {
             throw new TimeoutException(String.format("%s has timed out", taskName));
         } finally {

@@ -18,14 +18,15 @@ package org.axonframework.eventhandling.gateway;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
-import java.util.UUID;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -112,9 +113,9 @@ class DefaultEventGatewayTest {
 
         // then
         verify(mockEventBus).publish(
-                argThat((GenericEventMessage msg) -> msg.equals(message)));
+                argThat((GenericEventMessage<?> msg) -> msg.equals(message)));
         verify(mockEventMessageTransformer).handle(
-                argThat((GenericEventMessage msg) -> msg.equals(message)));
+                argThat((GenericEventMessage<?> msg) -> msg.equals(message)));
     }
 
     private record TestPayload(String value) {

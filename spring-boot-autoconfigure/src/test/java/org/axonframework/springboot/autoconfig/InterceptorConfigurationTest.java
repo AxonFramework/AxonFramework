@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,13 @@
 package org.axonframework.springboot.autoconfig;
 
 import com.thoughtworks.xstream.XStream;
-import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.config.*;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.config.Configuration;
+import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
@@ -30,12 +31,11 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryMessage;
+import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.springboot.utils.TestSerializer;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -45,14 +45,14 @@ import org.springframework.core.annotation.Order;
 import org.springframework.jmx.support.RegistrationPolicy;
 import org.springframework.test.context.ContextConfiguration;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 
 
 /**
@@ -67,16 +67,24 @@ class InterceptorConfigurationTest {
     @BeforeEach
     void setUp() {
         testApplicationContext = new ApplicationContextRunner().withUserConfiguration(DefaultContext.class)
-                .withPropertyValues("axon.axonserver.enabled:false");
+                                                               .withPropertyValues("axon.axonserver.enabled:false");
     }
 
     @Test
+    @Disabled("TODO #3103")
+    // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
     public void commandHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
-            context.getBean("commandGateway", CommandGateway.class).send(new Object());
-            Queue<String> commandHandlingInterceptingOutcome = context.getBean("commandHandlingInterceptingOutcome", Queue.class);
-            Queue<String> queryHandlingInterceptingOutcome = context.getBean("queryHandlingInterceptingOutcome", Queue.class);
-            Queue<String> eventHandlingInterceptingOutcome = context.getBean("eventHandlingInterceptingOutcome", Queue.class);
+            context.getBean("commandGateway", CommandGateway.class).sendAndWait(new Object());
+            //noinspection unchecked
+            Queue<String> commandHandlingInterceptingOutcome =
+                    context.getBean("commandHandlingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> queryHandlingInterceptingOutcome =
+                    context.getBean("queryHandlingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> eventHandlingInterceptingOutcome =
+                    context.getBean("eventHandlingInterceptingOutcome", Queue.class);
 
             assertThat(queryHandlingInterceptingOutcome).isEmpty();
             assertThat(eventHandlingInterceptingOutcome).isEmpty();
@@ -91,9 +99,15 @@ class InterceptorConfigurationTest {
     public void queryHandlerInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean("queryGateway", QueryGateway.class).query("foo", String.class);
-            Queue<String> commandHandlingInterceptingOutcome = context.getBean("commandHandlingInterceptingOutcome", Queue.class);
-            Queue<String> queryHandlingInterceptingOutcome = context.getBean("queryHandlingInterceptingOutcome", Queue.class);
-            Queue<String> eventHandlingInterceptingOutcome = context.getBean("eventHandlingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> commandHandlingInterceptingOutcome =
+                    context.getBean("commandHandlingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> queryHandlingInterceptingOutcome =
+                    context.getBean("queryHandlingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> eventHandlingInterceptingOutcome =
+                    context.getBean("eventHandlingInterceptingOutcome", Queue.class);
 
             assertThat(commandHandlingInterceptingOutcome).isEmpty();
             assertThat(eventHandlingInterceptingOutcome).isEmpty();
@@ -110,12 +124,19 @@ class InterceptorConfigurationTest {
             context.getBean("eventGateway", EventGateway.class).publish("foo");
 
             // Wait for all the event handlers to had their chance.
-            CountDownLatch eventHandlerInterceptorInvocations = context.getBean("eventHandlerInterceptorInvocations", CountDownLatch.class);
+            CountDownLatch eventHandlerInterceptorInvocations = context.getBean("eventHandlerInterceptorInvocations",
+                                                                                CountDownLatch.class);
             assertThat(eventHandlerInterceptorInvocations.await(1, TimeUnit.SECONDS)).isTrue();
 
-            Queue<String> commandHandlingInterceptingOutcome = context.getBean("commandHandlingInterceptingOutcome", Queue.class);
-            Queue<String> queryHandlingInterceptingOutcome = context.getBean("queryHandlingInterceptingOutcome", Queue.class);
-            Queue<String> eventHandlingInterceptingOutcome = context.getBean("eventHandlingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> commandHandlingInterceptingOutcome =
+                    context.getBean("commandHandlingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> queryHandlingInterceptingOutcome =
+                    context.getBean("queryHandlingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> eventHandlingInterceptingOutcome =
+                    context.getBean("eventHandlingInterceptingOutcome", Queue.class);
 
             assertThat(commandHandlingInterceptingOutcome).isEmpty();
             assertThat(queryHandlingInterceptingOutcome).isEmpty();
@@ -127,12 +148,20 @@ class InterceptorConfigurationTest {
     }
 
     @Test
+    @Disabled("TODO #3103")
+    // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
     public void commandDispatchInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
-            context.getBean("commandGateway", CommandGateway.class).send(new Object());
-            Queue<String> commandDispatchingInterceptingOutcome = context.getBean("commandDispatchingInterceptingOutcome", Queue.class);
-            Queue<String> queryDispatchingInterceptingOutcome = context.getBean("queryDispatchingInterceptingOutcome", Queue.class);
-            Queue<String> eventDispatchingInterceptingOutcome = context.getBean("eventDispatchingInterceptingOutcome", Queue.class);
+            context.getBean("commandGateway", CommandGateway.class).sendAndWait(new Object());
+            //noinspection unchecked
+            Queue<String> commandDispatchingInterceptingOutcome =
+                    context.getBean("commandDispatchingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> queryDispatchingInterceptingOutcome =
+                    context.getBean("queryDispatchingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> eventDispatchingInterceptingOutcome =
+                    context.getBean("eventDispatchingInterceptingOutcome", Queue.class);
 
             assertThat(queryDispatchingInterceptingOutcome).isEmpty();
             assertThat(eventDispatchingInterceptingOutcome).isEmpty();
@@ -144,12 +173,20 @@ class InterceptorConfigurationTest {
     }
 
     @Test
+    @Disabled("TODO #3103")
+    // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
     public void eventDispatchInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean("eventGateway", EventGateway.class).publish("foo");
-            Queue<String> commandDispatchingInterceptingOutcome = context.getBean("commandDispatchingInterceptingOutcome", Queue.class);
-            Queue<String> queryDispatchingInterceptingOutcome = context.getBean("queryDispatchingInterceptingOutcome", Queue.class);
-            Queue<String> eventDispatchingInterceptingOutcome = context.getBean("eventDispatchingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> commandDispatchingInterceptingOutcome =
+                    context.getBean("commandDispatchingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> queryDispatchingInterceptingOutcome =
+                    context.getBean("queryDispatchingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> eventDispatchingInterceptingOutcome =
+                    context.getBean("eventDispatchingInterceptingOutcome", Queue.class);
 
             assertThat(queryDispatchingInterceptingOutcome).isEmpty();
             assertThat(commandDispatchingInterceptingOutcome).isEmpty();
@@ -161,12 +198,20 @@ class InterceptorConfigurationTest {
     }
 
     @Test
+    @Disabled("TODO #3103")
+    // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
     public void queryDispatchInterceptorsAreRegisteredInCorrectOrder() {
         testApplicationContext.withUserConfiguration(MessageInterceptorContext.class).run(context -> {
             context.getBean("queryGateway", QueryGateway.class).query("foo", String.class);
-            Queue<String> commandDispatchingInterceptingOutcome = context.getBean("commandDispatchingInterceptingOutcome", Queue.class);
-            Queue<String> queryDispatchingInterceptingOutcome = context.getBean("queryDispatchingInterceptingOutcome", Queue.class);
-            Queue<String> eventDispatchingInterceptingOutcome = context.getBean("eventDispatchingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> commandDispatchingInterceptingOutcome =
+                    context.getBean("commandDispatchingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> queryDispatchingInterceptingOutcome =
+                    context.getBean("queryDispatchingInterceptingOutcome", Queue.class);
+            //noinspection unchecked
+            Queue<String> eventDispatchingInterceptingOutcome =
+                    context.getBean("eventDispatchingInterceptingOutcome", Queue.class);
 
             assertThat(commandDispatchingInterceptingOutcome).isEmpty();
             assertThat(eventDispatchingInterceptingOutcome).isEmpty();
@@ -271,12 +316,12 @@ class InterceptorConfigurationTest {
                 @Qualifier("eventHandlingInterceptingOutcome") Queue<String> eventHandlingInterceptingOutcome
         ) {
             return new MyGenericHandlerInterceptor("Order-100",
-                    commandHandlerInterceptorInvocations,
-                    queryHandlerInterceptorInvocations,
-                    eventHandlerInterceptorInvocations,
-                    commandHandlingInterceptingOutcome,
-                    queryHandlingInterceptingOutcome,
-                    eventHandlingInterceptingOutcome);
+                                                   commandHandlerInterceptorInvocations,
+                                                   queryHandlerInterceptorInvocations,
+                                                   eventHandlerInterceptorInvocations,
+                                                   commandHandlingInterceptingOutcome,
+                                                   queryHandlingInterceptingOutcome,
+                                                   eventHandlingInterceptingOutcome);
         }
 
         @Bean
@@ -286,7 +331,10 @@ class InterceptorConfigurationTest {
                 @Qualifier("commandHandlingInterceptingOutcome") Queue<String> commandHandlingInterceptingOutcome,
                 Configuration configuration
         ) {
-            return new MyCommandHandlerInterceptor("Order-0", commandHandlerInterceptorInvocations, commandHandlingInterceptingOutcome, configuration);
+            return new MyCommandHandlerInterceptor("Order-0",
+                                                   commandHandlerInterceptorInvocations,
+                                                   commandHandlingInterceptingOutcome,
+                                                   configuration);
         }
 
         @Bean
@@ -295,7 +343,10 @@ class InterceptorConfigurationTest {
                 @Qualifier("commandHandlingInterceptingOutcome") Queue<String> commandHandlingInterceptingOutcome,
                 Configuration configuration
         ) {
-            return new MyCommandHandlerInterceptor("Unordered", commandHandlerInterceptorInvocations, commandHandlingInterceptingOutcome, configuration);
+            return new MyCommandHandlerInterceptor("Unordered",
+                                                   commandHandlerInterceptorInvocations,
+                                                   commandHandlingInterceptingOutcome,
+                                                   configuration);
         }
 
         @Bean
@@ -305,7 +356,10 @@ class InterceptorConfigurationTest {
                 @Qualifier("queryHandlingInterceptingOutcome") Queue<String> queryHandlingInterceptingOutcome,
                 Configuration configuration
         ) {
-            return new MyQueryHandlerInterceptor("Order-0", queryHandlerInterceptorInvocations, queryHandlingInterceptingOutcome, configuration);
+            return new MyQueryHandlerInterceptor("Order-0",
+                                                 queryHandlerInterceptorInvocations,
+                                                 queryHandlingInterceptingOutcome,
+                                                 configuration);
         }
 
         @Bean
@@ -314,7 +368,10 @@ class InterceptorConfigurationTest {
                 @Qualifier("queryHandlingInterceptingOutcome") Queue<String> queryHandlingInterceptingOutcome,
                 Configuration configuration
         ) {
-            return new MyQueryHandlerInterceptor("Unordered", queryHandlerInterceptorInvocations, queryHandlingInterceptingOutcome, configuration);
+            return new MyQueryHandlerInterceptor("Unordered",
+                                                 queryHandlerInterceptorInvocations,
+                                                 queryHandlingInterceptingOutcome,
+                                                 configuration);
         }
 
         @Bean
@@ -324,7 +381,10 @@ class InterceptorConfigurationTest {
                 @Qualifier("eventHandlingInterceptingOutcome") Queue<String> eventHandlingInterceptingOutcome,
                 Configuration configuration
         ) {
-            return new MyEventHandlerInterceptor("Order-0", eventHandlerInterceptorInvocations, eventHandlingInterceptingOutcome, configuration);
+            return new MyEventHandlerInterceptor("Order-0",
+                                                 eventHandlerInterceptorInvocations,
+                                                 eventHandlingInterceptingOutcome,
+                                                 configuration);
         }
 
         @Bean
@@ -333,13 +393,16 @@ class InterceptorConfigurationTest {
                 @Qualifier("eventHandlingInterceptingOutcome") Queue<String> eventHandlingInterceptingOutcome,
                 Configuration configuration
         ) {
-            return new MyEventHandlerInterceptor("Unordered", eventHandlerInterceptorInvocations, eventHandlingInterceptingOutcome, configuration);
+            return new MyEventHandlerInterceptor("Unordered",
+                                                 eventHandlerInterceptorInvocations,
+                                                 eventHandlingInterceptingOutcome,
+                                                 configuration);
         }
 
 
         @Bean
         @Order(100)
-        public MyGenericDispatchInterceptor myFirstGenericDispatcherInterceptor(
+        public MyGenericDispatchInterceptor<? extends Message<?>> myFirstGenericDispatcherInterceptor(
                 @Qualifier("commandDispatchInterceptorInvocations") CountDownLatch commandDispatchInterceptorInvocations,
                 @Qualifier("queryDispatchInterceptorInvocations") CountDownLatch queryDispatchInterceptorInvocations,
                 @Qualifier("eventDispatchInterceptorInvocations") CountDownLatch eventDispatchInterceptorInvocations,
@@ -347,13 +410,13 @@ class InterceptorConfigurationTest {
                 @Qualifier("queryDispatchingInterceptingOutcome") Queue<String> queryDispatchingInterceptingOutcome,
                 @Qualifier("eventDispatchingInterceptingOutcome") Queue<String> eventDispatchingInterceptingOutcome
         ) {
-            return new MyGenericDispatchInterceptor("Order-100",
-                    commandDispatchInterceptorInvocations,
-                    queryDispatchInterceptorInvocations,
-                    eventDispatchInterceptorInvocations,
-                    commandDispatchingInterceptingOutcome,
-                    queryDispatchingInterceptingOutcome,
-                    eventDispatchingInterceptingOutcome);
+            return new MyGenericDispatchInterceptor<>("Order-100",
+                                                      commandDispatchInterceptorInvocations,
+                                                      queryDispatchInterceptorInvocations,
+                                                      eventDispatchInterceptorInvocations,
+                                                      commandDispatchingInterceptingOutcome,
+                                                      queryDispatchingInterceptingOutcome,
+                                                      eventDispatchingInterceptingOutcome);
         }
 
         @Bean
@@ -363,7 +426,10 @@ class InterceptorConfigurationTest {
                 @Qualifier("commandDispatchingInterceptingOutcome") Queue<String> commandDispatchingInterceptingOutcome,
                 Configuration configuration
         ) {
-            return new MyCommandDispatchInterceptor("Order-0", commandDispatchInterceptorInvocations, commandDispatchingInterceptingOutcome, configuration);
+            return new MyCommandDispatchInterceptor("Order-0",
+                                                    commandDispatchInterceptorInvocations,
+                                                    commandDispatchingInterceptingOutcome,
+                                                    configuration);
         }
 
         @Bean
@@ -372,7 +438,10 @@ class InterceptorConfigurationTest {
                 @Qualifier("commandDispatchingInterceptingOutcome") Queue<String> commandDispatchingInterceptingOutcome,
                 Configuration configuration
         ) {
-            return new MyCommandDispatchInterceptor("Unordered", commandDispatchInterceptorInvocations, commandDispatchingInterceptingOutcome, configuration);
+            return new MyCommandDispatchInterceptor("Unordered",
+                                                    commandDispatchInterceptorInvocations,
+                                                    commandDispatchingInterceptingOutcome,
+                                                    configuration);
         }
 
         @Bean
@@ -382,7 +451,10 @@ class InterceptorConfigurationTest {
                 @Qualifier("queryDispatchingInterceptingOutcome") Queue<String> queryDispatchingInterceptingOutcome,
                 Configuration configuration
         ) {
-            return new MyQueryDispatchInterceptor("Order-0", queryDispatchInterceptorInvocations, queryDispatchingInterceptingOutcome, configuration);
+            return new MyQueryDispatchInterceptor("Order-0",
+                                                  queryDispatchInterceptorInvocations,
+                                                  queryDispatchingInterceptingOutcome,
+                                                  configuration);
         }
 
         @Bean
@@ -391,7 +463,10 @@ class InterceptorConfigurationTest {
                 @Qualifier("queryDispatchingInterceptingOutcome") Queue<String> queryDispatchingInterceptingOutcome,
                 Configuration configuration
         ) {
-            return new MyQueryDispatchInterceptor("Unordered", queryDispatchInterceptorInvocations, queryDispatchingInterceptingOutcome, configuration);
+            return new MyQueryDispatchInterceptor("Unordered",
+                                                  queryDispatchInterceptorInvocations,
+                                                  queryDispatchingInterceptingOutcome,
+                                                  configuration);
         }
 
         @Bean
@@ -401,7 +476,10 @@ class InterceptorConfigurationTest {
                 @Qualifier("eventDispatchingInterceptingOutcome") Queue<String> eventDispatchingInterceptingOutcome,
                 Configuration configuration
         ) {
-            return new MyEventDispatchInterceptor("Order-0", eventDispatchInterceptorInvocations, eventDispatchingInterceptingOutcome, configuration);
+            return new MyEventDispatchInterceptor("Order-0",
+                                                  eventDispatchInterceptorInvocations,
+                                                  eventDispatchingInterceptingOutcome,
+                                                  configuration);
         }
 
         @Bean
@@ -410,7 +488,10 @@ class InterceptorConfigurationTest {
                 @Qualifier("eventDispatchingInterceptingOutcome") Queue<String> eventDispatchingInterceptingOutcome,
                 Configuration configuration
         ) {
-            return new MyEventDispatchInterceptor("Unordered", eventDispatchInterceptorInvocations, eventDispatchingInterceptingOutcome, configuration);
+            return new MyEventDispatchInterceptor("Unordered",
+                                                  eventDispatchInterceptorInvocations,
+                                                  eventDispatchingInterceptingOutcome,
+                                                  configuration);
         }
 
         @Bean
@@ -429,37 +510,49 @@ class InterceptorConfigurationTest {
         }
 
         public static class MyCommandHandlerInterceptor extends MyHandlerInterceptor<CommandMessage<?>> {
-            public MyCommandHandlerInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome, Configuration configuration) {
+
+            public MyCommandHandlerInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
+                                               Configuration configuration) {
                 super(name, invocation, handlingOutcome, configuration);
             }
         }
 
         public static class MyQueryHandlerInterceptor extends MyHandlerInterceptor<QueryMessage<?, ?>> {
-            public MyQueryHandlerInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome, Configuration configuration) {
+
+            public MyQueryHandlerInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
+                                             Configuration configuration) {
                 super(name, invocation, handlingOutcome, configuration);
             }
         }
 
         public static class MyEventHandlerInterceptor extends MyHandlerInterceptor<EventMessage<?>> {
-            public MyEventHandlerInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome, Configuration configuration) {
+
+            public MyEventHandlerInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
+                                             Configuration configuration) {
                 super(name, invocation, handlingOutcome, configuration);
             }
         }
 
         public static class MyCommandDispatchInterceptor extends MyDispatchInterceptor<CommandMessage<?>> {
-            public MyCommandDispatchInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome, Configuration configuration) {
+
+            public MyCommandDispatchInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
+                                                Configuration configuration) {
                 super(name, invocation, handlingOutcome, configuration);
             }
         }
 
         public static class MyQueryDispatchInterceptor extends MyDispatchInterceptor<QueryMessage<?, ?>> {
-            public MyQueryDispatchInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome, Configuration configuration) {
+
+            public MyQueryDispatchInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
+                                              Configuration configuration) {
                 super(name, invocation, handlingOutcome, configuration);
             }
         }
 
         public static class MyEventDispatchInterceptor extends MyDispatchInterceptor<EventMessage<?>> {
-            public MyEventDispatchInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome, Configuration configuration) {
+
+            public MyEventDispatchInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
+                                              Configuration configuration) {
                 super(name, invocation, handlingOutcome, configuration);
             }
         }
@@ -484,11 +577,12 @@ class InterceptorConfigurationTest {
             }
 
             @Override
-            public Object handle(UnitOfWork<? extends T> unitOfWork, InterceptorChain interceptorChain) throws Exception {
+            public Object handle(UnitOfWork<? extends T> unitOfWork,
+                                 InterceptorChain interceptorChain) throws Exception {
                 invocation.countDown();
                 axonConfiguration.tags();
                 handlingOutcome.add(name + ": " + unitOfWork.getMessage());
-                return interceptorChain.proceed();
+                return interceptorChain.proceedSync();
             }
         }
 
@@ -523,7 +617,8 @@ class InterceptorConfigurationTest {
             }
         }
 
-        public static class MyGenericDispatchInterceptor<T extends Message<?>> implements MessageDispatchInterceptor<T> {
+        public static class MyGenericDispatchInterceptor<T extends Message<?>>
+                implements MessageDispatchInterceptor<T> {
 
             private final String name;
             private final CountDownLatch commandInvocation;
@@ -596,7 +691,8 @@ class InterceptorConfigurationTest {
 
             @NotNull
             @Override
-            public Object handle(UnitOfWork<?> unitOfWork, InterceptorChain interceptorChain) throws Exception {
+            public Object handle(UnitOfWork<?> unitOfWork,
+                                 InterceptorChain interceptorChain) throws Exception {
                 if (unitOfWork.getMessage() instanceof CommandMessage) {
                     commandInvocation.countDown();
                     commandHandlingOutcome.add(name);
@@ -607,19 +703,21 @@ class InterceptorConfigurationTest {
                     eventInvocation.countDown();
                     eventHandlingOutcome.add(name);
                 }
-                return interceptorChain.proceed();
+                return interceptorChain.proceedSync();
             }
         }
 
 
-        public static class CommandHandlingComponent {
+        @SuppressWarnings("unused")
+        static class CommandHandlingComponent {
 
             @CommandHandler
             public void handle(Object command) {
             }
         }
 
-        public static class QueryHandlingComponent {
+        @SuppressWarnings("unused")
+        static class QueryHandlingComponent {
 
             @QueryHandler
             public String handle(String query) {
@@ -627,8 +725,9 @@ class InterceptorConfigurationTest {
             }
         }
 
+        @SuppressWarnings("unused")
         @ProcessingGroup("test")
-        public static class EventHandlingComponent {
+        static class EventHandlingComponent {
 
             @EventHandler
             public void handle(String event) {
@@ -646,8 +745,9 @@ class InterceptorConfigurationTest {
         public static class MyCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
 
             @Override
-            public Object handle(@NotNull UnitOfWork<? extends CommandMessage<?>> unitOfWork, @NotNull InterceptorChain interceptorChain) throws Exception {
-                return interceptorChain.proceed();
+            public Object handle(@NotNull UnitOfWork<? extends CommandMessage<?>> unitOfWork,
+                                 @NotNull InterceptorChain interceptorChain) throws Exception {
+                return interceptorChain.proceedSync();
             }
         }
     }

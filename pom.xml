@@ -104,18 +104,18 @@
         <projectreactor.version>3.7.3</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Serialization -->
-        <avro.version>1.11.4</avro.version><!-- Don't upgrade due to JDK8, the JDK11+ version is defined in profile below -->
+        <avro.version>1.12.0</avro.version>
         <dom4j.version>2.1.4</dom4j.version>
         <gson.version>2.12.1</gson.version>
         <jackson.version>2.18.2</jackson.version>
         <xstream.version>1.4.21</xstream.version>
         <!-- Scheduling -->
-        <db-scheduler.version>13.0.0</db-scheduler.version><!-- Don't upgrade due to JDK8 -->
+        <db-scheduler.version>13.0.0</db-scheduler.version>
         <jobrunr.version>7.4.1</jobrunr.version>
         <quartz.version>2.4.0</quartz.version>
         <!-- Spring -->
         <spring.version>6.2.1</spring.version>
-        <spring.boot.version>3.4.1</spring.boot.version>
+        <spring.boot.version>3.4.3</spring.boot.version>
         <spring-security.version>6.4.2</spring-security.version>
         <!-- Testing -->
         <awaitility.version>4.3.0</awaitility.version>

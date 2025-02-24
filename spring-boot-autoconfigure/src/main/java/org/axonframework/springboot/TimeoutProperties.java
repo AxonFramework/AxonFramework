@@ -24,7 +24,6 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import java.util.HashMap;
 import java.util.Map;
-import javax.transaction.Transactional;
 
 /**
  * Configuration properties for time limits of processing transactions and handlers in Axon Framework.

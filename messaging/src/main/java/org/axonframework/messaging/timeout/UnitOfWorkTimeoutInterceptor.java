@@ -119,6 +119,6 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
             unitOfWork.onRollback(u -> taskTimeout.complete());
         }
 
-        return interceptorChain.proceed();
+        return interceptorChain.proceedSync();
     }
 }

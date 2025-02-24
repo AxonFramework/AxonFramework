@@ -21,7 +21,11 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.MetaData;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -75,7 +79,7 @@ public abstract class AbstractEventGateway {
      */
     protected void publishAll(@Nonnull List<?> events) {
         List<EventMessage<?>> interceptedEvents = events.stream()
-                                                        .map(GenericEventMessage::asEventMessage)
+                                                        .map(this::asEventMessage)
                                                         .map(this::processInterceptors)
                                                         .collect(Collectors.toList());
         this.eventBus.publish(interceptedEvents);

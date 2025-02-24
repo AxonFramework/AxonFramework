@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,30 +23,30 @@ import org.axonframework.eventhandling.AbstractSequencedDomainEventEntry;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.serialization.*;
+import org.axonframework.serialization.AnnotationRevisionResolver;
+import org.axonframework.serialization.SerializationException;
+import org.axonframework.serialization.SerializedObject;
+import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.SimpleSerializedObject;
+import org.axonframework.serialization.SimpleSerializedType;
 import org.axonframework.serialization.avro.AvroSerializer;
-import org.axonframework.serialization.avro.AvroSerializerStrategy;
 import org.axonframework.serialization.avro.GenericRecordToByteArrayConverter;
-import org.axonframework.serialization.avro.SpecificRecordBaseSerializerStrategy;
 import org.axonframework.serialization.avro.test.ComplexObject;
 import org.axonframework.serialization.avro.test.ComplexObjectSchemas;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.event.InitialEventRepresentation;
 import org.axonframework.serialization.upcasting.event.IntermediateEventRepresentation;
 import org.axonframework.serialization.upcasting.event.SingleEventUpcaster;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Demonstrates and verifies behavior of avro based upcasters.
@@ -55,21 +55,21 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @author Jan Galinski
  * @since 4.11.0
  */
-public class AvroUpcasterTest {
+class AvroUpcasterTest {
 
     private final SchemaStore.Cache schemaStore = new SchemaStore.Cache();
 
     private final AvroSerializer serializer = AvroSerializer.builder()
-            .serializerDelegate(JacksonSerializer.defaultSerializer())
-            .revisionResolver(new AnnotationRevisionResolver())
-            .schemaStore(schemaStore)
-            .includeDefaultAvroSerializationStrategies(true)
-            .includeSchemasInStackTraces(true)
-            .build();
+                                                            .serializerDelegate(JacksonSerializer.defaultSerializer())
+                                                            .revisionResolver(new AnnotationRevisionResolver())
+                                                            .schemaStore(schemaStore)
+                                                            .includeDefaultAvroSerializationStrategies(true)
+                                                            .includeSchemasInStackTraces(true)
+                                                            .build();
 
     /**
-     * Purpose: Ensure that the complete wiring of serializer, initial-/intermediate representation
-     * and upcaster works as expected. No Schema incompatibilities, we just modify a property here.
+     * Purpose: Ensure that the complete wiring of serializer, initial-/intermediate representation and upcaster works
+     * as expected. No Schema incompatibilities, we just modify a property here.
      */
     @Test
     void modifyPropertyOfComplexObjectInUpcaster() {
@@ -77,27 +77,30 @@ public class AvroUpcasterTest {
 
         MetaData metaData = MetaData.with("key", "value");
         ComplexObject payload = ComplexObject.newBuilder()
-                .setValue1("foo")
-                .setValue2("bar")
-                .setValue3(42)
-                .build();
+                                             .setValue1("foo")
+                                             .setValue2("bar")
+                                             .setValue3(42)
+                                             .build();
 
         GenericDomainEventMessage<?> msg = new GenericDomainEventMessage<>(
                 ComplexObject.class.getCanonicalName(),
                 "aggregateId",
                 0,
+                new MessageType(ComplexObject.class),
                 payload,
-                metaData);
+                metaData
+        );
 
         EventData<?> eventData = new ByteArrayDomainEventEntry(msg, serializer);
 
-        SetValue2OnComplexObjectUpcaster setValue2OnComplexObjectUpcaster = new SetValue2OnComplexObjectUpcaster("helloWorld");
+        SetValue2OnComplexObjectUpcaster setValue2OnComplexObjectUpcaster = new SetValue2OnComplexObjectUpcaster(
+                "helloWorld");
 
         List<IntermediateEventRepresentation> collect = setValue2OnComplexObjectUpcaster.upcast(Stream.of(
                 new InitialEventRepresentation(eventData, serializer)
-        )).collect(Collectors.toList());
+        )).toList();
         Assertions.assertFalse(collect.isEmpty());
-        IntermediateEventRepresentation r = collect.get(0);
+        IntermediateEventRepresentation r = collect.getFirst();
 
         ComplexObject upcasted = serializer.deserialize(r.getData());
 
@@ -105,9 +108,9 @@ public class AvroUpcasterTest {
     }
 
     /**
-     * Purpose: the  {@link org.axonframework.serialization.avro.test.ComplexObjectSchemas#incompatibleSchema}
-     * does not define value1, so it is incompatible to the schema of {@link ComplexObject}. The Upcaster has
-     * to add the additional field.
+     * Purpose: the  {@link org.axonframework.serialization.avro.test.ComplexObjectSchemas#incompatibleSchema} does not
+     * define value1, so it is incompatible to the schema of {@link ComplexObject}. The Upcaster has to add the
+     * additional field.
      */
     @Test
     void upcastIncompatibleSchema() {
@@ -131,7 +134,9 @@ public class AvroUpcasterTest {
             }
 
             @Override
-            protected IntermediateEventRepresentation doUpcast(IntermediateEventRepresentation intermediateRepresentation) {
+            protected IntermediateEventRepresentation doUpcast(
+                    IntermediateEventRepresentation intermediateRepresentation
+            ) {
                 return intermediateRepresentation.upcastPayload(
                         intermediateRepresentation.getType(),
                         GenericRecord.class,
@@ -151,7 +156,7 @@ public class AvroUpcasterTest {
         SerializedObject<?> dataAfterUpcast = setMissingValue1Upcaster.upcast(Stream.of(new InitialEventRepresentation(
                 eventData(oldPayload, serializer.serialize(MetaData.with("key", "value"), byte[].class)),
                 serializer)
-        )).collect(Collectors.toList()).get(0).getData();
+        )).toList().getFirst().getData();
 
         // Then: we can successfully deserialize to reader Class
         ComplexObject upcasted = serializer.deserialize(dataAfterUpcast);
@@ -194,7 +199,7 @@ public class AvroUpcasterTest {
     }
 
     private static EventData<byte[]> eventData(SerializedObject<byte[]> payload, SerializedObject<byte[]> metaData) {
-        return new EventData<byte[]>() {
+        return new EventData<>() {
             @Override
             public String getEventIdentifier() {
                 return UUID.randomUUID().toString();
@@ -215,10 +220,11 @@ public class AvroUpcasterTest {
                 return payload;
             }
         };
-
     }
 
-    private static SerializedObject<byte[]> createSingleObjectEncodedSerializedObject(GenericRecord record, String revision) {
+    @SuppressWarnings("SameParameterValue")
+    private static SerializedObject<byte[]> createSingleObjectEncodedSerializedObject(GenericRecord record,
+                                                                                      String revision) {
         return new SimpleSerializedObject<>(
                 new GenericRecordToByteArrayConverter().convert(record),
                 byte[].class,

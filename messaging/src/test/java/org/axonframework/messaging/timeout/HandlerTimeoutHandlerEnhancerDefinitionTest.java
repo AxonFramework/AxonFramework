@@ -15,16 +15,23 @@
  */
 package org.axonframework.messaging.timeout;
 
-import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.common.ObjectUtils;
 import org.axonframework.deadline.annotation.DeadlineHandler;
-import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.messaging.annotation.MessageHandlerTimeout;
+import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MessageHandlerTimeout;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.junit.jupiter.api.*;
+
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -71,11 +78,10 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
     }
 
 
-
     @Test
     void createsCorrectHandlerEnhancerDefinitionForCommandHandlerWithAnnotation() throws NoSuchMethodException {
         MessageHandlingMember<CommandHandlerWithAnnotation> handler = getHandler(CommandHandlerWithAnnotation.class,
-                                                                               "handle");
+                                                                                 "handle");
         MessageHandlingMember<CommandHandlerWithAnnotation> result = handlerEnhancerDefinition.wrapHandler(handler);
 
         assertIsWrappedAndAssert(result, 100, 50, 10);
@@ -87,14 +93,13 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
     @Test
     void createsCorrectHandlerEnhancerDefinitionForCommandHandlerWithoutAnnotation() throws NoSuchMethodException {
         MessageHandlingMember<CommandHandlerWithAnnotation> handler = getHandler(CommandHandlerWithAnnotation.class,
-                                                                               "handleDefault");
+                                                                                 "handleDefault");
         MessageHandlingMember<CommandHandlerWithAnnotation> result = handlerEnhancerDefinition.wrapHandler(handler);
 
         assertIsWrappedAndAssert(result, 30000, 24000, 3000);
 
         assertInstanceOf(TimeoutWrappedMessageHandlingMember.class, result);
     }
-
 
 
     @Test
@@ -121,11 +126,10 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
     }
 
 
-
     @Test
     void createsCorrectHandlerEnhancerDefinitionForDeadlineHandlerWithAnnotation() throws NoSuchMethodException {
         MessageHandlingMember<DeadlineHandlerWithAnnotation> handler = getHandler(DeadlineHandlerWithAnnotation.class,
-                                                                               "handle");
+                                                                                  "handle");
         MessageHandlingMember<DeadlineHandlerWithAnnotation> result = handlerEnhancerDefinition.wrapHandler(handler);
 
         assertIsWrappedAndAssert(result, 100, 50, 10);
@@ -137,7 +141,7 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
     @Test
     void createsCorrectHandlerEnhancerDefinitionForDeadlineHandlerWithoutAnnotation() throws NoSuchMethodException {
         MessageHandlingMember<DeadlineHandlerWithAnnotation> handler = getHandler(DeadlineHandlerWithAnnotation.class,
-                                                                               "handleDefault");
+                                                                                  "handleDefault");
         MessageHandlingMember<DeadlineHandlerWithAnnotation> result = handlerEnhancerDefinition.wrapHandler(handler);
 
         assertIsWrappedAndAssert(result, 10000, 4000, 1000);
@@ -155,14 +159,34 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
         assertEquals(warningInterval, castResult.getWarningInterval());
     }
 
-    private <T> MessageHandlingMember<T> getHandler(Class<T> targetClass, String methodName)
-            throws NoSuchMethodException {
-        return handlerDefinition.createHandler(targetClass,
-                                               targetClass.getDeclaredMethod(methodName, String.class),
-                                               parameterResolver).get();
+    private <T> MessageHandlingMember<T> getHandler(Class<T> targetClass,
+                                                    String methodName) throws NoSuchMethodException {
+        Optional<MessageHandlingMember<T>> optionalHandler = handlerDefinition.createHandler(
+                targetClass,
+                targetClass.getDeclaredMethod(methodName, String.class),
+                parameterResolver,
+                HandlerTimeoutHandlerEnhancerDefinitionTest::returnTypeConverter
+        );
+        assertTrue(optionalHandler.isPresent());
+        return optionalHandler.get();
     }
 
-    public static class QueryHandlerWithAnnotation {
+    // TODO This local static function should be replaced with a dedicated interface that converts types.
+    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
+    private static MessageStream<?> returnTypeConverter(Object result) {
+        if (result instanceof CompletableFuture<?> future) {
+            return MessageStream.fromFuture(future.thenApply(
+                    r -> new GenericMessage<>(new MessageType(r.getClass()), r)
+            ));
+        }
+        if (result instanceof MessageStream<?> stream) {
+            return stream;
+        }
+        return MessageStream.just(new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
+    }
+
+    @SuppressWarnings("unused")
+    static class QueryHandlerWithAnnotation {
 
         @MessageHandlerTimeout(timeoutMs = 100, warningThresholdMs = 50, warningIntervalMs = 10)
         @QueryHandler
@@ -174,8 +198,8 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
         }
     }
 
-
-    public static class EventHandlerWithAnnotation {
+    @SuppressWarnings("unused")
+    static class EventHandlerWithAnnotation {
 
         @MessageHandlerTimeout(timeoutMs = 100, warningThresholdMs = 50, warningIntervalMs = 10)
         @EventHandler
@@ -187,8 +211,8 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
         }
     }
 
-
-    public static class CommandHandlerWithAnnotation {
+    @SuppressWarnings("unused")
+    static class CommandHandlerWithAnnotation {
 
         @MessageHandlerTimeout(timeoutMs = 100, warningThresholdMs = 50, warningIntervalMs = 10)
         @CommandHandler
@@ -200,8 +224,8 @@ class HandlerTimeoutHandlerEnhancerDefinitionTest {
         }
     }
 
-
-    public static class DeadlineHandlerWithAnnotation {
+    @SuppressWarnings("unused")
+    static class DeadlineHandlerWithAnnotation {
 
         @MessageHandlerTimeout(timeoutMs = 100, warningThresholdMs = 50, warningIntervalMs = 10)
         @DeadlineHandler

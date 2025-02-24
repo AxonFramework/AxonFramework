@@ -16,8 +16,9 @@
 package org.axonframework.messaging.timeout;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.DefaultInterceptorChain;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.jupiter.api.*;
 
@@ -25,23 +26,29 @@ import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link UnitOfWorkTimeoutInterceptor}.
+ *
+ * @author Mitchell Herrijgers
+ */
 class UnitOfWorkTimeoutInterceptorTest {
 
     @Test
-    void interruptsUnitOfWorkThatTakesTooLong() throws Exception {
+    void interruptsUnitOfWorkThatTakesTooLong() {
         UnitOfWorkTimeoutInterceptor testSubject = new UnitOfWorkTimeoutInterceptor("MyUnitOfWork", 100, 50, 10);
 
         DefaultUnitOfWork<EventMessage<String>> uow = new DefaultUnitOfWork<>(
-                GenericEventMessage.asEventMessage("test")
+                EventTestUtils.asEventMessage("test")
         );
-        DefaultInterceptorChain<EventMessage<String>> interceptorChain = new DefaultInterceptorChain<>(
+        DefaultInterceptorChain<EventMessage<String>, Message<Void>> interceptorChain = new DefaultInterceptorChain<>(
                 uow,
                 Collections.singletonList(testSubject),
                 message -> {
                     Thread.sleep(300);
                     return null;
-                });
-        uow.executeWithResult(interceptorChain::proceed);
+                }
+        );
+        uow.executeWithResult(interceptorChain::proceedSync);
         assertTrue(uow.isRolledBack());
         assertTrue(uow.getExecutionResult().isExceptionResult());
         assertInstanceOf(InterruptedException.class, uow.getExecutionResult().getExceptionResult());
@@ -49,20 +56,21 @@ class UnitOfWorkTimeoutInterceptorTest {
 
 
     @Test
-    void doesNotInterruptWorkWithinTime() throws Exception {
+    void doesNotInterruptWorkWithinTime() {
         UnitOfWorkTimeoutInterceptor testSubject = new UnitOfWorkTimeoutInterceptor("MyUnitOfWork", 100, 50, 10);
 
         DefaultUnitOfWork<EventMessage<String>> uow = new DefaultUnitOfWork<>(
-                GenericEventMessage.asEventMessage("test")
+                EventTestUtils.asEventMessage("test")
         );
-        DefaultInterceptorChain<EventMessage<String>> interceptorChain = new DefaultInterceptorChain<>(
+        DefaultInterceptorChain<EventMessage<String>, Message<Void>> interceptorChain = new DefaultInterceptorChain<>(
                 uow,
                 Collections.singletonList(testSubject),
                 message -> {
                     Thread.sleep(80);
                     return null;
-                });
-        uow.executeWithResult(interceptorChain::proceed);
+                }
+        );
+        uow.executeWithResult(interceptorChain::proceedSync);
         assertFalse(uow.isRolledBack());
         assertFalse(uow.getExecutionResult().isExceptionResult());
     }

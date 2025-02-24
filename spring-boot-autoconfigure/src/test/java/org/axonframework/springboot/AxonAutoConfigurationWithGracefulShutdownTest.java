@@ -18,16 +18,21 @@ package org.axonframework.springboot;
 
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryHandler;
+import org.axonframework.queryhandling.annotation.QueryHandler;
+import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
+import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
 import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -48,12 +53,22 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Mateusz Nowak
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
-        "server.shutdown=graceful",
-        "management.endpoints.web.exposure.include=*",
-        "management.endpoint.shutdown.enabled=true",
-        "spring.lifecycle.timeout-per-shutdown-phase=5s"
+@EnableAutoConfiguration(exclude = {
+        AxonServerBusAutoConfiguration.class,
+        AxonServerAutoConfiguration.class,
+        AxonServerActuatorAutoConfiguration.class
 })
+@SpringBootConfiguration
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {
+                "management.endpoint.shutdown.access=unrestricted",
+                "management.endpoints.web.exposure.include=*",
+                "server.shutdown=graceful",
+                "spring.lifecycle.timeout-per-shutdown-phase=5s",
+                "management.endpoints.migrate-legacy-ids=true"
+        }
+)
 class AxonAutoConfigurationWithGracefulShutdownTest {
 
     @Autowired
@@ -104,7 +119,7 @@ class AxonAutoConfigurationWithGracefulShutdownTest {
         return (ResponseEntity) entity;
     }
 
-    @TestConfiguration
+    @Configuration
     static class TestConfig {
 
         @Bean

@@ -32,8 +32,8 @@ import org.springframework.context.annotation.Bean;
 /**
  * Configures the timeout settings for message handlers.
  *
- * @since 4.11.0
  * @author Mitchell Herrijgers
+ * @since 4.11.0
  */
 @AutoConfiguration
 @EnableConfigurationProperties(value = {
@@ -41,6 +41,7 @@ import org.springframework.context.annotation.Bean;
 })
 @ConditionalOnProperty(prefix = "axon.timeout", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class AxonTimeoutAutoConfiguration {
+
     @Bean
     public HandlerTimeoutHandlerEnhancerDefinition messageTimeoutHandlerEnhancerDefinition(
             TimeoutProperties properties
@@ -78,12 +79,13 @@ public class AxonTimeoutAutoConfiguration {
             // Cannot use the configurer.onInitialize, as it creates a circular creation dependency
             configurer.onStart(Integer.MIN_VALUE, () -> {
                 Configuration c = configurer.buildConfiguration();
-                c.commandBus().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptor(
-                        c.commandBus().getClass().getSimpleName(),
-                        properties.getCommandBus().getTimeoutMs(),
-                        properties.getCommandBus().getWarningThresholdMs(),
-                        properties.getCommandBus().getWarningIntervalMs()
-                ));
+                // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
+//                c.commandBus().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptor(
+//                        c.commandBus().getClass().getSimpleName(),
+//                        properties.getCommandBus().getTimeoutMs(),
+//                        properties.getCommandBus().getWarningThresholdMs(),
+//                        properties.getCommandBus().getWarningIntervalMs()
+//                ));
                 c.queryBus().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptor(
                         c.queryBus().getClass().getSimpleName(),
                         properties.getQueryBus().getTimeoutMs(),

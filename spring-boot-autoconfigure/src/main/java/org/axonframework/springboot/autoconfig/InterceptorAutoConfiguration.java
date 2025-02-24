@@ -15,9 +15,6 @@
  */
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.gateway.EventGateway;
@@ -61,14 +58,15 @@ import java.util.Optional;
 })
 public class InterceptorAutoConfiguration {
 
-    @Bean
-    @ConditionalOnBean(MessageDispatchInterceptor.class)
-    public InitializingBean commandDispatchInterceptorConfigurer(
-            CommandGateway commandGateway,
-            Optional<List<MessageDispatchInterceptor<? super CommandMessage<?>>>> interceptors
-    ) {
-        return () -> interceptors.ifPresent(it -> it.forEach(commandGateway::registerDispatchInterceptor));
-    }
+    // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
+//    @Bean
+//    @ConditionalOnBean(MessageDispatchInterceptor.class)
+//    public InitializingBean commandDispatchInterceptorConfigurer(
+//            CommandGateway commandGateway,
+//            Optional<List<MessageDispatchInterceptor<? super CommandMessage<?>>>> interceptors
+//    ) {
+//        return () -> interceptors.ifPresent(it -> it.forEach(commandGateway::registerDispatchInterceptor));
+//    }
 
     @Bean
     @ConditionalOnBean(MessageDispatchInterceptor.class)
@@ -88,14 +86,15 @@ public class InterceptorAutoConfiguration {
         return () -> interceptors.ifPresent(it -> it.forEach(queryGateway::registerDispatchInterceptor));
     }
 
-    @Bean
-    @ConditionalOnBean(MessageHandlerInterceptor.class)
-    public InitializingBean commandHandlerInterceptorConfigurer(
-            CommandBus commandBus,
-            Optional<List<MessageHandlerInterceptor<? super CommandMessage<?>>>> interceptors
-    ) {
-        return () -> interceptors.ifPresent(it -> it.forEach(commandBus::registerHandlerInterceptor));
-    }
+    // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
+//    @Bean
+//    @ConditionalOnBean(MessageHandlerInterceptor.class)
+//    public InitializingBean commandHandlerInterceptorConfigurer(
+//            CommandBus commandBus,
+//            Optional<List<MessageHandlerInterceptor<? super CommandMessage<?>>>> interceptors
+//    ) {
+//        return () -> interceptors.ifPresent(it -> it.forEach(commandBus::registerHandlerInterceptor));
+//    }
 
     @Bean
     @ConditionalOnBean(MessageHandlerInterceptor.class)

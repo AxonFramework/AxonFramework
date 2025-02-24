@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,18 @@
 
 package org.axonframework.serialization.avro;
 
-import org.apache.avro.*;
-import org.apache.avro.SchemaCompatibility.SchemaCompatibilityResult;
+import org.apache.avro.AvroRuntimeException;
+import org.apache.avro.InvalidAvroMagicException;
+import org.apache.avro.InvalidNumberEncodingException;
+import org.apache.avro.Schema;
+import org.apache.avro.SchemaCompatibility;
+import org.apache.avro.SchemaNormalization;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.message.BadHeaderException;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.axonframework.serialization.SerializationException;
 
-import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -32,7 +35,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import static org.apache.avro.SchemaCompatibility.checkReaderWriterCompatibility;
 
@@ -99,8 +102,9 @@ public class AvroUtil {
                 throw new InvalidAvroMagicException(String.format("Unrecognized header magic byte: 0x%02X", magicByte));
             }
             if (versionByte != FORMAT_VERSION) {
-                throw new InvalidNumberEncodingException(String.format("Unrecognized header version bytes: 0x%02X",
-                        versionByte));
+                throw new InvalidNumberEncodingException(
+                        String.format("Unrecognized header version bytes: 0x%02X", versionByte)
+                );
             }
             byte[] fingerprintBytes = new byte[AVRO_FINGERPRINT_LENGTH];
             int read = bis.read(fingerprintBytes);
@@ -192,6 +196,7 @@ public class AvroUtil {
 
     /**
      * Checks compatibility between reader and writer schema.
+     *
      * @param readerSchema reader schema.
      * @param writerSchema writer schema.
      * @return list of incompatibilities if any, or empty list if schemas are compatible.
@@ -266,9 +271,9 @@ public class AvroUtil {
      */
     public static String incompatibilityPrinter(@Nonnull SchemaCompatibility.Incompatibility incompatibility) {
         return String.format("%s located at \"%s\" with value \"%s\"",
-                incompatibility.getType(),
-                incompatibility.getLocation(),
-                incompatibility.getMessage());
+                             incompatibility.getType(),
+                             incompatibility.getLocation(),
+                             incompatibility.getMessage());
     }
 
     /**
@@ -282,9 +287,9 @@ public class AvroUtil {
             @Nonnull Class<?> readerType,
             long fingerprint
     ) {
-        return new SerializationException("Schema store could didn't contain schema deserializing "
-                + readerType
-                + " with fingerprint:"
-                + fingerprint);
+        return new SerializationException(
+                "Schema store could didn't contain schema deserializing " + readerType
+                        + " with fingerprint:" + fingerprint
+        );
     }
 }

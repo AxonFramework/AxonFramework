@@ -15,14 +15,20 @@
  */
 package org.axonframework.messaging.timeout;
 
-import org.axonframework.eventhandling.EventHandler;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.common.ObjectUtils;
+import org.axonframework.eventhandling.EventTestUtils;
+import org.axonframework.eventhandling.annotation.EventHandler;
+import org.axonframework.messaging.GenericMessage;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.junit.jupiter.api.*;
 
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,19 +46,37 @@ class TimeoutWrappedMessageHandlingMemberTest {
 
     @Test
     void interruptsMessageHandlingMemberAsConfigured() throws NoSuchMethodException {
-        MessageHandlingMember<TestMessageHandler> original = handlerDefinition.createHandler(TestMessageHandler.class,
-                                                                                             TestMessageHandler.class.getDeclaredMethod(
-                                                                                                     "handle",
-                                                                                                     String.class),
-                                                                                             parameterResolver).get();
+        Optional<MessageHandlingMember<TestMessageHandler>> optionalHandler = handlerDefinition.createHandler(
+                TestMessageHandler.class,
+                TestMessageHandler.class.getDeclaredMethod("handle", String.class),
+                parameterResolver,
+                TimeoutWrappedMessageHandlingMemberTest::returnTypeConverter
+        );
+        assertTrue(optionalHandler.isPresent());
+        MessageHandlingMember<TestMessageHandler> original = optionalHandler.get();
 
         TimeoutWrappedMessageHandlingMember<TestMessageHandler> wrappedHandler = new TimeoutWrappedMessageHandlingMember<>(
                 original, 300, 200, 50
         );
 
-        assertThrows(TimeoutException.class,
-                     () -> wrappedHandler.handle(GenericEventMessage.asEventMessage("my-message"),
-                                                 new TestMessageHandler()));
+        assertThrows(
+                TimeoutException.class,
+                () -> wrappedHandler.handleSync(EventTestUtils.asEventMessage("my-message"), new TestMessageHandler())
+        );
+    }
+
+    // TODO This local static function should be replaced with a dedicated interface that converts types.
+    // TODO However, that's out of the scope of the unit-of-rework branch and thus will be picked up later.
+    private static MessageStream<?> returnTypeConverter(Object result) {
+        if (result instanceof CompletableFuture<?> future) {
+            return MessageStream.fromFuture(future.thenApply(
+                    r -> new GenericMessage<>(new MessageType(r.getClass()), r)
+            ));
+        }
+        if (result instanceof MessageStream<?> stream) {
+            return stream;
+        }
+        return MessageStream.just(new GenericMessage<>(new MessageType(ObjectUtils.nullSafeTypeOf(result)), result));
     }
 
     public static class TestMessageHandler {
