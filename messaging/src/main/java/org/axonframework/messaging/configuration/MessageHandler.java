@@ -14,11 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.common.infra;
+package org.axonframework.messaging.configuration;
 
-import jakarta.annotation.Nonnull;
+/**
+ * Marker interface for a handlers or components of {@link org.axonframework.messaging.Message messages}.
+ *
+ * @author Allard Buijze
+ * @author Rene de Waele
+ * @author Steven van Beelen
+ * @since 3.0.0
+ */
+public interface MessageHandler {
 
-public interface DescribableComponent {
-
-    void describeTo(@Nonnull ComponentDescriptor descriptor);
 }

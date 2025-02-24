@@ -16,12 +16,13 @@
 
 package org.axonframework.test.utils;
 
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -86,12 +87,13 @@ class RecordingCommandBusTest {
 
     @Test
     void registerHandler() {
-        MessageHandler<CommandMessage<?>, CommandResultMessage<?>> handler = command -> {
+        CommandHandler handler = (command, context) -> {
             fail("Did not expect handler to be invoked");
             return null;
         };
-        testSubject.subscribe(String.class.getName(), handler);
+        QualifiedName name = new QualifiedName("test");
+        testSubject.subscribe(name, handler);
         assertTrue(testSubject.isSubscribed(handler));
-        assertTrue(testSubject.isSubscribed(String.class.getName(), handler));
+        assertTrue(testSubject.isSubscribed(name, handler));
     }
 }

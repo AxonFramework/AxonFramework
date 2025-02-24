@@ -56,7 +56,7 @@ class EventPublicationOrderTest {
         StubAggregateCommandHandler target = new StubAggregateCommandHandler();
         target.setRepository(repository);
         target.setEventBus(eventStore);
-        new AnnotationCommandHandlerAdapter<>(target).subscribe(commandBus);
+        commandBus.subscribe(new AnnotationCommandHandlerAdapter<>(target));
     }
 
     @Test

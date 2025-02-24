@@ -14,29 +14,28 @@
  * limitations under the License.
  */
 
-package org.axonframework.commandhandling;
+package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.QualifiedName;
 
 import java.util.Set;
 
 /**
- * Interface describing a group of {@code CommandHandlers} belonging to a single component.
+ * Interface describing a group of {@code EventHandlers} belonging to a single component.
  * <p>
- * As such, it allows registration of {@code CommandHandlers} through the {@code CommandHandlerRegistry}. Besides
- * handling and registration, it specifies which {@link #supportedCommands() commands} it supports.
+ * As such, it allows registration of {@code EventHandlers} through the {@code EventHandlerRegistry}. Besides handling
+ * and registration, it specifies which {@link #supportedEvents() events} it supports.
  *
- * @author Allard Buijze
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface CommandHandlingComponent extends CommandHandler, CommandHandlerRegistry {
+public interface EventHandlingComponent extends EventHandler, EventHandlerRegistry {
 
     /**
-     * All supported {@link CommandMessage commands}, referenced through a {@link QualifiedName}.
+     * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
      *
-     * @return All supported {@link CommandMessage commands}, referenced through a {@link QualifiedName}.
+     * @return All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
      */
-    Set<QualifiedName> supportedCommands();
+    Set<QualifiedName> supportedEvents();
 }
