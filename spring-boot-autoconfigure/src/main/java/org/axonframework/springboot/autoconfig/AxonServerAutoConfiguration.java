@@ -25,6 +25,7 @@ import org.axonframework.axonserver.connector.event.axon.AxonServerEventSchedule
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSource;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceFactory;
+import org.axonframework.axonserver.connector.event.axon.DefaultPersistentStreamMessageSourceFactory;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicyProvider;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
@@ -272,10 +273,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @Bean
     @ConditionalOnMissingBean
     public PersistentStreamMessageSourceFactory persistentStreamMessageSourceFactory() {
-        return (name, persistentStreamProperties, scheduler, batchSize, context, configuration) ->
-                new PersistentStreamMessageSource(
-                        name, configuration, persistentStreamProperties, scheduler, batchSize, context
-                );
+        return new DefaultPersistentStreamMessageSourceFactory();
     }
 
     /**

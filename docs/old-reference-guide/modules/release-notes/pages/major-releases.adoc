@@ -3,6 +3,60 @@
 
 All the enhancements and features which have been introduced to our major releases of the Axon Framework are noted here.
 
+== Release 4.11
+
+=== _Features_
+
+- Introduce configurable timeouts for message handlers. link:https://github.com/AxonFramework/AxonFramework/pull/3272[#3272]
+- [#3179] test: Spring graceful shutdown - Configurer is only shutdown after processing active requests link:https://github.com/AxonFramework/AxonFramework/pull/3268[#3268]
+- [#3202] Auto-register `MessageHandlerInterceptors` with Spring Boot link:https://github.com/AxonFramework/AxonFramework/pull/3203[#3203]
+- Autoregister MessageHandlerInterceptors with Spring Boot link:https://github.com/AxonFramework/AxonFramework/issues/3202[#3202]
+- [#3159] Support Apache Avro link:https://github.com/AxonFramework/AxonFramework/pull/3187[#3187]
+- Support Apache Avro as message serialization format link:https://github.com/AxonFramework/AxonFramework/issues/3159[#3159]
+- Secure MessageHandlerDefinition link:https://github.com/AxonFramework/AxonFramework/pull/3057[#3057]
+- Interceptor list Spring auto configuration link:https://github.com/AxonFramework/AxonFramework/issues/1422[#1422]
+
+=== _Enhancements_
+
+- [#3159] `AvroSerializer` - Documentation, code sample, and auto-config fix link:https://github.com/AxonFramework/AxonFramework/pull/3275[#3275]
+- Catch `IllegalJobStateChangeException` in `JobRunrDeadlineManager` when the failed change is from `DELETED` to `DELETED` link:https://github.com/AxonFramework/AxonFramework/pull/3267[#3267]
+- Introduce gRPC message limit warning and prevention link:https://github.com/AxonFramework/AxonFramework/pull/3264[#3264]
+- [#3217] warn and document Persistent Stream uniqueness based on stream name link:https://github.com/AxonFramework/AxonFramework/pull/3262[#3262]
+- Have `DefaultEventGateway` provide a collection of events to the `EventBus` instead of looping over the events link:https://github.com/AxonFramework/AxonFramework/pull/3241[#3241]
+- ci: GitHub Actions (AF4) - rerun flaky tests link:https://github.com/AxonFramework/AxonFramework/pull/3238[#3238]
+- ci: GitHub Actions (AF4) - timeout for builds and one in-progress run per pull request link:https://github.com/AxonFramework/AxonFramework/pull/3232[#3232]
+- [#3215] Improve retry handling using (exponential) back-off in Pooled Streaming Event Processors link:https://github.com/AxonFramework/AxonFramework/pull/3223[#3223]
+- Warn or validate, and document Persistent Stream uniqueness based on stream name link:https://github.com/AxonFramework/AxonFramework/issues/3217[#3217]
+- Improve retry handling using (exponential) back-off in Pooled Streaming Event Processors link:https://github.com/AxonFramework/AxonFramework/issues/3215[#3215]
+- SagaTestFixture extend APIs for publishing historic events with metadata link:https://github.com/AxonFramework/AxonFramework/pull/3198[#3198]
+- SagaTestFixture API extension for publishing historic events with metadata link:https://github.com/AxonFramework/AxonFramework/issues/3197[#3197]
+- Upgrade XStream to 1.4.21 to resolve CVE-2024-47072 link:https://github.com/AxonFramework/AxonFramework/issues/3181[#3181]
+
+=== _Bug fixes_
+
+- Cleanup of persistent stream processing logic link:https://github.com/AxonFramework/AxonFramework/pull/3270[#3270]
+- Fix for deadlock when many queries wait for responses link:https://github.com/AxonFramework/AxonFramework/pull/3260[#3260]
+- docs: fix PooledStreamingEventProcessor default initial tracking token link:https://github.com/AxonFramework/AxonFramework/pull/3257[#3257]
+- [#3057] fix: Spring-Axon app can run without Spring Security as dependency link:https://github.com/AxonFramework/AxonFramework/pull/3222[#3222]
+- fixed hasAnnotation test link:https://github.com/AxonFramework/AxonFramework/pull/3142[#3142]
+
+=== _Contributors_
+
+We'd like to thank all the contributors who worked on this release!
+
+- link:https://github.com/kursataktas[@kursataktas]
+- link:https://github.com/zambrovski[@zambrovski]
+- link:https://github.com/smcvb[@smcvb]
+- link:https://github.com/AlexanderPraegla[@AlexanderPraegla]
+- link:https://github.com/bankras[@bankras]
+- link:https://github.com/stoerti[@stoerti]
+- link:https://github.com/wtrzas2[@wtrzas2]
+- link:https://github.com/dgomezg[@dgomezg]
+- link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
+- link:https://github.com/abuijze[@abuijze]
+- link:https://github.com/bruceaxoniq[@bruceaxoniq]
+- link:https://github.com/CodeDrivenMitch[@CodeDrivenMitch]
+
 == Release 4.10
 
 === _Features_

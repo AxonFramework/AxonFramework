@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -155,6 +155,11 @@ public class AxonServerConfiguration {
     private int queryThreads = 10;
 
     /**
+     * The number of threads handling query responses. Defaults to {@code 5} threads.
+     */
+    private int queryResponseThreads = 5;
+
+    /**
      * The interval (in ms.) application sends status updates on event processors to Axon Server. Defaults to
      * {@code 500} milliseconds.
      */
@@ -183,9 +188,17 @@ public class AxonServerConfiguration {
     private int snapshotPrefetch = 1;
 
     /**
-     * The gRPC max inbound message size. Defaults to {@code 0}, keeping the default value from the connector.
+     * The gRPC max inbound and outbound message size. Defaults to {@code 0}, keeping the default value (4,194,304 or
+     * 4MiB) from the connector. Upon messages exceeding this size, an exception is thrown to prevent unexpected
+     * disconnections.
      */
     private int maxMessageSize = 0;
+
+    /**
+     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to
+     * {@code 0.8}.
+     */
+    private double maxMessageSizeWarningThreshold = 0.8;
 
     /**
      * The timeout (in milliseconds) to wait for response on commit. Defaults to {@code 10_000} milliseconds.
@@ -674,6 +687,24 @@ public class AxonServerConfiguration {
     }
 
     /**
+     * The number of threads executing query responses. Defaults to {@code 5} threads.
+     *
+     * @return The number of threads executing query responses.
+     */
+    public int getQueryResponseThreads() {
+        return queryResponseThreads;
+    }
+
+    /**
+     * Sets the number of threads executing query responses. Defaults to {@code 5} threads.
+     *
+     * @param queryResponseThreads The number of threads executing query responses.
+     */
+    public void setQueryResponseThreads(int queryResponseThreads) {
+        this.queryResponseThreads = queryResponseThreads;
+    }
+
+    /**
      * The interval (in ms.) application sends status updates on event processors to Axon Server. Defaults to
      * {@code 500} milliseconds.
      *
@@ -788,6 +819,28 @@ public class AxonServerConfiguration {
      */
     public void setMaxMessageSize(int maxMessageSize) {
         this.maxMessageSize = maxMessageSize;
+    }
+
+    /**
+     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to
+     * {@code 0.8}.
+     *
+     * @return The threshold (in percentage of 0 to 1) of the max outbound message size at which a warning should be
+     * logged.
+     */
+    public double getMaxMessageSizeWarningThreshold() {
+        return maxMessageSizeWarningThreshold;
+    }
+
+    /**
+     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to
+     * {@code 0.8}.
+     *
+     * @param maxMessageSizeWarningThreshold The threshold (in percentage of 0 to 1) of the max outbound message size at
+     *                                       which a warning should be logged.
+     */
+    public void setMaxMessageSizeWarningThreshold(double maxMessageSizeWarningThreshold) {
+        this.maxMessageSizeWarningThreshold = maxMessageSizeWarningThreshold;
     }
 
     /**

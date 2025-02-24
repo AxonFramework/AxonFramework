@@ -18,60 +18,88 @@ package org.axonframework.eventhandling.gateway;
 
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.UUID;
+import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.*;
 
 /**
+ * This class validating the {@link DefaultEventGateway}.
+ *
  * @author Bert Laverman
  */
 class DefaultEventGatewayTest {
 
     private DefaultEventGateway testSubject;
     private EventBus mockEventBus;
-    private MessageDispatchInterceptor mockEventMessageTransformer;
+    private MessageDispatchInterceptor<EventMessage<?>> mockEventMessageTransformer;
 
-    @SuppressWarnings("unchecked")
     @BeforeEach
     void setUp() {
         mockEventBus = mock(EventBus.class);
+        //noinspection unchecked
         mockEventMessageTransformer = mock(MessageDispatchInterceptor.class);
 
         when(mockEventMessageTransformer.handle(isA(EventMessage.class)))
                 .thenAnswer(invocation -> invocation.getArguments()[0]);
+        //noinspection unchecked
         testSubject = DefaultEventGateway.builder()
                                          .eventBus(mockEventBus)
                                          .dispatchInterceptors(mockEventMessageTransformer)
                                          .build();
     }
 
-    @SuppressWarnings({"unchecked"})
     @Test
-    void publish() {
-        testSubject.publish("Event1");
-        verify(mockEventBus).publish(
-                argThat((GenericEventMessage msg) -> msg.getPayload().equals("Event1")));
-        verify(mockEventMessageTransformer).handle(
-                argThat((GenericEventMessage msg) -> msg.getPayload().equals("Event1")));
+    void publishSingleEvent() {
+        // Given
+        //noinspection unchecked
+        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
 
+        // When
+        testSubject.publish("Event1");
+
+        // Then
+        verify(mockEventBus).publish(eventCaptor.capture());
+        EventMessage<?> result = eventCaptor.getValue();
+        assertEquals("Event1", result.getPayload());
+
+        verify(mockEventMessageTransformer).handle(eventCaptor.capture());
+        EventMessage<?> interceptedResult = eventCaptor.getValue();
+        assertEquals("Event1", interceptedResult.getPayload());
+    }
+
+    @Test
+    void publishMultipleEvents() {
+        //Given
+        //noinspection unchecked
+        ArgumentCaptor<List<EventMessage<?>>> eventsCaptor = ArgumentCaptor.forClass(List.class);
+        //noinspection unchecked
+        ArgumentCaptor<EventMessage<?>> interceptedCaptor = ArgumentCaptor.forClass(EventMessage.class);
+
+        //When
         testSubject.publish("Event2", "Event3");
 
-        verify(mockEventBus).publish(
-                argThat((GenericEventMessage msg) -> msg.getPayload().equals("Event2")));
-        verify(mockEventMessageTransformer).handle(
-                argThat((GenericEventMessage msg) -> msg.getPayload().equals("Event2")));
-        verify(mockEventBus).publish(
-                argThat((GenericEventMessage msg) -> msg.getPayload().equals("Event3")));
-        verify(mockEventMessageTransformer).handle(
-                argThat((GenericEventMessage msg) -> msg.getPayload().equals("Event3")));
+        //Then
+        verify(mockEventBus).publish(eventsCaptor.capture());
+        List<EventMessage<?>> result = eventsCaptor.getValue();
+        assertEquals(2, result.size());
+        assertEquals("Event2", result.get(0).getPayload());
+        assertEquals("Event3", result.get(1).getPayload());
+
+        verify(mockEventMessageTransformer, times(2)).handle(interceptedCaptor.capture());
+        List<EventMessage<?>> interceptedResult = interceptedCaptor.getAllValues();
+        assertEquals(2, interceptedResult.size());
+        assertEquals("Event2", interceptedResult.get(0).getPayload());
+        assertEquals("Event3", interceptedResult.get(1).getPayload());
     }
 
     @Test
