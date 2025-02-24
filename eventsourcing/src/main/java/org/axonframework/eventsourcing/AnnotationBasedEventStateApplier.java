@@ -44,7 +44,7 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
     private final AnnotatedHandlerInspector<M> inspector;
 
     /**
-     * Initialize a new {@link AnnotationBasedEventStateApplier}.
+     * Initialize a new annotation-based {@link EventStateApplier}.
      *
      * @param modelType The type of model this instance will handle state changes for.
      */
@@ -58,7 +58,7 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
     }
 
     /**
-     * Initialize a new {@link AnnotationBasedEventStateApplier}.
+     * Initialize a new annotation-based {@link EventStateApplier}.
      *
      * @param modelType The type of model this instance will handle state changes for.
      * @param inspector The inspector to use to find the annotated handlers on the model.
@@ -103,8 +103,7 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
             ProcessingContext processingContext
     ) {
         var listenerType = model.getClass();
-        var handler =
-                inspector.getHandlers(listenerType)
+        var handler = inspector.getHandlers(listenerType)
                          .filter(h -> h.canHandle(event, processingContext))
                          .findFirst();
         if (handler.isPresent()) {

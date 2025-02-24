@@ -51,7 +51,7 @@ class AnnotationBasedEventStateApplierTest {
     class BasicEventHandling {
 
         @Test
-        void mutatesStateIfClass() {
+        void mutatesStateOnOriginalInstanceIfEventHandlerDoNotReturnsTheModelType() {
             // given
             var state = new TestState();
             var event = domainEvent(0);
@@ -64,7 +64,7 @@ class AnnotationBasedEventStateApplierTest {
         }
 
         @Test
-        void handlesEvent() {
+        void returnsStateAfterHandlingEvent() {
             // given
             var state = new TestState();
             var event = domainEvent(0);
@@ -184,6 +184,7 @@ class AnnotationBasedEventStateApplierTest {
         }
     }
 
+    // feel free to drop the support in case of some changed in EventHandling logic (like Empty stream always returned from event handling component)
     @Nested
     class RecordSupport {
 
