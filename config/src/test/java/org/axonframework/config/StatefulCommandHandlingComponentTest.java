@@ -132,10 +132,26 @@ class StatefulCommandHandlingComponentTest {
                         });
 
         updateStudentName(component, "my-studentId-1", "name-1");
+        verifyStudentName("my-studentId-1", "name-1");
         updateStudentName(component, "my-studentId-1", "name-2");
+        verifyStudentName("my-studentId-1", "name-2");
         updateStudentName(component, "my-studentId-1", "name-3");
+        verifyStudentName("my-studentId-1", "name-3");
         updateStudentName(component, "my-studentId-1", "name-4");
+        verifyStudentName("my-studentId-1", "name-4");
+
         updateStudentName(component, "my-studentId-2", "name-5");
+        verifyStudentName("my-studentId-1", "name-4");
+        verifyStudentName("my-studentId-2", "name-5");
+    }
+
+    private void verifyStudentName(String id, String name) {
+        AsyncUnitOfWork uow = new AsyncUnitOfWork();
+        uow.executeWithResult((context) -> {
+            return studentRepository.load(id, context).thenAccept(student -> {
+                assertEquals(name, student.entity().name);
+            });
+        }).join();
     }
 
     /**
@@ -196,17 +212,43 @@ class StatefulCommandHandlingComponentTest {
                             return MessageStream.empty().cast();
                         });
 
-        updateStudentName(component, "my-studentId-1", "name-1");
-        updateStudentName(component, "my-studentId-1", "name-2");
-        updateStudentName(component, "my-studentId-1", "name-3");
-        updateStudentName(component, "my-studentId-1", "name-4");
-        updateStudentName(component, "my-studentId-2", "name-5");
-
+        // First student
         enrollStudentToCourse(component, "my-studentId-2", "my-courseId-1");
+        verifyStudentEnrolledInCourse("my-studentId-2", "my-courseId-1");
+
+        // Second student
         enrollStudentToCourse(component, "my-studentId-3", "my-courseId-1");
+        verifyStudentEnrolledInCourse("my-studentId-3", "my-courseId-1");
+        verifyStudentEnrolledInCourse("my-studentId-2", "my-courseId-1");
+
+        // Third and last possible student
         enrollStudentToCourse(component, "my-studentId-4", "my-courseId-1");
+        verifyStudentEnrolledInCourse("my-studentId-4", "my-courseId-1");
+        verifyStudentEnrolledInCourse("my-studentId-3", "my-courseId-1");
+        verifyStudentEnrolledInCourse("my-studentId-2", "my-courseId-1");
+
+        // Fourth can still enroll for other couse
+        enrollStudentToCourse(component, "my-studentId-4", "my-courseId-2");
+        verifyStudentEnrolledInCourse("my-studentId-4", "my-courseId-2");
+
+        // But five can not enroll for the first course
         assertThrows(ExecutionException.class,
                      () -> enrollStudentToCourse(component, "my-studentId-5", "my-courseId-1"));
+    }
+
+    private void verifyStudentEnrolledInCourse(String id, String courseId) {
+        AsyncUnitOfWork uow = new AsyncUnitOfWork();
+        uow.executeWithResult((context) -> {
+            return studentRepository
+                    .load(id, context)
+                    .thenAccept(student -> {
+                        assertTrue(student.entity().getCoursedEnrolled().contains(courseId));
+                    }).thenCompose((__) -> {
+                        return courseRepository.load(courseId, context);
+                    }).thenAccept(course -> {
+                        assertTrue(course.entity().getStudentsEnrolled().contains(id));
+                    });
+        }).join();
     }
 
     private static void updateStudentName(StatefulCommandHandlingComponent component, String id, String name)
