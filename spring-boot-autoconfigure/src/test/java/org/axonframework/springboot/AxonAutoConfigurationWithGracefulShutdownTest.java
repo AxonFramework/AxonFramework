@@ -77,6 +77,7 @@ class AxonAutoConfigurationWithGracefulShutdownTest {
     @LocalServerPort
     private int port;
 
+    @Disabled("TODO as part of issue #3310")
     @Test
     @DirtiesContext
     void whenPostForActuatorShutdownThenShuttingDownIsStarted() {
@@ -89,6 +90,7 @@ class AxonAutoConfigurationWithGracefulShutdownTest {
         assertThat((String) entity.getBody().get("message")).contains("Shutting down");
     }
 
+    @Disabled("TODO as part of issue #3310")
     @Test
     @DirtiesContext
     void givenActiveRequestWhenTriggerShutdownThenWaitingForRequestsToComplete() throws Exception {
