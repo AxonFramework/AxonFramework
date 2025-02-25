@@ -35,7 +35,6 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -146,34 +145,32 @@ class DefaultEventStoreTransactionTest {
 
         @Test
         void appendCommitsOfNonExistentTagWhenOfTwoNonOverlappingTagsOneYieldedNoEvents() {
-
             Tag nonExistentTag = new Tag("nonExistent", "tag");
             EventCriteria nonExistingCriteria = EventCriteria.forAnyEventType().withTags(nonExistentTag);
             Tag existentTag = new Tag("existent", "tag");
             EventCriteria existingCriteria = EventCriteria.forAnyEventType().withTags(existentTag);
 
-            appendExistingEventForTag(existentTag);
+            appendEventForTag(existentTag);
             testCanCommitTag(nonExistingCriteria, existingCriteria, nonExistentTag);
         }
 
         @Test
         void appendCommitsOfExistentTagWhenOfTwoNonOverlappingTagsOneYieldedNoEvents() {
-
             Tag nonExistentTag = new Tag("nonExistent", "tag");
             EventCriteria nonExistingCriteria = EventCriteria.forAnyEventType().withTags(nonExistentTag);
             Tag existentTag = new Tag("existent", "tag");
             EventCriteria existingCriteria = EventCriteria.forAnyEventType().withTags(existentTag);
 
-            appendExistingEventForTag(existentTag);
+            appendEventForTag(existentTag);
             testCanCommitTag(nonExistingCriteria, existingCriteria, existentTag);
         }
 
-        private ConsistencyMarker appendExistingEventForTag(Tag existentTag) {
+        private ConsistencyMarker appendEventForTag(Tag tag) {
             return eventStorageEngine.appendEvents(AppendCondition.none(),
                                                    new GenericTaggedEventMessage<>(
                                                            new GenericEventMessage<>(new MessageType(String.class),
                                                                                      "my payload"),
-                                                           Set.of(existentTag)
+                                                           Set.of(tag)
                                                    )).join().commit().join();
         }
 
