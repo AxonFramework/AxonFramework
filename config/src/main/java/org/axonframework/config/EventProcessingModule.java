@@ -148,6 +148,10 @@ public class EventProcessingModule
         this.subscribableMessageSourceDefinitionBuilder = builder;
     }
 
+    public SubscribableMessageSourceDefinitionBuilder getSubscribableMessageSourceDefinitionBuilder() {
+        return subscribableMessageSourceDefinitionBuilder;
+    }
+
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
             () -> configuration,
             "listenerInvocationErrorHandler",

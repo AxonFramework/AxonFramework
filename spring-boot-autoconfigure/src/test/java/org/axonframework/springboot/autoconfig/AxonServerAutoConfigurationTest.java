@@ -23,6 +23,7 @@ import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
+import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.commandhandling.CommandBus;
@@ -32,6 +33,8 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.config.EventProcessingModule;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -260,8 +263,29 @@ class AxonServerAutoConfigurationTest {
     @Test
     void axonServerEventStoreFactoryBeanIsNotConfiguredWhenEventStoreIsDisabled() {
         testContext.withUserConfiguration(TestContext.class)
-                .withPropertyValues("axon.axonserver.event-store.enabled=false")
+                   .withPropertyValues("axon.axonserver.event-store.enabled=false")
                    .run(context -> assertThat(context).getBean(AxonServerEventStoreFactory.class).isNull());
+    }
+
+    @Test
+    void axonServerAutoPersistentStreamSettingsBeanCreated() {
+        testContext.withPropertyValues("axon.axonserver.auto-persistent-streams.enabled=true")
+                   .run(context -> {
+                       assertThat(context).hasBean("autoPersistentStreamSettings");
+                   });
+    }
+
+    @Test
+    void subscribableMessageSourceDefinitionBuilderBuildsPersistentStreamMessageSourceDefinition() {
+        testContext.withPropertyValues("axon.axonserver.auto-persistent-streams.enabled=true")
+                   .run(context -> {
+                       EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder builder = context.getBean(
+                               EventProcessingModule.class).getSubscribableMessageSourceDefinitionBuilder();
+
+                       assertThat(builder).isNotNull();
+
+                       assertThat(builder.build("name")).isInstanceOf(PersistentStreamMessageSourceDefinition.class);
+                   });
     }
 
     @Test
