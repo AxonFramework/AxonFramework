@@ -39,6 +39,7 @@ import org.junit.jupiter.api.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -145,13 +146,37 @@ class SimpleStatefulCommandHandlingComponentTest {
         verifyStudentName("my-studentId-2", "name-5");
     }
 
+    @Test
+    void canHandleCommandWithoutId() {
+        var component = StatefulCommandHandlingComponent
+                .forName("MyStatefulCommandHandlingComponent")
+                .loadModelsEagerly()
+                .registerModel(
+                        Student.class,
+                        studentCommandIdResolver,
+                        (id, context) -> studentRepository.loadOrCreate(id, context).thenApply(ManagedEntity::entity)
+                )
+                .subscribe(
+                        new QualifiedName(UnknownCommand.class),
+                        (command, model, context) -> {
+                            model.modelOf(Student.class);
+                            // Will not be invoked
+                            return MessageStream.empty().cast();
+                        });
+
+
+        var thrown = assertThrows(ExecutionException.class,
+                                  () -> sendCommand(component, new UnknownCommand("my-studentId-1")));
+        assertInstanceOf(IllegalStateException.class, thrown.getCause());
+        assertTrue(thrown.getMessage().contains("No model definition found for model type"));
+    }
+
     private void verifyStudentName(String id, String name) {
         AsyncUnitOfWork uow = new AsyncUnitOfWork();
-        uow.executeWithResult((context) -> {
-            return studentRepository.load(id, context).thenAccept(student -> {
-                assertEquals(name, student.entity().name);
-            });
-        }).join();
+        uow.executeWithResult((context) -> studentRepository
+                .load(id, context)
+                .thenAccept(student -> assertEquals(name, student.entity().name))
+        ).join();
     }
 
     /**
@@ -194,7 +219,7 @@ class SimpleStatefulCommandHandlingComponentTest {
                             Student student = models.modelOf(Student.class);
                             Course course = models.modelOf(Course.class);
 
-                            if (student.getCoursedEnrolled().size() > 2) {
+                            if (student.getCoursesEnrolled().size() > 2) {
                                 throw new IllegalArgumentException(
                                         "Student already enrolled in 3 courses");
                             }
@@ -227,28 +252,24 @@ class SimpleStatefulCommandHandlingComponentTest {
         verifyStudentEnrolledInCourse("my-studentId-3", "my-courseId-1");
         verifyStudentEnrolledInCourse("my-studentId-2", "my-courseId-1");
 
-        // Fourth can still enroll for other couse
+        // Fourth can still enroll for other course
         enrollStudentToCourse(component, "my-studentId-4", "my-courseId-2");
         verifyStudentEnrolledInCourse("my-studentId-4", "my-courseId-2");
 
         // But five can not enroll for the first course
-        assertThrows(ExecutionException.class,
+        var thrown = assertThrows(ExecutionException.class,
                      () -> enrollStudentToCourse(component, "my-studentId-5", "my-courseId-1"));
+        assertInstanceOf(IllegalArgumentException.class, thrown.getCause());
+        assertTrue(thrown.getMessage().contains("Course already has 3 students"));
     }
 
     private void verifyStudentEnrolledInCourse(String id, String courseId) {
         AsyncUnitOfWork uow = new AsyncUnitOfWork();
-        uow.executeWithResult((context) -> {
-            return studentRepository
-                    .load(id, context)
-                    .thenAccept(student -> {
-                        assertTrue(student.entity().getCoursedEnrolled().contains(courseId));
-                    }).thenCompose((__) -> {
-                        return courseRepository.load(courseId, context);
-                    }).thenAccept(course -> {
-                        assertTrue(course.entity().getStudentsEnrolled().contains(id));
-                    });
-        }).join();
+        uow.executeWithResult((context) -> studentRepository
+                .load(id, context)
+                .thenAccept(student -> assertTrue(student.entity().getCoursesEnrolled().contains(courseId)))
+                .thenCompose((__) -> courseRepository.load(courseId, context))
+                .thenAccept(course -> assertTrue(course.entity().getStudentsEnrolled().contains(id)))).join();
     }
 
     private static void updateStudentName(StatefulCommandHandlingComponent component, String id, String name)
@@ -294,6 +315,9 @@ class SimpleStatefulCommandHandlingComponentTest {
 
     }
 
+    record UnknownCommand(
+            String studentId
+    ) {}
 
     record StudentNameChangedEvent(
             @EventTag(key = "Student")
@@ -318,7 +342,7 @@ class SimpleStatefulCommandHandlingComponentTest {
     static class Student {
         private String id;
         private String name;
-        private List<String> coursedEnrolled = new ArrayList<>();
+        private List<String> coursesEnrolled = new ArrayList<>();
 
         public Student(String id) {
             this.id = id;
@@ -328,12 +352,12 @@ class SimpleStatefulCommandHandlingComponentTest {
             this.name = name;
         }
 
-        public List<String> getCoursedEnrolled() {
-            return coursedEnrolled;
+        public List<String> getCoursesEnrolled() {
+            return coursesEnrolled;
         }
 
         public void handle(StudentEnrolledEvent event) {
-            coursedEnrolled.add(event.courseId());
+            coursesEnrolled.add(event.courseId());
         }
 
         public void handle(StudentNameChangedEvent event) {
@@ -346,7 +370,7 @@ class SimpleStatefulCommandHandlingComponentTest {
             return "Student{" +
                     "id='" + id + '\'' +
                     ", name='" + name + '\'' +
-                    ", coursedEnrolled=" + coursedEnrolled +
+                    ", coursedEnrolled=" + coursesEnrolled +
                     '}';
         }
     }
