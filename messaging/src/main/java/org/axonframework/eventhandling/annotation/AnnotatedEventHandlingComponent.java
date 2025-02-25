@@ -41,8 +41,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Adapter that turns any {@link org.axonframework.eventhandling.annotation.EventHandler} annotated bean into a
- * {@link MessageHandler} implementation. Each annotated method is subscribed as a Command Handler at the
- * {@link org.axonframework.eventhandling.annotation.EventHandler} for the command type specified by the parameter of
+ * {@link MessageHandler} implementation. Each annotated method is subscribed as Event Handler at the
+ * {@link org.axonframework.eventhandling.EventSink} for the event type specified by the parameter of
  * that method.
  *
  * @author Mateusz Nowak
@@ -103,7 +103,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     @Override
     public EventHandlerRegistry subscribe(@Nonnull QualifiedName name, @Nonnull EventHandler eventHandler) {
         throw new UnsupportedOperationException(
-                "This Command Handling Component does not support direct command handler registration."
+                "This Event Handling Component does not support direct event handler registration."
         );
     }
 

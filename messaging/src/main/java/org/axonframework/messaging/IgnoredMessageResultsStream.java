@@ -37,7 +37,7 @@ class IgnoredMessageResultsStream<M extends Message<?>>
         implements MessageStream.Empty<Message<Void>> {
 
     /**
-     * Constructs the IgnoreMessageStream with given {@code delegate} to receive and ignore calls from.
+     * Constructs the IgnoreMessageStream with given {@code delegate} to receive and ignore entries from.
      *
      * @param delegate The instance to delegate calls to.
      */
