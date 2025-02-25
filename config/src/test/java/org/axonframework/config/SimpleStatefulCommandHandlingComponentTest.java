@@ -19,7 +19,9 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
+import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventStateApplier;
 import org.axonframework.eventsourcing.annotations.EventTag;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
@@ -31,6 +33,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.SimpleModelRegistry;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.repository.ManagedEntity;
@@ -55,15 +58,8 @@ class SimpleStatefulCommandHandlingComponentTest {
             new AnnotationBasedTagResolver()
     );
 
-    private final EventStateApplier<Student> studentEventStateApplier = (model, em) -> {
-        if (em.getPayload() instanceof StudentNameChangedEvent e) {
-            model.handle(e);
-        }
-        if (em.getPayload() instanceof StudentEnrolledEvent e) {
-            model.handle(e);
-        }
-        return model;
-    };
+    private final EventStateApplier<Student> studentEventStateApplier = new AnnotationBasedEventStateApplier<>(Student.class);
+    private final EventStateApplier<Course> courseEventStateApplier = new AnnotationBasedEventStateApplier<>(Course.class);
 
     private final AsyncEventSourcingRepository<String, Student> studentRepository = new AsyncEventSourcingRepository<>(
             eventStore,
@@ -74,12 +70,6 @@ class SimpleStatefulCommandHandlingComponentTest {
     );
 
 
-    private final EventStateApplier<Course> courseEventStateApplier = (model, em) -> {
-        if (em.getPayload() instanceof StudentEnrolledEvent e) {
-            model.handle(e);
-        }
-        return model;
-    };
     private final AsyncEventSourcingRepository<String, Course> courseRepository = new AsyncEventSourcingRepository<>(
             eventStore,
             myModelId -> EventCriteria.forAnyEventType().withTags(new Tag("Course", myModelId)),
@@ -109,13 +99,8 @@ class SimpleStatefulCommandHandlingComponentTest {
                         new QualifiedName(ChangeStudentNameCommand.class),
                         (command, model, context) -> {
                             ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
-                            Student student = model.getModel(Student.class,
-                                                             payload.id())
-                                                   .join();
-                            eventStore.transaction(context, DEFAULT_CONTEXT)
-                                      .appendEvent(new GenericEventMessage<>(
-                                              new MessageType(StudentNameChangedEvent.class),
-                                              new StudentNameChangedEvent(student.id, payload.name())));
+                            Student student = model.getModel(Student.class, payload.id()).join();
+                            appendEvent(context, new StudentNameChangedEvent(student.id, payload.name()));
                             return MessageStream.empty().cast();
                         });
 
@@ -167,25 +152,16 @@ class SimpleStatefulCommandHandlingComponentTest {
                         new QualifiedName(ChangeStudentNameCommand.class),
                         (command, model, context) -> {
                             ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
-                            Student student = model.getModel(Student.class,
-                                                             payload.id())
-                                                   .join();
-                            eventStore.transaction(context, DEFAULT_CONTEXT)
-                                      .appendEvent(new GenericEventMessage<>(
-                                              new MessageType(StudentNameChangedEvent.class),
-                                              new StudentNameChangedEvent(
-                                                      student.id,
-                                                      payload.name())));
+                            Student student = model.getModel(Student.class, payload.id()).join();
+                            appendEvent(context, new StudentNameChangedEvent(student.id, payload.name()));
                             return MessageStream.empty().cast();
                         })
                 .subscribe(
                         new QualifiedName(EnrollStudentToCourseCommand.class),
                         (command, models, context) -> {
                             EnrollStudentToCourseCommand payload = (EnrollStudentToCourseCommand) command.getPayload();
-                            Student student = models.getModel(Student.class, payload.studentId())
-                                                    .join();
-                            Course course = models.getModel(Course.class, payload.courseId())
-                                                  .join();
+                            Student student = models.getModel(Student.class, payload.studentId()).join();
+                            Course course = models.getModel(Course.class, payload.courseId()).join();
 
                             if (student.getCoursesEnrolled().size() > 2) {
                                 throw new IllegalArgumentException(
@@ -195,13 +171,7 @@ class SimpleStatefulCommandHandlingComponentTest {
                             if (course.getStudentsEnrolled().size() > 2) {
                                 throw new IllegalArgumentException("Course already has 3 students");
                             }
-
-                            eventStore.transaction(context, DEFAULT_CONTEXT)
-                                      .appendEvent(new GenericEventMessage<>(new MessageType(
-                                              StudentEnrolledEvent.class),
-                                                                             new StudentEnrolledEvent(
-                                                                                     payload.studentId(),
-                                                                                     payload.courseId())));
+                            appendEvent(context, new StudentEnrolledEvent(payload.studentId(), payload.courseId()));
                             return MessageStream.empty().cast();
                         });
 
@@ -228,6 +198,13 @@ class SimpleStatefulCommandHandlingComponentTest {
         assertThrows(ExecutionException.class,
                      () -> enrollStudentToCourse(component, "my-studentId-5", "my-courseId-1"
                      ));
+    }
+
+    private void appendEvent(ProcessingContext context, Object event) {
+        eventStore.transaction(context, DEFAULT_CONTEXT)
+                  .appendEvent(new GenericEventMessage<>(
+                          new MessageType(event.getClass()),
+                          event));
     }
 
     private void verifyStudentEnrolledInCourse(String id, String courseId) {
@@ -283,12 +260,6 @@ class SimpleStatefulCommandHandlingComponentTest {
 
     }
 
-    record UnknownCommand(
-            String studentId
-    ) {
-
-    }
-
     record StudentNameChangedEvent(
             @EventTag(key = "Student")
             String id,
@@ -327,22 +298,14 @@ class SimpleStatefulCommandHandlingComponentTest {
             return coursesEnrolled;
         }
 
+        @EventSourcingHandler
         public void handle(StudentEnrolledEvent event) {
             coursesEnrolled.add(event.courseId());
         }
 
+        @EventSourcingHandler
         public void handle(StudentNameChangedEvent event) {
             name = event.name();
-        }
-
-
-        @Override
-        public String toString() {
-            return "Student{" +
-                    "id='" + id + '\'' +
-                    ", name='" + name + '\'' +
-                    ", coursesEnrolled=" + coursesEnrolled +
-                    '}';
         }
     }
 
@@ -359,16 +322,9 @@ class SimpleStatefulCommandHandlingComponentTest {
             return studentsEnrolled;
         }
 
+        @EventSourcingHandler
         public void handle(StudentEnrolledEvent event) {
             studentsEnrolled.add(event.studentId());
-        }
-
-        @Override
-        public String toString() {
-            return "Course{" +
-                    "id='" + id + '\'' +
-                    ", studentsEnrolled=" + studentsEnrolled +
-                    '}';
         }
     }
 }
