@@ -90,27 +90,33 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
         MessageStream<EventMessage<?>> source = eventStorageEngine.source(condition);
         if (appendCondition.consistencyMarker() == ConsistencyMarker.ORIGIN) {
             AtomicReference<ConsistencyMarker> markerReference = new AtomicReference<>(appendCondition.consistencyMarker());
-            AtomicBoolean loadedEvent = new AtomicBoolean(false);
+            AtomicBoolean receivedEvent = new AtomicBoolean(false);
             return source.onNext(e -> {
                 ConsistencyMarker marker;
                 if ((marker = e.getResource(ConsistencyMarker.RESOURCE_KEY)) != null) {
                     markerReference.set(marker);
                 }
-                loadedEvent.set(true);
+                receivedEvent.set(true);
             }).whenComplete(() -> {
                 // when reading is complete, we choose the lowest, non-ORIGIN appendPosition as our next appendPosition
                 // when reading multiple times, the lowest consistency marker that we received from those streams
                 // (usually the first), is the safest one to use
-                processingContext.updateResource(appendPositionKey,
-                                                 current -> {
-                                                     if (!loadedEvent.get()) {
-                                                         return current;
-                                                     }
-                                                     return current == null
-                                                             || current == ConsistencyMarker.ORIGIN
-                                                             ? markerReference.get()
-                                                             : current.lowerBound(markerReference.get());
-                                                 });
+                processingContext.updateResource(
+                        appendPositionKey,
+                        current -> {
+                            if (!receivedEvent.get()) {
+                                // We sourced the entire stream without receiving an event.
+                                // This means that we read the entire event stream up until now, with a consistency marker up to the current head.
+                                // As such, any existing ConsistencyMarker will always be the lower bound, and can be maintained.
+                                return current;
+                            }
+                            if (current == null || current == ConsistencyMarker.ORIGIN) {
+                                // This is the first time we are sourcing events, as such will be the correct ConsistencyMarker.
+                                return markerReference.get();
+                            }
+                            // We received a stream of events, while we already sourced before. The lowest of the two is the safest to use.
+                            return current.lowerBound(markerReference.get());
+                        });
             });
         } else {
             return source;
