@@ -38,7 +38,9 @@ import org.axonframework.queryhandling.QueryUpdateEmitterSpanFactory;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration;
+import org.axonframework.springboot.autoconfig.AxonTimeoutAutoConfiguration;
 import org.axonframework.springboot.autoconfig.OpenTelemetryAutoConfiguration;
+import org.axonframework.springboot.autoconfig.SecurityAutoConfiguration;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.SpanAttributesProvider;
 import org.axonframework.tracing.SpanFactory;
@@ -520,6 +522,8 @@ class AxonAutoConfigurationWithTracingTest {
             JmxAutoConfiguration.class,
             OpenTelemetryAutoConfiguration.class,
             WebClientAutoConfiguration.class,
+            SecurityAutoConfiguration.class,
+            AxonTimeoutAutoConfiguration.class,
     })
     @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
     @Configuration

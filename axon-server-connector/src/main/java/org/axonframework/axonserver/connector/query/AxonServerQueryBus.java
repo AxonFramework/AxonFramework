@@ -144,6 +144,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
     private final TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver;
     private final ShutdownLatch shutdownLatch = new ShutdownLatch();
     private final ExecutorService queryExecutor;
+    private final ExecutorService queryResponseExecutor;
     private final LocalSegmentAdapter localSegmentAdapter;
     private final String context;
     private final QueryBusSpanFactory spanFactory;
@@ -174,7 +175,9 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         dispatchInterceptors = new DispatchInterceptors<>();
 
         PriorityBlockingQueue<Runnable> queryProcessQueue = new PriorityBlockingQueue<>(QUERY_QUEUE_CAPACITY);
-        queryExecutor = builder.executorServiceBuilder.apply(configuration, queryProcessQueue);
+        queryExecutor = builder.queryExecutorServiceBuilder.apply(configuration, queryProcessQueue);
+        PriorityBlockingQueue<Runnable> queryResponseProcessQueue = new PriorityBlockingQueue<>(QUERY_QUEUE_CAPACITY);
+        queryResponseExecutor = builder.queryResponseExecutorServiceBuilder.apply(configuration, queryResponseProcessQueue);
         localSegmentAdapter = new LocalSegmentAdapter();
         this.localSegmentShortCut = builder.localSegmentShortCut;
     }
@@ -186,21 +189,22 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             StreamingQueryMessage<Q, R> queryWithContext = spanFactory.propagateContext(query);
             int priority = priorityCalculator.determinePriority(queryWithContext);
             AtomicReference<Scheduler> scheduler = new AtomicReference<>(PriorityTaskSchedulers.forPriority(
-                    queryExecutor,
+                    queryResponseExecutor,
                     priority,
                     TASK_SEQUENCE));
-            return Mono.fromSupplier(this::registerStreamingQueryActivity).flatMapMany(
-                    activity -> Mono.just(dispatchInterceptors.intercept(queryWithContext))
+            return Mono.fromSupplier(this::registerStreamingQueryActivity)
+                    .flatMapMany(activity ->
+                            Mono.just(dispatchInterceptors.intercept(queryWithContext))
                                     .flatMapMany(intercepted -> {
-                                                     if (shouldRunQueryLocally(intercepted.getQueryName())) {
-                                                         return localSegment.streamingQuery(intercepted);
-                                                     }
-                                                     return Mono.just(serializeStreaming(intercepted, priority))
-                                                                .flatMapMany(queryRequest -> new ResultStreamPublisher<>(
-                                                                        () -> sendRequest(intercepted, queryRequest)))
-                                                                .concatMap(queryResponse -> deserialize(intercepted,
-                                                                                                        queryResponse));
-                                                 }
+                                                if (shouldRunQueryLocally(intercepted.getQueryName())) {
+                                                    return localSegment.streamingQuery(intercepted);
+                                                }
+                                                return Mono.just(serializeStreaming(intercepted, priority))
+                                                        .flatMapMany(queryRequest -> new ResultStreamPublisher<>(
+                                                                () -> sendRequest(intercepted, queryRequest)))
+                                                        .concatMap(queryResponse -> deserialize(intercepted,
+                                                                queryResponse));
+                                            }
                                     )
                                     .publishOn(scheduler.get())
                                     .doOnError(span::recordException)
@@ -295,7 +299,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                                                                                    queryMessage.getResponseType(),
                                                                                    responseTaskSpan);
 
-                    result.onAvailable(() -> queryExecutor.execute(new PriorityRunnable(
+                    result.onAvailable(() -> queryResponseExecutor.execute(new PriorityRunnable(
                             responseProcessingTask,
                             priority,
                             TASK_SEQUENCE.incrementAndGet())));
@@ -578,8 +582,10 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
         private QueryPriorityCalculator priorityCalculator = QueryPriorityCalculator.defaultQueryPriorityCalculator();
         private TargetContextResolver<? super QueryMessage<?, ?>> targetContextResolver =
                 q -> configuration.getContext();
-        private ExecutorServiceBuilder executorServiceBuilder =
+        private ExecutorServiceBuilder queryExecutorServiceBuilder =
                 ExecutorServiceBuilder.defaultQueryExecutorServiceBuilder();
+        private ExecutorServiceBuilder queryResponseExecutorServiceBuilder =
+                ExecutorServiceBuilder.defaultQueryResponseExecutorServiceBuilder();
         private String defaultContext;
         private QueryBusSpanFactory spanFactory = DefaultQueryBusSpanFactory.builder()
                                                                             .spanFactory(NoOpSpanFactory.INSTANCE)
@@ -701,11 +707,56 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
          * Sets the {@link ExecutorServiceBuilder} which builds an {@link ExecutorService} based on a given
          * {@link AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used
          * to process incoming queries with. Defaults to a {@link ThreadPoolExecutor}, using the
-         * {@link AxonServerConfiguration#getQueryThreads()} for the pool size, a keep-alive-time of {@code 100ms}, the
-         * given BlockingQueue as the work queue and an {@link AxonThreadFactory}.
+         * {@link AxonServerConfiguration#getQueryThreads()} for the pool size, the
+         * given BlockingQueue as the work queue, and an {@link AxonThreadFactory}.
          * <p/>
          * Note that it is highly recommended to use the given BlockingQueue if you are to provide you own
-         * {@code executorServiceBuilder}, as it ensure the query's priority is taken into consideration. Defaults to
+         * {@code executorServiceBuilder}, as it ensures the query's priority is taken into consideration. Defaults to
+         * {@link ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}.
+         *
+         * @param executorServiceBuilder an {@link ExecutorServiceBuilder} used to build an {@link ExecutorService}
+         *                               based on the {@link AxonServerConfiguration} and a {@link BlockingQueue}
+         * @return the current Builder instance, for fluent interfacing
+         * @deprecated in favor of using the {@link #queryExecutorServiceBuilder(ExecutorServiceBuilder)} method
+         */
+        @Deprecated
+        @SuppressWarnings("unused")
+        public Builder executorServiceBuilder(ExecutorServiceBuilder executorServiceBuilder) {
+            return queryExecutorServiceBuilder(executorServiceBuilder);
+        }
+
+        /**
+         * Sets the {@link ExecutorServiceBuilder} which builds an {@link ExecutorService} based on a given
+         * {@link AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used
+         * to process incoming queries with. Defaults to a {@link ThreadPoolExecutor}, using the
+         * {@link AxonServerConfiguration#getQueryThreads()} for the pool size, the
+         * given BlockingQueue as the work queue, and an {@link AxonThreadFactory}.
+         * <p/>
+         * Note that it is highly recommended to use the given BlockingQueue if you are to provide you own
+         * {@code executorServiceBuilder}, as it ensures the query's priority is taken into consideration. Defaults to
+         * {@link ExecutorServiceBuilder#defaultQueryResponseExecutorServiceBuilder()}.
+         *
+         * @param executorServiceBuilder an {@link ExecutorServiceBuilder} used to build an {@link ExecutorService}
+         *                               based on the {@link AxonServerConfiguration} and a {@link BlockingQueue}
+         * @return the current Builder instance, for fluent interfacing
+         */
+        @SuppressWarnings("unused")
+        public Builder queryExecutorServiceBuilder(ExecutorServiceBuilder executorServiceBuilder) {
+            assertNonNull(executorServiceBuilder, "ExecutorServiceBuilder may not be null");
+            this.queryExecutorServiceBuilder = executorServiceBuilder;
+            return this;
+        }
+
+
+        /**
+         * Sets the {@link ExecutorServiceBuilder} which builds an {@link ExecutorService} based on a given
+         * {@link AxonServerConfiguration} and {@link BlockingQueue} of {@link Runnable}. This ExecutorService is used
+         * to process incoming query responses with. Defaults to a {@link ThreadPoolExecutor}, using the
+         * {@link AxonServerConfiguration#getQueryResponseThreads()} for the pool size, the given BlockingQueue as the
+         * work queue, and an {@link AxonThreadFactory}.
+         * <p/>
+         * Note that it is highly recommended to use the given BlockingQueue if you are to provide you own
+         * {@code executorServiceBuilder}, as it ensures the query's priority is taken into consideration. Defaults to
          * {@link ExecutorServiceBuilder#defaultQueryExecutorServiceBuilder()}.
          *
          * @param executorServiceBuilder an {@link ExecutorServiceBuilder} used to build an {@link ExecutorService}
@@ -713,11 +764,12 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
          * @return the current Builder instance, for fluent interfacing
          */
         @SuppressWarnings("unused")
-        public Builder executorServiceBuilder(ExecutorServiceBuilder executorServiceBuilder) {
+        public Builder queryResponseExecutorServiceBuilder(ExecutorServiceBuilder executorServiceBuilder) {
             assertNonNull(executorServiceBuilder, "ExecutorServiceBuilder may not be null");
-            this.executorServiceBuilder = executorServiceBuilder;
+            this.queryResponseExecutorServiceBuilder = executorServiceBuilder;
             return this;
         }
+
 
         /**
          * Sets the default context for this event store to connect to.

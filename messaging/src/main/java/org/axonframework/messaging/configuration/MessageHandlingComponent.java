@@ -20,14 +20,12 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlerRegistry;
 import org.axonframework.commandhandling.CommandHandlingComponent;
-import org.axonframework.common.CollectionUtils;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.queryhandling.QueryHandler;
 import org.axonframework.queryhandling.QueryHandlingComponent;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -89,9 +87,12 @@ public interface MessageHandlingComponent
                                                @Nonnull MessageHandler handler) {
         switch (handler) {
             case MessageHandlingComponent component:
-                component.supportedCommands().forEach(command -> subscribe(command, (CommandHandler) component));
-                component.supportedEvents().forEach(command -> subscribe(command, (EventHandler) component));
-                component.supportedQueries().forEach(command -> subscribe(command, (QueryHandler) component));
+                component.supportedCommands()
+                         .forEach(commandName -> subscribe(commandName, (CommandHandler) component));
+                component.supportedEvents()
+                         .forEach(eventName -> subscribe(eventName, (EventHandler) component));
+                component.supportedQueries()
+                         .forEach(queryName -> subscribe(queryName, (QueryHandler) component));
                 break;
             case CommandHandler commandHandler:
                 subscribe(name, commandHandler);
@@ -105,6 +106,27 @@ public interface MessageHandlingComponent
             default:
                 throw new IllegalStateException("Unexpected value: " + handler);
         }
+        return this;
+    }
+
+    /**
+     * Subscribe the given {@code handlingComponent} with this component.
+     * <p>
+     * Typically invokes {@link #subscribe(Set, CommandHandler)}, {@link #subscribe(QualifiedName, EventHandler)}, and
+     * {@link #subscribe(QualifiedName, QueryHandler)}, using the {@link CommandHandlingComponent#supportedCommands()},
+     * {@link EventHandlingComponent#supportedEvents()}, and {@link QueryHandlingComponent#supportedQueries()}
+     * respectively as the set of compatible {@link QualifiedName names} the component in question can deal with.
+     *
+     * @param handlingComponent The message handling component instance to subscribe with this component.
+     * @return This component for fluent interfacing.
+     */
+    default MessageHandlingComponent subscribe(@Nonnull MessageHandlingComponent handlingComponent) {
+        handlingComponent.supportedCommands()
+                         .forEach(commandName -> subscribe(commandName, (CommandHandler) handlingComponent));
+        handlingComponent.supportedEvents()
+                         .forEach(eventName -> subscribe(eventName, (EventHandler) handlingComponent));
+        handlingComponent.supportedQueries()
+                         .forEach(queryName -> subscribe(queryName, (QueryHandler) handlingComponent));
         return this;
     }
 
@@ -136,18 +158,5 @@ public interface MessageHandlingComponent
                                                @Nonnull QueryHandler queryHandler) {
         names.forEach(name -> subscribe(name, queryHandler));
         return this;
-    }
-
-    /**
-     * All supported {@link org.axonframework.messaging.Message messages}, referenced through a {@link QualifiedName}.
-     *
-     * @return All supported {@link org.axonframework.messaging.Message messages}, referenced through a
-     * {@link QualifiedName}.
-     */
-    default Set<QualifiedName> supportedMessages() {
-        Set<QualifiedName> supportedCommandsAndEvents = CollectionUtils.merge(supportedCommands(),
-                                                                              supportedEvents(),
-                                                                              HashSet::new);
-        return CollectionUtils.merge(supportedCommandsAndEvents, supportedQueries(), HashSet::new);
     }
 }
