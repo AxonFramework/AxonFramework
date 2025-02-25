@@ -19,16 +19,11 @@ package org.axonframework.modelling.command;
 import org.axonframework.commandhandling.CommandHandlerRegistry;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import javax.annotation.Nonnull;
 
 /**
- * Interface describing a registry of {@link StatefulCommandHandler StatefulCommandHandlers} belonging to a single
- * component. During handling of commands, the stateful command handlers can access a model through a {@link ModelContainer}.
- * That container is filled based on the models registered to this registry through the {@link #registerModel(String, Class, Function, ModelLoader)}
+ * TODO
  *
  * @param <SELF> the type of the registry itself
  * @author Mitchell Herrijgers
@@ -47,72 +42,4 @@ public interface StatefulCommandHandlerRegistry<SELF extends StatefulCommandHand
      * @return This registry for fluent interfacing.
      */
     SELF subscribe(@Nonnull QualifiedName name, @Nonnull StatefulCommandHandler commandHandler);
-
-
-    /**
-     * Registers a model that can be resolved for registered {@link StatefulCommandHandler StatefulCommandHandlers}.
-     * Will register this model under the simple name of the given {@code modelClass}. As each combination of a
-     * {@code name} and {@code modelClass} can only be registered once, use {@link #registerModel(String, Class, Function, ModelLoader)}
-     * if you have need for multiple models of the same type to be registered.
-     *
-     * @param modelClass        The class of the model to register
-     * @param commandIdResolver The function to resolve the identifier of the model based on a command. Returning
-     *                          {@code null} from this function will result in an exception when trying to load this
-     *                          model.
-     * @param loadFunction      The function to load the model based on the identifier and the
-     *                          {@link ProcessingContext}.
-     * @param <ID>              The type of the identifier of the model
-     * @param <T>               The type of the model
-     * @return This registry for fluent interfacing
-     */
-    default <ID, T> SELF registerModel(
-            Class<T> modelClass,
-            Function<CommandMessage<?>, ID> commandIdResolver,
-            ModelLoader<ID, T> loadFunction
-    ) {
-        return registerModel(modelClass.getSimpleName(), modelClass, commandIdResolver, loadFunction);
-    }
-
-    /**
-     * Registers a model that can be resolved for registered {@link StatefulCommandHandler StatefulCommandHandlers}.
-     * Each {@code name} and {@code modelClass} combination can only be registered once.
-     *
-     * @param name              The name of the model to register
-     * @param modelClass        The class of the model to register
-     * @param commandIdResolver The function to resolve the identifier of the model based on a command. Returning
-     *                          {@code null} from this function will result in an exception when trying to load this
-     *                          model.
-     * @param loadFunction      The function to load the model based on the identifier and the
-     *                          {@link ProcessingContext}.
-     * @param <ID>              The type of the identifier of the model
-     * @param <T>               The type of the model
-     * @return This registry for fluent interfacing
-     */
-    <ID, T> SELF registerModel(String name,
-                               Class<T> modelClass,
-                               Function<CommandMessage<?>, ID> commandIdResolver,
-                               ModelLoader<ID, T> loadFunction
-    );
-
-    /**
-     * Function that can load a model based on an identifier and a {@link ProcessingContext}.
-     *
-     * @param <ID> The type of the identifier of the model
-     * @param <T>  The type of the model
-     *
-     * @since 5.0.0
-     * @author Mitchell Herrijgers
-     */
-    @FunctionalInterface
-    interface ModelLoader<ID, T> {
-
-        /**
-         * Load a model based on the given {@code id} and {@link ProcessingContext}.
-         *
-         * @param id      The identifier of the model to load
-         * @param context The context to load the model in
-         * @return A {@link CompletableFuture} containing the loaded model
-         */
-        CompletableFuture<T> load(ID id, ProcessingContext context);
-    }
 }

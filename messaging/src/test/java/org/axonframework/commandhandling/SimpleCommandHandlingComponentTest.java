@@ -38,7 +38,7 @@ class SimpleCommandHandlingComponentTest {
         AtomicBoolean command3Handled = new AtomicBoolean(false);
 
         CommandHandlingComponent handlingComponent = SimpleCommandHandlingComponent
-                .forComponent("MySuperComponent")
+                .create("MySuperComponent")
                 .subscribe(new AnnotationCommandHandlerAdapter<>(new MyAnnotatedCommandHandler()))
                 .subscribe(
                         new QualifiedName("Command1"),
@@ -49,7 +49,7 @@ class SimpleCommandHandlingComponentTest {
                 )
                 .subscribe(
                         SimpleCommandHandlingComponent
-                                .forComponent("MySubComponent")
+                                .create("MySubComponent")
                                 .subscribe(
                                         new QualifiedName("Command2"),
                                         (command, context) -> {

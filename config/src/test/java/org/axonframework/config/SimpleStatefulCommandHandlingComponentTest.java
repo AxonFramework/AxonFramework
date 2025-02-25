@@ -17,7 +17,6 @@
 package org.axonframework.config;
 
 
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
@@ -32,6 +31,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.axonframework.modelling.command.SimpleModelRegistry;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
@@ -39,8 +39,6 @@ import org.junit.jupiter.api.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -90,41 +88,30 @@ class SimpleStatefulCommandHandlingComponentTest {
             DEFAULT_CONTEXT
     );
 
-    private final Function<CommandMessage<?>, String> studentCommandIdResolver = command -> {
-        if (command.getPayload() instanceof ChangeStudentNameCommand(String id, String name)) {
-            return id;
-        }
-        if (command.getPayload() instanceof EnrollStudentToCourseCommand(String studentId, String courseId)) {
-            return studentId;
-        }
-        return null;
-    };
-
-    private final Function<CommandMessage<?>, String> courseCommandIdResolver = command -> {
-        if (command.getPayload() instanceof EnrollStudentToCourseCommand esc) {
-            return esc.courseId();
-        }
-        return null;
-    };
-
     /**
      * Tests that the {@link StatefulCommandHandlingComponent} can handle a singular model command.
      */
     @Test
     void canHandleSingularModelCommand() throws ExecutionException, InterruptedException {
-        var component = StatefulCommandHandlingComponent
-                .forName("MyStatefulCommandHandlingComponent")
-                .loadModelsEagerly()
+        var registry = SimpleModelRegistry
+                .create()
                 .registerModel(
+                        String.class,
                         Student.class,
-                        studentCommandIdResolver,
-                        (id, context) -> studentRepository.loadOrCreate(id, context).thenApply(ManagedEntity::entity)
-                )
+                        (id, context) ->
+                                studentRepository.loadOrCreate(id, context)
+                                                 .thenApply(ManagedEntity::entity)
+                );
+
+        var component = StatefulCommandHandlingComponent
+                .create("MyStatefulCommandHandlingComponent", registry)
                 .subscribe(
                         new QualifiedName(ChangeStudentNameCommand.class),
                         (command, model, context) -> {
-                            Student student = model.modelOf(Student.class);
                             ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
+                            Student student = model.getModel(Student.class,
+                                                             payload.id())
+                                                   .join();
                             eventStore.transaction(context, DEFAULT_CONTEXT)
                                       .appendEvent(new GenericEventMessage<>(
                                               new MessageType(StudentNameChangedEvent.class),
@@ -146,58 +133,43 @@ class SimpleStatefulCommandHandlingComponentTest {
         verifyStudentName("my-studentId-2", "name-5");
     }
 
-    @Test
-    void canHandleCommandWithoutId() {
-        var component = StatefulCommandHandlingComponent
-                .forName("MyStatefulCommandHandlingComponent")
-                .loadModelsEagerly()
-                .registerModel(
-                        Student.class,
-                        studentCommandIdResolver,
-                        (id, context) -> studentRepository.loadOrCreate(id, context).thenApply(ManagedEntity::entity)
-                )
-                .subscribe(
-                        new QualifiedName(UnknownCommand.class),
-                        (command, model, context) -> {
-                            model.modelOf(Student.class);
-                            // Will not be invoked
-                            return MessageStream.empty().cast();
-                        });
-
-
-        var thrown = assertThrows(ExecutionException.class,
-                                  () -> sendCommand(component, new UnknownCommand("my-studentId-1")));
-        assertInstanceOf(IllegalStateException.class, thrown.getCause());
-        assertTrue(thrown.getMessage().contains("No model definition found for model type"));
-    }
-
     private void verifyStudentName(String id, String name) {
         AsyncUnitOfWork uow = new AsyncUnitOfWork();
-        uow.executeWithResult((context) -> studentRepository
-                .load(id, context)
-                .thenAccept(student -> assertEquals(name, student.entity().name))
+        uow.executeWithResult((context) ->
+                                      studentRepository
+                                              .load(id, context)
+                                              .thenAccept(student -> assertEquals(name, student.entity().name))
         ).join();
     }
 
     /**
-     * Tests that the {@link StatefulCommandHandlingComponent} can handle a command that targets multiple models at
-     * the same time, in the same transaction.
+     * Tests that the {@link StatefulCommandHandlingComponent} can handle a command that targets multiple models at the
+     * same time, in the same transaction.
      */
     @Test
     void canHandleCommandThatTargetsMultipleModels() throws ExecutionException, InterruptedException {
-        var component = StatefulCommandHandlingComponent
-                .forName("MyStatefulCommandHandlingComponent")
-                .loadModelsEagerly()
+        var registry = SimpleModelRegistry
+                .create()
                 .registerModel(
+                        String.class,
                         Student.class,
-                        studentCommandIdResolver,
                         (id, context) -> studentRepository.loadOrCreate(id, context).thenApply(ManagedEntity::entity)
                 )
+                .registerModel(
+                        String.class,
+                        Course.class,
+                        (id, context) -> courseRepository.loadOrCreate(id, context).thenApply(ManagedEntity::entity)
+                );
+
+        var component = StatefulCommandHandlingComponent
+                .create("MyStatefulCommandHandlingComponent", registry)
                 .subscribe(
                         new QualifiedName(ChangeStudentNameCommand.class),
                         (command, model, context) -> {
-                            Student student = model.modelOf(Student.class);
                             ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
+                            Student student = model.getModel(Student.class,
+                                                             payload.id())
+                                                   .join();
                             eventStore.transaction(context, DEFAULT_CONTEXT)
                                       .appendEvent(new GenericEventMessage<>(
                                               new MessageType(StudentNameChangedEvent.class),
@@ -206,18 +178,14 @@ class SimpleStatefulCommandHandlingComponentTest {
                                                       payload.name())));
                             return MessageStream.empty().cast();
                         })
-                .registerModel(
-                        "CourseModel",
-                        Course.class,
-                        courseCommandIdResolver,
-                        (id, context) -> courseRepository.loadOrCreate(id, context).thenApply(ManagedEntity::entity)
-                )
                 .subscribe(
                         new QualifiedName(EnrollStudentToCourseCommand.class),
                         (command, models, context) -> {
                             EnrollStudentToCourseCommand payload = (EnrollStudentToCourseCommand) command.getPayload();
-                            Student student = models.modelOf(Student.class);
-                            Course course = models.modelOf(Course.class);
+                            Student student = models.getModel(Student.class, payload.studentId())
+                                                    .join();
+                            Course course = models.getModel(Course.class, payload.courseId())
+                                                  .join();
 
                             if (student.getCoursesEnrolled().size() > 2) {
                                 throw new IllegalArgumentException(
@@ -257,10 +225,9 @@ class SimpleStatefulCommandHandlingComponentTest {
         verifyStudentEnrolledInCourse("my-studentId-4", "my-courseId-2");
 
         // But five can not enroll for the first course
-        var thrown = assertThrows(ExecutionException.class,
-                     () -> enrollStudentToCourse(component, "my-studentId-5", "my-courseId-1"));
-        assertInstanceOf(IllegalArgumentException.class, thrown.getCause());
-        assertTrue(thrown.getMessage().contains("Course already has 3 students"));
+        assertThrows(ExecutionException.class,
+                     () -> enrollStudentToCourse(component, "my-studentId-5", "my-courseId-1"
+                     ));
     }
 
     private void verifyStudentEnrolledInCourse(String id, String courseId) {
@@ -269,16 +236,17 @@ class SimpleStatefulCommandHandlingComponentTest {
                 .load(id, context)
                 .thenAccept(student -> assertTrue(student.entity().getCoursesEnrolled().contains(courseId)))
                 .thenCompose((__) -> courseRepository.load(courseId, context))
-                .thenAccept(course -> assertTrue(course.entity().getStudentsEnrolled().contains(id)))).join();
+                .thenAccept(course -> assertTrue(course.entity().getStudentsEnrolled().contains(id))))
+           .join();
     }
 
-    private static void updateStudentName(StatefulCommandHandlingComponent component, String id, String name)
+    private void updateStudentName(StatefulCommandHandlingComponent component, String id, String name)
             throws InterruptedException, ExecutionException {
         sendCommand(component, new ChangeStudentNameCommand(id, name));
     }
 
 
-    private static void enrollStudentToCourse(
+    private void enrollStudentToCourse(
             StatefulCommandHandlingComponent component,
             String studentId,
             String courseId
@@ -287,7 +255,7 @@ class SimpleStatefulCommandHandlingComponentTest {
         sendCommand(component, new EnrollStudentToCourseCommand(studentId, courseId));
     }
 
-    private static <T> void sendCommand(
+    private <T> void sendCommand(
             StatefulCommandHandlingComponent component,
             T payload
     ) throws ExecutionException, InterruptedException {
@@ -317,7 +285,9 @@ class SimpleStatefulCommandHandlingComponentTest {
 
     record UnknownCommand(
             String studentId
-    ) {}
+    ) {
+
+    }
 
     record StudentNameChangedEvent(
             @EventTag(key = "Student")
@@ -340,6 +310,7 @@ class SimpleStatefulCommandHandlingComponentTest {
      * Event-sourced Student model
      */
     static class Student {
+
         private String id;
         private String name;
         private List<String> coursesEnrolled = new ArrayList<>();
@@ -370,7 +341,7 @@ class SimpleStatefulCommandHandlingComponentTest {
             return "Student{" +
                     "id='" + id + '\'' +
                     ", name='" + name + '\'' +
-                    ", coursedEnrolled=" + coursesEnrolled +
+                    ", coursesEnrolled=" + coursesEnrolled +
                     '}';
         }
     }

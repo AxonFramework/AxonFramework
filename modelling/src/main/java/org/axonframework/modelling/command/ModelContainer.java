@@ -16,14 +16,14 @@
 
 package org.axonframework.modelling.command;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.Context;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
- * A container of different models that can be accessed by type and name.
- * <p>
- * The combination of type and name should uniquely identify a model within the container. Retrieving a model by type
- * only requires a single model of that type to be present in the container.
+ * A container of different models that can be accessed by the model type and identifier.
+ * The implementation may choose to cache models or retrieve them from a store on each invocation.
  *
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
@@ -33,28 +33,18 @@ import javax.annotation.Nullable;
 public interface ModelContainer {
 
     /**
-     * Retrieve a model of the given {@code modelType} from the container.
-     * <p>
-     * If multiple models of the given type are present in the container, this method will throw an exception. If no
-     * model of the given type is present in the container, this method will throw an exception.
-     *
-     * @param modelType The type of model to retrieve
-     * @param <T>       The type of model to retrieve
-     * @return The model of the given {@code modelType}
+     * The {@link Context.ResourceKey} used to store the {@link ModelContainer} in the {@link org.axonframework.messaging.unitofwork.ProcessingContext}.
      */
-    default <T> T modelOf(@Nonnull Class<T> modelType) {
-        return modelOf(modelType, null);
-    }
+    Context.ResourceKey<ModelContainer> RESOURCE_KEY = Context.ResourceKey.withLabel("ModelContainer");
 
     /**
-     * Retrieve a model of the given {@code modelType} and {@code name} from the container.
-     * <p>
-     * If no model of the given type and name is present in the container, this method will throw an exception.
+     * Retrieves the model from the container of the given {@code modelType} and {@code identifier}.
      *
-     * @param modelType The type of model to retrieve
-     * @param name      The name of the model to retrieve
-     * @param <T>       The type of model to retrieve
-     * @return The model of the given {@code modelType} and {@code name}
+     * @param modelType  The type of model to retrieve
+     * @param identifier The identifier of the model to retrieve
+     * @param <M>        The type of model to retrieve
+     * @return a {@link CompletableFuture} which resolves to the model instance
      */
-    <T> T modelOf(@Nonnull Class<T> modelType, @Nullable String name);
+    @Nonnull
+    <M> CompletableFuture<M> getModel(@Nonnull Class<M> modelType, @Nonnull Object identifier);
 }

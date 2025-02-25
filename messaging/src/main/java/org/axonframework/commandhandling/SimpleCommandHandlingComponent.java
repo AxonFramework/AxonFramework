@@ -19,7 +19,6 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -57,7 +56,7 @@ public class SimpleCommandHandlingComponent implements
      *
      * @param name the name of the component
      */
-    public static SimpleCommandHandlingComponent forComponent(String name) {
+    public static SimpleCommandHandlingComponent create(String name) {
         return new SimpleCommandHandlingComponent(name);
     }
 

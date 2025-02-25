@@ -101,7 +101,9 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
                                            @Nonnull ParameterResolverFactory parameterResolverFactory,
                                            @Nonnull HandlerDefinition handlerDefinition,
                                            @Nonnull MessageTypeResolver messageTypeResolver) {
-        this.handlingComponent = SimpleCommandHandlingComponent.forComponent("AnnotatedCommandHandler");
+        this.handlingComponent = SimpleCommandHandlingComponent.create(
+                "AnnotationCommandHandlerAdapter[%s]".formatted(annotatedCommandHandler.getClass().getName())
+        );
         this.target = requireNonNull(annotatedCommandHandler, "The Annotated Command Handler may not be null");
         this.model = AnnotatedHandlerInspector.inspectType((Class<T>) annotatedCommandHandler.getClass(),
                                                            parameterResolverFactory,
@@ -133,12 +135,11 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
             qualifiedName = new QualifiedName(commandName);
         }
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
-        handlingComponent.subscribe(qualifiedName, (command, ctx) -> {
-            return interceptorChain.handle(command, ctx, target, handler)
-                                   .mapMessage(this::asCommandResultMessage)
-                                   .first()
-                                   .cast();
-        });
+        handlingComponent.subscribe(qualifiedName, (command, ctx) ->
+                interceptorChain.handle(command, ctx, target, handler)
+                                .mapMessage(this::asCommandResultMessage)
+                                .first()
+                                .cast());
     }
 
     @Nonnull
