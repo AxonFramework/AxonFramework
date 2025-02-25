@@ -16,27 +16,27 @@
 
 package org.axonframework.test.utils;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.common.ObjectUtils;
-import org.axonframework.common.Registration;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * CommandBus implementation that does not perform any actions on subscriptions or dispatched commands, but records them
@@ -47,20 +47,29 @@ import javax.annotation.Nullable;
  */
 public class RecordingCommandBus implements CommandBus {
 
-    private final ConcurrentMap<String, MessageHandler<? super CommandMessage<?>, ? extends Message<?>>> subscriptions = new ConcurrentHashMap<>();
+    private final ConcurrentMap<QualifiedName, CommandHandler> subscriptions = new ConcurrentHashMap<>();
     private final List<CommandMessage<?>> dispatchedCommands = new ArrayList<>();
     private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
     @Override
     public CompletableFuture<Message<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                               @Nullable ProcessingContext processingContext) {
+                                                  @Nullable ProcessingContext processingContext) {
         dispatchedCommands.add(command);
         try {
-            return CompletableFuture.completedFuture(asCommandResultMessage(callbackBehavior.handle(command.getPayload(),
-                                                                                                    command.getMetaData())));
+            return CompletableFuture.completedFuture(asCommandResultMessage(
+                    callbackBehavior.handle(command.getPayload(), command.getMetaData())
+            ));
         } catch (Throwable throwable) {
             return CompletableFuture.failedFuture(throwable);
         }
+    }
+
+    @Override
+    public CommandBus subscribe(@Nonnull QualifiedName name,
+                                @Nonnull CommandHandler handler) {
+        CommandHandler commandHandler = Objects.requireNonNull(handler, "Given handler cannot be null.");
+        subscriptions.putIfAbsent(name, commandHandler);
+        return this;
     }
 
     @SuppressWarnings("unchecked")
@@ -73,13 +82,6 @@ public class RecordingCommandBus implements CommandBus {
         }
         MessageType type = new MessageType(ObjectUtils.nullSafeTypeOf(commandResult));
         return new GenericCommandResultMessage<>(type, (R) commandResult);
-    }
-
-    @Override
-    public Registration subscribe(@Nonnull String commandName,
-                                  @Nonnull MessageHandler<? super CommandMessage<?>, ? extends Message<?>> handler) {
-        subscriptions.putIfAbsent(commandName, handler);
-        return () -> subscriptions.remove(commandName, handler);
     }
 
     /**
@@ -102,8 +104,7 @@ public class RecordingCommandBus implements CommandBus {
      * @param commandHandler The command handler to verify the subscription for
      * @return {@code true} if the handler is subscribed, otherwise {@code false}.
      */
-    public boolean isSubscribed(
-            MessageHandler<? super CommandMessage<?>, ? extends Message<?>> commandHandler) {
+    public boolean isSubscribed(CommandHandler commandHandler) {
         return subscriptions.containsValue(commandHandler);
     }
 
@@ -115,8 +116,8 @@ public class RecordingCommandBus implements CommandBus {
      * @param commandHandler The command handler to verify the subscription for
      * @return {@code true} if the handler is subscribed, otherwise {@code false}.
      */
-    public boolean isSubscribed(String commandName,
-                                MessageHandler<? super CommandMessage<?>, ? extends Message<?>> commandHandler) {
+    public boolean isSubscribed(QualifiedName commandName,
+                                CommandHandler commandHandler) {
         return subscriptions.containsKey(commandName) && subscriptions.get(commandName).equals(commandHandler);
     }
 
@@ -125,7 +126,7 @@ public class RecordingCommandBus implements CommandBus {
      *
      * @return a Map will all Command Names and their Command Handler
      */
-    public Map<String, MessageHandler<? super CommandMessage<?>, ? extends Message<?>>> getSubscriptions() {
+    public Map<QualifiedName, CommandHandler> getSubscriptions() {
         return subscriptions;
     }
 
@@ -149,7 +150,7 @@ public class RecordingCommandBus implements CommandBus {
     }
 
     @Override
-    public void describeTo(@NotNull ComponentDescriptor descriptor) {
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("subscriptions", subscriptions);
         descriptor.describeProperty("dispatchedCommands", dispatchedCommands);
         descriptor.describeProperty("callbackBehavior", callbackBehavior);

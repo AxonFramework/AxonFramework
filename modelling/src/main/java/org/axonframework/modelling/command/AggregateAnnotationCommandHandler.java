@@ -17,7 +17,7 @@
 package org.axonframework.modelling.command;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
@@ -28,7 +28,6 @@ import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
-import org.axonframework.common.Registration;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandler;
@@ -52,7 +51,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -84,13 +82,13 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     private final CommandTargetResolver commandTargetResolver;
     // TODO replace these MessageHandlers for MessageHandlingMembers, as the latter dictate the use of annotations
     private final List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlers;
-    private final Set<String> supportedCommandNames;
+    private final Set<QualifiedName> supportedCommands;
     private final Map<String, Set<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>>> supportedCommandsByName;
     private final Map<Class<? extends T>, CreationPolicyAggregateFactory<T>> factoryPerType;
     private final MessageTypeResolver messageTypeResolver;
 
     /**
-     * Instantiate a Builder to be able to create a {@link AggregateAnnotationCommandHandler}.
+     * Instantiate a Builder to be able to create a {@code AggregateAnnotationCommandHandler}.
      * <p>
      * The {@link CommandTargetResolver} is defaulted to a {@link AnnotationCommandTargetResolver}. The
      * {@link Repository} is a <b>hard requirement</b> and as such should be provided. Next to that, this Builder's goal
@@ -99,15 +97,15 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      * {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the
      * AggregateModel <b>or</b> the {@code aggregateType} should be provided.
      *
-     * @param <T> the type of aggregate this {@link AggregateAnnotationCommandHandler} handles commands for
-     * @return a Builder to be able to create a {@link AggregateAnnotationCommandHandler}
+     * @param <T> the type of aggregate this {@code AggregateAnnotationCommandHandler} handles commands for
+     * @return a Builder to be able to create a {@code AggregateAnnotationCommandHandler}
      */
     public static <T> Builder<T> builder() {
         return new Builder<>();
     }
 
     /**
-     * Instantiate a {@link AggregateAnnotationCommandHandler} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@code AggregateAnnotationCommandHandler} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the {@link Repository} and {@link CommandTargetResolver} are not {@code null}, and will throw an
      * {@link AxonConfigurationException} if either of them is {@code null}. Next to that, the provided Builder's goal
@@ -117,13 +115,13 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      * AggregateModel <b>or</b> the {@code aggregateType} should be provided. An AxonConfigurationException is thrown if
      * this criteria is not met.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link AggregateAnnotationCommandHandler} instance
+     * @param builder the {@link Builder} used to instantiate a {@code AggregateAnnotationCommandHandler} instance
      */
     protected AggregateAnnotationCommandHandler(Builder<T> builder) {
         builder.validate();
         this.repository = builder.repository;
         this.commandTargetResolver = builder.commandTargetResolver;
-        this.supportedCommandNames = new HashSet<>();
+        this.supportedCommands = new HashSet<>();
         this.supportedCommandsByName = new HashMap<>();
         this.messageTypeResolver = builder.messageTypeResolver;
         AggregateModel<T> aggregateModel = builder.buildAggregateModel();
@@ -153,23 +151,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         return typeToFactory;
     }
 
-    /**
-     * Subscribe this command handler to the given {@code commandBus}. The command handler will be subscribed for each
-     * of the supported commands.
-     *
-     * @param commandBus The command bus instance to subscribe to
-     * @return A handle that can be used to unsubscribe
-     */
-    public Registration subscribe(CommandBus commandBus) {
-        List<Registration> subscriptions = supportedCommandsByName
-                .entrySet()
-                .stream()
-                .flatMap(entry -> entry.getValue().stream().map(
-                        messageHandler -> commandBus.subscribe(entry.getKey(), messageHandler)
-                ))
-                .filter(Objects::nonNull)
-                .toList();
-        return () -> subscriptions.stream().map(Registration::cancel).reduce(Boolean::logicalOr).orElse(false);
+    @Override
+    public AggregateAnnotationCommandHandler<T> subscribe(@Nonnull QualifiedName name,
+                                                          @Nonnull CommandHandler commandHandler) {
+        throw new UnsupportedOperationException(
+                "This Command Handling Component does not support direct command handler registration."
+        );
     }
 
     /**
@@ -177,7 +164,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      * of the method and all parameter types. This is an effective override in the hierarchy.
      */
     private List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> initializeHandlers(
-            AggregateModel<T> aggregateModel) {
+            AggregateModel<T> aggregateModel
+    ) {
         List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlersFound = new ArrayList<>();
 
         aggregateModel.allCommandHandlers()
@@ -230,28 +218,22 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
             }
             handlersFound.add(messageHandler);
             supportedCommandsByName.computeIfAbsent(cmh.commandName(), key -> new HashSet<>()).add(messageHandler);
-            supportedCommandNames.add(cmh.commandName());
+            supportedCommands.add(new QualifiedName(cmh.commandName()));
         });
     }
 
+    @Nonnull
     @Override
-    public Object handleSync(CommandMessage<?> commandMessage) throws Exception {
-        return handlers.stream()
-                       .filter(ch -> ch.canHandle(commandMessage))
-                       .findFirst()
-                       .orElseThrow(() -> new NoHandlerForCommandException(commandMessage))
-                       .handleSync(commandMessage);
-    }
-
-    @Override
-    public MessageStream<CommandResultMessage<?>> handle(CommandMessage<?> message,
-                                                         ProcessingContext processingContext) {
+    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+                                                                @Nonnull ProcessingContext processingContext) {
         return handlers.stream()
                        .filter(ch -> ch.canHandle(message))
                        .findFirst()
                        .orElseThrow(() -> new NoHandlerForCommandException(message))
                        .handle(message, processingContext)
-                       .mapMessage(m -> asCommandResultMessage(m, messageTypeResolver::resolve));
+                       .mapMessage(m -> asCommandResultMessage(m, messageTypeResolver::resolve))
+                       .first()
+                       .cast();
     }
 
     @SuppressWarnings("unchecked")
@@ -269,7 +251,6 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         return new GenericCommandResultMessage<>(type, (R) commandResult);
     }
 
-    @Override
     public boolean canHandle(CommandMessage<?> message) {
         return handlers.stream()
                        .anyMatch(ch -> ch.canHandle(message));
@@ -291,8 +272,8 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     }
 
     @Override
-    public Set<String> supportedCommandNames() {
-        return supportedCommandNames;
+    public Set<QualifiedName> supportedCommands() {
+        return Set.copyOf(supportedCommands);
     }
 
     /**
@@ -423,10 +404,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         }
 
         /**
-         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when dispatching {@link CommandMessage CommandMessages}.
-         * If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
+         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when dispatching
+         * {@link CommandMessage CommandMessages}. If not set, a {@link ClassBasedMessageTypeResolver} is used by
+         * default.
          *
-         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for {@link CommandMessage CommandMessages}.
+         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for
+         *                            {@link CommandMessage CommandMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder<T> messageNameResolver(MessageTypeResolver messageTypeResolver) {

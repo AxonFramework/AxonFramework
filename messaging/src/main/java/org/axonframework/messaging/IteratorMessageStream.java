@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,9 @@
 package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.FutureUtils;
 
 import java.util.Iterator;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * A {@link MessageStream} implementation using an {@link Iterator} as the source for {@link Entry entries}.
@@ -42,13 +40,6 @@ class IteratorMessageStream<M extends Message<?>> implements MessageStream<M> {
      */
     IteratorMessageStream(@Nonnull Iterator<? extends Entry<M>> source) {
         this.source = source;
-    }
-
-    @Override
-    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
-        return source.hasNext()
-                ? CompletableFuture.completedFuture(source.next())
-                : FutureUtils.emptyCompletedFuture();
     }
 
     @Override

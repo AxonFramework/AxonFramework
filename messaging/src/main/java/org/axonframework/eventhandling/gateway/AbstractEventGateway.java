@@ -21,18 +21,23 @@ import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.*;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.MetaData;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import static java.util.Arrays.asList;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Abstract implementation of an EventGateway, which handles the dispatch interceptors. The
- * actual publishing of events is left to the subclasses.
+ * Abstract implementation of an EventGateway, which handles the dispatch interceptors. The actual publishing of events
+ * is left to the subclasses.
  *
  * @author Bert Laverman
  * @since 4.1
@@ -46,8 +51,8 @@ public abstract class AbstractEventGateway {
     /**
      * Instantiate an {@link AbstractEventGateway} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link EventBus} is not {@code null} and throws an {@link AxonConfigurationException}
-     * if it is.
+     * Will assert that the {@link EventBus} is not {@code null} and throws an {@link AxonConfigurationException} if it
+     * is.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AbstractEventGateway} instance
      */
@@ -65,6 +70,19 @@ public abstract class AbstractEventGateway {
      */
     protected void publish(@Nonnull Object event) {
         this.eventBus.publish(processInterceptors(asEventMessage(event)));
+    }
+
+    /**
+     * Publishes (dispatches) the given {@link List} of {@code events}.
+     *
+     * @param events The {@link List} of events to publish.
+     */
+    protected void publishAll(@Nonnull List<?> events) {
+        List<EventMessage<?>> interceptedEvents = events.stream()
+                                                        .map(this::asEventMessage)
+                                                        .map(this::processInterceptors)
+                                                        .collect(Collectors.toList());
+        this.eventBus.publish(interceptedEvents);
     }
 
     @SuppressWarnings("unchecked")
@@ -121,8 +139,8 @@ public abstract class AbstractEventGateway {
     /**
      * Abstract Builder class to instantiate {@link AbstractEventGateway} implementations.
      * <p>
-     * The {@code dispatchInterceptors} are defaulted to an empty list.
-     * The {@link EventBus} is a <b>hard requirement</b> and as such should be provided.
+     * The {@code dispatchInterceptors} are defaulted to an empty list. The {@link EventBus} is a <b>hard
+     * requirement</b> and as such should be provided.
      */
     public abstract static class Builder {
 
@@ -144,8 +162,8 @@ public abstract class AbstractEventGateway {
         }
 
         /**
-         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link EventMessage}s.
-         * Are invoked when an event is being dispatched.
+         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link EventMessage}s. Are invoked when an
+         * event is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when an event is being dispatched
          * @return the current Builder instance, for fluent interfacing
@@ -156,8 +174,8 @@ public abstract class AbstractEventGateway {
         }
 
         /**
-         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link EventMessage}s.
-         * Are invoked when an event is being dispatched.
+         * Sets the {@link List} of {@link MessageDispatchInterceptor}s for {@link EventMessage}s. Are invoked when an
+         * event is being dispatched.
          *
          * @param dispatchInterceptors which are invoked when an event is being dispatched
          * @return the current Builder instance, for fluent interfacing
@@ -171,10 +189,11 @@ public abstract class AbstractEventGateway {
         }
 
         /**
-         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when publishing {@link EventMessage EventMessages}.
-         * If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
+         * Sets the {@link MessageTypeResolver} used to resolve the {@link QualifiedName} when publishing
+         * {@link EventMessage EventMessages}. If not set, a {@link ClassBasedMessageTypeResolver} is used by default.
          *
-         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for {@link EventMessage EventMessages}.
+         * @param messageTypeResolver The {@link MessageTypeResolver} used to provide the {@link QualifiedName} for
+         *                            {@link EventMessage EventMessages}.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder messageNameResolver(MessageTypeResolver messageTypeResolver) {

@@ -6,3 +6,4 @@
 ** xref:messaging-concepts:supported-parameters-annotated-handlers.adoc[]
 ** xref:messaging-concepts:exception-handling.adoc[]
 ** xref:messaging-concepts:unit-of-work.adoc[]
+** xref:messaging-concepts:timeouts.adoc[]

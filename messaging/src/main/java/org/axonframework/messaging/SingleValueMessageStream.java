@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,12 @@ import java.util.function.Function;
  * A {@link MessageStream} implementation using a single {@link Entry entry} or {@link CompletableFuture} completing to
  * an entry as the source.
  *
- * @param <M> The type of {@link Message} contained in the {@link Entry entries} of this stream.
+ * @param <M> The type of {@link Message} contained in the singular {@link Entry} of this stream.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M> {
+class SingleValueMessageStream<M extends Message<?>> implements MessageStream.Single<M> {
 
     private final CompletableFuture<Entry<M>> source;
     private final AtomicBoolean read = new AtomicBoolean(false);
@@ -64,20 +64,27 @@ class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M>
     }
 
     @Override
-    public CompletableFuture<Entry<M>> firstAsCompletableFuture() {
+    public CompletableFuture<Entry<M>> asCompletableFuture() {
         return source;
     }
 
     @Override
     public Flux<Entry<M>> asFlux() {
-        return Flux.from(Mono.fromFuture(source));
+        return Flux.from(asMono());
+    }
+
+    @Override
+    public Mono<Entry<M>> asMono() {
+        return Mono.fromFuture(source);
     }
 
     @Override
     public Optional<Entry<M>> next() {
-        Entry<M> current = source.getNow(null);
-        if (current != null && !read.getAndSet(true)) {
-            return Optional.of(current);
+        if (source.isDone() && !source.isCompletedExceptionally()) {
+            Entry<M> current = source.getNow(null);
+            if (read.compareAndSet(false, true)) {
+                return Optional.of(current);
+            }
         }
         return Optional.empty();
     }
@@ -87,9 +94,7 @@ class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M>
         if (source.isDone()) {
             callback.run();
         } else {
-            source.whenComplete((entry, throwable) -> {
-                callback.run();
-            });
+            source.whenComplete((entry, throwable) -> callback.run());
         }
     }
 
@@ -116,7 +121,7 @@ class SingleValueMessageStream<M extends Message<?>> implements MessageStream<M>
     }
 
     @Override
-    public <RM extends Message<?>> MessageStream<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
+    public <RM extends Message<?>> Single<RM> map(@Nonnull Function<Entry<M>, Entry<RM>> mapper) {
         return new SingleValueMessageStream<>(source.thenApply(mapper));
     }
 

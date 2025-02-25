@@ -1,4 +1,6 @@
+org.axonframework.springboot.autoconfig.AvroSerializerAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonAutoConfiguration
+org.axonframework.springboot.autoconfig.AxonTimeoutAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonDbSchedulerAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonJobRunrAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration
@@ -7,6 +9,7 @@ org.axonframework.springboot.autoconfig.AxonServerBusAutoConfiguration
 org.axonframework.springboot.autoconfig.AxonTracingAutoConfiguration
 org.axonframework.springboot.autoconfig.EventProcessingAutoConfiguration
 org.axonframework.springboot.autoconfig.InfraConfiguration
+org.axonframework.springboot.autoconfig.InterceptorAutoConfiguration
 org.axonframework.springboot.autoconfig.JdbcAutoConfiguration
 org.axonframework.springboot.autoconfig.JpaAutoConfiguration
 org.axonframework.springboot.autoconfig.JpaEventStoreAutoConfiguration
@@ -16,5 +19,6 @@ org.axonframework.springboot.autoconfig.NoOpTransactionAutoConfiguration
 org.axonframework.springboot.autoconfig.ObjectMapperAutoConfiguration
 org.axonframework.springboot.autoconfig.CBORMapperAutoConfiguration
 org.axonframework.springboot.autoconfig.OpenTelemetryAutoConfiguration
+org.axonframework.springboot.autoconfig.SecurityAutoConfiguration
 org.axonframework.springboot.autoconfig.TransactionAutoConfiguration
 org.axonframework.springboot.autoconfig.XStreamAutoConfiguration

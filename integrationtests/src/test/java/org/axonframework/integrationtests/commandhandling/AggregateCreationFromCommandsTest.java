@@ -152,7 +152,7 @@ class AggregateCreationFromCommandsTest {
                 .aggregateType(StubAggregateForCreation.class)
                 .aggregateModel(new AnnotatedAggregateMetaModelFactory().createModel(StubAggregateForCreation.class))
                 .build();
-        ch.subscribe(commandBus);
+        commandBus.subscribe(ch);
     }
 
     private void createAndRegisterCommandHandlerWithFactory() {
@@ -166,6 +166,6 @@ class AggregateCreationFromCommandsTest {
                 })
                 .aggregateModel(new AnnotatedAggregateMetaModelFactory().createModel(StubAggregateForCreation.class))
                 .build();
-        ch.subscribe(commandBus);
+        commandBus.subscribe(ch);
     }
 }

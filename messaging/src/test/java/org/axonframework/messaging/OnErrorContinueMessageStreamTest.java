@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging;
 
+import org.junit.jupiter.api.*;
+
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -29,7 +31,20 @@ class OnErrorContinueMessageStreamTest extends MessageStreamTest<Message<String>
 
     @Override
     MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
-        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages), error -> MessageStream.empty());
+        return new OnErrorContinueMessageStream<>(MessageStream.fromIterable(messages),
+                                                  error -> MessageStream.empty().cast());
+    }
+
+    @Override
+    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+        Assumptions.abort("OnErrorContinueMessageStream doesn't support explicit single-value streams");
+        return null;
+    }
+
+    @Override
+    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+        Assumptions.abort("OnErrorContinueMessageStream doesn't support explicitly empty streams");
+        return null;
     }
 
     @Override

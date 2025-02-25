@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging;
 
+import org.junit.jupiter.api.*;
+
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -33,6 +35,18 @@ class CompletionCallbackMessageStreamTest extends MessageStreamTest<Message<Stri
     @Override
     MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
         return new CompletionCallbackMessageStream<>(MessageStream.fromIterable(messages), NO_OP_COMPLETION_CALLBACK);
+    }
+
+    @Override
+    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+        Assumptions.abort("CompletionCallbackMessageStream does not support explicit single-item streams");
+        return null;
+    }
+
+    @Override
+    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+        Assumptions.abort("CompletionCallbackMessageStream does not support explicit zero-item streams");
+        return null;
     }
 
     @Override

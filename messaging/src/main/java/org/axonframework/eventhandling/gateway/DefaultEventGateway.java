@@ -65,7 +65,7 @@ public class DefaultEventGateway extends AbstractEventGateway implements EventGa
 
     @Override
     public void publish(@Nonnull List<?> events) {
-        events.forEach(this::publish);
+        this.publishAll(events);
     }
 
     /**
