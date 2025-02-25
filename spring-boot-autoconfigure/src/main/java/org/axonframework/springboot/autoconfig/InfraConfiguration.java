@@ -102,7 +102,7 @@ public class InfraConfiguration {
 
         List<ConfigurerModule> sortedList = new ArrayList<>(configurerModules);
         sortedList.sort(Comparator.comparing(ConfigurerModule::order)
-                                  .thenComparing(AnnotationAwareOrderComparator.INSTANCE));
+                .thenComparing(AnnotationAwareOrderComparator.INSTANCE));
         sortedList.forEach(c -> c.configureModule(configurer));
         return configurer;
     }

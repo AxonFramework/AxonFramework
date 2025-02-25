@@ -15,6 +15,7 @@
  */
 package org.axonframework.axonserver.connector.event.axon;
 
+import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.common.Registration;
 import org.axonframework.config.Configuration;
@@ -27,7 +28,9 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 /**
- * A {@link SubscribableMessageSource} that receives event from a persistent stream from Axon Server.
+ * A {@link SubscribableMessageSource} that receives event from a persistent stream from Axon Server. The persistent
+ * stream is identified by a unique name, which serves as an identifier for the {@link PersistentStream} connection with
+ * Axon Server. Using the same name for different instances will overwrite the existing connection.
  *
  * @author Marc Gathier
  * @since 4.10.0
@@ -35,11 +38,18 @@ import javax.annotation.Nonnull;
 public class PersistentStreamMessageSource implements SubscribableMessageSource<EventMessage<?>> {
 
     private final PersistentStreamConnection persistentStreamConnection;
+    private final String name;
+
+    private Consumer<List<? extends EventMessage<?>>> consumer = NO_OP_CONSUMER;
+    private static final Consumer<List<? extends EventMessage<?>>> NO_OP_CONSUMER = events -> {
+    };
 
     /**
      * Instantiates a {@code PersistentStreamMessageSource}.
      *
-     * @param name                       The name of the event processor.
+     * @param name                       The name of the persistent stream. It's a unique identifier of the
+     *                                   {@link PersistentStream} connection with Axon Sever. Usage of the same name
+     *                                   will overwrite the existing connection.
      * @param configuration              Global configuration of Axon components.
      * @param persistentStreamProperties Properties for the persistent stream.
      * @param scheduler                  Scheduler thread pool to schedule tasks.
@@ -57,7 +67,9 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
     /**
      * Instantiates a {@code PersistentStreamMessageSource}.
      *
-     * @param name                       The name of the event processor.
+     * @param name                       The name of the persistent stream. It's a unique identifier of the
+     *                                   {@link PersistentStream} connection with Axon Sever. Usage of the same name
+     *                                   will overwrite the existing connection.
      * @param configuration              Global configuration of Axon components.
      * @param persistentStreamProperties Properties for the persistent stream.
      * @param scheduler                  Scheduler thread pool to schedule tasks.
@@ -70,6 +82,7 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
                                          ScheduledExecutorService scheduler,
                                          int batchSize,
                                          String context) {
+        this.name = name;
         persistentStreamConnection = new PersistentStreamConnection(name,
                                                                     configuration,
                                                                     persistentStreamProperties,
@@ -80,10 +93,27 @@ public class PersistentStreamMessageSource implements SubscribableMessageSource<
 
     @Override
     public Registration subscribe(@Nonnull Consumer<List<? extends EventMessage<?>>> consumer) {
-        persistentStreamConnection.open(consumer);
+        synchronized (this) {
+            boolean noConsumer = this.consumer.equals(NO_OP_CONSUMER);
+            if (noConsumer) {
+                persistentStreamConnection.open(consumer);
+                this.consumer = consumer;
+            } else {
+                boolean sameConsumer = this.consumer.equals(consumer);
+                if (!sameConsumer) {
+                    throw new IllegalStateException(
+                            String.format(
+                                    "%s: Cannot subscribe to PersistentStreamMessageSource with another consumer: there is already an active subscription.",
+                                    name));
+                }
+            }
+        }
         return () -> {
-            persistentStreamConnection.close();
-            return true;
+            synchronized (this) {
+                persistentStreamConnection.close();
+                this.consumer = NO_OP_CONSUMER;
+                return true;
+            }
         };
     }
 }

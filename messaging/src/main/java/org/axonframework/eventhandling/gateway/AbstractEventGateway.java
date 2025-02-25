@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,12 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import static java.util.Arrays.asList;
@@ -63,6 +65,19 @@ public abstract class AbstractEventGateway {
      */
     protected void publish(@Nonnull Object event) {
         this.eventBus.publish(processInterceptors(asEventMessage(event)));
+    }
+
+    /**
+     * Publishes (dispatches) the given {@link List} of {@code events}.
+     *
+     * @param events The {@link List} of events to publish.
+     */
+    protected void publishAll(@Nonnull List<?> events) {
+        List<EventMessage<?>> interceptedEvents = events.stream()
+                                                        .map(GenericEventMessage::asEventMessage)
+                                                        .map(this::processInterceptors)
+                                                        .collect(Collectors.toList());
+        this.eventBus.publish(interceptedEvents);
     }
 
     /**

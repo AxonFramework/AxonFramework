@@ -15,12 +15,14 @@ This `Serializer` implementation uses https://github.com/FasterXML/jackson[Jacks
 It produces a more compact serialized form, while requiring those classes to stick to Jackson's conventions (or configuration).
 The compact format makes it ideal for events, commands, and queries, as it minimizes the storage space and package size.
 
+The third option provided by the AxonFramework is the `AvroServializer`. The `Serializer` uses https://avro.apache.org/[Apache Avro] to serialize objects into and deserialize from https://avro.apache.org/docs/1.12.0/specification/#binary-encoding[binary single-object-encoded format]. The format is compact, is based on the https://avro.apache.org/docs/1.12.0/specification/[Avro Schema Specification] and is ideal for messaging (serialization of commands, events and queries) and event storage. This serializer is designed to serve as payload `event`/`message` serializer and requires a `delegate` serializer to serialize everything else (here the best choice is `JacksonSerializer`). Since the entire serialization process is based on Apache Avro schema, a schema store is required. The framework provides a local `SchemaStore` which can be pre-filled manually or uses SpringBoot class path scanning to detect  schemas located on the class path.
+
 You may also implement your own serializer simply by creating a class that implements `Serializer` and setting it within Axon's configuration for the desired infrastructure components.
 
 == Serializer Implementations
 
 `Serializers` come in several flavors in Axon Framework and are used for various things.
-Currently, you can choose between the `XStreamSerializer` and `JacksonSerializer` to serialize messages (commands/queries/events), tokens, snapshots, deadlines and sagas in an Axon application.
+Currently, you can choose between the `XStreamSerializer`, `JacksonSerializer` and `AvroSerializer` to serialize messages (commands/queries/events), tokens, snapshots, deadlines and sagas in an Axon application.
 
 As there are several objects to be serialized, it is typically desired to chose which serializer handles which object.
 To that end, the `Configuration` API allows you to define default, `message` and `event` serializers, which lead to the following object-serialization break down:
@@ -65,7 +67,7 @@ In turn, if no message `Serializer` is configured, the default `Serializer` will
 
 See the following example on how to configure each serializer specifically, were we use the `XStreamSerializer` as the default and the `JacksonSerializer` for all our messages:
 
-==== Axon Configuration API
+==== Axon Configuration API using XStream/JacksonSerializer
 
 [source,java]
 ----
@@ -89,7 +91,35 @@ public class SerializerConfiguration {
 }
 ----
 
-===== Spring Boot - configuration class
+==== Axon Configuration API using XStream/AvroSerializer
+
+
+[source,java]
+----
+public class SerializerConfiguration {
+
+    public void serializerConfiguration(Configurer configurer, SchemaStore schemaStore) {
+        // By default, we want the XStreamSerializer
+        XStream xStream = new XStream();
+        // Set the secure types on the xStream instance
+        XStreamSerializer defaultSerializer = XStreamSerializer.builder()
+                                                               .xStream(xStream)
+                                                               .build();
+
+        // But for all our messages we'd prefer the AvroSerializer due to Avro's smaller format
+        AvroSerializer messageSerializer = AvroSerializer.builder()
+                                                         .serializerDelegate(JacksonSerializer.defaultSerializer())
+                                                         .schemaStore(schemaStore)
+                                                         .build();
+
+        configurer.configureSerializer(configuration -> defaultSerializer)
+                  .configureMessageSerializer(configuration -> messageSerializer)
+                  .configureEventSerializer(configuration -> messageSerializer);
+    }
+}
+----
+
+===== Spring Boot - configuration class using XStream/JacksonSerializer
 
 [source,java]
 ----
@@ -115,11 +145,41 @@ public class SerializerConfiguration {
 }
 ----
 
+===== Spring Boot - configuration class using XStream/AvroSerializer
+
+[source,java]
+----
+@Configuration
+public class SerializerConfiguration {
+
+   // By default, we want the XStreamSerializer
+   @Bean
+   public Serializer defaultSerializer() {
+      // Set the secure types on the xStream instance
+      XStream xStream = new XStream();
+      return XStreamSerializer.builder()
+                              .xStream(xStream)
+                              .build();
+   }
+
+   // But for all our messages we'd prefer the AvroSerializer due to Avro's smaller format
+   @Bean
+   @Qualifier("messageSerializer")
+   public Serializer messageSerializer(SchemaStore schemaStore) {
+      return AvroSerializer.builder()
+                           .delegateSerializer(JacksonSerializer.defaultSerializer())
+                           .schemaStore(schemaStore)
+                           .build();
+   }
+}
+----
+
+
 ===== Spring Boot - properties file
 
 [source,text]
 ----
-# Possible values for these keys are `default`, `xstream`, `java`, and `jackson`.
+# Possible values for these keys are `default`, `xstream`, `java`, and `jackson`. `avro` can be used for `events` and `messages` only.
 axon.serializer.general
 axon.serializer.events
 axon.serializer.messages
@@ -129,7 +189,7 @@ axon.serializer.messages
 
 [source,yaml]
 ----
-# Possible values for these keys are `default`, `xstream`, `java`, and `jackson`.
+# Possible values for these keys are `default`, `xstream`, `java`, and `jackson`. `avro` can be used for `events` and `messages` only.
 axon:
     serializer:
         general: 
@@ -168,6 +228,17 @@ In that case, it is probably wisest to create a custom serialization mechanism.
 The `DataInputStream` and `DataOutputStream` allow you to easily write the contents of the events to an output stream.
 The `ByteArrayOutputStream` and `ByteArrayInputStream` allow writing to and reading from byte arrays.
 
+=== AvroSerializer
+
+The Avro Serializer requires a `SchemaStore` to operate, which must be able to resolve schemas of all messages being processed. By default, you can use the `org.apache.avro.message.SchemaStore.Cache` and add Avro schemas to it manually. If you are using
+Spring Boot, the auto-configuration will create a `SchemaStore` instance for you. This Schema Store can be pre-filled with Avro Schemas extracted from Avro `SpecificRecordBase` instances. These are in turn generated by the `avro-maven-plugin` that should then be located on your classpath. For this purpose,
+a special annotation `@AvroSchemaScan` should be put to any SpringBoot configuration class (similar to SpringData `@EntityScan`) in a package hierarchy including the `SpecificRecordBase` classes.
+
+In case you want to use a central Schema Registry in your application landscape, you should provide your own `SchemaStore`
+implementation, accessing this remote registry. Just implement the corresponding interface and wire it into the configuration of the `AvroSerrializer`. When doing this, do consider to implement a caching strategy in your implementation. The `AvroSerializer` will check the Avro Schemas by their fingerprints on any serialization / deserialization operation, making fast and local in-memory resolution important to keep up the performance.
+
+The `AvroSerializer` is extendable and delegates to `AvroSerializerStrategy` to support different flavors of source classes. The default strategy is the `SpecificRecordBaseSerializerStrategy` that is capable to work with Java classes generated by `avro-maven-plugin`. If you use different representation of Avro classes in your project, you might want to supply a different `AvroSerializerStrategy` in order to deal with the specifics of your implementation. For example, to support KotlinX serialization of data classes, implemented by https://github.com/avro-kotlin/avro4k[avro4k], there is a community project, delivering the corresponding `AvroSerializerStrategy`.
+
 === Preventing duplicate serialization
 
 Especially in distributed systems, event messages need to be serialized on multiple occasions.
@@ -185,7 +256,7 @@ See the JavaDoc of the `MessageSerializer` for more details.
 When using event sourcing, serialized events can stick around for a long time.
 Therefore, consider the format to which they are serialized, carefully.
 Consider configuring a separate serializer for events, carefully optimized for the way they are stored.
-The JSON format generated by Jackson is generally more suitable for the long term than XStream's XML format.
+The JSON format generated by Jackson or Avro binary format is generally more suitable for the long term than XStream's XML format. If you want to enforce the structural definition of the events, the Apache Avro is the best choice.
 
 === Lenient Deserialization
 
@@ -200,7 +271,7 @@ A scenario when you would hit this is when going for a rolling upgrade pattern t
 To accommodate more closely with the desire to ignore unknown fields, both the `XStreamSerializer` and `JacksonSerializer` can be enabled as such.
 How to achieve this is shown in the following snippet:
 
-===== `XStreamSerializer`
+==== `XStreamSerializer`
 
 [source,java]
 ----
@@ -214,7 +285,7 @@ public class SerializerConfiguration {
 }
 ----
 
-===== `JacksonSerializer`
+==== `JacksonSerializer`
 
 [source,java]
 ----
@@ -227,6 +298,11 @@ public class SerializerConfiguration {
     }
 }
 ----
+
+==== `AvroSerializer`
+
+Apache Avro addresses the issue of reading of old messages by checking compatibility between the reader and writer Avro Schema. By its nature,
+Apache Avro binary format is designed to be highly permissive to schema additions, so no additional overhead is required to allow lenient deserialization.
 
 === Generic types
 
@@ -283,3 +359,4 @@ If Axon does not provide the content type conversion that you need, you can alwa
 
 The `XStreamSerializer` supports dom4j as well as XOM as XML document representations.
 The `JacksonSerializer` supports Jackson's `JsonNode` and `ObjectNode`.
+The `AvroSerializer` supports `GenericRecord` as intermediate format suitable for upcasting.

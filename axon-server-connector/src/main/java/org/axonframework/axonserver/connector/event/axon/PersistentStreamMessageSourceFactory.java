@@ -15,6 +15,7 @@
  */
 package org.axonframework.axonserver.connector.event.axon;
 
+import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.config.Configuration;
 
@@ -34,7 +35,9 @@ public interface PersistentStreamMessageSourceFactory {
     /**
      * Builds a new instance of {@link PersistentStreamMessageSource} with the specified parameters.
      *
-     * @param name                       The name of the persistent stream. This is used to identify the stream.
+     * @param name                       The name of the persistent stream. It's a unique identifier of the
+     *                                   {@link PersistentStream} connection with Axon Sever. Usage of the same name
+     *                                   will overwrite the existing connection.
      * @param persistentStreamProperties The properties of the persistent stream, containing configuration details.
      * @param scheduler                  The {@link ScheduledExecutorService} to be used for scheduling tasks related to
      *                                   the message source.

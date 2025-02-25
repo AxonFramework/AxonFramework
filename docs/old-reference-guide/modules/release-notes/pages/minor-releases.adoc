@@ -3,7 +3,41 @@
 
 Any patch release made for an Axon project is tailored towards resolving bugs. This page aims to provide a dedicated overview of patch releases per project.
 
+== Release 4.11
+
+=== Release 4.11.1
+
+==== Bug fixes
+
+- [#3283] fix: Auto-register `MessageHandlerInterceptors` with Spring Boot fails for interceptors which depends on Axon components link:https://github.com/AxonFramework/AxonFramework/pull/3290[#3290]
+- Auto-register `MessageHandlerInterceptors` with Spring Boot fails for interceptors which depends on Axon components link:https://github.com/AxonFramework/AxonFramework/issues/3283[#3283]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release:
+
+- link:https://github.com/MateuszNaKodach[@MateuszNaKodach]
+
 == Release 4.10
+
+=== Release 4.10.3
+
+==== Enhancements
+
+- Known Issues and Workarounds page link:https://github.com/AxonFramework/AxonFramework/pull/3193[#3193]
+
+==== Bug fixes
+
+- Add retry on error behavior to persistent streams link:https://github.com/AxonFramework/AxonFramework/pull/3196[#3196]
+- [#3171] Ensure `AggregateAnnotationCommandHandler` default `CreationPolicyAggregateFactory` can kick in link:https://github.com/AxonFramework/AxonFramework/pull/3183[#3183]
+- Polymorphic aggregate cannot be instantiated using `@CreationPolicy`  link:https://github.com/AxonFramework/AxonFramework/issues/3171[#3171]
+
+==== Contributors
+
+We'd like to thank all the contributors who worked on this release!
+
+- link:https://github.com/smcvb[@smcvb]
+- link:https://github.com/MGathier[@MGathier]
 
 === Release 4.10.2
 
