@@ -82,8 +82,7 @@ class SimpleStatefulCommandHandlingComponentTest {
 
 
     ModelRegistry registry = SimpleModelRegistry
-            .create()
-
+            .create("MyModelRegistry")
             .registerModel(
                     String.class,
                     Student.class,
