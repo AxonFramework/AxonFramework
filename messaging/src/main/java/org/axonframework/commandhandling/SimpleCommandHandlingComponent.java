@@ -54,7 +54,7 @@ public class SimpleCommandHandlingComponent implements
      * Instantiates a simple {@link CommandHandlingComponent} that is able to handle commands and delegate them to
      * subcomponents.
      *
-     * @param name the name of the component
+     * @param name the name of the component, used for {@link DescribableComponent describing} the component
      */
     public static SimpleCommandHandlingComponent create(String name) {
         return new SimpleCommandHandlingComponent(name);
@@ -64,7 +64,7 @@ public class SimpleCommandHandlingComponent implements
      * Instantiates a simple {@link CommandHandlingComponent} that is able to handle commands and delegate them to
      * subcomponents.
      *
-     * @param name the name of the component
+     * @param name the name of the component, used for {@link DescribableComponent describing} the component
      */
     private SimpleCommandHandlingComponent(String name) {
         this.name = name;
@@ -117,7 +117,7 @@ public class SimpleCommandHandlingComponent implements
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("commandHandlers", commandHandlers);
-        subComponents.forEach(descriptor::describeWrapperOf);
+        descriptor.describeProperty("subCommandHandlingComponents", commandHandlers);
     }
 
     @Override

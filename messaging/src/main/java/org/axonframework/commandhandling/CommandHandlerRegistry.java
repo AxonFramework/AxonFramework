@@ -31,7 +31,7 @@ import java.util.Set;
  * @author Sara Pellegrini
  * @author Steven van Beelen
  * @since 5.0.0
- * @param <SELF> the type of the registry itself
+ * @param <SELF> the type of the registry itself, used for fluent interfacing
  */
 public interface CommandHandlerRegistry<SELF extends CommandHandlerRegistry<SELF>> {
 

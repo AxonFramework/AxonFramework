@@ -22,9 +22,7 @@ import java.util.Set;
 
 /**
  * Interface describing a group of {@code CommandHandlers} belonging to a single component.
- * <p>
- * As such, it allows registration of {@code CommandHandlers} through the {@code CommandHandlerRegistry}. Besides
- * handling and registration, it specifies which {@link #supportedCommands() commands} it supports.
+ * It specifies the {@link #supportedCommands() commands} it supports.
  *
  * @author Allard Buijze
  * @author Rene de Waele

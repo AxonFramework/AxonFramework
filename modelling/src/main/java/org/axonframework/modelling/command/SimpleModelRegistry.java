@@ -17,6 +17,8 @@
 package org.axonframework.modelling.command;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
@@ -35,29 +37,33 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @see ModelContainer
  * @since 5.0.0
  */
-public class SimpleModelRegistry implements ModelRegistry {
+public class SimpleModelRegistry implements ModelRegistry, DescribableComponent {
 
     private final List<ModelDefinition<?, ?>> modelDefinitions = new CopyOnWriteArrayList<>();
+    private final String name;
 
     /**
      * Constructs a new simple {@link ModelRegistry} instance.
      */
-    private SimpleModelRegistry() {
+    private SimpleModelRegistry(String name) {
         // No direct instantiation
+        this.name = name;
     }
 
     /**
      * Constructs a new simple {@link ModelRegistry} instance.
+     *
+     * @param name The name of the registry, used for describing it to the {@link DescribableComponent}
      */
-    public static SimpleModelRegistry create() {
-        return new SimpleModelRegistry();
+    public static SimpleModelRegistry create(String name) {
+        return new SimpleModelRegistry(name);
     }
 
     @Override
-    public <ID, T> SimpleModelRegistry registerModel(
+    public <ID, M> SimpleModelRegistry registerModel(
             Class<ID> idClass,
-            Class<T> modelClass,
-            ModelLoader<ID, T> loadFunction) {
+            Class<M> modelClass,
+            ModelLoader<ID, M> loadFunction) {
         if (!getModelDefinitionsFor(modelClass).isEmpty()) {
             throw new IllegalStateException(
                     "Model with type [%s] already registered".formatted(modelClass.getName())
@@ -70,6 +76,12 @@ public class SimpleModelRegistry implements ModelRegistry {
     @Override
     public ModelContainer modelContainer(ProcessingContext context) {
         return context.computeResourceIfAbsent(ModelContainer.RESOURCE_KEY, () -> new SimplemodelContainer(context));
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("name", name);
+        descriptor.describeProperty("modelDefinitions", modelDefinitions);
     }
 
     /**
@@ -104,14 +116,19 @@ public class SimpleModelRegistry implements ModelRegistry {
 
         @Nonnull
         @Override
-        public <T> CompletableFuture<T> getModel(@Nonnull Class<T> modelType, @Nonnull Object identifier) {
-            T loadedModel = alreadyLoadedModelOf(modelType, identifier);
+        public <M> CompletableFuture<M> getModel(@Nonnull Class<M> modelType, @Nonnull Object identifier) {
+            M loadedModel = alreadyLoadedModelOf(modelType, identifier);
             if (loadedModel != null) {
                 return CompletableFuture.completedFuture(loadedModel);
             }
 
-            ModelDefinition<Object, T> definition = getModelDefinitionFor(modelType);
-            return loadModel(definition, identifier);
+            var definitions = getModelDefinitionsFor(modelType);
+            if (definitions.isEmpty()) {
+                return CompletableFuture.failedFuture(new IllegalStateException(
+                        "No model definition found for model type: %s".formatted(modelType)
+                ));
+            }
+            return loadModel(definitions.getFirst(), identifier);
         }
 
         /**
@@ -120,10 +137,10 @@ public class SimpleModelRegistry implements ModelRegistry {
          *
          * @param definition The model definition to use for loading the model
          * @param id         The identifier of the model to load
-         * @param <T>        The type of the model to load
+         * @param <M>        The type of the model to load
          * @return A {@link CompletableFuture} which resolves to the loaded model
          */
-        private <T> CompletableFuture<T> loadModel(ModelDefinition<Object, T> definition, Object id) {
+        private <M> CompletableFuture<M> loadModel(ModelDefinition<Object, M> definition, Object id) {
             return definition.loader()
                              .load(id, context)
                              .thenApply(model -> {
@@ -137,20 +154,20 @@ public class SimpleModelRegistry implements ModelRegistry {
         }
 
         /**
-         * Retrieves a model that is already loaded for this container. If the model is not found, null is returned.
+         * Retrieves a model already loaded for this container. If the model is not found, null is returned.
          *
          * @param modelType  The type of the model to retrieve
          * @param identifier The identifier of the model to retrieve
          * @param <ID>       The type of the identifier
-         * @param <T>        The type of the model
+         * @param <M>        The type of the model
          * @return The model if it is already loaded, otherwise null
          */
-        private <ID, T> T alreadyLoadedModelOf(@Nonnull Class<T> modelType, ID identifier) {
+        private <ID, M> M alreadyLoadedModelOf(@Nonnull Class<M> modelType, ID identifier) {
             //noinspection unchecked // The cast is checked in the stream
             return loadedModels
                     .stream()
                     .filter(lmd -> lmd.modelClass().equals(modelType))
-                    .map(lmd -> (LoadedModelDefinition<ID, T>) lmd)
+                    .map(lmd -> (LoadedModelDefinition<ID, M>) lmd)
                     .filter(md -> identifier.equals(md.identifier()))
                     .findFirst()
                     .map(LoadedModelDefinition::model)
@@ -171,42 +188,20 @@ public class SimpleModelRegistry implements ModelRegistry {
     }
 
     /**
-     * Retrieves exactly one model definition for the given model type. Will throw and exception if no model definition
-     * is found.
-     *
-     * @param modelType The model type to get the definition for
-     * @param <T>       The type of the model
-     * @return The model definition for the given model type and name
-     */
-    @Nonnull
-    private <T> ModelDefinition<Object, T> getModelDefinitionFor(
-            @Nonnull Class<T> modelType
-    ) {
-        var definitions = getModelDefinitionsFor(modelType);
-
-        if (definitions.isEmpty()) {
-            throw new IllegalStateException(
-                    "No model definition found for model type: %s".formatted(modelType)
-            );
-        }
-        return definitions.getFirst();
-    }
-
-    /**
      * Get all matching definitions for the given model type.
      *
      * @param modelType The model type to get definitions for
-     * @param <T>       The type of the model
+     * @param <M>       The type of the model
      * @return A list of definitions matching the given model type and name
      */
     @SuppressWarnings("unchecked") // The cast is checked in the stream
-    private <ID, T> List<? extends ModelDefinition<ID, T>> getModelDefinitionsFor(
-            @Nonnull Class<T> modelType
+    private <ID, M> List<? extends ModelDefinition<ID, M>> getModelDefinitionsFor(
+            @Nonnull Class<M> modelType
     ) {
         return modelDefinitions
                 .stream()
                 .filter(md -> md.modelClass().equals(modelType))
-                .map(md -> (ModelDefinition<ID, T>) md)
+                .map(md -> (ModelDefinition<ID, M>) md)
                 .toList();
     }
 }

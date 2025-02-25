@@ -51,6 +51,7 @@ public class CommandModelComponent
         this.eventComponent = new SimpleEventHandlingComponent();
     }
 
+    @Override
     public CommandModelComponent subscribe(@Nonnull QualifiedName name, @Nonnull CommandHandler commandHandler) {
         commandComponent.subscribe(name, commandHandler);
         return this;

@@ -43,7 +43,7 @@ abstract class ConsistencyMarkers {
 
         @Override
         public String toString() {
-            return "Origin";
+            return "ORIGIN";
         }
     }
 
@@ -62,6 +62,11 @@ abstract class ConsistencyMarkers {
         @Override
         public ConsistencyMarker upperBound(ConsistencyMarker other) {
             return this;
+        }
+
+        @Override
+        public String toString() {
+            return "INFINITY";
         }
     }
 }

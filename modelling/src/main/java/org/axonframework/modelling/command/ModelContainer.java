@@ -18,12 +18,16 @@ package org.axonframework.modelling.command;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Context;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * A container of different models that can be accessed by the model type and identifier.
- * The implementation may choose to cache models or retrieve them from a store on each invocation.
+ * A container of different models that can be accessed using the model type and an identifier. The implementation may
+ * choose to cache models or retrieve them from a store on each invocation.
+ * <p>
+ * The container is not in charge of model registration, that is the {@link ModelRegistry}. A container can be retrieved
+ * for a {@link ProcessingContext} through its {@link ModelRegistry#modelContainer(ProcessingContext)} method.
  *
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
@@ -33,12 +37,14 @@ import java.util.concurrent.CompletableFuture;
 public interface ModelContainer {
 
     /**
-     * The {@link Context.ResourceKey} used to store the {@link ModelContainer} in the {@link org.axonframework.messaging.unitofwork.ProcessingContext}.
+     * The {@link Context.ResourceKey} used to store the {@link ModelContainer} in the {@link ProcessingContext}.
      */
     Context.ResourceKey<ModelContainer> RESOURCE_KEY = Context.ResourceKey.withLabel("ModelContainer");
 
     /**
      * Retrieves the model from the container of the given {@code modelType} and {@code identifier}.
+     * The {@link CompletableFuture} will resolve to the model instance, or complete exceptionally if the
+     * model could not be found.
      *
      * @param modelType  The type of model to retrieve
      * @param identifier The identifier of the model to retrieve

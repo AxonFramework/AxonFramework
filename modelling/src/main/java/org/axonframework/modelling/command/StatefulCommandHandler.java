@@ -29,8 +29,6 @@ import javax.annotation.Nonnull;
  * Interface describing a stateful handler of {@link CommandMessage commands}.
  * Receives a {@link ModelContainer container} where models can be fetched from to reach a decision about the
  * received command message.
- * <p>
- * Models are resolved through registering them on a {@link StatefulCommandHandlerRegistry}.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -42,14 +40,14 @@ public interface StatefulCommandHandler extends MessageHandler {
 
     /**
      * Handles the given {@code command} within the given {@code context}. The {@code models} parameter provides access
-     * to the models registered to this handler.
+     * to the available models to load.
      * <p>
      * The {@link CommandResultMessage result message} in the returned {@link MessageStream stream} may be {@code null}.
      * Only a {@link MessageStream#just(Message) single} or {@link MessageStream#empty() empty} result message should
      * ever be expected.
      *
      * @param command The command to handle.
-     * @param models  The container providing access to the models registered to this handler.
+     * @param models  The container providing access to the available models to load.
      * @param context The context to the given {@code command} is handled in.
      * @return A {@code MessagesStream} of a {@link CommandResultMessage}.
      */

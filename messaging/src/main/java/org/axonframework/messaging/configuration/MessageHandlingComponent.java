@@ -33,7 +33,6 @@ import java.util.Set;
  * <p>
  * As such, it allows registration of {@code CommandHandlers}, {@code EventHandlers}, and {@code QueryHandlers} through
  * the respective {@code CommandHandlingComponent}, {@code EventHandlingComponent}, and {@code QueryHandlingComponent}.
- * Besides handling and registration, it specifies which {@link #supportedMessages() messages} it supports.
  *
  * @author Allard Buijze
  * @author Gerard Klijs

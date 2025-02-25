@@ -23,7 +23,7 @@ import org.axonframework.messaging.QualifiedName;
 import javax.annotation.Nonnull;
 
 /**
- * TODO
+ * Interface describing a registry of {@link StatefulCommandHandler command handlers}.
  *
  * @param <SELF> the type of the registry itself
  * @author Mitchell Herrijgers
@@ -35,9 +35,9 @@ public interface StatefulCommandHandlerRegistry<SELF extends StatefulCommandHand
         extends CommandHandlerRegistry<SELF> {
 
     /**
-     * Subscribe the given {@code commandHandler} for a {@link QualifiedName name}.
+     * Subscribe the given {@link StatefulCommandHandler} for a {@link QualifiedName name}.
      *
-     * @param name           The name of the given {@code commandHandler} can handle.
+     * @param name           The name of the given {@link StatefulCommandHandler} can handle.
      * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given name.
      * @return This registry for fluent interfacing.
      */

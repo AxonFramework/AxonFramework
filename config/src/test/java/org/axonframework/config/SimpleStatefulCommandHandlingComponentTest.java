@@ -34,6 +34,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.command.ModelRegistry;
 import org.axonframework.modelling.command.SimpleModelRegistry;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.repository.ManagedEntity;
@@ -41,6 +42,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -78,21 +80,26 @@ class SimpleStatefulCommandHandlingComponentTest {
             DEFAULT_CONTEXT
     );
 
+
+    ModelRegistry registry = SimpleModelRegistry
+            .create()
+
+            .registerModel(
+                    String.class,
+                    Student.class,
+                    (id, context) -> studentRepository.loadOrCreate(id, context).thenApply(ManagedEntity::entity)
+            )
+            .registerModel(
+                    String.class,
+                    Course.class,
+                    (id, context) -> courseRepository.loadOrCreate(id, context).thenApply(ManagedEntity::entity)
+            );
+
     /**
      * Tests that the {@link StatefulCommandHandlingComponent} can handle a singular model command.
      */
     @Test
-    void canHandleSingularModelCommand() throws ExecutionException, InterruptedException {
-        var registry = SimpleModelRegistry
-                .create()
-                .registerModel(
-                        String.class,
-                        Student.class,
-                        (id, context) ->
-                                studentRepository.loadOrCreate(id, context)
-                                                 .thenApply(ManagedEntity::entity)
-                );
-
+    void canHandleSingularModelCommand() {
         var component = StatefulCommandHandlingComponent
                 .create("MyStatefulCommandHandlingComponent", registry)
                 .subscribe(
@@ -132,20 +139,7 @@ class SimpleStatefulCommandHandlingComponentTest {
      * same time, in the same transaction.
      */
     @Test
-    void canHandleCommandThatTargetsMultipleModels() throws ExecutionException, InterruptedException {
-        var registry = SimpleModelRegistry
-                .create()
-                .registerModel(
-                        String.class,
-                        Student.class,
-                        (id, context) -> studentRepository.loadOrCreate(id, context).thenApply(ManagedEntity::entity)
-                )
-                .registerModel(
-                        String.class,
-                        Course.class,
-                        (id, context) -> courseRepository.loadOrCreate(id, context).thenApply(ManagedEntity::entity)
-                );
-
+    void canHandleCommandThatTargetsMultipleModels() {
         var component = StatefulCommandHandlingComponent
                 .create("MyStatefulCommandHandlingComponent", registry)
                 .subscribe(
@@ -195,9 +189,11 @@ class SimpleStatefulCommandHandlingComponentTest {
         verifyStudentEnrolledInCourse("my-studentId-4", "my-courseId-2");
 
         // But five can not enroll for the first course
-        assertThrows(ExecutionException.class,
+        var exception = assertThrows(CompletionException.class,
                      () -> enrollStudentToCourse(component, "my-studentId-5", "my-courseId-1"
                      ));
+        assertInstanceOf(IllegalArgumentException.class, exception.getCause());
+        assertTrue(exception.getCause().getMessage().contains("Course already has 3 students"));
     }
 
     private void appendEvent(ProcessingContext context, Object event) {
@@ -217,8 +213,7 @@ class SimpleStatefulCommandHandlingComponentTest {
            .join();
     }
 
-    private void updateStudentName(StatefulCommandHandlingComponent component, String id, String name)
-            throws InterruptedException, ExecutionException {
+    private void updateStudentName(StatefulCommandHandlingComponent component, String id, String name) {
         sendCommand(component, new ChangeStudentNameCommand(id, name));
     }
 
@@ -227,22 +222,21 @@ class SimpleStatefulCommandHandlingComponentTest {
             StatefulCommandHandlingComponent component,
             String studentId,
             String courseId
-    )
-            throws InterruptedException, ExecutionException {
+    ) {
         sendCommand(component, new EnrollStudentToCourseCommand(studentId, courseId));
     }
 
     private <T> void sendCommand(
             StatefulCommandHandlingComponent component,
             T payload
-    ) throws ExecutionException, InterruptedException {
+    ) {
         AsyncUnitOfWork uow = new AsyncUnitOfWork();
         uow.executeWithResult((context) -> {
             GenericCommandMessage<T> command = new GenericCommandMessage<>(
                     new MessageType(payload.getClass()),
                     payload);
             return component.handle(command, context).first().asCompletableFuture();
-        }).get();
+        }).join();
     }
 
 

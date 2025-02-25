@@ -67,7 +67,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
      *                          {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a matching
      *                          event stream.
      * @param eventStateApplier The function to apply event state changes to the loaded entities.
-     * @param newInstanceFactory A factory method to create new instances of the model based on an provided identifier.
+     * @param newInstanceFactory A factory method to create new instances of the model based on a provided identifier.
      * @param context           The (bounded) context this {@code AsyncEventSourcingRepository} provides access to
      *                          models for.
      */
