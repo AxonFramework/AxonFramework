@@ -24,6 +24,7 @@ import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine.Append
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.utils.AssertUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
@@ -35,8 +36,11 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Test suite validating the {@link SimpleEventStore} and {@link DefaultEventStoreTransaction} for different
@@ -174,11 +178,40 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
                     .verifyComplete();
     }
 
+
     @Test
-    void sourcingEventsReturnsEmptyStreamIfNoEventsInTheStore() {
+    void sourcingEventsReturnsTheHeadGlobalIndexAsConsistencyMarker() throws Exception {
+        testSubject.appendEvents(AppendCondition.none(),
+                                 taggedEventMessage("event-0", TEST_CRITERIA.tags()),
+                                 taggedEventMessage("event-1", TEST_CRITERIA.tags()),
+                                 taggedEventMessage("event-2", OTHER_CRITERIA.tags()),
+                                 taggedEventMessage("event-3", OTHER_CRITERIA.tags()),
+                                 taggedEventMessage("event-4", OTHER_CRITERIA.tags()),
+                                 taggedEventMessage("event-5", OTHER_CRITERIA.tags()))
+                   .thenCompose(AppendTransaction::commit).get(5, TimeUnit.SECONDS);
+
+        StepVerifier.create(
+                            testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)).asFlux())
+                    .expectNextMatches(assertHasConsistencyMarker(5))
+                    .expectNextMatches(assertHasConsistencyMarker(5))
+                    .verifyComplete();
+    }
+
+    @Test
+    void sourcingEventsReturnsEmptyStreamIfNoEventsInTheStoreForFlux() {
         StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)).asFlux())
                     .expectNextCount(0)
                     .verifyComplete();
+    }
+
+
+    @Test
+    void sourcingEventsReturnsEmptyStreamThatCompletesIfNoEventsInTheStore() {
+        AtomicBoolean completed = new AtomicBoolean(false);
+        testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)).whenComplete(
+                () -> completed.set(true));
+
+        await().untilTrue(completed);
     }
 
     @Test
@@ -371,5 +404,14 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
                 new GenericEventMessage<>(new MessageType("event"), payload),
                 tags
         );
+    }
+
+
+    private static Predicate<MessageStream.Entry<EventMessage<?>>> assertHasConsistencyMarker(int position) {
+        return em -> {
+            assertEquals(new GlobalIndexConsistencyMarker(position),
+                         em.getResource(ConsistencyMarker.RESOURCE_KEY));
+            return true;
+        };
     }
 }

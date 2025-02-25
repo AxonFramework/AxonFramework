@@ -187,8 +187,7 @@ class NewMessageHandlerRegistrationTest {
                 new GenericQueryMessage<>(QUERY_TYPE, "payload", ResponseTypes.instanceOf(String.class));
 
         MessageHandlingComponent testSubjectWithRegisteredMHC =
-                new GenericMessageHandlingComponent()
-                        .subscribe(testSubject.supportedMessages(), (MessageHandler) testSubject);
+                new GenericMessageHandlingComponent().subscribe(testSubject);
 
         testSubjectWithRegisteredMHC.handle(testCommandMessage, ProcessingContext.NONE);
         testSubjectWithRegisteredMHC.handle(testEventMessage, ProcessingContext.NONE);
@@ -253,11 +252,6 @@ class NewMessageHandlerRegistrationTest {
         public MessageHandlingComponent subscribe(@Nonnull QualifiedName name,
                                                   @Nonnull QueryHandler queryHandler) {
             return null;
-        }
-
-        @Override
-        public Set<QualifiedName> supportedMessages() {
-            return Set.of();
         }
 
         @Override

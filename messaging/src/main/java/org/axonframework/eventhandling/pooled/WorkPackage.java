@@ -51,17 +51,17 @@ import java.util.function.UnaryOperator;
 
 /**
  * Defines the process of handling {@link EventMessage}s for a specific {@link Segment}. This entails validating if the
- * event can be handled through a {@link EventFilter} and after that processing a collection of events in the {@link
- * BatchProcessor}.
+ * event can be handled through a {@link EventFilter} and after that processing a collection of events in the
+ * {@link BatchProcessor}.
  * <p>
- * Events are received through the {@link #scheduleEvent(TrackedEventMessage)} operation, delegated by a {@link
- * Coordinator}. Receiving event(s) means this {@link WorkPackage} will be scheduled to process these events through an
- * {@link ExecutorService}. As there are local threads and outside threads invoking methods on the {@code WorkPackage},
- * several methods have threading notes describing what can invoke them safely.
+ * Events are received through the {@link #scheduleEvent(TrackedEventMessage)} operation, delegated by a
+ * {@link Coordinator}. Receiving event(s) means this {@link WorkPackage} will be scheduled to process these events
+ * through an {@link ExecutorService}. As there are local threads and outside threads invoking methods on the
+ * {@code WorkPackage}, several methods have threading notes describing what can invoke them safely.
  * <p>
- * Since the {@code WorkPackage} is in charge of a {@code Segment}, it maintains the claim on the matching {@link
- * TrackingToken}. In absence of new events, it will also {@link TokenStore#extendClaim(String, int)} on the {@code
- * TrackingToken}.
+ * Since the {@code WorkPackage} is in charge of a {@code Segment}, it maintains the claim on the matching
+ * {@link TrackingToken}. In absence of new events, it will also {@link TokenStore#extendClaim(String, int)} on the
+ * {@code TrackingToken}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -85,6 +85,7 @@ class WorkPackage {
     private final int batchSize;
     private final long claimExtensionThreshold;
     private final Consumer<UnaryOperator<TrackerStatus>> segmentStatusUpdater;
+    private Runnable batchProcessedCallback;
     private final Clock clock;
     private final String segmentIdResourceKey;
     private final String lastTokenResourceKey;
@@ -316,7 +317,10 @@ class WorkPackage {
                 unitOfWork.resources().put(lastTokenResourceKey, lastConsumedToken);
                 unitOfWork.onPrepareCommit(u -> storeToken(lastConsumedToken));
                 unitOfWork.afterCommit(
-                        u -> segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken))
+                        u -> {
+                            segmentStatusUpdater.accept(status -> status.advancedTo(lastConsumedToken));
+                            batchProcessedCallback.run();
+                        }
                 );
                 batchProcessor.processBatch(eventBatch, unitOfWork, Collections.singleton(segment));
             } finally {
@@ -388,8 +392,8 @@ class WorkPackage {
      * <b>Threading note:</b> This method is only safe to call from {@link Coordinator} threads. The {@link
      * WorkPackage} threads must not rely on this method.
      *
-     * @return the {@link TrackingToken} of the last {@link TrackedEventMessage} that was delivered to this {@link
-     * WorkPackage}
+     * @return the {@link TrackingToken} of the last {@link TrackedEventMessage} that was delivered to this
+     * {@link WorkPackage}
      */
     public TrackingToken lastDeliveredToken() {
         return lastDeliveredToken;
@@ -418,7 +422,6 @@ class WorkPackage {
      * An aborted {@code WorkPackage} cannot be restarted.
      *
      * @param abortReason the reason to request the {@link WorkPackage} to abort
-     *
      * @return a {@link CompletableFuture} that completes with the first reason once the {@link WorkPackage} has stopped
      * processing
      */
@@ -452,6 +455,16 @@ class WorkPackage {
         // Reschedule the worker to ensure the abort flag is processed
         scheduleWorker();
         return abortTask;
+    }
+
+    /**
+     * Lambda to be invoked whenever the event batch of this package's {@code segment} processed.
+     *
+     * @param batchProcessedCallback lambda to be invoked whenever the event batch of this package's {@code segment}
+     *                               processed
+     */
+    void onBatchProcessed(Runnable batchProcessedCallback) {
+        this.batchProcessedCallback = batchProcessedCallback;
     }
 
     /**
@@ -534,8 +547,8 @@ class WorkPackage {
         }
 
         /**
-         * The storage solution of {@link TrackingToken}s. Used to extend claims on and update the {@code
-         * initialToken}.
+         * The storage solution of {@link TrackingToken}s. Used to extend claims on and update the
+         * {@code initialToken}.
          *
          * @param tokenStore the storage solution of {@link TrackingToken}s
          * @return the current Builder instance, for fluent interfacing
@@ -650,8 +663,9 @@ class WorkPackage {
         }
 
         /**
-         * Defines the {@link Clock} used for time dependent operations. For example used to update whenever this {@link
-         * WorkPackage} updated the {@link TrackingToken} claim last. Defaults to {@link GenericEventMessage#clock}.
+         * Defines the {@link Clock} used for time dependent operations. For example used to update whenever this
+         * {@link WorkPackage} updated the {@link TrackingToken} claim last. Defaults to
+         * {@link GenericEventMessage#clock}.
          *
          * @param clock the {@link Clock} used for time dependent operations
          * @return the current Builder instance, for fluent interfacing
