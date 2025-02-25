@@ -189,7 +189,7 @@ class DefaultEventStoreTransactionTest {
 
                 transaction.appendEvent(new GenericEventMessage<>(new MessageType(String.class), "my payload"));
 
-                return MessageStream.empty().firstAsCompletableFuture();
+                return MessageStream.empty().asCompletableFuture();
             }));
         }
     }
