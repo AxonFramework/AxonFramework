@@ -42,8 +42,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Adapter that turns any {@link org.axonframework.eventhandling.annotation.EventHandler} annotated bean into a
  * {@link MessageHandler} implementation. Each annotated method is subscribed as Event Handler at the
- * {@link org.axonframework.eventhandling.EventSink} for the event type specified by the parameter of
- * that method.
+ * {@link org.axonframework.eventhandling.EventSink} for the event type specified by the parameter of that method.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -98,6 +97,20 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         this.model = AnnotatedHandlerInspector.inspectType((Class<T>) annotatedEventHandler.getClass(),
                                                            parameterResolverFactory,
                                                            handlerDefinition);
+    }
+
+    /**
+     * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a
+     * {@link org.axonframework.eventhandling.EventSink} as a {@link EventHandlingComponent}.
+     *
+     * @param annotatedEventHandler The object containing the
+     *                              {@link org.axonframework.eventhandling.annotation.EventHandler} annotated methods.
+     * @param model                 The inspector to use to find the annotated handlers on the annotatedEventHandler.
+     */
+    public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
+                                           @Nonnull AnnotatedHandlerInspector<T> model) {
+        this.target = requireNonNull(annotatedEventHandler, "The Annotated Event Handler may not be null");
+        this.model = requireNonNull(model, "The Annotated Handler Inspector may not be null");
     }
 
     @Override
