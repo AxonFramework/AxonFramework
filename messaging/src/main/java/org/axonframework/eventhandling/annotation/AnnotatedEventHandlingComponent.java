@@ -54,7 +54,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     /**
      * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a
-     * {@link org.axonframework.eventhandling.EventSink} as a {@link EventHandlingComponent}.
+     * {@link org.axonframework.eventhandling.EventSink} as an {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler The object containing the
      *                              {@link org.axonframework.eventhandling.annotation.EventHandler} annotated methods.
@@ -65,7 +65,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     /**
      * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a
-     * {@link org.axonframework.eventhandling.EventSink} as a {@link EventHandlingComponent}.
+     * {@link org.axonframework.eventhandling.EventSink} as an {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler    The object containing the
      *                                 {@link org.axonframework.eventhandling.annotation.EventHandler} annotated
@@ -81,7 +81,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     /**
      * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a
-     * {@link org.axonframework.eventhandling.EventSink} as a {@link EventHandlingComponent}.
+     * {@link org.axonframework.eventhandling.EventSink} as an {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler    The object containing the
      *                                 {@link org.axonframework.eventhandling.annotation.EventHandler} annotated
@@ -101,7 +101,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
 
     /**
      * Wraps the given {@code annotatedEventHandler}, allowing it to be subscribed to a
-     * {@link org.axonframework.eventhandling.EventSink} as a {@link EventHandlingComponent}.
+     * {@link org.axonframework.eventhandling.EventSink} as an {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler The object containing the
      *                              {@link org.axonframework.eventhandling.annotation.EventHandler} annotated methods.
