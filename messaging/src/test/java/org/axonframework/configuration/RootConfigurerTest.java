@@ -37,122 +37,130 @@ class RootConfigurerTest {
         testSubject = RootConfigurer.defaultConfigurer();
     }
 
-    @Test
-    void registerComponentExposesRegisteredComponentUponBuild() {
-        TestComponent testComponent = TEST_COMPONENT;
+    @Nested
+    class ComponentRegistration {
 
-        testSubject.registerComponent(TestComponent.class, config -> testComponent);
+        @Test
+        void registerComponentExposesRegisteredComponentUponBuild() {
+            TestComponent testComponent = TEST_COMPONENT;
 
-        RootConfiguration config = testSubject.build();
+            testSubject.registerComponent(TestComponent.class, config -> testComponent);
 
-        assertEquals(testComponent, config.getComponent(TestComponent.class));
+            RootConfiguration config = testSubject.build();
+
+            assertEquals(testComponent, config.getComponent(TestComponent.class));
+        }
+
+        @Test
+        void registerComponentExposesRegisteredComponentUponStart() {
+            TestComponent testComponent = TEST_COMPONENT;
+
+            testSubject.registerComponent(TestComponent.class, config -> testComponent);
+
+            RootConfiguration config = testSubject.start();
+
+            assertEquals(testComponent, config.getComponent(TestComponent.class));
+        }
+
+        @Test
+        void registerComponentThrowsNullPointerExceptionForNullType() {
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class, () -> testSubject.registerComponent(null, config -> new Object()));
+        }
+
+        @Test
+        void registerComponentThrowsNullPointerExceptionForComponentBuilder() {
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class, () -> testSubject.registerComponent(TestComponent.class, null));
+        }
     }
 
-    @Test
-    void registerComponentExposesRegisteredComponentUponStart() {
-        TestComponent testComponent = TEST_COMPONENT;
+    @Nested
+    class ComponentDecoration {
 
-        testSubject.registerComponent(TestComponent.class, config -> testComponent);
+        @Test
+        void registerDecoratorDecoratesOutcomeOfComponentBuilder() {
+            String expectedState = "updated-" + TEST_COMPONENT.state() + "-twice";
 
-        RootConfiguration config = testSubject.start();
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
+                       .registerDecorator(TestComponent.class,
+                                          (config, delegate) -> new TestComponent("updated-" + delegate.state))
+                       .registerDecorator(TestComponent.class,
+                                          (config, delegate) -> new TestComponent(delegate.state + "-twice"));
 
-        assertEquals(testComponent, config.getComponent(TestComponent.class));
-    }
+            TestComponent result = testSubject.start()
+                                              .getComponent(TestComponent.class);
 
-    @Test
-    void registerComponentThrowsNullPointerExceptionForNullType() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.registerComponent(null, config -> new Object()));
-    }
+            assertEquals(expectedState, result.state());
+        }
 
-    @Test
-    void registerComponentThrowsNullPointerExceptionForComponentBuilder() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.registerComponent(TestComponent.class, null));
-    }
+        // TODO Discuss if we would want to throw an exception or whether we should simply store it if the register component comes in later
+        @Test
+        void registerDecoratorThrowsIllegalArgumentExceptionForNonExistingComponentType() {
+            assertThrows(IllegalArgumentException.class,
+                         () -> testSubject.registerDecorator(TestComponent.class, (config, delegate) -> delegate));
+        }
 
-    @Test
-    void registerDecoratorDecoratesOutcomeOfComponentBuilder() {
-        String expectedState = "updated-" + TEST_COMPONENT.state() + "-twice";
+        @Test
+        void registerDecoratorThrowsNullPointerExceptionForType() {
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
 
-        testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
-                   .registerDecorator(TestComponent.class,
-                                      (config, delegate) -> new TestComponent("updated-" + delegate.state))
-                   .registerDecorator(TestComponent.class,
-                                      (config, delegate) -> new TestComponent(delegate.state + "-twice"));
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class,
+                         () -> testSubject.registerDecorator(null, (config, delegate) -> delegate));
+        }
 
-        TestComponent result = testSubject.start()
-                                          .getComponent(TestComponent.class);
+        @Test
+        void registerDecoratorThrowsNullPointerExceptionForNullComponentDecorator() {
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
 
-        assertEquals(expectedState, result.state());
-    }
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class,
+                         () -> testSubject.registerDecorator(TestComponent.class, null));
+        }
 
-    // TODO Discuss if we would want to throw an exception or whether we should simply store it if the register component comes in later
-    @Test
-    void registerDecoratorThrowsIllegalArgumentExceptionForNonExistingComponentType() {
-        assertThrows(IllegalArgumentException.class,
-                     () -> testSubject.registerDecorator(TestComponent.class, (config, delegate) -> delegate));
-    }
+        @Test
+        void registerDecoratorWithOrderDecoratesOutcomeOfComponentBuilderInSpecifiedOrder() {
+            String expectedState = TEST_COMPONENT.state() + "123";
 
-    @Test
-    void registerDecoratorThrowsNullPointerExceptionForType() {
-        testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
+                       .registerDecorator(TestComponent.class, 2,
+                                          (config, delegate) -> new TestComponent(delegate.state + "3"))
+                       .registerDecorator(TestComponent.class, 1,
+                                          (config, delegate) -> new TestComponent(delegate.state + "2"))
+                       .registerDecorator(TestComponent.class, 0,
+                                          (config, delegate) -> new TestComponent(delegate.state + "1"));
 
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class,
-                     () -> testSubject.registerDecorator(null, (config, delegate) -> delegate));
-    }
+            TestComponent result = testSubject.start()
+                                              .getComponent(TestComponent.class);
 
-    @Test
-    void registerDecoratorThrowsNullPointerExceptionForNullComponentDecorator() {
-        testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
+            assertEquals(expectedState, result.state());
+        }
 
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class,
-                     () -> testSubject.registerDecorator(TestComponent.class, null));
-    }
+        // TODO Discuss if we would want to throw an exception or whether we should simply store it if the register component comes in later
+        @Test
+        void registerDecoratorWithOrderThrowsIllegalArgumentExceptionForNonExistingComponentType() {
+            assertThrows(IllegalArgumentException.class,
+                         () -> testSubject.registerDecorator(TestComponent.class, 42, (config, delegate) -> delegate));
+        }
 
-    @Test
-    void registerDecoratorWithOrderDecoratesOutcomeOfComponentBuilderInSpecifiedOrder() {
-        String expectedState = TEST_COMPONENT.state() + "123";
+        @Test
+        void registerDecoratorWithOrderThrowsNullPointerExceptionForType() {
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
 
-        testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
-                   .registerDecorator(TestComponent.class, 2,
-                                      (config, delegate) -> new TestComponent(delegate.state + "3"))
-                   .registerDecorator(TestComponent.class, 1,
-                                      (config, delegate) -> new TestComponent(delegate.state + "2"))
-                   .registerDecorator(TestComponent.class, 0,
-                                      (config, delegate) -> new TestComponent(delegate.state + "1"));
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class,
+                         () -> testSubject.registerDecorator(null, 42, (config, delegate) -> delegate));
+        }
 
-        TestComponent result = testSubject.start()
-                                          .getComponent(TestComponent.class);
+        @Test
+        void registerDecoratorWithOrderThrowsNullPointerExceptionForNullComponentDecorator() {
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
 
-        assertEquals(expectedState, result.state());
-    }
-
-    // TODO Discuss if we would want to throw an exception or whether we should simply store it if the register component comes in later
-    @Test
-    void registerDecoratorWithOrderThrowsIllegalArgumentExceptionForNonExistingComponentType() {
-        assertThrows(IllegalArgumentException.class,
-                     () -> testSubject.registerDecorator(TestComponent.class, 42, (config, delegate) -> delegate));
-    }
-
-    @Test
-    void registerDecoratorWithOrderThrowsNullPointerExceptionForType() {
-        testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
-
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class,
-                     () -> testSubject.registerDecorator(null, 42, (config, delegate) -> delegate));
-    }
-
-    @Test
-    void registerDecoratorWithOrderThrowsNullPointerExceptionForNullComponentDecorator() {
-        testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
-
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class,
-                     () -> testSubject.registerDecorator(TestComponent.class, 42, null));
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class,
+                         () -> testSubject.registerDecorator(TestComponent.class, 42, null));
+        }
     }
 
     private record TestComponent(String state) {
