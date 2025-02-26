@@ -17,40 +17,24 @@
 package org.axonframework.configuration;
 
 /**
- * Interface describing a module for the Axon Configuration API. These modules are relatively independent, but have
- * access to the component available in the main Configuration.
+ * Interface describing a module of Axon Framework's Configuration.
  * <p>
- * Modules have callback methods for the initialization, start and shutdown phases of the application's lifecycle.
+ * Modules are relatively independent. They can be {@link NewConfigurer#registerModule(ModuleBuilder) registered} on a
+ * parent {@link NewConfigurer} or registered in a nested style on another {@link Module} through the dedicated register
+ * module operation. Furthermore, a module is able to access the registered {@link Component Components} from its
+ * parent.
  *
  * @author Allard Buijze
- * @since 3.0
+ * @author Steven van Beelen
+ * @since 3.0.0
  */
-public interface Module {
+public interface Module extends NewConfigurer {
 
     /**
-     * Initialize the module configuration using the given global {@code config}. Any specific start up or shut down
-     * processes should be added here by using the provided {@code config} and invoke {@link Configuration#onStart(int,
-     * LifecycleHandler)} and {@link Configuration#onShutdown(int, LifecycleHandler)} respectively.
+     * Checks whether this configuration {@code Module} is of the given {@code type}.
      *
-     * @param config the global configuration, providing access to generic components
-     */
-    void initialize(NewConfiguration config);
-
-    /**
-     * Returns the actual module configuration instance. Usually, it is the instance itself. However, in case of module
-     * configuration wrappers, we would like to provide the wrapped module configuration as the instance.
-     *
-     * @return the actual module configuration instance
-     */
-    default Module unwrap() {
-        return this;
-    }
-
-    /**
-     * Checks whether this Module Configuration is of the given {@code type}.
-     *
-     * @param type a {@link Class} type to check the Module Configuration against
-     * @return whether Module Configuration is of given {@code type}
+     * @param type A {@link Class} type to check the configuration {@code Module} against.
+     * @return {@code true} when this configuration {@code Module} is of given {@code type}, {@code false} otherwise.
      */
     default boolean isType(Class<?> type) {
         return type.isInstance(this);
