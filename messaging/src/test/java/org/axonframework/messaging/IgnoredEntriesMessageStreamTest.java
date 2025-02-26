@@ -19,6 +19,9 @@ package org.axonframework.messaging;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the {@link IgnoredEntriesMessageStream} through the {@link MessageStreamTest} suite.
@@ -54,7 +57,41 @@ class IgnoredEntriesMessageStreamTest extends MessageStreamTest<Message<Void>> {
 
     @Override
     Message<Void> createRandomMessage() {
-        Assumptions.abort("IgnoredEntriesMessageStream doesn't support content");
-        return null;
+//        Assumptions.abort("IgnoredEntriesMessageStream doesn't support content");
+        return new GenericMessage<>(new MessageType("message"),
+                                    null);
     }
+
+    @Test
+    void shouldReturnFailedMessageStreamOnFailingCompletionHandler() {
+        var expected = new RuntimeException("oops");
+
+        var result = MessageStream.empty()
+                                  .ignoreEntries()
+                                  .whenComplete(() -> {
+                                      throw expected;
+                                  })
+                                  .first()
+                                  .asCompletableFuture()
+                                  .thenApply(MessageStream.Entry::message);
+
+        assertTrue(result.isCompletedExceptionally());
+        assertEquals(expected, result.exceptionNow());
+    }
+
+//    @Test
+//    void shouldProcessMessagesButIgnoresEntries() {
+//        var processed = new AtomicBoolean(false);
+//        var messages = List.of(createRandomMessage());
+//
+//        var result = MessageStream.fromIterable(messages)
+//                                  .onNext(e -> {
+//                                      processed.set(true);
+//                                  })
+//                                  .ignoreEntries()
+//                                  .asCompletableFuture();
+//        assertTrue(result.isDone());
+//        assertNull(result.join());
+//        assertFalse(processed.get());
+//    }
 }
