@@ -17,116 +17,154 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Assert;
+import org.axonframework.common.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
+import static org.axonframework.common.Assert.assertThat;
 
 /**
- * A Component used in the Axon Configurer. A Component describes an object that needs to be created, possibly based on
- * other components in the configuration, and initialized as part of a NewConfiguration. Components are lazily
- * initialized when they are accessed. During the initialization, they may trigger initialization of components they
- * depend on.
+ * A component used in the Axon {@link NewConfigurer}.
+ * <p>
+ * A component describes an object that needs to be created, possibly based on other components in the
+ * {@link LifecycleSupportingConfiguration}, and initialized as part of the {@code NewConfiguration}.
+ * <p>
+ * Components are lazily initialized when they are accessed. During the initialization, they may trigger initialization
+ * of components they depend on.
  *
- * @param <C> The type of Component contained
+ * @param <C> The type of component contained.
  * @author Allard Buijze
- * @since 3.0
+ * @author Steven van Beelen
+ * @since 3.0.0
  */
 public class Component<C> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final Supplier<NewConfiguration> configSupplier;
     private final String name;
+    private final Supplier<LifecycleSupportingConfiguration> configSupplier;
     private ComponentBuilder<C> builder;
+
     private final SortedMap<Integer, ComponentDecorator<C>> decorators = new TreeMap<>();
+    // TODO Discuss what phase-enum we provide, and what the offset/default on the enum is for the default order.
+    private int defaultDecoratorOrder = 0;
 
     private C instance;
 
     /**
-     * Creates a component for the given {@code config} with given {@code name} created by the given
-     * {@code builderFunction}. Then the NewConfiguration is not initialized yet, consider using
-     * {@link #Component(Supplier, String, ComponentBuilder)} instead.
+     * Creates a {@code Component} for the given {@code config} with given {@code name} created by the given
+     * {@code builder}.
+     * <p>
+     * When the {@link LifecycleSupportingConfiguration} is not initialized yet, consider using
+     * {@link #Component(String, Supplier, ComponentBuilder)} instead.
      *
-     * @param config  The NewConfiguration the component is part of
-     * @param name    The name of the component
-     * @param builder The builder function of the component
+     * @param name    The name of the component.
+     * @param config  The {@code NewConfiguration} the component is part of.
+     * @param builder The builder function of the component.
      */
-    public Component(@Nonnull NewConfiguration config,
-                     @Nonnull String name,
+    public Component(@Nonnull String name,
+                     @Nonnull LifecycleSupportingConfiguration config,
                      @Nonnull ComponentBuilder<C> builder) {
-        this(() -> config, name, builder);
+        this(name, () -> config, builder);
     }
 
     /**
-     * Creates a component for the given {@code config} with given {@code name} created by the given
-     * {@code builderFunction}.
+     * Creates a {@code Component} for the given {@code config} with given {@code name} created by the given
+     * {@code builder}.
      *
-     * @param config  The supplier function of the configuration
-     * @param name    The name of the component
-     * @param builder The builder function of the component
+     * @param name    The name of the component.
+     * @param config  The supplier function of the {@code NewConfiguration}.
+     * @param builder The builder function of the component.
      */
-    public Component(@Nonnull Supplier<NewConfiguration> config,
-                     @Nonnull String name,
+    public Component(@Nonnull String name,
+                     @Nonnull Supplier<LifecycleSupportingConfiguration> config,
                      @Nonnull ComponentBuilder<C> builder) {
-        this.configSupplier = requireNonNull(config, "The configuration supplier cannot be null.");
+        assertThat(
+                requireNonNull(name, "The given name is unsupported because it is null."),
+                StringUtils::nonEmpty,
+                () -> new IllegalArgumentException("The given name is unsupported because it is empty.")
+        );
         this.name = name;
+        this.configSupplier = requireNonNull(config, "The configuration supplier cannot be null.");
         this.builder = requireNonNull(builder, "A Component builder cannot be null.");
     }
 
     /**
-     * Retrieves the object contained in this component, triggering the builder function if the component hasn't been
-     * built yet. Upon initiation of the instance the
-     * {@link LifecycleHandlerInspector#registerLifecycleHandlers(NewConfiguration, Object)} methods will be called to
-     * resolve and register lifecycle methods.
+     * Retrieves the object contained in this {@code Component}, triggering the {@link ComponentBuilder builder} and all
+     * attached {@link ComponentDecorator decorators} if the component hasn't been built yet.
+     * <p>
+     * Upon initiation of the instance the
+     * {@link LifecycleHandlerInspector#registerLifecycleHandlers(LifecycleSupportingConfiguration, Object)} methods
+     * will be called to resolve and register lifecycle methods.
      *
-     * @return the initialized component contained in this instance
+     * @return The initialized component contained in this instance.
      */
     public C get() {
-        if (instance == null) {
-            NewConfiguration config = configSupplier.get();
-            instance = builder.build(config);
-            decorators.values()
-                      .forEach(decorator -> instance = decorator.decorate(config, instance));
-            logger.debug("Instantiated component [{}]: {}", name, instance);
-            LifecycleHandlerInspector.registerLifecycleHandlers(config, instance);
+        if (instance != null) {
+            return instance;
         }
+
+        LifecycleSupportingConfiguration config = configSupplier.get();
+        instance = builder.build(config);
+        decorators.values()
+                  .forEach(decorator -> instance = decorator.decorate(config, instance));
+        logger.debug("Instantiated component [{}]: {}", name, instance);
+        LifecycleHandlerInspector.registerLifecycleHandlers(config, instance);
         return instance;
     }
 
     /**
-     * Updates the builder function for this component.
+     * Updates the builder function for this {@code Component}.
      *
-     * @param componentBuilder The new builder function for the component
-     * @throws IllegalStateException when the component has already been retrieved using {@link #get()}.
+     * @param componentBuilder The new builder function for the {@code Component}.
+     * @throws IllegalStateException When the component has already been retrieved using {@link #get()}.
      */
     public void update(@Nonnull ComponentBuilder<C> componentBuilder) {
-        Assert.state(instance == null, () -> "Cannot update [" + name + "] as it is already in use.");
+        assertThat(
+                this.instance,
+                Objects::isNull,
+                () -> new IllegalArgumentException(
+                        "Cannot update component with [" + name + "] as it is already in use."
+                )
+        );
         this.builder = componentBuilder;
     }
 
     /**
-     * @param decorator
-     * @return
+     * Decorates the contained component upon {@link #get() initialization} by passing it through the given
+     * {@code decorator}.
+     *
+     * @param decorator The {@code ComponentDecorator} to use on the contained component upon
+     *                  {@link #get() initialization}.
+     * @return This {@code Component}, for a fluent API.
      */
     public Component<C> decorate(@Nonnull ComponentDecorator<C> decorator) {
-        // TODO this will hit Integer ceiling, so think of something else.
-        decorators.put(decorators.lastKey() + 1, requireNonNull(decorator, "Component decorators cannot be null."));
+        decorators.put(++defaultDecoratorOrder, requireNonNull(decorator, "Component decorators cannot be null."));
         return this;
     }
 
     /**
-     * @param order
-     * @param decorator
-     * @return
+     * Decorates the contained component upon {@link #get() initialization} by passing it through the given
+     * {@code decorator} at the specified {@code order}.
+     * <p>
+     * The {@code order} of the {@code decorator} will impact the decoration ordering of the outcome of this component.
+     * Will override previously registered {@link ComponentDecorator ComponentDecorators} if there already was one
+     * present at the given {@code order}.
+     *
+     * @param order     Defines the ordering of the given {@code decorator} among all other
+     *                  {@link ComponentDecorator ComponentDecorators} that have been registered.
+     * @param decorator The {@code ComponentDecorator} to use on the contained component upon
+     *                  {@link #get() initialization}.
+     * @return This {@code Component}, for a fluent API.
      */
-    public Component<C> decorate(Integer order,
+    public Component<C> decorate(int order,
                                  @Nonnull ComponentDecorator<C> decorator) {
         ComponentDecorator<C> previous =
                 decorators.put(order, requireNonNull(decorator, "Component decorators cannot be null."));
@@ -137,9 +175,9 @@ public class Component<C> {
     }
 
     /**
-     * Checks if the component is already initialized.
+     * Checks if this {@code Component} is already initialized.
      *
-     * @return true if component is initialized
+     * @return {@code true} if this {@code Component} is initialized, {@code false} otherwise.
      */
     public boolean isInitialized() {
         return instance != null;
