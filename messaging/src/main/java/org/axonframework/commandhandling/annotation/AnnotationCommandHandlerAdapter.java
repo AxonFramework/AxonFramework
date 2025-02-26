@@ -114,26 +114,19 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
     }
 
     private void initializeHandlersBasedOnModel() {
-        model.getAllHandlers()
-             .forEach((modelClass, handlers) -> {
-                 handlers.stream()
-                         .filter(h -> h.canHandleMessageType(CommandMessage.class))
-                         .forEach(this::registerHandler);
-             });
+        model.getAllHandlers().forEach(
+                (modelClass, handlers) ->
+                        handlers.stream()
+                                .filter(h -> h.canHandleMessageType(CommandMessage.class))
+                                .forEach(this::registerHandler));
     }
 
     private void registerHandler(MessageHandlingMember<? super T> handler) {
-        // TODO: Is this the right way to extract the QualifiedName? Shouldn't the message handling member expose it?
-        String commandName = handler.attribute("CommandHandler.commandName")
-                                    .map(cn -> (String) cn)
-                                    .orElse("");
+        QualifiedName qualifiedName = handler.unwrap(CommandMessageHandlingMember.class)
+                                      .map(CommandMessageHandlingMember::commandName)
+                                      .map(QualifiedName::new)
+                                      .orElseGet(() -> new QualifiedName(handler.payloadType()));
 
-        QualifiedName qualifiedName;
-        if(commandName.isEmpty()) {
-            qualifiedName = new QualifiedName(handler.payloadType());
-        } else {
-            qualifiedName = new QualifiedName(commandName);
-        }
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
         handlingComponent.subscribe(qualifiedName, (command, ctx) ->
                 interceptorChain.handle(command, ctx, target, handler)

@@ -16,25 +16,21 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-
-import java.util.concurrent.CompletableFuture;
-
 /**
- * Loader of a model of type {@code M} with identifier of type {@code ID}.
+ * Exception thrown by the {@link ModelRegistry} when no model is registered for a given model class. Can be resolved by
+ * registering a model for the given model class.
  *
- * @param <I> The type of the identifier of the model
- * @param <M>  The type of model to load
+ * @author Mitchell Herrijgers
+ * @since 5.0.0
  */
-@FunctionalInterface
-public interface ModelLoader<I, M> {
+public class MissingModelDefinitionException extends RuntimeException {
 
     /**
-     * Load the model with the given {@code id} and {@code context}.
+     * Initialize the exception with a message containing the given model class.
      *
-     * @param id      The identifier of the model to load
-     * @param context The context to load the model in
-     * @return a {@link CompletableFuture} which resolves to the model instance
+     * @param modelClass The model class for which no model was registered
      */
-    CompletableFuture<M> load(I id, ProcessingContext context);
+    public MissingModelDefinitionException(Class<?> modelClass) {
+        super("No Model was registered for the given model class: %s".formatted(modelClass.getName()));
+    }
 }

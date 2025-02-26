@@ -87,12 +87,12 @@ public class SimpleCommandHandlingComponent implements
     @Override
     public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                           @Nonnull ProcessingContext context) {
-        QualifiedName name = command.type().qualifiedName();
+        QualifiedName qualifiedName = command.type().qualifiedName();
         // TODO #3103 - add interceptor knowledge
         Optional<CommandHandlingComponent> optionalSubHandler = subComponents
                 .stream()
                 .filter(subComponent ->
-                                subComponent.supportedCommands().contains(name)
+                                subComponent.supportedCommands().contains(qualifiedName)
                 )
                 .findFirst();
 
@@ -101,12 +101,12 @@ public class SimpleCommandHandlingComponent implements
         }
 
 
-        if (commandHandlers.containsKey(name)) {
-            return commandHandlers.get(name).handle(command, context);
+        if (commandHandlers.containsKey(qualifiedName)) {
+            return commandHandlers.get(qualifiedName).handle(command, context);
         }
         return MessageStream.failed(new NoHandlerForCommandException(
                 "No handler was subscribed for command with qualified name[%s] on component [%s]. Registered handlers: [%s]".formatted(
-                        name.fullName(),
+                        qualifiedName.fullName(),
                         this.getClass().getName(),
                         commandHandlers.keySet()
                 ))

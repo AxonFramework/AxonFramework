@@ -16,25 +16,21 @@
 
 package org.axonframework.modelling.command;
 
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-
-import java.util.concurrent.CompletableFuture;
-
 /**
- * Loader of a model of type {@code M} with identifier of type {@code ID}.
+ * Exception thrown by the {@link ModelRegistry} when trying to register a model for a model class that already has a
+ * model registered.
  *
- * @param <I> The type of the identifier of the model
- * @param <M>  The type of model to load
+ * @author Mitchell Herrijgers
+ * @since 5.0.0
  */
-@FunctionalInterface
-public interface ModelLoader<I, M> {
+public class ModelAlreadyRegisteredException extends RuntimeException {
 
     /**
-     * Load the model with the given {@code id} and {@code context}.
+     * Initialize the exception with a message containing the given model class.
      *
-     * @param id      The identifier of the model to load
-     * @param context The context to load the model in
-     * @return a {@link CompletableFuture} which resolves to the model instance
+     * @param modelClass The model class for which no model was registered
      */
-    CompletableFuture<M> load(I id, ProcessingContext context);
+    public ModelAlreadyRegisteredException(Class<?> modelClass) {
+        super("Model model class was already registered: %s".formatted(modelClass.getName()));
+    }
 }

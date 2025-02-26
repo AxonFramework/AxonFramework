@@ -25,14 +25,14 @@ import javax.annotation.Nonnull;
 /**
  * Interface describing a registry of {@link StatefulCommandHandler command handlers}.
  *
- * @param <SELF> the type of the registry itself
+ * @param <S> the type of the registry itself
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public interface StatefulCommandHandlerRegistry<SELF extends StatefulCommandHandlerRegistry<SELF>>
-        extends CommandHandlerRegistry<SELF> {
+public interface StatefulCommandHandlerRegistry<S extends StatefulCommandHandlerRegistry<S>>
+        extends CommandHandlerRegistry<S> {
 
     /**
      * Subscribe the given {@link StatefulCommandHandler} for a {@link QualifiedName name}.
@@ -41,5 +41,5 @@ public interface StatefulCommandHandlerRegistry<SELF extends StatefulCommandHand
      * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given name.
      * @return This registry for fluent interfacing.
      */
-    SELF subscribe(@Nonnull QualifiedName name, @Nonnull StatefulCommandHandler commandHandler);
+    S subscribe(@Nonnull QualifiedName name, @Nonnull StatefulCommandHandler commandHandler);
 }
