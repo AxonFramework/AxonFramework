@@ -6,7 +6,8 @@ Version and Dependency Compatibility
 * Spring Framework 5 is no longer supported. You should upgrade to Spring Framework 6 or higher.
 * Javax Persistence is completely replaced for Jakarta Persistence. This means the majority of `javax` reference no
   longer apply.
-* EhCache 2 (from group identifier `net.sf.ehcache`) has been faced out entirely in favor of EhCache 3 (from group identifier `org.ehcache`).
+* EhCache 2 (from group identifier `net.sf.ehcache`) has been faced out entirely in favor of EhCache 3 (from group
+  identifier `org.ehcache`).
 
 Major API Changes
 =================
@@ -29,6 +30,12 @@ Major API Changes
 * We no longer support message handler annotated constructors. For example, the constructor of an aggregate can no
   longer contain the `@CommandHandler` annotation. Instead, the `@CreationPolicy` should be used.
 * All annotation logic is moved to the annotation module.
+* The Configuration of Axon Framework has been flipped around. Instead of having a `axon-configuration` module that
+  depends on all of Axon's modules to provide a global configuration, the core module of Axon now contains a
+  `Configurer` with a base set of operations. This `Configurer` can either take `Components` or `Modules`. The former
+  typically represents an infrastructure component (e.g. the `CommandBus`) whereas modules are themselves configurers
+  for a specific module of an application. For an exhaustive list of all the operations that have been removed, moved,
+  or altered, see the [Configurer and Configuration](#configurer-and-configuration) section.
 
 ## Unit of Work
 
@@ -138,7 +145,111 @@ TODO - provide description once the `MessageStream` generics discussion has been
 
 TODO - Start filling adjusted operation once the `MessageStream` generics discussion has been finalized.
 
-*
+## Configurer and Configuration
+
+The configuration API of Axon Framework has seen a big adjustment. You can essentially say it has been turned upside
+down. We have done so, because the `axon-configuration` module enforced a dependency on all other modules of Axon
+Framework. Due to this, it was, for example, not possible to make an Axon Framework application that only support
+command messaging and use the configuration API; the module just pulled in everything.
+
+As an act to clean this up, we have broken down the `Configurer` and `Configuration` into manageable chunks.
+As such, the `Configurer` interface now only provides basic operations
+to [register components](#registering-components-with-the-componentbuilder-interface), [decorate components](#decorating-components-with-the-componentdecorator-interface),
+and [register modules](#registering-modules-with-the-modulebuilder-interface), besides the basic start-and-shutdown
+handler registration from the `LifecycleOperations` interface.
+The `Configuration` in turn now only has the means to retrieve components and retrieve modules.
+
+However, we still provide the flexibility to specify your buses, gateways, handlers, and other Axon-specific components.
+To configure those, you will have to provide that specific's Axon module's configuration `Module`. A `Module` is an
+implementation of a `Configurer` interface, which should be registered as part of a `ModuleBuilder`.
+
+So, how do you start Axon's configuration? You begin with the `RootConfigurer` that can be constructed through the
+static `RootConfigurer#defaultConfigurer` method. On this `RootConfigurer`, you are able to provide components directly
+if desired, or use the aforementioned module-specific `Modules`.
+You would do so by registering a `ModuleBuilder` with the `RootConfigurer`.
+
+In this fashion, we intent to ensure the following points:
+
+1. We clean up the `Configurer` and `Configuration` API substantially by splitting it into manageable chunks. This
+   should simplify configuration of Axon applications.
+2. We reverse the dependency order. In doing so, each Axon Framework module can provide its own configuration `Module`.
+   This allows users to pick and choose the Axon modules they need.
+
+For more details on how to use the new configuration API, be sure to read the following subsections.
+
+### Registering components with the ComponentBuilder interface
+
+The configuration API boosts a new interface, called the `ComponentBuilder`. The `ComponentBuilder` can generate any
+type of component you would need to register with Axon, based on a given `Configuration` instance. By providing the
+`Configuration` instance, you are able to pull other (Axon) components out of it that you might require to construct
+your component. The `Configurer#registerComponent` method is adjusted to expect such a `ComponentBuilder` upon
+registration.
+
+Here's an example of how to register a `DefaultCommandGateway` in Java:
+
+```java
+public static void main(String[] args) {
+    RootConfigurer.defaultConfigurer()
+                  .registerComponent(config -> new DefaultCommandGateway(
+                          config.getComponent(CommandBus.class),
+                          config.getComponent(MessageTypeResolver.class)
+                  ));
+    // Further configuration...
+}
+```
+
+### Decorating components with the ComponentDecorator interface
+
+New functionality to the configuration API, is the ability to provide decorators
+for [registered components](#registering-components-with-the-componentbuilder-interface). The decorator pattern is what
+Axon Framework uses to construct its infrastructure components, like the `CommandBus`, as of version 5.
+
+In the command bus' example, concept like intercepting, tracing, being distributed, and retrying, are now decorators
+around a `SimpleCommandBus`. We register those through the `Configurer#registerDecorator` method, which expect
+provisioning of a `ComponentDecorator` instance. The `ComponentDecorator` provides a `Configuration` and _delegate_
+component when invoked, and expects a new instance of the `ComponentDecorator's` generic type to be returned.
+
+Here's an example of how we can decorate the `SimpleCommandBus` in with a `ComponentDecorator`, in Java:
+
+```java
+public static void main(String[] args) {
+    RootConfigurer.defaultConfigurer()
+                  .registerComponent(CommandBus.class, config -> new SimpleCommandBus())
+                  .registerDecorator(
+                          CommandBus.class,
+                          (config, delegate) -> new TracingCommandBus(
+                                  delegate,
+                                  config.getComponent(CommandBusSpanFactory.class)
+                          )
+                  );
+    // Further configuration...
+}
+```
+
+By providing this functionality on the base `Configurer` interface, you are able to decorate any of Axon's components
+with your own custom logic. Since ordering of these decorates can be of importance, you are able to provide an order, if
+needed, upon registration of a `ComponentDecorator`.
+
+### Registering modules with the ModuleBuilder interface
+
+To support the desired module-specific configuration modules, each `Configurer` provides the means to register a
+`ModuleBuilder`.
+The `ModuleBuilder` receives the `LifecycleSupportingConfiguration`, that should be given to the `Module` to construct.
+A `LifecycleSupportingConfiguration` instance is given, so that the `Module` under construction is able to both retrieve
+components and modules, as well as register start and shutdown handlers. The latter allow the `Module` to take part in
+the lifecycle of Axon Framework, ensuring that, for example, handler registration phases happen at the right point in
+time.
+
+As messaging support is at the core of Axon, you would typically follow up the construction of a `RootConfigurer` by
+registering a `InfraConfigurer` module. The sample below shows how this can be achieved in Java:
+
+```java
+public static void main(String[] args) {
+    RootConfigurer.defaultConfigurer()
+                  .registerModule(InfraConfigurer::configurer);
+    // Further configuration...
+}
+```
 
 Other API changes
 =================
@@ -177,8 +288,13 @@ Stored format changes
 4. The dbscheduler `org.axonframework.deadline.dbscheduler.DbSchedulerHumanReadableDeadlineDetails` expects the
    `QualifiedName` to be present under the field `type`.
 
-Moved / Remove Classes
+Classes changes
 ======================
+
+This section contains two tables:
+
+1. A table of all the moved and renamed classes.
+2. A table of all the removed classes.
 
 ### Moved / Renamed
 
@@ -190,6 +306,13 @@ Moved / Remove Classes
 | org.axonframework.commandhandling.CommandHandler             | org.axonframework.commandhandling.annotation.CommandHandler  |
 | org.axonframework.eventhandling.EventHandler                 | org.axonframework.eventhandling.annotation.EventHandler      |
 | org.axonframework.queryhandling.QueryHandler                 | org.axonframework.queryhandling.annotation.QueryHandler      |
+| org.axonframework.config.Configurer                          | org.axonframework.configuration.NewConfigurer                |
+| org.axonframework.config.Configuration                       | org.axonframework.configuration.NewConfiguration             |
+| org.axonframework.config.Component                           | org.axonframework.configuration.Component                    |
+| org.axonframework.config.ModuleConfiguration                 | org.axonframework.configuration.Module                       |
+| org.axonframework.config.LifecycleHandler                    | org.axonframework.configuration.LifecycleHandler             |
+| org.axonframework.config.LifecycleHandlerInspector           | org.axonframework.configuration.LifecycleHandlerInspector    |
+| org.axonframework.config.LifecycleOperations                 | org.axonframework.configuration.LifecycleOperations          |
 
 ### Removed
 
@@ -203,10 +326,18 @@ Moved / Remove Classes
 | org.axonframework.messaging.unitofwork.MessageProcessingContext | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
 | org.axonframework.eventsourcing.eventstore.AbstractEventStore   | Made obsolete through the rewrite of the `EventStore`                                     |
 
-Method Signature Changes
+Method signature changes
 ========================
 
-### Constructors
+This section contains three subsections, called:
+
+1. [Parameter adjustments](#parameter-adjustments)
+2. [Moved methods and constructors](#moved-methods-and-constructors)
+3. [Removed methods and constructors](#removed-methods-and-constructors)
+
+### Parameter adjustments
+
+#### Constructors
 
 | Constructor                                                                                | What                           | Why                                          | 
 |--------------------------------------------------------------------------------------------|--------------------------------|----------------------------------------------|
@@ -224,3 +355,33 @@ Method Signature Changes
 | All none-copy org.axonframework.commandhandling.GenericCommandResultMessage constructors   | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
 | All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
 | All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+
+#### Methods
+
+| Method                       | What                                                                   | Why                                     |
+|------------------------------|------------------------------------------------------------------------|-----------------------------------------|
+| Configurer#registerComponent | Replaced `Function<Configuration, ? extends C>` for `ComponentBuilder` | See [here](#componentbuilder-interface) |
+| Configurer#registerModule    | Replaced `ModuleConfiguration` for `ModuleBuilder`                     | See [here](#modulebuilder-interface)    |
+
+### Moved methods and constructors
+
+| Constructor / Method                     | To where                                           |
+|------------------------------------------|----------------------------------------------------|
+| `Configurer#registerCommandHandler`      | `InfraConfigurer#registerCommandHandler`           | 
+| `Configurer#registerQueryHandler`        | `InfraConfigurer#registerQueryHandler`             | 
+| `Configurer#registerMessageHandler`      | `InfraConfigurer#registerMessageHandlingComponent` | 
+| `Configurer#configureCommandBus`         | `InfraConfigurer#registerCommandBus`               | 
+| `Configurer#configureEventBus`           | `InfraConfigurer#registerEventBus`                 | 
+| `Configurer#configureQueryBus`           | `InfraConfigurer#registerQueryBus`                 | 
+| `Configurer#configureQueryUpdateEmitter` | `InfraConfigurer#registerQueryUpdateEmitter`       | 
+
+### Removed methods and constructors
+
+| Constructor / Method                                                            | Why                                       | 
+|---------------------------------------------------------------------------------|-------------------------------------------|
+| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`        | See [here](#configurer-and-configuration) |
+| `org.axonframework.config.ModuleConfiguration#unwrap()`                         | See [here](#configurer-and-configuration) |
+| `org.axonframework.config.Configuration#lifecycleRegistry()`                    | See [here](#configurer-and-configuration) |
+| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`     | See [here](#configurer-and-configuration) |
+| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`     | See [here](#configurer-and-configuration) |
+| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)` | See [here](#configurer-and-configuration) |
