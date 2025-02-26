@@ -25,11 +25,11 @@ import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.CommandLoadFactorProvider;
 import org.axonframework.axonserver.connector.command.CommandPriorityCalculator;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
+import org.axonframework.axonserver.connector.event.axon.DefaultPersistentStreamMessageSourceFactory;
 import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfiguration;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSource;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceFactory;
-import org.axonframework.axonserver.connector.event.axon.DefaultPersistentStreamMessageSourceFactory;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamSequencingPolicyProvider;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
@@ -268,6 +268,11 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     @ConditionalOnProperty(name = "axon.axonserver.auto-persistent-streams.enabled")
     public static class AutoPersistentStreamConfiguration {
 
+        /**
+         * Creates {@link AxonServerConfiguration.PersistentStreamSettings} bean for auto persistent streams.
+         *
+         * @return {@link AxonServerConfiguration.PersistentStreamSettings}
+         */
         @Bean
         @ConfigurationProperties(prefix = "axon.axonserver.auto-persistent-streams")
         AxonServerConfiguration.PersistentStreamSettings autoPersistentStreamSettings() {
@@ -276,11 +281,15 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     /**
-     * TODO
+     * The method registers {@link EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder} in
+     * {@link EventProcessingModule}
      *
-     * @param executorBuilder
-     * @param eventProcessingModule
-     * @param psFactory
+     * @param executorBuilder       is used to create
+     *                              {@link EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder}
+     * @param eventProcessingModule where {@link EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder}
+     *                              will be registered.
+     * @param psFactory             is used to create
+     *                              {@link EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder}
      * @return
      */
     @Bean
@@ -289,7 +298,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
             PersistentStreamScheduledExecutorBuilder executorBuilder,
             EventProcessingModule eventProcessingModule,
             PersistentStreamMessageSourceFactory psFactory,
-            AxonServerConfiguration.PersistentStreamSettings autoPersistentStreamSettings) {
+            @Qualifier("autoPersistentStreamSettings") AxonServerConfiguration.PersistentStreamSettings autoPersistentStreamSettings) {
 
         EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder ret = processingGroupName -> {
             String psName = processingGroupName + "-stream";

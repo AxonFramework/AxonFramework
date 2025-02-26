@@ -173,9 +173,11 @@ public interface EventProcessingConfigurer {
             Function<Configuration, SubscribableMessageSource<EventMessage<?>>> defaultSource);
 
     /**
-     * TODO
+     * If this filed is set, Subscribing Event Processors will be created for all processing groups if none was
+     * explicitly provided.
      *
-     * @param builder
+     * @param builder a function that creates {@link SubscribableMessageSourceDefinition} for given processing group
+     *                name.
      */
     void setSubscribableMessageSourceDefinitionBuilder(SubscribableMessageSourceDefinitionBuilder builder);
 
@@ -863,9 +865,9 @@ public interface EventProcessingConfigurer {
     interface SubscribableMessageSourceDefinitionBuilder {
 
         /**
-         * Creates SubscribableMessageSourceDefinition for particular processing group
+         * Creates SubscribableMessageSourceDefinition for given processing group.
          *
-         * @param processingGroupName the name of processing group for which definition is about to be applied
+         * @param processingGroupName the name of processing group for which definition is about to be created.
          * @return
          */
         SubscribableMessageSourceDefinition<EventMessage<?>> build(String processingGroupName);
