@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class SingleValueMessageStreamTest extends MessageStreamTest<Message<String>> {
+class SingleValueMessageStreamTest extends MessageStreamTest<Message<String>, Message<String>> {
 
     @Override
     MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {

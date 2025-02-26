@@ -27,7 +27,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class CompletionCallbackMessageStreamTest extends MessageStreamTest<Message<String>> {
+class CompletionCallbackMessageStreamTest extends MessageStreamTest<Message<String>, Message<String>> {
 
     private static final Runnable NO_OP_COMPLETION_CALLBACK = () -> {
     };

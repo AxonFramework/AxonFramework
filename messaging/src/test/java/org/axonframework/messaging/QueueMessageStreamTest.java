@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class QueueMessageStreamTest extends MessageStreamTest<EventMessage<String>> {
+class QueueMessageStreamTest extends MessageStreamTest<EventMessage<String>, EventMessage<String>> {
 
     @Override
     MessageStream<EventMessage<String>> completedTestSubject(List<EventMessage<String>> messages) {

@@ -26,7 +26,7 @@ import java.util.List;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class FailedMessageStreamTest extends MessageStreamTest<Message<Void>> {
+class FailedMessageStreamTest extends MessageStreamTest<Message<Void>, Message<Void>> {
 
     @Override
     MessageStream<Message<Void>> completedTestSubject(List<Message<Void>> messages) {
