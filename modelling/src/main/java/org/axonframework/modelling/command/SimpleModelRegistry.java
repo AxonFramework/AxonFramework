@@ -65,9 +65,7 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
             Class<M> modelClass,
             ModelLoader<ID, M> loadFunction) {
         if (!getModelDefinitionsFor(modelClass).isEmpty()) {
-            throw new IllegalStateException(
-                    "Model with type [%s] already registered".formatted(modelClass.getName())
-            );
+            throw new ModelAlreadyRegisteredException(modelClass);
         }
         modelDefinitions.add(new ModelDefinition<>(idClass, modelClass, loadFunction));
         return this;
@@ -124,9 +122,7 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
 
             var definitions = getModelDefinitionsFor(modelType);
             if (definitions.isEmpty()) {
-                return CompletableFuture.failedFuture(new IllegalStateException(
-                        "No model definition found for model type: %s".formatted(modelType)
-                ));
+                return CompletableFuture.failedFuture(new MissingModelDefinitionException(modelType));
             }
             return loadModel(definitions.getFirst(), identifier);
         }
