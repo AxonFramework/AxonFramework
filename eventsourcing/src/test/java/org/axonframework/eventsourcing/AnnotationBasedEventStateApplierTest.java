@@ -339,6 +339,4 @@ class AnnotationBasedEventStateApplierTest {
             this.handledCount++;
         }
     }
-
-    // todo: add test - throws tech error (non-event handler)
 }
