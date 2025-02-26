@@ -41,7 +41,7 @@ class IgnoredEntriesMessageStream<M extends Message<?>>
      *
      * @param delegate The instance to delegate calls to.
      */
-    public IgnoredEntriesMessageStream(@Nonnull MessageStream<M> delegate) {
+    IgnoredEntriesMessageStream(@Nonnull MessageStream<M> delegate) {
         super(delegate);
     }
 
@@ -49,5 +49,4 @@ class IgnoredEntriesMessageStream<M extends Message<?>>
     public Optional<Entry<Message<Void>>> next() {
         return delegate().next().flatMap(r -> Optional.empty());
     }
-
 }
