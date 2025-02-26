@@ -27,7 +27,9 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.MetaDataValue;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SourceId;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
@@ -40,6 +42,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link AnnotatedEventHandlingComponent}.
@@ -49,14 +52,14 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AnnotatedEventHandlingComponentTest {
 
-    private TestEventHandlingComponent state;
+    private TestEventHandler eventHandler;
     private EventHandlingComponent eventHandlingComponent;
     private final ProcessingContext processingContext = ProcessingContext.NONE;
 
     @BeforeEach
     void beforeEach() {
-        state = new TestEventHandlingComponent();
-        eventHandlingComponent = new AnnotatedEventHandlingComponent<>(state);
+        eventHandler = new TestEventHandler();
+        eventHandlingComponent = new AnnotatedEventHandlingComponent<>(eventHandler);
     }
 
     @Test
@@ -82,7 +85,7 @@ class AnnotatedEventHandlingComponentTest {
 
             // then
             assertSuccessfulStream(result);
-            assertEquals("null-0", state.handledPayloads);
+            assertEquals("null-0", eventHandler.handledPayloads);
         }
 
         @Test
@@ -96,7 +99,7 @@ class AnnotatedEventHandlingComponentTest {
             // then
             assertSuccessfulStream(result);
             assertInstanceOf(MessageStream.Empty.class, result);
-            assertEquals("null-0", state.handledPayloads);
+            assertEquals("null-0", eventHandler.handledPayloads);
         }
 
         @Test
@@ -110,8 +113,8 @@ class AnnotatedEventHandlingComponentTest {
             assertSuccessfulStream(result1);
             assertSuccessfulStream(result2);
             assertSuccessfulStream(result3);
-            assertEquals("null-0-1-2", state.handledPayloads);
-            assertEquals(3, state.handledCount);
+            assertEquals("null-0-1-2", eventHandler.handledPayloads);
+            assertEquals(3, eventHandler.handledCount);
         }
     }
 
@@ -128,7 +131,7 @@ class AnnotatedEventHandlingComponentTest {
 
             // then
             assertSuccessfulStream(result);
-            assertEquals("null-sampleValue", state.handledMetadata);
+            assertEquals("null-sampleValue", eventHandler.handledMetadata);
         }
 
         @Test
@@ -141,7 +144,7 @@ class AnnotatedEventHandlingComponentTest {
 
             // then
             assertSuccessfulStream(result);
-            assertEquals("null-0", state.handledSequences);
+            assertEquals("null-0", eventHandler.handledSequences);
         }
 
         @Test
@@ -154,7 +157,7 @@ class AnnotatedEventHandlingComponentTest {
 
             // then
             assertSuccessfulStream(result);
-            assertEquals("null-id", state.handledSources);
+            assertEquals("null-id", eventHandler.handledSources);
         }
 
         @Test
@@ -170,7 +173,7 @@ class AnnotatedEventHandlingComponentTest {
 
             // then
             assertSuccessfulStream(result);
-            assertEquals("null-" + timestamp, state.handledTimestamps);
+            assertEquals("null-" + timestamp, eventHandler.handledTimestamps);
         }
     }
 
@@ -184,8 +187,8 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void doNotHandleNotDeclaredEventType() {
             // given
-            var state = new HandlingJustStringEventHandlingComponent();
-            var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(state);
+            var eventHandler = new HandlingJustStringEventHandler();
+            var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(eventHandler);
             var event = domainEvent(0);
 
             // when
@@ -193,7 +196,7 @@ class AnnotatedEventHandlingComponentTest {
 
             // then
             assertSuccessfulStream(result);
-            assertEquals(0, state.handledCount);
+            assertEquals(0, eventHandler.handledCount);
         }
 
         @Test
@@ -206,9 +209,9 @@ class AnnotatedEventHandlingComponentTest {
 
             // then
             assertSuccessfulStream(result);
-            assertEquals("null-0", state.handledPayloads);
-            assertFalse(state.objectHandlerInvoked);
-            assertEquals(1, state.handledCount);
+            assertEquals("null-0", eventHandler.handledPayloads);
+            assertFalse(eventHandler.objectHandlerInvoked);
+            assertEquals(1, eventHandler.handledCount);
         }
     }
 
@@ -218,8 +221,8 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void returnsFailedMessageStreamIfExceptionThrownInsideEventHandler() {
             // given
-            var state = new ErrorThrowingEventHandlingComponent();
-            var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(state);
+            var eventHandler = new ErrorThrowingEventHandler();
+            var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(eventHandler);
             var event = domainEvent(0);
 
             // when
@@ -230,6 +233,25 @@ class AnnotatedEventHandlingComponentTest {
             var exception = result.error().get();
             assertInstanceOf(RuntimeException.class, exception);
             assertEquals("Simulated error for event: 0", exception.getMessage());
+        }
+
+        @Test
+        void propagateExceptionIfExceptionThrownOutOfEventHandler() {
+            // given
+            var eventHandler = new TestEventHandler();
+            AnnotatedHandlerInspector<TestEventHandler> errorThrowingDependency = mock(AnnotatedHandlerInspector.class);
+            when(errorThrowingDependency.getHandlers(any())).thenThrow(new RuntimeException("Simulated error"));
+            var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(eventHandler, errorThrowingDependency);
+            var event = domainEvent(0);
+
+            // when-thenn
+            var exception = assertThrows(
+                    RuntimeException.class,
+                    () -> eventHandlingComponent.handle(event, processingContext)
+            );
+
+            // then
+            assertEquals("Simulated error", exception.getMessage());
         }
 
         @Test
@@ -263,7 +285,7 @@ class AnnotatedEventHandlingComponentTest {
         );
     }
 
-    private static class TestEventHandlingComponent {
+    private static class TestEventHandler {
 
         private String handledPayloads = "null";
         private String handledMetadata = "null";
@@ -274,9 +296,7 @@ class AnnotatedEventHandlingComponentTest {
         private boolean objectHandlerInvoked = false;
 
         @EventHandler
-        void handle(
-                Object payload
-        ) {
+        void handle(Object payload) {
             this.objectHandlerInvoked = true;
             this.handledCount++;
         }
@@ -298,7 +318,7 @@ class AnnotatedEventHandlingComponentTest {
         }
     }
 
-    private static class ErrorThrowingEventHandlingComponent {
+    private static class ErrorThrowingEventHandler {
 
         @EventHandler
         public void handle(Integer event) {
@@ -306,7 +326,7 @@ class AnnotatedEventHandlingComponentTest {
         }
     }
 
-    private static class HandlingJustStringEventHandlingComponent {
+    private static class HandlingJustStringEventHandler {
 
         private int handledCount = 0;
 
