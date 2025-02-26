@@ -72,22 +72,25 @@ public class Component<C> {
     public Component(@Nonnull Identifier<C> identifier,
                      @Nonnull LifecycleSupportingConfiguration config,
                      @Nonnull ComponentBuilder<C> builder) {
-        this(identifier, () -> config, builder);
+        this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
+        requireNonNull(config, "The configuration supplier cannot be null.");
+        this.configSupplier = () -> config;
+        this.builder = requireNonNull(builder, "A Component builder cannot be null.");
     }
 
     /**
-     * Creates a {@code Component} for the given {@code config} with given {@code identifier} created by the given
-     * {@code builder}.
+     * Creates a {@code Component} for the given {@code configSupplier} with given {@code identifier} created by the
+     * given {@code builder}.
      *
-     * @param identifier The identifier of the component.
-     * @param config     The supplier function of the {@code NewConfiguration}.
-     * @param builder    The builder function of the component.
+     * @param identifier     The identifier of the component.
+     * @param configSupplier The supplier function of the {@code NewConfiguration}.
+     * @param builder        The builder function of the component.
      */
     public Component(@Nonnull Identifier<C> identifier,
-                     @Nonnull Supplier<LifecycleSupportingConfiguration> config,
+                     @Nonnull Supplier<LifecycleSupportingConfiguration> configSupplier,
                      @Nonnull ComponentBuilder<C> builder) {
         this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
-        this.configSupplier = requireNonNull(config, "The configuration supplier cannot be null.");
+        this.configSupplier = requireNonNull(configSupplier, "The configuration supplier cannot be null.");
         this.builder = requireNonNull(builder, "A Component builder cannot be null.");
     }
 
@@ -125,7 +128,7 @@ public class Component<C> {
         assertThat(
                 this.instance,
                 Objects::isNull,
-                () -> new IllegalArgumentException(
+                () -> new IllegalStateException(
                         "Cannot update component with [" + identifier + "] as it is already in use."
                 )
         );
