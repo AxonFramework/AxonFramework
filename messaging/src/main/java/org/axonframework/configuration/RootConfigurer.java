@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.Component.Identifier;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -67,25 +68,79 @@ public interface RootConfigurer extends NewConfigurer {
      */
     static RootConfigurer configurer(boolean autoLocateConfigurerModules) {
         DefaultRootConfigurer configurer = new DefaultRootConfigurer();
-        if (autoLocateConfigurerModules) {
-            ServiceLoader<NewConfigurerModule> configurerModuleLoader =
-                    ServiceLoader.load(NewConfigurerModule.class, configurer.getClass().getClassLoader());
-            List<NewConfigurerModule> configurerModules = new ArrayList<>();
-            configurerModuleLoader.forEach(configurerModules::add);
-            configurerModules.sort(Comparator.comparingInt(NewConfigurerModule::order));
-            configurerModules.forEach(cm -> cm.configureModule(configurer));
+        if (!autoLocateConfigurerModules) {
+            return configurer;
         }
+
+        ServiceLoader<NewConfigurerModule> configurerModuleLoader =
+                ServiceLoader.load(NewConfigurerModule.class, configurer.getClass().getClassLoader());
+        List<NewConfigurerModule> configurerModules = new ArrayList<>();
+        configurerModuleLoader.forEach(configurerModules::add);
+        configurerModules.sort(Comparator.comparingInt(NewConfigurerModule::order));
+        configurerModules.forEach(cm -> cm.configureModule(configurer));
         return configurer;
     }
 
+    // TODO I don't like this...what about casting magic?
     @Override
-    <C> RootConfigurer registerComponent(@Nonnull Class<C> type, @Nonnull ComponentBuilder<C> builder);
+    default <C> RootConfigurer registerComponent(@Nonnull Class<C> type,
+                                                 @Nonnull ComponentBuilder<C> builder) {
+        NewConfigurer.super.registerComponent(type, builder);
+        return this;
+    }
 
     @Override
-    <C> RootConfigurer registerDecorator(@Nonnull Class<C> type, @Nonnull ComponentDecorator<C> decorator);
+    default <C> RootConfigurer registerComponent(@Nonnull Class<C> type,
+                                                @Nonnull String name,
+                                                @Nonnull ComponentBuilder<C> builder) {
+        NewConfigurer.super.registerComponent(type, name, builder);
+        return this;
+    }
 
     @Override
-    <C> RootConfigurer registerDecorator(@Nonnull Class<C> type, int order, @Nonnull ComponentDecorator<C> decorator);
+    <C> RootConfigurer registerComponent(@Nonnull Identifier<C> identifier,
+                                         @Nonnull ComponentBuilder<C> builder);
+
+    @Override
+    default <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
+                                                 @Nonnull ComponentDecorator<C> decorator) {
+        NewConfigurer.super.registerDecorator(type, decorator);
+        return this;
+    }
+
+    @Override
+    default <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
+                                                 @Nonnull String name,
+                                                 @Nonnull ComponentDecorator<C> decorator) {
+        NewConfigurer.super.registerDecorator(type, name, decorator);
+        return this;
+    }
+
+    @Override
+    <C> RootConfigurer registerDecorator(@Nonnull Identifier<C> identifier,
+                                         @Nonnull ComponentDecorator<C> decorator);
+
+    @Override
+    default <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
+                                                 int order,
+                                                 @Nonnull ComponentDecorator<C> decorator) {
+        NewConfigurer.super.registerDecorator(type, order, decorator);
+        return this;
+    }
+
+    @Override
+    default <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
+                                                 @Nonnull String name,
+                                                 int order,
+                                                 @Nonnull ComponentDecorator<C> decorator) {
+        NewConfigurer.super.registerDecorator(type, name, order, decorator);
+        return this;
+    }
+
+    @Override
+    <C> RootConfigurer registerDecorator(@Nonnull Identifier<C> identifier,
+                                         int order,
+                                         @Nonnull ComponentDecorator<C> decorator);
 
     @Override
     RootConfigurer registerModule(@Nonnull ModuleBuilder moduleBuilder);

@@ -19,6 +19,7 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.configuration.Component.Identifier;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,22 +73,26 @@ class DefaultRootConfigurer extends AbstractConfigurer implements RootConfigurer
         super(null); // 🦸 <- Is this a train? Is this a bullet? No, it is Super Null!
     }
 
+    // TODO I don't like this...what about casting magic?
     @Override
-    public <C> RootConfigurer registerComponent(@Nonnull Class<C> type, @Nonnull ComponentBuilder<C> builder) {
-        super.registerComponent(type, builder);
+    public <C> RootConfigurer registerComponent(@Nonnull Identifier<C> identifier,
+                                                @Nonnull ComponentBuilder<C> builder) {
+        super.registerComponent(identifier, builder);
         return this;
     }
 
     @Override
-    public <C> RootConfigurer registerDecorator(@Nonnull Class<C> type, @Nonnull ComponentDecorator<C> decorator) {
-        super.registerDecorator(type, decorator);
-        return this;
-    }
-
-    @Override
-    public <C> RootConfigurer registerDecorator(@Nonnull Class<C> type, int order,
+    public <C> RootConfigurer registerDecorator(@Nonnull Identifier<C> identifier,
                                                 @Nonnull ComponentDecorator<C> decorator) {
-        super.registerDecorator(type, order, decorator);
+        super.registerDecorator(identifier, decorator);
+        return this;
+    }
+
+    @Override
+    public <C> RootConfigurer registerDecorator(@Nonnull Identifier<C> identifier,
+                                                int order,
+                                                @Nonnull ComponentDecorator<C> decorator) {
+        super.registerDecorator(identifier, order, decorator);
         return this;
     }
 
@@ -259,19 +264,20 @@ class DefaultRootConfigurer extends AbstractConfigurer implements RootConfigurer
         }
 
         @Override
-        public <T> Optional<T> getOptionalComponent(@Nonnull Class<T> type) {
-            return components.getOptional(type);
+        public <C> Optional<C> getOptionalComponent(@Nonnull Identifier<C> identifier) {
+            return components.getOptional(identifier);
         }
 
         @Nonnull
         @Override
-        public <C> C getComponent(@Nonnull Class<C> type, @Nonnull Supplier<C> defaultImpl) {
+        public <C> C getComponent(@Nonnull Identifier<C> identifier,
+                                  @Nonnull Supplier<C> defaultImpl) {
             Object component = components.computeIfAbsent(
-                    type,
-                    t -> new Component<>(type.getSimpleName(), config(),
-                                         c -> c.getOptionalComponent(type).orElseGet(defaultImpl))
+                    identifier,
+                    t -> new Component<>(identifier, config(),
+                                         c -> c.getOptionalComponent(identifier).orElseGet(defaultImpl))
             ).get();
-            return type.cast(component);
+            return identifier.type().cast(component);
         }
 
         @Override

@@ -18,6 +18,7 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.configuration.Component.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,36 +53,34 @@ public abstract class AbstractConfigurer implements NewConfigurer {
     }
 
     @Override
-    public <C> NewConfigurer registerComponent(@Nonnull Class<C> type,
+    public <C> NewConfigurer registerComponent(@Nonnull Identifier<C> identifier,
                                                @Nonnull ComponentBuilder<C> builder) {
-        logger.debug("Registering component [{}].", type.getSimpleName());
-        components.put(type, new Component<>(type.getSimpleName(), config, builder));
+        logger.debug("Registering component [{}].", identifier);
+        components.put(identifier, new Component<>(identifier, config, builder));
         return this;
     }
 
     @Override
-    public <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
+    public <C> NewConfigurer registerDecorator(@Nonnull Identifier<C> identifier,
                                                @Nonnull ComponentDecorator<C> decorator) {
-        String name = type.getSimpleName();
-        logger.debug("Registering decorator for [{}].", name);
-        components.getOptionalComponent(type)
+        logger.debug("Registering decorator for [{}].", identifier);
+        components.getOptionalComponent(identifier)
                   .map(component -> component.decorate(decorator))
                   .orElseThrow(() -> new IllegalArgumentException(
-                          "Cannot decorate type [" + type + "] since there is no component builder for this type."
+                          "Cannot decorate type [" + identifier + "] since there is no component builder for this type."
                   ));
         return this;
     }
 
     @Override
-    public <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
+    public <C> NewConfigurer registerDecorator(@Nonnull Identifier<C> identifier,
                                                int order,
                                                @Nonnull ComponentDecorator<C> decorator) {
-        String name = type.getSimpleName();
-        logger.debug("Registering decorator for [{}] at order #{}.", name, order);
-        components.getOptionalComponent(type)
+        logger.debug("Registering decorator for [{}] at order #{}.", identifier, order);
+        components.getOptionalComponent(identifier)
                   .map(component -> component.decorate(order, decorator))
                   .orElseThrow(() -> new IllegalArgumentException(
-                          "Cannot decorate type [" + type + "] since there is no component builder for this type."
+                          "Cannot decorate type [" + identifier + "] since there is no component builder for this type."
                   ));
         return this;
     }
@@ -140,23 +139,23 @@ public abstract class AbstractConfigurer implements NewConfigurer {
         }
 
         @Override
-        public <T> Optional<T> getOptionalComponent(@Nonnull Class<T> type) {
+        public <T> Optional<T> getOptionalComponent(@Nonnull Identifier<T> identifier) {
             // TODO cycle through modules here too
-            return components.getOptional(type)
-                             .or(() -> parent != null ? parent.getOptionalComponent(type) : Optional.empty());
+            return components.getOptional(identifier)
+                             .or(() -> parent != null ? parent.getOptionalComponent(identifier) : Optional.empty());
         }
 
         @Override
         @Nonnull
-        public <T> T getComponent(@Nonnull Class<T> type,
+        public <T> T getComponent(@Nonnull Identifier<T> identifier,
                                   @Nonnull Supplier<T> defaultImpl) {
             // TODO make this go down the chain through the parent somehow
             Object component = components.computeIfAbsent(
-                    type,
-                    t -> new Component<>(type.getSimpleName(), config(),
-                                         c -> c.getOptionalComponent(type).orElseGet(defaultImpl))
+                    identifier,
+                    t -> new Component<>(identifier, config(),
+                                         c -> c.getOptionalComponent(identifier).orElseGet(defaultImpl))
             ).get();
-            return type.cast(component);
+            return identifier.type().cast(component);
         }
 
         @Override

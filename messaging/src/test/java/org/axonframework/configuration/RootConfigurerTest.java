@@ -16,7 +16,10 @@
 
 package org.axonframework.configuration;
 
+import org.axonframework.configuration.Component.Identifier;
 import org.junit.jupiter.api.*;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -44,7 +47,7 @@ class RootConfigurerTest {
         void registerComponentExposesRegisteredComponentUponBuild() {
             TestComponent testComponent = TEST_COMPONENT;
 
-            testSubject.registerComponent(TestComponent.class, config -> testComponent);
+            testSubject.registerComponent(TestComponent.class, c -> testComponent);
 
             RootConfiguration config = testSubject.build();
 
@@ -55,7 +58,7 @@ class RootConfigurerTest {
         void registerComponentExposesRegisteredComponentUponStart() {
             TestComponent testComponent = TEST_COMPONENT;
 
-            testSubject.registerComponent(TestComponent.class, config -> testComponent);
+            testSubject.registerComponent(TestComponent.class, c -> testComponent);
 
             RootConfiguration config = testSubject.start();
 
@@ -63,9 +66,109 @@ class RootConfigurerTest {
         }
 
         @Test
+        void canRegisterMultipleComponentsOfTheSameTypeForDifferentNames() {
+            String testNameOne = "one";
+            String testNameTwo = "two";
+            TestComponent testComponentOne = new TestComponent(testNameOne);
+            TestComponent testComponentTwo = new TestComponent(testNameTwo);
+
+            RootConfiguration config =
+                    testSubject.registerComponent(TestComponent.class, testNameOne, c -> testComponentOne)
+                               .registerComponent(TestComponent.class, testNameTwo, c -> testComponentTwo)
+                               .start();
+
+            assertEquals(testComponentOne, config.getComponent(TestComponent.class, testNameOne));
+            assertEquals(testComponentTwo, config.getComponent(TestComponent.class, testNameTwo));
+        }
+
+        @Test
+        void componentBuilderIsInvokedOnceUponRetrievalOfComponent() {
+            Identifier<TestComponent> testId = new Identifier<>(TestComponent.class, "name");
+            AtomicInteger invocationCounter = new AtomicInteger(0);
+
+            RootConfiguration config = testSubject.registerComponent(testId, c -> {
+                                                      invocationCounter.incrementAndGet();
+                                                      return TEST_COMPONENT;
+                                                  })
+                                                  .start();
+
+            assertEquals(0, invocationCounter.get());
+            config.getComponent(testId);
+            assertEquals(1, invocationCounter.get());
+            config.getComponent(testId);
+            assertEquals(1, invocationCounter.get());
+        }
+
+        @Test
+        void registeringComponentsForTheSameTypeReplacesThePreviousComponentBuilder() {
+            TestComponent testComponent = new TestComponent("replaced-component");
+            TestComponent expectedComponent = new TestComponent("the-winner");
+
+            RootConfiguration config = testSubject.registerComponent(TestComponent.class, c -> testComponent)
+                                                  .registerComponent(TestComponent.class, c -> expectedComponent)
+                                                  .start();
+
+            assertNotEquals(testComponent, config.getComponent(TestComponent.class));
+            assertEquals(expectedComponent, config.getComponent(TestComponent.class));
+        }
+
+        @Test
+        void registeringComponentsForTheSameTypeAndNameReplacesThePreviousComponentBuilder() {
+            TestComponent testComponent = new TestComponent("replaced-component");
+            TestComponent expectedComponent = new TestComponent("the-winner");
+
+            RootConfiguration config =
+                    testSubject.registerComponent(TestComponent.class, "name", c -> testComponent)
+                               .registerComponent(TestComponent.class, "name", c -> expectedComponent)
+                               .start();
+
+            assertNotEquals(testComponent, config.getComponent(TestComponent.class, "name"));
+            assertEquals(expectedComponent, config.getComponent(TestComponent.class, "name"));
+        }
+
+        @Test
+        void registeringComponentsForTheSameIdentifierReplacesThePreviousComponentBuilder() {
+            Identifier<TestComponent> testId = new Identifier<>(TestComponent.class, "name");
+            TestComponent testComponent = new TestComponent("replaced-component");
+            TestComponent expectedComponent = new TestComponent("the-winner");
+
+            RootConfiguration config = testSubject.registerComponent(testId, c -> testComponent)
+                                                  .registerComponent(testId, c -> expectedComponent)
+                                                  .start();
+
+            assertNotEquals(testComponent, config.getComponent(testId));
+            assertEquals(expectedComponent, config.getComponent(testId));
+        }
+    }
+
+    @Nested
+    class ComponentRegistrationFailures {
+
+        @Test
         void registerComponentThrowsNullPointerExceptionForNullType() {
             //noinspection DataFlowIssue
-            assertThrows(NullPointerException.class, () -> testSubject.registerComponent(null, config -> new Object()));
+            assertThrows(NullPointerException.class,
+                         () -> testSubject.registerComponent((Class<Object>) null, c -> new Object()));
+        }
+
+        @Test
+        void registerComponentThrowsNullPointerExceptionForNullName() {
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class,
+                         () -> testSubject.registerComponent(Object.class, null, c -> new Object()));
+        }
+
+        @Test
+        void registerComponentThrowsIllegalArgumentExceptionForEmptyName() {
+            assertThrows(IllegalArgumentException.class,
+                         () -> testSubject.registerComponent(Object.class, "", c -> new Object()));
+        }
+
+        @Test
+        void registerComponentThrowsNullPointerExceptionForNullIdentifier() {
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class,
+                         () -> testSubject.registerComponent((Identifier<Object>) null, c -> new Object()));
         }
 
         @Test
@@ -84,9 +187,9 @@ class RootConfigurerTest {
 
             testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
                        .registerDecorator(TestComponent.class,
-                                          (config, delegate) -> new TestComponent("updated-" + delegate.state))
+                                          (c, delegate) -> new TestComponent("updated-" + delegate.state))
                        .registerDecorator(TestComponent.class,
-                                          (config, delegate) -> new TestComponent(delegate.state + "-twice"));
+                                          (c, delegate) -> new TestComponent(delegate.state + "-twice"));
 
             TestComponent result = testSubject.start()
                                               .getComponent(TestComponent.class);
@@ -94,20 +197,69 @@ class RootConfigurerTest {
             assertEquals(expectedState, result.state());
         }
 
+        @Test
+        void registerDecoratorWithOrderDecoratesOutcomeOfComponentBuilderInSpecifiedOrder() {
+            String expectedState = TEST_COMPONENT.state() + "123";
+
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
+                       .registerDecorator(TestComponent.class, 2,
+                                          (c, delegate) -> new TestComponent(delegate.state + "3"))
+                       .registerDecorator(TestComponent.class, 1,
+                                          (c, delegate) -> new TestComponent(delegate.state + "2"))
+                       .registerDecorator(TestComponent.class, 0,
+                                          (c, delegate) -> new TestComponent(delegate.state + "1"));
+
+            TestComponent result = testSubject.start()
+                                              .getComponent(TestComponent.class);
+
+            assertEquals(expectedState, result.state());
+        }
+    }
+
+    @Nested
+    class ComponentDecorationFailures {
+
         // TODO Discuss if we would want to throw an exception or whether we should simply store it if the register component comes in later
         @Test
         void registerDecoratorThrowsIllegalArgumentExceptionForNonExistingComponentType() {
             assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.registerDecorator(TestComponent.class, (config, delegate) -> delegate));
+                         () -> testSubject.registerDecorator(TestComponent.class, (c, delegate) -> delegate));
         }
 
         @Test
-        void registerDecoratorThrowsNullPointerExceptionForType() {
+        void registerDecoratorThrowsNullPointerExceptionForNullType() {
             testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
 
             //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
-                         () -> testSubject.registerDecorator(null, (config, delegate) -> delegate));
+                         () -> testSubject.registerDecorator((Class<Object>) null, (c, delegate) -> delegate));
+        }
+
+        @Test
+        void registerDecoratorThrowsNullPointerExceptionForNullName() {
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
+
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class,
+                         () -> testSubject.registerDecorator(Object.class, null, (c, delegate) -> delegate));
+        }
+
+        @Test
+        void registerDecoratorThrowsIllegalArgumentExceptionForEmptyName() {
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
+
+            assertThrows(IllegalArgumentException.class,
+                         () -> testSubject.registerDecorator(Object.class, "", (c, delegate) -> delegate));
+        }
+
+        @Test
+        void registerDecoratorThrowsNullPointerExceptionForNullIdentifier() {
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
+
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class,
+                         () -> testSubject.registerDecorator((Identifier<Object>) null,
+                                                             (c, delegate) -> delegate));
         }
 
         @Test
@@ -119,38 +271,39 @@ class RootConfigurerTest {
                          () -> testSubject.registerDecorator(TestComponent.class, null));
         }
 
-        @Test
-        void registerDecoratorWithOrderDecoratesOutcomeOfComponentBuilderInSpecifiedOrder() {
-            String expectedState = TEST_COMPONENT.state() + "123";
-
-            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
-                       .registerDecorator(TestComponent.class, 2,
-                                          (config, delegate) -> new TestComponent(delegate.state + "3"))
-                       .registerDecorator(TestComponent.class, 1,
-                                          (config, delegate) -> new TestComponent(delegate.state + "2"))
-                       .registerDecorator(TestComponent.class, 0,
-                                          (config, delegate) -> new TestComponent(delegate.state + "1"));
-
-            TestComponent result = testSubject.start()
-                                              .getComponent(TestComponent.class);
-
-            assertEquals(expectedState, result.state());
-        }
-
         // TODO Discuss if we would want to throw an exception or whether we should simply store it if the register component comes in later
         @Test
         void registerDecoratorWithOrderThrowsIllegalArgumentExceptionForNonExistingComponentType() {
             assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.registerDecorator(TestComponent.class, 42, (config, delegate) -> delegate));
+                         () -> testSubject.registerDecorator(TestComponent.class, 42, (c, delegate) -> delegate));
         }
 
         @Test
-        void registerDecoratorWithOrderThrowsNullPointerExceptionForType() {
+        void registerDecoratorWithOrderThrowsNullPointerExceptionForNullType() {
             testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
 
             //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
-                         () -> testSubject.registerDecorator(null, 42, (config, delegate) -> delegate));
+                         () -> testSubject.registerDecorator((Class<Object>) null, 42, (c, delegate) -> delegate));
+        }
+
+        @Test
+        void registerDecoratorWithOrderThrowsNullPointerExceptionForNullName() {
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
+
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class,
+                         () -> testSubject.registerDecorator(Object.class, null, 42, (c, delegate) -> delegate));
+        }
+
+        @Test
+        void registerDecoratorWithOrderThrowsNullPointerExceptionForNullIdentifier() {
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
+
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class,
+                         () -> testSubject.registerDecorator((Identifier<Object>) null, 42,
+                                                             (c, delegate) -> delegate));
         }
 
         @Test

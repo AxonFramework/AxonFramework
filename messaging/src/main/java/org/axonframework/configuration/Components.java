@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.Component.Identifier;
 
 import java.util.Map;
 import java.util.Optional;
@@ -34,37 +35,37 @@ import java.util.function.Function;
  */
 public class Components {
 
-    private final Map<Class<?>, Component<?>> components = new ConcurrentHashMap<>();
+    private final Map<Identifier<?>, Component<?>> components = new ConcurrentHashMap<>();
 
     @Nonnull
-    public <C> C get(@Nonnull Class<C> type) {
+    public <C> C get(@Nonnull Identifier<C> type) {
         return getOptional(type).orElseThrow(() -> new NullPointerException("No component found for type: " + type));
     }
 
-    public <C> Optional<C> getOptional(@Nonnull Class<C> type) {
+    public <C> Optional<C> getOptional(@Nonnull Identifier<C> type) {
         return getOptionalComponent(type).map(Component::get);
     }
 
     @Nonnull
-    public <C> Component<C> getComponent(@Nonnull Class<C> type) {
+    public <C> Component<C> getComponent(@Nonnull Identifier<C> type) {
         return getOptionalComponent(type)
                 .orElseThrow(() -> new NullPointerException("No component found for type: " + type));
     }
 
     @Nonnull
-    public <C> Optional<Component<C>> getOptionalComponent(@Nonnull Class<C> type) {
+    public <C> Optional<Component<C>> getOptionalComponent(@Nonnull Identifier<C> type) {
         //noinspection unchecked
         return Optional.ofNullable((Component<C>) components.get(type));
     }
 
-    public <C> Component<C> put(@Nonnull Class<C> type, @Nonnull Component<C> component) {
+    public <C> Component<C> put(@Nonnull Identifier<C> type, @Nonnull Component<C> component) {
         //noinspection unchecked
         return (Component<C>) components.put(type, component);
     }
 
     public <T> Component<T> computeIfAbsent(
-            @Nonnull Class<T> type,
-            @Nonnull Function<? super Class<?>, ? extends Component<?>> mappingFunction
+            @Nonnull Identifier<T> type,
+            @Nonnull Function<? super Identifier<?>, ? extends Component<?>> mappingFunction
     ) {
         //noinspection unchecked
         return (Component<T>) components.computeIfAbsent(type, mappingFunction);

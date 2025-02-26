@@ -48,7 +48,7 @@ public class Component<C> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final String name;
+    private final Identifier<C> identifier;
     private final Supplier<LifecycleSupportingConfiguration> configSupplier;
     private ComponentBuilder<C> builder;
 
@@ -59,39 +59,34 @@ public class Component<C> {
     private C instance;
 
     /**
-     * Creates a {@code Component} for the given {@code config} with given {@code name} created by the given
+     * Creates a {@code Component} for the given {@code config} with given {@code identifier} created by the given
      * {@code builder}.
      * <p>
      * When the {@link LifecycleSupportingConfiguration} is not initialized yet, consider using
-     * {@link #Component(String, Supplier, ComponentBuilder)} instead.
+     * {@link #Component(Identifier, Supplier, ComponentBuilder)} instead.
      *
-     * @param name    The name of the component.
-     * @param config  The {@code NewConfiguration} the component is part of.
-     * @param builder The builder function of the component.
+     * @param identifier The identifier of the component.
+     * @param config     The {@code NewConfiguration} the component is part of.
+     * @param builder    The builder function of the component.
      */
-    public Component(@Nonnull String name,
+    public Component(@Nonnull Identifier<C> identifier,
                      @Nonnull LifecycleSupportingConfiguration config,
                      @Nonnull ComponentBuilder<C> builder) {
-        this(name, () -> config, builder);
+        this(identifier, () -> config, builder);
     }
 
     /**
-     * Creates a {@code Component} for the given {@code config} with given {@code name} created by the given
+     * Creates a {@code Component} for the given {@code config} with given {@code identifier} created by the given
      * {@code builder}.
      *
-     * @param name    The name of the component.
-     * @param config  The supplier function of the {@code NewConfiguration}.
-     * @param builder The builder function of the component.
+     * @param identifier The identifier of the component.
+     * @param config     The supplier function of the {@code NewConfiguration}.
+     * @param builder    The builder function of the component.
      */
-    public Component(@Nonnull String name,
+    public Component(@Nonnull Identifier<C> identifier,
                      @Nonnull Supplier<LifecycleSupportingConfiguration> config,
                      @Nonnull ComponentBuilder<C> builder) {
-        assertThat(
-                requireNonNull(name, "The given name is unsupported because it is null."),
-                StringUtils::nonEmpty,
-                () -> new IllegalArgumentException("The given name is unsupported because it is empty.")
-        );
-        this.name = name;
+        this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
         this.configSupplier = requireNonNull(config, "The configuration supplier cannot be null.");
         this.builder = requireNonNull(builder, "A Component builder cannot be null.");
     }
@@ -115,7 +110,7 @@ public class Component<C> {
         instance = builder.build(config);
         decorators.values()
                   .forEach(decorator -> instance = decorator.decorate(config, instance));
-        logger.debug("Instantiated component [{}]: {}", name, instance);
+        logger.debug("Instantiated component [{}]: {}", identifier, instance);
         LifecycleHandlerInspector.registerLifecycleHandlers(config, instance);
         return instance;
     }
@@ -131,7 +126,7 @@ public class Component<C> {
                 this.instance,
                 Objects::isNull,
                 () -> new IllegalArgumentException(
-                        "Cannot update component with [" + name + "] as it is already in use."
+                        "Cannot update component with [" + identifier + "] as it is already in use."
                 )
         );
         this.builder = componentBuilder;
@@ -181,5 +176,37 @@ public class Component<C> {
      */
     public boolean isInitialized() {
         return instance != null;
+    }
+
+    /**
+     * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code type} and {@code name}.
+     *
+     * @param type The type of the component this object identifiers, typically an interface.
+     * @param name The name of the component this object identifiers.
+     * @param <C>  The type of the component this object identifiers, typically an interface.
+     */
+    public record Identifier<C>(@Nonnull Class<C> type, @Nonnull String name) {
+
+        /**
+         * Construct an {@code Component.Identifier} by setting the {@link #name()} to the {@link Class#getSimpleName()}
+         * of the given {@code type}.
+         *
+         * @param type The type of the component this object identifiers, typically an interface.
+         */
+        public Identifier(@Nonnull Class<C> type) {
+            this(type, requireNonNull(type, "The given type is unsupported because it is null.").getSimpleName());
+        }
+
+        /**
+         * Compact constructor asserting whether the {@code type} and {@code name} are non-null and not empty.
+         */
+        public Identifier {
+            requireNonNull(type, "The given type is unsupported because it is null.");
+            assertThat(
+                    requireNonNull(name, "The given name is unsupported because it is null."),
+                    StringUtils::nonEmpty,
+                    () -> new IllegalArgumentException("The given name is unsupported because it is empty.")
+            );
+        }
     }
 }
