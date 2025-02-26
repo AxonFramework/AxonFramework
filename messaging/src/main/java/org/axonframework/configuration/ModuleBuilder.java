@@ -17,8 +17,8 @@
 package org.axonframework.configuration;
 
 /**
- * Functional interface describing how to build a {@link Module} using the {@link LifecycleConfiguration} during
- * construction.
+ * Functional interface describing how to build a {@link Module} using the {@link LifecycleSupportingConfiguration}
+ * during construction.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -32,5 +32,5 @@ public interface ModuleBuilder {
      * @param config The configuration from which other components can be retrieved to build the result.
      * @return A {@link Module} using the given {@code config} during construction.
      */
-    Module build(LifecycleConfiguration config);
+    Module build(LifecycleSupportingConfiguration config);
 }
