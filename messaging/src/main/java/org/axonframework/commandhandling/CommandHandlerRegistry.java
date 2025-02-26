@@ -31,9 +31,9 @@ import java.util.Set;
  * @author Sara Pellegrini
  * @author Steven van Beelen
  * @since 5.0.0
- * @param <SELF> the type of the registry itself, used for fluent interfacing
+ * @param <S> the type of the registry itself, used for fluent interfacing
  */
-public interface CommandHandlerRegistry<SELF extends CommandHandlerRegistry<SELF>> {
+public interface CommandHandlerRegistry<S extends CommandHandlerRegistry<S>> {
 
     /**
      * Subscribe the given {@code handler} for {@link CommandMessage commands} of the given {@code names}.
@@ -46,11 +46,11 @@ public interface CommandHandlerRegistry<SELF extends CommandHandlerRegistry<SELF
      * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given names.
      * @return This registry for fluent interfacing.
      */
-    default SELF subscribe(@Nonnull Set<QualifiedName> names,
-                                             @Nonnull CommandHandler commandHandler) {
+    default S subscribe(@Nonnull Set<QualifiedName> names,
+                        @Nonnull CommandHandler commandHandler) {
         names.forEach(name -> subscribe(name, commandHandler));
         //noinspection unchecked
-        return (SELF) this;
+        return (S) this;
     }
 
     /**
@@ -64,8 +64,8 @@ public interface CommandHandlerRegistry<SELF extends CommandHandlerRegistry<SELF
      * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given name.
      * @return This registry for fluent interfacing.
      */
-    SELF subscribe(@Nonnull QualifiedName name,
-                   @Nonnull CommandHandler commandHandler);
+    S subscribe(@Nonnull QualifiedName name,
+                @Nonnull CommandHandler commandHandler);
 
 
     /**
@@ -82,7 +82,7 @@ public interface CommandHandlerRegistry<SELF extends CommandHandlerRegistry<SELF
      * @param handlingComponent The command handling component instance to subscribe with this registry.
      * @return This registry for fluent interfacing.
      */
-    default SELF subscribe(@Nonnull CommandHandlingComponent handlingComponent) {
+    default S subscribe(@Nonnull CommandHandlingComponent handlingComponent) {
         return subscribe(handlingComponent.supportedCommands(), handlingComponent);
     }
 }

@@ -16,13 +16,13 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,41 +30,49 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SimpleCommandHandlingComponentTest {
 
+    AtomicBoolean command1Handled = new AtomicBoolean(false);
+    AtomicBoolean command2HandledParent = new AtomicBoolean(false);
+    AtomicBoolean command2HandledChild = new AtomicBoolean(false);
+    AtomicBoolean command3Handled = new AtomicBoolean(false);
+
+    CommandHandlingComponent handlingComponent = SimpleCommandHandlingComponent
+            .create("MySuperComponent")
+            .subscribe(
+                    new QualifiedName("Command1"),
+                    (command, context) -> {
+                        command1Handled.set(true);
+                        return MessageStream.empty().cast();
+                    }
+            )
+            .subscribe(
+                    new QualifiedName("Command2"),
+                    (command, context) -> {
+                        command2HandledParent.set(true);
+                        return MessageStream.empty().cast();
+                    }
+            )
+            .subscribe(
+                    SimpleCommandHandlingComponent
+                            .create("MySubComponent")
+                            .subscribe(
+                                    new QualifiedName("Command2"),
+                                    (command, context) -> {
+                                        command2HandledChild.set(true);
+                                        return MessageStream.empty().cast();
+                                    }
+                            )
+                            .subscribe(
+                                    new QualifiedName("Command3"),
+                                    (command, context) -> {
+                                        command3Handled.set(true);
+                                        return MessageStream.empty().cast();
+                                    }
+                            )
+            );
+
     @Test
     void handlesTheMostSpecificRegisteredHandler() {
-        AtomicBoolean command1Handled = new AtomicBoolean(false);
-        AtomicBoolean command2HandledParent = new AtomicBoolean(false);
-        AtomicBoolean command2HandledChild = new AtomicBoolean(false);
-        AtomicBoolean command3Handled = new AtomicBoolean(false);
 
-        CommandHandlingComponent handlingComponent = SimpleCommandHandlingComponent
-                .create("MySuperComponent")
-                .subscribe(new AnnotationCommandHandlerAdapter<>(new MyAnnotatedCommandHandler()))
-                .subscribe(
-                        new QualifiedName("Command1"),
-                        (command, context) -> {
-                            command1Handled.set(true);
-                            return MessageStream.empty().cast();
-                        }
-                )
-                .subscribe(
-                        SimpleCommandHandlingComponent
-                                .create("MySubComponent")
-                                .subscribe(
-                                        new QualifiedName("Command2"),
-                                        (command, context) -> {
-                                            command2HandledChild.set(true);
-                                            return MessageStream.empty().cast();
-                                        }
-                                )
-                                .subscribe(
-                                        new QualifiedName("Command3"),
-                                        (command, context) -> {
-                                            command3Handled.set(true);
-                                            return MessageStream.empty().cast();
-                                        }
-                                )
-                );
 
         handlingComponent.handle(new GenericCommandMessage<>(new MessageType("Command1"), ""), ProcessingContext.NONE);
         assertTrue(command1Handled.get());
@@ -80,14 +88,30 @@ class SimpleCommandHandlingComponentTest {
         assertTrue(command2HandledChild.get());
         assertFalse(command3Handled.get());
 
+        command2HandledChild.set(false);
+        handlingComponent.handle(new GenericCommandMessage<>(new MessageType("Command3"), ""), ProcessingContext.NONE);
+        assertFalse(command1Handled.get());
+        assertFalse(command2HandledParent.get());
+        assertFalse(command2HandledChild.get());
+        assertTrue(command3Handled.get());
     }
 
+    @Test
+    void supportedCommandReturnsAllSupportedCommands() {
+        assertEquals(3, handlingComponent.supportedCommands().size());
+        assertTrue(handlingComponent.supportedCommands().contains(new QualifiedName("Command1")));
+        assertTrue(handlingComponent.supportedCommands().contains(new QualifiedName("Command2")));
+        assertTrue(handlingComponent.supportedCommands().contains(new QualifiedName("Command3")));
+    }
 
-    static class MyAnnotatedCommandHandler {
-
-        @org.axonframework.commandhandling.annotation.CommandHandler(commandName = "MyCommand")
-        public void handle(String command) {
-            // Nothing to do here
-        }
+    @Test
+    void handleWithUnknownPayloadReturnsInFailure() {
+        CompletionException exception = assertThrows(CompletionException.class, () -> {
+            handlingComponent.handle(new GenericCommandMessage<>(new MessageType("Command4"), ""),
+                                     ProcessingContext.NONE)
+                             .asCompletableFuture()
+                             .join();
+        });
+        assertInstanceOf(NoHandlerForCommandException.class, exception.getCause());
     }
 }

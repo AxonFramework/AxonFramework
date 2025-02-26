@@ -177,7 +177,7 @@ class SingleAndMultiModelCommandHandlingComponentTest {
 
     private void verifyStudentName(String id, String name) {
         AsyncUnitOfWork uow = new AsyncUnitOfWork();
-        uow.executeWithResult((context) ->
+        uow.executeWithResult(context ->
                                       studentRepository
                                               .load(id, context)
                                               .thenAccept(student -> assertEquals(name, student.entity().name))
@@ -296,10 +296,10 @@ class SingleAndMultiModelCommandHandlingComponentTest {
 
     private void verifyStudentEnrolledInCourse(String id, String courseId) {
         AsyncUnitOfWork uow = new AsyncUnitOfWork();
-        uow.executeWithResult((context) -> studentRepository
+        uow.executeWithResult(context -> studentRepository
                    .load(id, context)
                    .thenAccept(student -> assertTrue(student.entity().getCoursesEnrolled().contains(courseId)))
-                   .thenCompose((__) -> courseRepository.load(courseId, context))
+                   .thenCompose(v -> courseRepository.load(courseId, context))
                    .thenAccept(course -> assertTrue(course.entity().getStudentsEnrolled().contains(id))))
            .join();
     }
@@ -322,7 +322,7 @@ class SingleAndMultiModelCommandHandlingComponentTest {
             T payload
     ) {
         AsyncUnitOfWork uow = new AsyncUnitOfWork();
-        uow.executeWithResult((context) -> {
+        uow.executeWithResult(context -> {
             GenericCommandMessage<T> command = new GenericCommandMessage<>(
                     new MessageType(payload.getClass()),
                     payload);
