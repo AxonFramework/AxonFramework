@@ -173,6 +173,13 @@ public interface EventProcessingConfigurer {
             Function<Configuration, SubscribableMessageSource<EventMessage<?>>> defaultSource);
 
     /**
+     * TODO
+     *
+     * @param builder
+     */
+    void setSubscribableMessageSourceDefinitionBuilder(SubscribableMessageSourceDefinitionBuilder builder);
+
+    /**
      * Registers a {@link org.axonframework.eventhandling.TrackingEventProcessor} with given {@code name} and
      * {@code source} within this Configurer.
      *
@@ -851,12 +858,16 @@ public interface EventProcessingConfigurer {
     }
     // end::RegisterDeadLetterQueueProvider[]
 
-    /**
-     * TODO
-     */
+
     @FunctionalInterface
     interface SubscribableMessageSourceDefinitionBuilder {
 
+        /**
+         * Creates SubscribableMessageSourceDefinition for particular processing group
+         *
+         * @param processingGroupName the name of processing group for which definition is about to be applied
+         * @return
+         */
         SubscribableMessageSourceDefinition<EventMessage<?>> build(String processingGroupName);
     }
 }
