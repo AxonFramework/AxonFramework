@@ -36,7 +36,6 @@ import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistra
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -57,7 +56,8 @@ public class CommandBusBuilder implements ComponentBuilder<CommandBus> {
     }
 
     public static CommandBusBuilder forSimpleCommandBus() {
-        return new CommandBusBuilder(builder -> new SimpleCommandBus(builder.executor, builder.processingLifecycleHandlerRegistrars));
+        return new CommandBusBuilder(builder -> new SimpleCommandBus(builder.executor,
+                                                                     builder.processingLifecycleHandlerRegistrars));
     }
 
     // TODO - Parameter should be `Function<Configuration, CommandBus> builder`
@@ -101,7 +101,6 @@ public class CommandBusBuilder implements ComponentBuilder<CommandBus> {
         return this;
     }
 
-    @Override
     public CommandBusBuilder decorate(@Nonnull ComponentDecorator<CommandBus> decorator) {
         decorators.add(requireNonNull(decorator, "Decorators cannot be null."));
         return this;
@@ -123,7 +122,9 @@ public class CommandBusBuilder implements ComponentBuilder<CommandBus> {
     public CommandBus build(@Nonnull NewConfiguration config) {
         Function<CommandBusBuilder, CommandBus> finalCreator = creator;
         if (!dispatchInterceptors.isEmpty() || !handlerInterceptors.isEmpty()) {
-            finalCreator = builder -> new InterceptingCommandBus(creator.apply(builder), handlerInterceptors, dispatchInterceptors);
+            finalCreator = builder -> new InterceptingCommandBus(creator.apply(builder),
+                                                                 handlerInterceptors,
+                                                                 dispatchInterceptors);
         }
         for (ComponentDecorator<CommandBus> decorator : decorators) {
             Function<CommandBusBuilder, CommandBus> previous = finalCreator;
