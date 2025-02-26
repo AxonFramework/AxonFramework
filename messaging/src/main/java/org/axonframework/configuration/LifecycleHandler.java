@@ -22,16 +22,16 @@ import java.util.concurrent.CompletableFuture;
  * Functional interface towards a lifecycle handler used during start up or shutdown of an application.
  *
  * @author Steven van Beelen
- * @since 4.3
+ * @since 4.3.0
  */
 @FunctionalInterface
 public interface LifecycleHandler {
 
     /**
-     * Run the start up or shutdown process this {@link LifecycleHandler} represents. Depending on the implementation
+     * Run the start-up or shutdown process this {@code LifecycleHandler} represents. Depending on the implementation
      * this might be asynchronous through the return value.
      *
-     * @return a {@link CompletableFuture} of unknown type which enables chaining several {@link LifecycleHandler} calls
+     * @return a {@link CompletableFuture} of unknown type which enables chaining several {@code LifecycleHandler} calls
      */
     CompletableFuture<?> run();
 }
