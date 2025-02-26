@@ -17,210 +17,83 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.gateway.EventGateway;
-import org.axonframework.lifecycle.Lifecycle;
-import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryUpdateEmitter;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
- * Interface describing the Global Configuration for Axon components. It provides access to the components configured,
- * such as the Command Bus and Event Bus.
+ * Interface providing access to all configured {@link Component components} in an Axon components.
  * <p>
- * Note that certain components in the Configuration may need to be started. Therefore, before using any of the
- * components provided by this configuration, ensure that {@link #start()} has been invoked.
+ * Note that certain components in the configuration may need to be started. Therefore, before using any of the
+ * components provided by this configuration, ensure that {@code #start()} has been invoked.
  *
  * @author Allard Buijze
- * @since 3.0
+ * @since 3.0.0
  */
-public interface NewConfiguration extends LifecycleOperations {
+// TODO rename to Configuration once the old Configuration is removed
+public interface NewConfiguration {
 
     /**
-     * TODO the following configuration methods no longer reside here:
-     * - TagsConfiguration tags()
-     * - SpanFactory spanFactory()
-     * - <A> AggregateConfiguration<A> aggregateConfiguration(@Nonnull Class<A> aggregateType)
-     * - <A> Repository<A> repository(@Nonnull Class<A> aggregateType)<A> AggregateFactory<A> aggregateFactory(@Nonnull Class<A> aggregateType)
-     * - <M extends Message<?>> MessageMonitor<? super M> messageMonitor(@Nonnull Class<?> componentType, @Nonnull String componentName);
-     * - Serializer serializer()
-     * - Serializer eventSerializer()
-     * - Serializer messageSerializer()
-     * - List<CorrelationDataProvider> correlationDataProviders();
-     * - EventScheduler eventScheduler()
-     * - DeadlineManager deadlineManager()
-     * - Snapshotter snapshotter()
-     * - ScopeAwareProvider scopeAwareProvider()
-     * - SnapshotFilter snapshotFilter()
-     * - ResourceInjector resourceInjector()
-     * - EventProcessingConfiguration eventProcessingConfiguration() throws AxonConfigurationException
-     * - ParameterResolverFactory parameterResolverFactory()
-     * - HandlerDefinition handlerDefinition(Class<?> inspectedType);
-     * - EventUpcasterChain upcasterChain();
-     */
-
-    /**
-     * Starts this configuration. All components defined in this Configuration will be started.
-     */
-    void start();
-
-    /**
-     * Shuts down the components defined in this Configuration
-     */
-    void shutdown();
-
-    /**
-     * Returns the Component declared under the given {@code type}, typically the interface the component implements.
+     * Returns the component declared under the given {@code type} or throws a {@link NullPointerException} if it does
+     * not exist.
      *
-     * @param type The type of component
-     * @param <T>  The type of component
-     * @return the component registered for the given type, or {@code null} if no such component exists
-     */
-    <T> Optional<T> getOptionalComponent(@Nonnull Class<T> type);
-
-    /**
-     * Returns the Component declared under the given {@code type}, typically the interface the component implements.
-     *
-     * @param type The type of component
-     * @param <T>  The type of component
-     * @return the component registered for the given type, or {@code null} if no such component exists
+     * @param type The type of component, typically the interface the component implements.
+     * @param <C>  The type of component.
+     * @return The component registered for the given type.
+     * @throws NullPointerException Whenever there is no component present for the given {@code type}.
      */
     @Nonnull
-    default <T> T getComponent(@Nonnull Class<T> type) {
-        return getOptionalComponent(type).orElseThrow(() -> new NullPointerException("No component found for " + type));
+    default <C> C getComponent(@Nonnull Class<C> type) {
+        return getOptionalComponent(type)
+                .orElseThrow(() -> new NullPointerException("No component found for [" + type + "]"));
     }
 
     /**
-     * Returns the Component declared under the given {@code type}, typically the interface the component implements,
-     * reverting to the given {@code defaultImpl} if no such component is defined.
+     * Returns the component declared under the given {@code type} within an {@code Optional}.
+     *
+     * @param type The type of component, typically the interface the component implements.
+     * @param <C>  The type of component.
+     * @return An {@code Optional} wrapping the component registered for the given {@code type}. Might be empty when
+     * there is no component present for the given {@code type}.
+     */
+    <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type);
+
+    /**
+     * Returns the component declared under the given {@code type}, reverting to the given {@code defaultImpl} if no
+     * such component is defined.
      * <p>
      * When no component was previously registered, the default is then configured as the component for the given type.
      *
-     * @param type        The type of component
-     * @param defaultImpl The supplier of the default to return if no component was registered
-     * @param <T>         The type of component
-     * @return the component registered for the given type, or the value returned by the {@code defaultImpl} supplier,
-     * if no component was registered
+     * @param type        The type of component, typically the interface the component implements.
+     * @param defaultImpl The supplier of the default component to return if it was not registered.
+     * @param <C>         The type of component.
+     * @return The component declared under the given {@code type}, reverting to the given {@code defaultImpl} if no
+     * such component is defined.
      */
-    default <T> T getComponent(@Nonnull Class<T> type, @Nonnull Supplier<T> defaultImpl) {
-        return getOptionalComponent(type).orElse(defaultImpl.get());
-    }
-
-    /**
-     * Returns all modules that have been registered with this Configuration.
-     *
-     * @return all modules that have been registered with this Configuration
-     */
-    List<Module> getModules();
+    @Nonnull
+    <C> C getComponent(@Nonnull Class<C> type,
+                       @Nonnull Supplier<C> defaultImpl);
 
     /**
      * Finds all configuration modules of given {@code type} within this configuration.
      *
-     * @param type The type of the configuration module
-     * @param <T>  The type of the configuration module
-     * @return configuration modules of {@code type} defined in this configuration
+     * @param type The type of the {@link Module Modules} to retrieve.
+     * @param <M>  The type of the {@link Module}.
+     * @return The {@code Modules} matching the given {@code type} that are defined in this configuration.
      */
     @SuppressWarnings("unchecked")
-    default <T extends Module> List<T> getModulesFor(@Nonnull Class<T> type) {
+    default <M extends Module> List<M> getModulesFor(@Nonnull Class<M> type) {
         return getModules().stream()
                            .filter(m -> m.isType(type))
-                           .map(m -> (T) m.unwrap())
-                           .collect(Collectors.toList());
+                           .map(m -> (M) m)
+                           .toList();
     }
 
     /**
-     * Returns the lifecycle registry for this configuration. Typically, this is just an adapter around the
-     * configuration itself to register individual handler methods.
+     * Returns all modules that have been registered with this configuration.
      *
-     * @return the lifecycle registry for this configuration
+     * @return All modules that have been registered with this configuration.
      */
-    default Lifecycle.LifecycleRegistry lifecycleRegistry() {
-        return new Lifecycle.LifecycleRegistry() {
-            @Override
-            public void onStart(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
-                NewConfiguration.this.onStart(phase, action::run);
-            }
-
-            @Override
-            public void onShutdown(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
-                NewConfiguration.this.onShutdown(phase, action::run);
-            }
-        };
-    }
-
-    /**
-     * Returns the Command Bus defined in this Configuration. Note that this Configuration should be started (see
-     * {@link #start()}) before sending Commands over the Command Bus.
-     *
-     * @return the CommandBus defined in this configuration
-     */
-    @Nonnull
-    default CommandBus commandBus() {
-        return getComponent(CommandBus.class);
-    }
-
-    /**
-     * Retrieves the Event Bus defined in this Configuration.
-     *
-     * @return the Event Bus defined in this Configuration
-     */
-    @Nonnull
-    default EventBus eventBus() {
-        return getComponent(EventBus.class);
-    }
-
-    @Nonnull
-    default QueryBus queryBus() {
-        return getComponent(QueryBus.class);
-    }
-
-    /**
-     * Returns the Query Update Emitter in this Configuration. Note that this Configuration should be started (see
-     * {@link #start()} before emitting updates over Query Update Emitter.
-     *
-     * @return the QueryUpdateEmitter defined in this configuration
-     */
-    @Nonnull
-    default QueryUpdateEmitter queryUpdateEmitter() {
-        return getComponent(QueryUpdateEmitter.class);
-    }
-
-    /**
-     * Returns the Command Gateway defined in this Configuration. Note that this Configuration should be started (see
-     * {@link #start()}) before sending Commands using this Command Gateway.
-     *
-     * @return the CommandGateway defined in this configuration
-     */
-    @Nonnull
-    default CommandGateway commandGateway() {
-        return getComponent(CommandGateway.class);
-    }
-
-    /**
-     * Returns the Event Gateway defined in this Configuration.
-     *
-     * @return the EventGateway defined in this configuration
-     */
-    @Nonnull
-    default EventGateway eventGateway() {
-        return getComponent(EventGateway.class);
-    }
-
-    /**
-     * Returns the Query Gateway defined in this Configuration. Note that this Configuration should be started (see
-     * {@link #start()}) before sending Queries using this Query Gateway.
-     *
-     * @return the QueryGateway defined in this configuration
-     */
-    @Nonnull
-    default QueryGateway queryGateway() {
-        return getComponent(QueryGateway.class);
-    }
+    List<Module> getModules();
 }
