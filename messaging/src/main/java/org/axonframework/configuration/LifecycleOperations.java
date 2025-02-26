@@ -16,9 +16,12 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 
 import java.util.concurrent.CompletableFuture;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Interface describing the configuration of start and shutdown handlers within Axon's configuration.
@@ -40,10 +43,10 @@ public interface LifecycleOperations {
      * <p>
      * The behavior for handlers that are registered when the Configuration is already started is undefined.
      *
-     * @param startHandler the handler to execute when the configuration is started
-     * @see Configuration#start()
+     * @param startHandler The handler to execute when the configuration is started.
+     * @see RootConfiguration#start()
      */
-    default void onStart(Runnable startHandler) {
+    default void onStart(@Nonnull Runnable startHandler) {
         onStart(0, startHandler);
     }
 
@@ -52,16 +55,16 @@ public interface LifecycleOperations {
      * <p>
      * The behavior for handlers that are registered when the Configuration is already started is undefined.
      *
-     * @param phase        defines a {@code phase} in which the start handler will be invoked during {@link
-     *                     Configuration#start()}. When starting the configuration the given handlers are started in
-     *                     ascending order based on their {@code phase}
-     * @param startHandler the handler to execute when the configuration is started
-     * @see Configuration#start()
+     * @param phase        Defines a {@code phase} in which the start handler will be invoked during
+     *                     {@link RootConfiguration#start()}. When starting the configuration the given handlers are
+     *                     started in ascending order based on their {@code phase}.
+     * @param startHandler The handler to execute when the configuration is started.
+     * @see RootConfiguration#start()
      */
-    default void onStart(int phase, Runnable startHandler) {
+    default void onStart(int phase, @Nonnull Runnable startHandler) {
         onStart(phase, () -> {
             try {
-                startHandler.run();
+                requireNonNull(startHandler, "Cannot run a null start handler.").run();
                 return FutureUtils.emptyCompletedFuture();
             } catch (Exception e) {
                 CompletableFuture<?> exceptionResult = new CompletableFuture<>();
@@ -77,13 +80,13 @@ public interface LifecycleOperations {
      * <p>
      * The behavior for handlers that are registered when the Configuration is already started is undefined.
      *
-     * @param phase        defines a {@code phase} in which the start handler will be invoked during {@link
-     *                     Configuration#start()}. When starting the configuration the given handlers are started in
-     *                     ascending order based on their {@code phase}
-     * @param startHandler the handler to be executed asynchronously when the configuration is started
-     * @see Configuration#start()
+     * @param phase        Defines a {@code phase} in which the start handler will be invoked during
+     *                     {@link RootConfiguration#start()}. When starting the configuration the given handlers are
+     *                     started in ascending order based on their {@code phase}.
+     * @param startHandler The handler to be executed asynchronously when the configuration is started.
+     * @see RootConfiguration#start()
      */
-    void onStart(int phase, LifecycleHandler startHandler);
+    void onStart(int phase, @Nonnull LifecycleHandler startHandler);
 
     /**
      * Registers a {@code shutdownHandler} to be executed in the default phase {@code 0} when the Configuration is shut
@@ -91,10 +94,10 @@ public interface LifecycleOperations {
      * <p>
      * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
      *
-     * @param shutdownHandler the handler to execute when the Configuration is shut down
-     * @see Configuration#shutdown()
+     * @param shutdownHandler The handler to execute when the Configuration is shut down.
+     * @see RootConfiguration#shutdown()
      */
-    default void onShutdown(Runnable shutdownHandler) {
+    default void onShutdown(@Nonnull Runnable shutdownHandler) {
         onShutdown(0, shutdownHandler);
     }
 
@@ -104,16 +107,16 @@ public interface LifecycleOperations {
      * <p>
      * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
      *
-     * @param phase           defines a phase in which the shutdown handler will be invoked during {@link
-     *                        Configuration#shutdown()}. When shutting down the configuration the given handlers are
-     *                        executing in descending order based on their {@code phase}
-     * @param shutdownHandler the handler to execute when the Configuration is shut down
-     * @see Configuration#shutdown()
+     * @param phase           Defines a phase in which the shutdown handler will be invoked during
+     *                        {@link RootConfiguration#shutdown()}. When shutting down the configuration the given
+     *                        handlers are executing in descending order based on their {@code phase}
+     * @param shutdownHandler The handler to execute when the Configuration is shut down.
+     * @see RootConfiguration#shutdown()
      */
     default void onShutdown(int phase, Runnable shutdownHandler) {
         onShutdown(phase, () -> {
             try {
-                shutdownHandler.run();
+                requireNonNull(shutdownHandler, "Cannot run a null shutdown handler.").run();
                 return FutureUtils.emptyCompletedFuture();
             } catch (Exception e) {
                 CompletableFuture<?> exceptionResult = new CompletableFuture<>();
@@ -129,11 +132,11 @@ public interface LifecycleOperations {
      * <p>
      * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
      *
-     * @param phase           defines a phase in which the shutdown handler will be invoked during {@link
-     *                        Configuration#shutdown()}. When shutting down the configuration the given handlers are
-     *                        executing in descending order based on their {@code phase}
-     * @param shutdownHandler the handler to be executed asynchronously when the Configuration is shut down
-     * @see Configuration#shutdown()
+     * @param phase           Defines a phase in which the shutdown handler will be invoked during
+     *                        {@link RootConfiguration#shutdown()}. When shutting down the configuration the given
+     *                        handlers are executing in descending order based on their {@code phase}.
+     * @param shutdownHandler The handler to be executed asynchronously when the Configuration is shut down.
+     * @see RootConfiguration#shutdown()
      */
-    void onShutdown(int phase, LifecycleHandler shutdownHandler);
+    void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler);
 }
