@@ -49,13 +49,13 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AnnotatedEventHandlingComponentTest {
 
-    private TestState state;
+    private TestEventHandlingComponent state;
     private EventHandlingComponent eventHandlingComponent;
     private final ProcessingContext processingContext = ProcessingContext.NONE;
 
     @BeforeEach
     void beforeEach() {
-        state = new TestState();
+        state = new TestEventHandlingComponent();
         eventHandlingComponent = new AnnotatedEventHandlingComponent<>(state);
     }
 
@@ -73,7 +73,7 @@ class AnnotatedEventHandlingComponentTest {
     class BasicEventHandling {
 
         @Test
-        void mutatesStateOnOriginalInstanceIfEventHandlerDoNotReturnsTheModelType() {
+        void canMutateStateInEventHandler() {
             // given
             var event = domainEvent(0);
 
@@ -86,7 +86,7 @@ class AnnotatedEventHandlingComponentTest {
         }
 
         @Test
-        void returnsStateAfterHandlingEvent() {
+        void returnsEmptyStreamAfterHandlingEvent() {
             // given
             var event = domainEvent(0);
 
@@ -95,6 +95,7 @@ class AnnotatedEventHandlingComponentTest {
 
             // then
             assertSuccessfulStream(result);
+            assertInstanceOf(MessageStream.Empty.class, result);
             assertEquals("null-0", state.handledPayloads);
         }
 
@@ -183,7 +184,7 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void doNotHandleNotDeclaredEventType() {
             // given
-            var state = new HandlingJustStringState();
+            var state = new HandlingJustStringEventHandlingComponent();
             var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(state);
             var event = domainEvent(0);
 
@@ -217,7 +218,7 @@ class AnnotatedEventHandlingComponentTest {
         @Test
         void returnsFailedMessageStreamIfExceptionThrownInsideEventHandler() {
             // given
-            var state = new ErrorThrowingState();
+            var state = new ErrorThrowingEventHandlingComponent();
             var eventHandlingComponent = new AnnotatedEventHandlingComponent<>(state);
             var event = domainEvent(0);
 
@@ -262,7 +263,7 @@ class AnnotatedEventHandlingComponentTest {
         );
     }
 
-    private static class TestState {
+    private static class TestEventHandlingComponent {
 
         private String handledPayloads = "null";
         private String handledMetadata = "null";
@@ -297,7 +298,7 @@ class AnnotatedEventHandlingComponentTest {
         }
     }
 
-    private static class ErrorThrowingState {
+    private static class ErrorThrowingEventHandlingComponent {
 
         @EventHandler
         public void handle(Integer event) {
@@ -305,7 +306,7 @@ class AnnotatedEventHandlingComponentTest {
         }
     }
 
-    private static class HandlingJustStringState {
+    private static class HandlingJustStringEventHandlingComponent {
 
         private int handledCount = 0;
 

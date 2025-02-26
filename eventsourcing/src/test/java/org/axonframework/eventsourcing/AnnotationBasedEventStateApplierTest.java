@@ -183,7 +183,7 @@ class AnnotationBasedEventStateApplierTest {
         }
     }
 
-    @Disabled("TODO #XXXX - Event Sourcing Handler support for evolved state return")
+    @Disabled("TODO #3313 - Event Sourcing Handler support for evolved state return")
     @Nested
     class RecordSupport {
 
@@ -339,4 +339,6 @@ class AnnotationBasedEventStateApplierTest {
             this.handledCount++;
         }
     }
+
+    // todo: add test - throws tech error (non-event handler)
 }

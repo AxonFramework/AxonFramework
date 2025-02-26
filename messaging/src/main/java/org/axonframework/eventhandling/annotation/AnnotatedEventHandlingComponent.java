@@ -93,10 +93,12 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
     public AnnotatedEventHandlingComponent(@Nonnull T annotatedEventHandler,
                                            @Nonnull ParameterResolverFactory parameterResolverFactory,
                                            @Nonnull HandlerDefinition handlerDefinition) {
-        this.target = requireNonNull(annotatedEventHandler, "The Annotated Event Handler may not be null");
-        this.model = AnnotatedHandlerInspector.inspectType((Class<T>) annotatedEventHandler.getClass(),
-                                                           parameterResolverFactory,
-                                                           handlerDefinition);
+        this(
+                annotatedEventHandler,
+                AnnotatedHandlerInspector.inspectType((Class<T>) annotatedEventHandler.getClass(),
+                                                      parameterResolverFactory,
+                                                      handlerDefinition)
+        );
     }
 
     /**
@@ -133,7 +135,7 @@ public class AnnotatedEventHandlingComponent<T> implements EventHandlingComponen
         if (handler.isPresent()) {
             var interceptor = model.chainedInterceptor(listenerType);
             var result = interceptor.handle(event, context, target, handler.get());
-            return result.ignored();
+            return result.ignoreEntries();
         }
         return MessageStream.empty();
     }
