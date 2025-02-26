@@ -60,10 +60,10 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
     }
 
     @Override
-    public <ID, M> SimpleModelRegistry registerModel(
-            Class<ID> idClass,
+    public <I, M> SimpleModelRegistry registerModel(
+            Class<I> idClass,
             Class<M> modelClass,
-            ModelLoader<ID, M> loadFunction) {
+            ModelLoader<I, M> loadFunction) {
         if (!getModelDefinitionsFor(modelClass).isEmpty()) {
             throw new ModelAlreadyRegisteredException(modelClass);
         }
@@ -86,10 +86,10 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
      * A definition of a model that can be registered. Used for resolving of the models. Solely used for internal
      * purposes.
      */
-    private record ModelDefinition<ID, M>(
-            Class<ID> idClass,
+    private record ModelDefinition<I, M>(
+            Class<I> idClass,
             Class<M> modelClass,
-            ModelLoader<ID, M> loader
+            ModelLoader<I, M> loader
     ) {
 
     }
@@ -154,16 +154,16 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
          *
          * @param modelType  The type of the model to retrieve
          * @param identifier The identifier of the model to retrieve
-         * @param <ID>       The type of the identifier
+         * @param <I>       The type of the identifier
          * @param <M>        The type of the model
          * @return The model if it is already loaded, otherwise null
          */
-        private <ID, M> M alreadyLoadedModelOf(@Nonnull Class<M> modelType, ID identifier) {
+        private <I, M> M alreadyLoadedModelOf(@Nonnull Class<M> modelType, I identifier) {
             //noinspection unchecked // The cast is checked in the stream
             return loadedModels
                     .stream()
                     .filter(lmd -> lmd.modelClass().equals(modelType))
-                    .map(lmd -> (LoadedModelDefinition<ID, M>) lmd)
+                    .map(lmd -> (LoadedModelDefinition<I, M>) lmd)
                     .filter(md -> identifier.equals(md.identifier()))
                     .findFirst()
                     .map(LoadedModelDefinition::model)
@@ -173,10 +173,10 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
         /**
          * Represents an already loaded model for this container. Used to keep track of the loaded models.
          */
-        private record LoadedModelDefinition<ID, M>(
-                Class<ID> idClass,
+        private record LoadedModelDefinition<I, M>(
+                Class<I> idClass,
                 Class<M> modelClass,
-                ID identifier,
+                I identifier,
                 M model
         ) {
 
@@ -191,13 +191,13 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
      * @return A list of definitions matching the given model type and name
      */
     @SuppressWarnings("unchecked") // The cast is checked in the stream
-    private <ID, M> List<? extends ModelDefinition<ID, M>> getModelDefinitionsFor(
+    private <I, M> List<ModelDefinition<I, M>> getModelDefinitionsFor(
             @Nonnull Class<M> modelType
     ) {
         return modelDefinitions
                 .stream()
                 .filter(md -> md.modelClass().equals(modelType))
-                .map(md -> (ModelDefinition<ID, M>) md)
+                .map(md -> (ModelDefinition<I, M>) md)
                 .toList();
     }
 }

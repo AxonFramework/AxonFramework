@@ -23,11 +23,11 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Loader of a model of type {@code M} with identifier of type {@code ID}.
  *
- * @param <ID> The type of the identifier of the model
+ * @param <I> The type of the identifier of the model
  * @param <M>  The type of model to load
  */
 @FunctionalInterface
-public interface ModelLoader<ID, M> {
+public interface ModelLoader<I, M> {
 
     /**
      * Load the model with the given {@code id} and {@code context}.
@@ -36,5 +36,5 @@ public interface ModelLoader<ID, M> {
      * @param context The context to load the model in
      * @return a {@link CompletableFuture} which resolves to the model instance
      */
-    CompletableFuture<M> load(ID id, ProcessingContext context);
+    CompletableFuture<M> load(I id, ProcessingContext context);
 }

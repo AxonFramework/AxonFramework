@@ -42,14 +42,14 @@ public interface ModelRegistry {
      * @param idClass      The class of the identifier
      * @param modelClass   The class of the model
      * @param loadFunction The function to load the model based on the identifier
-     * @param <ID>         The type of the identifier of the model
+     * @param <I>         The type of the identifier of the model
      * @param <M>          The type of model to load
      * @return The {@link ModelRegistry} instance for fluent interfacing
      */
-    <ID, M> ModelRegistry registerModel(
-            Class<ID> idClass,
+    <I, M> ModelRegistry registerModel(
+            Class<I> idClass,
             Class<M> modelClass,
-            ModelLoader<ID, M> loadFunction
+            ModelLoader<I, M> loadFunction
     );
 
     /**
