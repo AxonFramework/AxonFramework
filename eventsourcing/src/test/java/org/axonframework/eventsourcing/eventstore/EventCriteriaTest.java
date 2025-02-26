@@ -36,7 +36,7 @@ class EventCriteriaTest {
 
     @Test
     void criteriaForEventsOfSpecificTypeIgnoresOtherTypes() {
-        EventCriteria testSubject = EventCriteria.forEventTypes("OneType").withAnyTags();
+        EventCriteria testSubject = EventCriteria.forTypes("OneType");
 
         assertTrue(testSubject.matches("OneType", Set.of()));
         assertTrue(testSubject.matches("OneType", Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
@@ -47,7 +47,10 @@ class EventCriteriaTest {
 
     @Test
     void criteriaWithTypesAndTagsIgnoresTagsForOtherTypes() {
-        EventCriteria testSubject = EventCriteria.forEventTypes("OneType").withTags("key1", "value1");
+        EventCriteria testSubject = EventCriteria.and(
+                EventCriteria.forTypes("OneType"),
+                EventCriteria.forTags(new Tag("key1", "value1"))
+        );
 
         assertTrue(testSubject.matches("OneType", Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
 
@@ -59,7 +62,13 @@ class EventCriteriaTest {
 
     @Test
     void criteriaWithTypesAndTagsIgnoresEventsWithSubsetOfTags() {
-        EventCriteria testSubject = EventCriteria.forEventTypes("OneType").withTags("key1", "value1", "key2", "value2");
+        EventCriteria testSubject = EventCriteria.and(
+                EventCriteria.forTypes("OneType"),
+                EventCriteria.and(
+                        EventCriteria.forTags(new Tag("key1", "value1")),
+                        EventCriteria.forTags(new Tag("key2", "value2"))
+                )
+        );
 
         assertTrue(testSubject.matches("OneType", Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
 
@@ -67,41 +76,5 @@ class EventCriteriaTest {
         assertFalse(testSubject.matches("OneType", Set.of()));
         assertFalse(testSubject.matches("Another", Set.of()));
         assertFalse(testSubject.matches("Another", Set.of(new Tag("key1", "value1"))));
-    }
-
-    @Test
-    void criteriaWithOddParameterCountForTagsIsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> EventCriteria.forAnyEventType().withTags("odd"));
-        assertThrows(IllegalArgumentException.class, () -> EventCriteria.forAnyEventType().withTags("odd", "even", "odd"));
-    }
-
-    @Test
-    void criteriaWithEqualParametersAreConsideredEqual() {
-        EventCriteria testSubject1 = EventCriteria.forEventTypes("OneType").withTags("key1", "value1");
-        EventCriteria testSubject2 = EventCriteria.forEventTypes("OneType").withTags(new Tag("key1", "value1"));
-        EventCriteria testSubject3 = EventCriteria.forEventTypes("OtherType").withTags(new Tag("key1", "value1"));
-        EventCriteria testSubject4 = EventCriteria.forEventTypes("OneType").withTags(new Tag("key2", "value2s"));
-        EventCriteria testSubject5 = EventCriteria.forAnyEventType().withAnyTags();
-        EventCriteria testSubject6 = EventCriteria.forEventTypes().withTags(Set.of());
-
-        assertEquals(testSubject1, testSubject2);
-        assertEquals(testSubject5, testSubject6);
-
-        assertNotEquals(testSubject1, testSubject3);
-        assertNotEquals(testSubject1, testSubject4);
-        assertNotEquals(testSubject1, testSubject5);
-        assertNotEquals(testSubject1, testSubject6);
-
-        assertNotEquals(testSubject2, testSubject3);
-        assertNotEquals(testSubject2, testSubject4);
-        assertNotEquals(testSubject2, testSubject5);
-        assertNotEquals(testSubject2, testSubject6);
-
-        assertNotEquals(testSubject3, testSubject4);
-        assertNotEquals(testSubject3, testSubject5);
-        assertNotEquals(testSubject3, testSubject6);
-
-        assertNotEquals(testSubject4, testSubject5);
-        assertNotEquals(testSubject4, testSubject6);
     }
 }

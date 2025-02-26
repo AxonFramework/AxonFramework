@@ -56,8 +56,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
 
     protected String TEST_AGGREGATE_ID;
     protected String OTHER_AGGREGATE_ID;
-    protected EventCriteria TEST_AGGREGATE_CRITERIA;
-    protected EventCriteria OTHER_AGGREGATE_CRITERIA;
+    protected EventCriteria.TagsCriteria TEST_AGGREGATE_CRITERIA;
+    protected EventCriteria.TagsCriteria OTHER_AGGREGATE_CRITERIA;
 
     protected ESE testSubject;
 
@@ -66,8 +66,8 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         TEST_AGGREGATE_ID = UUID.randomUUID().toString();
         OTHER_AGGREGATE_ID = UUID.randomUUID().toString();
 
-        TEST_AGGREGATE_CRITERIA = EventCriteria.forAnyEventType().withTags(TEST_AGGREGATE_TYPE, TEST_AGGREGATE_ID);
-        OTHER_AGGREGATE_CRITERIA = EventCriteria.forAnyEventType().withTags("OTHER_AGGREGATE", OTHER_AGGREGATE_ID);
+        TEST_AGGREGATE_CRITERIA = EventCriteria.forTags(new Tag(TEST_AGGREGATE_TYPE, TEST_AGGREGATE_ID));
+        OTHER_AGGREGATE_CRITERIA = EventCriteria.forTags(new Tag("OTHER_AGGREGATE", OTHER_AGGREGATE_ID));
 
         testSubject = buildStorageEngine();
     }

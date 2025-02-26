@@ -252,8 +252,7 @@ class SimpleEventStoreTest {
 
             var result = asyncUnitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc, MATCHING_CONTEXT);
-                doConsumeAll(transaction.source(SourcingCondition.conditionFor(EventCriteria.forAnyEventType()
-                                                                                            .withAnyTags())));
+                doConsumeAll(transaction.source(SourcingCondition.conditionFor(EventCriteria.anyEvent())));
                 transaction.appendEvent(eventMessage(0));
                 return completedFuture(transaction);
             });
@@ -289,13 +288,10 @@ class SimpleEventStoreTest {
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
             var result = asyncUnitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc, MATCHING_CONTEXT);
-                var firstStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.forAnyEventType()
-                                                                                                 .withAnyTags()));
+                var firstStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.anyEvent()));
 
-                var secondStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.forAnyEventType()
-                                                                                                  .withAnyTags()));
-                var thirdStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.forAnyEventType()
-                                                                                                 .withAnyTags()));
+                var secondStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.anyEvent()));
+                var thirdStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.anyEvent()));
                 doConsumeAll(firstStream, secondStream, thirdStream);
                 transaction.appendEvent(eventMessage(0));
                 return completedFuture(transaction);

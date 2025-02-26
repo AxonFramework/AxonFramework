@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class DefaultSourcingConditionTest {
 
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.forAnyEventType().withTags("key", "value");
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.forTags(new Tag("key", "value"));
     private static final long TEST_START = 1L;
     private static final long TEST_END = 10L;
 

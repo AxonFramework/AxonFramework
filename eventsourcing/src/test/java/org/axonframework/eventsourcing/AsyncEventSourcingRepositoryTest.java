@@ -24,6 +24,7 @@ import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
+import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -45,7 +46,7 @@ import static org.mockito.Mockito.*;
 class AsyncEventSourcingRepositoryTest {
 
     private static final String TEST_CONTEXT = "DEFAULT_CONTEXT";
-    private static final EventCriteria TEST_MODEL_CRITERIA = EventCriteria.forAnyEventType().withTags("aggregateId", "id");
+    private static final EventCriteria.TagsCriteria TEST_MODEL_CRITERIA = EventCriteria.forTags(new Tag("aggregateId", "id"));
 
     private AsyncEventStore eventStore;
     private EventStoreTransaction eventStoreTransaction;

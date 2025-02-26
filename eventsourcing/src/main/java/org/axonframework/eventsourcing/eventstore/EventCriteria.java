@@ -18,13 +18,14 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 /**
  * Interface describing criteria to be taken into account when
- * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) sourcing},
+ * {@link EventStoreTransaction#source(SourcingCondition) sourcing},
  * {@link StreamableEventSource#open(String, StreamingCondition) streaming} or
  * {@link EventStoreTransaction#appendEvent(EventMessage) appending} events.
  * <p>
@@ -36,9 +37,76 @@ import java.util.Set;
  * @author Marco Amann
  * @author Sara Pellegrini
  * @author Steven van Beelen
+ * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public sealed interface EventCriteria permits AnyEvent, DefaultEventCriteria {
+public sealed interface EventCriteria
+        permits EventCriteria.TagsCriteria, EventCriteria.EventTypesCriteria, EventCriteria.AndEventCriteria,
+        EventCriteria.OrEventCriteria, AnyEvent {
+
+    /**
+     * Construct a new {@code EventCriteria} instance that matches events with the given {@code tags}. Any matching tag
+     * will be considered a match.
+     *
+     * @param tags The tags to match against.
+     * @return A new {@code EventCriteria} instance that matches events with the given {@code tags}.
+     */
+    static EventCriteria forTags(@Nonnull Set<Tag> tags) {
+        return new TagsCriteria(tags);
+    }
+
+    /**
+     * Construct a new {@code EventCriteria} instance that matches events with the given {@code tags}. Any matching tag
+     * will be considered a match.
+     *
+     * @param tags The tags to match against.
+     * @return A new {@code EventCriteria} instance that matches events with the given {@code tags}.
+     */
+    static EventCriteria.TagsCriteria forTags(@Nonnull Tag... tags) {
+        return new TagsCriteria(Set.of(tags));
+    }
+
+    /**
+     * Construct a new {@code EventCriteria} instance that matches events with the given {@code types}.
+     *
+     * @param types The types to match against.
+     * @return A new {@code EventCriteria} instance that matches events with the given {@code types}.
+     */
+    static EventCriteria forTypes(@Nonnull Set<String> types) {
+        return new EventTypesCriteria(types);
+    }
+
+    /**
+     * Construct a new {@code EventCriteria} instance that matches events with the given {@code types}.
+     *
+     * @param types The types to match against.
+     * @return A new {@code EventCriteria} instance that matches events with the given {@code types}.
+     */
+    static EventCriteria forTypes(@Nonnull String... types) {
+        return new EventTypesCriteria(Set.of(types));
+    }
+
+    /**
+     * Construct a new {@code EventCriteria} instance that matches events with the given {@code types}. All criteria
+     * need to match for the event to be considered a match.
+     *
+     * @param criteria The criteria to match against.
+     * @return A new {@code EventCriteria} instance that matches events with the given {@code types}.
+     */
+    static EventCriteria and(EventCriteria... criteria) {
+        return new AndEventCriteria(criteria);
+    }
+
+    /**
+     * Construct a new {@code EventCriteria} instance that matches events with the given {@code types}. All criteria
+     * need to match for the event to be considered a match.
+     *
+     * @param criteria The criteria to match against.
+     * @return A new {@code EventCriteria} instance that matches events with the given {@code types}.
+     */
+    static EventCriteria or(EventCriteria... criteria) {
+        return new OrEventCriteria(criteria);
+    }
 
     /**
      * Construct a {@code EventCriteria} that allows <b>any</b> events.
@@ -47,7 +115,7 @@ public sealed interface EventCriteria permits AnyEvent, DefaultEventCriteria {
      * {@link StreamableEventSource#open(String, StreamingCondition) streaming} or when there are no consistency
      * boundaries to validate during {@link EventStoreTransaction#appendEvent(EventMessage) appending}. Note that this
      * {@code EventCriteria} does not make sense for
-     * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) sourcing}, as it is <b>not</b>
+     * {@link EventStoreTransaction#source(SourcingCondition) sourcing}, as it is <b>not</b>
      * recommended to source the entire event store.
      *
      * @return An {@code EventCriteria} that contains no criteria at all.
@@ -57,104 +125,22 @@ public sealed interface EventCriteria permits AnyEvent, DefaultEventCriteria {
     }
 
     /**
-     * Create a builder for criteria that match events with any of the given {@code types}. Events with types not
-     * matching any of the given types will not match against criteria built by the returned builder.
+     * Indicates whether the given {@code tags} match the conditions defined in this instance. If no tags are defined,
+     * any given {@code tags} will be considered a match.
      *
-     * @param types The types of messages to build the criteria for.
-     * @return a builder that allows criteria to be built for the given event types.
+     * @param tags The tags to match against this criteria instance.
+     * @return {@code true} if the tags match, otherwise {@code false}.
      */
-    static EventCriteria.Builder forEventTypes(@Nonnull String... types) {
-        if (types.length == 0) {
-            return EventCriteriaBuilder.NO_TYPES;
-        }
-        return new EventCriteriaBuilder(types);
-    }
+    boolean matchingTags(@Nonnull Set<Tag> tags);
 
     /**
-     * Create a builder for criteria that match events with any type.
-     *
-     * @return a builder that allows criteria to be built matching against any event type.
-     */
-    static EventCriteria.Builder forAnyEventType() {
-        return EventCriteriaBuilder.NO_TYPES;
-    }
-
-    /**
-     * A {@link Set} of {@link String} containing all the types of events applicable for sourcing, streaming, or
-     * appending events.
-     *
-     * @return The {@link Set} of {@link String} containing all the types of events applicable for sourcing, streaming,
-     * or appending events.
-     */
-    Set<String> types();
-
-    /**
-     * A {@link Set} of {@link Tag Tags} applicable for sourcing, streaming, or appending events. An {@code Tag} can,
-     * for example, refer to a model's (aggregate) identifier name and value.
-     *
-     * @return The {@link Set} of {@link Tag Tags} applicable for sourcing, streaming, or appending events.
-     */
-    Set<Tag> tags();
-
-    /**
-     * Indicates whether the given {@code type} matches the types defined in this instance. If no types are defined, any
+     * Indicates whether the given {@code type} matches the type defined in this instance. If no type is defined, any
      * given {@code type} will be considered a match.
      *
      * @param type The type to match against this criteria instance.
      * @return {@code true} if the type matches, otherwise {@code false}.
      */
-    default boolean matchingType(String type) {
-        return types().isEmpty() || types().contains(type);
-    }
-
-    /**
-     * Matches the given {@code tags} with the {@link #tags()} of this {@code EventCriteria}. An event matches against
-     * this criteria instance if the tags in one of the criteria in this set are all found in that event.
-     * <p>
-     * For example, given the following set of criteria :
-     * <ul>
-     *     <li>
-     *         1:
-     *         <ul>
-     *             <li>STUDENT -> A</li>
-     *             <li>COURSE -> X</li>
-     *         </ul>
-     *     </li>
-     *     <li>
-     *         2:
-     *         <ul>
-     *             <li>STUDENT -> A</li>
-     *             <li>COURSE -> Y</li>
-     *         </ul>
-     *     </li>
-     *     <li>
-     *         3:
-     *         <ul>
-     *             <li>COURSE -> Z</li>
-     *         </ul>
-     *     </li>
-     * </ul>
-     * The following events will match:
-     * <ul>
-     *     <li> Event [STUDENT -> A, COURSE -> X]</li>
-     *     <li> Event [STUDENT -> A, COURSE -> X, FACULTY -> 1]</li>
-     *     <li> Event [STUDENT -> A, COURSE -> Z]</li>
-     *     <li> Event [STUDENT -> B, COURSE -> Z]</li>
-     *     <li> Event [COURSE -> Z, FACULTY -> 1]</li>
-     * </ul>
-     * But the following events do not:
-     * <ul>
-     *     <li> Event [STUDENT -> B, COURSE -> X]</li>
-     *     <li> Event [STUDENT -> A]</li>
-     *     <li> Event [STUDENT -> Z]</li>
-     * </ul>
-     *
-     * @param tags The {@link Set} of {@link Tag Tags} to compare with {@code this EventCriteria} its {@link #tags()}.
-     * @return {@code true} if they are deemed to be equal, {@code false} otherwise.
-     */
-    default boolean matchingTags(@Nonnull Set<Tag> tags) {
-        return tags.containsAll(this.tags());
-    }
+    boolean matchingType(@Nonnull String type);
 
     /**
      * Indicates whether the given {@code type} and {@code tags} matches the types and tags defined in this instance. If
@@ -173,42 +159,95 @@ public sealed interface EventCriteria permits AnyEvent, DefaultEventCriteria {
     }
 
     /**
-     * Interface providing operations during an intermediate state of creating an {@link EventCriteria} instance.
+     * Criteria that matches when any of the given delegate criteria match.
      */
-    interface Builder {
+    final class OrEventCriteria implements EventCriteria {
 
-        /**
-         * Create a {@link EventCriteria} expecting events containing the given {@code tags}.
-         *
-         * @param tags The tags that events must have to match.
-         * @return a criteria object that matches against the given tags.
-         */
-        EventCriteria withTags(@Nonnull Set<Tag> tags);
+        private final List<EventCriteria> delegates;
 
-        /**
-         * Create a {@link EventCriteria} expecting events containing the given {@code tags}.
-         *
-         * @param tags The tags that events must have to match.
-         * @return a criteria object that matches against the given tags.
-         */
-        EventCriteria withTags(@Nonnull Tag... tags);
+        public OrEventCriteria(
+                EventCriteria... delegates
+        ) {
+            this.delegates = Arrays.asList(delegates);
+        }
 
-        /**
-         * Create a {@link EventCriteria} expecting events containing the given {@code tagKeyValuePairs}. The given
-         * values are used in pairs to construct a tag with the first parameter as key, and the second as value,
-         * repeating until all parameters are used to create tags.
-         *
-         * @param tagKeyValuePairs The tags that events must have to match.
-         * @return a criteria object that matches against the given tags.
-         * @throws IllegalArgumentException if an odd number of parameters are provided.
-         */
-        EventCriteria withTags(@Nonnull String... tagKeyValuePairs);
+        @Override
+        public boolean matchingTags(@Nonnull Set<Tag> tags) {
+            return delegates.stream().anyMatch(criteria -> criteria.matchingTags(tags));
+        }
 
-        /**
-         * Create a {@link EventCriteria} that doesn't require any specific tags on events to match.
-         *
-         * @return a criteria object that matches against all events.
-         */
-        EventCriteria withAnyTags();
+        @Override
+        public boolean matchingType(@Nonnull String type) {
+            return delegates.stream().anyMatch(criteria -> criteria.matchingType(type));
+        }
+
+        public List<EventCriteria> getDelegates() {
+            return delegates;
+        }
     }
+
+    /**
+     * Criteria that matches when all of the given delegate criteria match.
+     */
+    final class AndEventCriteria implements EventCriteria {
+
+        private final List<EventCriteria> delegates;
+
+        public AndEventCriteria(
+                EventCriteria... delegates
+        ) {
+            this.delegates = Arrays.asList(delegates);
+        }
+
+        @Override
+        public boolean matchingTags(@Nonnull Set<Tag> tags) {
+            return delegates.stream().allMatch(criteria -> criteria.matchingTags(tags));
+        }
+
+        @Override
+        public boolean matchingType(@Nonnull String type) {
+            return delegates.stream().allMatch(criteria -> criteria.matchingType(type));
+        }
+
+        public List<EventCriteria> getDelegates() {
+            return delegates;
+        }
+    }
+
+    /**
+     * Criteria that matches when one of the given tags is present in the event.
+     *
+     * @param tags The tags to match against.
+     */
+    record TagsCriteria(Set<Tag> tags) implements EventCriteria {
+
+        @Override
+        public boolean matchingTags(@Nonnull Set<Tag> tags) {
+            return tags.stream().anyMatch(this.tags::contains);
+        }
+
+        @Override
+        public boolean matchingType(@Nonnull String type) {
+            return true;
+        }
+    }
+
+    /**
+     * Criteria that matches when the event is one of the given types.
+     *
+     * @param types The types to match against.
+     */
+    record EventTypesCriteria(Set<String> types) implements EventCriteria {
+
+        @Override
+        public boolean matchingTags(@Nonnull Set<Tag> tags) {
+            return true;
+        }
+
+        @Override
+        public boolean matchingType(@Nonnull String type) {
+            return types.contains(type);
+        }
+    }
+
 }

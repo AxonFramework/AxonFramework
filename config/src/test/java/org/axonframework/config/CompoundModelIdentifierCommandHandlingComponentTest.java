@@ -47,8 +47,6 @@ import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -78,12 +76,17 @@ class CompoundModelIdentifierCommandHandlingComponentTest {
 
     private final AsyncEventSourcingRepository<MentorModelIdentifier, StudentMentorCompoundModel> studentMentorRepository = new AsyncEventSourcingRepository<>(
             eventStore,
-            myModelId -> {
-                Set<Tag> tags = new HashSet<>();
-                tags.add(new Tag("Student", myModelId.mentorId()));
-                tags.add(new Tag("Student", myModelId.menteeId()));
-                return EventCriteria.forAnyEventType().withTags(tags);
-            },
+            myModelId -> EventCriteria.and(
+                    EventCriteria.or(
+                            EventCriteria.forTags(
+                                    new Tag("Student", myModelId.mentorId())
+                            ),
+                            EventCriteria.forTags(
+                                    new Tag("Student", myModelId.menteeId())
+                            )
+                    ),
+                    EventCriteria.forTypes(MentorAssignedToMenteeEvent.class.getName())
+            ),
             studentMentorCompoundModelEventStateApplier,
             StudentMentorCompoundModel::new,
             DEFAULT_CONTEXT
@@ -99,7 +102,7 @@ class CompoundModelIdentifierCommandHandlingComponentTest {
             );
 
     @Test
-    @Disabled
+//    @Disabled
     void canHandleCommandThatTargetsMultipleModelsViaInjectionOfCompoundModel() {
 
         var configuration = Mockito.mock(Configuration.class);

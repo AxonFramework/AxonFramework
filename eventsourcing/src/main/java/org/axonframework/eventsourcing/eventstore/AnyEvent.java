@@ -46,17 +46,12 @@ final class AnyEvent implements EventCriteria {
     }
 
     @Override
-    public Set<String> types() {
-        return Set.of();
-    }
-
-    @Override
-    public Set<Tag> tags() {
-        return Set.of();
-    }
-
-    @Override
     public boolean matchingTags(@Nonnull Set<Tag> tags) {
+        return true;
+    }
+
+    @Override
+    public boolean matchingType(@Nonnull String type) {
         return true;
     }
 

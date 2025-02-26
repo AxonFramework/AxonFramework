@@ -285,7 +285,10 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     private MessageStream<EventMessage<?>> eventsForCriteria(SourcingCondition condition,
                                                              EventCriteria criterion) {
-        var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
+        if(!(criterion instanceof EventCriteria.TagsCriteria)) {
+            throw new IllegalArgumentException("Unsupported criteria type: " + criterion.getClass().getName());
+        }
+        var aggregateIdentifier = resolveAggregateIdentifier(((EventCriteria.TagsCriteria) criterion).tags());
         var events = batchingOperations.readEventData(
                 aggregateIdentifier,
                 condition.start(),
