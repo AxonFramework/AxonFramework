@@ -36,7 +36,7 @@ class EventCriteriaTest {
 
     @Test
     void criteriaForEventsOfSpecificTypeIgnoresOtherTypes() {
-        EventCriteria testSubject = EventCriteria.forTypes("OneType");
+        EventCriteria testSubject = EventCriteria.isOneOfTypes("OneType");
 
         assertTrue(testSubject.matches("OneType", Set.of()));
         assertTrue(testSubject.matches("OneType", Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
@@ -46,10 +46,10 @@ class EventCriteriaTest {
     }
 
     @Test
-    void criteriaWithTypesAndTagsIgnoresTagsForOtherTypes() {
-        EventCriteria testSubject = EventCriteria.and(
-                EventCriteria.forTypes("OneType"),
-                EventCriteria.forTags(new Tag("key1", "value1"))
+    void criteriaWithTypesBothTagsIgnoresTagsForOtherTypes() {
+        EventCriteria testSubject = EventCriteria.both(
+                EventCriteria.isOneOfTypes("OneType"),
+                EventCriteria.matchesTag(new Tag("key1", "value1"))
         );
 
         assertTrue(testSubject.matches("OneType", Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
@@ -61,12 +61,12 @@ class EventCriteriaTest {
     }
 
     @Test
-    void criteriaWithTypesAndTagsIgnoresEventsWithSubsetOfTags() {
-        EventCriteria testSubject = EventCriteria.and(
-                EventCriteria.forTypes("OneType"),
-                EventCriteria.and(
-                        EventCriteria.forTags(new Tag("key1", "value1")),
-                        EventCriteria.forTags(new Tag("key2", "value2"))
+    void criteriaWithTypesBothTagsIgnoresEventsWithSubsetOfTags() {
+        EventCriteria testSubject = EventCriteria.both(
+                EventCriteria.isOneOfTypes("OneType"),
+                EventCriteria.both(
+                        EventCriteria.matchesTag(new Tag("key1", "value1")),
+                        EventCriteria.matchesTag(new Tag("key2", "value2"))
                 )
         );
 
@@ -76,5 +76,99 @@ class EventCriteriaTest {
         assertFalse(testSubject.matches("OneType", Set.of()));
         assertFalse(testSubject.matches("Another", Set.of()));
         assertFalse(testSubject.matches("Another", Set.of(new Tag("key1", "value1"))));
+    }
+
+    @Test
+    void canConstructCriteriaObjectForOrm() {
+        var criteria = EventCriteria.both(
+                EventCriteria.isOneOfTypes("OneType"),
+                EventCriteria.either(
+                        EventCriteria.matchesTag(new Tag("key1", "value1")),
+                        EventCriteria.matchesTag(new Tag("key2", "value2"))
+                )
+        );
+
+        assertEquals("(IS (OneType) AND (key1=value1 OR key2=value2))", criteria.toString());
+    }
+
+    @Test
+    void canFormInsanelyComplexCondition() {
+        var criteria = EventCriteria.either(
+                EventCriteria.both(
+                        EventCriteria.isOneOfTypes("OneType"),
+                        EventCriteria.either(
+                                EventCriteria.matchesTag(new Tag("key1", "value1")),
+                                EventCriteria.both(
+                                        EventCriteria.matchesTag(new Tag("key2", "value2")),
+                                        EventCriteria.isOneOfTypes("AnotherType")
+                                )
+                        )
+                ),
+                EventCriteria.both(
+                        EventCriteria.isOneOfTypes("TwoType"),
+                        EventCriteria.either(
+                                EventCriteria.matchesTag(new Tag("key1", "value1")),
+                                EventCriteria.both(
+                                        EventCriteria.matchesTag(new Tag("key2", "value2")),
+                                        EventCriteria.isOneOfTypes("AnotherType")
+                                )
+                        )
+                )
+        );
+
+        assertEquals("((IS (OneType) AND (key1=value1 OR (key2=value2 AND IS (AnotherType)))) OR (IS (TwoType) AND (key1=value1 OR (key2=value2 AND IS (AnotherType)))))", criteria.toString());
+    }
+
+
+    @Test
+    void proveThatCanBeRecursivelyReduced() {
+        var criteria = EventCriteria.either(
+                EventCriteria.both(
+                        EventCriteria.isOneOfTypes("OneType"),
+                        EventCriteria.either(
+                                EventCriteria.matchesTag(new Tag("key1", "value1")),
+                                EventCriteria.both(
+                                        EventCriteria.matchesTag(new Tag("key2", "value2")),
+                                        EventCriteria.isOneOfTypes("AnotherType")
+                                )
+                        )
+                ),
+                EventCriteria.both(
+                        EventCriteria.isOneOfTypes("TwoType"),
+                        EventCriteria.either(
+                                EventCriteria.matchesTag(new Tag("key1", "value1")),
+                                EventCriteria.both(
+                                        EventCriteria.matchesTag(new Tag("key2", "value2")),
+                                        EventCriteria.isOneOfTypes("AnotherType")
+                                )
+                        )
+                )
+        );
+
+        assertEquals("OR (AND (IS (OneType) AND OR (key1=value1 OR AND (key2=value2 AND IS (AnotherType)))) OR AND (IS (TwoType) AND OR (key1=value1 OR AND (key2=value2 AND IS (AnotherType)))))", reduceCriteria(criteria));
+
+
+    }
+
+    private String reduceCriteria(EventCriteria criteria) {
+        switch (criteria) {
+            case AndEventCriteria andEventCriteria -> {
+                return "AND (" + andEventCriteria.criteria().stream().map(this::reduceCriteria).reduce((a, b) -> a
+                        + " AND " + b).orElse("") + ")";
+            }
+            case OrEventCriteria orEventCriteria -> {
+                return "OR (" + orEventCriteria.criteria().stream().map(this::reduceCriteria).reduce((a, b) -> a
+                        + " OR " + b).orElse("") + ")";
+            }
+            case EventTypesCriteria eventTypesCriteria -> {
+                return "IS (" + eventTypesCriteria.types().stream().reduce((a, b) -> a + ", " + b).orElse("") + ")";
+            }
+            case TagEventCriteria tagEventCriteria -> {
+                return tagEventCriteria.tag().key() + "=" + tagEventCriteria.tag().value();
+            }
+            case AnyEvent anyEvent -> {
+                return "*";
+            }
+        }
     }
 }

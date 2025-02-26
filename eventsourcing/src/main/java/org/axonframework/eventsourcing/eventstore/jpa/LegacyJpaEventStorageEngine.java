@@ -45,6 +45,7 @@ import org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStora
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
+import org.axonframework.eventsourcing.eventstore.TagEventCriteria;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
@@ -285,10 +286,11 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
 
     private MessageStream<EventMessage<?>> eventsForCriteria(SourcingCondition condition,
                                                              EventCriteria criterion) {
-        if(!(criterion instanceof EventCriteria.TagsCriteria)) {
-            throw new IllegalArgumentException("Unsupported criteria type: " + criterion.getClass().getName());
+        if (!(criterion instanceof TagEventCriteria)) {
+            throw new IllegalArgumentException(
+                    "While using LegacyJpaEventStorageEngine, only singular TagEventCriteria are supported");
         }
-        var aggregateIdentifier = resolveAggregateIdentifier(((EventCriteria.TagsCriteria) criterion).tags());
+        var aggregateIdentifier = ((TagEventCriteria) criterion).tag().value();
         var events = batchingOperations.readEventData(
                 aggregateIdentifier,
                 condition.start(),

@@ -53,7 +53,7 @@ class DefaultEventStoreTransactionTest {
     private static final String TEST_AGGREGATE_ID = "someId";
     public static final Tag AGGREGATE_ID_TAG = new Tag("aggregateIdentifier", TEST_AGGREGATE_ID);
     private static final EventCriteria TEST_AGGREGATE_CRITERIA =
-            EventCriteria.forTags(AGGREGATE_ID_TAG);
+            EventCriteria.matchesTag(AGGREGATE_ID_TAG);
 
     private final Context.ResourceKey<EventStoreTransaction> testEventStoreTransactionKey =
             Context.ResourceKey.withLabel("eventStoreTransaction");
@@ -146,9 +146,9 @@ class DefaultEventStoreTransactionTest {
         @Test
         void appendCommitsOfNonExistentTagWhenOfTwoNonOverlappingTagsOneYieldedNoEvents() {
             Tag nonExistentTag = new Tag("nonExistent", "tag");
-            EventCriteria nonExistingCriteria = EventCriteria.forTags(nonExistentTag);
+            EventCriteria nonExistingCriteria = EventCriteria.matchesTag(nonExistentTag);
             Tag existentTag = new Tag("existent", "tag");
-            EventCriteria existingCriteria = EventCriteria.forTags(existentTag);
+            EventCriteria existingCriteria = EventCriteria.matchesTag(existentTag);
 
             appendEventForTag(existentTag);
             testCanCommitTag(nonExistingCriteria, existingCriteria, nonExistentTag);
@@ -157,9 +157,9 @@ class DefaultEventStoreTransactionTest {
         @Test
         void appendCommitsOfExistentTagWhenOfTwoNonOverlappingTagsOneYieldedNoEvents() {
             Tag nonExistentTag = new Tag("nonExistent", "tag");
-            EventCriteria nonExistingCriteria = EventCriteria.forTags(nonExistentTag);
+            EventCriteria nonExistingCriteria = EventCriteria.matchesTag(nonExistentTag);
             Tag existentTag = new Tag("existent", "tag");
-            EventCriteria existingCriteria = EventCriteria.forTags(existentTag);
+            EventCriteria existingCriteria = EventCriteria.matchesTag(existentTag);
 
             appendEventForTag(existentTag);
             testCanCommitTag(nonExistingCriteria, existingCriteria, existentTag);
@@ -396,8 +396,8 @@ class DefaultEventStoreTransactionTest {
         Optional<Set<Tag>> optionalTags = Tag.fromContext(actual);
         assertTrue(optionalTags.isPresent());
         Set<Tag> actualTags = optionalTags.get();
-        assertInstanceOf(EventCriteria.TagsCriteria.class, expectedCriteria);
-        assertTrue(actualTags.containsAll(((EventCriteria.TagsCriteria) expectedCriteria).tags()));
+        assertInstanceOf(TagEventCriteria.class, expectedCriteria);
+        assertTrue(actualTags.contains(((TagEventCriteria) expectedCriteria).tag()));
         assertPositionAndEvent(actual, expectedPosition, expectedEvent);
     }
 

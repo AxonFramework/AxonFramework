@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -41,29 +40,27 @@ import java.util.Set;
  * @since 5.0.0
  */
 public sealed interface EventCriteria
-        permits EventCriteria.TagsCriteria, EventCriteria.EventTypesCriteria, EventCriteria.AndEventCriteria,
-        EventCriteria.OrEventCriteria, AnyEvent {
+        permits TagEventCriteria, EventTypesCriteria, AndEventCriteria, OrEventCriteria, AnyEvent {
 
     /**
-     * Construct a new {@code EventCriteria} instance that matches events with the given {@code tags}. Any matching tag
-     * will be considered a match.
+     * Construct a new {@code EventCriteria} instance that matches events with the given {@code tag}.
      *
-     * @param tags The tags to match against.
+     * @param tag The tag to match against.
      * @return A new {@code EventCriteria} instance that matches events with the given {@code tags}.
      */
-    static EventCriteria forTags(@Nonnull Set<Tag> tags) {
-        return new TagsCriteria(tags);
+    static TagEventCriteria matchesTag(@Nonnull Tag tag) {
+        return new TagEventCriteria(tag);
     }
 
     /**
-     * Construct a new {@code EventCriteria} instance that matches events with the given {@code tags}. Any matching tag
-     * will be considered a match.
+     * Construct a new {@code EventCriteria} instance that matches events with the given {@code key} and {@code value}.
      *
-     * @param tags The tags to match against.
+     * @param key  The key of the tag to match against.
+     * @param value The value of the tag to match against.
      * @return A new {@code EventCriteria} instance that matches events with the given {@code tags}.
      */
-    static EventCriteria.TagsCriteria forTags(@Nonnull Tag... tags) {
-        return new TagsCriteria(Set.of(tags));
+    static TagEventCriteria matchesTag(@Nonnull String key, @Nonnull String value) {
+        return matchesTag(new Tag(key, value));
     }
 
     /**
@@ -72,7 +69,7 @@ public sealed interface EventCriteria
      * @param types The types to match against.
      * @return A new {@code EventCriteria} instance that matches events with the given {@code types}.
      */
-    static EventCriteria forTypes(@Nonnull Set<String> types) {
+    static EventCriteria isOneOfTypes(@Nonnull Set<String> types) {
         return new EventTypesCriteria(types);
     }
 
@@ -82,8 +79,8 @@ public sealed interface EventCriteria
      * @param types The types to match against.
      * @return A new {@code EventCriteria} instance that matches events with the given {@code types}.
      */
-    static EventCriteria forTypes(@Nonnull String... types) {
-        return new EventTypesCriteria(Set.of(types));
+    static EventCriteria isOneOfTypes(@Nonnull String... types) {
+        return isOneOfTypes(Set.of(types));
     }
 
     /**
@@ -93,8 +90,8 @@ public sealed interface EventCriteria
      * @param criteria The criteria to match against.
      * @return A new {@code EventCriteria} instance that matches events with the given {@code types}.
      */
-    static EventCriteria and(EventCriteria... criteria) {
-        return new AndEventCriteria(criteria);
+    static EventCriteria both(EventCriteria... criteria) {
+        return new AndEventCriteria(Arrays.asList(criteria));
     }
 
     /**
@@ -104,8 +101,8 @@ public sealed interface EventCriteria
      * @param criteria The criteria to match against.
      * @return A new {@code EventCriteria} instance that matches events with the given {@code types}.
      */
-    static EventCriteria or(EventCriteria... criteria) {
-        return new OrEventCriteria(criteria);
+    static EventCriteria either(EventCriteria... criteria) {
+        return new OrEventCriteria(Arrays.asList(criteria));
     }
 
     /**
@@ -131,7 +128,9 @@ public sealed interface EventCriteria
      * @param tags The tags to match against this criteria instance.
      * @return {@code true} if the tags match, otherwise {@code false}.
      */
-    boolean matchingTags(@Nonnull Set<Tag> tags);
+    default boolean matchingTags(@Nonnull Set<Tag> tags) {
+        return true;
+    }
 
     /**
      * Indicates whether the given {@code type} matches the type defined in this instance. If no type is defined, any
@@ -140,7 +139,9 @@ public sealed interface EventCriteria
      * @param type The type to match against this criteria instance.
      * @return {@code true} if the type matches, otherwise {@code false}.
      */
-    boolean matchingType(@Nonnull String type);
+    default boolean matchingType(@Nonnull String type) {
+        return true;
+    }
 
     /**
      * Indicates whether the given {@code type} and {@code tags} matches the types and tags defined in this instance. If
@@ -157,97 +158,4 @@ public sealed interface EventCriteria
     default boolean matches(@Nonnull String type, @Nonnull Set<Tag> tags) {
         return matchingType(type) && matchingTags(tags);
     }
-
-    /**
-     * Criteria that matches when any of the given delegate criteria match.
-     */
-    final class OrEventCriteria implements EventCriteria {
-
-        private final List<EventCriteria> delegates;
-
-        public OrEventCriteria(
-                EventCriteria... delegates
-        ) {
-            this.delegates = Arrays.asList(delegates);
-        }
-
-        @Override
-        public boolean matchingTags(@Nonnull Set<Tag> tags) {
-            return delegates.stream().anyMatch(criteria -> criteria.matchingTags(tags));
-        }
-
-        @Override
-        public boolean matchingType(@Nonnull String type) {
-            return delegates.stream().anyMatch(criteria -> criteria.matchingType(type));
-        }
-
-        public List<EventCriteria> getDelegates() {
-            return delegates;
-        }
-    }
-
-    /**
-     * Criteria that matches when all of the given delegate criteria match.
-     */
-    final class AndEventCriteria implements EventCriteria {
-
-        private final List<EventCriteria> delegates;
-
-        public AndEventCriteria(
-                EventCriteria... delegates
-        ) {
-            this.delegates = Arrays.asList(delegates);
-        }
-
-        @Override
-        public boolean matchingTags(@Nonnull Set<Tag> tags) {
-            return delegates.stream().allMatch(criteria -> criteria.matchingTags(tags));
-        }
-
-        @Override
-        public boolean matchingType(@Nonnull String type) {
-            return delegates.stream().allMatch(criteria -> criteria.matchingType(type));
-        }
-
-        public List<EventCriteria> getDelegates() {
-            return delegates;
-        }
-    }
-
-    /**
-     * Criteria that matches when one of the given tags is present in the event.
-     *
-     * @param tags The tags to match against.
-     */
-    record TagsCriteria(Set<Tag> tags) implements EventCriteria {
-
-        @Override
-        public boolean matchingTags(@Nonnull Set<Tag> tags) {
-            return tags.stream().anyMatch(this.tags::contains);
-        }
-
-        @Override
-        public boolean matchingType(@Nonnull String type) {
-            return true;
-        }
-    }
-
-    /**
-     * Criteria that matches when the event is one of the given types.
-     *
-     * @param types The types to match against.
-     */
-    record EventTypesCriteria(Set<String> types) implements EventCriteria {
-
-        @Override
-        public boolean matchingTags(@Nonnull Set<Tag> tags) {
-            return true;
-        }
-
-        @Override
-        public boolean matchingType(@Nonnull String type) {
-            return types.contains(type);
-        }
-    }
-
 }

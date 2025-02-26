@@ -30,7 +30,6 @@ import org.axonframework.eventsourcing.annotations.EventTag;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
-import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -76,17 +75,14 @@ class CompoundModelIdentifierCommandHandlingComponentTest {
 
     private final AsyncEventSourcingRepository<MentorModelIdentifier, StudentMentorCompoundModel> studentMentorRepository = new AsyncEventSourcingRepository<>(
             eventStore,
-            myModelId -> EventCriteria.and(
-                    EventCriteria.or(
-                            EventCriteria.forTags(
-                                    new Tag("Student", myModelId.mentorId())
+            myModelId ->
+                    EventCriteria.both(
+                            EventCriteria.either(
+                                    EventCriteria.matchesTag("Student", myModelId.mentorId()),
+                                    EventCriteria.matchesTag("Student", myModelId.menteeId())
                             ),
-                            EventCriteria.forTags(
-                                    new Tag("Student", myModelId.menteeId())
-                            )
+                            EventCriteria.isOneOfTypes(MentorAssignedToMenteeEvent.class.getName())
                     ),
-                    EventCriteria.forTypes(MentorAssignedToMenteeEvent.class.getName())
-            ),
             studentMentorCompoundModelEventStateApplier,
             StudentMentorCompoundModel::new,
             DEFAULT_CONTEXT

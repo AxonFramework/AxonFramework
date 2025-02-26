@@ -80,7 +80,7 @@ class SingleAndMultiModelCommandHandlingComponentTest {
 
     private final AsyncEventSourcingRepository<String, Student> studentRepository = new AsyncEventSourcingRepository<>(
             eventStore,
-            myModelId -> EventCriteria.forTags(new Tag("Student", myModelId)),
+            myModelId -> EventCriteria.matchesTag(new Tag("Student", myModelId)),
             studentEventStateApplier,
             Student::new,
             DEFAULT_CONTEXT
@@ -89,7 +89,7 @@ class SingleAndMultiModelCommandHandlingComponentTest {
 
     private final AsyncEventSourcingRepository<String, Course> courseRepository = new AsyncEventSourcingRepository<>(
             eventStore,
-            myModelId -> EventCriteria.forTags(new Tag("Course", myModelId)),
+            myModelId -> EventCriteria.matchesTag(new Tag("Course", myModelId)),
             courseEventStateApplier,
             Course::new,
             DEFAULT_CONTEXT

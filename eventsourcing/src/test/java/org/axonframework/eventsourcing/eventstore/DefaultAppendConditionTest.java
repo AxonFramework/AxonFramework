@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DefaultAppendConditionTest {
 
     private static final ConsistencyMarker TEST_CONSISTENCY_MARKER = new GlobalIndexConsistencyMarker(10);
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.forTags(new Tag("key", "value"));
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.matchesTag(new Tag("key", "value"));
 
     private AppendCondition testSubject;
 

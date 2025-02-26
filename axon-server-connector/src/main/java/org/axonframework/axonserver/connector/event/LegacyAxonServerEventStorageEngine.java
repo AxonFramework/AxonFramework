@@ -41,6 +41,7 @@ import org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStora
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
+import org.axonframework.eventsourcing.eventstore.TagEventCriteria;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
@@ -194,7 +195,11 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
     }
 
     private MessageStream<EventMessage<?>> eventsForCriteria(SourcingCondition condition, EventCriteria criterion) {
-        String aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
+        if (!(criterion instanceof TagEventCriteria)) {
+            throw new IllegalArgumentException(
+                    "While using LegacyJpaEventStorageEngine, only singular TagEventCriteria are supported");
+        }
+        var aggregateIdentifier = ((TagEventCriteria) criterion).tag().value();
         // axonserver uses 0 to denote the end of a stream, so if 0 is provided, we use 1. For infinity, we use 0.
         long end = condition.end() == Long.MAX_VALUE ? 0 : condition.end() + 1;
         AggregateEventStream aggregateStream = connection.eventChannel().openAggregateStream(aggregateIdentifier,

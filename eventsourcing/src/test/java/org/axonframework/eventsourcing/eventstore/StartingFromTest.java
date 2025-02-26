@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class StartingFromTest {
 
     private static final GlobalSequenceTrackingToken TEST_POSITION = new GlobalSequenceTrackingToken(1337);
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.forTags(new Tag("key", "value"));
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.matchesTag(new Tag("key", "value"));
 
     private StreamingCondition testSubject;
 
