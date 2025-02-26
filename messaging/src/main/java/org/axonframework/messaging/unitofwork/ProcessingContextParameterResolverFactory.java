@@ -16,12 +16,15 @@
 
 package org.axonframework.messaging.unitofwork;
 
+import org.axonframework.common.Priority;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
+
+import static org.axonframework.common.Priority.LOW;
 
 /**
  * {@link ParameterResolverFactory} implementation that provides a {@link ParameterResolver} for parameters of type
@@ -30,6 +33,7 @@ import java.lang.reflect.Parameter;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
+@Priority(LOW)
 public class ProcessingContextParameterResolverFactory implements ParameterResolverFactory {
 
     private static final ProcessingContextParameterResolver INSTANCE = new ProcessingContextParameterResolver();
