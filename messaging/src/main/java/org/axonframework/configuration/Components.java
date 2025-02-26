@@ -32,7 +32,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class Components {
+public class Components {
 
     private final Map<Class<?>, Component<?>> components = new ConcurrentHashMap<>();
 
