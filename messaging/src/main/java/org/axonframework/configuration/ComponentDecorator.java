@@ -51,5 +51,6 @@ public interface ComponentDecorator<C> {
      * @param delegate The delegate of type {@code C} to be decorated.
      * @return A decorated component of type {@code C}, typically based on the given {@code delegate}.
      */
-    C decorate(@Nonnull NewConfiguration config, @Nonnull C delegate);
+    C decorate(@Nonnull NewConfiguration config,
+               @Nonnull C delegate);
 }
