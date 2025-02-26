@@ -18,9 +18,9 @@ package org.axonframework.springboot.integration;
 
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.interceptors.LoggingInterceptor;
@@ -49,6 +49,8 @@ class EventProcessingModuleConfigTest {
     @BeforeEach
     void setUp() {
         testApplicationContext = new ApplicationContextRunner().withPropertyValues("axon.axonserver.enabled:false")
+                                                               // Exclude the timeout module, which adds an interceptor
+                                                               .withPropertyValues("axon.timeout.enabled:false")
                                                                .withUserConfiguration(TestContext.class);
     }
 

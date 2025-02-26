@@ -24,6 +24,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
@@ -43,7 +44,8 @@ import static org.junit.jupiter.api.Assertions.*;
         JmxAutoConfiguration.class,
         WebClientAutoConfiguration.class,
         DataSourceAutoConfiguration.class,
-        JacksonAutoConfiguration.class
+        JacksonAutoConfiguration.class,
+        HttpMessageConvertersAutoConfiguration.class,
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @TestPropertySource("classpath:application.serializertest.properties")
