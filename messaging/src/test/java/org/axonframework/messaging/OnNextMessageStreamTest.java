@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class OnNextMessageStreamTest extends MessageStreamTest<Message<String>, Message<String>> {
+class OnNextMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     private static final Consumer<Entry<Message<String>>> NO_OP_ON_NEXT = message -> {
     };

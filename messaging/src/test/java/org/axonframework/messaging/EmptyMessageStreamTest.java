@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>, Message<Void>> {
+class EmptyMessageStreamTest extends MessageStreamTest<Message<Void>> {
 
     @Override
     MessageStream<Message<Void>> completedTestSubject(List<Message<Void>> messages) {

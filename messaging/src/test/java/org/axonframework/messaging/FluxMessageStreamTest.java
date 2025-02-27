@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class FluxMessageStreamTest extends MessageStreamTest<Message<String>, Message<String>> {
+class FluxMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {

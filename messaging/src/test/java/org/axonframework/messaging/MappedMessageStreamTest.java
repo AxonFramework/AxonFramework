@@ -29,7 +29,7 @@ import java.util.function.Function;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class MappedMessageStreamTest extends MessageStreamTest<Message<String>, Message<String>> {
+class MappedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     private static final Function<Entry<Message<String>>, Entry<Message<String>>> NO_OP_MAPPER = entry -> entry;
 

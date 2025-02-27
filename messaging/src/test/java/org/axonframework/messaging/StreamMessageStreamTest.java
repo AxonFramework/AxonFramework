@@ -28,7 +28,7 @@ import java.util.stream.Stream;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class StreamMessageStreamTest extends MessageStreamTest<Message<String>, Message<String>> {
+class StreamMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {

@@ -27,7 +27,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class ConcatenatingMessageStreamTest extends MessageStreamTest<Message<String>, Message<String>> {
+class ConcatenatingMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {

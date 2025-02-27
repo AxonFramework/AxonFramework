@@ -36,7 +36,7 @@ import static org.mockito.Mockito.*;
  * @author Allard Buijze
  * @author Steven van Beelen
  */
-class DelayedMessageStreamTest extends MessageStreamTest<Message<String>, Message<String>> {
+class DelayedMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
     MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
