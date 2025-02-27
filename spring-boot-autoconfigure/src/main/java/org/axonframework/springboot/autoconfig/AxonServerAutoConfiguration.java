@@ -38,7 +38,6 @@ import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
-import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.messaging.Message;
 import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
@@ -281,43 +280,37 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
     }
 
     /**
-     * The method registers {@link EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder} in
-     * {@link EventProcessingModule}
+     * Creates a {@link ConfigurerModule} to set
+     * {@link EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder}
      *
-     * @param executorBuilder       is used to create
-     *                              {@link EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder}
-     * @param eventProcessingModule where {@link EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder}
-     *                              will be registered.
-     * @param psFactory             is used to create
-     *                              {@link EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder}
-     * @return
+     * @param executorBuilder
+     * @param psFactory
+     * @param autoPersistentStreamSettings
+     * @return A {@link ConfigurerModule} to configure
      */
     @Bean
     @ConditionalOnProperty(name = "axon.axonserver.auto-persistent-streams.enabled")
-    public EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder autoPersistentStreamMessageSourceDefinitionBuilder(
+    public ConfigurerModule autoPersistentStreamMessageSourceDefinitionBuilder1(
             PersistentStreamScheduledExecutorBuilder executorBuilder,
-            EventProcessingModule eventProcessingModule,
             PersistentStreamMessageSourceFactory psFactory,
             @Qualifier("autoPersistentStreamSettings") AxonServerConfiguration.PersistentStreamSettings autoPersistentStreamSettings) {
-
-        EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder ret = processingGroupName -> {
-            String psName = processingGroupName + "-stream";
-            return new PersistentStreamMessageSourceDefinition(
-                    processingGroupName,
-                    new PersistentStreamProperties(psName,
-                                                   autoPersistentStreamSettings.getInitialSegmentCount(),
-                                                   autoPersistentStreamSettings.getSequencingPolicy(),
-                                                   autoPersistentStreamSettings.getSequencingPolicyParameters(),
-                                                   autoPersistentStreamSettings.getInitialPosition(),
-                                                   autoPersistentStreamSettings.getFilter()),
-                    executorBuilder.build(autoPersistentStreamSettings.getThreadCount(), psName),
-                    autoPersistentStreamSettings.getBatchSize(),
-                    null,
-                    psFactory
-            );
-        };
-        eventProcessingModule.setSubscribableMessageSourceDefinitionBuilder(ret);
-        return ret;
+        return configurer -> configurer.eventProcessing().setSubscribableMessageSourceDefinitionBuilder(
+                processingGroupName -> {
+                    String psName = processingGroupName + "-stream";
+                    return new PersistentStreamMessageSourceDefinition(
+                            processingGroupName,
+                            new PersistentStreamProperties(psName,
+                                                           autoPersistentStreamSettings.getInitialSegmentCount(),
+                                                           autoPersistentStreamSettings.getSequencingPolicy(),
+                                                           autoPersistentStreamSettings.getSequencingPolicyParameters(),
+                                                           autoPersistentStreamSettings.getInitialPosition(),
+                                                           autoPersistentStreamSettings.getFilter()),
+                            executorBuilder.build(autoPersistentStreamSettings.getThreadCount(), psName),
+                            autoPersistentStreamSettings.getBatchSize(),
+                            null,
+                            psFactory
+                    );
+                });
     }
 
     /**
