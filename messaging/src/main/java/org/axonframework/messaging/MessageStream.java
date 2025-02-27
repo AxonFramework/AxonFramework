@@ -303,8 +303,8 @@ public interface MessageStream<M extends Message<?>> {
      *
      * @return An Empty stream that ignores all results.
      */
-    default Empty<Message<Void>> ignoreEntries() {
-        return new IgnoredEntriesMessageStream<>(this);
+    default Empty<M> ignoreEntries() {
+        return new IgnoredEntriesMessageStream<>(this).cast();
     }
 
     /**

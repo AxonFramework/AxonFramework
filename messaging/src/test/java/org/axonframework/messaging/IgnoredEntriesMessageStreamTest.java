@@ -16,9 +16,11 @@
 
 package org.axonframework.messaging;
 
+import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,69 +31,58 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class IgnoredEntriesMessageStreamTest extends MessageStreamTest<Message<Void>> {
+class IgnoredEntriesMessageStreamTest extends MessageStreamTest<Message<String>> {
 
     @Override
-    MessageStream<Message<Void>> completedTestSubject(List<Message<Void>> messages) {
-        Assumptions.abort("IgnoredEntriesMessageStream doesn't support content");
+    MessageStream<Message<String>> completedTestSubject(List<Message<String>> messages) {
+        Assumptions.assumeTrue(messages.isEmpty(), "EmptyMessageStream ignores entries");
         return MessageStream.fromIterable(messages).ignoreEntries();
     }
 
     @Override
-    MessageStream.Single<Message<Void>> completedSingleStreamTestSubject(Message<Void> message) {
-        Assumptions.abort("IgnoredEntriesMessageStream doesn't support content");
+    MessageStream.Single<Message<String>> completedSingleStreamTestSubject(Message<String> message) {
+        Assumptions.abort("IgnoredEntriesMessageStream ignores entries");
         return MessageStream.just(message).ignoreEntries();
     }
 
     @Override
-    MessageStream.Empty<Message<Void>> completedEmptyStreamTestSubject() {
-        return MessageStream.empty().ignoreEntries();
+    MessageStream.Empty<Message<String>> completedEmptyStreamTestSubject() {
+        return MessageStream.empty().ignoreEntries().cast();
     }
 
     @Override
-    MessageStream<Message<Void>> failingTestSubject(List<Message<Void>> messages, Exception failure) {
-        return MessageStream.fromIterable(messages)
-                            .concatWith(MessageStream.failed(failure))
-                            .ignoreEntries();
+    MessageStream<Message<String>> failingTestSubject(List<Message<String>> messages, Exception failure) {
+        Assumptions.abort("IgnoredEntriesMessageStream ignores entries");
+        return MessageStream.fromIterable(messages).concatWith(MessageStream.failed(failure)).ignoreEntries();
     }
 
     @Override
-    Message<Void> createRandomMessage() {
-//        Assumptions.abort("IgnoredEntriesMessageStream doesn't support content");
+    Message<String> createRandomMessage() {
         return new GenericMessage<>(new MessageType("message"),
-                                    null);
+                                    "test-" + ThreadLocalRandom.current().nextInt(10000));
     }
 
     @Test
-    void shouldReturnFailedMessageStreamOnFailingCompletionHandler() {
-        var expected = new RuntimeException("oops");
+    void shouldProcessMessagesButIgnoresEntries() {
+        var processed = new AtomicBoolean(false);
+        var messages = List.of(createRandomMessage());
 
-        var result = MessageStream.empty()
+        var result = MessageStream.fromIterable(messages)
                                   .ignoreEntries()
-                                  .whenComplete(() -> {
-                                      throw expected;
-                                  })
-                                  .first()
-                                  .asCompletableFuture()
-                                  .thenApply(MessageStream.Entry::message);
-
-        assertTrue(result.isCompletedExceptionally());
-        assertEquals(expected, result.exceptionNow());
+                                  .onNext(e -> processed.set(true))
+                                  .asCompletableFuture();
+        assertTrue(result.isDone());
+        assertNull(result.join());
+        assertFalse(processed.get());
     }
 
-//    @Test
-//    void shouldProcessMessagesButIgnoresEntries() {
-//        var processed = new AtomicBoolean(false);
-//        var messages = List.of(createRandomMessage());
-//
-//        var result = MessageStream.fromIterable(messages)
-//                                  .onNext(e -> {
-//                                      processed.set(true);
-//                                  })
-//                                  .ignoreEntries()
-//                                  .asCompletableFuture();
-//        assertTrue(result.isDone());
-//        assertNull(result.join());
-//        assertFalse(processed.get());
-//    }
+    @Test
+    void shouldEmitOriginalExceptionAsFailure() {
+        var testSubject = MessageStream.failed(new MockException()).ignoreEntries();
+
+        var actual = testSubject.first().asCompletableFuture();
+
+        assertTrue(actual.isCompletedExceptionally());
+        assertInstanceOf(MockException.class, actual.exceptionNow());
+    }
 }

@@ -33,8 +33,8 @@ import java.util.Optional;
  * @since 5.0.0
  */
 class IgnoredEntriesMessageStream<M extends Message<?>>
-        extends DelegatingMessageStream<M, Message<Void>>
-        implements MessageStream.Empty<Message<Void>> {
+        extends DelegatingMessageStream<M, Message<M>>
+        implements MessageStream.Empty<Message<M>> {
 
     /**
      * Constructs the IgnoreMessageStream with given {@code delegate} to receive and ignore entries from.
@@ -46,7 +46,7 @@ class IgnoredEntriesMessageStream<M extends Message<?>>
     }
 
     @Override
-    public Optional<Entry<Message<Void>>> next() {
+    public Optional<Entry<Message<M>>> next() {
         return delegate().next().flatMap(r -> Optional.empty());
     }
 }
