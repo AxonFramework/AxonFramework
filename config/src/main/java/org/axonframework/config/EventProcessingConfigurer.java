@@ -865,10 +865,10 @@ public interface EventProcessingConfigurer {
     interface SubscribableMessageSourceDefinitionBuilder {
 
         /**
-         * Creates SubscribableMessageSourceDefinition for given processing group.
+         * Creates a {@code SubscribableMessageSourceDefinition} for the given {@code processingGroupName}.
          *
-         * @param processingGroupName the name of processing group for which definition is about to be created.
-         * @return
+         * @param processingGroupName The name of processing group for which definition is about to be created.
+         * @return A {@code SubscribableMessageSourceDefinition} for the given {@code processingGroupName}.
          */
         SubscribableMessageSourceDefinition<EventMessage<?>> build(String processingGroupName);
     }
