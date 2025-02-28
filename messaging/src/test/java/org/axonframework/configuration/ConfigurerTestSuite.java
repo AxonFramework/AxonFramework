@@ -16,10 +16,14 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nullable;
 import org.junit.jupiter.api.*;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -54,12 +58,31 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         @Test
         void registerComponentExposesRegisteredComponentUponBuild() {
             TestComponent testComponent = TEST_COMPONENT;
-
             testSubject.registerComponent(TestComponent.class, c -> testComponent);
 
             NewConfiguration config = testSubject.build();
 
             assertEquals(testComponent, config.getComponent(TestComponent.class));
+        }
+
+        @Test
+        void registerComponentExposesRegisteredComponentOnOptionalGet() {
+            TestComponent testComponent = TEST_COMPONENT;
+            testSubject.registerComponent(TestComponent.class, c -> testComponent);
+            NewConfiguration config = testSubject.build();
+
+            Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class);
+
+            assertTrue(result.isPresent());
+            assertEquals(testComponent, result.get());
+        }
+
+        @Test
+        void getOptionalComponentResultsInEmptyOptionalForUnregisteredComponent() {
+            Optional<TestComponent> result = testSubject.build()
+                                                        .getOptionalComponent(TestComponent.class);
+
+            assertFalse(result.isPresent());
         }
 
         @Test

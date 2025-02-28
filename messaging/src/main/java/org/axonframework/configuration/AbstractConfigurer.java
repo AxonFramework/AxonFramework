@@ -49,10 +49,13 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     protected final LifecycleSupportingConfiguration config;
 
     /**
-     * Initialize the Configurer.
+     * Initialize the {@code AbstractConfigurer} based on the given {@code config}.
+     *
+     * @param config The life cycle supporting configuration used as the <b>parent</b> configuration of the
+     *               {@link LocalConfiguration}.
      */
     protected AbstractConfigurer(@Nullable LifecycleSupportingConfiguration config) {
-        this.config = new ConfigurationImpl(config);
+        this.config = new LocalConfiguration(config);
     }
 
     @Override
@@ -121,11 +124,25 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         return config;
     }
 
-    private class ConfigurationImpl implements LifecycleSupportingConfiguration {
+    /**
+     * A {@link LifecycleSupportingConfiguration} implementation acting as the local configuration of this configurer.
+     * Can be implemented by {@link AbstractConfigurer} implementation that need desire to reuse the access logic for
+     * {@link Component Components} and {@link Module Modules} as provided by this implementation.
+     */
+    public class LocalConfiguration implements LifecycleSupportingConfiguration {
 
         private final LifecycleSupportingConfiguration parent;
 
-        public ConfigurationImpl(@Nullable LifecycleSupportingConfiguration parent) {
+        /**
+         * Construct a {@code LocalConfiguration} using the given {@code parent} configuration.
+         * <p>
+         * If this configuration does not have a certain {@link Component}, it will fall back to it's {@code parent}.
+         * <p>
+         * Note that the {@code parent} can {@code null}.
+         *
+         * @param parent The parent life cycle supporting configuration to fall back on when necessary.
+         */
+        public LocalConfiguration(@Nullable LifecycleSupportingConfiguration parent) {
             this.parent = parent;
         }
 

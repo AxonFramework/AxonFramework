@@ -16,10 +16,18 @@
 
 package org.axonframework.configuration;
 
+import org.junit.jupiter.api.*;
+
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
  * Test suite validating the common behavior of each {@link Module} implementation.
  * <p>
  * This test suite includes the {@link ConfigurerTestSuite}, since each module is a configurer implementation.
+ * Furthermore, it implements the {@link ConfigurerTestSuite#testSubject()} operation, constructing a
+ * {@link RootConfigurer} as the parent of the module under test.
  *
  * @param <M> The {@link Module} implementation under test.
  * @author Steven van Beelen
@@ -45,4 +53,38 @@ public abstract class ModuleTestSuite<M extends Module<M>> extends ConfigurerTes
      * @return The test {@link Module} of type {@code M} used for testing.
      */
     abstract M testSubject(LifecycleSupportingConfiguration config);
+
+    @Test
+    void canRetrieveComponentsFromParentConfiguration() {
+        TestComponent expected = new TestComponent("parent-retrieval-test");
+        RootConfigurer.defaultConfigurer()
+                      .registerModule(config -> {
+                          M testModule = testSubject(config);
+                          this.testModule = testModule;
+                          return testModule;
+                      })
+                      .registerComponent(TestComponent.class, "parent-retrieval-test", config -> expected);
+
+        TestComponent result = testModule.build()
+                                         .getComponent(TestComponent.class, "parent-retrieval-test");
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void returnsEmptyOptionalIfBothModuleAndParentDoNotHaveTheRequestedComponent() {
+        RootConfigurer.defaultConfigurer()
+                      .registerModule(config -> {
+                          M testModule = testSubject(config);
+                          this.testModule = testModule;
+                          return testModule;
+                      })
+                      .registerComponent(TestComponent.class, "parent", config -> new TestComponent("parent"));
+        testModule.registerComponent(TestComponent.class, "module", config -> new TestComponent("module"));
+
+        Optional<Object> result = testModule.build()
+                                            .getOptionalComponent(Object.class);
+
+        assertFalse(result.isPresent());
+    }
 }

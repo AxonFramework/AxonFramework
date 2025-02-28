@@ -19,17 +19,14 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.IdentifierFactory;
-import org.axonframework.configuration.Component.Identifier;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -39,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.BuilderUtils.assertStrictPositive;
@@ -117,13 +113,16 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
         return rootConfig;
     }
 
-    private class RootConfigurationImpl implements RootConfiguration {
+    private class RootConfigurationImpl
+            extends AbstractConfigurer<RootConfigurer>.LocalConfiguration
+            implements RootConfiguration {
 
         private final AtomicBoolean isRunning;
         private Integer currentLifecyclePhase = null;
         private LifecycleState lifecycleState = LifecycleState.DOWN;
 
         private RootConfigurationImpl() {
+            super(null); // 🦸 <- Is this a train? Is this a bullet? No, it is Super Null!
             this.isRunning = new AtomicBoolean(false);
         }
 
@@ -235,37 +234,6 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
                 }
             } while ((phasedHandlers = lifecycleHandlerMap.higherEntry(currentLifecyclePhase)) != null);
             currentLifecyclePhase = null;
-        }
-
-        @Override
-        public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
-                                                    @Nonnull String name) {
-            return components.getOptional(new Identifier<>(type, name))
-                             .or(() -> moduleConfigurations.stream()
-                                                           .map(c -> c.getOptionalComponent(type, name))
-                                                           .findFirst()
-                                                           .orElse(Optional.empty()));
-        }
-
-        @Nonnull
-        @Override
-        public <C> C getComponent(@Nonnull Class<C> type,
-                                  @Nonnull String name,
-                                  @Nonnull Supplier<C> defaultImpl) {
-            Identifier<C> identifier = new Identifier<>(type, name);
-            Object component = components.computeIfAbsent(
-                    identifier,
-                    t -> new Component<>(identifier, config(),
-                                         c -> c.getOptionalComponent(type, name).orElseGet(defaultImpl))
-            ).get();
-            return identifier.type().cast(component);
-        }
-
-        @Override
-        public List<Module<?>> getModules() {
-            List<Module<?>> modules = new ArrayList<>(DefaultRootConfigurer.this.modules);
-            moduleConfigurations.forEach(moduleConfig -> modules.addAll(moduleConfig.getModules()));
-            return modules;
         }
 
         @Override
