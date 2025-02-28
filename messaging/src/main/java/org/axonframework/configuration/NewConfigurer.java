@@ -129,4 +129,15 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      * @return The current instance of the {@code NewConfigurer} for a fluent API.
      */
     <M extends Module<M>> S registerModule(@Nonnull ModuleBuilder<M> builder);
+
+    /**
+     * Returns the completely initialized {@link NewConfiguration} instance of type {@code C} built using this
+     * {@code NewConfigurer} implementation.
+     * <p>
+     * It is not recommended to change any configuration on {@code this NewConfigurer} once this method is called.
+     *
+     * @param <C> The {@link NewConfiguration} implementation of type {@code C} returned by this method.
+     * @return The fully initialized {@link NewConfiguration} instance of type {@code C}.
+     */
+    <C extends NewConfiguration> C build();
 }

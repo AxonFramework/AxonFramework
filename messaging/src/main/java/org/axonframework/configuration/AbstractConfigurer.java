@@ -91,6 +91,12 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     @Override
+    public <C extends NewConfiguration> C build() {
+        //noinspection unchecked
+        return (C) config;
+    }
+
+    @Override
     public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
         throw new UnsupportedOperationException("Registering start handlers is not supported on this module.");
     }

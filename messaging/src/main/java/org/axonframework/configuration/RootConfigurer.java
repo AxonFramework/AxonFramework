@@ -99,17 +99,6 @@ public interface RootConfigurer extends NewConfigurer<RootConfigurer> {
     RootConfigurer configureLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit);
 
     /**
-     * Returns the completely initialized {@link RootConfiguration} built using this {@code RootConfigurer}.
-     * <p>
-     * It is not recommended to change any configuration on {@code this} {@code RootConfigurer} once this method is
-     * called.
-     *
-     * @return The fully initialized {@link RootConfiguration}.
-     */
-    RootConfiguration build();
-    // TODO maybe move this to the NewConfiguration to ensure a Module can return it's configuration?
-
-    /**
      * {@link #build() Builds the configuration} and starts it immediately.
      * <p>
      * It is not recommended to change any configuration on {@code this} {@code RootConfigurer} once this method is
