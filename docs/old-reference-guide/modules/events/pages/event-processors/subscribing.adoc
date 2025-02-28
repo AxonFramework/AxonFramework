@@ -252,7 +252,7 @@ To simplify configuration, if you want to apply persistent streams to all proces
 
 [source,text]
 ----
-axon.axonserver.auto-persistent-streams.enabled=true
+axon.axonserver.auto-persistent-streams-enable=true
 ----
 
 This will configure persistent streams automatically for all processing groups whith default settings.
@@ -261,7 +261,7 @@ You can also override default persistent stream settings
 
 [source,text]
 ----
-axon.axonserver.auto-persistent-streams.batch-size=5
-axon.axonserver.auto-persistent-streams.thread-count=10
-axon.axonserver.auto-persistent-streams.initial-segment-count=10
+axon.axonserver.auto-persistent-streams-settings.batch-size=5
+axon.axonserver.auto-persistent-streams-settings.thread-count=10
+axon.axonserver.auto-persistent-streams-settings.initial-segment-count=10
 ----
