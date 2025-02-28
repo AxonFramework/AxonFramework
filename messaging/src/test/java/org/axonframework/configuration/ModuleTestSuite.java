@@ -34,6 +34,9 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public abstract class ModuleTestSuite<M extends Module<M>> extends ConfigurerTestSuite<M> {
 
+    private static final Runnable NO_OP = () -> {
+    };
+
     private M testModule;
 
     @Override
@@ -86,5 +89,15 @@ public abstract class ModuleTestSuite<M extends Module<M>> extends ConfigurerTes
                                             .getOptionalComponent(Object.class);
 
         assertFalse(result.isPresent());
+    }
+
+    @Test
+    void onStartThrowsUnsupportedOperationException() {
+        assertThrows(UnsupportedOperationException.class, () -> testModule.onStart(0, NO_OP));
+    }
+
+    @Test
+    void onShutdownThrowsUnsupportedOperationException() {
+        assertThrows(UnsupportedOperationException.class, () -> testModule.onShutdown(0, NO_OP));
     }
 }
