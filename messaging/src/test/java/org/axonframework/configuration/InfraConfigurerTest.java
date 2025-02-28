@@ -16,30 +16,15 @@
 
 package org.axonframework.configuration;
 
-import org.junit.jupiter.api.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
- * Test class validating the {@link RootConfigurer}.
+ * Test class validating the {@link InfraConfigurer}.
  *
  * @author Steven van Beelen
  */
-class RootConfigurerTest extends ConfigurerTestSuite<RootConfigurer> {
+class InfraConfigurerTest extends ModuleTestSuite<InfraConfigurer> {
 
     @Override
-    public RootConfigurer testSubject() {
-        return RootConfigurer.defaultConfigurer();
-    }
-
-    @Test
-    void registerComponentExposesRegisteredComponentUponStart() {
-        TestComponent testComponent = TEST_COMPONENT;
-
-        testSubject.registerComponent(TestComponent.class, c -> testComponent);
-
-        RootConfiguration config = testSubject.start();
-
-        assertEquals(testComponent, config.getComponent(TestComponent.class));
+    public InfraConfigurer testSubject(LifecycleSupportingConfiguration config) {
+        return InfraConfigurer.configurer(config);
     }
 }
