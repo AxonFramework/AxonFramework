@@ -50,7 +50,7 @@ public interface NewConfigurer extends LifecycleOperations {
      */
     default <C> NewConfigurer registerComponent(@Nonnull Class<C> type,
                                                 @Nonnull ComponentBuilder<C> builder) {
-        return registerComponent(new Identifier<>(type), builder);
+        return registerComponent(type, type.getSimpleName(), builder);
     }
 
     /**
@@ -70,29 +70,9 @@ public interface NewConfigurer extends LifecycleOperations {
      * @param <C>     The type of component the {@code builder} builds.
      * @return The current instance of the {@code NewConfigurer} for a fluent API.
      */
-    default <C> NewConfigurer registerComponent(@Nonnull Class<C> type,
-                                                @Nonnull String name,
-                                                @Nonnull ComponentBuilder<C> builder) {
-        return registerComponent(new Identifier<>(type, name), builder);
-    }
-
-    /**
-     * Registers a {@link Component} that should be made available to other {@link Component components} or
-     * {@link Module modules} in the {@link NewConfiguration} that this {@code NewConfigurer} will result in.
-     * <p>
-     * The given {@code builder} function gets the {@link NewConfiguration configuration} as input, and is expected to
-     * provide the component as output. The component will be registered under the given {@code identifier}.
-     * <p>
-     * Note that registering a component twice for the same {@code identifier} will remove the previous registration!
-     *
-     * @param identifier The identifier of the component to build.
-     * @param builder    The builder function of this component.
-     * @param <C>        The identifier of component the {@code builder} builds.
-     * @return The current instance of the {@code NewConfigurer} for a fluent API.
-     */
-    <C> NewConfigurer registerComponent(@Nonnull Identifier<C> identifier,
+    <C> NewConfigurer registerComponent(@Nonnull Class<C> type,
+                                        @Nonnull String name,
                                         @Nonnull ComponentBuilder<C> builder);
-
 
     /**
      * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
@@ -107,7 +87,7 @@ public interface NewConfigurer extends LifecycleOperations {
      */
     default <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
                                                 @Nonnull ComponentDecorator<C> decorator) {
-        return registerDecorator(new Identifier<>(type), decorator);
+        return registerDecorator(type, type.getSimpleName(), decorator);
     }
 
     /**
@@ -123,25 +103,8 @@ public interface NewConfigurer extends LifecycleOperations {
      * @param <C>       The type of component the {@code decorator} decorates.
      * @return The current instance of the {@code NewConfigurer} for a fluent API.
      */
-    default <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
-                                                @Nonnull String name,
-                                                @Nonnull ComponentDecorator<C> decorator) {
-        return registerDecorator(new Identifier<>(type, name), decorator);
-    }
-
-    /**
-     * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
-     * {@link #registerComponent(Class, String, ComponentBuilder) registered} components of the given
-     * {@code identifier}.
-     * <p>
-     * Multiple Invocations of this method will attach the given decorators in the invocation order.
-     *
-     * @param identifier The identifier of the component to decorate.
-     * @param decorator  The decoration function of this component.
-     * @param <C>        The identifier of component the {@code decorator} decorates.
-     * @return The current instance of the {@code NewConfigurer} for a fluent API.
-     */
-    <C> NewConfigurer registerDecorator(@Nonnull Identifier<C> identifier,
+    <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
+                                        @Nonnull String name,
                                         @Nonnull ComponentDecorator<C> decorator);
 
     /**
@@ -163,7 +126,7 @@ public interface NewConfigurer extends LifecycleOperations {
     default <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
                                                 int order,
                                                 @Nonnull ComponentDecorator<C> decorator) {
-        return registerDecorator(new Identifier<>(type), order, decorator);
+        return registerDecorator(type, type.getSimpleName(), order, decorator);
     }
 
     /**
@@ -184,30 +147,8 @@ public interface NewConfigurer extends LifecycleOperations {
      * @param <C>       The type of component the {@code decorator} decorates.
      * @return The current instance of the {@code NewConfigurer} for a fluent API.
      */
-    default <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
-                                                @Nonnull String name,
-                                                int order,
-                                                @Nonnull ComponentDecorator<C> decorator) {
-        return registerDecorator(new Identifier<>(type, name), order, decorator);
-    }
-
-    /**
-     * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
-     * {@link #registerComponent(Class, ComponentBuilder) registered} components of the given {@code identifier}.
-     * <p>
-     * The {@code order} parameter dictates at what point in time the given {@code decorator} is invoked during
-     * construction of the {@code Component} it decorators. If a {@code ComponentDecorator} was already present at the
-     * given {@code order}, it will be replaced by the given {@code decorator}
-     *
-     * @param identifier The identifier of the component to decorate.
-     * @param order      The order of the given {@code decorator} among other decorators. Becomes important whenever
-     *                   multiple decorators are present for the given {@code identifier} <b>and</b> when ordering of
-     *                   these decorators is important.
-     * @param decorator  The decoration function of this component.
-     * @param <C>        The identifier of component the {@code decorator} decorates.
-     * @return The current instance of the {@code NewConfigurer} for a fluent API.
-     */
-    <C> NewConfigurer registerDecorator(@Nonnull Identifier<C> identifier,
+    <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
+                                        @Nonnull String name,
                                         int order,
                                         @Nonnull ComponentDecorator<C> decorator);
 

@@ -53,17 +53,21 @@ public abstract class AbstractConfigurer implements NewConfigurer {
     }
 
     @Override
-    public <C> NewConfigurer registerComponent(@Nonnull Identifier<C> identifier,
+    public <C> NewConfigurer registerComponent(@Nonnull Class<C> type,
+                                               @Nonnull String name,
                                                @Nonnull ComponentBuilder<C> builder) {
-        logger.debug("Registering component [{}].", identifier);
+        logger.debug("Registering component [{}] of type [{}].", name, type);
+        Identifier<C> identifier = new Identifier<>(type, name);
         components.put(identifier, new Component<>(identifier, config, builder));
         return this;
     }
 
     @Override
-    public <C> NewConfigurer registerDecorator(@Nonnull Identifier<C> identifier,
+    public <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
+                                               @Nonnull String name,
                                                @Nonnull ComponentDecorator<C> decorator) {
-        logger.debug("Registering decorator for [{}].", identifier);
+        logger.debug("Registering decorator [{}] of type [{}].", name, type);
+        Identifier<C> identifier = new Identifier<>(type, name);
         components.getOptionalComponent(identifier)
                   .map(component -> component.decorate(decorator))
                   .orElseThrow(() -> new IllegalArgumentException(
@@ -73,9 +77,12 @@ public abstract class AbstractConfigurer implements NewConfigurer {
     }
 
     @Override
-    public <C> NewConfigurer registerDecorator(@Nonnull Identifier<C> identifier,
+    public <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
+                                               @Nonnull String name,
                                                int order,
                                                @Nonnull ComponentDecorator<C> decorator) {
+        logger.debug("Registering decorator for [{}] of type [{}] at order #{}.", name, type, order);
+        Identifier<C> identifier = new Identifier<>(type, name);
         logger.debug("Registering decorator for [{}] at order #{}.", identifier, order);
         components.getOptionalComponent(identifier)
                   .map(component -> component.decorate(order, decorator))
@@ -138,22 +145,27 @@ public abstract class AbstractConfigurer implements NewConfigurer {
             }
         }
 
+        @Nonnull
         @Override
-        public <T> Optional<T> getOptionalComponent(@Nonnull Identifier<T> identifier) {
+        public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
+                                                    @Nonnull String name) {
+            Identifier<C> identifier = new Identifier<>(type, name);
             // TODO cycle through modules here too
             return components.getOptional(identifier)
-                             .or(() -> parent != null ? parent.getOptionalComponent(identifier) : Optional.empty());
+                             .or(() -> parent != null ? parent.getOptionalComponent(type, name) : Optional.empty());
         }
 
-        @Override
         @Nonnull
-        public <T> T getComponent(@Nonnull Identifier<T> identifier,
-                                  @Nonnull Supplier<T> defaultImpl) {
+        @Override
+        public <C> C getComponent(@Nonnull Class<C> type,
+                                  @Nonnull String name,
+                                  @Nonnull Supplier<C> defaultImpl) {
+            Identifier<C> identifier = new Identifier<>(type, name);
             // TODO make this go down the chain through the parent somehow
             Object component = components.computeIfAbsent(
                     identifier,
                     t -> new Component<>(identifier, config(),
-                                         c -> c.getOptionalComponent(identifier).orElseGet(defaultImpl))
+                                         c -> c.getOptionalComponent(type, name).orElseGet(defaultImpl))
             ).get();
             return identifier.type().cast(component);
         }

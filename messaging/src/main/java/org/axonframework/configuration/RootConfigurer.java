@@ -17,7 +17,6 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.Component.Identifier;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -90,15 +89,8 @@ public interface RootConfigurer extends NewConfigurer {
     }
 
     @Override
-    default <C> RootConfigurer registerComponent(@Nonnull Class<C> type,
-                                                @Nonnull String name,
-                                                @Nonnull ComponentBuilder<C> builder) {
-        NewConfigurer.super.registerComponent(type, name, builder);
-        return this;
-    }
-
-    @Override
-    <C> RootConfigurer registerComponent(@Nonnull Identifier<C> identifier,
+    <C> RootConfigurer registerComponent(@Nonnull Class<C> type,
+                                         @Nonnull String name,
                                          @Nonnull ComponentBuilder<C> builder);
 
     @Override
@@ -109,16 +101,10 @@ public interface RootConfigurer extends NewConfigurer {
     }
 
     @Override
-    default <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
-                                                 @Nonnull String name,
-                                                 @Nonnull ComponentDecorator<C> decorator) {
-        NewConfigurer.super.registerDecorator(type, name, decorator);
-        return this;
-    }
-
-    @Override
-    <C> RootConfigurer registerDecorator(@Nonnull Identifier<C> identifier,
+    <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
+                                         @Nonnull String name,
                                          @Nonnull ComponentDecorator<C> decorator);
+
 
     @Override
     default <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
@@ -129,16 +115,8 @@ public interface RootConfigurer extends NewConfigurer {
     }
 
     @Override
-    default <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
-                                                 @Nonnull String name,
-                                                 int order,
-                                                 @Nonnull ComponentDecorator<C> decorator) {
-        NewConfigurer.super.registerDecorator(type, name, order, decorator);
-        return this;
-    }
-
-    @Override
-    <C> RootConfigurer registerDecorator(@Nonnull Identifier<C> identifier,
+    <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
+                                         @Nonnull String name,
                                          int order,
                                          @Nonnull ComponentDecorator<C> decorator);
 
@@ -172,6 +150,7 @@ public interface RootConfigurer extends NewConfigurer {
      * @return The fully initialized {@link RootConfiguration}.
      */
     RootConfiguration build();
+    // TODO maybe move this to the NewConfiguration to ensure a Module can return it's configuration?
 
     /**
      * {@link #build() Builds the configuration} and starts it immediately.

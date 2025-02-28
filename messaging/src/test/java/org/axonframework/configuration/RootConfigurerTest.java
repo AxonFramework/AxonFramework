@@ -16,7 +16,6 @@
 
 package org.axonframework.configuration;
 
-import org.axonframework.configuration.Component.Identifier;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -83,19 +82,18 @@ class RootConfigurerTest {
 
         @Test
         void componentBuilderIsInvokedOnceUponRetrievalOfComponent() {
-            Identifier<TestComponent> testId = new Identifier<>(TestComponent.class, "name");
             AtomicInteger invocationCounter = new AtomicInteger(0);
 
-            RootConfiguration config = testSubject.registerComponent(testId, c -> {
+            RootConfiguration config = testSubject.registerComponent(TestComponent.class, "name", c -> {
                                                       invocationCounter.incrementAndGet();
                                                       return TEST_COMPONENT;
                                                   })
                                                   .start();
 
             assertEquals(0, invocationCounter.get());
-            config.getComponent(testId);
+            config.getComponent(TestComponent.class, "name");
             assertEquals(1, invocationCounter.get());
-            config.getComponent(testId);
+            config.getComponent(TestComponent.class, "name");
             assertEquals(1, invocationCounter.get());
         }
 
@@ -127,17 +125,17 @@ class RootConfigurerTest {
         }
 
         @Test
-        void registeringComponentsForTheSameIdentifierReplacesThePreviousComponentBuilder() {
-            Identifier<TestComponent> testId = new Identifier<>(TestComponent.class, "name");
+        void registeringComponentsForTheSameTypeAndNameCombinationReplacesThePreviousComponentBuilder() {
             TestComponent testComponent = new TestComponent("replaced-component");
             TestComponent expectedComponent = new TestComponent("the-winner");
 
-            RootConfiguration config = testSubject.registerComponent(testId, c -> testComponent)
-                                                  .registerComponent(testId, c -> expectedComponent)
-                                                  .start();
+            RootConfiguration config =
+                    testSubject.registerComponent(TestComponent.class, "name", c -> testComponent)
+                               .registerComponent(TestComponent.class, "name", c -> expectedComponent)
+                               .start();
 
-            assertNotEquals(testComponent, config.getComponent(testId));
-            assertEquals(expectedComponent, config.getComponent(testId));
+            assertNotEquals(testComponent, config.getComponent(TestComponent.class, "name"));
+            assertEquals(expectedComponent, config.getComponent(TestComponent.class, "name"));
         }
     }
 
@@ -148,7 +146,7 @@ class RootConfigurerTest {
         void registerComponentThrowsNullPointerExceptionForNullType() {
             //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
-                         () -> testSubject.registerComponent((Class<Object>) null, c -> new Object()));
+                         () -> testSubject.registerComponent(null, c -> new Object()));
         }
 
         @Test
@@ -162,13 +160,6 @@ class RootConfigurerTest {
         void registerComponentThrowsIllegalArgumentExceptionForEmptyName() {
             assertThrows(IllegalArgumentException.class,
                          () -> testSubject.registerComponent(Object.class, "", c -> new Object()));
-        }
-
-        @Test
-        void registerComponentThrowsNullPointerExceptionForNullIdentifier() {
-            //noinspection DataFlowIssue
-            assertThrows(NullPointerException.class,
-                         () -> testSubject.registerComponent((Identifier<Object>) null, c -> new Object()));
         }
 
         @Test
@@ -232,7 +223,7 @@ class RootConfigurerTest {
 
             //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
-                         () -> testSubject.registerDecorator((Class<Object>) null, (c, delegate) -> delegate));
+                         () -> testSubject.registerDecorator(null, (c, delegate) -> delegate));
         }
 
         @Test
@@ -250,16 +241,6 @@ class RootConfigurerTest {
 
             assertThrows(IllegalArgumentException.class,
                          () -> testSubject.registerDecorator(Object.class, "", (c, delegate) -> delegate));
-        }
-
-        @Test
-        void registerDecoratorThrowsNullPointerExceptionForNullIdentifier() {
-            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
-
-            //noinspection DataFlowIssue
-            assertThrows(NullPointerException.class,
-                         () -> testSubject.registerDecorator((Identifier<Object>) null,
-                                                             (c, delegate) -> delegate));
         }
 
         @Test
@@ -284,7 +265,7 @@ class RootConfigurerTest {
 
             //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
-                         () -> testSubject.registerDecorator((Class<Object>) null, 42, (c, delegate) -> delegate));
+                         () -> testSubject.registerDecorator(null, 42, (c, delegate) -> delegate));
         }
 
         @Test
@@ -294,16 +275,6 @@ class RootConfigurerTest {
             //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
                          () -> testSubject.registerDecorator(Object.class, null, 42, (c, delegate) -> delegate));
-        }
-
-        @Test
-        void registerDecoratorWithOrderThrowsNullPointerExceptionForNullIdentifier() {
-            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
-
-            //noinspection DataFlowIssue
-            assertThrows(NullPointerException.class,
-                         () -> testSubject.registerDecorator((Identifier<Object>) null, 42,
-                                                             (c, delegate) -> delegate));
         }
 
         @Test

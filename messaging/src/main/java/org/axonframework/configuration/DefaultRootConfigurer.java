@@ -75,24 +75,27 @@ class DefaultRootConfigurer extends AbstractConfigurer implements RootConfigurer
 
     // TODO I don't like this...what about casting magic?
     @Override
-    public <C> RootConfigurer registerComponent(@Nonnull Identifier<C> identifier,
+    public <C> RootConfigurer registerComponent(@Nonnull Class<C> type,
+                                                @Nonnull String name,
                                                 @Nonnull ComponentBuilder<C> builder) {
-        super.registerComponent(identifier, builder);
+        super.registerComponent(type, name, builder);
         return this;
     }
 
     @Override
-    public <C> RootConfigurer registerDecorator(@Nonnull Identifier<C> identifier,
+    public <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
+                                                @Nonnull String name,
                                                 @Nonnull ComponentDecorator<C> decorator) {
-        super.registerDecorator(identifier, decorator);
+        super.registerDecorator(type, name, decorator);
         return this;
     }
 
     @Override
-    public <C> RootConfigurer registerDecorator(@Nonnull Identifier<C> identifier,
+    public <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
+                                                @Nonnull String name,
                                                 int order,
                                                 @Nonnull ComponentDecorator<C> decorator) {
-        super.registerDecorator(identifier, order, decorator);
+        super.registerDecorator(type, name, order, decorator);
         return this;
     }
 
@@ -264,18 +267,21 @@ class DefaultRootConfigurer extends AbstractConfigurer implements RootConfigurer
         }
 
         @Override
-        public <C> Optional<C> getOptionalComponent(@Nonnull Identifier<C> identifier) {
-            return components.getOptional(identifier);
+        public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
+                                                    @Nonnull String name) {
+            return components.getOptional(new Identifier<>(type, name));
         }
 
         @Nonnull
         @Override
-        public <C> C getComponent(@Nonnull Identifier<C> identifier,
+        public <C> C getComponent(@Nonnull Class<C> type,
+                                  @Nonnull String name,
                                   @Nonnull Supplier<C> defaultImpl) {
+            Identifier<C> identifier = new Identifier<>(type, name);
             Object component = components.computeIfAbsent(
                     identifier,
                     t -> new Component<>(identifier, config(),
-                                         c -> c.getOptionalComponent(identifier).orElseGet(defaultImpl))
+                                         c -> c.getOptionalComponent(type, name).orElseGet(defaultImpl))
             ).get();
             return identifier.type().cast(component);
         }

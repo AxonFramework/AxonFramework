@@ -17,7 +17,6 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.Component.Identifier;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,7 +43,7 @@ public interface NewConfiguration {
      */
     @Nonnull
     default <C> C getComponent(@Nonnull Class<C> type) {
-        return getComponent(new Identifier<>(type));
+        return getComponent(type, type.getSimpleName());
     }
 
     /**
@@ -60,22 +59,10 @@ public interface NewConfiguration {
     @Nonnull
     default <C> C getComponent(@Nonnull Class<C> type,
                                @Nonnull String name) {
-        return getComponent(new Identifier<>(type, name));
-    }
-
-    /**
-     * Returns the component declared under the given {@code identifier} or throws a {@link NullPointerException} if it
-     * does not exist.
-     *
-     * @param identifier The identifier of the component, typically the interface the component implements.
-     * @param <C>        The type of component.
-     * @return The component registered for the given identifier.
-     * @throws NullPointerException Whenever there is no component present for the given {@code identifier}.
-     */
-    @Nonnull
-    default <C> C getComponent(@Nonnull Identifier<C> identifier) {
-        return getOptionalComponent(identifier)
-                .orElseThrow(() -> new NullPointerException("No component found for [" + identifier + "]"));
+        return getOptionalComponent(type, name)
+                .orElseThrow(() -> new NullPointerException(
+                        "No component found with type [" + type + "] name [" + name + "]"
+                ));
     }
 
     /**
@@ -87,7 +74,7 @@ public interface NewConfiguration {
      * there is no component present for the given {@code type}.
      */
     default <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type) {
-        return getOptionalComponent(new Identifier<>(type));
+        return getOptionalComponent(type, type.getSimpleName());
     }
 
     /**
@@ -99,20 +86,8 @@ public interface NewConfiguration {
      * @return An {@code Optional} wrapping the component registered for the given {@code type} and {@code name}. Might
      * be empty when there is no component present for the given {@code type} and {@code name}.
      */
-    default <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
-                                                 @Nonnull String name) {
-        return getOptionalComponent(new Identifier<>(type, name));
-    }
-
-    /**
-     * Returns the component declared under the given {@code identifier} within an {@code Optional}.
-     *
-     * @param identifier The identifier of component, typically the interface the component implements.
-     * @param <C>        The type of component.
-     * @return An {@code Optional} wrapping the component registered for the given {@code identifier}. Might be empty
-     * when there is no component present for the given {@code identifier}.
-     */
-    <C> Optional<C> getOptionalComponent(@Nonnull Identifier<C> identifier);
+    <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
+                                         @Nonnull String name);
 
     /**
      * Returns the component declared under the given {@code type}, reverting to the given {@code defaultImpl} if no
@@ -129,7 +104,7 @@ public interface NewConfiguration {
     @Nonnull
     default <C> C getComponent(@Nonnull Class<C> type,
                                @Nonnull Supplier<C> defaultImpl) {
-        return getComponent(new Identifier<>(type), defaultImpl);
+        return getComponent(type, type.getSimpleName(), defaultImpl);
     }
 
     /**
@@ -146,26 +121,8 @@ public interface NewConfiguration {
      * {@code defaultImpl} if no such component is defined.
      */
     @Nonnull
-    default <C> C getComponent(@Nonnull Class<C> type,
-                               @Nonnull String name,
-                               @Nonnull Supplier<C> defaultImpl) {
-        return getComponent(new Identifier<>(type, name), defaultImpl);
-    }
-
-    /**
-     * Returns the component declared under the given {@code identifier}, reverting to the given {@code defaultImpl} if
-     * no such component is defined.
-     * <p>
-     * When no component was previously registered, the default is then configured as the component for the given type.
-     *
-     * @param identifier  The identifier of component, typically the interface the component implements.
-     * @param defaultImpl The supplier of the default component to return if it was not registered.
-     * @param <C>         The type of component.
-     * @return The component declared under the given {@code identifier}, reverting to the given {@code defaultImpl} if
-     * no such component is defined.
-     */
-    @Nonnull
-    <C> C getComponent(@Nonnull Identifier<C> identifier,
+    <C> C getComponent(@Nonnull Class<C> type,
+                       @Nonnull String name,
                        @Nonnull Supplier<C> defaultImpl);
 
     /**
