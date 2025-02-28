@@ -148,7 +148,9 @@ import static org.axonframework.util.HandlerTypeResolver.*;
  *
  * @author Allard Buijze
  * @since 3.0
+ * @deprecated In favor of using the {@link org.axonframework.configuration.RootConfigurer} with additional modules.
  */
+@Deprecated
 public class DefaultConfigurer implements Configurer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
