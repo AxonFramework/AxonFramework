@@ -142,13 +142,6 @@ public class EventProcessingModule
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     protected Configuration configuration;
 
-
-    @Override
-    public void setSubscribableMessageSourceDefinitionBuilder(
-            SubscribableMessageSourceDefinitionBuilder builder) {
-        this.subscribableMessageSourceDefinitionBuilder = builder;
-    }
-
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
             () -> configuration,
             "listenerInvocationErrorHandler",

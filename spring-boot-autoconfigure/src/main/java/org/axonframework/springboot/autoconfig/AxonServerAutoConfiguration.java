@@ -57,7 +57,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -263,50 +262,34 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
         return new PersistentStreamMessageSourceRegistrar(environment, executorBuilder);
     }
 
-    @Configuration
-    @ConditionalOnProperty(name = "axon.axonserver.auto-persistent-streams.enabled")
-    public static class AutoPersistentStreamConfiguration {
-
-        /**
-         * Creates {@link AxonServerConfiguration.PersistentStreamSettings} bean for auto persistent streams.
-         *
-         * @return {@link AxonServerConfiguration.PersistentStreamSettings}
-         */
-        @Bean
-        @ConfigurationProperties(prefix = "axon.axonserver.auto-persistent-streams")
-        AxonServerConfiguration.PersistentStreamSettings autoPersistentStreamSettings() {
-            return new AxonServerConfiguration.PersistentStreamSettings();
-        }
-    }
-
     /**
      * Creates a {@link ConfigurerModule} to set
      * {@link EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder}
      *
      * @param executorBuilder
      * @param psFactory
-     * @param autoPersistentStreamSettings
      * @return A {@link ConfigurerModule} to configure
      */
     @Bean
-    @ConditionalOnProperty(name = "axon.axonserver.auto-persistent-streams.enabled")
-    public ConfigurerModule autoPersistentStreamMessageSourceDefinitionBuilder1(
+    @ConditionalOnProperty(name = "axon.axonserver.auto-persistent-streams-enable")
+    public ConfigurerModule autoPersistentStreamMessageSourceDefinitionBuilder(
             PersistentStreamScheduledExecutorBuilder executorBuilder,
             PersistentStreamMessageSourceFactory psFactory,
-            @Qualifier("autoPersistentStreamSettings") AxonServerConfiguration.PersistentStreamSettings autoPersistentStreamSettings) {
+            AxonServerConfiguration axonServerConfiguration) {
+        AxonServerConfiguration.PersistentStreamSettings psSettings = axonServerConfiguration.getAutoPersistentStreamsSettings();
         return configurer -> configurer.eventProcessing().usingSubscribingEventProcessors(
                 processingGroupName -> {
                     String psName = processingGroupName + "-stream";
                     return new PersistentStreamMessageSourceDefinition(
                             processingGroupName,
                             new PersistentStreamProperties(psName,
-                                                           autoPersistentStreamSettings.getInitialSegmentCount(),
-                                                           autoPersistentStreamSettings.getSequencingPolicy(),
-                                                           autoPersistentStreamSettings.getSequencingPolicyParameters(),
-                                                           autoPersistentStreamSettings.getInitialPosition(),
-                                                           autoPersistentStreamSettings.getFilter()),
-                            executorBuilder.build(autoPersistentStreamSettings.getThreadCount(), psName),
-                            autoPersistentStreamSettings.getBatchSize(),
+                                                           psSettings.getInitialSegmentCount(),
+                                                           psSettings.getSequencingPolicy(),
+                                                           psSettings.getSequencingPolicyParameters(),
+                                                           psSettings.getInitialPosition(),
+                                                           psSettings.getFilter()),
+                            executorBuilder.build(psSettings.getThreadCount(), psName),
+                            psSettings.getBatchSize(),
                             null,
                             psFactory
                     );

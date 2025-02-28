@@ -271,18 +271,10 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
-    void axonServerAutoPersistentStreamSettingsBeanCreated() {
-        testContext.withPropertyValues("axon.axonserver.auto-persistent-streams.enabled=true")
-                   .run(context -> {
-                       assertThat(context).hasBean("autoPersistentStreamSettings");
-                   });
-    }
-
-    @Test
     void subscribableMessageSourceDefinitionShouldBeConfigured() {
-        testContext.withPropertyValues("axon.axonserver.auto-persistent-streams.enabled=true",
-                                       "axon.axonserver.auto-persistent-streams.initial-segment-count=10",
-                                       "axon.axonserver.auto-persistent-streams.batch-size=6")
+        testContext.withPropertyValues("axon.axonserver.auto-persistent-streams-enable=true",
+                                       "axon.axonserver.auto-persistent-streams-settings.initial-segment-count=10",
+                                       "axon.axonserver.auto-persistent-streams-settings.batch-size=6")
                    .run(context -> {
 
                        EventProcessingModule eventProcessingModule = context.getBean(EventProcessingModule.class);

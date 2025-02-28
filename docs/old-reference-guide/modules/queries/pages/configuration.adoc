@@ -91,10 +91,3 @@ The outcome of which method will actually be called is however unspecified.
 
 Note that this should be regarded as a _extremely_ uncommon scenario, as typically identical query handling methods would be spread over several query handlers.
 ====
-
-Queries that have a handler locally can be invoked directly without engaging Axon Server, additional property need to be set:
-
-[source,java]
-----
-axon.axonserver.local-segment-short-cut=true
-----
