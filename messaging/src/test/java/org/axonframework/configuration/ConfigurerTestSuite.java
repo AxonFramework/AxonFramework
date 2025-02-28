@@ -215,13 +215,13 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
 
         // TODO Discuss if we would want to throw an exception or whether we should simply store it if the register component comes in later
         @Test
-        void registerDecoratorWithOrderThrowsIllegalArgumentExceptionForNonExistingComponentType() {
+        void registerDecoratorThrowsIllegalArgumentExceptionForNonExistingComponentType() {
             assertThrows(IllegalArgumentException.class,
                          () -> testSubject.registerDecorator(TestComponent.class, 42, (c, delegate) -> delegate));
         }
 
         @Test
-        void registerDecoratorWithOrderThrowsNullPointerExceptionForNullType() {
+        void registerDecoratorThrowsNullPointerExceptionForNullType() {
             testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
 
             //noinspection DataFlowIssue
@@ -230,7 +230,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         }
 
         @Test
-        void registerDecoratorWithOrderThrowsNullPointerExceptionForNullName() {
+        void registerDecoratorThrowsNullPointerExceptionForNullName() {
             testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
 
             //noinspection DataFlowIssue
@@ -239,7 +239,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         }
 
         @Test
-        void registerDecoratorWithOrderThrowsNullPointerExceptionForNullComponentDecorator() {
+        void registerDecoratorThrowsNullPointerExceptionForNullComponentDecorator() {
             testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
 
             //noinspection DataFlowIssue
