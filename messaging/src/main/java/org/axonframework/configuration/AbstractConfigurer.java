@@ -44,6 +44,8 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
 
     protected final Components components = new Components();
     protected final List<Module<?>> modules = new ArrayList<>();
+    protected final List<NewConfiguration> moduleConfigurations = new ArrayList<>();
+
     protected final LifecycleSupportingConfiguration config;
 
     /**
@@ -92,6 +94,10 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
 
     @Override
     public <C extends NewConfiguration> C build() {
+        // Ensure all registered modules are built too.
+        for (Module<?> module : modules) {
+            moduleConfigurations.add(module.build());
+        }
         //noinspection unchecked
         return (C) config;
     }
@@ -145,9 +151,11 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nonnull String name) {
-            Identifier<C> identifier = new Identifier<>(type, name);
-            // TODO cycle through modules here too
-            return components.getOptional(identifier)
+            return components.getOptional(new Identifier<>(type, name))
+                             .or(() -> moduleConfigurations.stream()
+                                                           .map(c -> c.getOptionalComponent(type, name))
+                                                           .findFirst()
+                                                           .orElse(Optional.empty()))
                              .or(() -> parent != null ? parent.getOptionalComponent(type, name) : Optional.empty());
         }
 
@@ -169,7 +177,9 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
 
         @Override
         public List<Module<?>> getModules() {
-            return List.copyOf(modules);
+            List<Module<?>> modules = new ArrayList<>(AbstractConfigurer.this.modules);
+            moduleConfigurations.forEach(moduleConfig -> modules.addAll(moduleConfig.getModules()));
+            return modules;
         }
     }
 }

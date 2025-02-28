@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -109,8 +110,10 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
         return rootConfig;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public RootConfiguration build() {
+        super.build();
         return rootConfig;
     }
 
@@ -237,7 +240,11 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nonnull String name) {
-            return components.getOptional(new Identifier<>(type, name));
+            return components.getOptional(new Identifier<>(type, name))
+                             .or(() -> moduleConfigurations.stream()
+                                                           .map(c -> c.getOptionalComponent(type, name))
+                                                           .findFirst()
+                                                           .orElse(Optional.empty()));
         }
 
         @Nonnull
@@ -256,7 +263,9 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
 
         @Override
         public List<Module<?>> getModules() {
-            return List.copyOf(modules);
+            List<Module<?>> modules = new ArrayList<>(DefaultRootConfigurer.this.modules);
+            moduleConfigurations.forEach(moduleConfig -> modules.addAll(moduleConfig.getModules()));
+            return modules;
         }
 
         @Override

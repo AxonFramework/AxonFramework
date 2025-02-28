@@ -248,7 +248,181 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         }
     }
 
+    @Nested
+    class ModuleRegistration {
+
+        @Test
+        void registerModuleThrowsNullPointerExceptionForNullModuleBuilder() {
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class, () -> testSubject.registerModule(null));
+        }
+
+        @Test
+        void registerModuleExposesRegisteredModuleThroughGetModulesForUponBuild() {
+            AtomicReference<TestModule> moduleOneReference = new AtomicReference<>();
+            AtomicReference<TestModule> moduleTwoReference = new AtomicReference<>();
+
+            testSubject.registerModule(config -> {
+                           TestModule moduleOne = new TestModule(config);
+                           moduleOneReference.set(moduleOne);
+                           return moduleOne;
+                       })
+                       .registerModule(config -> {
+                           TestModule moduleTwo = new TestModule(config);
+                           moduleTwoReference.set(moduleTwo);
+                           return moduleTwo;
+                       });
+
+            List<TestModule> result = testSubject.build().getModulesFor(TestModule.class);
+
+            assertEquals(2, result.size());
+            assertTrue(result.contains(moduleOneReference.get()));
+            assertTrue(result.contains(moduleTwoReference.get()));
+        }
+
+        @Test
+        void registerModuleExposesRegisteredModuleThroughModulesUponBuild() {
+            AtomicReference<TestModule> moduleOneReference = new AtomicReference<>();
+            AtomicReference<TestModule> moduleTwoReference = new AtomicReference<>();
+
+            testSubject.registerModule(config -> {
+                           TestModule moduleOne = new TestModule(config);
+                           moduleOneReference.set(moduleOne);
+                           return moduleOne;
+                       })
+                       .registerModule(config -> {
+                           TestModule moduleTwo = new TestModule(config);
+                           moduleTwoReference.set(moduleTwo);
+                           return moduleTwo;
+                       });
+
+            List<Module<?>> result = testSubject.build().getModules();
+
+            assertEquals(2, result.size());
+            assertTrue(result.contains(moduleOneReference.get()));
+            assertTrue(result.contains(moduleTwoReference.get()));
+        }
+
+        @Test
+        void canRetrieveComponentsRegisteredOnSubModule() {
+            TestComponent rootComponent = new TestComponent("root");
+            TestComponent levelOneModuleComponent = new TestComponent("level-one");
+            TestComponent levelTwoModuleComponent = new TestComponent("level-two");
+            testSubject.registerComponent(TestComponent.class, "root", rootConfig -> rootComponent)
+                       .registerModule(
+                               rootConfig -> new TestModule(rootConfig)
+                                       .registerComponent(TestComponent.class, "one", c -> levelOneModuleComponent)
+                                       .registerModule(c -> new TestModule(c)
+                                               .registerComponent(TestComponent.class, "two",
+                                                                  config -> levelTwoModuleComponent)
+                                       )
+                       );
+
+            NewConfiguration result = testSubject.build();
+
+            assertEquals(rootComponent, result.getComponent(TestComponent.class, "root"));
+            assertEquals(levelOneModuleComponent, result.getComponent(TestComponent.class, "one"));
+            assertEquals(levelTwoModuleComponent, result.getComponent(TestComponent.class, "two"));
+        }
+
+        @Test
+        void registeredModulesExposeModulesToParentConfigurer() {
+            AtomicReference<TestModule> rootModuleReference = new AtomicReference<>();
+            AtomicReference<TestModule> levelOneModuleReference = new AtomicReference<>();
+            AtomicReference<TestModule> levelTwoModuleReference = new AtomicReference<>();
+            AtomicReference<TestModule> levelThreeModuleReference = new AtomicReference<>();
+
+            testSubject.registerModule(rootConfig -> {
+                // Root level
+                TestModule rootModule = new TestModule(rootConfig)
+                        .registerModule(moduleOneConfig -> {
+                            // Level one
+                            TestModule levelOneModule = new TestModule(moduleOneConfig)
+                                    .registerModule(moduleTwoConfig -> {
+                                        // Level two
+                                        TestModule levelTwoModule = new TestModule(moduleTwoConfig)
+                                                .registerModule(moduleThreeConfig -> {
+                                                    // Level three
+                                                    TestModule levelThreeModule = new TestModule(moduleThreeConfig);
+                                                    levelThreeModuleReference.set(levelThreeModule);
+                                                    return levelThreeModule;
+                                                });
+                                        levelTwoModuleReference.set(levelTwoModule);
+                                        return levelTwoModule;
+                                    });
+                            levelOneModuleReference.set(levelOneModule);
+                            return levelOneModule;
+                        });
+                rootModuleReference.set(rootModule);
+                return rootModule;
+            });
+
+            List<Module<?>> result = testSubject.build().getModules();
+
+            assertEquals(4, result.size());
+            assertTrue(result.contains(rootModuleReference.get()));
+            assertTrue(result.contains(levelOneModuleReference.get()));
+            assertTrue(result.contains(levelTwoModuleReference.get()));
+            assertTrue(result.contains(levelThreeModuleReference.get()));
+        }
+
+        @Test
+        void decoratingOnlyOccursOnTheModuleLevelItIsInvokedOn() {
+            String expectedRootComponentState = "root-decorated-by-root";
+            String expectedLevelOneComponentState = "level-one-decorated-by-level-one";
+            String expectedLevelTwoComponentState = "level-two-decorated-by-level-two";
+            testSubject.registerComponent(
+                               TestComponent.class, "root", rootConfig -> new TestComponent("root")
+                       )
+                       .registerDecorator(
+                               TestComponent.class, "root", 0,
+                               (rootConfig, delegate) -> new TestComponent(
+                                       delegate.state() + "-decorated-by-root"
+                               )
+                       )
+                       .registerModule(
+                               rootConfig -> new TestModule(rootConfig)
+                                       .registerComponent(
+                                               TestComponent.class, "one",
+                                               c -> new TestComponent("level-one")
+                                       )
+                                       .registerDecorator(
+                                               TestComponent.class, "one", 0,
+                                               (config, delegate) -> new TestComponent(
+                                                       delegate.state() + "-decorated-by-level-one"
+                                               )
+                                       )
+                                       .registerModule(
+                                               moduleConfig -> new TestModule(moduleConfig)
+                                                       .registerComponent(
+                                                               TestComponent.class, "two",
+                                                               config -> new TestComponent("level-two")
+                                                       )
+                                                       .registerDecorator(
+                                                               TestComponent.class, "two", 0,
+                                                               (config, delegate) -> new TestComponent(
+                                                                       delegate.state() + "-decorated-by-level-two"
+                                                               )
+                                                       )
+                                       )
+                       );
+
+            NewConfiguration result = testSubject.build();
+
+            assertEquals(expectedRootComponentState, result.getComponent(TestComponent.class, "root").state());
+            assertEquals(expectedLevelOneComponentState, result.getComponent(TestComponent.class, "one").state());
+            assertEquals(expectedLevelTwoComponentState, result.getComponent(TestComponent.class, "two").state());
+        }
+    }
+
     protected record TestComponent(String state) {
 
+    }
+
+    protected static class TestModule extends AbstractConfigurer<TestModule> implements Module<TestModule> {
+
+        protected TestModule(@Nullable LifecycleSupportingConfiguration config) {
+            super(config);
+        }
     }
 }
