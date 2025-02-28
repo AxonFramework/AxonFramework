@@ -112,38 +112,26 @@ class ComponentTest {
     }
 
     @Test
-    void decorateInvokesDecoratorsInProvidedOrder() {
-        String expectedComponent = TEST_COMPONENT + "abc";
-
-        Component<String> testSubject = new Component<>(identifier, config, builder);
-        testSubject.decorate((c, delegate) -> delegate + "a")
-                   .decorate((c, delegate) -> delegate + "b")
-                   .decorate((c, delegate) -> delegate + "c");
-
-        assertEquals(expectedComponent, testSubject.get());
-    }
-
-    @Test
-    void decorateWithOrderInvokesDecoratorsAtGivenOrder() {
+    void decorateInvokesDecoratorsAtGivenOrder() {
         String expectedComponent = TEST_COMPONENT + "cba";
 
         Component<String> testSubject = new Component<>(identifier, config, builder);
-        testSubject.decorate(2, (c, delegate) -> delegate + "a")
-                   .decorate(1, (c, delegate) -> delegate + "b")
-                   .decorate(0, (c, delegate) -> delegate + "c");
+        testSubject.decorate((c, delegate) -> delegate + "a", 2)
+                   .decorate((c, delegate) -> delegate + "b", 1)
+                   .decorate((c, delegate) -> delegate + "c", 0);
 
         assertEquals(expectedComponent, testSubject.get());
     }
 
     @Test
-    void decorateWithOrderMayReplacePreviousDecoratorsAtGivenOrder() {
+    void decorateReplacesPreviousDecoratorsForReusedOrder() {
         int testOrder = 0;
         String replacedDecoration = "this-will-not-be-there-on-creation";
         String keptDecoration = "and-this-will-be";
 
         Component<String> testSubject = new Component<>(identifier, config, builder);
-        testSubject.decorate(testOrder, (c, delegate) -> delegate + replacedDecoration)
-                   .decorate(testOrder, (c, delegate) -> delegate + keptDecoration);
+        testSubject.decorate((c, delegate) -> delegate + replacedDecoration, testOrder)
+                   .decorate((c, delegate) -> delegate + keptDecoration, testOrder);
 
         assertNotEquals(TEST_COMPONENT + replacedDecoration, testSubject.get());
         assertEquals(TEST_COMPONENT + keptDecoration, testSubject.get());

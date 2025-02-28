@@ -65,27 +65,13 @@ public abstract class AbstractConfigurer implements NewConfigurer {
     @Override
     public <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
                                                @Nonnull String name,
-                                               @Nonnull ComponentDecorator<C> decorator) {
-        logger.debug("Registering decorator [{}] of type [{}].", name, type);
-        Identifier<C> identifier = new Identifier<>(type, name);
-        components.getOptionalComponent(identifier)
-                  .map(component -> component.decorate(decorator))
-                  .orElseThrow(() -> new IllegalArgumentException(
-                          "Cannot decorate type [" + identifier + "] since there is no component builder for this type."
-                  ));
-        return this;
-    }
-
-    @Override
-    public <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
-                                               @Nonnull String name,
                                                int order,
                                                @Nonnull ComponentDecorator<C> decorator) {
         logger.debug("Registering decorator for [{}] of type [{}] at order #{}.", name, type, order);
         Identifier<C> identifier = new Identifier<>(type, name);
         logger.debug("Registering decorator for [{}] at order #{}.", identifier, order);
         components.getOptionalComponent(identifier)
-                  .map(component -> component.decorate(order, decorator))
+                  .map(component -> component.decorate(decorator, order))
                   .orElseThrow(() -> new IllegalArgumentException(
                           "Cannot decorate type [" + identifier + "] since there is no component builder for this type."
                   ));

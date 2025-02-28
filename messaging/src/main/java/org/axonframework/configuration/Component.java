@@ -51,10 +51,7 @@ public class Component<C> {
     private final Identifier<C> identifier;
     private final Supplier<LifecycleSupportingConfiguration> configSupplier;
     private ComponentBuilder<C> builder;
-
     private final SortedMap<Integer, ComponentDecorator<C>> decorators = new TreeMap<>();
-    // TODO Discuss what phase-enum we provide, and what the offset/default on the enum is for the default order.
-    private int defaultDecoratorOrder = 0;
 
     private C instance;
 
@@ -137,33 +134,20 @@ public class Component<C> {
 
     /**
      * Decorates the contained component upon {@link #get() initialization} by passing it through the given
-     * {@code decorator}.
-     *
-     * @param decorator The {@code ComponentDecorator} to use on the contained component upon
-     *                  {@link #get() initialization}.
-     * @return This {@code Component}, for a fluent API.
-     */
-    public Component<C> decorate(@Nonnull ComponentDecorator<C> decorator) {
-        decorators.put(++defaultDecoratorOrder, requireNonNull(decorator, "Component decorators cannot be null."));
-        return this;
-    }
-
-    /**
-     * Decorates the contained component upon {@link #get() initialization} by passing it through the given
      * {@code decorator} at the specified {@code order}.
      * <p>
      * The {@code order} of the {@code decorator} will impact the decoration ordering of the outcome of this component.
      * Will override previously registered {@link ComponentDecorator ComponentDecorators} if there already was one
      * present at the given {@code order}.
      *
-     * @param order     Defines the ordering of the given {@code decorator} among all other
-     *                  {@link ComponentDecorator ComponentDecorators} that have been registered.
      * @param decorator The {@code ComponentDecorator} to use on the contained component upon
      *                  {@link #get() initialization}.
+     * @param order     Defines the ordering of the given {@code decorator} among all other
+     *                  {@link ComponentDecorator ComponentDecorators} that have been registered.
      * @return This {@code Component}, for a fluent API.
      */
-    public Component<C> decorate(int order,
-                                 @Nonnull ComponentDecorator<C> decorator) {
+    public Component<C> decorate(@Nonnull ComponentDecorator<C> decorator,
+                                 int order) {
         ComponentDecorator<C> previous =
                 decorators.put(order, requireNonNull(decorator, "Component decorators cannot be null."));
         if (previous != null) {

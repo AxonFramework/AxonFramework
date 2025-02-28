@@ -18,6 +18,7 @@ package org.axonframework.configuration;
 
 import org.junit.jupiter.api.*;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -173,23 +174,7 @@ class RootConfigurerTest {
     class ComponentDecoration {
 
         @Test
-        void registerDecoratorDecoratesOutcomeOfComponentBuilder() {
-            String expectedState = "updated-" + TEST_COMPONENT.state() + "-twice";
-
-            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
-                       .registerDecorator(TestComponent.class,
-                                          (c, delegate) -> new TestComponent("updated-" + delegate.state))
-                       .registerDecorator(TestComponent.class,
-                                          (c, delegate) -> new TestComponent(delegate.state + "-twice"));
-
-            TestComponent result = testSubject.start()
-                                              .getComponent(TestComponent.class);
-
-            assertEquals(expectedState, result.state());
-        }
-
-        @Test
-        void registerDecoratorWithOrderDecoratesOutcomeOfComponentBuilderInSpecifiedOrder() {
+        void registerDecoratorDecoratesOutcomeOfComponentBuilderInSpecifiedOrder() {
             String expectedState = TEST_COMPONENT.state() + "123";
 
             testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
@@ -205,52 +190,31 @@ class RootConfigurerTest {
 
             assertEquals(expectedState, result.state());
         }
+
+        @Test
+        void registerDecoratorReplacesPreviousDecoratorForReusedOrderDecoratesOutcomeOfComponentBuilderInSpecifiedOrder() {
+            String expectedState = TEST_COMPONENT.state() + "bar";
+            AtomicBoolean invoked = new AtomicBoolean(false);
+
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
+                       .registerDecorator(TestComponent.class, 0,
+                                          (c, delegate) -> {
+                                              invoked.set(true);
+                                              return new TestComponent(delegate.state + "foo");
+                                          })
+                       .registerDecorator(TestComponent.class, 0,
+                                          (c, delegate) -> new TestComponent(delegate.state + "bar"));
+
+            TestComponent result = testSubject.start()
+                                              .getComponent(TestComponent.class);
+
+            assertFalse(invoked.get());
+            assertEquals(expectedState, result.state());
+        }
     }
 
     @Nested
     class ComponentDecorationFailures {
-
-        // TODO Discuss if we would want to throw an exception or whether we should simply store it if the register component comes in later
-        @Test
-        void registerDecoratorThrowsIllegalArgumentExceptionForNonExistingComponentType() {
-            assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.registerDecorator(TestComponent.class, (c, delegate) -> delegate));
-        }
-
-        @Test
-        void registerDecoratorThrowsNullPointerExceptionForNullType() {
-            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
-
-            //noinspection DataFlowIssue
-            assertThrows(NullPointerException.class,
-                         () -> testSubject.registerDecorator(null, (c, delegate) -> delegate));
-        }
-
-        @Test
-        void registerDecoratorThrowsNullPointerExceptionForNullName() {
-            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
-
-            //noinspection DataFlowIssue
-            assertThrows(NullPointerException.class,
-                         () -> testSubject.registerDecorator(Object.class, null, (c, delegate) -> delegate));
-        }
-
-        @Test
-        void registerDecoratorThrowsIllegalArgumentExceptionForEmptyName() {
-            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
-
-            assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.registerDecorator(Object.class, "", (c, delegate) -> delegate));
-        }
-
-        @Test
-        void registerDecoratorThrowsNullPointerExceptionForNullComponentDecorator() {
-            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
-
-            //noinspection DataFlowIssue
-            assertThrows(NullPointerException.class,
-                         () -> testSubject.registerDecorator(TestComponent.class, null));
-        }
 
         // TODO Discuss if we would want to throw an exception or whether we should simply store it if the register component comes in later
         @Test

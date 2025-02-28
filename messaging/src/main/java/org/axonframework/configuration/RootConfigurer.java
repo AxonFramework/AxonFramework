@@ -93,18 +93,6 @@ public interface RootConfigurer extends NewConfigurer {
                                          @Nonnull String name,
                                          @Nonnull ComponentBuilder<C> builder);
 
-    @Override
-    default <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
-                                                 @Nonnull ComponentDecorator<C> decorator) {
-        NewConfigurer.super.registerDecorator(type, decorator);
-        return this;
-    }
-
-    @Override
-    <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
-                                         @Nonnull String name,
-                                         @Nonnull ComponentDecorator<C> decorator);
-
 
     @Override
     default <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,

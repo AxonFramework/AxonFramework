@@ -23,7 +23,7 @@ import org.axonframework.configuration.Component.Identifier;
  * The starting point when configuring any Axon Framework application.
  * <p>
  * Provides utilities to {@link #registerComponent(Class, ComponentBuilder) register components},
- * {@link #registerDecorator(Class, ComponentDecorator) decorators} of these components, and
+ * {@link #registerDecorator(Class, int, ComponentDecorator) decorators} of these components, and
  * {@link #registerModule(ModuleBuilder) modules}.
  *
  * @author Allard Buijze
@@ -73,39 +73,6 @@ public interface NewConfigurer extends LifecycleOperations {
     <C> NewConfigurer registerComponent(@Nonnull Class<C> type,
                                         @Nonnull String name,
                                         @Nonnull ComponentBuilder<C> builder);
-
-    /**
-     * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
-     * {@link #registerComponent(Class, ComponentBuilder) registered} components of the given {@code type}.
-     * <p>
-     * Multiple Invocations of this method will attach the given decorators in the invocation order.
-     *
-     * @param type      The declared type of the component to decorate, typically an interface.
-     * @param decorator The decoration function of this component.
-     * @param <C>       The type of component the {@code decorator} decorates.
-     * @return The current instance of the {@code NewConfigurer} for a fluent API.
-     */
-    default <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
-                                                @Nonnull ComponentDecorator<C> decorator) {
-        return registerDecorator(type, type.getSimpleName(), decorator);
-    }
-
-    /**
-     * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
-     * {@link #registerComponent(Class, String, ComponentBuilder) registered} components of the given {@code type} and
-     * {@code name} combination.
-     * <p>
-     * Multiple Invocations of this method will attach the given decorators in the invocation order.
-     *
-     * @param type      The declared type of the component to decorate, typically an interface.
-     * @param name      The name of the component to decorate.
-     * @param decorator The decoration function of this component.
-     * @param <C>       The type of component the {@code decorator} decorates.
-     * @return The current instance of the {@code NewConfigurer} for a fluent API.
-     */
-    <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
-                                        @Nonnull String name,
-                                        @Nonnull ComponentDecorator<C> decorator);
 
     /**
      * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on

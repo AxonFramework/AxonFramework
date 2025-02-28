@@ -85,14 +85,6 @@ class DefaultRootConfigurer extends AbstractConfigurer implements RootConfigurer
     @Override
     public <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
                                                 @Nonnull String name,
-                                                @Nonnull ComponentDecorator<C> decorator) {
-        super.registerDecorator(type, name, decorator);
-        return this;
-    }
-
-    @Override
-    public <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
-                                                @Nonnull String name,
                                                 int order,
                                                 @Nonnull ComponentDecorator<C> decorator) {
         super.registerDecorator(type, name, order, decorator);
