@@ -294,7 +294,7 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
             PersistentStreamScheduledExecutorBuilder executorBuilder,
             PersistentStreamMessageSourceFactory psFactory,
             @Qualifier("autoPersistentStreamSettings") AxonServerConfiguration.PersistentStreamSettings autoPersistentStreamSettings) {
-        return configurer -> configurer.eventProcessing().setSubscribableMessageSourceDefinitionBuilder(
+        return configurer -> configurer.eventProcessing().usingSubscribingEventProcessors(
                 processingGroupName -> {
                     String psName = processingGroupName + "-stream";
                     return new PersistentStreamMessageSourceDefinition(

@@ -173,15 +173,6 @@ public interface EventProcessingConfigurer {
             Function<Configuration, SubscribableMessageSource<EventMessage<?>>> defaultSource);
 
     /**
-     * If this filed is set, Subscribing Event Processors will be created for all processing groups if none was
-     * explicitly provided.
-     *
-     * @param builder a function that creates {@link SubscribableMessageSourceDefinition} for given processing group
-     *                name.
-     */
-    void setSubscribableMessageSourceDefinitionBuilder(SubscribableMessageSourceDefinitionBuilder builder);
-
-    /**
      * Registers a {@link org.axonframework.eventhandling.TrackingEventProcessor} with given {@code name} and
      * {@code source} within this Configurer.
      *
@@ -254,6 +245,19 @@ public interface EventProcessingConfigurer {
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer usingSubscribingEventProcessors();
+
+    /**
+     * If this filed is set, Subscribing Event Processors will be created for all processing groups if none was
+     * explicitly provided.
+     *
+     * @param builder a function that creates {@link SubscribableMessageSourceDefinition} for given processing group
+     *                name.
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    default EventProcessingConfigurer usingSubscribingEventProcessors(
+            SubscribableMessageSourceDefinitionBuilder builder) {
+        return this;
+    }
 
     /**
      * Defaults Event Processors builders to use {@link org.axonframework.eventhandling.TrackingEventProcessor}.

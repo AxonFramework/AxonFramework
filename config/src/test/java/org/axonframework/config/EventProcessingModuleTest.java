@@ -381,7 +381,7 @@ class EventProcessingModuleTest {
         configurer.eventProcessing()
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerEventHandler(config -> new TrackingEventHandler())
-                  .setSubscribableMessageSourceDefinitionBuilder(mockBuilder);
+                  .usingSubscribingEventProcessors(mockBuilder);
         Configuration config = configurer.start();
 
         Map<String, EventProcessor> processorMap = config.eventProcessingConfiguration().eventProcessors();
