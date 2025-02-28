@@ -21,7 +21,6 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 // todo: rename to EventSourcingHandler and move the `@EventSourcingHandler` annotation to annotations package
@@ -29,7 +28,7 @@ interface IEventSourcingHandler extends EventHandler {
 
     // todo: should it be ResultMessage / just message or EvolvedStateMessage?
     @Nonnull
-    MessageStream.Single<? extends ResultMessage<?>> source(@Nonnull EventMessage<?> event,
+    MessageStream.Single<? extends Message<?>> source(@Nonnull EventMessage<?> event,
                                                             @Nonnull ProcessingContext context);
 
     @Nonnull
