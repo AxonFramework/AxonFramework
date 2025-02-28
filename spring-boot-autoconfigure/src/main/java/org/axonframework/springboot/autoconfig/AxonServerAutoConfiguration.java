@@ -266,8 +266,10 @@ public class AxonServerAutoConfiguration implements ApplicationContextAware {
      * Creates a {@link ConfigurerModule} to set
      * {@link EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder}
      *
-     * @param executorBuilder
-     * @param psFactory
+     * @param executorBuilder         The {@link java.util.concurrent.ScheduledExecutorService} builder used during
+     *                                construction of the {@link PersistentStreamMessageSourceDefinition}.
+     * @param psFactory               used during construction of the {@link PersistentStreamMessageSourceDefinition}.
+     * @param axonServerConfiguration Contains the persistent stream settings.
      * @return A {@link ConfigurerModule} to configure
      */
     @Bean

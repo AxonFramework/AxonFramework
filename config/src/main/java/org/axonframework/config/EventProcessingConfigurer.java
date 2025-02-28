@@ -247,7 +247,7 @@ public interface EventProcessingConfigurer {
     EventProcessingConfigurer usingSubscribingEventProcessors();
 
     /**
-     * If this filed is set, Subscribing Event Processors will be created for all processing groups if none was
+     * If this method is invoked, Subscribing Event Processors will be created for all processing groups if none was
      * explicitly provided.
      *
      * @param builder a function that creates {@link SubscribableMessageSourceDefinition} for given processing group

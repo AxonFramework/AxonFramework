@@ -162,6 +162,9 @@ public class AxonServerConfiguration {
      */
     private boolean autoPersistentStreamsEnable = false;
 
+    /**
+     * Settings that are used to create persistent stream definition.
+     */
     private PersistentStreamSettings autoPersistentStreamsSettings = new PersistentStreamSettings();
 
     /**
