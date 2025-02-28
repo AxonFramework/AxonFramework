@@ -57,7 +57,7 @@ import javax.annotation.Nonnull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class DefaultInfraConfigurer extends AbstractConfigurer implements InfraConfigurer {
+class DefaultInfraConfigurer extends AbstractConfigurer<InfraConfigurer> implements InfraConfigurer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 

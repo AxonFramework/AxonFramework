@@ -26,12 +26,13 @@ import org.axonframework.configuration.Component.Identifier;
  * {@link #registerDecorator(Class, int, ComponentDecorator) decorators} of these components, and
  * {@link #registerModule(ModuleBuilder) modules}.
  *
+ * @param <S> The type of configurer this implementation returns. This generic allows us to support fluent interfacing.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 3.0.0
  */
 // TODO Rename to Configurer once the old Configurer is removed
-public interface NewConfigurer extends LifecycleOperations {
+public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOperations {
 
     /**
      * Registers a {@link Component} that should be made available to other {@link Component components} or
@@ -48,8 +49,8 @@ public interface NewConfigurer extends LifecycleOperations {
      * @param <C>     The type of component the {@code builder} builds.
      * @return The current instance of the {@code NewConfigurer} for a fluent API.
      */
-    default <C> NewConfigurer registerComponent(@Nonnull Class<C> type,
-                                                @Nonnull ComponentBuilder<C> builder) {
+    default <C> S registerComponent(@Nonnull Class<C> type,
+                                    @Nonnull ComponentBuilder<C> builder) {
         return registerComponent(type, type.getSimpleName(), builder);
     }
 
@@ -70,9 +71,9 @@ public interface NewConfigurer extends LifecycleOperations {
      * @param <C>     The type of component the {@code builder} builds.
      * @return The current instance of the {@code NewConfigurer} for a fluent API.
      */
-    <C> NewConfigurer registerComponent(@Nonnull Class<C> type,
-                                        @Nonnull String name,
-                                        @Nonnull ComponentBuilder<C> builder);
+    <C> S registerComponent(@Nonnull Class<C> type,
+                            @Nonnull String name,
+                            @Nonnull ComponentBuilder<C> builder);
 
     /**
      * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
@@ -90,9 +91,9 @@ public interface NewConfigurer extends LifecycleOperations {
      * @param <C>       The type of component the {@code decorator} decorates.
      * @return The current instance of the {@code NewConfigurer} for a fluent API.
      */
-    default <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
-                                                int order,
-                                                @Nonnull ComponentDecorator<C> decorator) {
+    default <C> S registerDecorator(@Nonnull Class<C> type,
+                                    int order,
+                                    @Nonnull ComponentDecorator<C> decorator) {
         return registerDecorator(type, type.getSimpleName(), order, decorator);
     }
 
@@ -114,17 +115,18 @@ public interface NewConfigurer extends LifecycleOperations {
      * @param <C>       The type of component the {@code decorator} decorates.
      * @return The current instance of the {@code NewConfigurer} for a fluent API.
      */
-    <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
-                                        @Nonnull String name,
-                                        int order,
-                                        @Nonnull ComponentDecorator<C> decorator);
+    <C> S registerDecorator(@Nonnull Class<C> type,
+                            @Nonnull String name,
+                            int order,
+                            @Nonnull ComponentDecorator<C> decorator);
 
     /**
-     * Registers a {@code moduleBuilder} with this {@code NewConfigurer}. The {@code moduleBuilder} is typically
-     * constructed immediately by the {@code NewConfigurer}.
+     * Registers a {@code builder} with this {@code NewConfigurer}. The {@code builder} is typically constructed
+     * immediately by the {@code NewConfigurer}.
      *
-     * @param moduleBuilder The module builder function to register.
+     * @param builder The module builder function to register.
+     * @param <M>     The type of {@link Module} constructed by the given {@code builder}.
      * @return The current instance of the {@code NewConfigurer} for a fluent API.
      */
-    NewConfigurer registerModule(@Nonnull ModuleBuilder moduleBuilder);
+    <M extends Module<M>> S registerModule(@Nonnull ModuleBuilder<M> builder);
 }

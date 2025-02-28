@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface RootConfigurer extends NewConfigurer {
+public interface RootConfigurer extends NewConfigurer<RootConfigurer> {
 
     /**
      * Returns a {@code RootConfigurer} instance to start configuring {@link Component components},
@@ -79,37 +79,6 @@ public interface RootConfigurer extends NewConfigurer {
         configurerModules.forEach(cm -> cm.configureModule(configurer));
         return configurer;
     }
-
-    // TODO I don't like this...what about casting magic?
-    @Override
-    default <C> RootConfigurer registerComponent(@Nonnull Class<C> type,
-                                                 @Nonnull ComponentBuilder<C> builder) {
-        NewConfigurer.super.registerComponent(type, builder);
-        return this;
-    }
-
-    @Override
-    <C> RootConfigurer registerComponent(@Nonnull Class<C> type,
-                                         @Nonnull String name,
-                                         @Nonnull ComponentBuilder<C> builder);
-
-
-    @Override
-    default <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
-                                                 int order,
-                                                 @Nonnull ComponentDecorator<C> decorator) {
-        NewConfigurer.super.registerDecorator(type, order, decorator);
-        return this;
-    }
-
-    @Override
-    <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
-                                         @Nonnull String name,
-                                         int order,
-                                         @Nonnull ComponentDecorator<C> decorator);
-
-    @Override
-    RootConfigurer registerModule(@Nonnull ModuleBuilder moduleBuilder);
 
     /**
      * Configures the timeout of each lifecycle phase. The {@code Configurer} invokes lifecycle phases during start-up

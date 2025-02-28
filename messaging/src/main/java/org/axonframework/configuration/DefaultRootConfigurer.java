@@ -52,7 +52,7 @@ import static org.axonframework.common.BuilderUtils.assertStrictPositive;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class DefaultRootConfigurer extends AbstractConfigurer implements RootConfigurer {
+class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implements RootConfigurer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -71,30 +71,6 @@ class DefaultRootConfigurer extends AbstractConfigurer implements RootConfigurer
      */
     protected DefaultRootConfigurer() {
         super(null); // 🦸 <- Is this a train? Is this a bullet? No, it is Super Null!
-    }
-
-    // TODO I don't like this...what about casting magic?
-    @Override
-    public <C> RootConfigurer registerComponent(@Nonnull Class<C> type,
-                                                @Nonnull String name,
-                                                @Nonnull ComponentBuilder<C> builder) {
-        super.registerComponent(type, name, builder);
-        return this;
-    }
-
-    @Override
-    public <C> RootConfigurer registerDecorator(@Nonnull Class<C> type,
-                                                @Nonnull String name,
-                                                int order,
-                                                @Nonnull ComponentDecorator<C> decorator) {
-        super.registerDecorator(type, name, order, decorator);
-        return this;
-    }
-
-    @Override
-    public RootConfigurer registerModule(@Nonnull ModuleBuilder moduleBuilder) {
-        super.registerModule(moduleBuilder);
-        return this;
     }
 
     @Override
@@ -279,7 +255,7 @@ class DefaultRootConfigurer extends AbstractConfigurer implements RootConfigurer
         }
 
         @Override
-        public List<Module> getModules() {
+        public List<Module<?>> getModules() {
             return List.copyOf(modules);
         }
 

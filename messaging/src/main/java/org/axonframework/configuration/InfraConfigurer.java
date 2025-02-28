@@ -40,7 +40,7 @@ import javax.annotation.Nonnull;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface InfraConfigurer extends Module {
+public interface InfraConfigurer extends Module<InfraConfigurer> {
 
     /**
      * Returns an {@code InfraConfigurer} instance with default components configured, such as a
@@ -60,7 +60,7 @@ public interface InfraConfigurer extends Module {
      * @return The current instance of the {@link NewConfigurer}, for chaining purposes.
      */
     default InfraConfigurer registerCommandBus(@Nonnull ComponentBuilder<CommandBus> commandBusBuilder) {
-        return (InfraConfigurer) registerComponent(CommandBus.class, commandBusBuilder);
+        return registerComponent(CommandBus.class, commandBusBuilder);
     }
 
     /**
@@ -87,7 +87,7 @@ public interface InfraConfigurer extends Module {
      * @return The current instance of the {@link NewConfigurer}, for chaining purposes.
      */
     default InfraConfigurer registerEventBus(@Nonnull ComponentBuilder<EventBus> eventBusBuilder) {
-        return (InfraConfigurer) registerComponent(EventBus.class, eventBusBuilder);
+        return registerComponent(EventBus.class, eventBusBuilder);
     }
 
     /**
@@ -98,7 +98,7 @@ public interface InfraConfigurer extends Module {
      * @return The current instance of the {@link NewConfigurer}, for chaining purposes.
      */
     default InfraConfigurer registerQueryBus(@Nonnull ComponentBuilder<QueryBus> queryBusBuilder) {
-        return (InfraConfigurer) registerComponent(QueryBus.class, queryBusBuilder);
+        return registerComponent(QueryBus.class, queryBusBuilder);
     }
 
     /**
@@ -111,7 +111,7 @@ public interface InfraConfigurer extends Module {
     default InfraConfigurer registerQueryUpdateEmitter(
             @Nonnull ComponentBuilder<QueryUpdateEmitter> queryUpdateEmitterBuilder
     ) {
-        return (InfraConfigurer) registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterBuilder);
+        return registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterBuilder);
     }
 
     /**

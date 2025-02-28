@@ -133,7 +133,7 @@ public interface NewConfiguration {
      * @return The {@code Modules} matching the given {@code type} that are defined in this configuration.
      */
     @SuppressWarnings("unchecked")
-    default <M extends Module> List<M> getModulesFor(@Nonnull Class<M> type) {
+    default <M extends Module<?>> List<M> getModulesFor(@Nonnull Class<M> type) {
         return getModules().stream()
                            .filter(m -> m.isType(type))
                            .map(m -> (M) m)
@@ -145,5 +145,5 @@ public interface NewConfiguration {
      *
      * @return All modules that have been registered with this configuration.
      */
-    List<Module> getModules();
+    List<Module<?>> getModules();
 }

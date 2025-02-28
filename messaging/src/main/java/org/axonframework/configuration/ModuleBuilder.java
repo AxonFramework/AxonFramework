@@ -17,20 +17,21 @@
 package org.axonframework.configuration;
 
 /**
- * Functional interface describing how to build a {@link Module} using the {@link LifecycleSupportingConfiguration}
- * during construction.
+ * Functional interface describing how to build a {@link Module} of type {@code M}using the
+ * {@link LifecycleSupportingConfiguration} during construction.
  *
+ * @param <M> The type of module created by this builder.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface ModuleBuilder {
+public interface ModuleBuilder<M extends Module<M>> {
 
     /**
      * Builds a {@link Module} using the given {@code config} during construction.
      *
      * @param config The configuration from which other components can be retrieved to build the result.
-     * @return A {@link Module} using the given {@code config} during construction.
+     * @return A {@link Module} of type {@code M} using the given {@code config} during construction.
      */
-    Module build(LifecycleSupportingConfiguration config);
+    M build(LifecycleSupportingConfiguration config);
 }

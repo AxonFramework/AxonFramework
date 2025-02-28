@@ -24,11 +24,12 @@ package org.axonframework.configuration;
  * module operation. Furthermore, a module is able to access the registered {@link Component Components} from its
  * parent.
  *
+ * @param <M> The type of module this implementation returns. This generic allows us to support fluent interfacing.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface Module extends NewConfigurer {
+public interface Module<M extends Module<M>> extends NewConfigurer<M> {
 
     /**
      * Checks whether this configuration {@code Module} is of the given {@code type}.

@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * Abstract implementation of the {@link NewConfigurer} allowing for reuse of {@link Component},
@@ -37,12 +38,12 @@ import java.util.function.Supplier;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public abstract class AbstractConfigurer implements NewConfigurer {
+public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements NewConfigurer<S> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     protected final Components components = new Components();
-    protected final List<Module> modules = new ArrayList<>();
+    protected final List<Module<?>> modules = new ArrayList<>();
     protected final LifecycleSupportingConfiguration config;
 
     /**
@@ -53,20 +54,21 @@ public abstract class AbstractConfigurer implements NewConfigurer {
     }
 
     @Override
-    public <C> NewConfigurer registerComponent(@Nonnull Class<C> type,
-                                               @Nonnull String name,
-                                               @Nonnull ComponentBuilder<C> builder) {
+    public <C> S registerComponent(@Nonnull Class<C> type,
+                                   @Nonnull String name,
+                                   @Nonnull ComponentBuilder<C> builder) {
         logger.debug("Registering component [{}] of type [{}].", name, type);
         Identifier<C> identifier = new Identifier<>(type, name);
         components.put(identifier, new Component<>(identifier, config, builder));
-        return this;
+        //noinspection unchecked
+        return (S) this;
     }
 
     @Override
-    public <C> NewConfigurer registerDecorator(@Nonnull Class<C> type,
-                                               @Nonnull String name,
-                                               int order,
-                                               @Nonnull ComponentDecorator<C> decorator) {
+    public <C> S registerDecorator(@Nonnull Class<C> type,
+                                   @Nonnull String name,
+                                   int order,
+                                   @Nonnull ComponentDecorator<C> decorator) {
         logger.debug("Registering decorator for [{}] of type [{}] at order #{}.", name, type, order);
         Identifier<C> identifier = new Identifier<>(type, name);
         logger.debug("Registering decorator for [{}] at order #{}.", identifier, order);
@@ -75,15 +77,17 @@ public abstract class AbstractConfigurer implements NewConfigurer {
                   .orElseThrow(() -> new IllegalArgumentException(
                           "Cannot decorate type [" + identifier + "] since there is no component builder for this type."
                   ));
-        return this;
+        //noinspection unchecked
+        return (S) this;
     }
 
     @Override
-    public NewConfigurer registerModule(@Nonnull ModuleBuilder moduleBuilder) {
-        Module module = moduleBuilder.build(config());
+    public <M extends Module<M>> S registerModule(@Nonnull ModuleBuilder<M> builder) {
+        Module<?> module = builder.build(config());
         logger.debug("Registering module [{}].", module.getClass().getSimpleName());
         this.modules.add(module);
-        return this;
+        //noinspection unchecked
+        return (S) this;
     }
 
     @Override
@@ -146,8 +150,9 @@ public abstract class AbstractConfigurer implements NewConfigurer {
         public <C> C getComponent(@Nonnull Class<C> type,
                                   @Nonnull String name,
                                   @Nonnull Supplier<C> defaultImpl) {
-            Identifier<C> identifier = new Identifier<>(type, name);
             // TODO make this go down the chain through the parent somehow
+            Identifier<C> identifier = new Identifier<>(type, name);
+            Stream<Module<?>> moduleStream = modules.stream().filter(module -> true);
             Object component = components.computeIfAbsent(
                     identifier,
                     t -> new Component<>(identifier, config(),
@@ -157,7 +162,7 @@ public abstract class AbstractConfigurer implements NewConfigurer {
         }
 
         @Override
-        public List<Module> getModules() {
+        public List<Module<?>> getModules() {
             return List.copyOf(modules);
         }
     }
