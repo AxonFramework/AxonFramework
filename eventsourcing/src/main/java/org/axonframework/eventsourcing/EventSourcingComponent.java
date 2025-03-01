@@ -16,11 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
-import org.axonframework.eventhandling.EventHandlerRegistry;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.QualifiedName;
-
-import java.util.Set;
+import org.axonframework.eventhandling.EventHandlingComponent;
 
 /**
  * Interface describing a group of {@code EventSourcingHandlers} belonging to a single component.
@@ -33,12 +29,6 @@ import java.util.Set;
  * @since 5.0.0
  */
 // todo: name - or `EventSourcedComponent`? I'm not sure if introduce another EventHandlerRegistry interface. Just ignore if no result?
-public interface EventSourcingComponent extends IEventSourcingHandler, EventHandlerRegistry {
+public interface EventSourcingComponent extends IEventSourcingHandler, EventHandlingComponent {
 
-    /**
-     * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
-     *
-     * @return All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.
-     */
-    Set<QualifiedName> supportedEvents();
 }
