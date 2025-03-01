@@ -137,7 +137,7 @@ public class EventProcessingModule
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
     protected final Map<String, DeadLetteringInvokerConfiguration> deadLetteringInvokerConfigs = new HashMap<>();
     protected Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider = processingGroup -> null;
-    private SubscribableMessageSourceDefinitionBuilder subscribableMessageSourceDefinitionBuilder;//
+    private SubscribableMessageSourceDefinitionBuilder subscribableMessageSourceDefinitionBuilder;
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     protected Configuration configuration;
