@@ -183,7 +183,6 @@ class AnnotationBasedEventStateApplierTest {
         }
     }
 
-    @Disabled("TODO #3313 - Event Sourcing Handler support for evolved state return")
     @Nested
     class RecordSupport {
 

@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotation.AnnotatedEventHandlingComponent;
+import org.axonframework.eventsourcing.annotations.AnnotatedEventSourcingComponent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
@@ -78,8 +79,8 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
         requireNonNull(event, "Event Message may not be null");
 
         try {
-            var eventHandler = new AnnotatedEventHandlingComponent<>(model, inspector);
-            var eventHandlerResult = eventHandler.handle(event, processingContext)
+            var eventHandler = new AnnotatedEventSourcingComponent<>(model, inspector);
+            var eventHandlerResult = eventHandler.source(event, processingContext)
                                                  .asCompletableFuture()
                                                  .join();
             return modelFromStreamResultOrUpdatedExisting(eventHandlerResult, model);

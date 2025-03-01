@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 
 // todo: maybe extends AnnotatedEventHandlingComponent? Implement SimpleEventSourcingComponent
-class AnnotatedEventSourcingComponent<T> implements EventSourcingComponent {
+public class AnnotatedEventSourcingComponent<T> implements EventSourcingComponent {
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
