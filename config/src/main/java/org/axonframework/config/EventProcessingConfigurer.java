@@ -864,7 +864,9 @@ public interface EventProcessingConfigurer {
     }
     // end::RegisterDeadLetterQueueProvider[]
 
-
+    /**
+     * Contract which define how to build {@link SubscribableMessageSourceDefinition}
+     */
     @FunctionalInterface
     interface SubscribableMessageSourceDefinitionBuilder {
 
