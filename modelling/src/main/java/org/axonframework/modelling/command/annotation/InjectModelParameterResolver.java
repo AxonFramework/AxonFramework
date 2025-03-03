@@ -16,11 +16,14 @@
 
 package org.axonframework.modelling.command.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.ModelRegistry;
 import org.axonframework.modelling.command.ModelIdentifierResolver;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * {@link ParameterResolver} implementation that resolves a model from the {@link ModelRegistry} in the
@@ -34,7 +37,7 @@ class InjectModelParameterResolver implements ParameterResolver<Object> {
 
     private final ModelRegistry registry;
     private final Class<?> type;
-    private final ModelIdentifierResolver<?> idResolver;
+    private final ModelIdentifierResolver<?> identifierResolver;
 
     /**
      * Instantiate a {@link ParameterResolver} that resolves a model for the given {@code registry}, {@code type} and
@@ -42,18 +45,21 @@ class InjectModelParameterResolver implements ParameterResolver<Object> {
      *
      * @param registry   The {@link ModelRegistry} to resolve the model from.
      * @param type       The type of the model to resolve.
-     * @param idResolver The {@link ModelIdentifierResolver} to resolve the identifier of the model.
+     * @param identifierResolver The {@link ModelIdentifierResolver} to resolve the identifier of the model.
      */
-    public InjectModelParameterResolver(ModelRegistry registry, Class<?> type,
-                                        ModelIdentifierResolver<?> idResolver) {
-        this.registry = registry;
-        this.type = type;
-        this.idResolver = idResolver;
+    public InjectModelParameterResolver(
+            @Nonnull ModelRegistry registry,
+            @Nonnull Class<?> type,
+            @Nonnull ModelIdentifierResolver<?> identifierResolver
+    ) {
+        this.registry = requireNonNull(registry, "The ModelRegistry is required");
+        this.type = requireNonNull(type, "The type is required");
+        this.identifierResolver = requireNonNull(identifierResolver, "The ModelIdentifierResolver is required");
     }
 
     @Override
     public Object resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
-        Object resolvedId = idResolver.resolve(message, processingContext);
+        Object resolvedId = identifierResolver.resolve(message, processingContext);
         if (resolvedId == null) {
             throw new IllegalStateException(
                     "The idResolver returned null, while it is expected to return a non-null value");

@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.ModelRegistry;
@@ -24,6 +25,7 @@ import org.axonframework.modelling.command.ModelIdentifierResolver;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 
+import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 
 /**
@@ -49,8 +51,8 @@ public class InjectModelParameterResolverFactory implements ParameterResolverFac
      *
      * @param registry The registry to resolve models from.
      */
-    public InjectModelParameterResolverFactory(ModelRegistry registry) {
-        this.registry = registry;
+    public InjectModelParameterResolverFactory(@Nonnull ModelRegistry registry) {
+        this.registry = requireNonNull(registry, "The ModelRegistry is required");
     }
 
     @Override

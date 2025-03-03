@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.ModelContainer;
@@ -23,6 +24,8 @@ import org.axonframework.modelling.ModelRegistry;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * {@link ParameterResolverFactory} implementation that provides {@link ParameterResolver ParameterResolvers} the
@@ -41,8 +44,8 @@ public class ModelContainerParameterResolverFactory implements ParameterResolver
      *
      * @param registry The registry to get the {@link ModelContainer} from.
      */
-    public ModelContainerParameterResolverFactory(ModelRegistry registry) {
-        this.registry = registry;
+    public ModelContainerParameterResolverFactory(@Nonnull ModelRegistry registry) {
+        this.registry = requireNonNull(registry, "The ModelRegistry is required");
     }
 
     @Override

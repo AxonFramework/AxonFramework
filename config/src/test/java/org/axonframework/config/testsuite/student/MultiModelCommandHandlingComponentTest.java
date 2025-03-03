@@ -204,9 +204,6 @@ class MultiModelCommandHandlingComponentTest extends AbstractStudentTestsuite {
                 }
                 return null;
             }
-
-            public MentorIdResolver() {
-            }
         }
     }
 }

@@ -17,6 +17,7 @@
 package org.axonframework.modelling.command.annotation;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.messaging.Message;
@@ -39,8 +40,7 @@ import javax.annotation.Nullable;
  */
 public class PropertyBasedModelIdentifierResolver implements ModelIdentifierResolver<Object> {
 
-    private final Map<Class<?>, Property<Object>> memberCache = new ConcurrentHashMap<>();
-
+    private final Map<Class<?>, Property<Object>> propertyCache = new ConcurrentHashMap<>();
     private final String property;
 
     /**
@@ -48,7 +48,8 @@ public class PropertyBasedModelIdentifierResolver implements ModelIdentifierReso
      *
      * @param property The name of the property to resolve the identifier from.
      */
-    public PropertyBasedModelIdentifierResolver(String property) {
+    public PropertyBasedModelIdentifierResolver(@Nonnull String property) {
+        BuilderUtils.assertNonEmpty(property, "Property cannot be empty or null");
         this.property = property;
     }
 
@@ -56,18 +57,16 @@ public class PropertyBasedModelIdentifierResolver implements ModelIdentifierReso
     @Override
     public Object resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
         Object payload = message.getPayload();
-        return getMember(payload.getClass()).getValue(payload);
+        Class<?> payloadClass = payload.getClass();
+        var property = propertyCache.computeIfAbsent(payloadClass, this::getObjectProperty);
+        return property.getValue(payload);
     }
 
-    /**
-     * Returns the member that represents the identifier of the given {@code payloadClass}.
-     *
-     * @param payloadClass The class of the payload.
-     * @return The member that represents the identifier.
-     */
-    private Property<Object> getMember(Class<?> payloadClass) {
-        return memberCache.computeIfAbsent(payloadClass, (n) ->
-                PropertyAccessStrategy.getProperty(payloadClass, property)
-        );
+    private Property<Object> getObjectProperty(Class<?> payloadClass) {
+        Property<Object> foundProperty = PropertyAccessStrategy.getProperty(payloadClass, property);
+        if (foundProperty == null) {
+            throw new TargetModelIdentifierMemberMismatchException(property, payloadClass);
+        }
+        return foundProperty;
     }
 }

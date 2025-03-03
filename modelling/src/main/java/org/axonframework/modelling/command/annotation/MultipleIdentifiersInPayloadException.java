@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.command.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.modelling.command.ModelIdentifierResolver;
 
 import java.util.List;
@@ -39,7 +40,7 @@ public class MultipleIdentifiersInPayloadException extends RuntimeException {
      * @param identifiers  The identifiers found in the payload.
      * @param payloadClass The type of the payload.
      */
-    public MultipleIdentifiersInPayloadException(List<Object> identifiers, Class<?> payloadClass) {
+    public MultipleIdentifiersInPayloadException(@Nonnull List<Object> identifiers, @Nonnull Class<?> payloadClass) {
         super(String.format("Found multiple identifiers in payload of type [%s]: %s. Only one identifier is allowed.",
                             payloadClass.getName(), identifiers));
     }

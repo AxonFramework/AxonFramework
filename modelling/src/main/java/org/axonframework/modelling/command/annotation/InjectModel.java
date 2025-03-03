@@ -51,6 +51,12 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface InjectModel {
 
+    /**
+     * The property of the message payload that contains the identifier of the model to inject. If not specified, the
+     * {@code idResolver} is used to resolve the identifier of the model to inject.
+     *
+     * @return the property of the message payload that contains the identifier of the model to inject.
+     */
     String idProperty() default "";
 
     /**
