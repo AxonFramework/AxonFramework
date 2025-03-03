@@ -79,14 +79,10 @@ class DefaultInfraConfigurer extends AbstractConfigurer<InfraConfigurer> impleme
     protected CommandBus defaultCommandBus(NewConfiguration config) {
         return config.getOptionalComponent(CommandBus.class)
                      .orElseGet(() -> {
+                         // TODO #3067 - Discuss to adjust this to registerComponent-and-Decorator invocations
                          CommandBusBuilder commandBusBuilder = CommandBusBuilder.forSimpleCommandBus();
                          config.getOptionalComponent(TransactionManager.class)
                                .ifPresent(commandBusBuilder::withTransactions);
-//                    if (!config.correlationDataProviders().isEmpty()) {
-//                        CorrelationDataInterceptor<Message<?>> interceptor = new CorrelationDataInterceptor<>(config.correlationDataProviders());
-//                        commandBusBuilder.withHandlerInterceptor(interceptor);
-//                        //TODO - commandBusBuilder.withDispatchInterceptor(interceptor);
-//                    }
                          return commandBusBuilder.build(config);
                      });
     }
