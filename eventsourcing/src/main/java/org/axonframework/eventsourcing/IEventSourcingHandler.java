@@ -24,6 +24,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 // todo: rename to EventSourcingHandler and move the `@EventSourcingHandler` annotation to annotations package
+@FunctionalInterface
 interface IEventSourcingHandler extends EventHandler {
 
     // todo: should it be ResultMessage / just message or EvolvedStateMessage?

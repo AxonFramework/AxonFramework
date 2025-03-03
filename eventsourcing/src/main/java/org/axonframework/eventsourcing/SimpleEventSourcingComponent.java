@@ -64,14 +64,7 @@ class SimpleEventSourcingComponent implements EventSourcingComponent {
         if (handler instanceof IEventSourcingHandler eventSourcingHandler) {
             names.forEach(name -> this.eventSourcingHandlers.put(name, eventSourcingHandler));
         } else {
-            var eventSourcingHandler = new IEventSourcingHandler() {
-                @Nonnull
-                @Override
-                public MessageStream.Single<? extends Message<?>> source(@Nonnull EventMessage<?> event,
-                                                                         @Nonnull ProcessingContext context) {
-                    return handler.handle(event, context);
-                }
-            };
+            IEventSourcingHandler eventSourcingHandler = handler::handle;
             names.forEach(name -> this.eventSourcingHandlers.put(name, eventSourcingHandler));
         }
         return this;
