@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import io.grpc.ManagedChannelBuilder;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.ManagedChannelCustomizer;
@@ -23,6 +24,7 @@ import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
+import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.commandhandling.CommandBus;
@@ -32,6 +34,9 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.config.EventProcessingModule;
+import org.axonframework.config.SubscribableMessageSourceDefinition;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
@@ -54,6 +59,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
 
+import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -260,8 +266,36 @@ class AxonServerAutoConfigurationTest {
     @Test
     void axonServerEventStoreFactoryBeanIsNotConfiguredWhenEventStoreIsDisabled() {
         testContext.withUserConfiguration(TestContext.class)
-                .withPropertyValues("axon.axonserver.event-store.enabled=false")
+                   .withPropertyValues("axon.axonserver.event-store.enabled=false")
                    .run(context -> assertThat(context).getBean(AxonServerEventStoreFactory.class).isNull());
+    }
+
+    @Test
+    void subscribableMessageSourceDefinitionShouldBeConfigured() {
+        testContext.withPropertyValues("axon.axonserver.auto-persistent-streams-enable=true",
+                                       "axon.axonserver.auto-persistent-streams-settings.initial-segment-count=10",
+                                       "axon.axonserver.auto-persistent-streams-settings.batch-size=6")
+                   .run(context -> {
+
+                       EventProcessingModule eventProcessingModule = context.getBean(EventProcessingModule.class);
+
+                       EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder builder = getField(
+                               "subscribableMessageSourceDefinitionBuilder",
+                               eventProcessingModule);
+
+                       assertThat(builder).isNotNull();
+
+                       SubscribableMessageSourceDefinition<EventMessage<?>> definition = builder.build(
+                               "processingGroupName");
+                       assertThat(definition).isInstanceOf(PersistentStreamMessageSourceDefinition.class);
+                       String name = getField("name", definition);
+                       int batchSize = getField("batchSize", definition);
+                       PersistentStreamProperties properties = getField("persistentStreamProperties", definition);
+                       assertThat(name).isEqualTo("processingGroupName");
+                       assertThat(batchSize).isEqualTo(6);
+                       assertThat(properties.streamName()).isEqualTo("processingGroupName-stream");
+                       assertThat(properties.segments()).isEqualTo(10);
+                   });
     }
 
     @Test
@@ -424,5 +458,18 @@ class AxonServerAutoConfigurationTest {
         public ScheduledExecutorService persistentStreamScheduler() {
             return Executors.newScheduledThreadPool(1, new AxonThreadFactory("persistent-streams"));
         }
+    }
+
+    private <O, R> R getField(String fieldName, O object) throws NoSuchFieldException, IllegalAccessException {
+        return getField(object.getClass(), fieldName, object);
+    }
+
+    private <C, O, R> R getField(Class<C> clazz,
+                                 String fieldName,
+                                 O object) throws NoSuchFieldException, IllegalAccessException {
+        Field field = clazz.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        //noinspection unchecked
+        return (R) field.get(object);
     }
 }

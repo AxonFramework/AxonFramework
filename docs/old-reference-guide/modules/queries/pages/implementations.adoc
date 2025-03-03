@@ -1,21 +1,29 @@
 = Implementations
 
-When it comes to dispatching queries, as explained in the xref:query-dispatchers.adoc[Dispatching Queries] section, there are a couple of implementations when it comes to actually sending the query message in question. The next sections provide an overview of the possible implementations, as well as pointing out how to set up query dispatching infrastructure with Axon.
+When it comes to dispatching queries, as explained in the xref:query-dispatchers.adoc[Dispatching Queries] section, there are a couple of implementations when it comes to actually sending the query message in question.
+The next sections provide an overview of the possible implementations, as well as pointing out how to set up query dispatching infrastructure with Axon.
 
 == Query gateway
 
-The query gateway is a convenient interface towards the query dispatching mechanism. While you are not required to use a gateway to dispatch queries, it is generally the easiest option to do so.
+The query gateway is a convenient interface towards the query dispatching mechanism.
+While you are not required to use a gateway to dispatch queries, it is generally the easiest option to do so.
 
-Axon provides a `QueryGateway` interface and the `DefaultQueryGateway` implementation. The query gateway provides a number of methods that allow you to send a query and wait for a single or multiple results either synchronously, with a timeout or asynchronously. The query gateway needs to be configured with access to the query bus and a (possibly empty) list of `QueryDispatchInterceptor`s.
+Axon provides a `QueryGateway` interface and the `DefaultQueryGateway` implementation.
+The query gateway provides a number of methods that allow you to send a query and wait for a single or multiple results either synchronously, with a timeout or asynchronously.
+The query gateway needs to be configured with access to the query bus and a (possibly empty) list of `QueryDispatchInterceptor`s.
 
 == Query bus
 
-The query bus is the mechanism that dispatches queries to query handlers. Queries are registered using the combination of the query request name and query response type. It is possible to register multiple handlers for the same request-response combination, which can be used to implement the scatter-gather pattern. When dispatching queries, the client must indicate whether it wants a response from a single handler or from all handlers.
+The query bus is the mechanism that dispatches queries to query handlers.
+Queries are registered using the combination of the query request name and query response type.
+It is possible to register multiple handlers for the same request-response combination, which can be used to implement the scatter-gather pattern.
+When dispatching queries, the client must indicate whether it wants a response from a single handler or from all handlers.
 
 [[AxonServerQueryBus]]
 === `AxonServerQueryBus`
 
-Axon provides a query bus out of the box, the `AxonServerQueryBus`. It connects to the AxonServer to send and receive Queries in a distributed way.
+Axon provides a query bus out of the box, the `AxonServerQueryBus`.
+It connects to the AxonServer to send and receive Queries in a distributed way.
 
 [tabs]
 ====
@@ -74,10 +82,18 @@ By simply declaring dependency to `axon-spring-boot-starter`, Axon will automati
 If you exclude the `axon-server-connector` dependency you will fall back to the non-AxonServer query bus option, the `SimpleQueryBus` (see below).
 ====
 
+Queries that have a handler locally can be invoked directly without engaging Axon Server, additional property need to be set:
+
+[source,java]
+----
+axon.axonserver.local-segment-short-cut=true
+----
+
 [[SimpleQueryBus]]
 === `SimpleQueryBus`
 
-The `SimpleQueryBus` does straightforward processing of queries in the thread that dispatches them. To configure a `SimpleQueryBus` (instead of an `AxonServerQueryBus`):
+The `SimpleQueryBus` does straightforward processing of queries in the thread that dispatches them.
+To configure a `SimpleQueryBus` (instead of an `AxonServerQueryBus`):
 
 [tabs]
 ====
