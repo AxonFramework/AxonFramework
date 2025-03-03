@@ -16,13 +16,6 @@
 
 package org.axonframework.configuration;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.common.FutureUtils;
-import org.axonframework.common.IdentifierFactory;
-import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.invoke.MethodHandles;
 import java.util.Comparator;
 import java.util.List;
@@ -38,7 +31,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
-import static org.axonframework.common.BuilderUtils.assertStrictPositive;
+import static org.axonframework.common.Assert.assertStrictPositive;
+
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.FutureUtils;
+import org.axonframework.common.IdentifierFactory;
+import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Default implementation of the {@code RootConfigurer}.
