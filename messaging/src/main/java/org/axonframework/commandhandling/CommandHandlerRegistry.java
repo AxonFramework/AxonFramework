@@ -22,6 +22,8 @@ import org.axonframework.messaging.QualifiedName;
 import java.util.Objects;
 import java.util.Set;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Interface describing a registry of {@link CommandHandler command handlers}.
  *
@@ -49,8 +51,8 @@ public interface CommandHandlerRegistry<S extends CommandHandlerRegistry<S>> {
      */
     default S subscribe(@Nonnull Set<QualifiedName> names,
                         @Nonnull CommandHandler commandHandler) {
-        Objects.requireNonNull(names, "The set of names may not be null");
-        Objects.requireNonNull(commandHandler, "The commandHandler may not be null");
+        requireNonNull(names, "The set of names may not be null");
+        requireNonNull(commandHandler, "The commandHandler may not be null");
         names.forEach(name -> subscribe(name, commandHandler));
         //noinspection unchecked
         return (S) this;
