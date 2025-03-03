@@ -16,18 +16,17 @@
 
 package org.axonframework.configuration;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.configuration.Component.Identifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
+
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.configuration.Component.Identifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract implementation of the {@link NewConfigurer} allowing for reuse of {@link Component},
@@ -169,11 +168,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nonnull String name) {
             return components.getOptional(new Identifier<>(type, name))
-                             .or(() -> moduleConfigurations.stream()
-                                                           .map(c -> c.getOptionalComponent(type, name))
-                                                           .findFirst()
-                                                           .orElse(Optional.empty()))
-                             .or(() -> parent != null ? parent.getOptionalComponent(type, name) : Optional.empty());
+                             .or(() -> optionalFromParent(type, name, () -> null));
         }
 
         @Nonnull
@@ -181,22 +176,24 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         public <C> C getComponent(@Nonnull Class<C> type,
                                   @Nonnull String name,
                                   @Nonnull Supplier<C> defaultImpl) {
-            // TODO make this go down the chain through the parent somehow
             Identifier<C> identifier = new Identifier<>(type, name);
-            Stream<Module<?>> moduleStream = modules.stream().filter(module -> true);
             Object component = components.computeIfAbsent(
                     identifier,
-                    t -> new Component<>(identifier, config(),
-                                         c -> c.getOptionalComponent(type, name).orElseGet(defaultImpl))
+                    id -> new Component<>(identifier, config(),
+                                          c -> optionalFromParent(type, name, defaultImpl).orElseGet(defaultImpl))
             ).get();
             return identifier.type().cast(component);
         }
 
+        private <C> Optional<C> optionalFromParent(Class<C> type, String name, Supplier<C> defaultSupplier) {
+            return parent != null
+                    ? parent.getOptionalComponent(type, name).or(() -> Optional.ofNullable(defaultSupplier.get()))
+                    : Optional.ofNullable(defaultSupplier.get());
+        }
+
         @Override
-        public List<Module<?>> getModules() {
-            List<Module<?>> modules = new ArrayList<>(AbstractConfigurer.this.modules);
-            moduleConfigurations.forEach(moduleConfig -> modules.addAll(moduleConfig.getModules()));
-            return modules;
+        public List<NewConfiguration> getModuleConfigurations() {
+            return List.copyOf(moduleConfigurations);
         }
     }
 }

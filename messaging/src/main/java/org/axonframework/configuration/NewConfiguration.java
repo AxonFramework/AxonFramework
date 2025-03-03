@@ -16,11 +16,11 @@
 
 package org.axonframework.configuration;
 
-import jakarta.annotation.Nonnull;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+
+import jakarta.annotation.Nonnull;
 
 /**
  * Interface providing access to all configured {@link Component components} in an Axon Framework application.
@@ -126,24 +126,11 @@ public interface NewConfiguration {
                        @Nonnull Supplier<C> defaultImpl);
 
     /**
-     * Finds all configuration modules of given {@code type} within this configuration.
+     * Returns all {@code Configurations} from the {@link Module Modules} that have been
+     * {@link NewConfigurer#registerModule(ModuleBuilder) registered} with this {@code Configuration}.
      *
-     * @param type The type of the {@link Module Modules} to retrieve.
-     * @param <M>  The type of the {@link Module}.
-     * @return The {@code Modules} matching the given {@code type} that are defined in this configuration.
+     * @return The resulting {@code Configuration} from each
+     * {@link NewConfigurer#registerModule(ModuleBuilder) registered module} with this {@code Configuration}.
      */
-    @SuppressWarnings("unchecked")
-    default <M extends Module<?>> List<M> getModulesFor(@Nonnull Class<M> type) {
-        return getModules().stream()
-                           .filter(m -> m.isType(type))
-                           .map(m -> (M) m)
-                           .toList();
-    }
-
-    /**
-     * Returns all modules that have been registered with this configuration.
-     *
-     * @return All modules that have been registered with this configuration.
-     */
-    List<Module<?>> getModules();
+    List<NewConfiguration> getModuleConfigurations();
 }

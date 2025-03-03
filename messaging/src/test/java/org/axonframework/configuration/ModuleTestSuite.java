@@ -16,11 +16,9 @@
 
 package org.axonframework.configuration;
 
-import org.junit.jupiter.api.*;
-
-import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.*;
 
 /**
  * Test suite validating the common behavior of each {@link Module} implementation.
@@ -56,40 +54,6 @@ public abstract class ModuleTestSuite<M extends Module<M>> extends ConfigurerTes
      * @return The test {@link Module} of type {@code M} used for testing.
      */
     abstract M testSubject(LifecycleSupportingConfiguration config);
-
-    @Test
-    void canRetrieveComponentsFromParentConfiguration() {
-        TestComponent expected = new TestComponent("parent-retrieval-test");
-        RootConfigurer.defaultConfigurer()
-                      .registerModule(config -> {
-                          M testModule = testSubject(config);
-                          this.testModule = testModule;
-                          return testModule;
-                      })
-                      .registerComponent(TestComponent.class, "parent-retrieval-test", config -> expected);
-
-        TestComponent result = testModule.build()
-                                         .getComponent(TestComponent.class, "parent-retrieval-test");
-
-        assertEquals(expected, result);
-    }
-
-    @Test
-    void returnsEmptyOptionalIfBothModuleAndParentDoNotHaveTheRequestedComponent() {
-        RootConfigurer.defaultConfigurer()
-                      .registerModule(config -> {
-                          M testModule = testSubject(config);
-                          this.testModule = testModule;
-                          return testModule;
-                      })
-                      .registerComponent(TestComponent.class, "parent", config -> new TestComponent("parent"));
-        testModule.registerComponent(TestComponent.class, "module", config -> new TestComponent("module"));
-
-        Optional<Object> result = testModule.build()
-                                            .getOptionalComponent(Object.class);
-
-        assertFalse(result.isPresent());
-    }
 
     @Test
     void onStartThrowsUnsupportedOperationException() {

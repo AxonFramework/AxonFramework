@@ -16,9 +16,9 @@
 
 package org.axonframework.configuration;
 
-import org.junit.jupiter.api.*;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.*;
 
 /**
  * Test class validating the {@link RootConfigurer}.
