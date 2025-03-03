@@ -16,6 +16,8 @@
 
 package org.axonframework.configuration;
 
+import javax.annotation.Nonnull;
+
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.config.CommandBusBuilder;
@@ -41,12 +43,6 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.QueryUpdateEmitterSpanFactory;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.lang.invoke.MethodHandles;
-import java.util.UUID;
-import javax.annotation.Nonnull;
 
 /**
  * Default implementation of the {@link InfraConfigurer}.
@@ -58,8 +54,6 @@ import javax.annotation.Nonnull;
  * @since 5.0.0
  */
 class DefaultInfraConfigurer extends AbstractConfigurer<InfraConfigurer> implements InfraConfigurer {
-
-    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     /**
      * Initialize the {@code DefaultInfraConfigurer}.
@@ -192,35 +186,13 @@ class DefaultInfraConfigurer extends AbstractConfigurer<InfraConfigurer> impleme
 
     @Override
     public InfraConfigurer registerCommandHandler(@Nonnull ComponentBuilder<CommandHandler> commandHandlerBuilder) {
-        String cmdUUID = UUID.randomUUID().toString();
-//        registerComponent(CommandHandler.class, cmdUUID, commandHandlerBuilder);
-//        config().onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
-//                         () -> config().getComponent(CommandHandler.class, cmdUUID));
-
-//        parent.getComponent(CommandBus.class)
-//              .decorate((config, delegate) -> (CommandBus) delegate.subscribe(
-//                          new QualifiedName(
-//                                  "TODO perhaps move QualifiedName to the method on the Configurer. Or, make the configurer into a CommandHandlerRegistry"),
-//                          commandHandlerBuilder.build(config)
-//                  ));
+        // TODO #3067 - Implement in follow-up PR
         return this;
     }
 
     @Override
     public InfraConfigurer registerQueryHandler(@Nonnull ComponentBuilder<QueryHandler> queryHandlerBuilder) {
-//        messageHandlerRegistrars.add(new Component<>(
-//                () -> config,
-//                "QueryHandlerRegistrar",
-//                configuration -> new MessageHandlerRegistrar(
-//                        () -> configuration,
-//                        queryHandlerBuilder,
-//                        (config, queryHandler) -> new AnnotationQueryHandlerAdapter<>(
-//                                queryHandler,
-//                                config.parameterResolverFactory(),
-//                                config.handlerDefinition(queryHandler.getClass())
-//                        ).subscribe(config.queryBus())
-//                )
-//        ));
+        // TODO #3067 - Implement in follow-up PR
         return this;
     }
 
@@ -228,19 +200,7 @@ class DefaultInfraConfigurer extends AbstractConfigurer<InfraConfigurer> impleme
     public InfraConfigurer registerMessageHandlingComponent(
             @Nonnull ComponentBuilder<MessageHandlingComponent> handlingComponentBuilder
     ) {
-//        Component<MessageHandlingComponent> messageHandler = new Component<>(() -> config,
-//                                                                             "",
-//                                                                             handlingComponentBuilder);
-//        Class<?> handlerClass = messageHandler.get().getClass();
-//        if (isCommandHandler(handlerClass)) {
-//            registerCommandHandler(c -> messageHandler.get());
-//        }
-//        if (isEventHandler(handlerClass)) {
-////            eventProcessing().registerEventHandler(c -> messageHandler.get());
-//        }
-//        if (isQueryHandler(handlerClass)) {
-//            registerQueryHandler(c -> messageHandler.get());
-//        }
+        // TODO #3067 - Implement in follow-up PR
         return this;
     }
 }
