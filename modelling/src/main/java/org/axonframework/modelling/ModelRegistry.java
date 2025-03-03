@@ -45,7 +45,7 @@ public interface ModelRegistry {
      * @param idClass      The class of the identifier.
      * @param modelClass   The class of the model.
      * @param loadFunction The function to load the model based on the identifier.
-     * @param <I>         The type of the identifier of the model.
+     * @param <I>          The type of the identifier of the model.
      * @param <M>          The type of model to load.
      * @return The registry instance for fluent interfacing.
      */
@@ -56,8 +56,8 @@ public interface ModelRegistry {
     );
 
     /**
-     * Retrieve the {@link ModelContainer} for the given {@link ProcessingContext}.
-     * Should return the same container for the same context.
+     * Retrieve the {@link ModelContainer} for the given {@link ProcessingContext}. Should return the same container for
+     * the same context.
      *
      * @param context The context to retrieve the container for.
      * @return The container for the given context.
@@ -68,7 +68,7 @@ public interface ModelRegistry {
      * Supplier of a model of type {@code M} with identifier of type {@code I}.
      *
      * @param <I> The type of the identifier of the model.
-     * @param <M>  The type of model to load.
+     * @param <M> The type of model to load.
      */
     @FunctionalInterface
     interface ModelSupplier<I, M> {

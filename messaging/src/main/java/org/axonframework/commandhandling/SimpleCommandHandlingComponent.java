@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
@@ -30,9 +31,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.axonframework.common.BuilderUtils.assertNonEmpty;
+
 /**
  * A simple implementation of the {@link CommandHandlingComponent} interface, allowing for easy registration of
- * {@link CommandHandler}s and other {@link CommandHandlingComponent}s.
+ * {@link CommandHandler CommandHandlers} and other {@link CommandHandlingComponent CommandHandlingComponents}.
  * <p>
  * Registered subcomponents are preferred over registered command handlers when handling a command.
  *
@@ -62,6 +65,7 @@ public class SimpleCommandHandlingComponent implements
     }
 
     private SimpleCommandHandlingComponent(@Nonnull String name) {
+        assertNonEmpty(name, "The name may not be null or empty");
         this.name = name;
     }
 

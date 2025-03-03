@@ -17,11 +17,13 @@
 package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -44,19 +46,16 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
 
     /**
      * Constructs a new simple {@link ModelRegistry} instance.
-     */
-    private SimpleModelRegistry(@Nonnull String name) {
-        // No direct instantiation
-        this.name = name;
-    }
-
-    /**
-     * Constructs a new simple {@link ModelRegistry} instance.
      *
      * @param name The name of the registry, used for describing it to the {@link DescribableComponent}
      */
-    public static SimpleModelRegistry create(String name) {
+    public static SimpleModelRegistry create(@Nonnull String name) {
+        BuilderUtils.assertNonBlank(name, "Name may not be blank");
         return new SimpleModelRegistry(name);
+    }
+
+    private SimpleModelRegistry(@Nonnull String name) {
+        this.name = name;
     }
 
     @Override
@@ -103,11 +102,6 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
         private final ProcessingContext context;
         private final List<LoadedModelDefinition<?, ?>> loadedModels = new CopyOnWriteArrayList<>();
 
-        /**
-         * Constructs a new simple {@link ModelContainer} instance.
-         *
-         * @param context The context this container is bound to.
-         */
         private SimpleModelContainer(ProcessingContext context) {
             this.context = context;
         }
