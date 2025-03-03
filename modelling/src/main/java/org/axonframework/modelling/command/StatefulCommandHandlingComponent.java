@@ -26,16 +26,22 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.ModelContainer;
+import org.axonframework.modelling.ModelRegistry;
 
+import java.util.Objects;
 import java.util.Set;
 import javax.annotation.Nonnull;
+
+import static java.util.Objects.requireNonNull;
+import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 
 /**
  * A {@link CommandHandlingComponent} implementation which allows for stateful handling of commands.
  * <p>
- * The component uses a {@link ModelRegistry} which provides access to the models that are used to
- * handle the commands. The models are resolved through the {@link ModelContainer} which is provided to the
- * {@link StatefulCommandHandler} when handling a command.
+ * The component uses a {@link ModelRegistry} which provides access to the models that are used to handle the commands.
+ * The models are resolved through the {@link ModelContainer} which is provided to the {@link StatefulCommandHandler}
+ * when handling a command.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -50,33 +56,32 @@ public class StatefulCommandHandlingComponent implements
     private final ModelRegistry modelRegistry;
 
     /**
-     * Initializes a new stateful command handling component with the given {@code name}.
-     *
-     * @param name          The name of the component, used for describing it to the {@link DescribableComponent}
-     * @param modelRegistry The model registry to use for resolving the {@link ModelContainer}
-     */
-    private StatefulCommandHandlingComponent(String name, ModelRegistry modelRegistry) {
-        this.name = name;
-        this.handlingComponent = SimpleCommandHandlingComponent.create(name);
-        this.modelRegistry = modelRegistry;
-    }
-
-    /**
      * Creates a new stateful command handling component with the given {@code name}.
-     * @param name          The name of the component, used for describing it to the {@link DescribableComponent}
-     * @param modelRegistry The model registry to use for resolving the {@link ModelContainer}
-     * @return A stateful {@link CommandHandlingComponent} component with the given {@code name} and {@code modelRegistry}
+     *
+     * @param name          The name of the component, used for {@link DescribableComponent describing} the component.
+     * @param modelRegistry The model registry to use for resolving the {@link ModelContainer}.
+     * @return A stateful {@link CommandHandlingComponent} component with the given {@code name} and
+     * {@code modelRegistry}.
      */
-    public static StatefulCommandHandlingComponent create(String name, ModelRegistry modelRegistry) {
+    public static StatefulCommandHandlingComponent create(@Nonnull String name, @Nonnull ModelRegistry modelRegistry) {
         return new StatefulCommandHandlingComponent(name, modelRegistry);
     }
 
+    private StatefulCommandHandlingComponent(@Nonnull String name, @Nonnull ModelRegistry modelRegistry) {
+        assertNonEmpty(name, "The name may not be null or empty");
+        this.name = name;
+        this.modelRegistry = requireNonNull(modelRegistry, "ModelRegistry may not be null");
+        this.handlingComponent = SimpleCommandHandlingComponent.create(name);
+    }
 
     @Override
     public StatefulCommandHandlingComponent subscribe(
             @Nonnull QualifiedName name,
             @Nonnull StatefulCommandHandler commandHandler
     ) {
+        requireNonNull(name, "The name of the command handler may not be null");
+        requireNonNull(commandHandler, "The command handler may not be null");
+
         handlingComponent.subscribe(name, ((command, context) -> {
             try {
                 var modelContainer = modelRegistry.modelContainer(context);
@@ -91,7 +96,7 @@ public class StatefulCommandHandlingComponent implements
     @Nonnull
     @Override
     public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                                   @Nonnull ProcessingContext context) {
+                                                                          @Nonnull ProcessingContext context) {
         return handlingComponent.handle(command, context);
     }
 
@@ -114,5 +119,4 @@ public class StatefulCommandHandlingComponent implements
         descriptor.describeProperty("handlingComponent", handlingComponent);
         descriptor.describeProperty("modelRegistry", modelRegistry);
     }
-
 }

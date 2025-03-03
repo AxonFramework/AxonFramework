@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.command;
+package org.axonframework.modelling;
 
 /**
  * Exception thrown by the {@link ModelRegistry} when no model is registered for a given model class. Can be resolved by
@@ -28,7 +28,7 @@ public class MissingModelDefinitionException extends RuntimeException {
     /**
      * Initialize the exception with a message containing the given model class.
      *
-     * @param modelClass The model class for which no model was registered
+     * @param modelClass The model class for which no model was registered.
      */
     public MissingModelDefinitionException(Class<?> modelClass) {
         super("No Model was registered for the given model class: %s".formatted(modelClass.getName()));

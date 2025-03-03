@@ -23,9 +23,9 @@ import org.axonframework.messaging.QualifiedName;
 import javax.annotation.Nonnull;
 
 /**
- * Interface describing a registry of {@link StatefulCommandHandler command handlers}.
+ * Interface describing a registry of {@link StatefulCommandHandler stateful command handlers}.
  *
- * @param <S> the type of the registry itself
+ * @param <S> The type of the registry itself.
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  * @author Mateusz Nowak

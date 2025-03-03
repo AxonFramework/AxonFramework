@@ -18,7 +18,7 @@ package org.axonframework.config;
 
 
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -37,8 +37,8 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.ModelRegistry;
-import org.axonframework.modelling.command.SimpleModelRegistry;
+import org.axonframework.modelling.ModelRegistry;
+import org.axonframework.modelling.SimpleModelRegistry;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.command.annotation.InjectModel;
 import org.axonframework.modelling.command.annotation.InjectModelParameterResolverFactory;
@@ -109,7 +109,7 @@ class CompoundModelIdentifierCommandHandlingComponentTest {
         CompoundModelAnnotatedCommandHandler handler = new CompoundModelAnnotatedCommandHandler();
         var component = StatefulCommandHandlingComponent
                 .create("InjectedStateHandler", registry)
-                .subscribe(new AnnotationCommandHandlerAdapter<>(
+                .subscribe(new AnnotatedCommandHandlingComponent<>(
                         handler,
                         new MultiParameterResolverFactory(
                                 ClasspathParameterResolverFactory.forClass(this.getClass()),

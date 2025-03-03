@@ -18,9 +18,9 @@ package org.axonframework.modelling.command.annotation;
 
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.modelling.command.ModelContainer;
+import org.axonframework.modelling.ModelContainer;
 import org.axonframework.modelling.command.ModelIdResolver;
-import org.axonframework.modelling.command.ModelRegistry;
+import org.axonframework.modelling.ModelRegistry;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;

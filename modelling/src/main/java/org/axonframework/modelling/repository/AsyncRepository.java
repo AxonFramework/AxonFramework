@@ -52,8 +52,7 @@ public sealed interface AsyncRepository<ID, T>
                                                          @Nonnull ProcessingContext processingContext);
 
     /**
-     * Loads an entity from the repository. If the entity is not found it creates one using the specified
-     * {@code factoryMethod}.
+     * Loads an entity from the repository.
      *
      * @param identifier        The identifier of the entity to load.
      * @param processingContext The processing context in which to manage the lifecycle of the entity.

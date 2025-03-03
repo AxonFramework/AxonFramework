@@ -30,12 +30,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SimpleCommandHandlingComponentTest {
 
-    AtomicBoolean command1Handled = new AtomicBoolean(false);
-    AtomicBoolean command2HandledParent = new AtomicBoolean(false);
-    AtomicBoolean command2HandledChild = new AtomicBoolean(false);
-    AtomicBoolean command3Handled = new AtomicBoolean(false);
+    private final AtomicBoolean command1Handled = new AtomicBoolean(false);
+    private final AtomicBoolean command2HandledParent = new AtomicBoolean(false);
+    private final AtomicBoolean command2HandledChild = new AtomicBoolean(false);
+    private final AtomicBoolean command3Handled = new AtomicBoolean(false);
 
-    CommandHandlingComponent handlingComponent = SimpleCommandHandlingComponent
+    private final CommandHandlingComponent handlingComponent = SimpleCommandHandlingComponent
             .create("MySuperComponent")
             .subscribe(
                     new QualifiedName("Command1"),
@@ -72,8 +72,6 @@ class SimpleCommandHandlingComponentTest {
 
     @Test
     void handlesTheMostSpecificRegisteredHandler() {
-
-
         handlingComponent.handle(new GenericCommandMessage<>(new MessageType("Command1"), ""), ProcessingContext.NONE);
         assertTrue(command1Handled.get());
         assertFalse(command2HandledParent.get());

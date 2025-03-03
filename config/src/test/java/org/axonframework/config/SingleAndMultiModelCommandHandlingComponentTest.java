@@ -19,7 +19,7 @@ package org.axonframework.config;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -41,10 +41,10 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.ModelContainer;
+import org.axonframework.modelling.ModelContainer;
 import org.axonframework.modelling.command.ModelIdResolver;
-import org.axonframework.modelling.command.ModelRegistry;
-import org.axonframework.modelling.command.SimpleModelRegistry;
+import org.axonframework.modelling.ModelRegistry;
+import org.axonframework.modelling.SimpleModelRegistry;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.command.annotation.InjectModel;
 import org.axonframework.modelling.command.annotation.InjectModelParameterResolverFactory;
@@ -67,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SingleAndMultiModelCommandHandlingComponentTest {
 
-    public static final String DEFAULT_CONTEXT = "default";
+    private static final String DEFAULT_CONTEXT = "default";
 
     private final SimpleEventStore eventStore = new SimpleEventStore(
             new AsyncInMemoryEventStorageEngine(),
@@ -76,7 +76,12 @@ class SingleAndMultiModelCommandHandlingComponentTest {
     );
 
     private final EventStateApplier<Student> studentEventStateApplier = new AnnotationBasedEventStateApplier<>(Student.class);
-    private final EventStateApplier<Course> courseEventStateApplier = new AnnotationBasedEventStateApplier<>(Course.class);
+    private final EventStateApplier<Course> courseEventStateApplier = (model, em, ctx) -> {
+        if (em.getPayload() instanceof StudentEnrolledEvent e) {
+            model.handle(e);
+        }
+        return model;
+    };
 
     private final AsyncEventSourcingRepository<String, Student> studentRepository = new AsyncEventSourcingRepository<>(
             eventStore,
@@ -96,7 +101,7 @@ class SingleAndMultiModelCommandHandlingComponentTest {
     );
 
 
-    ModelRegistry registry = SimpleModelRegistry
+    private final ModelRegistry registry = SimpleModelRegistry
             .create("MyModelRegistry")
             .registerModel(
                     String.class,
@@ -125,16 +130,16 @@ class SingleAndMultiModelCommandHandlingComponentTest {
                             return MessageStream.empty().cast();
                         });
 
-        updateStudentName(component, "my-studentId-1", "name-1");
+        changeStudentName(component, "my-studentId-1", "name-1");
         verifyStudentName("my-studentId-1", "name-1");
-        updateStudentName(component, "my-studentId-1", "name-2");
+        changeStudentName(component, "my-studentId-1", "name-2");
         verifyStudentName("my-studentId-1", "name-2");
-        updateStudentName(component, "my-studentId-1", "name-3");
+        changeStudentName(component, "my-studentId-1", "name-3");
         verifyStudentName("my-studentId-1", "name-3");
-        updateStudentName(component, "my-studentId-1", "name-4");
+        changeStudentName(component, "my-studentId-1", "name-4");
         verifyStudentName("my-studentId-1", "name-4");
 
-        updateStudentName(component, "my-studentId-2", "name-5");
+        changeStudentName(component, "my-studentId-2", "name-5");
         verifyStudentName("my-studentId-1", "name-4");
         verifyStudentName("my-studentId-2", "name-5");
     }
@@ -152,7 +157,7 @@ class SingleAndMultiModelCommandHandlingComponentTest {
 
         var component = StatefulCommandHandlingComponent
                 .create("InjectedStateHandler", registry)
-                .subscribe(new AnnotationCommandHandlerAdapter<>(
+                .subscribe(new AnnotatedCommandHandlingComponent<>(
                         handler,
                         new MultiParameterResolverFactory(
                                 ClasspathParameterResolverFactory.forClass(this.getClass()),
@@ -164,11 +169,11 @@ class SingleAndMultiModelCommandHandlingComponentTest {
                         )));
 
 
-        updateStudentName(component, "my-studentId-1", "name-1");
+        changeStudentName(component, "my-studentId-1", "name-1");
         verifyStudentName("my-studentId-1", "name-1");
 
 
-        updateStudentName(component, "my-studentId-1", "name-2");
+        changeStudentName(component, "my-studentId-1", "name-2");
         verifyStudentName("my-studentId-1", "name-2");
 
         enrollStudentToCourse(component, "my-studentId-1", "my-courseId-1");
@@ -264,7 +269,7 @@ class SingleAndMultiModelCommandHandlingComponentTest {
         MultiModelAnnotatedCommandHandler handler = new MultiModelAnnotatedCommandHandler();
         var component = StatefulCommandHandlingComponent
                 .create("InjectedStateHandler", registry)
-                .subscribe(new AnnotationCommandHandlerAdapter<>(
+                .subscribe(new AnnotatedCommandHandlingComponent<>(
                         handler,
                         new MultiParameterResolverFactory(
                                 ClasspathParameterResolverFactory.forClass(this.getClass()),
@@ -304,7 +309,7 @@ class SingleAndMultiModelCommandHandlingComponentTest {
            .join();
     }
 
-    private void updateStudentName(StatefulCommandHandlingComponent component, String id, String name) {
+    private void changeStudentName(StatefulCommandHandlingComponent component, String id, String name) {
         sendCommand(component, new ChangeStudentNameCommand(id, name));
     }
 
@@ -480,7 +485,6 @@ class SingleAndMultiModelCommandHandlingComponentTest {
             return studentsEnrolled;
         }
 
-        @EventSourcingHandler
         public void handle(StudentEnrolledEvent event) {
             studentsEnrolled.add(event.studentId());
         }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.command;
+package org.axonframework.modelling;
 
 /**
  * Exception thrown by the {@link ModelRegistry} when trying to register a model for a model class that already has a
@@ -28,9 +28,9 @@ public class ModelAlreadyRegisteredException extends RuntimeException {
     /**
      * Initialize the exception with a message containing the given model class.
      *
-     * @param modelClass The model class for which no model was registered
+     * @param modelClass The model class for which no model was registered.
      */
     public ModelAlreadyRegisteredException(Class<?> modelClass) {
-        super("Model model class was already registered: %s".formatted(modelClass.getName()));
+        super("Cannot register model %s as it was already registered.".formatted(modelClass.getName()));
     }
 }

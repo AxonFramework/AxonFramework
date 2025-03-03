@@ -19,7 +19,10 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
 
+import java.util.Objects;
 import java.util.Set;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Interface describing a registry of {@link CommandHandler command handlers}.
@@ -31,7 +34,7 @@ import java.util.Set;
  * @author Sara Pellegrini
  * @author Steven van Beelen
  * @since 5.0.0
- * @param <S> the type of the registry itself, used for fluent interfacing
+ * @param <S> the type of the registry itself, used for fluent interfacing.
  */
 public interface CommandHandlerRegistry<S extends CommandHandlerRegistry<S>> {
 
@@ -48,6 +51,8 @@ public interface CommandHandlerRegistry<S extends CommandHandlerRegistry<S>> {
      */
     default S subscribe(@Nonnull Set<QualifiedName> names,
                         @Nonnull CommandHandler commandHandler) {
+        requireNonNull(names, "The set of names may not be null");
+        requireNonNull(commandHandler, "The commandHandler may not be null");
         names.forEach(name -> subscribe(name, commandHandler));
         //noinspection unchecked
         return (S) this;

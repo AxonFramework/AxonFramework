@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.command;
+package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Context;
@@ -34,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+@FunctionalInterface
 public interface ModelContainer {
 
     /**
@@ -42,14 +43,14 @@ public interface ModelContainer {
     Context.ResourceKey<ModelContainer> RESOURCE_KEY = Context.ResourceKey.withLabel("ModelContainer");
 
     /**
-     * Retrieves the model from the container of the given {@code modelType} and {@code identifier}.
+     * Retrieves a model of given {@code modelType} and {@code identifier} from the container.
      * The {@link CompletableFuture} will resolve to the model instance, or complete exceptionally if the
      * model could not be found.
      *
-     * @param modelType  The type of model to retrieve
-     * @param identifier The identifier of the model to retrieve
-     * @param <M>        The type of model to retrieve
-     * @return a {@link CompletableFuture} which resolves to the model instance
+     * @param modelType  The type of model to retrieve.
+     * @param identifier The identifier of the model to retrieve.
+     * @param <M>        The type of model to retrieve.
+     * @return a {@link CompletableFuture} which resolves to the model instance.
      */
     @Nonnull
     <M> CompletableFuture<M> getModel(@Nonnull Class<M> modelType, @Nonnull Object identifier);

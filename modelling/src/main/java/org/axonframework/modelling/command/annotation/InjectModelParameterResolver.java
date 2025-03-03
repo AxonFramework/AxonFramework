@@ -20,7 +20,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.ModelIdResolver;
-import org.axonframework.modelling.command.ModelRegistry;
+import org.axonframework.modelling.ModelRegistry;
 
 /**
  * {@link ParameterResolver} implementation that resolves a model from the {@link ModelRegistry} in the

@@ -19,8 +19,8 @@ package org.axonframework.modelling.command.annotation;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.ModelContainer;
-import org.axonframework.modelling.command.ModelRegistry;
+import org.axonframework.modelling.ModelContainer;
+import org.axonframework.modelling.ModelRegistry;
 
 /**
  * {@link ParameterResolver} implementation that resolves a {@link ModelContainer} from the {@link ModelRegistry} in the

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.command;
+package org.axonframework.modelling;
 
-import org.axonframework.modelling.utils.StubProcessingContext;
+import org.axonframework.messaging.StubProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CompletableFuture;
@@ -28,20 +28,26 @@ import static org.junit.jupiter.api.Assertions.*;
 class SimpleModelRegistryTest {
 
     @Test
-    void testRegisterModel() {
+    void registerModel() {
+        // Given
         ModelRegistry testSubject = SimpleModelRegistry.create("test");
         testSubject.registerModel(
                 String.class,
                 Integer.class,
                 (id, ctx) -> CompletableFuture.completedFuture(Integer.valueOf(id))
         );
+
+        // When
         ModelContainer container = testSubject.modelContainer(new StubProcessingContext());
+
+        // Then
         assertEquals(42, container.getModel(Integer.class, "42").join());
     }
 
 
     @Test
     void cachesAlreadyCreatedModel() {
+        // Given
         AtomicInteger creationCount = new AtomicInteger();
         ModelRegistry testSubject = SimpleModelRegistry.create("test");
         testSubject.registerModel(
@@ -52,30 +58,39 @@ class SimpleModelRegistryTest {
                     return CompletableFuture.completedFuture(Integer.valueOf(id));
                 }
         );
-        ModelContainer container = testSubject.modelContainer(new StubProcessingContext());
-        assertEquals(42, container.getModel(Integer.class, "42").join());
-        assertEquals(42, container.getModel(Integer.class, "42").join());
-        assertEquals(42, container.getModel(Integer.class, "42").join());
 
+        // When
+        ModelContainer container = testSubject.modelContainer(new StubProcessingContext());
+
+        // Then
+        assertEquals(42, container.getModel(Integer.class, "42").join());
+        assertEquals(42, container.getModel(Integer.class, "42").join());
+        assertEquals(42, container.getModel(Integer.class, "42").join());
         assertEquals(1, creationCount.get());
     }
 
     @Test
     void throwsExceptionOnMissingModelDefinition() {
+        // Given
         ModelRegistry testSubject = SimpleModelRegistry.create("test");
         ModelContainer container = testSubject.modelContainer(new StubProcessingContext());
+
+        // When & Then
         var exception = assertThrows(CompletionException.class, () -> container.getModel(Integer.class, "42").join());
         assertInstanceOf(MissingModelDefinitionException.class, exception.getCause());
     }
 
     @Test
     void canRegisterEachModelClassOnlyOnce() {
+        // Given
         ModelRegistry testSubject = SimpleModelRegistry.create("test");
         testSubject.registerModel(
                 String.class,
                 Integer.class,
                 (id, ctx) -> CompletableFuture.completedFuture(Integer.valueOf(id))
         );
+
+        // When & Then
         assertThrows(ModelAlreadyRegisteredException.class, () -> testSubject.registerModel(
                 String.class,
                 Integer.class,
