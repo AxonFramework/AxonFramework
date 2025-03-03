@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.command;
+package org.axonframework.modelling;
 
 /**
- * Exception thrown by the {@link ModelRegistry} when trying to register a model for a model class that already has a
- * model registered.
+ * Exception thrown by the {@link ModelRegistry} when no model is registered for a given model class. Can be resolved by
+ * registering a model for the given model class.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ModelAlreadyRegisteredException extends RuntimeException {
+public class MissingModelDefinitionException extends RuntimeException {
 
     /**
      * Initialize the exception with a message containing the given model class.
      *
-     * @param modelClass The model class for which no model was registered
+     * @param modelClass The model class for which no model was registered.
      */
-    public ModelAlreadyRegisteredException(Class<?> modelClass) {
-        super("Model model class was already registered: %s".formatted(modelClass.getName()));
+    public MissingModelDefinitionException(Class<?> modelClass) {
+        super("No Model was registered for the given model class: %s".formatted(modelClass.getName()));
     }
 }

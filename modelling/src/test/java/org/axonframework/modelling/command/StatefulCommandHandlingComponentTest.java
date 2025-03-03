@@ -20,8 +20,10 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.utils.StubProcessingContext;
+import org.axonframework.modelling.ModelRegistry;
+import org.axonframework.modelling.SimpleModelRegistry;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;
@@ -33,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class StatefulCommandHandlingComponentTest {
 
-    ModelRegistry modelRegistry = SimpleModelRegistry.create("test");
+    private final ModelRegistry modelRegistry = SimpleModelRegistry.create("test");
 
     @Test
     void invokesRegisteredHandlerWithModelContainer() {
@@ -54,7 +56,7 @@ class StatefulCommandHandlingComponentTest {
             return MessageStream.empty().cast();
         });
 
-        testSubject.handle(new GenericCommandMessage<>(new MessageType(new QualifiedName("test-command")),
+        testSubject.handle(new GenericCommandMessage<>(new MessageType("test-command"),
                                                        "my-payload"), processingContext)
                    .asCompletableFuture().join();
         assertTrue(invoked.get());
@@ -70,7 +72,7 @@ class StatefulCommandHandlingComponentTest {
             return MessageStream.empty().cast();
         });
 
-        testSubject.handle(new GenericCommandMessage<>(new MessageType(new QualifiedName("test-command")),
+        testSubject.handle(new GenericCommandMessage<>(new MessageType("test-command"),
                                                        "my-payload"), processingContext)
                    .asCompletableFuture().join();
         assertTrue(invoked.get());
@@ -97,7 +99,7 @@ class StatefulCommandHandlingComponentTest {
         });
 
         CompletionException exception = assertThrows(CompletionException.class, () -> {
-            testSubject.handle(new GenericCommandMessage<>(new MessageType(new QualifiedName("test-command")),
+            testSubject.handle(new GenericCommandMessage<>(new MessageType("test-command"),
                                                            "my-payload"), processingContext)
                        .asCompletableFuture()
                        .join();

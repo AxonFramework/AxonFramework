@@ -19,6 +19,7 @@ package org.axonframework.commandhandling.annotation;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.NoHandlerForCommandException;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageType;
@@ -33,24 +34,26 @@ import org.junit.jupiter.api.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test to validate the {@link AnnotationCommandHandlerAdapter}.
+ * Test to validate the {@link AnnotatedCommandHandlingComponent}.
  *
  * @author Allard Buijze
  */
-class AnnotationCommandHandlerAdapterTest {
+class AnnotatedCommandHandlingComponentTest {
 
     private static final MessageType TEST_TYPE = new MessageType("command");
 
     private CommandBus commandBus;
     private MyCommandHandler annotatedCommandHandler;
 
-    private AnnotationCommandHandlerAdapter<MyCommandHandler> testSubject;
+    private AnnotatedCommandHandlingComponent<MyCommandHandler> testSubject;
 
     @BeforeEach
     void setUp() {
@@ -58,7 +61,7 @@ class AnnotationCommandHandlerAdapterTest {
         annotatedCommandHandler = new MyCommandHandler();
         ParameterResolverFactory parameterResolverFactory = ClasspathParameterResolverFactory.forClass(getClass());
 
-        testSubject = new AnnotationCommandHandlerAdapter<>(annotatedCommandHandler, parameterResolverFactory);
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler, parameterResolverFactory);
 
         when(commandBus.subscribe(any(QualifiedName.class), any())).thenReturn(commandBus);
         when(commandBus.subscribe(anySet(), any())).thenReturn(commandBus);
@@ -131,6 +134,15 @@ class AnnotationCommandHandlerAdapterTest {
     }
 
     @Test
+    void handleNoHandlerForCommand() {
+        CommandMessage<Object> command = new GenericCommandMessage<>(TEST_TYPE, new LinkedList<>());
+
+        var exception = assertThrows(CompletionException.class,
+                                     () -> testSubject.handle(command, mock(ProcessingContext.class)).first().asCompletableFuture().join());
+        assertInstanceOf(NoHandlerForCommandException.class, exception.getCause());
+    }
+
+    @Test
     void messageHandlerInterceptorAnnotatedMethodsAreSupportedForCommandHandlingComponents() {
         CommandMessage<String> testCommandMessage = new GenericCommandMessage<>(new MessageType(String.class), "");
         List<CommandMessage<?>> withInterceptor = new ArrayList<>();
@@ -138,7 +150,7 @@ class AnnotationCommandHandlerAdapterTest {
         annotatedCommandHandler = new MyInterceptingCommandHandler(withoutInterceptor,
                                                                    withInterceptor,
                                                                    new ArrayList<>());
-        testSubject = new AnnotationCommandHandlerAdapter<>(annotatedCommandHandler);
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler);
 
         Object result = testSubject.handle(testCommandMessage, mock(ProcessingContext.class))
                                    .first()
@@ -163,7 +175,7 @@ class AnnotationCommandHandlerAdapterTest {
         annotatedCommandHandler = new MyInterceptingCommandHandler(new ArrayList<>(),
                                                                    new ArrayList<>(),
                                                                    interceptedExceptions);
-        testSubject = new AnnotationCommandHandlerAdapter<>(annotatedCommandHandler);
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler);
 
         try {
             testSubject.handle(testCommandMessage, mock(ProcessingContext.class));

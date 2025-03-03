@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.command;
+package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -45,7 +45,7 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
     /**
      * Constructs a new simple {@link ModelRegistry} instance.
      */
-    private SimpleModelRegistry(String name) {
+    private SimpleModelRegistry(@Nonnull String name) {
         // No direct instantiation
         this.name = name;
     }
@@ -61,9 +61,9 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
 
     @Override
     public <I, M> SimpleModelRegistry registerModel(
-            Class<I> idClass,
-            Class<M> modelClass,
-            ModelLoader<I, M> loadFunction) {
+            @Nonnull Class<I> idClass,
+            @Nonnull Class<M> modelClass,
+            @Nonnull ModelSupplier<I, M> loadFunction) {
         if (!getModelDefinitionsFor(modelClass).isEmpty()) {
             throw new ModelAlreadyRegisteredException(modelClass);
         }
@@ -72,8 +72,8 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
     }
 
     @Override
-    public ModelContainer modelContainer(ProcessingContext context) {
-        return context.computeResourceIfAbsent(ModelContainer.RESOURCE_KEY, () -> new SimplemodelContainer(context));
+    public ModelContainer modelContainer(@Nonnull ProcessingContext context) {
+        return context.computeResourceIfAbsent(ModelContainer.RESOURCE_KEY, () -> new SimpleModelContainer(context));
     }
 
     @Override
@@ -89,7 +89,7 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
     private record ModelDefinition<I, M>(
             Class<I> idClass,
             Class<M> modelClass,
-            ModelLoader<I, M> loader
+            ModelSupplier<I, M> loader
     ) {
 
     }
@@ -98,7 +98,7 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
      * A simple implementation of the {@link ModelContainer} interface. This implementation is thread-safe and caches
      * loaded models for the duration of the context.
      */
-    private class SimplemodelContainer implements ModelContainer {
+    private class SimpleModelContainer implements ModelContainer {
 
         private final ProcessingContext context;
         private final List<LoadedModelDefinition<?, ?>> loadedModels = new CopyOnWriteArrayList<>();
@@ -106,9 +106,9 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
         /**
          * Constructs a new simple {@link ModelContainer} instance.
          *
-         * @param context The context this container is bound to
+         * @param context The context this container is bound to.
          */
-        private SimplemodelContainer(ProcessingContext context) {
+        private SimpleModelContainer(ProcessingContext context) {
             this.context = context;
         }
 
@@ -131,10 +131,10 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
          * Loads a model using the given model definition and identifier. The loaded model is then cached in this
          * container.
          *
-         * @param definition The model definition to use for loading the model
-         * @param id         The identifier of the model to load
-         * @param <M>        The type of the model to load
-         * @return A {@link CompletableFuture} which resolves to the loaded model
+         * @param definition The model definition to use for loading the model.
+         * @param id         The identifier of the model to load.
+         * @param <M>        The type of the model to load.
+         * @return A {@link CompletableFuture} which resolves to the loaded model.
          */
         private <M> CompletableFuture<M> loadModel(ModelDefinition<Object, M> definition, Object id) {
             return definition.loader()
@@ -152,11 +152,11 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
         /**
          * Retrieves a model already loaded for this container. If the model is not found, null is returned.
          *
-         * @param modelType  The type of the model to retrieve
-         * @param identifier The identifier of the model to retrieve
-         * @param <I>       The type of the identifier
-         * @param <M>        The type of the model
-         * @return The model if it is already loaded, otherwise null
+         * @param modelType  The type of the model to retrieve.
+         * @param identifier The identifier of the model to retrieve.
+         * @param <I>        The type of the identifier.
+         * @param <M>        The type of the model.
+         * @return The model if it is already loaded, otherwise null.
          */
         private <I, M> M alreadyLoadedModelOf(@Nonnull Class<M> modelType, I identifier) {
             //noinspection unchecked // The cast is checked in the stream
@@ -186,9 +186,9 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
     /**
      * Get all matching definitions for the given model type.
      *
-     * @param modelType The model type to get definitions for
-     * @param <M>       The type of the model
-     * @return A list of definitions matching the given model type and name
+     * @param modelType The model type to get definitions for.
+     * @param <M>       The type of the model.
+     * @return A list of definitions matching the given model type and name.
      */
     @SuppressWarnings("unchecked") // The cast is checked in the stream
     private <I, M> List<ModelDefinition<I, M>> getModelDefinitionsFor(

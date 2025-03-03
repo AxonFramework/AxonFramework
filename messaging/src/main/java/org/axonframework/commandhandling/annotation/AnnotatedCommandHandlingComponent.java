@@ -53,7 +53,7 @@ import static java.util.Objects.requireNonNull;
  * @author Allard Buijze
  * @since 0.5
  */
-public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingComponent {
+public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComponent {
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
@@ -66,7 +66,7 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
      *
      * @param annotatedCommandHandler The object containing the {@link CommandHandler} annotated methods.
      */
-    public AnnotationCommandHandlerAdapter(@Nonnull T annotatedCommandHandler) {
+    public AnnotatedCommandHandlingComponent(@Nonnull T annotatedCommandHandler) {
         this(annotatedCommandHandler, ClasspathParameterResolverFactory.forClass(annotatedCommandHandler.getClass()));
     }
 
@@ -77,8 +77,8 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
      * @param annotatedCommandHandler  The object containing the {@link CommandHandler} annotated methods.
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      */
-    public AnnotationCommandHandlerAdapter(@Nonnull T annotatedCommandHandler,
-                                           @Nonnull ParameterResolverFactory parameterResolverFactory) {
+    public AnnotatedCommandHandlingComponent(@Nonnull T annotatedCommandHandler,
+                                             @Nonnull ParameterResolverFactory parameterResolverFactory) {
         this(annotatedCommandHandler,
              parameterResolverFactory,
              ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()),
@@ -97,10 +97,10 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
      *                                 {@link org.axonframework.commandhandling.CommandMessage CommandMessages}.
      */
     @SuppressWarnings("unchecked")
-    public AnnotationCommandHandlerAdapter(@Nonnull T annotatedCommandHandler,
-                                           @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                           @Nonnull HandlerDefinition handlerDefinition,
-                                           @Nonnull MessageTypeResolver messageTypeResolver) {
+    public AnnotatedCommandHandlingComponent(@Nonnull T annotatedCommandHandler,
+                                             @Nonnull ParameterResolverFactory parameterResolverFactory,
+                                             @Nonnull HandlerDefinition handlerDefinition,
+                                             @Nonnull MessageTypeResolver messageTypeResolver) {
         this.handlingComponent = SimpleCommandHandlingComponent.create(
                 "AnnotationCommandHandlerAdapter[%s]".formatted(annotatedCommandHandler.getClass().getName())
         );

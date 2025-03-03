@@ -34,8 +34,8 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.ModelRegistry;
-import org.axonframework.modelling.command.SimpleModelRegistry;
+import org.axonframework.modelling.ModelRegistry;
+import org.axonframework.modelling.SimpleModelRegistry;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
@@ -43,7 +43,6 @@ import org.junit.jupiter.api.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SimpleStatefulCommandHandlingComponentTest {
 
-    public static final String DEFAULT_CONTEXT = "default";
+    private static final String DEFAULT_CONTEXT = "default";
 
     private final SimpleEventStore eventStore = new SimpleEventStore(
             new AsyncInMemoryEventStorageEngine(),
@@ -61,7 +60,12 @@ class SimpleStatefulCommandHandlingComponentTest {
     );
 
     private final EventStateApplier<Student> studentEventStateApplier = new AnnotationBasedEventStateApplier<>(Student.class);
-    private final EventStateApplier<Course> courseEventStateApplier = new AnnotationBasedEventStateApplier<>(Course.class);
+    private final EventStateApplier<Course> courseEventStateApplier = (model, em, ctx) -> {
+        if (em.getPayload() instanceof StudentEnrolledEvent e) {
+            model.handle(e);
+        }
+        return model;
+    };
 
     private final AsyncEventSourcingRepository<String, Student> studentRepository = new AsyncEventSourcingRepository<>(
             eventStore,
@@ -81,7 +85,7 @@ class SimpleStatefulCommandHandlingComponentTest {
     );
 
 
-    ModelRegistry registry = SimpleModelRegistry
+    private final ModelRegistry registry = SimpleModelRegistry
             .create("MyModelRegistry")
             .registerModel(
                     String.class,
@@ -110,16 +114,16 @@ class SimpleStatefulCommandHandlingComponentTest {
                             return MessageStream.empty().cast();
                         });
 
-        updateStudentName(component, "my-studentId-1", "name-1");
+        changeStudentName(component, "my-studentId-1", "name-1");
         verifyStudentName("my-studentId-1", "name-1");
-        updateStudentName(component, "my-studentId-1", "name-2");
+        changeStudentName(component, "my-studentId-1", "name-2");
         verifyStudentName("my-studentId-1", "name-2");
-        updateStudentName(component, "my-studentId-1", "name-3");
+        changeStudentName(component, "my-studentId-1", "name-3");
         verifyStudentName("my-studentId-1", "name-3");
-        updateStudentName(component, "my-studentId-1", "name-4");
+        changeStudentName(component, "my-studentId-1", "name-4");
         verifyStudentName("my-studentId-1", "name-4");
 
-        updateStudentName(component, "my-studentId-2", "name-5");
+        changeStudentName(component, "my-studentId-2", "name-5");
         verifyStudentName("my-studentId-1", "name-4");
         verifyStudentName("my-studentId-2", "name-5");
     }
@@ -212,7 +216,7 @@ class SimpleStatefulCommandHandlingComponentTest {
            .join();
     }
 
-    private void updateStudentName(StatefulCommandHandlingComponent component, String id, String name) {
+    private void changeStudentName(StatefulCommandHandlingComponent component, String id, String name) {
         sendCommand(component, new ChangeStudentNameCommand(id, name));
     }
 
@@ -315,7 +319,6 @@ class SimpleStatefulCommandHandlingComponentTest {
             return studentsEnrolled;
         }
 
-        @EventSourcingHandler
         public void handle(StudentEnrolledEvent event) {
             studentsEnrolled.add(event.studentId());
         }

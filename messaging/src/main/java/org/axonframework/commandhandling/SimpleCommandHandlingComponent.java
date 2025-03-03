@@ -26,6 +26,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -54,31 +55,28 @@ public class SimpleCommandHandlingComponent implements
      * Instantiates a simple {@link CommandHandlingComponent} that is able to handle commands and delegate them to
      * subcomponents.
      *
-     * @param name the name of the component, used for {@link DescribableComponent describing} the component
+     * @param name The name of the component, used for {@link DescribableComponent describing} the component.
      */
-    public static SimpleCommandHandlingComponent create(String name) {
+    public static SimpleCommandHandlingComponent create(@Nonnull String name) {
         return new SimpleCommandHandlingComponent(name);
     }
 
-    /**
-     * Instantiates a simple {@link CommandHandlingComponent} that is able to handle commands and delegate them to
-     * subcomponents.
-     *
-     * @param name the name of the component, used for {@link DescribableComponent describing} the component
-     */
-    private SimpleCommandHandlingComponent(String name) {
+    private SimpleCommandHandlingComponent(@Nonnull String name) {
         this.name = name;
     }
 
     @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull QualifiedName name,
                                                     @Nonnull CommandHandler commandHandler) {
+        Objects.requireNonNull(name, "The name of the command handler may not be null");
+        Objects.requireNonNull(commandHandler, "The command handler may not be null");
         commandHandlers.put(name, commandHandler);
         return this;
     }
 
     @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull CommandHandlingComponent commandHandlingComponent) {
+        Objects.requireNonNull(commandHandlingComponent, "The command handling component may not be null");
         subComponents.add(commandHandlingComponent);
         return this;
     }
@@ -108,7 +106,7 @@ public class SimpleCommandHandlingComponent implements
                 "No handler was subscribed for command with qualified name[%s] on component [%s]. Registered handlers: [%s]".formatted(
                         qualifiedName.fullName(),
                         this.getClass().getName(),
-                        commandHandlers.keySet()
+                        supportedCommands()
                 ))
         );
     }

@@ -26,6 +26,8 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.ModelContainer;
+import org.axonframework.modelling.ModelRegistry;
 
 import java.util.Set;
 import javax.annotation.Nonnull;
@@ -55,7 +57,7 @@ public class StatefulCommandHandlingComponent implements
      * @param name          The name of the component, used for describing it to the {@link DescribableComponent}
      * @param modelRegistry The model registry to use for resolving the {@link ModelContainer}
      */
-    private StatefulCommandHandlingComponent(String name, ModelRegistry modelRegistry) {
+    private StatefulCommandHandlingComponent(@Nonnull String name, @Nonnull ModelRegistry modelRegistry) {
         this.name = name;
         this.handlingComponent = SimpleCommandHandlingComponent.create(name);
         this.modelRegistry = modelRegistry;
