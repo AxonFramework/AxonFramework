@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,16 @@
  * limitations under the License.
  */
 
-package org.axonframework.config;
+package org.axonframework.configuration;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import javax.annotation.Nonnull;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.lifecycle.Lifecycle;
@@ -26,15 +35,6 @@ import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
 import org.mockito.junit.jupiter.*;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-import javax.annotation.Nonnull;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 /**
  * Validates the internals of the {@link LifecycleHandlerInspector}.
  *
@@ -43,10 +43,10 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class LifecycleHandlerInspectorTest {
 
-    public static final int TEST_PHASE = 1;
+    private static final int TEST_PHASE = 1;
 
     @Test
-    void nothingIsRegisteredForNullComponent(@Mock Configuration configuration) {
+    void nothingIsRegisteredForNullComponent(@Mock LifecycleSupportingConfiguration configuration) {
         LifecycleHandlerInspector.registerLifecycleHandlers(configuration, null);
 
         verifyNoInteractions(configuration);
@@ -54,7 +54,8 @@ class LifecycleHandlerInspectorTest {
 
     @Test
     void axonConfigurationExceptionIsThrownForLifecycleHandlerMethodWithParameters(
-            @Mock Configuration configuration) {
+            @Mock LifecycleSupportingConfiguration configuration
+    ) {
         assertThrows(
                 AxonConfigurationException.class,
                 () -> LifecycleHandlerInspector.registerLifecycleHandlers(
@@ -64,8 +65,9 @@ class LifecycleHandlerInspectorTest {
     }
 
     @Test
-    void lifecycleHandlerWithReturnTypeCompletableFutureIsRegistered(@Mock Configuration config)
-            throws ExecutionException, InterruptedException {
+    void lifecycleHandlerWithReturnTypeCompletableFutureIsRegistered(
+            @Mock LifecycleSupportingConfiguration config
+    ) throws ExecutionException, InterruptedException {
         String asyncShutdownResult = "some result";
         ComponentWithLifecycleHandlers testComponent = new ComponentWithLifecycleHandlers(asyncShutdownResult);
         ArgumentCaptor<LifecycleHandler> lifecycleHandlerCaptor = ArgumentCaptor.forClass(LifecycleHandler.class);
@@ -79,7 +81,7 @@ class LifecycleHandlerInspectorTest {
     }
 
     @Test
-    void lifecycleAwareComponentsRegisterHandlers(@Mock Configuration config) {
+    void lifecycleAwareComponentsRegisterHandlers(@Mock LifecycleSupportingConfiguration config) {
         LifecycleHandlerInspector.registerLifecycleHandlers(config, new ComponentWithLifecycle(
                 r -> {
                     r.onStart(42, () -> {
@@ -93,7 +95,7 @@ class LifecycleHandlerInspectorTest {
     }
 
     @Test
-    void lifecycleHandlerWithoutReturnTypeCompletableFutureIsRegistered(@Mock Configuration config) {
+    void lifecycleHandlerWithoutReturnTypeCompletableFutureIsRegistered(@Mock LifecycleSupportingConfiguration config) {
         AtomicBoolean started = new AtomicBoolean(false);
         ComponentWithLifecycleHandlers testComponent = new ComponentWithLifecycleHandlers(started);
         ArgumentCaptor<LifecycleHandler> lifecycleHandlerCaptor = ArgumentCaptor.forClass(LifecycleHandler.class);
@@ -107,8 +109,9 @@ class LifecycleHandlerInspectorTest {
     }
 
     @Test
-    void lifecycleHandlerThrownExceptionIsWrappedInLifecycleHandlerInvocationException(@Mock Configuration config)
-            throws InterruptedException {
+    void lifecycleHandlerThrownExceptionIsWrappedInLifecycleHandlerInvocationException(
+            @Mock LifecycleSupportingConfiguration config
+    ) throws InterruptedException {
         ComponentWithFailingLifecycleHandler testComponent = new ComponentWithFailingLifecycleHandler();
         ArgumentCaptor<LifecycleHandler> lifecycleHandlerCaptor = ArgumentCaptor.forClass(LifecycleHandler.class);
 
@@ -136,13 +139,7 @@ class LifecycleHandlerInspectorTest {
         }
     }
 
-    private static class ComponentWithLifecycle implements Lifecycle {
-
-        private final Consumer<LifecycleRegistry> registration;
-
-        public ComponentWithLifecycle(Consumer<LifecycleRegistry> registration) {
-            this.registration = registration;
-        }
+    private record ComponentWithLifecycle(Consumer<LifecycleRegistry> registration) implements Lifecycle {
 
         @Override
         public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
@@ -165,6 +162,7 @@ class LifecycleHandlerInspectorTest {
             this.asyncShutdownResult = asyncShutdownResult;
         }
 
+        @SuppressWarnings("unused")
         @StartHandler(phase = TEST_PHASE)
         public void start() {
             started.set(true);
@@ -179,6 +177,7 @@ class LifecycleHandlerInspectorTest {
 
     private static class ComponentWithFailingLifecycleHandler {
 
+        @SuppressWarnings("unused")
         @ShutdownHandler(phase = TEST_PHASE)
         public void shutdown() {
             throw new RuntimeException("some test exception");
