@@ -16,13 +16,14 @@
 
 package org.axonframework.configuration;
 
-import org.junit.jupiter.api.*;
-
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+
+import org.axonframework.configuration.Component.Identifier;
+import org.junit.jupiter.api.*;
 
 /**
  * Test class validating the {@link Components}.
@@ -31,7 +32,7 @@ import static org.mockito.Mockito.*;
  */
 class ComponentsTest {
 
-    private static final Component.Identifier<String> IDENTIFIER = new Component.Identifier<>(String.class, "id");
+    private static final Identifier<String> IDENTIFIER = new Identifier<>(String.class, "id");
 
     private LifecycleSupportingConfiguration config;
 
@@ -156,5 +157,14 @@ class ComponentsTest {
 
         assertTrue(invoked.get());
         assertEquals(testComponent.get(), testSubject.get(IDENTIFIER));
+    }
+
+    @Test
+    void containsReturnsAsExpected() {
+        Identifier<Integer> unknownIdentifier = new Identifier<>(Integer.class, "some-unknown-id");
+        testSubject.put(IDENTIFIER, new Component<>(IDENTIFIER, config, c -> "some-state"));
+
+        assertTrue(testSubject.contains(IDENTIFIER));
+        assertFalse(testSubject.contains(unknownIdentifier));
     }
 }

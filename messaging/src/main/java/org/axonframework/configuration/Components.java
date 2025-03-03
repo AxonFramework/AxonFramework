@@ -16,13 +16,13 @@
 
 package org.axonframework.configuration;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.Component.Identifier;
-
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+
+import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.Component.Identifier;
 
 /**
  * Wrapper around a {@link Map} of {@link Component Components} stored per {@link Class} type.
@@ -69,5 +69,16 @@ public class Components {
     ) {
         //noinspection unchecked
         return (Component<T>) components.computeIfAbsent(type, mappingFunction);
+    }
+
+    /**
+     * Check whether there is a {@link Component} present for the given {@code identifier}.
+     *
+     * @param identifier The identifier for which to check if there is a {@link Component} present.
+     * @return {@code true} if this collection contains a {@link Component} identified by the given {@code identifier},
+     * {@code false} otherwise.
+     */
+    public boolean contains(Identifier<?> identifier) {
+        return components.containsKey(identifier);
     }
 }

@@ -16,13 +16,13 @@
 
 package org.axonframework.configuration;
 
-import jakarta.annotation.Nonnull;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
+
+import jakarta.annotation.Nonnull;
 
 /**
  * The root {@link NewConfigurer configurer} of any Axon Framework application.
@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface RootConfigurer extends NewConfigurer<RootConfigurer> {
+public interface RootConfigurer extends ListableConfigurer<RootConfigurer> {
 
     /**
      * Returns a {@code RootConfigurer} instance to start configuring {@link Component components},
