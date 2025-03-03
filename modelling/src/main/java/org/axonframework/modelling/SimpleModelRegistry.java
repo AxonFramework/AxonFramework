@@ -47,7 +47,7 @@ public class SimpleModelRegistry implements ModelRegistry, DescribableComponent 
     /**
      * Constructs a new simple {@link ModelRegistry} instance.
      *
-     * @param name The name of the registry, used for describing it to the {@link DescribableComponent}
+     * @param name The name of the component, used for {@link DescribableComponent describing} the component.
      */
     public static SimpleModelRegistry create(@Nonnull String name) {
         BuilderUtils.assertNonBlank(name, "Name may not be blank");

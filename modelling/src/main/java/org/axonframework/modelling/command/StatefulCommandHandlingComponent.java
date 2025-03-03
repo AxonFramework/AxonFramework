@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.Set;
 import javax.annotation.Nonnull;
 
+import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 
 /**
@@ -57,7 +58,7 @@ public class StatefulCommandHandlingComponent implements
     /**
      * Creates a new stateful command handling component with the given {@code name}.
      *
-     * @param name          The name of the component, used for describing it to the {@link DescribableComponent}.
+     * @param name          The name of the component, used for {@link DescribableComponent describing} the component.
      * @param modelRegistry The model registry to use for resolving the {@link ModelContainer}.
      * @return A stateful {@link CommandHandlingComponent} component with the given {@code name} and
      * {@code modelRegistry}.
@@ -69,7 +70,7 @@ public class StatefulCommandHandlingComponent implements
     private StatefulCommandHandlingComponent(@Nonnull String name, @Nonnull ModelRegistry modelRegistry) {
         assertNonEmpty(name, "The name may not be null or empty");
         this.name = name;
-        this.modelRegistry = Objects.requireNonNull(modelRegistry, "ModelRegistry may not be null");
+        this.modelRegistry = requireNonNull(modelRegistry, "ModelRegistry may not be null");
         this.handlingComponent = SimpleCommandHandlingComponent.create(name);
     }
 
@@ -78,8 +79,8 @@ public class StatefulCommandHandlingComponent implements
             @Nonnull QualifiedName name,
             @Nonnull StatefulCommandHandler commandHandler
     ) {
-        Objects.requireNonNull(name, "The name of the command handler may not be null");
-        Objects.requireNonNull(commandHandler, "The command handler may not be null");
+        requireNonNull(name, "The name of the command handler may not be null");
+        requireNonNull(commandHandler, "The command handler may not be null");
 
         handlingComponent.subscribe(name, ((command, context) -> {
             try {

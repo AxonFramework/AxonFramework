@@ -28,7 +28,7 @@ public class ModelAlreadyRegisteredException extends RuntimeException {
     /**
      * Initialize the exception with a message containing the given model class.
      *
-     * @param modelClass The model class for which no model was registered
+     * @param modelClass The model class for which no model was registered.
      */
     public ModelAlreadyRegisteredException(Class<?> modelClass) {
         super("Cannot register model %s as it was already registered.".formatted(modelClass.getName()));

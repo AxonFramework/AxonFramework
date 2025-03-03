@@ -19,6 +19,7 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -48,6 +49,8 @@ public interface CommandHandlerRegistry<S extends CommandHandlerRegistry<S>> {
      */
     default S subscribe(@Nonnull Set<QualifiedName> names,
                         @Nonnull CommandHandler commandHandler) {
+        Objects.requireNonNull(names, "The set of names may not be null");
+        Objects.requireNonNull(commandHandler, "The commandHandler may not be null");
         names.forEach(name -> subscribe(name, commandHandler));
         //noinspection unchecked
         return (S) this;

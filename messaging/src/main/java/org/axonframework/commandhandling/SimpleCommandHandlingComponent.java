@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 
 /**
@@ -72,15 +73,15 @@ public class SimpleCommandHandlingComponent implements
     @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull QualifiedName name,
                                                     @Nonnull CommandHandler commandHandler) {
-        Objects.requireNonNull(name, "The name of the command handler may not be null");
-        Objects.requireNonNull(commandHandler, "The command handler may not be null");
+        requireNonNull(name, "The name of the command handler may not be null");
+        requireNonNull(commandHandler, "The command handler may not be null");
         commandHandlers.put(name, commandHandler);
         return this;
     }
 
     @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull CommandHandlingComponent commandHandlingComponent) {
-        Objects.requireNonNull(commandHandlingComponent, "The command handling component may not be null");
+        requireNonNull(commandHandlingComponent, "The command handling component may not be null");
         subComponents.add(commandHandlingComponent);
         return this;
     }
