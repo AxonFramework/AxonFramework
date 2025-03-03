@@ -26,14 +26,15 @@ package org.axonframework.modelling.command.annotation;
  * @see InjectModel
  * @since 5.0.0
  */
-public class IdentifierFieldNotFoundException extends RuntimeException {
+public class TargetModelIdentifierMemberMismatchException extends RuntimeException {
 
     /**
      * Initialize the exception with the given {@code fieldName} that was not found in the payload of type
      * {@code payloadClass}.
      */
-    public IdentifierFieldNotFoundException(String fieldName, Class<?> payloadClass) {
-        super(String.format("Could not find field [%s] or its accessor in payload of type [%s].",
+    public TargetModelIdentifierMemberMismatchException(String fieldName, Class<?> payloadClass) {
+        super(String.format(
+                "Could not find field [%s] or its accessor in payload of type [%s] as indicated on the @InjectModel annotation.",
                             fieldName,
                             payloadClass.getName()));
     }

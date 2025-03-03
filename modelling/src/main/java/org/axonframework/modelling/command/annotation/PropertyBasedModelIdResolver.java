@@ -18,9 +18,11 @@ package org.axonframework.modelling.command.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.property.Property;
+import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.ModelIdResolver;
+import org.axonframework.modelling.command.ModelIdentifierResolver;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -32,7 +34,7 @@ import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
 
 /**
- * Implementation of a {@link ModelIdResolver} that inspects the payload of a {@link Message} for an identifier. The
+ * Implementation of a {@link ModelIdentifierResolver} that inspects the payload of a {@link Message} for an identifier. The
  * identifier is resolved by looking for a field or method with the given {@code property} name. Methods will
  * automatically be resolved by looking for a method with the name {@code get<Property>} or {@code <Property>}.
  * <p>
@@ -41,9 +43,9 @@ import javax.annotation.Nullable;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class PropertyBasedModelIdResolver implements ModelIdResolver<Object> {
+public class PropertyBasedModelIdResolver implements ModelIdentifierResolver<Object> {
 
-    private final Map<Class<?>, Member> memberCache = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Property<Object>> memberCache = new ConcurrentHashMap<>();
 
     private final String property;
 
@@ -60,8 +62,7 @@ public class PropertyBasedModelIdResolver implements ModelIdResolver<Object> {
     @Override
     public Object resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
         Object payload = message.getPayload();
-        Member member = getMember(payload.getClass());
-        return ReflectionUtils.getMemberValue(member, payload);
+        return getMember(payload.getClass()).getValue(payload);
     }
 
     /**
@@ -70,36 +71,9 @@ public class PropertyBasedModelIdResolver implements ModelIdResolver<Object> {
      * @param payloadClass The class of the payload
      * @return The member that represents the identifier
      */
-    private Member getMember(Class<?> payloadClass) {
-        return memberCache.computeIfAbsent(payloadClass, this::findMember);
-    }
-
-    /**
-     * Finds the member that represents the identifier of the given {@code payloadClass}.
-     *
-     * @param payloadClass The class of the payload
-     * @return The member that represents the identifier
-     */
-    private Member findMember(Class<?> payloadClass) {
-
-        Optional<Field> foundField = StreamSupport.stream(ReflectionUtils.fieldsOf(payloadClass).spliterator(), false)
-                                                  .filter(f -> f.getName().equals(property))
-                                                  .findFirst();
-        if (foundField.isPresent()) {
-            return foundField.get();
-        }
-
-        // No field found, try to find a method
-        String getterName = "get" + Character.toUpperCase(property.charAt(0)) + property.substring(1);
-        Optional<Method> foundMethod = StreamSupport.stream(ReflectionUtils.methodsOf(payloadClass).spliterator(),
-                                                            false)
-                                                    .filter(m -> m.getName().equals(getterName) || m.getName()
-                                                                                                    .equals(property))
-                                                    .findFirst();
-        if (foundMethod.isPresent()) {
-            return foundMethod.get();
-        }
-
-        throw new IdentifierFieldNotFoundException(property, payloadClass);
+    private Property<Object> getMember(Class<?> payloadClass) {
+        return memberCache.computeIfAbsent(payloadClass, (n) ->
+                PropertyAccessStrategy.getProperty(payloadClass, property)
+        );
     }
 }

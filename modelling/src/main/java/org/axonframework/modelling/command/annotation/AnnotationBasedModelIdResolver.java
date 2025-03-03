@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.ModelIdResolver;
+import org.axonframework.modelling.command.ModelIdentifierResolver;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
@@ -33,11 +33,11 @@ import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
 
 /**
- * Implementation of a {@link ModelIdResolver} that inspects the payload of a {@link Message} for an identifier. The
+ * Implementation of a {@link ModelIdentifierResolver} that inspects the payload of a {@link Message} for an identifier. The
  * identifier is resolved by looking for a field or method annotated with {@link TargetModelIdentifier}.
  * <p>
  * If multiple identifiers are found, an {@link MultipleIdentifiersInPayloadException} is thrown. It is advised to
- * implement your own {@link ModelIdResolver} if a compound identifier is expected, or to make a getter method that
+ * implement your own {@link ModelIdentifierResolver} if a compound identifier is expected, or to make a getter method that
  * returns the compound identifier.
  * <p>
  * If no identifier is found, {@code null} is returned. This indicates that either no field has been found, or that the
@@ -47,10 +47,10 @@ import javax.annotation.Nullable;
  *
  * @author Mitchell Herrijgers
  * @see TargetModelIdentifier
- * @see ModelIdResolver
+ * @see ModelIdentifierResolver
  * @since 5.0.0
  */
-public class AnnotationBasedModelIdResolver implements ModelIdResolver<Object> {
+public class AnnotationBasedModelIdResolver implements ModelIdentifierResolver<Object> {
 
     private static final Class<TargetModelIdentifier> IDENTIFIER_ANNOTATION = TargetModelIdentifier.class;
     private final Map<Class<?>, List<Member>> cache = new ConcurrentHashMap<>();

@@ -18,9 +18,8 @@ package org.axonframework.modelling.command.annotation;
 
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.modelling.ModelContainer;
-import org.axonframework.modelling.command.ModelIdResolver;
 import org.axonframework.modelling.ModelRegistry;
+import org.axonframework.modelling.command.ModelIdentifierResolver;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -33,7 +32,7 @@ import static org.axonframework.common.ReflectionUtils.ensureAccessible;
  * <p>
  * If the {@link InjectModel} annotation has a {@link InjectModel#idProperty()}, a {@link PropertyBasedModelIdResolver}
  * will be constructed to resolve the model identifier. If the {@link InjectModel} annotation has a
- * {@link InjectModel#idResolver()}, an instance of the given {@link ModelIdResolver} will be constructed to resolve the
+ * {@link InjectModel#idResolver()}, an instance of the given {@link ModelIdentifierResolver} will be constructed to resolve the
  * model identifier. If it has both, the {@link InjectModel#idResolver()} will be used. If it has neither, the
  * {@link AnnotationBasedModelIdResolver} will be used.
  *
@@ -48,7 +47,7 @@ public class InjectModelParameterResolverFactory implements ParameterResolverFac
     /**
      * Initialize the factory with the given {@code registry} to resolve models from.
      *
-     * @param registry The registry to resolve models from
+     * @param registry The registry to resolve models from.
      */
     public InjectModelParameterResolverFactory(ModelRegistry registry) {
         this.registry = registry;
@@ -57,22 +56,13 @@ public class InjectModelParameterResolverFactory implements ParameterResolverFac
     @Override
     public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
         Parameter parameter = parameters[parameterIndex];
-        Class<?> type = parameter.getType();
-        if (type.isAssignableFrom(ModelContainer.class)) {
-            return new ModelContainerParameterResolver(registry);
-        }
         if (!parameter.isAnnotationPresent(InjectModel.class)) {
             return null;
         }
 
         InjectModel annotation = parameter.getAnnotation(InjectModel.class);
-        ModelIdResolver<?> modelIdResolver;
-        if (annotation.idProperty() != null && !annotation.idProperty().isEmpty()) {
-            modelIdResolver = new PropertyBasedModelIdResolver(annotation.idProperty());
-        } else {
-
-            modelIdResolver = constructCustomModelIdResolver(annotation);
-        }
+        ModelIdentifierResolver<?> modelIdResolver = getModelIdentifierResolver(annotation);
+        Class<?> type = parameter.getType();
         return new InjectModelParameterResolver(
                 registry,
                 type,
@@ -80,7 +70,14 @@ public class InjectModelParameterResolverFactory implements ParameterResolverFac
         );
     }
 
-    private static ModelIdResolver<?> constructCustomModelIdResolver(InjectModel annotation) {
+    private static ModelIdentifierResolver<?> getModelIdentifierResolver(InjectModel annotation) {
+        if (annotation.idProperty() != null && !annotation.idProperty().isEmpty()) {
+           return new PropertyBasedModelIdResolver(annotation.idProperty());
+        } 
+        return  constructCustomModelIdResolver(annotation);
+    }
+
+    private static ModelIdentifierResolver<?> constructCustomModelIdResolver(InjectModel annotation) {
         try {
             var constructor = annotation.idResolver().getDeclaredConstructor();
             ensureAccessible(constructor);

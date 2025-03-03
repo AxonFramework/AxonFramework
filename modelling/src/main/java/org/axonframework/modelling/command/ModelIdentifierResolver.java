@@ -19,27 +19,28 @@ package org.axonframework.modelling.command;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.ModelRegistry;
 
 import javax.annotation.Nullable;
 
 /**
  * Resolver for the identifier of a model. The identifier is used to identify the model in the {@link ModelRegistry}.
  *
- * @param <ID> The type of the identifier
+ * @param <I> The type of the identifier.
  * @author Mitchell Herrijgers
  * @see ModelRegistry
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface ModelIdResolver<ID> {
+public interface ModelIdentifierResolver<I> {
 
     /**
      * Resolve the identifier of the model from the given {@code message} and {@code context}.
      *
-     * @param message The message to resolve the identifier from
-     * @param context The context in which the message is processed
-     * @return The identifier of the model
+     * @param message The message to resolve the identifier from.
+     * @param context The context in which the message is processed.
+     * @return The identifier of the model.
      */
     @Nullable
-    ID resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context);
+    I resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context);
 }

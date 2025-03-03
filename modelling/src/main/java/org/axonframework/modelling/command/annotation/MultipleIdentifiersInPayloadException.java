@@ -16,17 +16,17 @@
 
 package org.axonframework.modelling.command.annotation;
 
-import org.axonframework.modelling.command.ModelIdResolver;
+import org.axonframework.modelling.command.ModelIdentifierResolver;
 
 import java.util.List;
 
 /**
  * Exception indicating that multiple identifiers were found in the payload of a message, while only one was expected.
  * Models can only have one identifier. If your model has a composite identifier, you should use a single field or
- * method to represent the composite identifier. Alternatively, you can use a custom {@link ModelIdResolver} to resolve
+ * method to represent the composite identifier. Alternatively, you can use a custom {@link ModelIdentifierResolver} to resolve
  * the identifier from the payload.
  *
- * @see ModelIdResolver
+ * @see ModelIdentifierResolver
  * @see TargetModelIdentifier
  * @since 5.0.0
  * @author Mitchell Herrijgers

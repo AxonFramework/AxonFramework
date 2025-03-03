@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.command.annotation;
 
-import org.axonframework.modelling.command.ModelIdResolver;
+import org.axonframework.modelling.command.ModelIdentifierResolver;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -26,11 +26,11 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to be placed on a parameter of a {@link org.axonframework.messaging.MessageHandler} method that should
- * receive a model loaded from the {@link org.axonframework.modelling.command.ModelRegistry}. The parameter should be of
+ * receive a model loaded from the {@link org.axonframework.modelling.ModelRegistry}. The parameter should be of
  * the type of the model to inject.
  * <p>
  * The {@code idProperty} attribute can be used to specify the property of the message payload that contains the
- * identifier of the model to inject. UIf not specified, the {@code idResolver} is used to resolve the identifier of the
+ * identifier of the model to inject. If not specified, the {@code idResolver} is used to resolve the identifier of the
  * model to inject.
  * <p>
  * Unless a specific {@code idResolver} is specified, the {@link AnnotationBasedModelIdResolver} is used to resolve the
@@ -39,9 +39,9 @@ import java.lang.annotation.Target;
  * <p>
  * So, identifiers will be resolved in the following order:
  * <ol>
- *     <li>From the property specified in {@code idProperty}</li>
- *     <li>From the {@code idResolver}</li>
- *     <li>From the {@link TargetModelIdentifier} annotation on the message payload</li>
+ *     <li>From the property specified in {@code idProperty}.</li>
+ *     <li>From the {@code idResolver}.</li>
+ *     <li>From the {@link TargetModelIdentifier} annotation on the message payload.</li>
  * </ol>
  *
  * @author Mitchell Herrijgers
@@ -54,9 +54,9 @@ public @interface InjectModel {
     String idProperty() default "";
 
     /**
-     * The {@link ModelIdResolver} to resolve the identifier of the model to inject. Should have a no-arg constructor.
+     * The {@link ModelIdentifierResolver} to resolve the identifier of the model to inject. Should have a no-arg constructor.
      *
-     * @return the {@link ModelIdResolver} to resolve the identifier of the model to inject
+     * @return the {@link ModelIdentifierResolver} to resolve the identifier of the model to inject.
      */
-    Class<? extends ModelIdResolver<?>> idResolver() default AnnotationBasedModelIdResolver.class;
+    Class<? extends ModelIdentifierResolver<?>> idResolver() default AnnotationBasedModelIdResolver.class;
 }

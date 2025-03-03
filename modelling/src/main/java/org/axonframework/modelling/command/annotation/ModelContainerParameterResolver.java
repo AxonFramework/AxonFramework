@@ -38,7 +38,7 @@ class ModelContainerParameterResolver implements ParameterResolver<ModelContaine
      * Instantiate a {@link ParameterResolver} that resolves a {@link ModelContainer} for the given
      * {@code modelRegistry}.
      *
-     * @param modelRegistry The {@link ModelRegistry} to resolve the model from
+     * @param modelRegistry The {@link ModelRegistry} to resolve the {@link ModelContainer} from.
      */
     public ModelContainerParameterResolver(ModelRegistry modelRegistry) {
         this.modelRegistry = modelRegistry;

@@ -19,13 +19,13 @@ package org.axonframework.modelling.command.annotation;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.ModelIdResolver;
+import org.axonframework.modelling.command.ModelIdentifierResolver;
 import org.axonframework.modelling.ModelRegistry;
 
 /**
  * {@link ParameterResolver} implementation that resolves a model from the {@link ModelRegistry} in the
  * {@link ProcessingContext}. The model is resolved based on the identifier resolved by the given
- * {@link ModelIdResolver}.
+ * {@link ModelIdentifierResolver}.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -34,7 +34,7 @@ class InjectModelParameterResolver implements ParameterResolver<Object> {
 
     private final ModelRegistry registry;
     private final Class<?> type;
-    private final ModelIdResolver<?> idResolver;
+    private final ModelIdentifierResolver<?> idResolver;
 
     /**
      * Instantiate a {@link ParameterResolver} that resolves a model for the given {@code registry}, {@code type} and
@@ -42,10 +42,10 @@ class InjectModelParameterResolver implements ParameterResolver<Object> {
      *
      * @param registry   The {@link ModelRegistry} to resolve the model from
      * @param type       The type of the model to resolve
-     * @param idResolver The {@link ModelIdResolver} to resolve the identifier of the model
+     * @param idResolver The {@link ModelIdentifierResolver} to resolve the identifier of the model
      */
     public InjectModelParameterResolver(ModelRegistry registry, Class<?> type,
-                                        ModelIdResolver<?> idResolver) {
+                                        ModelIdentifierResolver<?> idResolver) {
         this.registry = registry;
         this.type = type;
         this.idResolver = idResolver;
