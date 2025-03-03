@@ -17,12 +17,12 @@
 package org.axonframework.modelling.command.annotation;
 
 /**
- * Exception indicating that while using the {@link PropertyBasedModelIdResolver}, the indicated field can not be found.
+ * Exception indicating that while using the {@link PropertyBasedModelIdentifierResolver}, the indicated field can not be found.
  * This indicates a mismatch between the property configured in the {@link InjectModel#idProperty()} and the actual
  * payload class.
  *
  * @author Mitchell Herrijgers
- * @see PropertyBasedModelIdResolver
+ * @see PropertyBasedModelIdentifierResolver
  * @see InjectModel
  * @since 5.0.0
  */

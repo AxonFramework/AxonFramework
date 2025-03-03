@@ -33,12 +33,12 @@ import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
 
 /**
- * Implementation of a {@link ModelIdentifierResolver} that inspects the payload of a {@link Message} for an identifier. The
- * identifier is resolved by looking for a field or method annotated with {@link TargetModelIdentifier}.
+ * Implementation of a {@link ModelIdentifierResolver} that inspects the payload of a {@link Message} for an identifier.
+ * The identifier is resolved by looking for a field or method annotated with {@link TargetModelIdentifier}.
  * <p>
  * If multiple identifiers are found, an {@link MultipleIdentifiersInPayloadException} is thrown. It is advised to
- * implement your own {@link ModelIdentifierResolver} if a compound identifier is expected, or to make a getter method that
- * returns the compound identifier.
+ * implement your own {@link ModelIdentifierResolver} if a compound identifier is expected, or to make a getter method
+ * that returns the compound identifier.
  * <p>
  * If no identifier is found, {@code null} is returned. This indicates that either no field has been found, or that the
  * field has a {@code null} value.
@@ -50,7 +50,7 @@ import javax.annotation.Nullable;
  * @see ModelIdentifierResolver
  * @since 5.0.0
  */
-public class AnnotationBasedModelIdResolver implements ModelIdentifierResolver<Object> {
+public class AnnotationBasedModelIdentifierResolver implements ModelIdentifierResolver<Object> {
 
     private static final Class<TargetModelIdentifier> IDENTIFIER_ANNOTATION = TargetModelIdentifier.class;
     private final Map<Class<?>, List<Member>> cache = new ConcurrentHashMap<>();
@@ -73,8 +73,8 @@ public class AnnotationBasedModelIdResolver implements ModelIdentifierResolver<O
      * Extracts the identifiers from the payload by looking for fields or methods annotated with
      * {@link TargetModelIdentifier}.
      *
-     * @param payload The payload to extract the identifiers from
-     * @return The identifiers found in the payload
+     * @param payload The payload to extract the identifiers from.
+     * @return The identifiers found in the payload.
      */
     private List<Object> getIdentifiers(Object payload) {
         List<Member> members = getMembers(payload.getClass());
@@ -90,8 +90,8 @@ public class AnnotationBasedModelIdResolver implements ModelIdentifierResolver<O
      * Retrieves the members annotated with {@link TargetModelIdentifier} from the given {@code type}. If not present in
      * the cache, the members are retrieved and cached.
      *
-     * @param type The type to retrieve the members from
-     * @return The members annotated with {@link TargetModelIdentifier}
+     * @param type The type to retrieve the members from.
+     * @return The members annotated with {@link TargetModelIdentifier}.
      */
     private List<Member> getMembers(Class<?> type) {
         return cache.computeIfAbsent(type, this::findMembers);
@@ -100,8 +100,8 @@ public class AnnotationBasedModelIdResolver implements ModelIdentifierResolver<O
     /**
      * Finds the members annotated with {@link TargetModelIdentifier} in the given {@code type}.
      *
-     * @param type The type to find the members in
-     * @return The members annotated with {@link TargetModelIdentifier}
+     * @param type The type to find the members in.
+     * @return The members annotated with {@link TargetModelIdentifier}.
      */
     private List<Member> findMembers(Class<?> type) {
         var fields = StreamSupport.stream(ReflectionUtils.fieldsOf(type).spliterator(), false)
@@ -115,8 +115,9 @@ public class AnnotationBasedModelIdResolver implements ModelIdentifierResolver<O
 
     /**
      * Checks if the given {@code member} is annotated with {@link TargetModelIdentifier}.
-     * @param member The member to check for the annotation
-     * @return {@code true} if the member is annotated with {@link TargetModelIdentifier}, {@code false} otherwise
+     *
+     * @param member The member to check for the annotation.
+     * @return {@code true} if the member is annotated with {@link TargetModelIdentifier}, {@code false} otherwise.
      */
     private boolean hasIdentifierAnnotation(AnnotatedElement member) {
         return member.isAnnotationPresent(IDENTIFIER_ANNOTATION);

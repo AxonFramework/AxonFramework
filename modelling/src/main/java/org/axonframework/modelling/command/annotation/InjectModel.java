@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
  * identifier of the model to inject. If not specified, the {@code idResolver} is used to resolve the identifier of the
  * model to inject.
  * <p>
- * Unless a specific {@code idResolver} is specified, the {@link AnnotationBasedModelIdResolver} is used to resolve the
+ * Unless a specific {@code idResolver} is specified, the {@link AnnotationBasedModelIdentifierResolver} is used to resolve the
  * model identifier from the message. This is based on finding a {@link TargetModelIdentifier} annotation on a field or
  * accessor method of the message payload.
  * <p>
@@ -58,5 +58,5 @@ public @interface InjectModel {
      *
      * @return the {@link ModelIdentifierResolver} to resolve the identifier of the model to inject.
      */
-    Class<? extends ModelIdentifierResolver<?>> idResolver() default AnnotationBasedModelIdResolver.class;
+    Class<? extends ModelIdentifierResolver<?>> idResolver() default AnnotationBasedModelIdentifierResolver.class;
 }

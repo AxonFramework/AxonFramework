@@ -19,8 +19,8 @@ package org.axonframework.modelling.command.annotation;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.ModelIdentifierResolver;
 import org.axonframework.modelling.ModelRegistry;
+import org.axonframework.modelling.command.ModelIdentifierResolver;
 
 /**
  * {@link ParameterResolver} implementation that resolves a model from the {@link ModelRegistry} in the
@@ -40,9 +40,9 @@ class InjectModelParameterResolver implements ParameterResolver<Object> {
      * Instantiate a {@link ParameterResolver} that resolves a model for the given {@code registry}, {@code type} and
      * {@code idResolverClass}.
      *
-     * @param registry   The {@link ModelRegistry} to resolve the model from
-     * @param type       The type of the model to resolve
-     * @param idResolver The {@link ModelIdentifierResolver} to resolve the identifier of the model
+     * @param registry   The {@link ModelRegistry} to resolve the model from.
+     * @param type       The type of the model to resolve.
+     * @param idResolver The {@link ModelIdentifierResolver} to resolve the identifier of the model.
      */
     public InjectModelParameterResolver(ModelRegistry registry, Class<?> type,
                                         ModelIdentifierResolver<?> idResolver) {

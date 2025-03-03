@@ -30,11 +30,11 @@ import static org.axonframework.common.ReflectionUtils.ensureAccessible;
  * {@link ParameterResolverFactory} implementation that provides {@link ParameterResolver}s for parameters annotated
  * with {@link InjectModel}.
  * <p>
- * If the {@link InjectModel} annotation has a {@link InjectModel#idProperty()}, a {@link PropertyBasedModelIdResolver}
+ * If the {@link InjectModel} annotation has a {@link InjectModel#idProperty()}, a {@link PropertyBasedModelIdentifierResolver}
  * will be constructed to resolve the model identifier. If the {@link InjectModel} annotation has a
  * {@link InjectModel#idResolver()}, an instance of the given {@link ModelIdentifierResolver} will be constructed to resolve the
  * model identifier. If it has both, the {@link InjectModel#idResolver()} will be used. If it has neither, the
- * {@link AnnotationBasedModelIdResolver} will be used.
+ * {@link AnnotationBasedModelIdentifierResolver} will be used.
  *
  * @author Mitchell Herrijgers
  * @see InjectModel
@@ -72,7 +72,7 @@ public class InjectModelParameterResolverFactory implements ParameterResolverFac
 
     private static ModelIdentifierResolver<?> getModelIdentifierResolver(InjectModel annotation) {
         if (annotation.idProperty() != null && !annotation.idProperty().isEmpty()) {
-           return new PropertyBasedModelIdResolver(annotation.idProperty());
+           return new PropertyBasedModelIdentifierResolver(annotation.idProperty());
         } 
         return  constructCustomModelIdResolver(annotation);
     }

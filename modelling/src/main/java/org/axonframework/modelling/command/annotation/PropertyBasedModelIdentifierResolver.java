@@ -17,20 +17,14 @@
 package org.axonframework.modelling.command.annotation;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.ModelIdentifierResolver;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.StreamSupport;
 import javax.annotation.Nullable;
 
 /**
@@ -43,7 +37,7 @@ import javax.annotation.Nullable;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class PropertyBasedModelIdResolver implements ModelIdentifierResolver<Object> {
+public class PropertyBasedModelIdentifierResolver implements ModelIdentifierResolver<Object> {
 
     private final Map<Class<?>, Property<Object>> memberCache = new ConcurrentHashMap<>();
 
@@ -52,9 +46,9 @@ public class PropertyBasedModelIdResolver implements ModelIdentifierResolver<Obj
     /**
      * Initialize the resolver with the given {@code property} name.
      *
-     * @param property The name of the property to resolve the identifier from
+     * @param property The name of the property to resolve the identifier from.
      */
-    public PropertyBasedModelIdResolver(String property) {
+    public PropertyBasedModelIdentifierResolver(String property) {
         this.property = property;
     }
 
@@ -68,8 +62,8 @@ public class PropertyBasedModelIdResolver implements ModelIdentifierResolver<Obj
     /**
      * Returns the member that represents the identifier of the given {@code payloadClass}.
      *
-     * @param payloadClass The class of the payload
-     * @return The member that represents the identifier
+     * @param payloadClass The class of the payload.
+     * @return The member that represents the identifier.
      */
     private Property<Object> getMember(Class<?> payloadClass) {
         return memberCache.computeIfAbsent(payloadClass, (n) ->
