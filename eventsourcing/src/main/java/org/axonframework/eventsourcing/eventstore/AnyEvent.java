@@ -16,10 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
-
-import java.util.Set;
 
 /**
  * Implementation of the {@link EventCriteria} allowing <b>any</b> event.
@@ -46,22 +43,7 @@ final class AnyEvent implements EventCriteria {
     }
 
     @Override
-    public Set<String> types() {
-        return Set.of();
-    }
-
-    @Override
-    public Set<Tag> tags() {
-        return Set.of();
-    }
-
-    @Override
-    public boolean matchingTags(@Nonnull Set<Tag> tags) {
-        return true;
-    }
-
-    @Override
     public String toString() {
-        return "AnyEvent";
+        return "*";
     }
 }

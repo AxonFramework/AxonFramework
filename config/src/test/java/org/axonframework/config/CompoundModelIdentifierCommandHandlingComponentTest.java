@@ -30,7 +30,6 @@ import org.axonframework.eventsourcing.annotations.EventTag;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
-import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -47,8 +46,6 @@ import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -78,12 +75,14 @@ class CompoundModelIdentifierCommandHandlingComponentTest {
 
     private final AsyncEventSourcingRepository<MentorModelIdentifier, StudentMentorCompoundModel> studentMentorRepository = new AsyncEventSourcingRepository<>(
             eventStore,
-            myModelId -> {
-                Set<Tag> tags = new HashSet<>();
-                tags.add(new Tag("Student", myModelId.mentorId()));
-                tags.add(new Tag("Student", myModelId.menteeId()));
-                return EventCriteria.forAnyEventType().withTags(tags);
-            },
+            myModelId ->
+                    EventCriteria.both(
+                            EventCriteria.either(
+                                    EventCriteria.matchesTag("Student", myModelId.mentorId()),
+                                    EventCriteria.matchesTag("Student", myModelId.menteeId())
+                            ),
+                            EventCriteria.isOneOfTypes(MentorAssignedToMenteeEvent.class.getName())
+                    ),
             studentMentorCompoundModelEventStateApplier,
             StudentMentorCompoundModel::new,
             DEFAULT_CONTEXT
@@ -99,7 +98,7 @@ class CompoundModelIdentifierCommandHandlingComponentTest {
             );
 
     @Test
-    @Disabled
+//    @Disabled
     void canHandleCommandThatTargetsMultipleModelsViaInjectionOfCompoundModel() {
 
         var configuration = Mockito.mock(Configuration.class);
