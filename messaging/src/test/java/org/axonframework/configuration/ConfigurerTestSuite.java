@@ -157,6 +157,35 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             assertNotEquals(testComponent, config.getComponent(TestComponent.class, "name"));
             assertEquals(expectedComponent, config.getComponent(TestComponent.class, "name"));
         }
+
+        @Test
+        void getComponentWithDefaultInvokesSupplierWhenThereIsNoRegisteredComponentForTheGivenClass() {
+            AtomicBoolean invoked = new AtomicBoolean(false);
+            TestComponent defaultComponent = new TestComponent("default");
+            TestComponent registeredComponent = TEST_COMPONENT;
+
+            NewConfiguration config = testSubject.registerComponent(TestComponent.class, "id", c -> registeredComponent)
+                                                 .build();
+
+            TestComponent result = config.getComponent(TestComponent.class, "id", () -> {
+                invoked.set(true);
+                return defaultComponent;
+            });
+
+            assertFalse(invoked.get());
+            assertNotEquals(defaultComponent, result);
+            assertEquals(registeredComponent, result);
+
+            invoked.set(false);
+            result = config.getComponent(TestComponent.class, "non-registered-component", () -> {
+                invoked.set(true);
+                return defaultComponent;
+            });
+
+            assertTrue(invoked.get());
+            assertEquals(defaultComponent, result);
+            assertNotEquals(registeredComponent, result);
+        }
     }
 
     @Nested
