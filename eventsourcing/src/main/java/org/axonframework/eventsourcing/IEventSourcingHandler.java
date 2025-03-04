@@ -27,7 +27,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 @FunctionalInterface
 interface IEventSourcingHandler extends EventHandler {
 
-    // todo: should it be ResultMessage / just message or EvolvedStateMessage?
     @Nonnull
     MessageStream.Single<? extends Message<?>> source(@Nonnull EventMessage<?> event,
                                                             @Nonnull ProcessingContext context);

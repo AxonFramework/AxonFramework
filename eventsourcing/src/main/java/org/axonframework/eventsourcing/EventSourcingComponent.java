@@ -28,7 +28,6 @@ import org.axonframework.eventhandling.EventHandlingComponent;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-// todo: name - or `EventSourcedComponent`? I'm not sure if introduce another EventHandlerRegistry interface. Just ignore if no result?
 public interface EventSourcingComponent extends IEventSourcingHandler, EventHandlingComponent {
 
 }

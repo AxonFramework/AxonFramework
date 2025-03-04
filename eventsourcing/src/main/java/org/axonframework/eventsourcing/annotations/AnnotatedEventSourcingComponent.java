@@ -39,7 +39,6 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
-// todo: maybe extends AnnotatedEventHandlingComponent? Implement SimpleEventSourcingComponent
 public class AnnotatedEventSourcingComponent<T> implements EventSourcingComponent {
 
     private final T target;
@@ -50,7 +49,7 @@ public class AnnotatedEventSourcingComponent<T> implements EventSourcingComponen
      * {@link org.axonframework.eventhandling.EventSink} as an {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler The object containing the
-     *                              {@link org.axonframework.eventhandling.annotation.EventHandler} annotated methods.
+     *                              {@link org.axonframework.eventsourcing.EventSourcingHandler} annotated methods.
      */
     public AnnotatedEventSourcingComponent(@Nonnull T annotatedEventHandler) {
         this(annotatedEventHandler, ClasspathParameterResolverFactory.forClass(annotatedEventHandler.getClass()));
@@ -61,7 +60,7 @@ public class AnnotatedEventSourcingComponent<T> implements EventSourcingComponen
      * {@link org.axonframework.eventhandling.EventSink} as an {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler    The object containing the
-     *                                 {@link org.axonframework.eventhandling.annotation.EventHandler} annotated
+     *                                 {@link org.axonframework.eventsourcing.EventSourcingHandler} annotated
      *                                 methods.
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      */
@@ -77,7 +76,7 @@ public class AnnotatedEventSourcingComponent<T> implements EventSourcingComponen
      * {@link org.axonframework.eventhandling.EventSink} as an {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler    The object containing the
-     *                                 {@link org.axonframework.eventhandling.annotation.EventHandler} annotated
+     *                                 {@link org.axonframework.eventsourcing.EventSourcingHandler} annotated
      *                                 methods.
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      * @param handlerDefinition        The handler definition used to create concrete handlers.
@@ -99,7 +98,7 @@ public class AnnotatedEventSourcingComponent<T> implements EventSourcingComponen
      * {@link org.axonframework.eventhandling.EventSink} as an {@link EventHandlingComponent}.
      *
      * @param annotatedEventHandler The object containing the
-     *                              {@link org.axonframework.eventhandling.annotation.EventHandler} annotated methods.
+     *                              {@link org.axonframework.eventsourcing.EventSourcingHandler} annotated methods.
      * @param model                 The inspector to use to find the annotated handlers on the annotatedEventHandler.
      */
     public AnnotatedEventSourcingComponent(@Nonnull T annotatedEventHandler,
