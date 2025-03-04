@@ -25,7 +25,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Component.Identifier;
 
 /**
- * Wrapper around a {@link Map} of {@link Component Components} stored per {@link Class} type.
+ * Wrapper around a {@link Map} of {@link Component Components} stored per {@link Component.Identifier}.
  * <p>
  * Provides a cleaner interface to the {@link NewConfigurer} and {@link NewConfiguration} when interacting with the
  * configured {@code Components}.
@@ -37,38 +37,94 @@ public class Components {
 
     private final Map<Identifier<?>, Component<?>> components = new ConcurrentHashMap<>();
 
+    /**
+     * Get the component of type {@code C} registered under the given {@code identifier}, invoking
+     * {@link Component#get()} as part of the retrieval.
+     * <p>
+     * Throws a {@link NullPointerException} when none is present.
+     *
+     * @param identifier The identifier to retrieve a component for.
+     * @param <C>        The type of the component to retrieve.
+     * @return The component of type {@code C} registered under the given {@code identifier}.
+     */
     @Nonnull
-    public <C> C get(@Nonnull Identifier<C> type) {
-        return getOptional(type).orElseThrow(() -> new NullPointerException("No component found for type: " + type));
+    public <C> C get(@Nonnull Identifier<C> identifier) {
+        return getOptional(identifier)
+                .orElseThrow(() -> new NullPointerException("No component found for identifier: " + identifier));
     }
 
-    public <C> Optional<C> getOptional(@Nonnull Identifier<C> type) {
-        return getOptionalComponent(type).map(Component::get);
+    /**
+     * Get an {@link Optional} on the component of type {@code C} registered under the given {@code identifier},
+     * invoking {@link Component#get()} as part of the retrieval.
+     *
+     * @param identifier The identifier to retrieve a component for.
+     * @param <C>        The type of the component to retrieve.
+     * @return An {@code Optional} on the component of type {@code C} registered under the given {@code identifier}.
+     */
+    public <C> Optional<C> getOptional(@Nonnull Identifier<C> identifier) {
+        return getOptionalComponent(identifier).map(Component::get);
     }
 
+    /**
+     * Get the {@link Component} registered under the given {@code identifier}.
+     * <p>
+     * Throws a {@link NullPointerException} when none is present.
+     *
+     * @param identifier The identifier to retrieve a {@link Component} for.
+     * @param <C>        The type of the component to retrieve.
+     * @return The {@link Component} registered under the given {@code identifier}.
+     */
     @Nonnull
-    public <C> Component<C> getComponent(@Nonnull Identifier<C> type) {
-        return getOptionalComponent(type)
-                .orElseThrow(() -> new NullPointerException("No component found for type: " + type));
+    public <C> Component<C> getComponent(@Nonnull Identifier<C> identifier) {
+        return getOptionalComponent(identifier)
+                .orElseThrow(() -> new NullPointerException("No component found for identifier: " + identifier));
     }
 
+    /**
+     * Get an {@link Optional} on the {@link Component} registered under the given {@code identifier}.
+     *
+     * @param identifier The identifier to retrieve a {@link Component} for.
+     * @param <C>        The type of the component to retrieve.
+     * @return An {@link Optional} on the {@link Component} registered under the given {@code identifier}.
+     */
     @Nonnull
-    public <C> Optional<Component<C>> getOptionalComponent(@Nonnull Identifier<C> type) {
+    public <C> Optional<Component<C>> getOptionalComponent(@Nonnull Identifier<C> identifier) {
         //noinspection unchecked
-        return Optional.ofNullable((Component<C>) components.get(type));
+        return Optional.ofNullable((Component<C>) components.get(identifier));
     }
 
-    public <C> Component<C> put(@Nonnull Identifier<C> type, @Nonnull Component<C> component) {
+    /**
+     * Puts the given {@code component}, identified by the given {@code identifier}, in this collection.
+     *
+     * @param identifier The identifier for the {@code component} to put.
+     * @param component  The component to put in this collection.
+     * @param <C>        The type of the component to put.
+     * @return A previous component registered under the given {@code identifier}, if present.
+     */
+    public <C> Component<C> put(@Nonnull Identifier<C> identifier, @Nonnull Component<C> component) {
         //noinspection unchecked
-        return (Component<C>) components.put(type, component);
+        return (Component<C>) components.put(identifier, component);
     }
 
-    public <T> Component<T> computeIfAbsent(
-            @Nonnull Identifier<T> type,
-            @Nonnull Function<? super Identifier<?>, ? extends Component<?>> mappingFunction
+    /**
+     * Computes a {@link Component} for the given {@code identifier} when absent, otherwise returns the
+     * {@code Component} {@link #put(Identifier, Component)} under the {@code identifier}.
+     * <p>
+     * The given {@code compute} operation is <b>only</b> invoked when there is no {@code Component} present for the
+     * given {@code identifier}.
+     *
+     * @param identifier The identifier for which to check if a {@link Component} is already present.
+     * @param compute    The lambda computing the {@link Component} to put into this collection when absent.
+     * @param <C>        The type of the component to get and compute if absent.
+     * @return The previously {@link #put(Identifier, Component) put Component} identifier by the given
+     * {@code identifier}. When absent, the outcome of the {@code compute} operation is returned
+     */
+    public <C> Component<C> computeIfAbsent(
+            @Nonnull Identifier<C> identifier,
+            @Nonnull Function<? super Identifier<?>, ? extends Component<?>> compute
     ) {
         //noinspection unchecked
-        return (Component<T>) components.computeIfAbsent(type, mappingFunction);
+        return (Component<C>) components.computeIfAbsent(identifier, compute);
     }
 
     /**
