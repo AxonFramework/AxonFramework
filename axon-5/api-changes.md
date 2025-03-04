@@ -154,10 +154,10 @@ command messaging and use the configuration API; the module just pulled in every
 
 As an act to clean this up, we have broken down the `Configurer` and `Configuration` into manageable chunks.
 As such, the `Configurer` interface now only provides basic operations
-to [register components](#registering-components-with-the-componentbuilder-interface), [decorate components](#decorating-components-with-the-componentdecorator-interface),
+to [register components](#registering-components-with-the-componentbuilder-interface), [decorate components](#decorating-components-with-the-componentdecorator-interface), [register enhancers](#registering-enhancers-with-the-configurerenhancer-interface),
 and [register modules](#registering-modules-with-the-modulebuilder-interface), besides the basic start-and-shutdown
 handler registration from the `LifecycleOperations` interface.
-The `Configuration` in turn now only has the means to retrieve components and retrieve modules.
+The `Configuration` in turn now only has the means to retrieve components, and it's modules' components.
 
 However, we still provide the flexibility to specify your buses, gateways, handlers, and other Axon-specific components.
 To configure those, you will have to provide that specific's Axon module's configuration `Module`. A `Module` is an
@@ -168,7 +168,7 @@ static `RootConfigurer#defaultConfigurer` method. On this `RootConfigurer`, you 
 if desired, or use the aforementioned module-specific `Modules`.
 You would do so by registering a `ModuleBuilder` with the `RootConfigurer`.
 
-In this fashion, we intent to ensure the following points:
+In this fashion, we intend to ensure the following points:
 
 1. We clean up the `Configurer` and `Configuration` API substantially by splitting it into manageable chunks. This
    should simplify configuration of Axon applications.
@@ -217,6 +217,7 @@ public static void main(String[] args) {
                   .registerComponent(CommandBus.class, config -> new SimpleCommandBus())
                   .registerDecorator(
                           CommandBus.class,
+                          0,
                           (config, delegate) -> new TracingCommandBus(
                                   delegate,
                                   config.getComponent(CommandBusSpanFactory.class)
@@ -229,6 +230,44 @@ public static void main(String[] args) {
 By providing this functionality on the base `Configurer` interface, you are able to decorate any of Axon's components
 with your own custom logic. Since ordering of these decorates can be of importance, you are able to provide an order, if
 needed, upon registration of a `ComponentDecorator`.
+
+### Registering enhancers with the ConfigurerEnhancer interface
+
+The `ConfigurerEnhancer` replaces the old `ConfigurerModule`, with two major difference:
+
+1. A `ConfigurerEnhancer` acts on the `Configurer` during `Configurer#build` instead of immediately.
+2. A `ConfigurerEnhancer` receives a `ListableConfigurer` instead of a `Configurer` when enhancing.
+
+Difference one allows the enhancers to enact on its `Configurer` in a definable order. They are thus staged to enhance
+when the configuration is ready for it. The order is either the registration order with the `Configurer` or it is based
+on the `ConfigurerEnhancer#order` value.
+
+Furthermore, the use of the `ListableConfigurer` instead of a `Configurer` allows for conditional operations through the
+`ListableConfigurer#hasComponent` operation. Through this approach, the implementers of an enhancer can choose to
+replace a component or decorate a component only when it (or another) is present. To be more concrete, it allows for the
+following:
+
+```java
+public static void main(String[] args) {
+    RootConfigurer.defaultConfigurer()
+                  .registerEnhance(configurer -> {
+                      if (configurer.hasComponent(CommandBus.class)) {
+                          configurer.registerDecorator(
+                                  CommandBus.class, 0,
+                                  (config, delegate) -> new TracingCommandBus(
+                                          delegate,
+                                          config.getComponent(CommandBusSpanFactory.class)
+                                  )
+                          );
+                      }
+                  });
+}
+```
+
+In the above enhancer, we first validate if there is a `CommandBus` present. Only when that is the case do we choose to
+decorate it as a `TracingCommandBus` by retrieving the `CommandBusSpanFactory` from the `Configuration` given to the
+`ComponentDecorator`. Note that this sample does expect that somewhere else during the configuration a
+`CommandBusSpanFactory` has been added.
 
 ### Registering modules with the ModuleBuilder interface
 
@@ -309,6 +348,7 @@ This section contains two tables:
 | org.axonframework.config.Configurer                          | org.axonframework.configuration.NewConfigurer                |
 | org.axonframework.config.Configuration                       | org.axonframework.configuration.NewConfiguration             |
 | org.axonframework.config.Component                           | org.axonframework.configuration.Component                    |
+| org.axonframework.config.ConfigurerModule                    | org.axonframework.configuration.ConfigurerEnhancer           |
 | org.axonframework.config.ModuleConfiguration                 | org.axonframework.configuration.Module                       |
 | org.axonframework.config.LifecycleHandler                    | org.axonframework.configuration.LifecycleHandler             |
 | org.axonframework.config.LifecycleHandlerInspector           | org.axonframework.configuration.LifecycleHandlerInspector    |
@@ -365,15 +405,16 @@ This section contains three subsections, called:
 
 ### Moved methods and constructors
 
-| Constructor / Method                     | To where                                           |
-|------------------------------------------|----------------------------------------------------|
-| `Configurer#registerCommandHandler`      | `InfraConfigurer#registerCommandHandler`           | 
-| `Configurer#registerQueryHandler`        | `InfraConfigurer#registerQueryHandler`             | 
-| `Configurer#registerMessageHandler`      | `InfraConfigurer#registerMessageHandlingComponent` | 
-| `Configurer#configureCommandBus`         | `InfraConfigurer#registerCommandBus`               | 
-| `Configurer#configureEventBus`           | `InfraConfigurer#registerEventBus`                 | 
-| `Configurer#configureQueryBus`           | `InfraConfigurer#registerQueryBus`                 | 
-| `Configurer#configureQueryUpdateEmitter` | `InfraConfigurer#registerQueryUpdateEmitter`       | 
+| Constructor / Method                           | To where                                           |
+|------------------------------------------------|----------------------------------------------------|
+| `Configurer#registerCommandHandler`            | `InfraConfigurer#registerCommandHandler`           | 
+| `Configurer#registerQueryHandler`              | `InfraConfigurer#registerQueryHandler`             | 
+| `Configurer#registerMessageHandler`            | `InfraConfigurer#registerMessageHandlingComponent` | 
+| `Configurer#configureCommandBus`               | `InfraConfigurer#registerCommandBus`               | 
+| `Configurer#configureEventBus`                 | `InfraConfigurer#registerEventBus`                 | 
+| `Configurer#configureQueryBus`                 | `InfraConfigurer#registerQueryBus`                 | 
+| `Configurer#configureQueryUpdateEmitter`       | `InfraConfigurer#registerQueryUpdateEmitter`       | 
+| `ConfigurerModule#configureModule(Configurer)` | `ConfigurerEnhancer#enhance(ListableConfigurer)`   | 
 
 ### Removed methods and constructors
 

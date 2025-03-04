@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 
 /**
  * An extension of the {@link NewConfigurer} exposing the {@link #hasComponent(Class, String)} operation to ensure
- * {@link NewConfigurerModule} instances can validate if a given component is present before overriding it.
+ * {@link ConfigurerEnhancer} instances can validate if a given component is present before overriding it.
  *
  * @param <S> The type of configurer this implementation returns. This generic allows us to support fluent interfacing.
  * @author Allard Buijze

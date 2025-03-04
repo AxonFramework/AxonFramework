@@ -22,9 +22,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 /**
  * Test suite validating the common behavior of the {@link NewConfigurer}.
@@ -296,6 +299,179 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
                          () -> testSubject.registerDecorator(TestComponent.class, 42, null));
+        }
+    }
+
+    @Nested
+    class EnhancerRegistration {
+
+        @Test
+        void registerEnhancerThrowsNullPointerExceptionForNullEnhancer() {
+            //noinspection DataFlowIssue
+            assertThrows(NullPointerException.class, () -> testSubject.registerEnhance(null));
+        }
+
+        @Test
+        void registeredEnhancersAreInvokedDuringBuild() {
+            AtomicBoolean invoked = new AtomicBoolean(false);
+
+            testSubject.registerEnhance(configurer -> invoked.set(true));
+
+            testSubject.build();
+
+            assertTrue(invoked.get());
+        }
+
+        @Test
+        void registeredEnhancersAreInvokedDuringBuildOnlyOnce() {
+            AtomicInteger counter = new AtomicInteger(0);
+
+            testSubject.registerEnhance(configurer -> counter.getAndIncrement());
+            // First build
+            testSubject.build();
+            // Second build
+            testSubject.build();
+
+            assertEquals(1, counter.get());
+        }
+
+        @Test
+        void registeredEnhancersAreInvokedBasedOnInsertOrder() {
+            //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
+            ConfigurerEnhancer enhancerOne = spy(new ConfigurerEnhancer() {
+
+                @Override
+                public void enhance(@Nonnull ListableConfigurer<?> configurer) {
+                    // Not important, so do nothing.
+                }
+            });
+            //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
+            ConfigurerEnhancer enhancerTwo = spy(new ConfigurerEnhancer() {
+                @Override
+                public void enhance(@Nonnull ListableConfigurer<?> configurer) {
+                    // Not important, so do nothing.
+                }
+            });
+            //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
+            ConfigurerEnhancer enhancerThree = spy(new ConfigurerEnhancer() {
+
+                @Override
+                public void enhance(@Nonnull ListableConfigurer<?> configurer) {
+                    // Not important, so do nothing.
+                }
+            });
+
+            testSubject.registerEnhance(enhancerOne)
+                       .registerEnhance(enhancerTwo)
+                       .registerEnhance(enhancerThree)
+                       .build();
+
+            InOrder enhancementOrder = inOrder(enhancerOne, enhancerTwo, enhancerThree);
+            enhancementOrder.verify(enhancerOne).enhance(any());
+            enhancementOrder.verify(enhancerTwo).enhance(any());
+            enhancementOrder.verify(enhancerThree).enhance(any());
+        }
+
+        @Test
+        void registeredEnhancersAreInvokedBasedOnDefinedOrder() {
+            ConfigurerEnhancer enhancerWithLowOrder = spy(new ConfigurerEnhancer() {
+
+                @Override
+                public void enhance(@Nonnull ListableConfigurer<?> configurer) {
+                    // Not important, so do nothing.
+                }
+
+                @Override
+                public int order() {
+                    return -42;
+                }
+            });
+
+            //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
+            ConfigurerEnhancer enhancerWithDefaultOrder = spy(new ConfigurerEnhancer() {
+                @Override
+                public void enhance(@Nonnull ListableConfigurer<?> configurer) {
+                    // Not important, so do nothing.
+                }
+            });
+
+            ConfigurerEnhancer enhancerWithHighOrder = spy(new ConfigurerEnhancer() {
+
+                @Override
+                public void enhance(@Nonnull ListableConfigurer<?> configurer) {
+                    // Not important, so do nothing.
+                }
+
+                @Override
+                public int order() {
+                    return 42;
+                }
+            });
+
+            testSubject.registerEnhance(enhancerWithDefaultOrder)
+                       .registerEnhance(enhancerWithHighOrder)
+                       .registerEnhance(enhancerWithLowOrder)
+                       .build();
+
+            InOrder enhancementOrder = inOrder(enhancerWithLowOrder, enhancerWithDefaultOrder, enhancerWithHighOrder);
+            enhancementOrder.verify(enhancerWithLowOrder).enhance(any());
+            enhancementOrder.verify(enhancerWithDefaultOrder).enhance(any());
+            enhancementOrder.verify(enhancerWithHighOrder).enhance(any());
+        }
+
+        @Test
+        void registeredEnhancersCanAddComponents() {
+            testSubject.registerEnhance(
+                    configurer -> configurer.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+            );
+
+            NewConfiguration config = testSubject.build();
+
+            assertEquals(TEST_COMPONENT, config.getComponent(TestComponent.class));
+        }
+
+        @Test
+        void registeredEnhancersCanDecorateComponents() {
+            TestComponent expected = new TestComponent(TEST_COMPONENT.state() + "-decorated");
+            ConfigurerEnhancer enhancer = configurer -> configurer.registerDecorator(
+                    TestComponent.class, 0, (c, delegate) -> new TestComponent(delegate.state() + "-decorated")
+            );
+            testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+                       .registerEnhance(enhancer);
+
+            NewConfiguration config = testSubject.build();
+
+            assertEquals(expected, config.getComponent(TestComponent.class));
+        }
+
+        @Test
+        void registeredEnhancersCanReplaceComponents() {
+            TestComponent expected = new TestComponent("replacement");
+
+            testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+                       .registerEnhance(configurer -> configurer.registerComponent(TestComponent.class, c -> expected));
+
+            NewConfiguration config = testSubject.build();
+
+            assertNotEquals(TEST_COMPONENT, config.getComponent(TestComponent.class));
+            assertEquals(expected, config.getComponent(TestComponent.class));
+        }
+
+        @Test
+        void registeredEnhancersCanReplaceComponentsConditionally() {
+            TestComponent expected = new TestComponent("conditional");
+
+            testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+                       .registerEnhance(configurer -> {
+                           if (configurer.hasComponent(TestComponent.class)) {
+                               configurer.registerComponent(TestComponent.class, "conditional", c -> expected);
+                           }
+                       });
+
+            NewConfiguration config = testSubject.build();
+
+            assertEquals(TEST_COMPONENT, config.getComponent(TestComponent.class));
+            assertEquals(expected, config.getComponent(TestComponent.class, "conditional"));
         }
     }
 

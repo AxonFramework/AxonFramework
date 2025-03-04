@@ -30,6 +30,6 @@ package org.axonframework.configuration;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface Module<M extends Module<M>> extends NewConfigurer<M> {
+public interface Module<M extends Module<M>> extends ListableConfigurer<M> {
 
 }

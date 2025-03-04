@@ -44,9 +44,10 @@ public interface RootConfigurer extends ListableConfigurer<RootConfigurer> {
 
     /**
      * Returns a {@code RootConfigurer} instance to start configuring {@link Component components},
-     * {@link ComponentDecorator component decorators}, and {@link Module modules} for an Axon Framework application.
+     * {@link ComponentDecorator component decorators}, {@link ConfigurerEnhancer enhancers}, and {@link Module modules}
+     * for an Axon Framework application.
      *
-     * @return A {@code RootConfigurer} instance for further configuration.
+     * @return A {@code RootConfigurer} instance for further configuring.
      */
     static RootConfigurer defaultConfigurer() {
         return configurer(true);
@@ -54,29 +55,30 @@ public interface RootConfigurer extends ListableConfigurer<RootConfigurer> {
 
     /**
      * Returns a {@code RootConfigurer} instance to start configuring {@link Component components},
-     * {@link ComponentDecorator component decorators}, and {@link Module modules} for an Axon Framework application.
+     * {@link ComponentDecorator component decorators}, {@link ConfigurerEnhancer enhancers}, and {@link Module modules}
+     * for an Axon Framework application.
      * <p>
-     * When {@code autoLocateConfigurerModules} is {@code true}, a {@link ServiceLoader} will be used to locate all
-     * declared instances of type {@link NewConfigurerModule}. Each of the discovered instances will be invoked,
-     * allowing it to set default values for the returned {@code RootConfigurer}.
+     * When {@code autoLocateEnhancers} is {@code true}, a {@link ServiceLoader} will be used to locate all declared
+     * instances of type {@link ConfigurerEnhancer}. Each of the discovered instances will be invoked, allowing it to
+     * set default values for the returned {@code RootConfigurer}.
      *
-     * @param autoLocateConfigurerModules Flag indicating whether ConfigurerModules on the classpath should be
-     *                                    automatically retrieved. Should be set to {@code false} when using an
-     *                                    application container, such as Spring or CDI.
-     * @return A {@code RootConfigurer} instance for further configuration.
+     * @param autoLocateEnhancers Flag indicating whether {@link ConfigurerEnhancer} on the classpath should be
+     *                            automatically retrieved. Should be set to {@code false} when using an application
+     *                            container, such as Spring or CDI.
+     * @return A {@code RootConfigurer} instance for further configuring.
      */
-    static RootConfigurer configurer(boolean autoLocateConfigurerModules) {
-        DefaultRootConfigurer configurer = new DefaultRootConfigurer();
-        if (!autoLocateConfigurerModules) {
+    static RootConfigurer configurer(boolean autoLocateEnhancers) {
+        RootConfigurer configurer = new DefaultRootConfigurer();
+        if (!autoLocateEnhancers) {
             return configurer;
         }
 
-        ServiceLoader<NewConfigurerModule> configurerModuleLoader =
-                ServiceLoader.load(NewConfigurerModule.class, configurer.getClass().getClassLoader());
-        List<NewConfigurerModule> configurerModules = new ArrayList<>();
-        configurerModuleLoader.forEach(configurerModules::add);
-        configurerModules.sort(Comparator.comparingInt(NewConfigurerModule::order));
-        configurerModules.forEach(cm -> cm.configureModule(configurer));
+        ServiceLoader<ConfigurerEnhancer> enhancerLoader =
+                ServiceLoader.load(ConfigurerEnhancer.class, configurer.getClass().getClassLoader());
+        List<ConfigurerEnhancer> enhancers = new ArrayList<>();
+        enhancerLoader.forEach(enhancers::add);
+        enhancers.sort(Comparator.comparingInt(ConfigurerEnhancer::order));
+        enhancers.forEach(enhancer -> enhancer.enhance(configurer));
         return configurer;
     }
 

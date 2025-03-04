@@ -18,8 +18,10 @@ package org.axonframework.configuration;
 
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import jakarta.annotation.Nonnull;
@@ -37,15 +39,17 @@ import org.slf4j.LoggerFactory;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements NewConfigurer<S> {
+public abstract class AbstractConfigurer<S extends ListableConfigurer<S>> implements ListableConfigurer<S> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     protected final Components components = new Components();
+    private final List<ConfigurerEnhancer> enhancers = new ArrayList<>();
     private final List<Module<?>> modules = new ArrayList<>();
     private final List<NewConfiguration> moduleConfigurations = new ArrayList<>();
 
     protected final LifecycleSupportingConfiguration config;
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     /**
      * Initialize the {@code AbstractConfigurer} based on the given {@code config}.
@@ -86,6 +90,14 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     @Override
+    public S registerEnhance(@Nonnull ConfigurerEnhancer enhancer) {
+        logger.debug("Registering enhancer [{}].", enhancer.getClass().getSimpleName());
+        this.enhancers.add(enhancer);
+        //noinspection unchecked
+        return (S) this;
+    }
+
+    @Override
     public <M extends Module<M>> S registerModule(@Nonnull ModuleBuilder<M> builder) {
         Module<?> module = builder.build(config());
         logger.debug("Registering module [{}].", module.getClass().getSimpleName());
@@ -95,13 +107,40 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     @Override
+    public boolean hasComponent(@Nonnull Class<?> type,
+                                @Nonnull String name) {
+        return components.contains(new Component.Identifier<>(type, name));
+    }
+
+    @Override
     public <C extends NewConfiguration> C build() {
-        // Ensure all registered modules are built too.
-        for (Module<?> module : modules) {
-            moduleConfigurations.add(module.build());
+        if (!initialized.getAndSet(true)) {
+            invokeEnhancers();
+            buildModules();
         }
         //noinspection unchecked
         return (C) config;
+    }
+
+    /**
+     * Invoke all the {@link #registerEnhance(ConfigurerEnhancer) registered} {@link ConfigurerEnhancer enhancers} on this
+     * {@code Configurer} implementation in their {@link ConfigurerEnhancer#order()}. This will ensure all sensible
+     * default components and decorators are in place from these enhancers.
+     */
+    private void invokeEnhancers() {
+        enhancers.stream()
+                 .sorted(Comparator.comparingInt(ConfigurerEnhancer::order))
+                 .forEach(enhancer -> enhancer.enhance(this));
+    }
+
+    /**
+     * Ensure all registered {@link Module Modules} are built too. Store their {@link NewConfiguration} results for
+     * exposure on {@link NewConfiguration#getModuleConfigurations()}.
+     */
+    private void buildModules() {
+        for (Module<?> module : modules) {
+            moduleConfigurations.add(module.build());
+        }
     }
 
     @Override
