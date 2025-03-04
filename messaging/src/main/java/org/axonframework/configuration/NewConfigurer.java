@@ -23,7 +23,8 @@ import org.axonframework.configuration.Component.Identifier;
  * The starting point when configuring any Axon Framework application.
  * <p>
  * Provides utilities to {@link #registerComponent(Class, ComponentBuilder) register components},
- * {@link #registerDecorator(Class, int, ComponentDecorator) decorators} of these components, and
+ * {@link #registerDecorator(Class, int, ComponentDecorator) decorators} of these components, set
+ * {@link #enhance(ConfigurerEnhancer) enhancers} for the entire configurer, and
  * {@link #registerModule(ModuleBuilder) modules}.
  *
  * @param <S> The type of configurer this implementation returns. This generic allows us to support fluent interfacing.
@@ -36,7 +37,7 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
 
     /**
      * Registers a {@link Component} that should be made available to other {@link Component components} or
-     * {@link Module modules} in the {@link NewConfiguration} that this {@code NewConfigurer} will result in.
+     * {@link Module modules} in the {@link NewConfiguration} that this {@code Configurer} will result in.
      * <p>
      * The given {@code builder} function gets the {@link NewConfiguration configuration} as input, and is expected to
      * provide the component as output. The component will be registered under an {@link Identifier} based on the given
@@ -47,7 +48,7 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      * @param type    The declared type of the component to build, typically an interface.
      * @param builder The builder function of this component.
      * @param <C>     The type of component the {@code builder} builds.
-     * @return The current instance of the {@code NewConfigurer} for a fluent API.
+     * @return The current instance of the {@code Configurer} for a fluent API.
      */
     default <C> S registerComponent(@Nonnull Class<C> type,
                                     @Nonnull ComponentBuilder<C> builder) {
@@ -56,7 +57,7 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
 
     /**
      * Registers a {@link Component} that should be made available to other {@link Component components} or
-     * {@link Module modules} in the {@link NewConfiguration} that this {@code NewConfigurer} will result in.
+     * {@link Module modules} in the {@link NewConfiguration} that this {@code Configurer} will result in.
      * <p>
      * The given {@code builder} function gets the {@link NewConfiguration configuration} as input, and is expected to
      * provide the component as output. The component will be registered under an {@link Identifier} based on the given
@@ -69,7 +70,7 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      * @param name    The name of the component to build.
      * @param builder The builder function of this component.
      * @param <C>     The type of component the {@code builder} builds.
-     * @return The current instance of the {@code NewConfigurer} for a fluent API.
+     * @return The current instance of the {@code Configurer} for a fluent API.
      */
     <C> S registerComponent(@Nonnull Class<C> type,
                             @Nonnull String name,
@@ -89,7 +90,7 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      *                  decorators is important.
      * @param decorator The decoration function of this component.
      * @param <C>       The type of component the {@code decorator} decorates.
-     * @return The current instance of the {@code NewConfigurer} for a fluent API.
+     * @return The current instance of the {@code Configurer} for a fluent API.
      */
     default <C> S registerDecorator(@Nonnull Class<C> type,
                                     int order,
@@ -113,7 +114,7 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      *                  decorators is important.
      * @param decorator The decoration function of this component.
      * @param <C>       The type of component the {@code decorator} decorates.
-     * @return The current instance of the {@code NewConfigurer} for a fluent API.
+     * @return The current instance of the {@code Configurer} for a fluent API.
      */
     <C> S registerDecorator(@Nonnull Class<C> type,
                             @Nonnull String name,
@@ -121,18 +122,22 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
                             @Nonnull ComponentDecorator<C> decorator);
 
     /**
-     * Registers a {@code builder} with this {@code NewConfigurer}. The {@code builder} is typically constructed
-     * immediately by the {@code NewConfigurer}.
+     * Registers a {@link Module} {@code builder} with this {@code Configurer}.
+     * <p>
+     * Note that a {@code Module} is able to access the components of {@code this Configurer} upon construction, but not
+     * vice versa. As such, the {@code Module} maintains encapsulation.
+     * <p>
+     * The given {@code builder} is typically constructed immediately by the {@code Configurer}.
      *
      * @param builder The module builder function to register.
      * @param <M>     The type of {@link Module} constructed by the given {@code builder}.
-     * @return The current instance of the {@code NewConfigurer} for a fluent API.
+     * @return The current instance of the {@code Configurer} for a fluent API.
      */
     <M extends Module<M>> S registerModule(@Nonnull ModuleBuilder<M> builder);
 
     /**
      * Returns the completely initialized {@link NewConfiguration} instance of type {@code C} built using this
-     * {@code NewConfigurer} implementation.
+     * {@code Configurer} implementation.
      * <p>
      * It is not recommended to change any configuration on {@code this NewConfigurer} once this method is called.
      *

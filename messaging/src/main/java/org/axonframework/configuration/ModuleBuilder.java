@@ -17,7 +17,7 @@
 package org.axonframework.configuration;
 
 /**
- * Functional interface describing how to build a {@link Module} of type {@code M}using the
+ * Functional interface describing how to build a {@link Module} of type {@code M} using the
  * {@link LifecycleSupportingConfiguration} during construction.
  *
  * @param <M> The type of module created by this builder.

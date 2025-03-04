@@ -17,12 +17,13 @@
 package org.axonframework.configuration;
 
 /**
- * Interface describing a module of Axon Framework's Configuration.
+ * Interface describing a module of Axon Framework's configuration API.
  * <p>
  * Modules are relatively independent. They can be {@link NewConfigurer#registerModule(ModuleBuilder) registered} on a
  * parent {@link NewConfigurer} or registered in a nested style on another {@link Module} through the dedicated register
- * module operation. Furthermore, a module is able to access the registered {@link Component Components} from its
- * parent.
+ * module operation. Furthermore, a module is able to access the registered {@link Component Components} from the parent
+ * {@code Configurer} it is registered too. However, the parent is <b>not</b> able to retrieve components from these
+ * {@code Modules}, ensuring encapsulation.
  *
  * @param <M> The type of module this implementation returns. This generic allows us to support fluent interfacing.
  * @author Allard Buijze
@@ -31,13 +32,4 @@ package org.axonframework.configuration;
  */
 public interface Module<M extends Module<M>> extends NewConfigurer<M> {
 
-    /**
-     * Checks whether this configuration {@code Module} is of the given {@code type}.
-     *
-     * @param type A {@link Class} type to check the configuration {@code Module} against.
-     * @return {@code true} when this configuration {@code Module} is of given {@code type}, {@code false} otherwise.
-     */
-    default boolean isType(Class<?> type) {
-        return type.isInstance(this);
-    }
 }
