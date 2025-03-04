@@ -42,8 +42,8 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     protected final Components components = new Components();
-    protected final List<Module<?>> modules = new ArrayList<>();
-    protected final List<NewConfiguration> moduleConfigurations = new ArrayList<>();
+    private final List<Module<?>> modules = new ArrayList<>();
+    private final List<NewConfiguration> moduleConfigurations = new ArrayList<>();
 
     protected final LifecycleSupportingConfiguration config;
 
