@@ -16,11 +16,6 @@
 
 package org.axonframework.configuration;
 
-import jakarta.annotation.Nonnull;
-import org.axonframework.common.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 import java.util.SortedMap;
@@ -29,6 +24,11 @@ import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.assertThat;
+
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A component used in the Axon {@link NewConfigurer}.
@@ -173,16 +173,6 @@ public class Component<C> {
      * @param <C>  The type of the component this object identifiers, typically an interface.
      */
     public record Identifier<C>(@Nonnull Class<C> type, @Nonnull String name) {
-
-        /**
-         * Construct an {@code Component.Identifier} by setting the {@link #name()} to the {@link Class#getSimpleName()}
-         * of the given {@code type}.
-         *
-         * @param type The type of the component this object identifiers, typically an interface.
-         */
-        public Identifier(@Nonnull Class<C> type) {
-            this(type, requireNonNull(type, "The given type is unsupported because it is null.").getSimpleName());
-        }
 
         /**
          * Compact constructor asserting whether the {@code type} and {@code name} are non-null and not empty.
