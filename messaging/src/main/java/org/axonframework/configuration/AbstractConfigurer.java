@@ -67,7 +67,10 @@ public abstract class AbstractConfigurer<S extends ListableConfigurer<S>> implem
                                    @Nonnull ComponentBuilder<C> builder) {
         logger.debug("Registering component [{}] of type [{}].", name, type);
         Identifier<C> identifier = new Identifier<>(type, name);
-        components.put(identifier, new Component<>(identifier, config, builder));
+        Component<C> previous = components.put(identifier, new Component<>(identifier, config, builder));
+        if (previous != null) {
+            logger.warn("Replaced a previous Component registered under type [{}] and name [{}].", name, type);
+        }
         //noinspection unchecked
         return (S) this;
     }
