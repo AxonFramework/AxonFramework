@@ -36,6 +36,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration;
 import org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -55,7 +56,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @ContextConfiguration(classes = AxonAutoConfigurationWithEventSerializerPropertiesTest.TestContext.class)
 @EnableAutoConfiguration(exclude = {
         JmxAutoConfiguration.class,
-        WebClientAutoConfiguration.class
+        WebClientAutoConfiguration.class,
+        HttpMessageConvertersAutoConfiguration.class,
 })
 @EnableMBeanExport(registration = RegistrationPolicy.IGNORE_EXISTING)
 @TestPropertySource("classpath:application.serializertest.properties")

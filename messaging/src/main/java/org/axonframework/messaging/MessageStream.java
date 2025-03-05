@@ -299,6 +299,15 @@ public interface MessageStream<M extends Message<?>> {
     }
 
     /**
+     * Returns a stream that process all messages, but ignores the results and returns an empty stream.
+     *
+     * @return An Empty stream that ignores all results.
+     */
+    default Empty<M> ignoreEntries() {
+        return new IgnoredEntriesMessageStream<>(this).cast();
+    }
+
+    /**
      * Returns an Optional carrying the next {@link Entry entry} from the stream, if such entry was available. If no
      * entry is available for reading, this method returns an empty Optional.
      * <p>
