@@ -23,6 +23,7 @@ import org.axonframework.eventhandling.EventHandlingComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.EventSourcingComponent;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
@@ -39,6 +40,15 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Adapter that turns any {@link org.axonframework.eventsourcing.EventSourcingHandler} annotated bean into a
+ * {@link MessageHandler} implementation. Each annotated method is subscribed as Event Handler at the
+ * {@link org.axonframework.eventhandling.EventSink} for the event type specified by the parameter of that method.
+ *
+ * @param <T>
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 public class AnnotatedEventSourcingComponent<T> implements EventSourcingComponent {
 
     private final T target;

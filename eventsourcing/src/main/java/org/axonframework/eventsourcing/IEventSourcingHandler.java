@@ -23,13 +23,29 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-// todo: rename to EventSourcingHandler and move the `@EventSourcingHandler` annotation to annotations package
+/**
+ * Interface describing a handler of events that may return a {@link MessageStream.Single single stream} as a result of
+ * handling the event.
+ *
+ * @author Mateusz Nowak
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
 @FunctionalInterface
 interface IEventSourcingHandler extends EventHandler {
 
+    /**
+     * Handles the given {@code event} within the given {@code context}.
+     * <p>
+     * The result of handling is an {@link MessageStream.Single single stream}.
+     *
+     * @param event   The event to handle.
+     * @param context The context to the given {@code event} is handled in.
+     * @return An {@link MessageStream.Single empty stream} containing the response for the event.
+     */
     @Nonnull
     MessageStream.Single<? extends Message<?>> source(@Nonnull EventMessage<?> event,
-                                                            @Nonnull ProcessingContext context);
+                                                      @Nonnull ProcessingContext context);
 
     @Nonnull
     @Override

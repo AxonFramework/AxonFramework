@@ -27,6 +27,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * TODO This should be regarded as a playground object to verify the API. Feel free to remove, adjust, or replicate this class to your needs.
  * Should it be like regular event handler?
@@ -46,6 +48,8 @@ class SimpleEventSourcingComponent implements EventSourcingComponent {
     @Override
     public MessageStream.Single<? extends Message<?>> source(@Nonnull EventMessage<?> event,
                                                              @Nonnull ProcessingContext context) {
+        requireNonNull(event, "Event Message may not be null");
+        requireNonNull(context, "Processing Context may not be null");
         QualifiedName name = event.type().qualifiedName();
         // TODO #3103 - add interceptor knowledge
         var handler = eventSourcingHandlers.get(name);
@@ -55,7 +59,11 @@ class SimpleEventSourcingComponent implements EventSourcingComponent {
                     "No handler found for event with name [" + name + "]"
             ));
         }
-        return handler.source(event, context);
+        try {
+            return handler.source(event, context);
+        } catch (Exception e) {
+            return MessageStream.failed(e);
+        }
     }
 
     @Override
