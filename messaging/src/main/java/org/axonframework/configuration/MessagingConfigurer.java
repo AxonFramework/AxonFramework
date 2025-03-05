@@ -180,7 +180,7 @@ public class MessagingConfigurer extends DelegatingConfigurer<MessagingConfigure
         CommandBusBuilder commandBusBuilder = CommandBusBuilder.forSimpleCommandBus();
         config.getOptionalComponent(TransactionManager.class)
               .ifPresent(commandBusBuilder::withTransactions);
-        return commandBusBuilder.build(config);
+        return commandBusBuilder.build();
     }
 
     private static CommandGateway defaultCommandGateway(NewConfiguration config) {

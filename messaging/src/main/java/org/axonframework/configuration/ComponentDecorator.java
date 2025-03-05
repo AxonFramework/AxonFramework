@@ -19,7 +19,7 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 
 /**
- * A functional interface describing how to decorate a {@code delegate}.
+ * A functional interface describing how to decorate a component of type {@code C}.
  * <p>
  * Implementers of this interface can choose to wrap the {@code delegate} into a new instance of type {@code C} or to
  * mutate the state of the {@code delegate}. The former solution is applicable for infrastructure components that

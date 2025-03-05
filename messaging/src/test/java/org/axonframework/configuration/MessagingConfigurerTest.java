@@ -130,15 +130,4 @@ class MessagingConfigurerTest extends ConfigurerTestSuite<MessagingConfigurer> {
 
         assertEquals(expected, result.getComponent(QueryUpdateEmitter.class));
     }
-
-    @Test
-    void playground() {
-//        MessagingConfigurer.configurer(RootConfigurer.defaultConfigurer());
-//        MessagingConfigurer configurer = MessagingConfigurer.forProjection()defaultConfigurer();
-//
-//
-//        MessagingConfigurer.configurer(MessagingConfigurer.defaultConfigurer());
-
-
-    }
 }

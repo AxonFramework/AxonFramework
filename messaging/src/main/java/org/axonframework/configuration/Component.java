@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A component used in the Axon {@link NewConfigurer}.
+ * A component used in the Axon's configuration API.
  * <p>
  * A component describes an object that needs to be created, possibly based on other components in the
  * {@link LifecycleSupportingConfiguration}, and initialized as part of the {@code NewConfiguration}.
@@ -129,7 +129,7 @@ public class Component<C> {
                         "Cannot update component with [" + identifier + "] as it is already in use."
                 )
         );
-        this.builder = componentBuilder;
+        this.builder = requireNonNull(componentBuilder, "A component builder cannot be null.");
     }
 
     /**

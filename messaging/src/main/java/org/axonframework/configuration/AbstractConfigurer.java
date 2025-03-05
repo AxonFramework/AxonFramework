@@ -32,8 +32,8 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Abstract implementation of the {@link NewConfigurer} allowing for reuse of {@link Component},
- * {@link ComponentDecorator}, and {@link Module} registration for the {@link RootConfigurer} and {@link Module}
- * implementations alike.
+ * {@link ComponentDecorator}, {@link ConfigurerEnhancer}, and {@link Module} registration for the {@code NewConfigurer}
+ * and {@link Module} implementations alike.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -148,12 +148,12 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
 
     @Override
     public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
-        throw new UnsupportedOperationException("Registering start handlers is not supported on this module.");
+        throw new UnsupportedOperationException("Registering start handlers is not supported on this configurer.");
     }
 
     @Override
     public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
-        throw new UnsupportedOperationException("Registering shutdown handlers is not supported on this module.");
+        throw new UnsupportedOperationException("Registering shutdown handlers is not supported on this configurer.");
     }
 
     /**
@@ -167,7 +167,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
 
     /**
      * A {@link LifecycleSupportingConfiguration} implementation acting as the local configuration of this configurer.
-     * Can be implemented by {@link AbstractConfigurer} implementation that need desire to reuse the access logic for
+     * Can be implemented by {@link AbstractConfigurer} implementation that need to reuse the access logic for
      * {@link Component Components} and {@link Module Modules} as provided by this implementation.
      */
     public class LocalConfiguration implements LifecycleSupportingConfiguration {
@@ -179,7 +179,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
          * <p>
          * If this configuration does not have a certain {@link Component}, it will fall back to it's {@code parent}.
          * <p>
-         * Note that the {@code parent} can {@code null}.
+         * Note that the {@code parent} can be {@code null}.
          *
          * @param parent The parent life cycle supporting configuration to fall back on when necessary.
          */
