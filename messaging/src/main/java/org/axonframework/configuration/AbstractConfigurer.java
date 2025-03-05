@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public abstract class AbstractConfigurer<S extends ListableConfigurer<S>> implements ListableConfigurer<S> {
+public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements NewConfigurer<S> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -126,8 +126,8 @@ public abstract class AbstractConfigurer<S extends ListableConfigurer<S>> implem
     }
 
     /**
-     * Invoke all the {@link #registerEnhancer(ConfigurerEnhancer) registered} {@link ConfigurerEnhancer enhancers} on this
-     * {@code Configurer} implementation in their {@link ConfigurerEnhancer#order()}. This will ensure all sensible
+     * Invoke all the {@link #registerEnhancer(ConfigurerEnhancer) registered} {@link ConfigurerEnhancer enhancers} on
+     * this {@code Configurer} implementation in their {@link ConfigurerEnhancer#order()}. This will ensure all sensible
      * default components and decorators are in place from these enhancers.
      */
     private void invokeEnhancers() {

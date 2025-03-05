@@ -40,7 +40,7 @@ import jakarta.annotation.Nonnull;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface RootConfigurer extends ListableConfigurer<RootConfigurer> {
+public interface RootConfigurer extends NewConfigurer<RootConfigurer> {
 
     /**
      * Returns a {@code RootConfigurer} instance to start configuring {@link Component components},

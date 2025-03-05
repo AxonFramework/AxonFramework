@@ -222,6 +222,28 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
     }
 
     @Nested
+    class HasComponent {
+
+        @Test
+        void hasComponentForClass() {
+            assertFalse(testSubject.hasComponent(TestComponent.class));
+
+            testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT);
+
+            assertTrue(testSubject.hasComponent(TestComponent.class));
+        }
+
+        @Test
+        void hasComponentForClassAndName() {
+            assertFalse(testSubject.hasComponent(TestComponent.class, "some-name"));
+
+            testSubject.registerComponent(TestComponent.class, "some-name", c -> TEST_COMPONENT);
+
+            assertTrue(testSubject.hasComponent(TestComponent.class, "some-name"));
+        }
+    }
+
+    @Nested
     class ComponentDecoration {
 
         @Test
@@ -341,14 +363,14 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             ConfigurerEnhancer enhancerOne = spy(new ConfigurerEnhancer() {
 
                 @Override
-                public void enhance(@Nonnull ListableConfigurer<?> configurer) {
+                public void enhance(@Nonnull NewConfigurer<?> configurer) {
                     // Not important, so do nothing.
                 }
             });
             //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
             ConfigurerEnhancer enhancerTwo = spy(new ConfigurerEnhancer() {
                 @Override
-                public void enhance(@Nonnull ListableConfigurer<?> configurer) {
+                public void enhance(@Nonnull NewConfigurer<?> configurer) {
                     // Not important, so do nothing.
                 }
             });
@@ -356,7 +378,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             ConfigurerEnhancer enhancerThree = spy(new ConfigurerEnhancer() {
 
                 @Override
-                public void enhance(@Nonnull ListableConfigurer<?> configurer) {
+                public void enhance(@Nonnull NewConfigurer<?> configurer) {
                     // Not important, so do nothing.
                 }
             });
@@ -377,7 +399,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             ConfigurerEnhancer enhancerWithLowOrder = spy(new ConfigurerEnhancer() {
 
                 @Override
-                public void enhance(@Nonnull ListableConfigurer<?> configurer) {
+                public void enhance(@Nonnull NewConfigurer<?> configurer) {
                     // Not important, so do nothing.
                 }
 
@@ -390,7 +412,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
             ConfigurerEnhancer enhancerWithDefaultOrder = spy(new ConfigurerEnhancer() {
                 @Override
-                public void enhance(@Nonnull ListableConfigurer<?> configurer) {
+                public void enhance(@Nonnull NewConfigurer<?> configurer) {
                     // Not important, so do nothing.
                 }
             });
@@ -398,7 +420,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             ConfigurerEnhancer enhancerWithHighOrder = spy(new ConfigurerEnhancer() {
 
                 @Override
-                public void enhance(@Nonnull ListableConfigurer<?> configurer) {
+                public void enhance(@Nonnull NewConfigurer<?> configurer) {
                     // Not important, so do nothing.
                 }
 
@@ -449,7 +471,8 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             TestComponent expected = new TestComponent("replacement");
 
             testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
-                       .registerEnhancer(configurer -> configurer.registerComponent(TestComponent.class, c -> expected));
+                       .registerEnhancer(configurer -> configurer.registerComponent(TestComponent.class,
+                                                                                    c -> expected));
 
             NewConfiguration config = testSubject.build();
 

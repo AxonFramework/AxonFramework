@@ -21,17 +21,17 @@ import java.util.Objects;
 import jakarta.annotation.Nonnull;
 
 /**
- * A {@link ListableConfigurer} implementation delegating all calls to a {@code delegate Configurer}.
+ * A {@link NewConfigurer} implementation delegating all calls to a {@code delegate Configurer}.
  *
  * @param <S> The type of configurer this implementation returns. This generic allows us to support fluent interfacing.
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class DelegatingConfigurer<S extends ListableConfigurer<S>> implements ListableConfigurer<S> {
+public class DelegatingConfigurer<S extends NewConfigurer<S>> implements NewConfigurer<S> {
 
-    private final ListableConfigurer<?> delegate;
+    private final NewConfigurer<?> delegate;
 
-    public DelegatingConfigurer(@Nonnull ListableConfigurer<?> delegate) {
+    public DelegatingConfigurer(@Nonnull NewConfigurer<?> delegate) {
         this.delegate = Objects.requireNonNull(delegate, "A parent configuration is required");
     }
 

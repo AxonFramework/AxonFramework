@@ -23,9 +23,9 @@ import org.axonframework.configuration.Component.Identifier;
  * The starting point when configuring any Axon Framework application.
  * <p>
  * Provides utilities to {@link #registerComponent(Class, ComponentBuilder) register components},
- * {@link #registerDecorator(Class, int, ComponentDecorator) decorators} of these components, register
- * {@link #registerEnhancer(ConfigurerEnhancer) enhancers} for the entire configurer, and
- * {@link #registerModule(ModuleBuilder) modules}.
+ * {@link #registerDecorator(Class, int, ComponentDecorator) decorators} of these components, check if a component
+ * {@link #hasComponent(Class) exists}, register {@link #registerEnhancer(ConfigurerEnhancer) enhancers} for the entire
+ * configurer, and {@link #registerModule(ModuleBuilder) modules}.
  *
  * @param <S> The type of configurer this implementation returns. This generic allows us to support fluent interfacing.
  * @author Allard Buijze
@@ -122,15 +122,37 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
                             @Nonnull ComponentDecorator<C> decorator);
 
     /**
+     * Check whether there is a {@link Component} registered with this {@code Configurer} for the given {@code type}.
+     *
+     * @param type The type of the {@link Component} to check if it exists, typically an interface.
+     * @return {@code true} when there is a {@link Component} registered under the given {@code type}, {@code false}
+     * otherwise.
+     */
+    default boolean hasComponent(@Nonnull Class<?> type) {
+        return hasComponent(type, type.getSimpleName());
+    }
+
+    /**
+     * Check whether there is a {@link Component} registered with this {@code Configurer} for the given {@code type} and
+     * {@code name} combination.
+     *
+     * @param type The type of the {@link Component} to check if it exists, typically an interface.
+     * @param name The name of the {@link Component} to check if it exists.
+     * @return {@code true} when there is a {@link Component} registered under the given {@code type} and
+     * {@code name combination}, {@code false} otherwise.
+     */
+    boolean hasComponent(@Nonnull Class<?> type,
+                         @Nonnull String name);
+
+    /**
      * Registers an {@link ConfigurerEnhancer} with this {@code this Configurer}.
      * <p>
      * An {@code enhancer} is able to invoke <em>any</em> of the method on this {@code Configurer}, allowing it to add
      * (sensible) defaults, decorate {@link Component components}, or replace components entirely.
      * <p>
-     * An enhancer's {@link ConfigurerEnhancer#enhance(ListableConfigurer)} method is invoked during the
-     * {@link #build()} of {@code this Configurer}. When multiple enhancers have been provided, their
-     * {@link ConfigurerEnhancer#order()} dictates the enhancement order. For enhancer with the same order, the insert
-     * order is leading.
+     * An enhancer's {@link ConfigurerEnhancer#enhance(NewConfigurer)} method is invoked during the {@link #build()} of
+     * {@code this Configurer}. When multiple enhancers have been provided, their {@link ConfigurerEnhancer#order()}
+     * dictates the enhancement order. For enhancer with the same order, the insert order is leading.
      *
      * @param enhancer The configurer enhancer to enhance {@code this Configurer}.
      * @return The current instance of the {@code Configurer} for a fluent API.

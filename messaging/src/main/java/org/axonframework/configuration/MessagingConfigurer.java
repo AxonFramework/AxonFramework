@@ -118,7 +118,7 @@ public class MessagingConfigurer extends DelegatingConfigurer<MessagingConfigure
     /**
      * Private constructor to enforce usage of {@link #defaultConfigurer()} or {@link #configurer(boolean)}.
      */
-    private <C extends ListableConfigurer<C>> MessagingConfigurer(@Nonnull C delegate) {
+    private <C extends NewConfigurer<C>> MessagingConfigurer(@Nonnull C delegate) {
         super(delegate);
     }
 

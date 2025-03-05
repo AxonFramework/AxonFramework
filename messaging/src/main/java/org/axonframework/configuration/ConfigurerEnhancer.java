@@ -19,16 +19,15 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 
 /**
- * Interface describing an enhancement of a {@link ListableConfigurer listable configurer} of the Axon Framework
- * configuration API.
+ * Interface describing an enhancement of a {@link NewConfigurer configurer} of the Axon Framework configuration API.
  * <p>
- * Through implementing the {@link #enhance(ListableConfigurer)} operation a {@code ConfigurerEnhancer} is able to
- * {@link ListableConfigurer#registerComponent(Class, ComponentBuilder) register} components and
- * {@link ListableConfigurer#registerDecorator(Class, int, ComponentDecorator) register} decorators. The registration of
- * components and/or decorators can be made conditional by using the {@link ListableConfigurer#hasComponent(Class)}
+ * Through implementing the {@link #enhance(NewConfigurer)} operation a {@code ConfigurerEnhancer} is able to
+ * {@link NewConfigurer#registerComponent(Class, ComponentBuilder) register} components and
+ * {@link NewConfigurer#registerDecorator(Class, int, ComponentDecorator) register} decorators. The registration of
+ * components and/or decorators can be made conditional by using the {@link NewConfigurer#hasComponent(Class)}
  * operation.
  * <p>
- * Note that enhancers have an {@link #order()} in which they enhance the {@code ListableConfigurer}. When not otherwise
+ * Note that enhancers have an {@link #order()} in which they enhance the {@code Configurer}. When not otherwise
  * specified, the order defaults to {@code 0}. Thus, without specifying the order, the insert order of enhancer dictates
  * the order.
  *
@@ -42,9 +41,9 @@ public interface ConfigurerEnhancer {
      * Enhances the given {@code configurer} with, for example, additional {@link Component components} and
      * {@link ComponentDecorator decorators}.
      *
-     * @param configurer The listable configurer instance to enhance.
+     * @param configurer The configurer instance to enhance.
      */
-    void enhance(@Nonnull ListableConfigurer<?> configurer);
+    void enhance(@Nonnull NewConfigurer<?> configurer);
 
     /**
      * Returns the relative order this enhancer should be invoked in, compared to other instances.
