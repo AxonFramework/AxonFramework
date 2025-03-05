@@ -351,8 +351,8 @@ This section contains two tables:
 | org.axonframework.commandhandling.CommandHandler             | org.axonframework.commandhandling.annotation.CommandHandler  |
 | org.axonframework.eventhandling.EventHandler                 | org.axonframework.eventhandling.annotation.EventHandler      |
 | org.axonframework.queryhandling.QueryHandler                 | org.axonframework.queryhandling.annotation.QueryHandler      |
-| org.axonframework.config.Configurer                          | org.axonframework.configuration.NewConfigurer                |
-| org.axonframework.config.Configuration                       | org.axonframework.configuration.NewConfiguration             |
+| org.axonframework.config.Configurer                          | org.axonframework.configuration.Configurer                   |
+| org.axonframework.config.Configuration                       | org.axonframework.configuration.Configuration                |
 | org.axonframework.config.Component                           | org.axonframework.configuration.Component                    |
 | org.axonframework.config.ConfigurerModule                    | org.axonframework.configuration.ConfigurerEnhancer           |
 | org.axonframework.config.ModuleConfiguration                 | org.axonframework.configuration.Module                       |
@@ -370,7 +370,7 @@ This section contains two tables:
 | org.axonframework.messaging.unitofwork.DefaultUnitOfWork        | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
 | org.axonframework.messaging.unitofwork.ExecutionResult          | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
 | org.axonframework.messaging.unitofwork.MessageProcessingContext | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
-| org.axonframework.eventsourcing.eventstore.AbstractEventStore   | Made obsolete through the rewrite of the `EventStore`                                     |
+| org.axonframework.eventsourcing.eventstore.AbstractEventStore   | Made obsolete through the rewrite of the `EventStore`.                                    |
 
 Method signature changes
 ========================
@@ -404,31 +404,28 @@ This section contains three subsections, called:
 
 #### Methods
 
-| Method                       | What                                                                   | Why                                     |
-|------------------------------|------------------------------------------------------------------------|-----------------------------------------|
-| Configurer#registerComponent | Replaced `Function<Configuration, ? extends C>` for `ComponentBuilder` | See [here](#componentbuilder-interface) |
-| Configurer#registerModule    | Replaced `ModuleConfiguration` for `ModuleBuilder`                     | See [here](#modulebuilder-interface)    |
+| Method                         | What                                                                   | Why                                     |
+|--------------------------------|------------------------------------------------------------------------|-----------------------------------------|
+| `Configurer#registerComponent` | Replaced `Function<Configuration, ? extends C>` for `ComponentBuilder` | Added functional interface for clarity. |
+| `Configurer#registerModule`    | Replaced `ModuleConfiguration` for `ModuleBuilder`                     | Added functional interface for clarity. |
 
-### Moved methods and constructors
+### Moved/renamed methods and constructors
 
-| Constructor / Method                           | To where                                           |
-|------------------------------------------------|----------------------------------------------------|
-| `Configurer#registerCommandHandler`            | `InfraConfigurer#registerCommandHandler`           | 
-| `Configurer#registerQueryHandler`              | `InfraConfigurer#registerQueryHandler`             | 
-| `Configurer#registerMessageHandler`            | `InfraConfigurer#registerMessageHandlingComponent` | 
-| `Configurer#configureCommandBus`               | `InfraConfigurer#registerCommandBus`               | 
-| `Configurer#configureEventBus`                 | `InfraConfigurer#registerEventBus`                 | 
-| `Configurer#configureQueryBus`                 | `InfraConfigurer#registerQueryBus`                 | 
-| `Configurer#configureQueryUpdateEmitter`       | `InfraConfigurer#registerQueryUpdateEmitter`       | 
-| `ConfigurerModule#configureModule(Configurer)` | `ConfigurerEnhancer#enhance(ListableConfigurer)`   | 
+| Constructor / Method                     | To where                                         |
+|------------------------------------------|--------------------------------------------------|
+| `Configurer#configureCommandBus`         | `MessagingConfigurer#registerCommandBus`         | 
+| `Configurer#configureEventBus`           | `MessagingConfigurer#registerEventSink`          | 
+| `Configurer#configureQueryBus`           | `MessagingConfigurer#registerQueryBus`           | 
+| `Configurer#configureQueryUpdateEmitter` | `MessagingConfigurer#registerQueryUpdateEmitter` | 
+| `ConfigurerModule#configureModule`       | `ConfigurerEnhancer#enhance`                     | 
 
 ### Removed methods and constructors
 
-| Constructor / Method                                                            | Why                                       | 
-|---------------------------------------------------------------------------------|-------------------------------------------|
-| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`        | See [here](#configurer-and-configuration) |
-| `org.axonframework.config.ModuleConfiguration#unwrap()`                         | See [here](#configurer-and-configuration) |
-| `org.axonframework.config.Configuration#lifecycleRegistry()`                    | See [here](#configurer-and-configuration) |
-| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`     | See [here](#configurer-and-configuration) |
-| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`     | See [here](#configurer-and-configuration) |
-| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)` | See [here](#configurer-and-configuration) |
+| Constructor / Method                                                            | Why                                                                             | 
+|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`        | Initialize is now replace fully by start and shutdown handlers.                 |
+| `org.axonframework.config.ModuleConfiguration#unwrap()`                         | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant. |
+| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                 | Only use by `unwrap()` that's also removed.                                     |
+| `org.axonframework.config.Configuration#lifecycleRegistry()`                    | A round about way to support life cycle handler registration.                   |
+| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`     | Fully replaced by start and shutdown handler registration.                      |
+| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)` | Each Configurer now has get optional operation replacing this functionality.    |
