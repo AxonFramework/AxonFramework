@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.annotation.AnnotatedEventHandlingComponent;
 import org.axonframework.eventsourcing.annotations.AnnotatedEventSourcingComponent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
