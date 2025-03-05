@@ -21,8 +21,8 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.config.testsuite.student.commands.ChangeStudentNameCommand;
 import org.axonframework.config.testsuite.student.commands.EnrollStudentToCourseCommand;
 import org.axonframework.config.testsuite.student.events.StudentEnrolledEvent;
-import org.axonframework.config.testsuite.student.models.Course;
-import org.axonframework.config.testsuite.student.models.Student;
+import org.axonframework.config.testsuite.student.state.Course;
+import org.axonframework.config.testsuite.student.state.Student;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
@@ -37,9 +37,8 @@ import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventSto
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.ModelRegistry;
-import org.axonframework.modelling.SimpleModelRegistry;
-import org.axonframework.modelling.repository.ManagedEntity;
+import org.axonframework.modelling.StateManager;
+import org.axonframework.modelling.SimpleStateManager;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -77,18 +76,10 @@ public abstract class AbstractStudentTestsuite {
     );
 
 
-    protected ModelRegistry registry = SimpleModelRegistry
+    protected StateManager registry = SimpleStateManager
             .create("MyModelRegistry")
-            .registerModel(
-                    String.class,
-                    Student.class,
-                    (id, context) -> studentRepository.loadOrCreate(id, context).thenApply(ManagedEntity::entity)
-            )
-            .registerModel(
-                    String.class,
-                    Course.class,
-                    (id, context) -> courseRepository.loadOrCreate(id, context).thenApply(ManagedEntity::entity)
-            );
+            .register(String.class, Student.class, studentRepository)
+            .register(String.class, Course.class, courseRepository);
 
 
     /**

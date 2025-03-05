@@ -16,21 +16,23 @@
 
 package org.axonframework.modelling;
 
+import org.axonframework.modelling.repository.AsyncRepository;
+
 /**
- * Exception thrown by the {@link ModelRegistry} when no model is registered for a given model class. Can be resolved by
- * registering a model for the given model class.
+ * Exception thrown by the {@link StateManager} when no {@link AsyncRepository} is registered for a given state type.
+ * Can be resolved by registering a {@link AsyncRepository} for the given state type.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class MissingModelDefinitionException extends RuntimeException {
+public class MissingRepositoryException extends RuntimeException {
 
     /**
-     * Initialize the exception with a message containing the given model class.
+     * Initialize the exception with a message containing the given state type.
      *
-     * @param modelClass The model class for which no model was registered.
+     * @param stateType The state type for which no repository was registered.
      */
-    public MissingModelDefinitionException(Class<?> modelClass) {
-        super("No Model was registered for the given model class: %s".formatted(modelClass.getName()));
+    public MissingRepositoryException(Class<?> stateType) {
+        super("No repository was registered for the given state type: %s".formatted(stateType.getName()));
     }
 }

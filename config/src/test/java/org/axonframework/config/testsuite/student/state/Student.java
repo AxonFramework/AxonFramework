@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.config.testsuite.student.models;
+package org.axonframework.config.testsuite.student.state;
 
 import org.axonframework.config.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.config.testsuite.student.events.StudentNameChangedEvent;

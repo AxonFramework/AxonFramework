@@ -16,85 +16,75 @@
 
 package org.axonframework.modelling;
 
-import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.repository.AccessSerializingRepository;
+import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class SimpleModelRegistryTest {
+
+    private final AsyncRepository<String, Integer> repository = Mockito.mock(AccessSerializingRepository.class);
+
+    @BeforeEach
+    void setUp() {
+        ManagedEntity<String, Integer> loadedEntity = mock(ManagedEntity.class);
+        when(loadedEntity.identifier()).thenReturn("42");
+        when(loadedEntity.entity()).thenReturn(42);
+
+        when(repository.load("42", ProcessingContext.NONE)).thenReturn(CompletableFuture.completedFuture(loadedEntity));
+    }
 
     @Test
     void registerModel() {
         // Given
-        ModelRegistry testSubject = SimpleModelRegistry.create("test");
-        testSubject.registerModel(
+        StateManager testSubject = SimpleStateManager.create("test");
+        testSubject.register(
                 String.class,
                 Integer.class,
-                (id, ctx) -> CompletableFuture.completedFuture(Integer.valueOf(id))
+                repository
         );
 
         // When
-        ModelContainer container = testSubject.modelContainer(new StubProcessingContext());
+        var state = testSubject.load(Integer.class, "42", ProcessingContext.NONE).join();
 
         // Then
-        assertEquals(42, container.getModel(Integer.class, "42").join());
-    }
-
-
-    @Test
-    void cachesAlreadyCreatedModel() {
-        // Given
-        AtomicInteger creationCount = new AtomicInteger();
-        ModelRegistry testSubject = SimpleModelRegistry.create("test");
-        testSubject.registerModel(
-                String.class,
-                Integer.class,
-                (id, ctx) -> {
-                    creationCount.incrementAndGet();
-                    return CompletableFuture.completedFuture(Integer.valueOf(id));
-                }
-        );
-
-        // When
-        ModelContainer container = testSubject.modelContainer(new StubProcessingContext());
-
-        // Then
-        assertEquals(42, container.getModel(Integer.class, "42").join());
-        assertEquals(42, container.getModel(Integer.class, "42").join());
-        assertEquals(42, container.getModel(Integer.class, "42").join());
-        assertEquals(1, creationCount.get());
+        assertEquals(42, state);
     }
 
     @Test
     void throwsExceptionOnMissingModelDefinition() {
         // Given
-        ModelRegistry testSubject = SimpleModelRegistry.create("test");
-        ModelContainer container = testSubject.modelContainer(new StubProcessingContext());
+        StateManager testSubject = SimpleStateManager.create("test");
 
         // When & Then
-        var exception = assertThrows(CompletionException.class, () -> container.getModel(Integer.class, "42").join());
-        assertInstanceOf(MissingModelDefinitionException.class, exception.getCause());
+        var exception = assertThrows(CompletionException.class,
+                                     () -> testSubject.load(Integer.class, "42", ProcessingContext.NONE).join());
+        assertInstanceOf(MissingRepositoryException.class, exception.getCause());
     }
 
     @Test
     void canRegisterEachModelClassOnlyOnce() {
         // Given
-        ModelRegistry testSubject = SimpleModelRegistry.create("test");
-        testSubject.registerModel(
+        StateManager testSubject = SimpleStateManager.create("test");
+        testSubject.register(
                 String.class,
                 Integer.class,
-                (id, ctx) -> CompletableFuture.completedFuture(Integer.valueOf(id))
+                repository
         );
 
         // When & Then
-        assertThrows(ModelAlreadyRegisteredException.class, () -> testSubject.registerModel(
+        assertThrows(StateTypeAlreadyRegisteredException.class, () -> testSubject.register(
                 String.class,
                 Integer.class,
-                (id, ctx) -> CompletableFuture.completedFuture(Integer.valueOf(id))
+                repository
         ));
     }
 }

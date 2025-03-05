@@ -19,7 +19,7 @@ package org.axonframework.config.testsuite.student;
 
 import org.axonframework.config.testsuite.student.commands.ChangeStudentNameCommand;
 import org.axonframework.config.testsuite.student.events.StudentNameChangedEvent;
-import org.axonframework.config.testsuite.student.models.Student;
+import org.axonframework.config.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
@@ -28,17 +28,17 @@ import org.junit.jupiter.api.*;
 /**
  * Tests whether stateful command handling components can handle singular model commands.
  */
-class SingleModelCommandHandlingComponentTest extends AbstractStudentTestsuite {
+class SingleStateCommandHandlingComponentTest extends AbstractStudentTestsuite {
 
     @Test
-    void canHandleCommandThatTargetsOneModelViaLambdaModelContainer() {
+    void canHandleCommandThatTargetsOneStateViaLambdaStateManager() {
         var component = StatefulCommandHandlingComponent
                 .create("MyStatefulCommandHandlingComponent", registry)
                 .subscribe(
                         new QualifiedName(ChangeStudentNameCommand.class),
-                        (command, model, context) -> {
+                        (command, state, context) -> {
                             ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
-                            Student student = model.getModel(Student.class, payload.id()).join();
+                            Student student = state.load(Student.class, payload.id(), context).join();
                             appendEvent(context,
                                         new StudentNameChangedEvent(student.getId(), payload.name()));
                             return MessageStream.empty().cast();

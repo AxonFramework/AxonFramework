@@ -22,8 +22,11 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.ModelRegistry;
-import org.axonframework.modelling.SimpleModelRegistry;
+import org.axonframework.modelling.SimpleStateManager;
+import org.axonframework.modelling.StateManager;
+import org.axonframework.modelling.repository.AccessSerializingRepository;
+import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;
@@ -32,24 +35,34 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class StatefulCommandHandlingComponentTest {
 
-    private final ModelRegistry modelRegistry = SimpleModelRegistry.create("test");
+    private final StateManager stateManager = SimpleStateManager.create("test");
+    private final AsyncRepository<String, Integer> repository = mock(AccessSerializingRepository.class);
+
+    @BeforeEach
+    void setUp() {
+        ManagedEntity<String, Integer> loadedEntity = mock(ManagedEntity.class);
+        when(loadedEntity.identifier()).thenReturn("42");
+        when(loadedEntity.entity()).thenReturn(42);
+
+        when(repository.load("42", ProcessingContext.NONE)).thenReturn(CompletableFuture.completedFuture(loadedEntity));
+    }
 
     @Test
     void invokesRegisteredHandlerWithModelContainer() {
-        StatefulCommandHandlingComponent testSubject = StatefulCommandHandlingComponent.create("test", modelRegistry);
-        ProcessingContext processingContext = new StubProcessingContext();
-        modelRegistry.registerModel(
+        StatefulCommandHandlingComponent testSubject = StatefulCommandHandlingComponent.create("test", stateManager);
+        stateManager.register(
                 String.class,
                 Integer.class,
-                (id, ctx) -> CompletableFuture.completedFuture(42)
+                repository
         );
 
         AtomicBoolean invoked = new AtomicBoolean();
-        testSubject.subscribe(new QualifiedName("test-command"), (command, models, ctx) -> {
-            models.getModel(Integer.class, "42").thenAccept(result -> {
+        testSubject.subscribe(new QualifiedName("test-command"), (command, state, ctx) -> {
+            state.load(Integer.class, "42", ctx).thenAccept(result -> {
                 assertEquals(42, result);
             }).join();
             invoked.set(true);
@@ -57,14 +70,14 @@ class StatefulCommandHandlingComponentTest {
         });
 
         testSubject.handle(new GenericCommandMessage<>(new MessageType("test-command"),
-                                                       "my-payload"), processingContext)
+                                                       "my-payload"), ProcessingContext.NONE)
                    .asCompletableFuture().join();
         assertTrue(invoked.get());
     }
 
     @Test
     void canRegisterNonStatefulNormalHandler() {
-        StatefulCommandHandlingComponent testSubject = StatefulCommandHandlingComponent.create("test", modelRegistry);
+        StatefulCommandHandlingComponent testSubject = StatefulCommandHandlingComponent.create("test", stateManager);
         ProcessingContext processingContext = new StubProcessingContext();
         AtomicBoolean invoked = new AtomicBoolean();
         testSubject.subscribe(new QualifiedName("test-command"), (command, ctx) -> {
@@ -80,7 +93,7 @@ class StatefulCommandHandlingComponentTest {
 
     @Test
     void reigsteredHandlersAreListedInSupportedCommands() {
-        StatefulCommandHandlingComponent testSubject = StatefulCommandHandlingComponent.create("test", modelRegistry);
+        StatefulCommandHandlingComponent testSubject = StatefulCommandHandlingComponent.create("test", stateManager);
         testSubject.subscribe(new QualifiedName("test-command"),
                               (command, models, ctx) -> MessageStream.empty().cast());
         testSubject.subscribe(new QualifiedName("test-command-2"), (command, ctx) -> MessageStream.empty().cast());
@@ -92,7 +105,7 @@ class StatefulCommandHandlingComponentTest {
 
     @Test
     void exceptionWhileHandlingCommandResultsInFailedStream() {
-        StatefulCommandHandlingComponent testSubject = StatefulCommandHandlingComponent.create("test", modelRegistry);
+        StatefulCommandHandlingComponent testSubject = StatefulCommandHandlingComponent.create("test", stateManager);
         ProcessingContext processingContext = new StubProcessingContext();
         testSubject.subscribe(new QualifiedName("test-command"), (command, models, ctx) -> {
             throw new RuntimeException("Faking an exception");

@@ -16,21 +16,23 @@
 
 package org.axonframework.modelling;
 
+import org.axonframework.modelling.repository.AsyncRepository;
+
 /**
- * Exception thrown by the {@link ModelRegistry} when trying to register a model for a model class that already has a
- * model registered.
+ * Exception thrown by the {@link StateManager} when trying to register an {@link AsyncRepository} for a state type
+ * that already has a repository registered.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ModelAlreadyRegisteredException extends RuntimeException {
+public class StateTypeAlreadyRegisteredException extends RuntimeException {
 
     /**
-     * Initialize the exception with a message containing the given model class.
+     * Initialize the exception with a message containing the given state type.
      *
-     * @param modelClass The model class for which no model was registered.
+     * @param stateType The state type for which no model was registered.
      */
-    public ModelAlreadyRegisteredException(Class<?> modelClass) {
-        super("Cannot register model %s as it was already registered.".formatted(modelClass.getName()));
+    public StateTypeAlreadyRegisteredException(Class<?> stateType) {
+        super("Cannot register repository for state type %s as one was already registered.".formatted(stateType.getName()));
     }
 }

@@ -19,8 +19,8 @@ package org.axonframework.config.testsuite.student;
 
 import org.axonframework.config.testsuite.student.commands.EnrollStudentToCourseCommand;
 import org.axonframework.config.testsuite.student.events.StudentEnrolledEvent;
-import org.axonframework.config.testsuite.student.models.Course;
-import org.axonframework.config.testsuite.student.models.Student;
+import org.axonframework.config.testsuite.student.state.Course;
+import org.axonframework.config.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
@@ -33,18 +33,18 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests whether stateful command handling components can handle commands that target multiple models at the same time.
  */
-class MultiModelCommandHandlingComponentTest extends AbstractStudentTestsuite {
+class MultiStateCommandHandlingComponentTest extends AbstractStudentTestsuite {
 
     @Test
-    void canCombineModelsInLambdaCommandHandlerViaModelContainerParameter() {
+    void canCombineStatesInLambdaCommandHandlerViaStateManagerParameter() {
         var component = StatefulCommandHandlingComponent
                 .create("MyStatefulCommandHandlingComponent", registry)
                 .subscribe(
                         new QualifiedName(EnrollStudentToCourseCommand.class),
-                        (command, models, context) -> {
+                        (command, state, context) -> {
                             EnrollStudentToCourseCommand payload = (EnrollStudentToCourseCommand) command.getPayload();
-                            Student student = models.getModel(Student.class, payload.studentId()).join();
-                            Course course = models.getModel(Course.class, payload.courseId()).join();
+                            Student student = state.load(Student.class, payload.studentId(), context).join();
+                            Course course = state.load(Course.class, payload.courseId(), context).join();
 
                             if (student.getCoursesEnrolled().size() > 2) {
                                 throw new IllegalArgumentException(

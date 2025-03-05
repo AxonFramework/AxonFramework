@@ -19,13 +19,17 @@ package org.axonframework.modelling.command;
 import org.axonframework.commandhandling.CommandHandlerRegistry;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.modelling.StateManager;
 
 import javax.annotation.Nonnull;
 
 /**
- * Interface describing a registry of {@link StatefulCommandHandler stateful command handlers}.
+ * Interface describing a registry of {@link StatefulCommandHandler stateful command handlers}. These command handlers
+ * receive an addition {@link StateManager state parameter} which can be used to load state
+ * during the execution of the command handler.
  *
  * @param <S> The type of the registry itself.
+ * @see StateManager
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  * @author Mateusz Nowak
