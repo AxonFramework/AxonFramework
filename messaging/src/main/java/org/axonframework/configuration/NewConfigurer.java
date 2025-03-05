@@ -24,7 +24,7 @@ import org.axonframework.configuration.Component.Identifier;
  * <p>
  * Provides utilities to {@link #registerComponent(Class, ComponentBuilder) register components},
  * {@link #registerDecorator(Class, int, ComponentDecorator) decorators} of these components, register
- * {@link #registerEnhance(ConfigurerEnhancer) enhancers} for the entire configurer, and
+ * {@link #registerEnhancer(ConfigurerEnhancer) enhancers} for the entire configurer, and
  * {@link #registerModule(ModuleBuilder) modules}.
  *
  * @param <S> The type of configurer this implementation returns. This generic allows us to support fluent interfacing.
@@ -135,7 +135,7 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      * @param enhancer The configurer enhancer to enhance {@code this Configurer}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    S registerEnhance(@Nonnull ConfigurerEnhancer enhancer);
+    S registerEnhancer(@Nonnull ConfigurerEnhancer enhancer);
 
     /**
      * Registers a {@link Module} {@code builder} with this {@code Configurer}.

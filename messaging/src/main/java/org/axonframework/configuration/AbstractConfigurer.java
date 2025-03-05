@@ -93,7 +93,7 @@ public abstract class AbstractConfigurer<S extends ListableConfigurer<S>> implem
     }
 
     @Override
-    public S registerEnhance(@Nonnull ConfigurerEnhancer enhancer) {
+    public S registerEnhancer(@Nonnull ConfigurerEnhancer enhancer) {
         logger.debug("Registering enhancer [{}].", enhancer.getClass().getSimpleName());
         this.enhancers.add(enhancer);
         //noinspection unchecked
@@ -126,7 +126,7 @@ public abstract class AbstractConfigurer<S extends ListableConfigurer<S>> implem
     }
 
     /**
-     * Invoke all the {@link #registerEnhance(ConfigurerEnhancer) registered} {@link ConfigurerEnhancer enhancers} on this
+     * Invoke all the {@link #registerEnhancer(ConfigurerEnhancer) registered} {@link ConfigurerEnhancer enhancers} on this
      * {@code Configurer} implementation in their {@link ConfigurerEnhancer#order()}. This will ensure all sensible
      * default components and decorators are in place from these enhancers.
      */

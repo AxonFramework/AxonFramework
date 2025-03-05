@@ -308,14 +308,14 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         @Test
         void registerEnhancerThrowsNullPointerExceptionForNullEnhancer() {
             //noinspection DataFlowIssue
-            assertThrows(NullPointerException.class, () -> testSubject.registerEnhance(null));
+            assertThrows(NullPointerException.class, () -> testSubject.registerEnhancer(null));
         }
 
         @Test
         void registeredEnhancersAreInvokedDuringBuild() {
             AtomicBoolean invoked = new AtomicBoolean(false);
 
-            testSubject.registerEnhance(configurer -> invoked.set(true));
+            testSubject.registerEnhancer(configurer -> invoked.set(true));
 
             testSubject.build();
 
@@ -326,7 +326,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         void registeredEnhancersAreInvokedDuringBuildOnlyOnce() {
             AtomicInteger counter = new AtomicInteger(0);
 
-            testSubject.registerEnhance(configurer -> counter.getAndIncrement());
+            testSubject.registerEnhancer(configurer -> counter.getAndIncrement());
             // First build
             testSubject.build();
             // Second build
@@ -361,9 +361,9 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                 }
             });
 
-            testSubject.registerEnhance(enhancerOne)
-                       .registerEnhance(enhancerTwo)
-                       .registerEnhance(enhancerThree)
+            testSubject.registerEnhancer(enhancerOne)
+                       .registerEnhancer(enhancerTwo)
+                       .registerEnhancer(enhancerThree)
                        .build();
 
             InOrder enhancementOrder = inOrder(enhancerOne, enhancerTwo, enhancerThree);
@@ -408,9 +408,9 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                 }
             });
 
-            testSubject.registerEnhance(enhancerWithDefaultOrder)
-                       .registerEnhance(enhancerWithHighOrder)
-                       .registerEnhance(enhancerWithLowOrder)
+            testSubject.registerEnhancer(enhancerWithDefaultOrder)
+                       .registerEnhancer(enhancerWithHighOrder)
+                       .registerEnhancer(enhancerWithLowOrder)
                        .build();
 
             InOrder enhancementOrder = inOrder(enhancerWithLowOrder, enhancerWithDefaultOrder, enhancerWithHighOrder);
@@ -421,7 +421,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
 
         @Test
         void registeredEnhancersCanAddComponents() {
-            testSubject.registerEnhance(
+            testSubject.registerEnhancer(
                     configurer -> configurer.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
             );
 
@@ -437,7 +437,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                     TestComponent.class, 0, (c, delegate) -> new TestComponent(delegate.state() + "-decorated")
             );
             testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
-                       .registerEnhance(enhancer);
+                       .registerEnhancer(enhancer);
 
             NewConfiguration config = testSubject.build();
 
@@ -449,7 +449,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             TestComponent expected = new TestComponent("replacement");
 
             testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
-                       .registerEnhance(configurer -> configurer.registerComponent(TestComponent.class, c -> expected));
+                       .registerEnhancer(configurer -> configurer.registerComponent(TestComponent.class, c -> expected));
 
             NewConfiguration config = testSubject.build();
 
@@ -462,7 +462,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             TestComponent expected = new TestComponent("conditional");
 
             testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
-                       .registerEnhance(configurer -> {
+                       .registerEnhancer(configurer -> {
                            if (configurer.hasComponent(TestComponent.class)) {
                                configurer.registerComponent(TestComponent.class, "conditional", c -> expected);
                            }
