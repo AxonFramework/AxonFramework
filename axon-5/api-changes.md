@@ -156,24 +156,22 @@ As an act to clean this up, we have broken down the `Configurer` and `Configurat
 As such, the `Configurer` interface now only provides basic operations
 to [register components](#registering-components-with-the-componentbuilder-interface), [decorate components](#decorating-components-with-the-componentdecorator-interface), [register enhancers](#registering-enhancers-with-the-configurerenhancer-interface),
 and [register modules](#registering-modules-with-the-modulebuilder-interface), besides the basic start-and-shutdown
-handler registration from the `LifecycleOperations` interface.
-The `Configuration` in turn now only has the means to retrieve components, and it's modules' components.
+handler registration from the `LifecycleOperations` interface. The `Configuration` in turn now only has the means to
+retrieve components, and it's modules' components.
 
-However, we still provide the flexibility to specify your buses, gateways, handlers, and other Axon-specific components.
-To configure those, you will have to provide that specific's Axon module's configuration `Module`. A `Module` is an
-implementation of a `Configurer` interface, which should be registered as part of a `ModuleBuilder`.
-
-So, how do you start Axon's configuration? You begin with the `RootConfigurer` that can be constructed through the
-static `RootConfigurer#defaultConfigurer` method. On this `RootConfigurer`, you are able to provide components directly
-if desired, or use the aforementioned module-specific `Modules`.
-You would do so by registering a `ModuleBuilder` with the `RootConfigurer`.
+So, how do you start Axon's configuration? That depends on what you are going to use from Axon Framework. If you, for
+example, only want to use the basic messaging concepts, you can start with the `MessagingConfigurer`. You can construct
+one through the static `MessagingConfigurer#defaultConfigurer` method. This `MessagingConfigurer` will provide you a
+couple of defaults, like the `CommandBus` and `QueryBus`. Furthermore, on this configurer, you are able to provide new
+or replace existing components, decorate these components, and register the aforementioned module-specific `Modules`.
 
 In this fashion, we intend to ensure the following points:
 
 1. We clean up the `Configurer` and `Configuration` API substantially by splitting it into manageable chunks. This
-   should simplify configuration of Axon applications.
-2. We reverse the dependency order. In doing so, each Axon Framework module can provide its own configuration `Module`.
-   This allows users to pick and choose the Axon modules they need.
+   should simplify configuration of Axon applications, as well as ease the introduction of specific `Configurer`
+   instances like the `MessagingConfigurer`.
+2. We reverse the dependency order. In doing so, each Axon Framework module can provide its own `Configurer`. This
+   allows users to pick and choose the Axon modules they need.
 
 For more details on how to use the new configuration API, be sure to read the following subsections.
 
@@ -189,11 +187,11 @@ Here's an example of how to register a `DefaultCommandGateway` in Java:
 
 ```java
 public static void main(String[] args) {
-    RootConfigurer.defaultConfigurer()
-                  .registerComponent(config -> new DefaultCommandGateway(
-                          config.getComponent(CommandBus.class),
-                          config.getComponent(MessageTypeResolver.class)
-                  ));
+    MessagingConfigurer.defaultConfigurer()
+                       .registerComponent(CommandGateway.class, config -> new DefaultCommandGateway(
+                               config.getComponent(CommandBus.class),
+                               config.getComponent(MessageTypeResolver.class)
+                       ));
     // Further configuration...
 }
 ```
@@ -204,7 +202,7 @@ New functionality to the configuration API, is the ability to provide decorators
 for [registered components](#registering-components-with-the-componentbuilder-interface). The decorator pattern is what
 Axon Framework uses to construct its infrastructure components, like the `CommandBus`, as of version 5.
 
-In the command bus' example, concept like intercepting, tracing, being distributed, and retrying, are now decorators
+In the command bus' example, concepts like intercepting, tracing, being distributed, and retrying, are now decorators
 around a `SimpleCommandBus`. We register those through the `Configurer#registerDecorator` method, which expect
 provisioning of a `ComponentDecorator` instance. The `ComponentDecorator` provides a `Configuration` and _delegate_
 component when invoked, and expects a new instance of the `ComponentDecorator's` generic type to be returned.
@@ -213,54 +211,55 @@ Here's an example of how we can decorate the `SimpleCommandBus` in with a `Compo
 
 ```java
 public static void main(String[] args) {
-    RootConfigurer.defaultConfigurer()
-                  .registerComponent(CommandBus.class, config -> new SimpleCommandBus())
-                  .registerDecorator(
-                          CommandBus.class,
-                          0,
-                          (config, delegate) -> new TracingCommandBus(
-                                  delegate,
-                                  config.getComponent(CommandBusSpanFactory.class)
-                          )
-                  );
+    MessagingConfigurer.defaultConfigurer()
+                       .registerComponent(CommandBus.class, config -> new SimpleCommandBus())
+                       .registerDecorator(
+                               CommandBus.class,
+                               0,
+                               (config, delegate) -> new TracingCommandBus(
+                                       delegate,
+                                       config.getComponent(CommandBusSpanFactory.class)
+                               )
+                       );
     // Further configuration...
 }
 ```
 
 By providing this functionality on the base `Configurer` interface, you are able to decorate any of Axon's components
-with your own custom logic. Since ordering of these decorates can be of importance, you are able to provide an order, if
-needed, upon registration of a `ComponentDecorator`.
+with your own custom logic. Since ordering of these decorates can be of importance, you are required to provide an
+order upon registration of a `ComponentDecorator`.
 
 ### Registering enhancers with the ConfigurerEnhancer interface
 
-The `ConfigurerEnhancer` replaces the old `ConfigurerModule`, with two major difference:
+The `ConfigurerEnhancer` replaces the old `ConfigurerModule`, with one major difference: A `ConfigurerEnhancer` acts on
+the `Configurer` during `Configurer#build` instead of immediately.
 
-1. A `ConfigurerEnhancer` acts on the `Configurer` during `Configurer#build` instead of immediately.
-2. A `ConfigurerEnhancer` receives a `ListableConfigurer` instead of a `Configurer` when enhancing.
-
-Difference one allows the enhancers to enact on its `Configurer` in a definable order. They are thus staged to enhance
+This adjustment allows enhancers to enact on its `Configurer` in a pre-definable order. They are thus staged to enhance
 when the configuration is ready for it. The order is either the registration order with the `Configurer` or it is based
 on the `ConfigurerEnhancer#order` value.
 
-Furthermore, the use of the `ListableConfigurer` instead of a `Configurer` allows for conditional operations through the
-`ListableConfigurer#hasComponent` operation. Through this approach, the implementers of an enhancer can choose to
-replace a component or decorate a component only when it (or another) is present. To be more concrete, it allows for the
-following:
+Furthermore, a `ConfigurerEnhancer` can conditionally make adjustments as it sees fit through the
+`Configurer#hasComponent` operation. Through this approach, the implementers of an enhancer can choose to
+replace a component or decorate a component only when it (or another) is present.
+
+See the example below where decorating a `CommandBus` with tracing logic is only done when a `CommandBus` component is
+present:
 
 ```java
 public static void main(String[] args) {
-    RootConfigurer.defaultConfigurer()
-                  .registerEnhance(configurer -> {
-                      if (configurer.hasComponent(CommandBus.class)) {
-                          configurer.registerDecorator(
-                                  CommandBus.class, 0,
-                                  (config, delegate) -> new TracingCommandBus(
-                                          delegate,
-                                          config.getComponent(CommandBusSpanFactory.class)
-                                  )
-                          );
-                      }
-                  });
+    MessagingConfigurer.defaultConfigurer()
+                       .registerEnhancer(configurer -> {
+                           if (configurer.hasComponent(CommandBus.class)) {
+                               configurer.registerDecorator(
+                                       CommandBus.class, 0,
+                                       (config, delegate) -> new TracingCommandBus(
+                                               delegate,
+                                               config.getComponent(CommandBusSpanFactory.class)
+                                       )
+                               );
+                           }
+                       });
+    // Further configuration...
 }
 ```
 
@@ -271,21 +270,28 @@ decorate it as a `TracingCommandBus` by retrieving the `CommandBusSpanFactory` f
 
 ### Registering modules with the ModuleBuilder interface
 
-To support the desired module-specific configuration modules, each `Configurer` provides the means to register a
-`ModuleBuilder`.
-The `ModuleBuilder` receives the `LifecycleSupportingConfiguration`, that should be given to the `Module` to construct.
-A `LifecycleSupportingConfiguration` instance is given, so that the `Module` under construction is able to both retrieve
-components and modules, as well as register start and shutdown handlers. The latter allow the `Module` to take part in
-the lifecycle of Axon Framework, ensuring that, for example, handler registration phases happen at the right point in
-time.
+To support clear encapsulation, each `Configurer` provides the means to register a `ModuleBuilder` that constructs a
+`Module` based on a `LifecycleSupportingConfiguration`. A `LifecycleSupportingConfiguration` instance is given, so that
+the `Module` under construction is able to retrieve components as well as register start and shutdown handlers. The
+latter allow the `Module` to take part in the lifecycle of Axon Framework, ensuring that, for example, handler
+registration phases happen at the right point in time.
 
-As messaging support is at the core of Axon, you would typically follow up the construction of a `RootConfigurer` by
-registering a `InfraConfigurer` module. The sample below shows how this can be achieved in Java:
+To emphasize it more, the `Module` **is** able to retrieve components from its parent configuration, but this
+configuration **is not** able to retrieve components from the `Module`. This allows users to break down their
+configuration into separate `Modules` with their own local components. Reusable components would, instead, reside in the
+parent configuration.
+
+Imagine you define an integration module in your project that should use a different `CommandBus` from the rest of your
+application. By making a `Module` and registering this specific `CommandBus` on this `Module`, you ensure only **it** is
+able to retrieve this `CommandBus`. But, if this `Module` requires common components from its parent, it can still
+retrieve those. Down below is an example usage of the `SimpleModule` to achieve just that:
 
 ```java
 public static void main(String[] args) {
-    RootConfigurer.defaultConfigurer()
-                  .registerModule(InfraConfigurer::configurer);
+    MessagingConfigurer.defaultConfigurer()
+                       .registerModule(config -> new SimpleModule(config)
+                               .registerComponent(CommandBus.class, c -> new SimpleCommandBus())
+                       );
     // Further configuration...
 }
 ```
