@@ -31,7 +31,6 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * TODO This should be regarded as a playground object to verify the API. Feel free to remove, adjust, or replicate this class to your needs.
- * Should it be like regular event handler?
  *
  * @author Mateusz Nowak
  * @since 5.0.0
