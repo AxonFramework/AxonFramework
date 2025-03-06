@@ -296,6 +296,44 @@ public static void main(String[] args) {
 }
 ```
 
+### Accessing other Configurer methods from specific Configurer implementations
+
+Although the API of a `Configurer` is greatly simplified, we still believe it valuable to have specific registration
+methods guiding the user.
+For example, the `Configurer` no longer has a `subscribeCommandBus` operation, as that method does not belong on this
+low level API.
+However, the specific `MessagingConfigurer` still has this operation, as registering your `CommandBus` on the messaging
+layer is intuitive.
+
+To not overencumber users of the `MessagingConfigurer`, we did not give it lifecycle specific configuration operations
+like the `RootConfigurer#registerLifecyclePhaseTimeout` operation. The same will apply for modelling and event sourcing
+configurers: these will not override the registration operations of their delegates.
+
+To be able to access a delegate `Configurer`, you can use the `Configurer#delegate` operation:
+
+```java
+public static void main(String[] args) {
+    MessagingConfigurer.defaultConfigurer()
+                       .delegate(
+                               RootConfigurer.class,
+                               root -> root.registerLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS)
+                       )
+                       .build();
+    // Further configuration...
+}
+```
+
+As specifying the `Configurer` type can become verbose, the `MessagingConfigurer` has a `root` operation to allow for
+the exact same operation:
+```java
+public static void main(String[] args) {
+    MessagingConfigurer.defaultConfigurer()
+                       .root(root -> root.registerLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS))
+                       .build();
+    // Further configuration...
+}
+```
+
 Other API changes
 =================
 
