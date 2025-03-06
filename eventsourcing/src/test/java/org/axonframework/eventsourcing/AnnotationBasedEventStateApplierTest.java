@@ -148,6 +148,11 @@ class AnnotationBasedEventStateApplierTest {
             // then
             assertEquals("null-" + timestamp, state.handledTimestamps);
         }
+
+        @AfterEach
+        void afterEach() {
+            GenericEventMessage.clock = Clock.systemUTC();
+        }
     }
 
     @Nested
