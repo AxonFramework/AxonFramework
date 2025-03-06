@@ -31,6 +31,11 @@ public class DelegatingConfigurer<S extends NewConfigurer<S>> implements NewConf
 
     private final NewConfigurer<?> delegate;
 
+    /**
+     * Construct a {@code DelegatingConfigurer} using the given {@code delegate} to delegate all operations to.
+     *
+     * @param delegate The configurer to delegate all operations too.
+     */
     public DelegatingConfigurer(@Nonnull NewConfigurer<?> delegate) {
         this.delegate = Objects.requireNonNull(delegate, "A parent configuration is required");
     }
