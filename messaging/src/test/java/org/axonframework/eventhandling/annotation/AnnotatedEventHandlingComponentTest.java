@@ -29,7 +29,6 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.MetaDataValue;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SourceId;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
@@ -174,6 +173,11 @@ class AnnotatedEventHandlingComponentTest {
             // then
             assertSuccessfulStream(result);
             assertEquals("null-" + timestamp, eventHandler.handledTimestamps);
+        }
+
+        @AfterEach
+        void afterEach() {
+            GenericEventMessage.clock = Clock.systemUTC();
         }
     }
 
