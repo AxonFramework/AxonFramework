@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import java.util.ServiceLoader;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import jakarta.annotation.Nonnull;
@@ -70,7 +71,9 @@ import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public class MessagingConfigurer extends DelegatingConfigurer<MessagingConfigurer> {
+public class MessagingConfigurer
+        extends DelegatingConfigurer<MessagingConfigurer>
+        implements StartableConfigurer<MessagingConfigurer> {
 
     /**
      * Build a default {@code MessagingConfigurer} instance with several messaging defaults, as well as methods to
@@ -183,6 +186,13 @@ public class MessagingConfigurer extends DelegatingConfigurer<MessagingConfigure
      */
     public MessagingConfigurer root(@Nonnull Consumer<RootConfigurer> configureTask) {
         return delegate(RootConfigurer.class, configureTask);
+    }
+
+    @Override
+    public RootConfiguration start() {
+        AtomicReference<RootConfigurer> rootReference = new AtomicReference<>();
+        root(rootReference::set);
+        return rootReference.get().start();
     }
 
     private static MessageTypeResolver defaultMessageTypeResolver(NewConfiguration config) {

@@ -40,7 +40,7 @@ import jakarta.annotation.Nonnull;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface RootConfigurer extends NewConfigurer<RootConfigurer> {
+public interface RootConfigurer extends StartableConfigurer<RootConfigurer> {
 
     /**
      * Returns a {@code RootConfigurer} instance to start configuring {@link Component components},
@@ -100,14 +100,7 @@ public interface RootConfigurer extends NewConfigurer<RootConfigurer> {
      */
     RootConfigurer registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit);
 
-    /**
-     * {@link #build() Builds the configuration} and starts it immediately.
-     * <p>
-     * It is not recommended to change any configuration on {@code this} {@code RootConfigurer} once this method is
-     * called.
-     *
-     * @return The fully initialized and started {@link RootConfiguration}.
-     */
+    @Override
     default RootConfiguration start() {
         RootConfiguration configuration = build();
         configuration.start();
