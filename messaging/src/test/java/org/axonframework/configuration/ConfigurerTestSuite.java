@@ -301,7 +301,6 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
     @Nested
     class ComponentDecorationFailures {
 
-        // TODO Discuss if we would want to throw an exception or whether we should simply store it if the register component comes in later
         @Test
         void registerDecoratorThrowsIllegalArgumentExceptionForNonExistingComponentType() {
             assertThrows(IllegalArgumentException.class,
