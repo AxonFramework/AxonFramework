@@ -98,7 +98,7 @@ public interface RootConfigurer extends NewConfigurer<RootConfigurer> {
      * @see org.axonframework.lifecycle.Phase
      * @see LifecycleHandler
      */
-    RootConfigurer configureLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit);
+    RootConfigurer registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit);
 
     /**
      * {@link #build() Builds the configuration} and starts it immediately.

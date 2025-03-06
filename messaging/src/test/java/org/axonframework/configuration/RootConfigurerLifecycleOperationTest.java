@@ -419,7 +419,7 @@ class RootConfigurerLifecycleOperationTest {
     void lifecycleHandlersProceedToFollowingPhaseForNeverEndingPhases() {
         AtomicBoolean invoked = new AtomicBoolean(false);
         RootConfiguration testSubject = RootConfigurer.defaultConfigurer()
-                                                      .configureLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS)
+                                                      .registerLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS)
                                                       .build();
 
         LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
@@ -440,33 +440,33 @@ class RootConfigurerLifecycleOperationTest {
     }
 
     @Test
-    void configureLifecyclePhaseTimeoutWithZeroTimeoutThrowsIllegalArgumentException() {
+    void registerLifecyclePhaseTimeoutWithZeroTimeoutThrowsIllegalArgumentException() {
         RootConfigurer configurerTestSubject = RootConfigurer.defaultConfigurer();
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> configurerTestSubject.configureLifecyclePhaseTimeout(0, TimeUnit.SECONDS)
+                () -> configurerTestSubject.registerLifecyclePhaseTimeout(0, TimeUnit.SECONDS)
         );
     }
 
     @Test
-    void configureLifecyclePhaseTimeoutWithNegativeTimeoutThrowsIllegalArgumentException() {
+    void registerLifecyclePhaseTimeoutWithNegativeTimeoutThrowsIllegalArgumentException() {
         RootConfigurer configurerTestSubject = RootConfigurer.defaultConfigurer();
 
         assertThrows(
                 IllegalArgumentException.class,
-                () -> configurerTestSubject.configureLifecyclePhaseTimeout(-1, TimeUnit.SECONDS)
+                () -> configurerTestSubject.registerLifecyclePhaseTimeout(-1, TimeUnit.SECONDS)
         );
     }
 
     @Test
-    void configureLifecyclePhaseTimeoutWithNullTimeUnitThrowsNullPointerException() {
+    void registerLifecyclePhaseTimeoutWithNullTimeUnitThrowsNullPointerException() {
         RootConfigurer configurerTestSubject = RootConfigurer.defaultConfigurer();
 
         //noinspection DataFlowIssue
         assertThrows(
                 NullPointerException.class,
-                () -> configurerTestSubject.configureLifecyclePhaseTimeout(1, null)
+                () -> configurerTestSubject.registerLifecyclePhaseTimeout(1, null)
         );
     }
 

@@ -93,7 +93,7 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
     }
 
     @Override
-    public RootConfigurer configureLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit) {
+    public RootConfigurer registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit) {
         assertStrictPositive(timeout, "The lifecycle phase timeout should be strictly positive");
         requireNonNull(timeUnit, "The lifecycle phase time unit should not be null");
         this.lifecyclePhaseTimeout = timeout;

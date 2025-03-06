@@ -411,13 +411,14 @@ This section contains three subsections, called:
 
 ### Moved/renamed methods and constructors
 
-| Constructor / Method                     | To where                                         |
-|------------------------------------------|--------------------------------------------------|
-| `Configurer#configureCommandBus`         | `MessagingConfigurer#registerCommandBus`         | 
-| `Configurer#configureEventBus`           | `MessagingConfigurer#registerEventSink`          | 
-| `Configurer#configureQueryBus`           | `MessagingConfigurer#registerQueryBus`           | 
-| `Configurer#configureQueryUpdateEmitter` | `MessagingConfigurer#registerQueryUpdateEmitter` | 
-| `ConfigurerModule#configureModule`       | `ConfigurerEnhancer#enhance`                     | 
+| Constructor / Method                              | To where                                         |
+|---------------------------------------------------|--------------------------------------------------|
+| `Configurer#configureCommandBus`                  | `MessagingConfigurer#registerCommandBus`         | 
+| `Configurer#configureEventBus`                    | `MessagingConfigurer#registerEventSink`          | 
+| `Configurer#configureQueryBus`                    | `MessagingConfigurer#registerQueryBus`           | 
+| `Configurer#configureQueryUpdateEmitter`          | `MessagingConfigurer#registerQueryUpdateEmitter` | 
+| `ConfigurerModule#configureModule`                | `ConfigurerEnhancer#enhance`                     | 
+| `ConfigurerModule#configureLifecyclePhaseTimeout` | `RootConfigurer#registerLifecyclePhaseTimeout`   | 
 
 ### Removed methods and constructors
 
