@@ -25,14 +25,14 @@ import javax.annotation.Nonnull;
 
 /**
  * Interface describing a registry of {@link StatefulCommandHandler stateful command handlers}. These command handlers
- * receive an addition {@link StateManager state parameter} which can be used to load state
- * during the execution of the command handler.
+ * receive a {@link StateManager state parameter} which can be used to load state during the execution of the command
+ * handler.
  *
  * @param <S> The type of the registry itself.
- * @see StateManager
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  * @author Mateusz Nowak
+ * @see StateManager
  * @since 5.0.0
  */
 public interface StatefulCommandHandlerRegistry<S extends StatefulCommandHandlerRegistry<S>>

@@ -120,7 +120,7 @@ public class SimpleCommandHandlingComponent implements
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("commandHandlers", commandHandlers);
-        descriptor.describeProperty("subCommandHandlingComponents", commandHandlers);
+        descriptor.describeProperty("subComponents", subComponents);
     }
 
     @Override

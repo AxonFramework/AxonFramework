@@ -27,7 +27,6 @@ import org.axonframework.commandhandling.SimpleCommandHandlingComponent;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -46,9 +45,9 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Adapter that turns any {@link @CommandHandler} annotated bean into a {@link MessageHandler} implementation. Each
- * annotated method is subscribed as a Command Handler at the {@link CommandBus} for the command type specified by the
- * parameter of that method.
+ * Adapter that turns any {@link @CommandHandler} annotated bean into a {@link CommandHandlingComponent} implementation.
+ * Each annotated method is subscribed as a {@link org.axonframework.commandhandling.CommandHandler} at the
+ * {@link CommandHandlingComponent} for the command type specified by the parameter of that method.
  *
  * @author Allard Buijze
  * @since 0.5

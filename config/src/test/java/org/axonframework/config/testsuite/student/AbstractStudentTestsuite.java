@@ -43,8 +43,9 @@ import org.axonframework.modelling.SimpleStateManager;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Sets up the basics for the testsuite for the Student/Mentor/Course model. Can be customized by overriding the
- * relevant methods.
+ * Sets up the basics for the testsuite of the Student/Mentor/Course model. Can be customized by overriding the
+ * relevant methods. By default uses a mix of different available options to validate the different ways of setting up
+ * the event sourcing repository.
  */
 public abstract class AbstractStudentTestsuite {
 

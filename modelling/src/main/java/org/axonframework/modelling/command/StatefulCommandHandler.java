@@ -27,9 +27,9 @@ import org.axonframework.modelling.StateManager;
 import javax.annotation.Nonnull;
 
 /**
- * Interface describing a stateful handler of {@link CommandMessage commands}.
- * Receives a {@link StateManager} as argument which can be used to load state during the execution of your command
- * handler. Only state registered with the {@link StateManager} can be loaded.
+ * Interface describing a stateful handler of {@link CommandMessage commands}. Receives a {@link StateManager} as
+ * parameter which can be used to load state during the execution of the command handler. Only state registered with the
+ * {@link StateManager} can be loaded.
  *
  * @author Mitchell Herrijgers
  * @see StateManager
@@ -41,7 +41,8 @@ public interface StatefulCommandHandler extends MessageHandler {
 
     /**
      * Handles the given {@code command} within the given {@code context}. The {@code state} parameter provides access
-     * to the state to load, through the ability to call {@link StateManager#load(Class, Object, ProcessingContext)}.
+     * to state that can be loaded based on type and id, through the ability to call
+     * {@link StateManager#load(Class, Object, ProcessingContext)}.
      * <p>
      * The {@link CommandResultMessage result message} in the returned {@link MessageStream stream} may be {@code null}.
      * Only a {@link MessageStream#just(Message) single} or {@link MessageStream#empty() empty} result message should

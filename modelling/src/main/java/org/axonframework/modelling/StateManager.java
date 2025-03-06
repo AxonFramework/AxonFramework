@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
 public interface StateManager {
 
     /**
-     * Registers a {@link AsyncRepository} for state type {@code M} with id of type {@code I}.
+     * Registers an {@link AsyncRepository} for state type {@code M} with id of type {@code I}.
      * <p>
      * Only one {@link AsyncRepository} can be registered for a type.
      *
@@ -54,8 +54,8 @@ public interface StateManager {
 
 
     /**
-     * Retrieves state of the given {@code type} and {@code id} from the container. The {@link CompletableFuture} will
-     * resolve to state, or complete exceptionally if it could not be resolved.
+     * Retrieves state of the given {@code type} and {@code id}. The {@link CompletableFuture} will resolve to state, or
+     * complete exceptionally if it could not be resolved.
      *
      * @param <M>     The type of state to retrieve.
      * @param type    The type of state to retrieve.
