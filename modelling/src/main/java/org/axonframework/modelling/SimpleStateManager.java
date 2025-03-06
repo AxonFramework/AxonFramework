@@ -24,13 +24,14 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.axonframework.modelling.repository.ManagedEntity;
 
-import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Simple implementation of the {@link StateManager}. Keeps a list of {@link RegisteredStateRepository}s to resolve the
- * correct {@link AsyncRepository} for a given model type.
+ * Simple implementation of the {@link StateManager}. Keeps a map of registered repositories and uses them to load and
+ * save entities.
  *
  * @author Mitchell Herrijgers
  * @see StateManager
@@ -38,7 +39,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class SimpleStateManager implements StateManager, DescribableComponent {
 
-    private final List<RegisteredStateRepository<?, ?>> repositories = new CopyOnWriteArrayList<>();
+    private final Map<Class<?>, RegisteredRepository<?, ?>> repositories = new ConcurrentHashMap<>();
     private final String name;
 
     /**
@@ -56,26 +57,46 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
     }
 
     @Override
-    public <I, M> SimpleStateManager register(
+    public <I, T> SimpleStateManager register(
             @Nonnull Class<I> idType,
-            @Nonnull Class<M> stateType,
-            @Nonnull AsyncRepository<I, M> repository) {
-        if (!getRepositoriesForStateType(stateType).isEmpty()) {
+            @Nonnull Class<T> stateType,
+            @Nonnull AsyncRepository<I, T> repository) {
+        if (repositories.containsKey(stateType)) {
             throw new StateTypeAlreadyRegisteredException(stateType);
         }
-        repositories.add(new RegisteredStateRepository<>(idType, stateType, repository));
+        repositories.put(stateType, new RegisteredRepository<>(idType, stateType, repository));
         return this;
     }
 
     @Nonnull
     @Override
-    public <I, M> CompletableFuture<M> load(@Nonnull Class<M> type, @Nonnull I id, ProcessingContext context) {
-        var definitions = getRepositoriesForStateType(type);
-        if (definitions.isEmpty()) {
+    public <I, T> CompletableFuture<ManagedEntity<I, T>> loadManagedEntity(
+            @Nonnull Class<T> type,
+            @Nonnull I id,
+            @Nonnull ProcessingContext context
+    ) {
+        //noinspection unchecked
+        RegisteredRepository<I, T> definition = (RegisteredRepository<I, T>) repositories.get(type);
+        if (definition == null) {
             return CompletableFuture.failedFuture(new MissingRepositoryException(type));
         }
-        var repository = definitions.getFirst().repository();
-        return repository.load(id, context).thenApply(ManagedEntity::entity);
+        if(!definition.idClass().isAssignableFrom(id.getClass())) {
+            return CompletableFuture.failedFuture(new IdTypeMismatchException(
+                    definition.idClass(), id.getClass()
+            ));
+        }
+        return definition.repository().load(id, context);
+    }
+
+    @Override
+    public Set<Class<?>> registeredTypes() {
+        return repositories.keySet();
+    }
+
+    @Override
+    public <T> AsyncRepository<?, T> repository(Class<T> type) {
+        //noinspection unchecked
+        return (AsyncRepository<?, T>) repositories.get(type).repository();
     }
 
     @Override
@@ -84,16 +105,7 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
         descriptor.describeProperty("repositories", repositories);
     }
 
-    @SuppressWarnings("unchecked") // The cast is checked in the stream
-    private <I, M> List<RegisteredStateRepository<I, M>> getRepositoriesForStateType(@Nonnull Class<M> stateType) {
-        return repositories
-                .stream()
-                .filter(md -> md.stateType().equals(stateType))
-                .map(md -> (RegisteredStateRepository<I, M>) md)
-                .toList();
-    }
-
-    private record RegisteredStateRepository<I, M>(
+    private record RegisteredRepository<I, M>(
             Class<I> idClass,
             Class<M> stateType,
             AsyncRepository<I, M> repository

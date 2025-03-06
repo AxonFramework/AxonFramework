@@ -38,7 +38,7 @@ class SingleStateCommandHandlingComponentTest extends AbstractStudentTestsuite {
                         new QualifiedName(ChangeStudentNameCommand.class),
                         (command, state, context) -> {
                             ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
-                            Student student = state.load(Student.class, payload.id(), context).join();
+                            Student student = state.loadEntity(Student.class, payload.id(), context).join();
                             appendEvent(context,
                                         new StudentNameChangedEvent(student.getId(), payload.name()));
                             return MessageStream.empty().cast();

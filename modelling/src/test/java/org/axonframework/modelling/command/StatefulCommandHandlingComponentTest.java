@@ -62,7 +62,7 @@ class StatefulCommandHandlingComponentTest {
 
         AtomicBoolean invoked = new AtomicBoolean();
         testSubject.subscribe(new QualifiedName("test-command"), (command, state, ctx) -> {
-            state.load(Integer.class, "42", ctx).thenAccept(result -> {
+            state.loadEntity(Integer.class, "42", ctx).thenAccept(result -> {
                 assertEquals(42, result);
             }).join();
             invoked.set(true);

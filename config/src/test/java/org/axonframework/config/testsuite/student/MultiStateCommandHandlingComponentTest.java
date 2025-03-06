@@ -43,8 +43,8 @@ class MultiStateCommandHandlingComponentTest extends AbstractStudentTestsuite {
                         new QualifiedName(EnrollStudentToCourseCommand.class),
                         (command, state, context) -> {
                             EnrollStudentToCourseCommand payload = (EnrollStudentToCourseCommand) command.getPayload();
-                            Student student = state.load(Student.class, payload.studentId(), context).join();
-                            Course course = state.load(Course.class, payload.courseId(), context).join();
+                            Student student = state.loadEntity(Student.class, payload.studentId(), context).join();
+                            Course course = state.loadEntity(Course.class, payload.courseId(), context).join();
 
                             if (student.getCoursesEnrolled().size() > 2) {
                                 throw new IllegalArgumentException(

@@ -16,34 +16,33 @@
 
 package org.axonframework.modelling;
 
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.repository.AccessSerializingRepository;
 import org.axonframework.modelling.repository.AsyncRepository;
-import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
-import org.mockito.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
-class SimpleModelRegistryTest {
+class SimpleStateManagerTest {
 
-    private final AsyncRepository<String, Integer> repository = Mockito.mock(AccessSerializingRepository.class);
-
-    @BeforeEach
-    void setUp() {
-        ManagedEntity<String, Integer> loadedEntity = mock(ManagedEntity.class);
-        when(loadedEntity.identifier()).thenReturn("42");
-        when(loadedEntity.entity()).thenReturn(42);
-
-        when(repository.load("42", ProcessingContext.NONE)).thenReturn(CompletableFuture.completedFuture(loadedEntity));
-    }
+    private final Map<String, Integer> persistedValues = new HashMap<>();
+    private final AsyncRepository<String, Integer> repository = new SimpleEntityAsyncRepository<>(
+            String.class,
+            Integer.class,
+            (id, context) -> CompletableFuture.completedFuture(Integer.parseInt(id)),
+            (id, entity, context) -> {
+                persistedValues.put(id, entity);
+                return CompletableFuture.completedFuture(null);
+            }
+    );
 
     @Test
-    void registerModel() {
+    void registerAllowsEntitiesToBeLoadedFromTheRepository() {
         // Given
         StateManager testSubject = SimpleStateManager.create("test");
         testSubject.register(
@@ -53,7 +52,7 @@ class SimpleModelRegistryTest {
         );
 
         // When
-        var state = testSubject.load(Integer.class, "42", ProcessingContext.NONE).join();
+        var state = testSubject.loadEntity(Integer.class, "42", new StubProcessingContext()).join();
 
         // Then
         assertEquals(42, state);
@@ -66,7 +65,7 @@ class SimpleModelRegistryTest {
 
         // When & Then
         var exception = assertThrows(CompletionException.class,
-                                     () -> testSubject.load(Integer.class, "42", ProcessingContext.NONE).join());
+                                     () -> testSubject.loadEntity(Integer.class, "42", ProcessingContext.NONE).join());
         assertInstanceOf(MissingRepositoryException.class, exception.getCause());
     }
 
