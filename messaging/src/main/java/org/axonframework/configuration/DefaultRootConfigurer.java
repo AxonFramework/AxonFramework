@@ -101,15 +101,15 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
         return this;
     }
 
-    @Override
-    protected LifecycleSupportingConfiguration config() {
-        return rootConfig;
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public RootConfiguration build() {
         super.build();
+        return rootConfig;
+    }
+
+    @Override
+    protected LifecycleSupportingConfiguration config() {
         return rootConfig;
     }
 
