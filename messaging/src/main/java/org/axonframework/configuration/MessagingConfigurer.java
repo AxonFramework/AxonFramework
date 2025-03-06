@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import java.util.ServiceLoader;
+import java.util.function.Consumer;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
@@ -169,6 +170,19 @@ public class MessagingConfigurer extends DelegatingConfigurer<MessagingConfigure
             @Nonnull ComponentBuilder<QueryUpdateEmitter> queryUpdateEmitterBuilder
     ) {
         return registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterBuilder);
+    }
+
+    /**
+     * Delegates the given {@code configureTask} to the {@link RootConfigurer} this {@code MessagingConfigurer}
+     * delegates to.
+     * <p>
+     * Use this operation to invoke registration methods that only exist on the {@code RootConfigurer}.
+     *
+     * @param configureTask Lambda consuming the delegate {@link RootConfigurer}.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    public MessagingConfigurer root(@Nonnull Consumer<RootConfigurer> configureTask) {
+        return delegate(RootConfigurer.class, configureTask);
     }
 
     private static MessageTypeResolver defaultMessageTypeResolver(NewConfiguration config) {

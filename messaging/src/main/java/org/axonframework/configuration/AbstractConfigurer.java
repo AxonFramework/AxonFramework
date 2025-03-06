@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import jakarta.annotation.Nonnull;
@@ -111,6 +112,15 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         Module<?> module = builder.build(config());
         logger.debug("Registering module [{}].", module.getClass().getSimpleName());
         this.modules.add(module);
+        //noinspection unchecked
+        return (S) this;
+    }
+
+    @Override
+    public <C extends NewConfigurer<C>> S delegate(@Nonnull Class<C> type,
+                                                   @Nonnull Consumer<C> configureTask) {
+        logger.warn("Ignoring configure task on configurer [{}] because there is no delegate configurer of type [{}].",
+                    this.getClass(), type);
         //noinspection unchecked
         return (S) this;
     }

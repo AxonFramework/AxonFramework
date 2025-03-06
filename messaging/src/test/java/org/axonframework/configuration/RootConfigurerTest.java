@@ -18,6 +18,7 @@ package org.axonframework.configuration;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import jakarta.annotation.Nullable;
 import org.junit.jupiter.api.*;
 
 /**
@@ -30,6 +31,12 @@ class RootConfigurerTest extends ConfigurerTestSuite<RootConfigurer> {
     @Override
     public RootConfigurer testSubject() {
         return RootConfigurer.defaultConfigurer();
+    }
+
+    @Nullable
+    @Override
+    public <D extends NewConfigurer<D>> Class<D> delegateType() {
+        return null;
     }
 
     @Test

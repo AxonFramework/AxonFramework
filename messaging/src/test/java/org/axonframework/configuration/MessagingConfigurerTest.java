@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -49,6 +50,13 @@ class MessagingConfigurerTest extends ConfigurerTestSuite<MessagingConfigurer> {
     @Override
     public MessagingConfigurer testSubject() {
         return MessagingConfigurer.defaultConfigurer();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nullable
+    @Override
+    public Class<RootConfigurer> delegateType() {
+        return RootConfigurer.class;
     }
 
     @Test
@@ -129,5 +137,15 @@ class MessagingConfigurerTest extends ConfigurerTestSuite<MessagingConfigurer> {
                                              .build();
 
         assertEquals(expected, result.getComponent(QueryUpdateEmitter.class));
+    }
+
+    @Test
+    void rootDelegatesTasks() {
+        TestComponent result =
+                testSubject.root(root -> root.registerComponent(TestComponent.class, c -> TEST_COMPONENT))
+                           .build()
+                           .getComponent(TestComponent.class);
+
+        assertEquals(TEST_COMPONENT, result);
     }
 }

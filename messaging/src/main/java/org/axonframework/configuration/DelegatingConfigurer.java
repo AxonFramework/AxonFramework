@@ -16,9 +16,14 @@
 
 package org.axonframework.configuration;
 
-import java.util.Objects;
+import java.lang.invoke.MethodHandles;
+import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
 
 import jakarta.annotation.Nonnull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A {@link NewConfigurer} implementation delegating all calls to a {@code delegate Configurer}.
@@ -29,6 +34,8 @@ import jakarta.annotation.Nonnull;
  */
 public class DelegatingConfigurer<S extends NewConfigurer<S>> implements NewConfigurer<S> {
 
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
     private final NewConfigurer<?> delegate;
 
     /**
@@ -37,7 +44,7 @@ public class DelegatingConfigurer<S extends NewConfigurer<S>> implements NewConf
      * @param delegate The configurer to delegate all operations too.
      */
     public DelegatingConfigurer(@Nonnull NewConfigurer<?> delegate) {
-        this.delegate = Objects.requireNonNull(delegate, "A parent configuration is required");
+        this.delegate = requireNonNull(delegate, "A parent configuration is required");
     }
 
     @Override
@@ -86,6 +93,25 @@ public class DelegatingConfigurer<S extends NewConfigurer<S>> implements NewConf
     @Override
     public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
         delegate.onShutdown(phase, shutdownHandler);
+    }
+
+    @Override
+    public <C extends NewConfigurer<C>> S delegate(@Nonnull Class<C> type,
+                                                   @Nonnull Consumer<C> configureTask) {
+        requireNonNull(type, "The given type cannot be null.");
+        requireNonNull(configureTask, "The given configuration task cannot be null.");
+
+        if (type.isAssignableFrom(delegate.getClass())) {
+            logger.debug("Invoking configuration task since delegate is of type [{}].", type);
+            //noinspection unchecked
+            configureTask.accept((C) delegate);
+        } else {
+            logger.debug("Delegating operation since this delegate is not of type [{}].", type);
+            delegate.delegate(type, configureTask);
+        }
+
+        //noinspection unchecked
+        return (S) this;
     }
 
     @Override

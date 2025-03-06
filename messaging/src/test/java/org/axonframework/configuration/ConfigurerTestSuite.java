@@ -54,6 +54,18 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
      */
     public abstract C testSubject();
 
+    /**
+     * Returns type {@code D} that this {@link #testSubject()} can delegate operations to.
+     * <p>
+     * Returns {@code null} when the implementation does not have a delegate.
+     *
+     * @param <D> A {@link NewConfigurer} type that this {@link #testSubject()} can delegate operations to.
+     * @return The type {@code D} this {@link #testSubject()} can delegate operations to. Returns {@code null} when the
+     * implementation does not have a delegate.
+     */
+    @Nullable
+    public abstract <D extends NewConfigurer<D>> Class<D> delegateType();
+
     @Nested
     class ComponentRegistration {
 
@@ -699,6 +711,53 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             assertFalse(invoked.get());
             assertNotEquals(defaultComponent, result);
             assertEquals(registeredComponent, result);
+        }
+    }
+
+    @Nested
+    class ConfigurationDelegation {
+
+        @Test
+        void doesNotInvokeConfigureTaskWhenThisConfigurerDoesNotDelegate() {
+            if (delegateType() != null) {
+                Assumptions.abort("Cannot validate this scenario since the test subject has configurer delegate.");
+            }
+
+            AtomicBoolean invoked = new AtomicBoolean(false);
+
+            //noinspection unchecked
+            testSubject.delegate(NewConfigurer.class, config -> invoked.set(true));
+
+            assertFalse(invoked.get());
+        }
+
+        @Test
+        void doesNotInvokeConfigureTaskWhenTheDelegateIsNotOfTheExpectedType() {
+            if (delegateType() == null) {
+                Assumptions.abort("Cannot validate this scenario since the test subject has no configurer delegate.");
+            }
+
+            AtomicBoolean invoked = new AtomicBoolean(false);
+
+            testSubject.delegate(TestModule.class, config -> invoked.set(true));
+
+            assertFalse(invoked.get());
+        }
+
+        @Test
+        void invokeConfigureTaskWhenTestSubjectHasDelegateConfigurerAndTypeMatches() {
+            //noinspection rawtypes,unchecked
+            Class<NewConfigurer> delegateType = delegateType();
+            if (delegateType == null) {
+                Assumptions.abort("Cannot validate this scenario since the test subject has no configurer delegate.");
+            }
+
+            AtomicBoolean invoked = new AtomicBoolean(false);
+
+            //noinspection unchecked
+            testSubject.delegate(delegateType, config -> invoked.set(true));
+
+            assertTrue(invoked.get());
         }
     }
 

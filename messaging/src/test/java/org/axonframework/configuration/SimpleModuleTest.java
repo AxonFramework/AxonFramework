@@ -16,6 +16,8 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nullable;
+
 /**
  * Test validating the {@link SimpleModule}.
  *
@@ -26,5 +28,11 @@ class SimpleModuleTest extends ModuleTestSuite<SimpleModule> {
     @Override
     SimpleModule testSubject(LifecycleSupportingConfiguration config) {
         return new SimpleModule(config);
+    }
+
+    @Nullable
+    @Override
+    public <D extends NewConfigurer<D>> Class<D> delegateType() {
+        return null;
     }
 }

@@ -16,6 +16,8 @@
 
 package org.axonframework.configuration;
 
+import java.util.function.Consumer;
+
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Component.Identifier;
 
@@ -172,6 +174,27 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     <M extends Module<M>> S registerModule(@Nonnull ModuleBuilder<M> builder);
+
+    /**
+     * Invokes the given {@code configureTask} if (1) this configurer has a delegate configurer and (2) that delegate is
+     * of the given {@code type}.
+     * <p>
+     * Enables more specific {@code Configurer} implementations to invoke registration methods on its delegate
+     * configurer. Through this approach, {@code this Configurer} does not have to override all methods from the
+     * configurer it is delegating too.
+     * <p>
+     * Note that this method is typically not used directly, but instead used by more specific delegation methods like
+     * {@link MessagingConfigurer#root(Consumer)}, for example.
+     *
+     * @param type          The delegate type to invoke the given {@code configureTask} on, if it matches with this
+     *                      configurers delegate.
+     * @param configureTask Lambda consuming the delegate configurer if it matches the given {@code type}.
+     * @param <C>           The expected type of the delegate {@code Configurer}.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     * @see MessagingConfigurer#root(Consumer)
+     */
+    <C extends NewConfigurer<C>> S delegate(@Nonnull Class<C> type,
+                                            @Nonnull Consumer<C> configureTask);
 
     /**
      * Returns the completely initialized {@link NewConfiguration} instance of type {@code C} built using this
