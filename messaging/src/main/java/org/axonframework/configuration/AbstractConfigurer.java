@@ -93,6 +93,12 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     @Override
+    public boolean hasComponent(@Nonnull Class<?> type,
+                                @Nonnull String name) {
+        return components.contains(new Component.Identifier<>(type, name));
+    }
+
+    @Override
     public S registerEnhancer(@Nonnull ConfigurerEnhancer enhancer) {
         logger.debug("Registering enhancer [{}].", enhancer.getClass().getSimpleName());
         this.enhancers.add(enhancer);
@@ -107,12 +113,6 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         this.modules.add(module);
         //noinspection unchecked
         return (S) this;
-    }
-
-    @Override
-    public boolean hasComponent(@Nonnull Class<?> type,
-                                @Nonnull String name) {
-        return components.contains(new Component.Identifier<>(type, name));
     }
 
     @Override
