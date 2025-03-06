@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package org.axonframework.common;
 
-import org.junit.jupiter.api.*;
+import java.util.Random;
 
+import static org.axonframework.common.Assert.assertStrictPositive;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.*;
 
 /**
  * Test class validating the {@code static} methods of the {@link Assert} utility.
@@ -26,6 +29,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Allard Buijze
  */
 class AssertTest {
+
+    private static final int NUMBER_OF_RANDOM_NUMBERS = 256;
 
     @Test
     void stateAccept() {
@@ -52,5 +57,43 @@ class AssertTest {
         assertDoesNotThrow(() -> Assert.nonEmpty("some-text", "Reacts fine on some text"));
         assertThrows(IllegalArgumentException.class, () -> Assert.nonEmpty(null, "Should fail on null"));
         assertThrows(IllegalArgumentException.class, () -> Assert.nonEmpty("", "Should fail on an empty string"));
+    }
+
+    @Test
+    void assertStrictPositiveInteger() {
+        // Fixed tests
+        assertStrictPositive(1, "One is positive");
+        assertThrows(IllegalArgumentException.class, () -> assertStrictPositive(0, "Zero is not strict positive"));
+        assertThrows(IllegalArgumentException.class, () -> assertStrictPositive(-1, "Minus one is not positive"));
+
+        // Random sample
+        Random random = new Random();
+        for (int i = 0; i < NUMBER_OF_RANDOM_NUMBERS; i++) {
+            int value = random.nextInt();
+            if (value > 0) {
+                assertStrictPositive(value, "Value " + value + " is positive.");
+            } else {
+                assertThrows(IllegalArgumentException.class, () -> assertStrictPositive(value, "fail"));
+            }
+        }
+    }
+
+    @Test
+    void assertStrictPositiveLong() {
+        // Fixed tests
+        assertStrictPositive(1L, "One is also positive");
+        assertThrows(IllegalArgumentException.class, () -> assertStrictPositive(0L, "Zero is not strict positive"));
+        assertThrows(IllegalArgumentException.class, () -> assertStrictPositive(-1L, "Minus one is not positive"));
+
+        // Random sample
+        Random random = new Random();
+        for (int i = 0; i < NUMBER_OF_RANDOM_NUMBERS; i++) {
+            long value = random.nextLong();
+            if (value > 0L) {
+                assertStrictPositive(value, "Value " + value + " is positive.");
+            } else {
+                assertThrows(IllegalArgumentException.class, () -> assertStrictPositive(value, "fail"));
+            }
+        }
     }
 }

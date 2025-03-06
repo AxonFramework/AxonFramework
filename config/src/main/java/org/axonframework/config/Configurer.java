@@ -58,7 +58,9 @@ import javax.annotation.Nonnull;
  * @author Allard Buijze
  * @see DefaultConfigurer
  * @since 3.0
+ * @deprecated In favor of the {@link org.axonframework.configuration.NewConfigurer}.
  */
+@Deprecated
 public interface Configurer extends LifecycleOperations {
 
     /**
