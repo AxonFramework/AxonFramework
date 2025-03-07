@@ -16,12 +16,14 @@
 
 package org.axonframework.springboot.autoconfig;
 
+import org.apache.avro.Schema;
 import org.apache.avro.message.SchemaStore;
 import org.axonframework.spring.serialization.avro.AvroSchemaPackages;
 import org.axonframework.spring.serialization.avro.ClasspathAvroSchemaLoader;
 import org.axonframework.spring.serialization.avro.SpecificRecordBaseClasspathAvroSchemaLoader;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -32,6 +34,7 @@ import org.springframework.core.io.ResourceLoader;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -47,29 +50,41 @@ import java.util.stream.Collectors;
 public class AvroSerializerAutoConfiguration {
 
     /**
-     * Constructs a default in-memory schema store filled with schemas detected during class scanning of packages,
-     * configured using {@link org.axonframework.spring.serialization.avro.AvroSchemaScan} annotations.
-     *
-     * @param beanFactory  spring bean factory.
-     * @param schemaLoader list of schema loaders.
+     * Constructs a simple default in-memory schema store filled with schemas.
+     * @param schemas Avro schemas to put into the store.
      * @return schema store instance.
      */
     @Bean("defaultAxonSchemaStore")
     @Conditional({AvroConfiguredCondition.class, OnMissingDefaultSchemaStoreCondition.class})
-    public SchemaStore defaultAxonSchemaStore(BeanFactory beanFactory, List<ClasspathAvroSchemaLoader> schemaLoader) {
+    public SchemaStore defaultAxonSchemaStore(Set<Schema> schemas) {
         SchemaStore.Cache cachingSchemaStore = new SchemaStore.Cache();
-        List<String> packagesCandidates = AvroSchemaPackages.get(beanFactory).getPackages();
+        schemas.forEach(cachingSchemaStore::addSchema);
+        return cachingSchemaStore;
+    }
+
+    /**
+     * Scans classpath for schemas,
+     * configured using {@link org.axonframework.spring.serialization.avro.AvroSchemaScan} annotations.
+     *
+     * @param beanFactory  spring bean factory.
+     * @param schemaLoader list of schema loaders.
+     * @return set of schemas detected on the classpath.
+     */
+    @Bean
+    @Conditional({AvroConfiguredCondition.class})
+    public Set<Schema> collectAvroSchemasFromClassPath(BeanFactory beanFactory, List<ClasspathAvroSchemaLoader> schemaLoader) {
+        final List<String> packagesCandidates = AvroSchemaPackages.get(beanFactory).getPackages();
         final List<String> packagesToScan = new ArrayList<>();
         if (packagesCandidates.isEmpty() && AutoConfigurationPackages.has(beanFactory)) {
             packagesToScan.addAll(AutoConfigurationPackages.get(beanFactory));
         } else {
             packagesToScan.addAll(packagesCandidates);
         }
-        schemaLoader
-                .stream().map(loader -> loader.load(packagesToScan)).flatMap(List::stream)
-                .collect(Collectors.toSet())
-                .forEach(cachingSchemaStore::addSchema);
-        return cachingSchemaStore;
+        return schemaLoader
+                .stream()
+                .map(loader -> loader.load(packagesToScan))
+                .flatMap(List::stream)
+                .collect(Collectors.toSet());
     }
 
     /**
