@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.annotation.AnnotatedEventHandlingComponent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
@@ -73,21 +72,35 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
     }
 
     @Override
-    public M apply(@Nonnull M model, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext processingContext) {
-        requireNonNull(model, "Model may not be null");
+    public M apply(@Nonnull M state, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext processingContext) {
+        requireNonNull(state, "Model may not be null");
         requireNonNull(event, "Event Message may not be null");
 
         try {
-            var eventHandler = new AnnotatedEventHandlingComponent<>(model, inspector);
-            var eventHandlerResult = eventHandler.handle(event, processingContext)
-                                                 .asCompletableFuture()
-                                                 .join();
-            return modelFromStreamResultOrUpdatedExisting(eventHandlerResult, model);
+            var eventHandlerResult = handle(state, event, processingContext).join();
+            return modelFromStreamResultOrUpdatedExisting(eventHandlerResult, state);
         } catch (Exception e) {
             throw new StateEvolvingException(
-                    "Failed to apply event [" + event.type() + "] in order to evolve [" + model.getClass() + "] state",
+                    "Failed to apply event [" + event.type() + "] in order to evolve [" + state.getClass() + "] state",
                     e);
         }
+    }
+
+    private CompletableFuture<? extends MessageStream.Entry<?>> handle(
+            M model,
+            EventMessage<?> event,
+            ProcessingContext processingContext
+    ) {
+        var listenerType = model.getClass();
+        var handler = inspector.getHandlers(listenerType)
+                               .filter(h -> h.canHandle(event, processingContext))
+                               .findFirst();
+        if (handler.isPresent()) {
+            var interceptor = inspector.chainedInterceptor(listenerType);
+            var stream = interceptor.handle(event, processingContext, model, handler.get());
+            return stream.first().asCompletableFuture();
+        }
+        return CompletableFuture.completedFuture(null);
     }
 
     private M modelFromStreamResultOrUpdatedExisting(MessageStream.Entry<?> potentialModelFromStream, M existing) {
