@@ -21,8 +21,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.junit.jupiter.api.*;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -30,15 +28,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SimpleStateManagerTest {
 
-    private final Map<String, Integer> persistedValues = new HashMap<>();
     private final AsyncRepository<String, Integer> repository = new SimpleEntityAsyncRepository<>(
             String.class,
             Integer.class,
             (id, context) -> CompletableFuture.completedFuture(Integer.parseInt(id)),
-            (id, entity, context) -> {
-                persistedValues.put(id, entity);
-                return CompletableFuture.completedFuture(null);
-            }
+            (id, entity, context) -> CompletableFuture.completedFuture(null)
     );
 
     @Test
@@ -70,6 +64,22 @@ class SimpleStateManagerTest {
     }
 
     @Test
+    void throwsExceptionOnMismatchingIdType() {
+        // Given
+        StateManager testSubject = SimpleStateManager.create("test");
+        testSubject.register(
+                String.class,
+                Integer.class,
+                repository
+        );
+
+        // When & Then
+        var exception = assertThrows(CompletionException.class,
+                     () -> testSubject.loadEntity(Integer.class, 0.f, ProcessingContext.NONE).join());
+        assertInstanceOf(IdTypeMismatchException.class, exception.getCause());
+    }
+
+    @Test
     void canRegisterEachModelClassOnlyOnce() {
         // Given
         StateManager testSubject = SimpleStateManager.create("test");
@@ -85,5 +95,49 @@ class SimpleStateManagerTest {
                 Integer.class,
                 repository
         ));
+    }
+
+    @Test
+    void canRetrieveRegisteredTypes() {
+        // Given
+        StateManager testSubject = SimpleStateManager.create("test");
+        testSubject.register(
+                String.class,
+                Integer.class,
+                repository
+        );
+
+        // When
+        var registeredTypes = testSubject.registeredTypes();
+
+        // Then
+        assertEquals(1, registeredTypes.size());
+        assertTrue(registeredTypes.contains(Integer.class));
+    }
+
+    @Test
+    void canGetRepositoryForRegisteredType() {
+        // Given
+        StateManager testSubject = SimpleStateManager.create("test");
+        testSubject.register(
+                String.class,
+                Integer.class,
+                repository
+        );
+
+        // When
+        var result = testSubject.repository(Integer.class);
+
+        // Then
+        assertEquals(repository, result);
+    }
+
+    @Test
+    void throwsExceptionIfTryingToGetRepositoryForUnregisteredType() {
+        // Given
+        StateManager testSubject = SimpleStateManager.create("test");
+
+        // When & Then
+        assertThrows(MissingRepositoryException.class, () -> testSubject.repository(Integer.class));
     }
 }

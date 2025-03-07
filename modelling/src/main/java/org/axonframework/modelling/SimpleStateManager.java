@@ -96,7 +96,11 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
     @Override
     public <T> AsyncRepository<?, T> repository(Class<T> type) {
         //noinspection unchecked
-        return (AsyncRepository<?, T>) repositories.get(type).repository();
+        RegisteredRepository<?, T> registeredRepository = (RegisteredRepository<?, T>) repositories.get(type);
+        if (registeredRepository == null) {
+            throw new MissingRepositoryException(type);
+        }
+        return registeredRepository.repository();
     }
 
     @Override

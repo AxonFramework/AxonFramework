@@ -24,9 +24,6 @@ import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.repository.AccessSerializingRepository;
-import org.axonframework.modelling.repository.AsyncRepository;
-import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;
@@ -35,30 +32,19 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class StatefulCommandHandlingComponentTest {
 
-    private final StateManager stateManager = SimpleStateManager.create("test");
-    private final AsyncRepository<String, Integer> repository = mock(AccessSerializingRepository.class);
+    private final StateManager stateManager = SimpleStateManager
+            .create("test")
+            .register(String.class, Integer.class,
+                      (id, ctx) -> CompletableFuture.completedFuture(Integer.parseInt(id)),
+                      (id, entity, context) -> CompletableFuture.completedFuture(null));
 
-    @BeforeEach
-    void setUp() {
-        ManagedEntity<String, Integer> loadedEntity = mock(ManagedEntity.class);
-        when(loadedEntity.identifier()).thenReturn("42");
-        when(loadedEntity.entity()).thenReturn(42);
-
-        when(repository.load("42", ProcessingContext.NONE)).thenReturn(CompletableFuture.completedFuture(loadedEntity));
-    }
 
     @Test
-    void invokesRegisteredHandlerWithModelContainer() {
+    void invokedRegisteredHandler() {
         StatefulCommandHandlingComponent testSubject = StatefulCommandHandlingComponent.create("test", stateManager);
-        stateManager.register(
-                String.class,
-                Integer.class,
-                repository
-        );
 
         AtomicBoolean invoked = new AtomicBoolean();
         testSubject.subscribe(new QualifiedName("test-command"), (command, state, ctx) -> {
@@ -70,7 +56,7 @@ class StatefulCommandHandlingComponentTest {
         });
 
         testSubject.handle(new GenericCommandMessage<>(new MessageType("test-command"),
-                                                       "my-payload"), ProcessingContext.NONE)
+                                                       "my-payload"), new StubProcessingContext())
                    .asCompletableFuture().join();
         assertTrue(invoked.get());
     }
