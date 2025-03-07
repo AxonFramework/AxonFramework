@@ -17,27 +17,27 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
 
-/**
- * Functional interface describing state changes made on a model of type {@code M} based on a given
- * {@link EventMessage}.
- *
- * @param <M> The model to apply the event state to.
- * @author Steven van Beelen
- * @since 5.0.0
- */
-@FunctionalInterface
-public interface EventStateApplier<M> {
+public class SimpleEventStateApplier<S> implements EventStateApplier<S> {
 
-    /**
-     * Change the state of the given {@code state} by applying the given {@code event} to it.
-     *
-     * @param event The event that might adjust the {@code state}.
-     * @param state The current state of the entity to apply the given {@code event} to.
-     * @return The changed stated based on the given {@code event}.
-     */
-    M apply(@Nonnull M state, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext processingContext);
+    private final ConcurrentHashMap<QualifiedName, EventStateApplier<S>> eventStateAppliers;
+
+    public SimpleEventStateApplier() {
+        this.eventStateAppliers = new ConcurrentHashMap<>();
+    }
+
+    public SimpleEventStateApplier<S> on(QualifiedName name, EventStateApplier<S> applier) {
+        eventStateAppliers.put(name, applier);
+        return this;
+    }
+
+    @Override
+    public S apply(@Nonnull S state, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext processingContext) {
+        return null;
+    }
 }

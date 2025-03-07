@@ -72,16 +72,16 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
     }
 
     @Override
-    public M apply(@Nonnull M model, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext processingContext) {
-        requireNonNull(model, "Model may not be null");
+    public M apply(@Nonnull M state, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext processingContext) {
+        requireNonNull(state, "Model may not be null");
         requireNonNull(event, "Event Message may not be null");
 
         try {
-            var eventHandlerResult = handle(model, event, processingContext).join();
-            return modelFromStreamResultOrUpdatedExisting(eventHandlerResult, model);
+            var eventHandlerResult = handle(state, event, processingContext).join();
+            return modelFromStreamResultOrUpdatedExisting(eventHandlerResult, state);
         } catch (Exception e) {
             throw new StateEvolvingException(
-                    "Failed to apply event [" + event.type() + "] in order to evolve [" + model.getClass() + "] state",
+                    "Failed to apply event [" + event.type() + "] in order to evolve [" + state.getClass() + "] state",
                     e);
         }
     }
