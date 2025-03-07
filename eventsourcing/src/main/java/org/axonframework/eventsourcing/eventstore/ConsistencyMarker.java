@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.messaging.Context;
 
 /**
- * Interface representing a point in an Event Stream up to where certain models have been made up-to-date. Typically,
+ * Interface representing a point in an Event Stream up to where certain state has been made up-to-date. Typically,
  * consistency markers are provided by operations on an event stream that provide events for event sourcing purposes.
  * <p/>
  * Consistency Markers are used to identify the expected position new events should be inserted at, in order to avoid

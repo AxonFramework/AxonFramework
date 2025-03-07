@@ -33,7 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
@@ -55,6 +54,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
     private final CriteriaResolver<ID> criteriaResolver;
     private final EventStateApplier<M> eventStateApplier;
     private final String context;
+    private final Function<ID, M> newInstanceFactory;
 
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
@@ -62,20 +62,23 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
      * the {@link org.axonframework.eventsourcing.eventstore.EventCriteria} of the given identifier type used to source
      * a model.
      *
-     * @param eventStore        The event store to load events from.
-     * @param criteriaResolver  Converts the given identifier to an
-     *                          {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a matching
-     *                          event stream.
-     * @param eventStateApplier The function to apply event state changes to the loaded entities.
-     * @param context           The (bounded) context this {@code AsyncEventSourcingRepository} provides access to
-     *                          models for.
+     * @param eventStore         The event store to load events from.
+     * @param criteriaResolver   Converts the given identifier to an
+     *                           {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a
+     *                           matching event stream.
+     * @param eventStateApplier  The function to apply event state changes to the loaded entities.
+     * @param newInstanceFactory A factory method to create new instances of the model based on a provided identifier.
+     * @param context            The (bounded) context this {@code AsyncEventSourcingRepository} provides access to
+     *                           models for.
      */
     public AsyncEventSourcingRepository(AsyncEventStore eventStore,
                                         CriteriaResolver<ID> criteriaResolver,
                                         EventStateApplier<M> eventStateApplier,
+                                        Function<ID, M> newInstanceFactory,
                                         String context) {
         this.eventStore = eventStore;
         this.criteriaResolver = criteriaResolver;
+        this.newInstanceFactory = newInstanceFactory;
         this.eventStateApplier = eventStateApplier;
         this.context = context;
     }
@@ -104,7 +107,8 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
                 identifier,
                 id -> eventStore.transaction(processingContext, context)
                                 .source(SourcingCondition.conditionFor(criteriaResolver.resolve(id)))
-                                .reduce(new EventSourcedEntity<>(identifier, (M) null), (entity, entry) -> {
+                                .reduce(new EventSourcedEntity<>(identifier, newInstanceFactory.apply(identifier)),
+                                        (entity, entry) -> {
                                     entity.applyStateChange(entry.message(), eventStateApplier, processingContext);
                                     return entity;
                                 })
@@ -113,17 +117,17 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
                                         updateActiveModel(entity, processingContext);
                                     }
                                 })
+
         ).thenApply(Function.identity());
     }
 
     @Override
     public CompletableFuture<ManagedEntity<ID, M>> loadOrCreate(@Nonnull ID identifier,
-                                                                @Nonnull ProcessingContext processingContext,
-                                                                @Nonnull Supplier<M> factoryMethod) {
+                                                                @Nonnull ProcessingContext processingContext) {
         return load(identifier, processingContext).thenApply(
                 managedEntity -> {
                     managedEntity.applyStateChange(
-                            entity -> entity != null ? entity : factoryMethod.get()
+                            entity -> entity != null ? entity : newInstanceFactory.apply(identifier)
                     );
                     return managedEntity;
                 }
