@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.annotations.AnnotatedEventSourcingComponent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
@@ -78,16 +77,30 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
         requireNonNull(event, "Event Message may not be null");
 
         try {
-            var eventHandler = new AnnotatedEventSourcingComponent<>(model, inspector);
-            var eventHandlerResult = eventHandler.source(event, processingContext)
-                                                 .asCompletableFuture()
-                                                 .join();
+            var eventHandlerResult = handle(model, event, processingContext).join();
             return modelFromStreamResultOrUpdatedExisting(eventHandlerResult, model);
         } catch (Exception e) {
             throw new StateEvolvingException(
                     "Failed to apply event [" + event.type() + "] in order to evolve [" + model.getClass() + "] state",
                     e);
         }
+    }
+
+    private CompletableFuture<? extends MessageStream.Entry<?>> handle(
+            M model,
+            EventMessage<?> event,
+            ProcessingContext processingContext
+    ) {
+        var listenerType = model.getClass();
+        var handler = inspector.getHandlers(listenerType)
+                               .filter(h -> h.canHandle(event, processingContext))
+                               .findFirst();
+        if (handler.isPresent()) {
+            var interceptor = inspector.chainedInterceptor(listenerType);
+            var stream = interceptor.handle(event, processingContext, model, handler.get());
+            return stream.first().asCompletableFuture();
+        }
+        return CompletableFuture.completedFuture(null);
     }
 
     private M modelFromStreamResultOrUpdatedExisting(MessageStream.Entry<?> potentialModelFromStream, M existing) {
