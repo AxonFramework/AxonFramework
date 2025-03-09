@@ -16,22 +16,22 @@ so that Axon Framework can later load the aggregate from its event stream.
 
 Commands that target aggregates contain a reference to this identifier.
 Axon Framework will load the events for the aggregate with this identifier,
-replay them on an empty instance, and invoke the command.
+replay the events on an empty instance, and invoke the command. This is how the aggregate's state is reconstructed to support Event-Sourcing.
 
 [TIP]
 ====
-The aggregate identifier has to be unique in your event store.
-Events are only loaded based on the identifier, not
-the type of the aggregate.
+The aggregate identifier has to be globally unique in your event store.
+This means that events are loaded based only on the identifier, and nothing else.
+Henceforth, the aggregate's type does not influence uniqueness at all.
 This means that if you have two aggregate types with the same identifier, Axon will
 load the events for both aggregates when handling a command.
-Mixing these events might lead to unexpected behavior, so design
+Mixing these events might lead to unexpected behavior, so we strongly recommend to design
 your aggregate identifiers with uniqueness in mind.
 ====
 
 Note that commands that construct a new aggregate (via a constructor) do not need an identifier.
 However, your `@AggregateIdentifier` field needs to have a value after the first command,
-or Axon Framework will not know which aggregate identifier to publish the events to.
+or Axon Framework will not know which aggregate identifier to publish the events for.
 
 == Basic aggregate structure
 
