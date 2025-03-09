@@ -28,7 +28,7 @@ import org.junit.jupiter.api.*;
 /**
  * Tests whether stateful command handling components can handle singular model commands.
  */
-class SingleStateCommandHandlingComponentTest extends AbstractStudentTestsuite {
+class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
     @Test
     void canHandleCommandThatTargetsOneStateViaLambdaStateManager() {

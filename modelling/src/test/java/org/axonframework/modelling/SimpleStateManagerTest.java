@@ -37,7 +37,7 @@ class SimpleStateManagerTest {
 
     @Test
     void registerAllowsEntitiesToBeLoadedFromTheRepository() {
-        // Given
+        // given
         StateManager testSubject = SimpleStateManager.create("test");
         testSubject.register(
                 String.class,
@@ -45,19 +45,19 @@ class SimpleStateManagerTest {
                 repository
         );
 
-        // When
+        // when
         var state = testSubject.loadEntity(Integer.class, "42", new StubProcessingContext()).join();
 
-        // Then
+        // then
         assertEquals(42, state);
     }
 
     @Test
     void throwsExceptionOnMissingModelDefinition() {
-        // Given
+        // given
         StateManager testSubject = SimpleStateManager.create("test");
 
-        // When & Then
+        // when & then
         var exception = assertThrows(CompletionException.class,
                                      () -> testSubject.loadEntity(Integer.class, "42", ProcessingContext.NONE).join());
         assertInstanceOf(MissingRepositoryException.class, exception.getCause());
@@ -65,7 +65,7 @@ class SimpleStateManagerTest {
 
     @Test
     void throwsExceptionOnMismatchingIdType() {
-        // Given
+        // given
         StateManager testSubject = SimpleStateManager.create("test");
         testSubject.register(
                 String.class,
@@ -73,7 +73,7 @@ class SimpleStateManagerTest {
                 repository
         );
 
-        // When & Then
+        // when & then
         var exception = assertThrows(CompletionException.class,
                      () -> testSubject.loadEntity(Integer.class, 0.f, ProcessingContext.NONE).join());
         assertInstanceOf(IdTypeMismatchException.class, exception.getCause());
@@ -81,7 +81,7 @@ class SimpleStateManagerTest {
 
     @Test
     void canRegisterEachModelClassOnlyOnce() {
-        // Given
+        // given
         StateManager testSubject = SimpleStateManager.create("test");
         testSubject.register(
                 String.class,
@@ -89,7 +89,7 @@ class SimpleStateManagerTest {
                 repository
         );
 
-        // When & Then
+        // when & then
         assertThrows(StateTypeAlreadyRegisteredException.class, () -> testSubject.register(
                 String.class,
                 Integer.class,
@@ -99,7 +99,7 @@ class SimpleStateManagerTest {
 
     @Test
     void canRetrieveRegisteredTypes() {
-        // Given
+        // given
         StateManager testSubject = SimpleStateManager.create("test");
         testSubject.register(
                 String.class,
@@ -107,17 +107,17 @@ class SimpleStateManagerTest {
                 repository
         );
 
-        // When
+        // when
         var registeredTypes = testSubject.registeredTypes();
 
-        // Then
+        // then
         assertEquals(1, registeredTypes.size());
         assertTrue(registeredTypes.contains(Integer.class));
     }
 
     @Test
     void canGetRepositoryForRegisteredType() {
-        // Given
+        // given
         StateManager testSubject = SimpleStateManager.create("test");
         testSubject.register(
                 String.class,
@@ -125,19 +125,19 @@ class SimpleStateManagerTest {
                 repository
         );
 
-        // When
+        // when
         var result = testSubject.repository(Integer.class);
 
-        // Then
+        // then
         assertEquals(repository, result);
     }
 
     @Test
     void throwsExceptionIfTryingToGetRepositoryForUnregisteredType() {
-        // Given
+        // given
         StateManager testSubject = SimpleStateManager.create("test");
 
-        // When & Then
+        // when & then
         assertThrows(MissingRepositoryException.class, () -> testSubject.repository(Integer.class));
     }
 }

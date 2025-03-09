@@ -31,9 +31,9 @@ import java.util.concurrent.CompletionException;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests whether stateful command handling components can handle commands that target multiple models at the same time.
+ * Tests whether stateful command handling components can handle commands that target multiple entities at the same time.
  */
-class MultiStateCommandHandlingComponentTest extends AbstractStudentTestsuite {
+class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
     @Test
     void canCombineStatesInLambdaCommandHandlerViaStateManagerParameter() {

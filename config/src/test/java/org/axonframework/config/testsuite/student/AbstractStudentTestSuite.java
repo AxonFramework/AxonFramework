@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * relevant methods. By default uses a mix of different available options to validate the different ways of setting up
  * the event sourcing repository.
  */
-public abstract class AbstractStudentTestsuite {
+public abstract class AbstractStudentTestSuite {
 
     protected final String DEFAULT_CONTEXT = "default";
 
