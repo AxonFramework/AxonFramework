@@ -24,7 +24,6 @@ import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.serialization.Serializer;
 
-import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -109,7 +108,7 @@ public abstract class AbstractSnapshotEventEntry<T> extends AbstractEventEntry<T
      * Primary key definition of the AbstractEventEntry class. Is used by JPA to support composite primary keys.
      */
     @SuppressWarnings("UnusedDeclaration")
-    public static class PK implements Serializable {
+    public static class PK {
 
         private static final long serialVersionUID = 9182347799552520594L;
 

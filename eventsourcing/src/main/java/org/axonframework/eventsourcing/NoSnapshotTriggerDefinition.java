@@ -18,7 +18,6 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.EventMessage;
 
-import java.io.Serializable;
 import javax.annotation.Nonnull;
 
 /**
@@ -41,7 +40,7 @@ public enum NoSnapshotTriggerDefinition implements SnapshotTriggerDefinition {
         return TRIGGER;
     }
 
-    private static class NoSnapshotTrigger implements SnapshotTrigger, Serializable {
+    private static class NoSnapshotTrigger implements SnapshotTrigger {
 
         @Override
         public void eventHandled(@Nonnull EventMessage<?> msg) {
