@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.axonserver.connector.command;
+package org.axonframework.axonserver.connector;
 
 import org.axonframework.common.Registration;
 
