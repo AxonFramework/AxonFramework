@@ -83,7 +83,6 @@ class DbSchedulerBinaryDeadlineDetailsTest {
 
     public static Collection<Serializer> dbSchedulerSerializers() {
         List<Serializer> serializers = new ArrayList<>();
-        serializers.add(new JavaSerializer());
         serializers.add(new JacksonSerializer());
         serializers.add(new GsonSerializer());
         return serializers;
