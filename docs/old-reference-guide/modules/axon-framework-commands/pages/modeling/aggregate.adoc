@@ -8,6 +8,31 @@ ensuring changes to one part don’t mess up others.
 Aggregates are commonly used to model the core business entities in a system based on link:https://www.axoniq.io/concepts/domain-driven-design[Domain-Driven Design] and link:https://www.axoniq.io/concepts/cqrs-and-event-sourcing[CQRS].
 This chapter will cover the basics on how to implement one in Axon Framework.
 
+== Aggregate identifiers
+
+Each aggregate has an identifier that uniquely identifies it within the context.
+Events published from this aggregate will contain this identifier,
+so that Axon Framework can later load the aggregate from its event stream.
+
+Commands that target aggregates contain a reference to this identifier.
+Axon Framework will load the events for the aggregate with this identifier,
+replay the events on an empty instance, and invoke the command. This is how the aggregate's state is reconstructed to support Event-Sourcing.
+
+[TIP]
+====
+The aggregate identifier has to be globally unique in your event store.
+This means that events are loaded based only on the identifier, and nothing else.
+Henceforth, the aggregate's type does not influence uniqueness at all.
+This means that if you have two aggregate types with the same identifier, Axon will
+load the events for both aggregates when handling a command.
+Mixing these events might lead to unexpected behavior, so we strongly recommend to design
+your aggregate identifiers with uniqueness in mind.
+====
+
+Note that commands that construct a new aggregate (via a constructor) do not need an identifier.
+However, your `@AggregateIdentifier` field needs to have a value after the first command,
+or Axon Framework will not know which aggregate identifier to publish the events for.
+
 == Basic aggregate structure
 
 An Aggregate is a regular Java object, which contains state and methods to alter that state.
