@@ -137,7 +137,6 @@ public class EventProcessingModule
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
     protected final Map<String, DeadLetteringInvokerConfiguration> deadLetteringInvokerConfigs = new HashMap<>();
     protected Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider = processingGroup -> null;
-    private SubscribableMessageSourceDefinitionBuilder subscribableMessageSourceDefinitionBuilder;
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     protected Configuration configuration;
@@ -683,8 +682,13 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer usingSubscribingEventProcessors(
-            SubscribableMessageSourceDefinitionBuilder builder) {
-        this.subscribableMessageSourceDefinitionBuilder = builder;
+            SubscribableMessageSourceDefinitionBuilder defaultSource) {
+        this.defaultEventProcessorBuilder = (name,
+                                             conf,
+                                             eventHandlerInvoker) -> subscribingEventProcessor(name,
+                                                                                               eventHandlerInvoker,
+                                                                                               defaultSource.build(name)
+                                                                                                            .create(conf));
         return this;
     }
 
@@ -934,14 +938,6 @@ public class EventProcessingModule
     private EventProcessor defaultEventProcessor(String name,
                                                  Configuration conf,
                                                  EventHandlerInvoker eventHandlerInvoker) {
-
-        if (subscribableMessageSourceDefinitionBuilder != null) {
-            return subscribingEventProcessor(name,
-                                             eventHandlerInvoker,
-                                             subscribableMessageSourceDefinitionBuilder.build(name)
-                                                                                       .create(conf));
-        }
-
         if (conf.eventBus() instanceof StreamableMessageSource) {
             return trackingEventProcessor(
                     name,

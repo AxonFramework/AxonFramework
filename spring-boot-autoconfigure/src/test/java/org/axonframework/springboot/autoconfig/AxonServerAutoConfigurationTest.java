@@ -24,7 +24,7 @@ import org.axonframework.axonserver.connector.TargetContextResolver;
 import org.axonframework.axonserver.connector.command.AxonServerCommandBus;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventScheduler;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
-import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSourceDefinition;
+import org.axonframework.axonserver.connector.event.axon.PersistentStreamMessageSource;
 import org.axonframework.axonserver.connector.event.axon.PersistentStreamScheduledExecutorBuilder;
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.commandhandling.CommandBus;
@@ -36,10 +36,10 @@ import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.EventProcessingModule;
-import org.axonframework.config.SubscribableMessageSourceDefinition;
 import org.axonframework.disruptor.commandhandling.DisruptorCommandBus;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.MultiEventHandlerInvoker;
 import org.axonframework.eventhandling.async.SequencingPolicy;
 import org.axonframework.eventhandling.async.SequentialPerAggregatePolicy;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
@@ -60,6 +60,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -271,7 +272,7 @@ class AxonServerAutoConfigurationTest {
     }
 
     @Test
-    void subscribableMessageSourceDefinitionShouldBeConfigured() {
+    void defaultEventProcessorBuilderShouldBeConfiguredForPresistentStreams() {
         testContext.withPropertyValues("axon.axonserver.auto-persistent-streams-enable=true",
                                        "axon.axonserver.auto-persistent-streams-settings.initial-segment-count=10",
                                        "axon.axonserver.auto-persistent-streams-settings.batch-size=6")
@@ -279,22 +280,25 @@ class AxonServerAutoConfigurationTest {
 
                        EventProcessingModule eventProcessingModule = context.getBean(EventProcessingModule.class);
 
-                       EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder builder = getField(
-                               "subscribableMessageSourceDefinitionBuilder",
+                       EventProcessingConfigurer.EventProcessorBuilder defaultEventProcessorBuilder = getField(
+                               "defaultEventProcessorBuilder",
                                eventProcessingModule);
 
-                       assertThat(builder).isNotNull();
+                       Configuration config = getField("configuration", eventProcessingModule);
+                       Object processor = defaultEventProcessorBuilder.build("processingGroupName",
+                                                                             config,
+                                                                             new MultiEventHandlerInvoker(
+                                                                                     Collections.emptyList()));
 
-                       SubscribableMessageSourceDefinition<EventMessage<?>> definition = builder.build(
-                               "processingGroupName");
-                       assertThat(definition).isInstanceOf(PersistentStreamMessageSourceDefinition.class);
-                       String name = getField("name", definition);
-                       int batchSize = getField("batchSize", definition);
-                       PersistentStreamProperties properties = getField("persistentStreamProperties", definition);
-                       assertThat(name).isEqualTo("processingGroupName");
-                       assertThat(batchSize).isEqualTo(6);
-                       assertThat(properties.streamName()).isEqualTo("processingGroupName-stream");
+                       Object messageSource = getField("messageSource", processor);
+                       Object connection = getField("persistentStreamConnection", messageSource);
+                       PersistentStreamProperties properties = getField("persistentStreamProperties", connection);
+                       Integer batchSize = getField("batchSize", connection);
+
+                       assertThat(messageSource).isInstanceOf(PersistentStreamMessageSource.class);
                        assertThat(properties.segments()).isEqualTo(10);
+                       assertThat(properties.streamName()).isEqualTo("processingGroupName-stream");
+                       assertThat(batchSize).isEqualTo(6);
                    });
     }
 
