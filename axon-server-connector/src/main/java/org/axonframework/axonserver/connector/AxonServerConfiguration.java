@@ -1310,6 +1310,15 @@ public class AxonServerConfiguration {
         return persistentStreams;
     }
 
+    /**
+     * Return the settings for all persistent streams that will be created automatically.
+     * <p>
+     * Each persistent stream will be named according to the following pattern:
+     * <p>
+     * processingGroupName + "-stream"
+     *
+     * @return Return the settings for all persistent streams that will be created automatically.
+     */
     public PersistentStreamSettings getAutoPersistentStreamsSettings() {
         return autoPersistentStreamsSettings;
     }

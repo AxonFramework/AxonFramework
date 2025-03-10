@@ -255,7 +255,13 @@ To simplify configuration, if you want to apply persistent streams to all proces
 axon.axonserver.auto-persistent-streams-enable=true
 ----
 
-This will configure persistent streams automatically for all processing groups whith default settings.
+This will configure persistent streams automatically for all processing groups with default settings.
+Each persistent stream will be named according to the following pattern:
+
+[source,text]
+----
+processingGroupName + "-stream"
+----
 
 You can also override default persistent stream settings
 
