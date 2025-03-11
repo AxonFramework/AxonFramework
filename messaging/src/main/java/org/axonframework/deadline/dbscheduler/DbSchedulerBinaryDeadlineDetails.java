@@ -44,7 +44,7 @@ import static java.lang.String.format;
  * @since 4.8.0
  */
 @SuppressWarnings("Duplicates")
-public class DbSchedulerBinaryDeadlineDetails implements Serializable {
+public class DbSchedulerBinaryDeadlineDetails {
 
     private String d;
     private String t;

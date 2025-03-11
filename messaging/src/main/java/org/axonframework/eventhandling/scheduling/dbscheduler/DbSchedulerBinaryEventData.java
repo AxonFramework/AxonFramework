@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.eventhandling.scheduling.dbscheduler;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -31,7 +30,7 @@ import static java.lang.String.format;
  * @author Gerard Klijs
  * @since 4.8.0
  */
-public class DbSchedulerBinaryEventData implements Serializable {
+public class DbSchedulerBinaryEventData {
 
     private byte[] p;
     private String c;
