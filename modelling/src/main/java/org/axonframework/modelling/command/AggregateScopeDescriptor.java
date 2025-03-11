@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.messaging.ScopeDescriptor;
 
 import java.beans.ConstructorProperties;
-import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Supplier;
 

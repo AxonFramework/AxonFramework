@@ -24,11 +24,6 @@ import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.xml.XStreamSerializer;
 import org.junit.jupiter.api.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -47,7 +42,7 @@ class AggregateScopeDescriptorSerializationTest {
 
     @BeforeEach
     void setUp() {
-        testSubject = new AggregateScopeDescriptor(expectedType, () -> expectedIdentifier);
+        testSubject = new AggregateScopeDescriptor(expectedType, expectedIdentifier);
     }
 
     @Test
