@@ -16,14 +16,14 @@
 
 package org.axonframework.configuration;
 
+import org.axonframework.configuration.Component.Identifier;
+import org.junit.jupiter.api.*;
+
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-
-import org.axonframework.configuration.Component.Identifier;
-import org.junit.jupiter.api.*;
 
 /**
  * Test class validating the {@link Component}.
@@ -85,37 +85,6 @@ class ComponentTest {
         assertEquals(1, counter.get());
         testSubject.get();
         assertEquals(1, counter.get());
-    }
-
-    @Test
-    void updateReplacesComponentBuilderVariable() {
-        String replacementComponent = "other-component";
-        ComponentBuilder<String> replacementBuilder = c -> replacementComponent;
-
-        Component<String> testSubject = new Component<>(identifier, config, builder);
-
-        testSubject.update(replacementBuilder);
-
-        String result = testSubject.get();
-
-        assertNotEquals(TEST_COMPONENT, result);
-        assertEquals(replacementComponent, result);
-    }
-
-    @Test
-    void updateThrowsIllegalStateExceptionIfTheComponentWasAlreadyBuilt() {
-        Component<String> testSubject = new Component<>(identifier, config, builder);
-        testSubject.get();
-
-        assertThrows(IllegalStateException.class, () -> testSubject.update(c -> "failure!"));
-    }
-
-    @Test
-    void updateThrowsNullPointerExceptionForNullBuilder() {
-        Component<String> testSubject = new Component<>(identifier, config, builder);
-
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.update(null));
     }
 
     @Test

@@ -16,19 +16,18 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.invoke.MethodHandles;
-import java.util.Objects;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.assertThat;
-
-import jakarta.annotation.Nonnull;
-import org.axonframework.common.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A component used in the Axon's configuration API.
@@ -50,7 +49,7 @@ public class Component<C> {
 
     private final Identifier<C> identifier;
     private final Supplier<LifecycleSupportingConfiguration> configSupplier;
-    private ComponentBuilder<C> builder;
+    private final ComponentBuilder<C> builder;
     private final SortedMap<Integer, ComponentDecorator<C>> decorators = new TreeMap<>();
 
     private C instance;
@@ -113,23 +112,6 @@ public class Component<C> {
         logger.debug("Instantiated component [{}]: {}", identifier, instance);
         LifecycleHandlerInspector.registerLifecycleHandlers(config, instance);
         return instance;
-    }
-
-    /**
-     * Updates the builder function for this {@code Component}.
-     *
-     * @param componentBuilder The new builder function for the {@code Component}.
-     * @throws IllegalStateException When the component has already been retrieved using {@link #get()}.
-     */
-    public void update(@Nonnull ComponentBuilder<C> componentBuilder) {
-        assertThat(
-                this.instance,
-                Objects::isNull,
-                () -> new IllegalStateException(
-                        "Cannot update component with [" + identifier + "] as it is already in use."
-                )
-        );
-        this.builder = requireNonNull(componentBuilder, "A component builder cannot be null.");
     }
 
     /**
