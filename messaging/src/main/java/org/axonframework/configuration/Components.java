@@ -16,13 +16,14 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.configuration.Component.Identifier;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-
-import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.Component.Identifier;
 
 /**
  * Wrapper around a {@link Map} of {@link Component Components} stored per {@link Component.Identifier}.
@@ -38,18 +39,6 @@ public class Components {
     private final Map<Identifier<?>, Component<?>> components = new ConcurrentHashMap<>();
 
     /**
-     * Get an {@link Optional} on the component of type {@code C} registered under the given {@code identifier},
-     * invoking {@link Component#get()} as part of the retrieval.
-     *
-     * @param identifier The identifier to retrieve a component for.
-     * @param <C>        The type of the component to retrieve.
-     * @return An {@code Optional} on the component of type {@code C} registered under the given {@code identifier}.
-     */
-    public <C> Optional<C> getOptional(@Nonnull Identifier<C> identifier) {
-        return getOptionalComponent(identifier).map(Component::get);
-    }
-
-    /**
      * Get an {@link Optional} on the {@link Component} registered under the given {@code identifier}.
      *
      * @param identifier The identifier to retrieve a {@link Component} for.
@@ -57,9 +46,23 @@ public class Components {
      * @return An {@link Optional} on the {@link Component} registered under the given {@code identifier}.
      */
     @Nonnull
-    public <C> Optional<Component<C>> getOptionalComponent(@Nonnull Identifier<C> identifier) {
+    public <C> Optional<Component<C>> get(@Nonnull Identifier<C> identifier) {
         //noinspection unchecked
         return Optional.ofNullable((Component<C>) components.get(identifier));
+    }
+
+    /**
+     * Get an {@link Optional} on the unwrapped {@link Component} registered under the given {@code identifier}.
+     * <p>
+     * This operation will invoke {@link Component#get()} as part of the retrieval.
+     *
+     * @param identifier The identifier to retrieve a component for.
+     * @param <C>        The type of the component to retrieve.
+     * @return An {@code Optional} on the component of type {@code C} registered under the given {@code identifier}.
+     */
+    @Nonnull
+    public <C> Optional<C> getUnwrapped(@Nonnull Identifier<C> identifier) {
+        return get(identifier).map(Component::get);
     }
 
     /**
@@ -70,6 +73,7 @@ public class Components {
      * @param <C>        The type of the component to put.
      * @return A previous component registered under the given {@code identifier}, if present.
      */
+    @Nullable
     public <C> Component<C> put(@Nonnull Identifier<C> identifier, @Nonnull Component<C> component) {
         //noinspection unchecked
         return (Component<C>) components.put(identifier, component);
@@ -88,6 +92,7 @@ public class Components {
      * @return The previously {@link #put(Identifier, Component) put Component} identifier by the given
      * {@code identifier}. When absent, the outcome of the {@code compute} operation is returned
      */
+    @Nonnull
     public <C> Component<C> computeIfAbsent(
             @Nonnull Identifier<C> identifier,
             @Nonnull Function<? super Identifier<?>, ? extends Component<?>> compute

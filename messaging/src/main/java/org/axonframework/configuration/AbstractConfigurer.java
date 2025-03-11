@@ -84,7 +84,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         logger.debug("Registering decorator for [{}] of type [{}] at order #{}.", name, type, order);
         Identifier<C> identifier = new Identifier<>(type, name);
         logger.debug("Registering decorator for [{}] at order #{}.", identifier, order);
-        components.getOptionalComponent(identifier)
+        components.get(identifier)
                   .map(component -> component.decorate(decorator, order))
                   .orElseThrow(() -> new IllegalArgumentException(
                           "Cannot decorate type [" + identifier + "] since there is no component builder for this type."
@@ -219,7 +219,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nonnull String name) {
-            return components.getOptional(new Identifier<>(type, name))
+            return components.getUnwrapped(new Identifier<>(type, name))
                              .or(() -> optionalFromParent(type, name, () -> null));
         }
 

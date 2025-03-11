@@ -16,14 +16,14 @@
 
 package org.axonframework.configuration;
 
+import org.axonframework.configuration.Component.Identifier;
+import org.junit.jupiter.api.*;
+
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-
-import org.axonframework.configuration.Component.Identifier;
-import org.junit.jupiter.api.*;
 
 /**
  * Test class validating the {@link Components}.
@@ -46,47 +46,47 @@ class ComponentsTest {
     }
 
     @Test
-    void getOptionalThrowsNullPointerExceptionForNullIdentifier() {
+    void getThrowsNullPointerExceptionForNullIdentifier() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.getOptional(null));
+        assertThrows(NullPointerException.class, () -> testSubject.get(null));
     }
 
     @Test
-    void getOptionalReturnsEmptyOptional() {
-        assertTrue(testSubject.getOptional(IDENTIFIER).isEmpty());
+    void getReturnsEmpty() {
+        assertTrue(testSubject.get(IDENTIFIER).isEmpty());
     }
 
     @Test
-    void getOptionalReturnsPutComponent() {
+    void getReturnsPutComponent() {
         Component<String> testComponent = new Component<>(IDENTIFIER, config, c -> "some-state");
 
         testSubject.put(IDENTIFIER, testComponent);
 
-        Optional<String> result = testSubject.getOptional(IDENTIFIER);
-        assertTrue(result.isPresent());
-        assertEquals(testComponent.get(), result.get());
-    }
-
-    @Test
-    void getOptionalComponentThrowsNullPointerExceptionForNullIdentifier() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.getOptionalComponent(null));
-    }
-
-    @Test
-    void getOptionalComponentReturnsEmptyOptional() {
-        assertTrue(testSubject.getOptionalComponent(IDENTIFIER).isEmpty());
-    }
-
-    @Test
-    void getOptionalComponentReturnsPutComponent() {
-        Component<String> testComponent = new Component<>(IDENTIFIER, config, c -> "some-state");
-
-        testSubject.put(IDENTIFIER, testComponent);
-
-        Optional<Component<String>> result = testSubject.getOptionalComponent(IDENTIFIER);
+        Optional<Component<String>> result = testSubject.get(IDENTIFIER);
         assertTrue(result.isPresent());
         assertEquals(testComponent, result.get());
+    }
+
+    @Test
+    void getUnwrappedThrowsNullPointerExceptionForNullIdentifier() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> testSubject.getUnwrapped(null));
+    }
+
+    @Test
+    void getUnwrappedReturnsEmpty() {
+        assertTrue(testSubject.getUnwrapped(IDENTIFIER).isEmpty());
+    }
+
+    @Test
+    void getUnwrappedReturnsPutComponent() {
+        Component<String> testComponent = new Component<>(IDENTIFIER, config, c -> "some-state");
+
+        testSubject.put(IDENTIFIER, testComponent);
+
+        Optional<String> result = testSubject.getUnwrapped(IDENTIFIER);
+        assertTrue(result.isPresent());
+        assertEquals(testComponent.get(), result.get());
     }
 
     @Test
@@ -102,7 +102,9 @@ class ComponentsTest {
 
 
         assertFalse(invoked.get());
-        assertEquals(testComponent.get(), testSubject.getOptional(IDENTIFIER).get());
+        Optional<String> optionalResult = testSubject.getUnwrapped(IDENTIFIER);
+        assertTrue(optionalResult.isPresent());
+        assertEquals(testComponent.get(), optionalResult.get());
     }
 
     @Test
@@ -116,7 +118,9 @@ class ComponentsTest {
         });
 
         assertTrue(invoked.get());
-        assertEquals(testComponent.get(), testSubject.getOptional(IDENTIFIER).get());
+        Optional<String> optionalResult = testSubject.getUnwrapped(IDENTIFIER);
+        assertTrue(optionalResult.isPresent());
+        assertEquals(testComponent.get(), optionalResult.get());
     }
 
     @Test
