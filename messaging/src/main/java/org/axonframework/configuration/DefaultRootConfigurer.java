@@ -67,7 +67,7 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
      * Initialize the {@code RootConfigurer} with a {@code null} {@link LifecycleSupportingConfiguration}.
      */
     protected DefaultRootConfigurer() {
-        super(null); // 🦸 <- Is this a train? Is this a bullet? No, it is Super Null!
+        super(null);
     }
 
     @Override
@@ -122,7 +122,7 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
         private LifecycleState lifecycleState = LifecycleState.DOWN;
 
         private RootConfigurationImpl() {
-            super(null); // 🦸 <- Is this a train? Is this a bullet? No, it is Super Null!
+            super(null);
             this.isRunning = new AtomicBoolean(false);
         }
 
