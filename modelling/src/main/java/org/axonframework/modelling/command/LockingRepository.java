@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -154,14 +154,34 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
             CurrentUnitOfWork.get().onCleanup(u -> lock.release());
             return new LockAwareAggregate<>(aggregate, lock);
         } catch (AggregateNotFoundException ex) {
-            final A aggregate = doCreateNewForLock(factoryMethod);
-            CurrentUnitOfWork.get().onCleanup(u -> lock.release());
-            return new LockAwareAggregate<>(aggregate, lock);
+            if (isExactAggregateNotFound(ex.getClass())) {
+                final A aggregate = doCreateNewForLock(factoryMethod);
+                CurrentUnitOfWork.get().onCleanup(u -> lock.release());
+                return new LockAwareAggregate<>(aggregate, lock);
+            } else {
+                throw ex;
+            }
         } catch (Throwable ex) {
             logger.debug("Exception occurred while trying to load/create an aggregate. Releasing lock.", ex);
             lock.release();
             throw ex;
         }
+    }
+
+    /**
+     * Returns {@code true} if the given {@code exceptionClass} is {@link AggregateNotFoundException} and not an
+     * implementation of {@code AggregateNotFoundException}, {@code false} otherwise.
+     * <p>
+     * Necessary check to ensure {@link #doLoadOrCreate(String, Callable)} does not accidentally create an aggregate
+     * that was marked to be deleted. We cannot rely on the exact exception for that since marking something as deleted
+     * is a event sourcing concern.
+     *
+     * @param exceptionClass The class to match.
+     * @return {@code true} if the given {@code exceptionClass} is {@link AggregateNotFoundException} and not an
+     * implementation of {@code AggregateNotFoundException}, {@code false} otherwise
+     */
+    private static boolean isExactAggregateNotFound(Class<? extends AggregateNotFoundException> exceptionClass) {
+        return AggregateNotFoundException.class.equals(exceptionClass);
     }
 
     @Override
