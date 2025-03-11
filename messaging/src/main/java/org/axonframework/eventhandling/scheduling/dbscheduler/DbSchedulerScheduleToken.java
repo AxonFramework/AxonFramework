@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import static java.lang.String.format;
  */
 public class DbSchedulerScheduleToken implements ScheduleToken, TaskInstanceId {
 
-    private static final long serialVersionUID = 7798276124742534225L;
     static final String TASK_NAME = "AxonScheduledEvent";
 
     private final String id;

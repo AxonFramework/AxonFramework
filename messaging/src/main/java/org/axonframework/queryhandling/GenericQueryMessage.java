@@ -41,9 +41,6 @@ import java.util.Map;
  */
 public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements QueryMessage<P, R> {
 
-    @Serial
-    private static final long serialVersionUID = -3908412412867063631L;
-
     private final String queryName;
     private final ResponseType<R> responseType;
 

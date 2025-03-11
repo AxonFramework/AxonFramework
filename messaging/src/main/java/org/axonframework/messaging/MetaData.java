@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ import javax.annotation.Nullable;
  */
 public class MetaData implements Map<String, Object>, Serializable {
 
-    private static final long serialVersionUID = -7892913866303912970L;
     private static final MetaData EMPTY_META_DATA = new MetaData();
     private static final String UNSUPPORTED_MUTATION_MSG = "Metadata is immutable.";
 
