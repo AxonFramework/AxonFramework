@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -425,7 +425,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @SuppressWarnings("unused")
-    public static class TestAggregate {
+    public static class TestAggregate implements TestAggregateInterface {
 
         @AggregateIdentifier
         private ComplexAggregateId id;
@@ -443,16 +443,14 @@ class FixtureTest_CreationPolicy {
             apply(new CreatedEvent(command.getId()));
         }
 
-        @CommandHandler
-        @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
+        @Override
         public void handle(CreateOrUpdateCommand command) {
             if (command.shouldPublishEvent()) {
                 apply(new CreatedOrUpdatedEvent(command.getId()));
             }
         }
 
-        @CommandHandler
-        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        @Override
         public void handle(AlwaysCreateWithoutResultCommand command) {
             if (command.shouldPublishEvent()) {
                 apply(new AlwaysCreatedEvent(command.getId()));
@@ -498,6 +496,17 @@ class FixtureTest_CreationPolicy {
         public void on(AlwaysCreatedEvent event) {
             this.id = event.getId();
         }
+    }
+
+    public interface TestAggregateInterface {
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
+        void handle(CreateOrUpdateCommand command);
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        void handle(AlwaysCreateWithoutResultCommand command);
     }
 
     public static class TestAggregateWithPrivateNoArgConstructor {

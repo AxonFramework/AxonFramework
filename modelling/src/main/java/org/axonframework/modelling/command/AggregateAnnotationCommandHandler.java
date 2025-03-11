@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -204,12 +204,14 @@ public class AggregateAnnotationCommandHandler<T> implements CommandMessageHandl
                 switch (policy.orElse(NEVER)) {
                     case ALWAYS:
                         messageHandler = new AlwaysCreateAggregateCommandHandler(
-                                handler, factoryPerType.get(handler.declaringClass())
+                                handler, Optional.ofNullable(factoryPerType.get(handler.declaringClass()))
+                                                 .orElse(factoryPerType.get(aggregateModel.entityClass()))
                         );
                         break;
                     case CREATE_IF_MISSING:
                         messageHandler = new AggregateCreateOrUpdateCommandHandler(
-                                handler, factoryPerType.get(handler.declaringClass())
+                                handler, Optional.ofNullable(factoryPerType.get(handler.declaringClass()))
+                                                 .orElse(factoryPerType.get(aggregateModel.entityClass()))
                         );
                         break;
                     case NEVER:
