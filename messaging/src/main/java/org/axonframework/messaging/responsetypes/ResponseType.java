@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging.responsetypes;
 
-import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.Optional;
 
@@ -37,7 +36,7 @@ import java.util.Optional;
  * @see ResponseTypes to instantiate a {@link ResponseType} implementation
  * @since 3.2
  */
-public interface ResponseType<R> extends Serializable {
+public interface ResponseType<R> {
 
     /**
      * Indicates that the response type does not match with a given {@link java.lang.reflect.Type}.

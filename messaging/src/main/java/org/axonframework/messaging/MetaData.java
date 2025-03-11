@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,7 +37,7 @@ import javax.annotation.Nullable;
  * @author Allard Buijze
  * @since 2.0
  */
-public class MetaData implements Map<String, Object>, Serializable {
+public class MetaData implements Map<String, Object> {
 
     private static final MetaData EMPTY_META_DATA = new MetaData();
     private static final String UNSUPPORTED_MUTATION_MSG = "Metadata is immutable.";
