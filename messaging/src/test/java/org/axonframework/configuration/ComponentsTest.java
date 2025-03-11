@@ -46,26 +46,6 @@ class ComponentsTest {
     }
 
     @Test
-    void getThrowsNullPointerExceptionForNullIdentifier() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.get(null));
-    }
-
-    @Test
-    void getThrowsNullPointerExceptionForUnknownIdentifier() {
-        assertThrows(NullPointerException.class, () -> testSubject.get(IDENTIFIER));
-    }
-
-    @Test
-    void getReturnsPutComponent() {
-        Component<String> testComponent = new Component<>(IDENTIFIER, config, c -> "some-state");
-
-        testSubject.put(IDENTIFIER, testComponent);
-
-        assertEquals(testComponent.get(), testSubject.get(IDENTIFIER));
-    }
-
-    @Test
     void getOptionalThrowsNullPointerExceptionForNullIdentifier() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> testSubject.getOptional(null));
@@ -85,26 +65,6 @@ class ComponentsTest {
         Optional<String> result = testSubject.getOptional(IDENTIFIER);
         assertTrue(result.isPresent());
         assertEquals(testComponent.get(), result.get());
-    }
-
-    @Test
-    void getComponentThrowsNullPointerExceptionForNullIdentifier() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.getComponent(null));
-    }
-
-    @Test
-    void getComponentThrowsNullPointerExceptionForUnknownIdentifier() {
-        assertThrows(NullPointerException.class, () -> testSubject.getComponent(IDENTIFIER));
-    }
-
-    @Test
-    void getComponentReturnsPutComponent() {
-        Component<String> testComponent = new Component<>(IDENTIFIER, config, c -> "some-state");
-
-        testSubject.put(IDENTIFIER, testComponent);
-
-        assertEquals(testComponent, testSubject.getComponent(IDENTIFIER));
     }
 
     @Test
@@ -142,7 +102,7 @@ class ComponentsTest {
 
 
         assertFalse(invoked.get());
-        assertEquals(testComponent.get(), testSubject.get(IDENTIFIER));
+        assertEquals(testComponent.get(), testSubject.getOptional(IDENTIFIER).get());
     }
 
     @Test
@@ -156,7 +116,7 @@ class ComponentsTest {
         });
 
         assertTrue(invoked.get());
-        assertEquals(testComponent.get(), testSubject.get(IDENTIFIER));
+        assertEquals(testComponent.get(), testSubject.getOptional(IDENTIFIER).get());
     }
 
     @Test

@@ -38,22 +38,6 @@ public class Components {
     private final Map<Identifier<?>, Component<?>> components = new ConcurrentHashMap<>();
 
     /**
-     * Get the component of type {@code C} registered under the given {@code identifier}, invoking
-     * {@link Component#get()} as part of the retrieval.
-     * <p>
-     * Throws a {@link NullPointerException} when none is present.
-     *
-     * @param identifier The identifier to retrieve a component for.
-     * @param <C>        The type of the component to retrieve.
-     * @return The component of type {@code C} registered under the given {@code identifier}.
-     */
-    @Nonnull
-    public <C> C get(@Nonnull Identifier<C> identifier) {
-        return getOptional(identifier)
-                .orElseThrow(() -> new NullPointerException("No component found for identifier: " + identifier));
-    }
-
-    /**
      * Get an {@link Optional} on the component of type {@code C} registered under the given {@code identifier},
      * invoking {@link Component#get()} as part of the retrieval.
      *
@@ -63,21 +47,6 @@ public class Components {
      */
     public <C> Optional<C> getOptional(@Nonnull Identifier<C> identifier) {
         return getOptionalComponent(identifier).map(Component::get);
-    }
-
-    /**
-     * Get the {@link Component} registered under the given {@code identifier}.
-     * <p>
-     * Throws a {@link NullPointerException} when none is present.
-     *
-     * @param identifier The identifier to retrieve a {@link Component} for.
-     * @param <C>        The type of the component to retrieve.
-     * @return The {@link Component} registered under the given {@code identifier}.
-     */
-    @Nonnull
-    public <C> Component<C> getComponent(@Nonnull Identifier<C> identifier) {
-        return getOptionalComponent(identifier)
-                .orElseThrow(() -> new NullPointerException("No component found for identifier: " + identifier));
     }
 
     /**
