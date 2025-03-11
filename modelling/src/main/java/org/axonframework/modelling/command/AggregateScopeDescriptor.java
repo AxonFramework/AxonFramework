@@ -98,15 +98,6 @@ public class AggregateScopeDescriptor implements ScopeDescriptor {
         return String.format("AggregateScopeDescriptor for type [%s] and identifier [%s]", type, getIdentifier());
     }
 
-    /**
-     * This function is provided for Java serialization, such that it will ensure the {@code identifierSupplier} is
-     * called, thus setting the {@code identifier}, prior to serializing this AggregateScopeDescriptor.
-     */
-    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
-        getIdentifier();
-        out.defaultWriteObject();
-    }
-
     @Override
     public int hashCode() {
         return Objects.hash(type, getIdentifier());
