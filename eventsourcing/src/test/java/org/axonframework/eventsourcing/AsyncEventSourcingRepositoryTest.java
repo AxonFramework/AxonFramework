@@ -60,6 +60,8 @@ class AsyncEventSourcingRepositoryTest {
         when(eventStore.transaction(any(), eq(TEST_CONTEXT))).thenReturn(eventStoreTransaction);
 
         testSubject = new AsyncEventSourcingRepository<>(
+                String.class,
+                String.class,
                 eventStore,
                 identifier -> TEST_MODEL_CRITERIA,
                 (currentState, event, ctx) -> currentState + "-" + event.getPayload(),

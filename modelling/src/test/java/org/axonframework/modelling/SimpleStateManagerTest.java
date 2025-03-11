@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SimpleStateManagerTest {
 
-    private final AsyncRepository<String, Integer> repository = new SimpleEntityAsyncRepository<>(
+    private final AsyncRepository<String, Integer> repository = new SimpleRepository<>(
             String.class,
             Integer.class,
             (id, context) -> CompletableFuture.completedFuture(Integer.parseInt(id)),
@@ -38,15 +38,12 @@ class SimpleStateManagerTest {
     @Test
     void registerAllowsEntitiesToBeLoadedFromTheRepository() {
         // given
-        StateManager testSubject = SimpleStateManager.create("test");
-        testSubject.register(
-                String.class,
-                Integer.class,
-                repository
-        );
+        SimpleStateManager stateManager = SimpleStateManager.builder("test")
+                                                            .register(repository)
+                                                            .build();
 
         // when
-        var state = testSubject.loadEntity(Integer.class, "42", new StubProcessingContext()).join();
+        var state = stateManager.loadEntity(Integer.class, "42", new StubProcessingContext()).join();
 
         // then
         assertEquals(42, state);
@@ -55,7 +52,7 @@ class SimpleStateManagerTest {
     @Test
     void throwsExceptionOnMissingModelDefinition() {
         // given
-        StateManager testSubject = SimpleStateManager.create("test");
+        StateManager testSubject = SimpleStateManager.builder("test").build();
 
         // when & then
         var exception = assertThrows(CompletionException.class,
@@ -66,49 +63,35 @@ class SimpleStateManagerTest {
     @Test
     void throwsExceptionOnMismatchingIdType() {
         // given
-        StateManager testSubject = SimpleStateManager.create("test");
-        testSubject.register(
-                String.class,
-                Integer.class,
-                repository
-        );
+        SimpleStateManager stateManager = SimpleStateManager.builder("test")
+                                                            .register(repository)
+                                                            .build();
 
         // when & then
         var exception = assertThrows(CompletionException.class,
-                     () -> testSubject.loadEntity(Integer.class, 0.f, ProcessingContext.NONE).join());
+                                     () -> stateManager.loadEntity(Integer.class, 0.f, ProcessingContext.NONE).join());
         assertInstanceOf(IdTypeMismatchException.class, exception.getCause());
     }
 
     @Test
     void canRegisterEachModelClassOnlyOnce() {
         // given
-        StateManager testSubject = SimpleStateManager.create("test");
-        testSubject.register(
-                String.class,
-                Integer.class,
-                repository
-        );
+        SimpleStateManager.Builder builder = SimpleStateManager.builder("test")
+                                                               .register(repository);
 
         // when & then
-        assertThrows(StateTypeAlreadyRegisteredException.class, () -> testSubject.register(
-                String.class,
-                Integer.class,
-                repository
-        ));
+        assertThrows(RepositoryAlreadyRegisteredException.class, () -> builder.register(repository));
     }
 
     @Test
-    void canRetrieveRegisteredTypes() {
+    void canRetrieveRegisteredEntities() {
         // given
-        StateManager testSubject = SimpleStateManager.create("test");
-        testSubject.register(
-                String.class,
-                Integer.class,
-                repository
-        );
+        SimpleStateManager stateManager = SimpleStateManager.builder("test")
+                                                            .register(repository)
+                                                            .build();
 
         // when
-        var registeredTypes = testSubject.registeredTypes();
+        var registeredTypes = stateManager.registeredEntities();
 
         // then
         assertEquals(1, registeredTypes.size());
@@ -118,15 +101,12 @@ class SimpleStateManagerTest {
     @Test
     void canGetRepositoryForRegisteredType() {
         // given
-        StateManager testSubject = SimpleStateManager.create("test");
-        testSubject.register(
-                String.class,
-                Integer.class,
-                repository
-        );
+        SimpleStateManager stateManager = SimpleStateManager.builder("test")
+                                                            .register(repository)
+                                                            .build();
 
         // when
-        var result = testSubject.repository(Integer.class);
+        var result = stateManager.repository(Integer.class, String.class);
 
         // then
         assertEquals(repository, result);
@@ -135,9 +115,11 @@ class SimpleStateManagerTest {
     @Test
     void throwsExceptionIfTryingToGetRepositoryForUnregisteredType() {
         // given
-        StateManager testSubject = SimpleStateManager.create("test");
+        SimpleStateManager stateManager = SimpleStateManager.builder("test")
+                                                            .register(repository)
+                                                            .build();
 
         // when & then
-        assertThrows(MissingRepositoryException.class, () -> testSubject.repository(Integer.class));
+        assertThrows(MissingRepositoryException.class, () -> stateManager.repository(Integer.class, String.class));
     }
 }

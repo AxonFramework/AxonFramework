@@ -40,6 +40,19 @@ public sealed interface AsyncRepository<ID, T>
         permits AsyncRepository.LifecycleManagement {
 
     /**
+     * The type of entity stored in this repository.
+     *
+     * @return the type of entity stored in this repository
+     */
+    Class<T> entityType();
+
+    /**
+     * The type of the identifier used to identify entities in this repository.
+     * @return the type of the identifier used to identify entities in this repository
+     */
+    Class<ID> idType();
+
+    /**
      * Load the entity with the given unique identifier. No version checks are done when loading an entity, meaning that
      * concurrent access will not be checked for.
      *

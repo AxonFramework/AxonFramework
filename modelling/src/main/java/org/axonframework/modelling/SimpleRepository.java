@@ -29,6 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Simple implementation of an {@link AsyncRepository} that can load and persist entities of a given type. When an
  * entity is loaded, it is stored in the {@link ProcessingContext} to ensure that the same entity is returned when it is
@@ -46,36 +48,36 @@ import java.util.function.UnaryOperator;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class SimpleEntityAsyncRepository<I, T> implements AsyncRepository.LifecycleManagement<I, T> {
+public class SimpleRepository<I, T> implements AsyncRepository.LifecycleManagement<I, T> {
 
     private final ResourceKey<Map<I, CompletableFuture<ManagedEntity<I, T>>>> managedEntitiesKey =
-            ResourceKey.withLabel("SimpleEntityRepositoryManagedEntities");
+            ResourceKey.withLabel("SimpleRepository.ManagedEntities");
 
-    private final Class<I> entityIdClass;
-    private final Class<T> entityClass;
+    private final Class<I> idType;
+    private final Class<T> entityType;
     private final SimpleEntityLoader<I, T> loader;
     private final SimpleEntityPersister<I, T> persister;
 
     /**
-     * Constructs a new simple {@link AsyncRepository} for entities of type {@code entityClass} with identifiers of type
-     * {@code entityIdClass}. The given {@code loader} is used to load entities and the given {@code persister} is used
+     * Constructs a new simple {@link AsyncRepository} for entities of type {@code entityType} with identifiers of type
+     * {@code idType}. The given {@code loader} is used to load entities and the given {@code persister} is used
      * to persist entities.
      *
-     * @param entityIdClass The type of the identifier of the entity.
-     * @param entityClass   The type of the entity.
-     * @param loader        The component capable of loading entities.
-     * @param persister     The component capable of persisting entities.
+     * @param idType     The type of the identifier of the entity.
+     * @param entityType The type of the entity.
+     * @param loader     The component capable of loading entities.
+     * @param persister  The component capable of persisting entities.
      */
-    public SimpleEntityAsyncRepository(
-            Class<I> entityIdClass,
-            Class<T> entityClass,
-            SimpleEntityLoader<I, T> loader,
-            SimpleEntityPersister<I, T> persister
+    public SimpleRepository(
+            @Nonnull Class<I> idType,
+            @Nonnull Class<T> entityType,
+            @Nonnull SimpleEntityLoader<I, T> loader,
+            @Nonnull SimpleEntityPersister<I, T> persister
     ) {
-        this.entityIdClass = entityIdClass;
-        this.entityClass = entityClass;
-        this.loader = loader;
-        this.persister = persister;
+        this.idType = requireNonNull(idType, "The entityIdClass may not be null");
+        this.entityType = requireNonNull(entityType, "The entityClass may not be null");
+        this.loader = requireNonNull(loader, "The loader may not be null");
+        this.persister = requireNonNull(persister, "The persister may not be null");
     }
 
     @Override
@@ -91,6 +93,16 @@ public class SimpleEntityAsyncRepository<I, T> implements AsyncRepository.Lifecy
                     return CompletableFuture.completedFuture(simpleEntity);
                 }
         ).resultNow();
+    }
+
+    @Override
+    public Class<T> entityType() {
+        return entityType;
+    }
+
+    @Override
+    public Class<I> idType() {
+        return idType;
     }
 
     @Override
@@ -136,8 +148,8 @@ public class SimpleEntityAsyncRepository<I, T> implements AsyncRepository.Lifecy
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("idClass", entityIdClass);
-        descriptor.describeProperty("entityClass", entityClass);
+        descriptor.describeProperty("idClass", idType);
+        descriptor.describeProperty("entityClass", entityType);
     }
 
     /**
@@ -145,7 +157,7 @@ public class SimpleEntityAsyncRepository<I, T> implements AsyncRepository.Lifecy
      * entity.
      *
      * @param <I> The type of the identifier of the entity.
-     * @param <T>  The type of the entity.
+     * @param <T> The type of the entity.
      */
     private static class SimpleEntity<I, T> implements ManagedEntity<I, T> {
 

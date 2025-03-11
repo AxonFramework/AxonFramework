@@ -35,7 +35,7 @@ class SimpleEntityAsyncRepositoryTest {
     private final AtomicInteger loadedCounter = new AtomicInteger();
     private final AtomicInteger persistCounter = new AtomicInteger();
     private final AtomicReference<Integer> savedEntity = new AtomicReference<>();
-    private final SimpleEntityAsyncRepository<String, Integer> testSubject = new SimpleEntityAsyncRepository<>(
+    private final SimpleRepository<String, Integer> testSubject = new SimpleRepository<>(
             String.class,
             Integer.class,
             (id, context) -> {

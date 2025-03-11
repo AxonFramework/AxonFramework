@@ -24,14 +24,17 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.axonframework.modelling.repository.ManagedEntity;
 
-import java.util.Map;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 /**
- * Simple implementation of the {@link StateManager}. Keeps a map of registered repositories and uses them to load and
- * save entities.
+ * Simple implementation of the {@link StateManager}. Keeps a list of all registered
+ * {@link AsyncRepository repositories} and delegates the loading of entities to the appropriate repository. Throws a
+ * {@link MissingRepositoryException} if no repository is found for the given entity type and the provided id.
  *
  * @author Mitchell Herrijgers
  * @see StateManager
@@ -39,68 +42,64 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SimpleStateManager implements StateManager, DescribableComponent {
 
-    private final Map<Class<?>, RegisteredRepository<?, ?>> repositories = new ConcurrentHashMap<>();
     private final String name;
+    private final List<AsyncRepository<?, ?>> repositories;
 
     /**
-     * Constructs a new simple {@link StateManager} instance.
+     * Constructs a new simple {@link StateManager} instance with the given {@code name}.
      *
      * @param name The name of the component, used for {@link DescribableComponent describing} the component.
      */
-    public static SimpleStateManager create(@Nonnull String name) {
+    public static Builder builder(@Nonnull String name) {
         BuilderUtils.assertNonBlank(name, "Name may not be blank");
-        return new SimpleStateManager(name);
+        return new Builder(name);
     }
 
-    private SimpleStateManager(@Nonnull String name) {
-        this.name = name;
-    }
-
-    @Override
-    public <I, T> SimpleStateManager register(
-            @Nonnull Class<I> idType,
-            @Nonnull Class<T> stateType,
-            @Nonnull AsyncRepository<I, T> repository) {
-        if (repositories.containsKey(stateType)) {
-            throw new StateTypeAlreadyRegisteredException(stateType);
-        }
-        repositories.put(stateType, new RegisteredRepository<>(idType, stateType, repository));
-        return this;
+    private SimpleStateManager(@Nonnull Builder builder) {
+        this.name = builder.name;
+        this.repositories = builder.repositories;
     }
 
     @Nonnull
     @Override
     public <I, T> CompletableFuture<ManagedEntity<I, T>> loadManagedEntity(
-            @Nonnull Class<T> type,
+            @Nonnull Class<T> entityType,
             @Nonnull I id,
             @Nonnull ProcessingContext context
     ) {
         //noinspection unchecked
-        RegisteredRepository<I, T> definition = (RegisteredRepository<I, T>) repositories.get(type);
-        if (definition == null) {
-            return CompletableFuture.failedFuture(new MissingRepositoryException(type));
-        }
-        if(!definition.idClass().isAssignableFrom(id.getClass())) {
-            return CompletableFuture.failedFuture(new IdTypeMismatchException(
-                    definition.idClass(), id.getClass()
-            ));
-        }
-        return definition.repository().load(id, context);
+        return repositories.stream()
+                           .filter(r -> r.entityType().equals(entityType))
+                           .filter(r -> r.idType().isAssignableFrom(id.getClass()))
+                           .map(r -> (AsyncRepository<I, T>) r)
+                           .findFirst()
+                           .orElseThrow(() -> new MissingRepositoryException(id.getClass(), entityType))
+                           .load(id, context);
     }
 
     @Override
-    public Set<Class<?>> registeredTypes() {
-        return repositories.keySet();
+    public Set<Class<?>> registeredEntities() {
+        return repositories.stream()
+                           .map(AsyncRepository::entityType)
+                           .collect(Collectors.toSet());
     }
 
     @Override
-    public <T> AsyncRepository<?, T> repository(Class<T> type) {
+    public Set<Class<?>> registeredIdsFor(@Nonnull Class<?> entityType) {
+        return repositories.stream()
+                           .filter(r -> r.entityType().equals(entityType))
+                           .map(AsyncRepository::idType)
+                           .collect(Collectors.toSet());
+    }
+
+    @Override
+    public <I, T> AsyncRepository<I, T> repository(@Nonnull Class<T> entityType, @Nonnull Class<I> idType) {
         //noinspection unchecked
-        RegisteredRepository<?, T> registeredRepository = (RegisteredRepository<?, T>) repositories.get(type);
-        if (registeredRepository == null) {
-            throw new MissingRepositoryException(type);
-        }
-        return registeredRepository.repository();
+        return (AsyncRepository<I, T>) repositories.stream()
+                                                   .filter(r -> r.entityType().equals(entityType))
+                                                   .filter(r -> r.idType().equals(idType))
+                                                   .findFirst()
+                                                   .orElse(null);
     }
 
     @Override
@@ -109,11 +108,75 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
         descriptor.describeProperty("repositories", repositories);
     }
 
-    private record RegisteredRepository<I, M>(
-            Class<I> idClass,
-            Class<M> stateType,
-            AsyncRepository<I, M> repository
-    ) {
+    /**
+     * Builder class for the {@link SimpleStateManager}.
+     */
+    public static class Builder {
 
+        private final String name;
+        private final List<AsyncRepository<?, ?>> repositories = new CopyOnWriteArrayList<>();
+
+        private Builder(String name) {
+            BuilderUtils.assertNonBlank(name, "Name may not be blank");
+            this.name = name;
+        }
+
+        /**
+         * Registers an {@link AsyncRepository} for use with this {@link SimpleStateManager}. The combination of
+         * {@link AsyncRepository#entityType()} and {@link AsyncRepository#idType()} must be unique for all registered
+         * repositories. If a repository with the same combination is already registered, a
+         * {@link RepositoryAlreadyRegisteredException} is thrown.
+         *
+         * @param repository The {@link AsyncRepository} to use for loading state.
+         * @param <I>        The type of id.
+         * @param <T>        The type of the entity.
+         * @return This instance for fluent interfacing.
+         */
+        public <I, T> Builder register(AsyncRepository<I, T> repository) {
+            Optional<AsyncRepository<?, ?>> registeredRepository = repositories
+                    .stream()
+                    .filter(r -> match(r, repository))
+                    .findFirst();
+
+            if (registeredRepository.isPresent()) {
+                throw new RepositoryAlreadyRegisteredException(repository.idType(), repository.entityType());
+            }
+
+            repositories.add(repository);
+            return this;
+        }
+
+        /**
+         * Registers a load and save function for state type {@code T} with id of type {@code I}. Creates a
+         * {@link SimpleRepository} for the given type with the given load and save functions.
+         * <p>
+         * The combination of {@code idType} and {@code entityType} must be unique for all registered repositories,
+         * whether registered through this method or {@link #register(AsyncRepository)}. If a repository with the same
+         * combination is already registered, a {@link RepositoryAlreadyRegisteredException} is thrown.
+         *
+         * @param idType     The type of the identifier.
+         * @param entityType The type of the state.
+         * @param loader     The function to load state.
+         * @param persister  The function to persist state.
+         * @param <I>        The type of id.
+         * @param <T>        The type of state.
+         * @return This instance for fluent interfacing.
+         */
+        public <I, T> Builder register(Class<I> idType,
+                                       Class<T> entityType,
+                                       SimpleEntityLoader<I, T> loader,
+                                       SimpleEntityPersister<I, T> persister
+        ) {
+            return register(new SimpleRepository<>(idType, entityType, loader, persister));
+        }
+
+        public SimpleStateManager build() {
+            return new SimpleStateManager(this);
+        }
+
+        private boolean match(AsyncRepository<?, ?> repositoryOne, AsyncRepository<?, ?> repositoryTwo) {
+            return repositoryOne.entityType().equals(repositoryTwo.entityType())
+                    && repositoryOne.idType().equals(repositoryTwo.idType());
+        }
     }
 }

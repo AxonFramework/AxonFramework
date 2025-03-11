@@ -37,8 +37,8 @@ import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventSto
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.SimpleStateManager;
+import org.axonframework.modelling.StateManager;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -61,6 +61,8 @@ public abstract class AbstractStudentTestSuite {
     protected EventStateApplier<Course> courseEventStateApplier = getCourseEventStateApplier();
 
     protected AsyncEventSourcingRepository<String, Student> studentRepository = new AsyncEventSourcingRepository<>(
+            String.class,
+            Student.class,
             eventStore,
             getStudentCriteriaResolver(),
             studentEventStateApplier,
@@ -69,6 +71,8 @@ public abstract class AbstractStudentTestSuite {
     );
 
     protected AsyncEventSourcingRepository<String, Course> courseRepository = new AsyncEventSourcingRepository<>(
+            String.class,
+            Course.class,
             eventStore,
             getCourseCriteriaResolver(),
             courseEventStateApplier,
@@ -78,9 +82,10 @@ public abstract class AbstractStudentTestSuite {
 
 
     protected StateManager registry = SimpleStateManager
-            .create("MyModelRegistry")
-            .register(String.class, Student.class, studentRepository)
-            .register(String.class, Course.class, courseRepository);
+            .builder("MyModelRegistry")
+            .register(studentRepository)
+            .register(courseRepository)
+            .build();
 
 
     /**

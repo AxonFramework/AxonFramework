@@ -30,9 +30,12 @@ public class MissingRepositoryException extends RuntimeException {
     /**
      * Initialize the exception with a message containing the given state type.
      *
-     * @param stateType The state type for which no repository was registered.
+     * @param entityType The state type for which no repository was registered.
      */
-    public MissingRepositoryException(Class<?> stateType) {
-        super("No repository was registered for the given state type: %s".formatted(stateType.getName()));
+    public MissingRepositoryException(Class<?> idType, Class<?> entityType) {
+        super("No repository was registered for the given entity type [%s] with id type [%s]".formatted(
+                entityType.getName(),
+                idType.getName()
+        ));
     }
 }
