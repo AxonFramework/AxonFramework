@@ -31,9 +31,6 @@ import java.io.Serial;
  */
 public class DuplicateCommandHandlerSubscriptionException extends AxonNonTransientException {
 
-    @Serial
-    private static final long serialVersionUID = 7168111526309151296L;
-
     /**
      * Initialize a duplicate command handler subscription exception using the given {@code initialHandler} and
      * {@code duplicateHandler} to form a specific message.

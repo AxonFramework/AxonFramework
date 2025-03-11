@@ -24,8 +24,6 @@ package org.axonframework.common;
  */
 public abstract class AxonException extends RuntimeException {
 
-    private static final long serialVersionUID = 5157720304497629941L;
-
     /**
      * Initializes the exception using the given {@code message}.
      *

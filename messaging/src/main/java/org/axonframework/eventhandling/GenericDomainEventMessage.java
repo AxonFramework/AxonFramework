@@ -22,7 +22,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 
-import java.io.Serial;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -37,9 +36,6 @@ import java.util.function.Supplier;
  * @since 2.0.0
  */
 public class GenericDomainEventMessage<P> extends GenericEventMessage<P> implements DomainEventMessage<P> {
-
-    @Serial
-    private static final long serialVersionUID = -1222000190977419970L;
 
     private final String aggregateType;
     private final String aggregateIdentifier;
