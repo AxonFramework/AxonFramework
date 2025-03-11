@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,8 +109,6 @@ public abstract class AbstractSnapshotEventEntry<T> extends AbstractEventEntry<T
      */
     @SuppressWarnings("UnusedDeclaration")
     public static class PK {
-
-        private static final long serialVersionUID = 9182347799552520594L;
 
         private String aggregateIdentifier;
         private long sequenceNumber;

@@ -23,8 +23,6 @@ package org.axonframework.spring.config;
  */
 public class StubDomainEvent {
 
-    private static final long serialVersionUID = 834667054977749990L;
-
     private final String name;
 
     public StubDomainEvent() {
