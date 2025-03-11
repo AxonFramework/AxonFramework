@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 
 package org.axonframework.spring.config;
 
-import java.io.Serializable;
-
 /**
  * Stub Domain Event, used for testing purposes.
  *
  * @author Allard Buijze
  */
-public class StubDomainEvent implements Serializable {
+public class StubDomainEvent {
 
     private static final long serialVersionUID = 834667054977749990L;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,21 +48,6 @@ class AggregateScopeDescriptorSerializationTest {
     @BeforeEach
     void setUp() {
         testSubject = new AggregateScopeDescriptor(expectedType, () -> expectedIdentifier);
-    }
-
-    @Test
-    void javaSerializationCorrectlySetsIdentifierField() throws Exception {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(out);
-        objectOutputStream.writeObject(testSubject);
-        objectOutputStream.close();
-
-        ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray()));
-        AggregateScopeDescriptor result = (AggregateScopeDescriptor) objectInputStream.readObject();
-        objectInputStream.close();
-
-        assertEquals(expectedType, result.getType());
-        assertEquals(expectedIdentifier, result.getIdentifier());
     }
 
     @Test
