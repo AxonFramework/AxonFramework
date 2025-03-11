@@ -20,8 +20,6 @@ import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.QualifiedName;
 
-import java.io.Serial;
-
 /**
  * Exception indicating a duplicate Command Handler was subscribed whilst this behavior is purposefully guarded
  * against.

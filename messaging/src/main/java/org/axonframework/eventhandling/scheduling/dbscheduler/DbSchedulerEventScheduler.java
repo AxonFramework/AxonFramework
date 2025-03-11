@@ -419,6 +419,7 @@ public class DbSchedulerEventScheduler implements EventScheduler, Lifecycle {
          */
         public Builder useBinaryPojo(boolean useBinaryPojo) {
             this.useBinaryPojo = useBinaryPojo;
+            // todo: if false requires Serializable. What should we do with that?
             return this;
         }
 

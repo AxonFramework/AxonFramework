@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging;
 
-import java.io.Serializable;
-
 /**
  * Denotes the description of a {@link Scope}. This can be used to figure out in what scope a given message should be
  * handled.
@@ -25,7 +23,7 @@ import java.io.Serializable;
  * @author Steven van Beelen
  * @since 3.3
  */
-public interface ScopeDescriptor extends Serializable {
+public interface ScopeDescriptor {
 
     /**
      * Retrieve a {@link String} description of a {@link Scope} object.

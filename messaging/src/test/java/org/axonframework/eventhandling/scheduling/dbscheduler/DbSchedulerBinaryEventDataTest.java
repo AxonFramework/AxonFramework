@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.axonframework.eventhandling.scheduling.dbscheduler;
 
 import com.github.kagkarlsson.scheduler.serializer.GsonSerializer;
 import com.github.kagkarlsson.scheduler.serializer.JacksonSerializer;
-import com.github.kagkarlsson.scheduler.serializer.JavaSerializer;
 import com.github.kagkarlsson.scheduler.serializer.Serializer;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -47,7 +46,6 @@ class DbSchedulerBinaryEventDataTest {
 
     public static Collection<Serializer> serializers() {
         List<Serializer> serializers = new ArrayList<>();
-        serializers.add(new JavaSerializer());
         serializers.add(new JacksonSerializer());
         serializers.add(new GsonSerializer());
         return serializers;

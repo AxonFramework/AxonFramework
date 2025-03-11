@@ -24,7 +24,6 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.ResponseType;
 
-import java.io.Serial;
 import java.util.Map;
 
 /**
