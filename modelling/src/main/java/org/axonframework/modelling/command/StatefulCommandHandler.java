@@ -42,7 +42,8 @@ public interface StatefulCommandHandler extends MessageHandler {
     /**
      * Handles the given {@code command} within the given {@code context}. The {@code state} parameter provides access
      * to state that can be loaded based on type and id, through the ability to call
-     * {@link StateManager#loadEntity(Class, Object, ProcessingContext)}.
+     * {@link StateManager#loadEntity(Class, Object, ProcessingContext)} and
+     * {@link StateManager#loadManagedEntity(Class, Object, ProcessingContext)}.
      * <p>
      * The {@link CommandResultMessage result message} in the returned {@link MessageStream stream} may be {@code null}.
      * Only a {@link MessageStream#just(Message) single} or {@link MessageStream#empty() empty} result message should

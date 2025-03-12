@@ -109,7 +109,7 @@ public class SimpleCommandHandlingComponent implements
             return commandHandlers.get(qualifiedName).handle(command, context);
         }
         return MessageStream.failed(new NoHandlerForCommandException(
-                "No handler was subscribed for command with qualified name[%s] on component [%s]. Registered handlers: [%s]".formatted(
+                "No handler was subscribed for command with qualified name [%s] on component [%s]. Registered handlers: [%s]".formatted(
                         qualifiedName.fullName(),
                         this.getClass().getName(),
                         supportedCommands()

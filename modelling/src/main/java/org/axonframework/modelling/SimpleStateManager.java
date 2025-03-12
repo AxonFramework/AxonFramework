@@ -133,6 +133,12 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
          * {@link AsyncRepository#entityType()} and {@link AsyncRepository#idType()} must be unique for all registered
          * repositories. If a repository with the same combination is already registered, a
          * {@link ConflictingRepositoryAlreadyRegisteredException} is thrown.
+         * <p>
+         * The combination of {@link AsyncRepository#entityType() entity type} and
+         * {@link AsyncRepository#idType() id type} of all repositories must be unique and unambigious. This means you
+         * can not register a repository if another conflicting repository alread yexists. If you do, a
+         * {@link ConflictingRepositoryAlreadyRegisteredException} will be thrown. Note that superclasses and subclasses
+         * of each other are considered conflicting.
          *
          * @param repository The {@link AsyncRepository} to use for loading state.
          * @param <I>        The type of id.
@@ -160,6 +166,12 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
          * The combination of {@code idType} and {@code entityType} must be unique for all registered repositories,
          * whether registered through this method or {@link #register(AsyncRepository)}. If a repository with the same
          * combination is already registered, a {@link ConflictingRepositoryAlreadyRegisteredException} is thrown.
+         * <p>
+         * The combination of {@link AsyncRepository#entityType() entity type} and
+         * {@link AsyncRepository#idType() id type} of all repositories must be unique and unambigious. This means you
+         * can not register a repository if another conflicting repository alread yexists. If you do, a
+         * {@link ConflictingRepositoryAlreadyRegisteredException} will be thrown. Note that superclasses and subclasses
+         * of each other are considered conflicting.
          *
          * @param idType     The type of the identifier.
          * @param entityType The type of the state.
@@ -187,7 +199,8 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
          * For any id and entity type combination, only one repository should exist.
          */
         private boolean match(AsyncRepository<?, ?> repositoryOne, AsyncRepository<?, ?> repositoryTwo) {
-            return matchesBasedOnEntityType(repositoryOne, repositoryTwo) && matchesBasedOnIdType(repositoryOne, repositoryTwo);
+            return matchesBasedOnEntityType(repositoryOne, repositoryTwo) && matchesBasedOnIdType(repositoryOne,
+                                                                                                  repositoryTwo);
         }
 
         private static boolean matchesBasedOnIdType(AsyncRepository<?, ?> repositoryOne,

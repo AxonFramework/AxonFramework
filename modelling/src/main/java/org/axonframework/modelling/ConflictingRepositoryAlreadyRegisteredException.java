@@ -16,15 +16,13 @@
 
 package org.axonframework.modelling;
 
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.AsyncRepository;
 
 /**
- * Exception thrown by the {@link StateManager} when trying to register an {@link AsyncRepository} for an entity type
- * and id type combination that already has a repository registered.
- * When registering super- or subtypes of an already registered type, this will also be considered an already registered
- * repository. By guarding this, the {@link StateManager#loadManagedEntity(Class, Object, ProcessingContext)} will
- * unambiguously resolve the correct repository to load the entity from and prevent runtime errors.
+ * Exception thrown by the {@link StateManager} when trying to register an {@link AsyncRepository} for a combination of
+ * entity type and id type for which a repository was already registered. Super- or subtypes are considered a match of
+ * eachother, so the repository can unambiguously resolve an {@link AsyncRepository} for a given combination of entity
+ * type and id type and prevent runtime errors.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -34,7 +32,7 @@ public class ConflictingRepositoryAlreadyRegisteredException extends RuntimeExce
     /**
      * Initialize the exception with a message that contains the types of the conflicting repositories.
      *
-     * @param repository The repository that was attempted to be registered.
+     * @param repository         The repository that was attempted to be registered.
      * @param existingRepository The repository that was already registered for the conflicting entity type.
      */
     public ConflictingRepositoryAlreadyRegisteredException(AsyncRepository<?, ?> repository,
