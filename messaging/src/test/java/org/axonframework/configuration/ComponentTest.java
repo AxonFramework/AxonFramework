@@ -16,9 +16,11 @@
 
 package org.axonframework.configuration;
 
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component.Identifier;
 import org.junit.jupiter.api.*;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -137,5 +139,38 @@ class ComponentTest {
     @Test
     void identifierConstructorThrowsIllegalArgumentExceptionForEmptyName() {
         assertThrows(IllegalArgumentException.class, () -> new Identifier<>(String.class, ""));
+    }
+
+    @Test
+    void describeToDescribesBuilderWhenUninitialized() {
+        ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+        ComponentDecorator<String> testDecorator = (config, delegate) -> delegate;
+
+        Component<String> testSubject = new Component<>(identifier, config, builder)
+                .decorate(testDecorator, 1);
+
+        testSubject.describeTo(testDescriptor);
+
+        verify(testDescriptor).describeProperty("identifier", identifier.toString());
+        verify(testDescriptor).describeProperty("builder", builder);
+        verify(testDescriptor).describeProperty("decorators", Map.of(1, testDecorator));
+        verify(testDescriptor).describeProperty("initialized", false);
+    }
+
+    @Test
+    void describeToDescribesInstanceWhenInitialized() {
+        ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+        ComponentDecorator<String> testDecorator = (config, delegate) -> delegate;
+
+        Component<String> testSubject = new Component<>(identifier, config, builder)
+                .decorate(testDecorator, 1);
+
+        // Initialize the component by getting it.
+        testSubject.get();
+        testSubject.describeTo(testDescriptor);
+
+        verify(testDescriptor).describeProperty("identifier", identifier.toString());
+        verify(testDescriptor).describeProperty("component", (Object) TEST_COMPONENT);
+        verify(testDescriptor).describeProperty("initialized", true);
     }
 }
