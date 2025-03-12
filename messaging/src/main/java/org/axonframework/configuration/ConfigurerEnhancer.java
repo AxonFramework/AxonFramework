@@ -22,7 +22,7 @@ import jakarta.annotation.Nonnull;
  * Interface describing an enhancement of a {@link NewConfigurer configurer} of the Axon Framework configuration API.
  * <p>
  * Through implementing the {@link #enhance(NewConfigurer)} operation a {@code ConfigurerEnhancer} is able to
- * {@link NewConfigurer#registerComponent(Class, ComponentBuilder) register} components and
+ * {@link NewConfigurer#registerComponent(Class, ComponentFactory) register} components and
  * {@link NewConfigurer#registerDecorator(Class, int, ComponentDecorator) register} decorators. The registration of
  * components and/or decorators can be made conditional by using the {@link NewConfigurer#hasComponent(Class)}
  * operation.

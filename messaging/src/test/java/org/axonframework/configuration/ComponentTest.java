@@ -38,33 +38,33 @@ class ComponentTest {
 
     private Identifier<String> identifier;
     private LifecycleSupportingConfiguration config;
-    private ComponentBuilder<String> builder;
+    private ComponentFactory<String> factory;
 
     @BeforeEach
     void setUp() {
         identifier = new Identifier<>(String.class, "id");
         config = mock(LifecycleSupportingConfiguration.class);
-        builder = c -> TEST_COMPONENT;
+        factory = c -> TEST_COMPONENT;
     }
 
     @Test
     void constructorThrowsNullPointerExceptionForNullIdentifier() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new Component<>(null, () -> config, builder));
+        assertThrows(NullPointerException.class, () -> new Component<>(null, () -> config, factory));
     }
 
     @Test
     void constructorThrowsNullPointerExceptionForNullConfiguration() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class,
-                     () -> new Component<>(identifier, (LifecycleSupportingConfiguration) null, builder));
+                     () -> new Component<>(identifier, (LifecycleSupportingConfiguration) null, factory));
     }
 
     @Test
     void constructorThrowsNullPointerExceptionForNullConfigurationSupplier() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class,
-                     () -> new Component<>(identifier, (Supplier<LifecycleSupportingConfiguration>) null, builder));
+                     () -> new Component<>(identifier, (Supplier<LifecycleSupportingConfiguration>) null, factory));
     }
 
     @Test
@@ -79,7 +79,7 @@ class ComponentTest {
 
         Component<String> testSubject = new Component<>(identifier, config, c -> {
             counter.incrementAndGet();
-            return builder.build(c);
+            return factory.build(c);
         });
 
         assertEquals(0, counter.get());
@@ -93,7 +93,7 @@ class ComponentTest {
     void decorateInvokesDecoratorsAtGivenOrder() {
         String expectedComponent = TEST_COMPONENT + "cba";
 
-        Component<String> testSubject = new Component<>(identifier, config, builder);
+        Component<String> testSubject = new Component<>(identifier, config, factory);
         testSubject.decorate((c, delegate) -> delegate + "a", 2)
                    .decorate((c, delegate) -> delegate + "b", 1)
                    .decorate((c, delegate) -> delegate + "c", 0);
@@ -107,7 +107,7 @@ class ComponentTest {
         String replacedDecoration = "this-will-not-be-there-on-creation";
         String keptDecoration = "and-this-will-be";
 
-        Component<String> testSubject = new Component<>(identifier, config, builder);
+        Component<String> testSubject = new Component<>(identifier, config, factory);
         testSubject.decorate((c, delegate) -> delegate + replacedDecoration, testOrder)
                    .decorate((c, delegate) -> delegate + keptDecoration, testOrder);
 
@@ -117,7 +117,7 @@ class ComponentTest {
 
     @Test
     void isInitializedReturnsAsExpected() {
-        Component<String> testSubject = new Component<>(identifier, config, builder);
+        Component<String> testSubject = new Component<>(identifier, config, factory);
 
         assertFalse(testSubject.isInitialized());
         testSubject.get();

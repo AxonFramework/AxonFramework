@@ -51,8 +51,8 @@ public class DelegatingConfigurer<S extends NewConfigurer<S>> implements NewConf
     @Override
     public <C> S registerComponent(@Nonnull Class<C> type,
                                    @Nonnull String name,
-                                   @Nonnull ComponentBuilder<C> builder) {
-        delegate.registerComponent(type, name, builder);
+                                   @Nonnull ComponentFactory<C> factory) {
+        delegate.registerComponent(type, name, factory);
         //noinspection unchecked
         return (S) this;
     }

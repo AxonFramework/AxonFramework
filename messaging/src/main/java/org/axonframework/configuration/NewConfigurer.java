@@ -25,7 +25,7 @@ import org.axonframework.configuration.Component.Identifier;
 /**
  * The starting point when configuring any Axon Framework application.
  * <p>
- * Provides utilities to {@link #registerComponent(Class, ComponentBuilder) register components},
+ * Provides utilities to {@link #registerComponent(Class, ComponentFactory) register components},
  * {@link #registerDecorator(Class, int, ComponentDecorator) decorators} of these components, check if a component
  * {@link #hasComponent(Class) exists}, register {@link #registerEnhancer(ConfigurerEnhancer) enhancers} for the entire
  * configurer, and {@link #registerModule(ModuleBuilder) modules}.
@@ -42,27 +42,27 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      * Registers a {@link Component} that should be made available to other {@link Component components} or
      * {@link Module modules} in the {@link NewConfiguration} that this {@code Configurer} will result in.
      * <p>
-     * The given {@code builder} function gets the {@link NewConfiguration configuration} as input, and is expected to
+     * The given {@code factory} function gets the {@link NewConfiguration configuration} as input, and is expected to
      * provide the component as output. The component will be registered under an {@link Identifier} based on the given
      * {@code type}.
      * <p>
      * Note that registering a component twice for the same {@code type} will remove the previous registration!
      *
      * @param type    The declared type of the component to build, typically an interface.
-     * @param builder The builder function of this component.
-     * @param <C>     The type of component the {@code builder} builds.
+     * @param factory The factory building the component.
+     * @param <C>     The type of component the {@code factory} builds.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     default <C> S registerComponent(@Nonnull Class<C> type,
-                                    @Nonnull ComponentBuilder<C> builder) {
-        return registerComponent(type, type.getSimpleName(), builder);
+                                    @Nonnull ComponentFactory<C> factory) {
+        return registerComponent(type, type.getSimpleName(), factory);
     }
 
     /**
      * Registers a {@link Component} that should be made available to other {@link Component components} or
      * {@link Module modules} in the {@link NewConfiguration} that this {@code Configurer} will result in.
      * <p>
-     * The given {@code builder} function gets the {@link NewConfiguration configuration} as input, and is expected to
+     * The given {@code factory} function gets the {@link NewConfiguration configuration} as input, and is expected to
      * provide the component as output. The component will be registered under an {@link Identifier} based on the given
      * {@code type} and {@code name} combination.
      * <p>
@@ -71,17 +71,17 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      *
      * @param type    The declared type of the component to build, typically an interface.
      * @param name    The name of the component to build.
-     * @param builder The builder function of this component.
-     * @param <C>     The type of component the {@code builder} builds.
+     * @param factory The factory building the component.
+     * @param <C>     The type of component the {@code factory} builds.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     <C> S registerComponent(@Nonnull Class<C> type,
                             @Nonnull String name,
-                            @Nonnull ComponentBuilder<C> builder);
+                            @Nonnull ComponentFactory<C> factory);
 
     /**
      * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
-     * {@link #registerComponent(Class, ComponentBuilder) registered} components of the given {@code type}.
+     * {@link #registerComponent(Class, ComponentFactory) registered} components of the given {@code type}.
      * <p>
      * The {@code order} parameter dictates at what point in time the given {@code decorator} is invoked during
      * construction of the {@code Component} it decorators. If a {@code ComponentDecorator} was already present at the
@@ -103,7 +103,7 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
 
     /**
      * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
-     * {@link #registerComponent(Class, String, ComponentBuilder) registered} components of the given {@code type} and
+     * {@link #registerComponent(Class, String, ComponentFactory) registered} components of the given {@code type} and
      * {@code name} combination.
      * <p>
      * The {@code order} parameter dictates at what point in time the given {@code decorator} is invoked during

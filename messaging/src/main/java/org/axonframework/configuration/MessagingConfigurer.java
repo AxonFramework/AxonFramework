@@ -16,10 +16,6 @@
 
 package org.axonframework.configuration;
 
-import java.util.ServiceLoader;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.config.CommandBusBuilder;
@@ -44,11 +40,15 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 
+import java.util.ServiceLoader;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+
 /**
  * The messaging {@link NewConfigurer} of Axon Framework's configuration API.
  * <p>
- * Provides register operations for {@link #registerCommandBus(ComponentBuilder) command},
- * {@link #registerEventSink(ComponentBuilder) evnet}, and {@link #registerQueryBus(ComponentBuilder) query}
+ * Provides register operations for {@link #registerCommandBus(ComponentFactory) command},
+ * {@link #registerEventSink(ComponentFactory) evnet}, and {@link #registerQueryBus(ComponentFactory) query}
  * infrastructure components.
  * <p>
  * This configurer registers the following defaults:
@@ -64,7 +64,7 @@ import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
  *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryUpdateEmitter} as the {@link QueryUpdateEmitter}</li>
  * </ul>
  * To replace or decorate any of these defaults, use their respective interfaces as the identifier. For example, to
- * adjust the {@code CommandBus}, invoke {@link #registerComponent(Class, ComponentBuilder)} with
+ * adjust the {@code CommandBus}, invoke {@link #registerComponent(Class, ComponentFactory)} with
  * {@code CommandBus.class} to replace it.
  *
  * @author Allard Buijze
@@ -77,7 +77,7 @@ public class MessagingConfigurer
 
     /**
      * Build a default {@code MessagingConfigurer} instance with several messaging defaults, as well as methods to
-     * register (e.g.) a {@link #registerCommandBus(ComponentBuilder) command bus}.
+     * register (e.g.) a {@link #registerCommandBus(ComponentFactory) command bus}.
      * <p>
      * Besides the specific operations, the {@code MessagingConfigurer} allows for configuring generic
      * {@link Component components}, {@link ComponentDecorator component decorators},
@@ -91,7 +91,7 @@ public class MessagingConfigurer
 
     /**
      * Build a {@code MessagingConfigurer} instance with several messaging defaults, as well as methods to register
-     * (e.g.) a {@link #registerCommandBus(ComponentBuilder) command bus}.
+     * (e.g.) a {@link #registerCommandBus(ComponentFactory) command bus}.
      * <p>
      * Besides the specific operations, the {@code MessagingConfigurer} allows for configuring generic
      * {@link Component components}, {@link ComponentDecorator component decorators},
@@ -127,52 +127,57 @@ public class MessagingConfigurer
     }
 
     /**
-     * Configures the given Command Bus to use in this configuration. The builder receives the Configuration as input
-     * and is expected to return a fully initialized {@link CommandBus} instance.
-     *
-     * @param commandBusBuilder The builder function for the {@link CommandBus}.
-     * @return The current instance of the {@code Configurer} for a fluent API.
-     */
-    public MessagingConfigurer registerCommandBus(@Nonnull ComponentBuilder<CommandBus> commandBusBuilder) {
-        return registerComponent(CommandBus.class, commandBusBuilder);
-    }
-
-    /**
-     * Configures the given Event Bus to use in this configuration. The builder receives the Configuration as input and
-     * is expected to return a fully initialized {@link EventSink} instance.
+     * Configures the given Command Bus to use in this configuration.
      * <p>
-     * Note that this builder should not be used when an Event Store is configured. Since Axon 3, the Event Store will
-     * act as Event Bus implementation as well.
+     * The {@code commandBusFactory} receives the {@link NewConfiguration} as input and is expected to return a
+     * {@link CommandBus} instance.
      *
-     * @param eventSinkBuilder The builder function for the {@link EventSink}.
+     * @param commandBusFactory The factory building the {@link CommandBus}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public MessagingConfigurer registerEventSink(@Nonnull ComponentBuilder<EventSink> eventSinkBuilder) {
-        return registerComponent(EventSink.class, eventSinkBuilder);
+    public MessagingConfigurer registerCommandBus(@Nonnull ComponentFactory<CommandBus> commandBusFactory) {
+        return registerComponent(CommandBus.class, commandBusFactory);
     }
 
     /**
-     * Configures the given Query Bus to use in this configuration. The builder receives the Configuration as input and
-     * is expected to return a fully initialized {@link QueryBus} instance.
+     * Configures the given Event Bus to use in this configuration.
+     * <p>
+     * The {@code eventSinkFactory} receives the {@link NewConfiguration} as input and is expected to return a
+     * {@link EventSink} instance.
      *
-     * @param queryBusBuilder The builder function for the {@link QueryBus}.
+     * @param eventSinkFactory The factory building the {@link EventSink}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public MessagingConfigurer registerQueryBus(@Nonnull ComponentBuilder<QueryBus> queryBusBuilder) {
-        return registerComponent(QueryBus.class, queryBusBuilder);
+    public MessagingConfigurer registerEventSink(@Nonnull ComponentFactory<EventSink> eventSinkFactory) {
+        return registerComponent(EventSink.class, eventSinkFactory);
     }
 
     /**
-     * Configures the given Query Update Emitter to use in this configuration. The builder receives the Configuration as
-     * input and is expected to return a fully initialized {@link QueryUpdateEmitter} instance.
+     * Configures the given Query Bus to use in this configuration.
+     * <p>
+     * The {@code queryBusFactory} receives the {@link NewConfiguration} as input and is expected to return a
+     * {@link QueryBus} instance.
      *
-     * @param queryUpdateEmitterBuilder The builder function for the {@link QueryUpdateEmitter}.
+     * @param queryBusFactory The factory building the {@link QueryBus}.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    public MessagingConfigurer registerQueryBus(@Nonnull ComponentFactory<QueryBus> queryBusFactory) {
+        return registerComponent(QueryBus.class, queryBusFactory);
+    }
+
+    /**
+     * Configures the given Query Update Emitter to use in this configuration.
+     * <p>
+     * The {@code queryUpdateEmitterFactory} receives the {@link NewConfiguration} as input and is expected to return a
+     * {@link QueryUpdateEmitter} instance.
+     *
+     * @param queryUpdateEmitterFactory The factory building the {@link QueryUpdateEmitter}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public MessagingConfigurer registerQueryUpdateEmitter(
-            @Nonnull ComponentBuilder<QueryUpdateEmitter> queryUpdateEmitterBuilder
+            @Nonnull ComponentFactory<QueryUpdateEmitter> queryUpdateEmitterFactory
     ) {
-        return registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterBuilder);
+        return registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterFactory);
     }
 
     /**

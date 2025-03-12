@@ -61,9 +61,7 @@ public interface NewConfiguration extends DescribableComponent {
     default <C> C getComponent(@Nonnull Class<C> type,
                                @Nonnull String name) {
         return getOptionalComponent(type, name)
-                .orElseThrow(() -> new NullPointerException(
-                        "No component found with type [" + type + "] name [" + name + "]"
-                ));
+                .orElseThrow(() -> new ComponentNotFoundException(type, name));
     }
 
     /**

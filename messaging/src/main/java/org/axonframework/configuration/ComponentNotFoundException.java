@@ -19,21 +19,22 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 
 /**
- * Functional interface describing how to build a component of type {@code C} using the {@link NewConfiguration} during
- * construction.
+ * A {@code RuntimeException} dedicated when a {@link Component} cannot be found in the {@link NewConfiguration}.
  *
- * @param <C> The component to be built.
  * @author Steven van Beelen
+ * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-@FunctionalInterface
-public interface ComponentBuilder<C> {
+public class ComponentNotFoundException extends RuntimeException {
 
     /**
-     * Builds a component of type {@code C} using the given {@code config} during construction.
+     * Constructs a {@code ComponentNotFoundException} with a default message describing a {@link Component} couldn't be
+     * found for the given {@code type} and {@code name}.
      *
-     * @param config The configuration from which other components can be retrieved to build the result.
-     * @return A component of type {@code C} using the given {@code config} during construction.
+     * @param type The type of the component that could not be found, typically an interface.
+     * @param name The name of the component that could not be found.
      */
-    C build(@Nonnull NewConfiguration config);
+    public ComponentNotFoundException(@Nonnull Class<?> type, @Nonnull String name) {
+        super("No component found for type [" + type + "] name [" + name + "]");
+    }
 }
