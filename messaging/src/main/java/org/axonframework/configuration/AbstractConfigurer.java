@@ -65,10 +65,10 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     @Override
     public <C> S registerComponent(@Nonnull Class<C> type,
                                    @Nonnull String name,
-                                   @Nonnull ComponentBuilder<C> builder) {
+                                   @Nonnull ComponentFactory<C> factory) {
         logger.debug("Registering component [{}] of type [{}].", name, type);
         Identifier<C> identifier = new Identifier<>(type, name);
-        Component<C> previous = components.put(identifier, new Component<>(identifier, config, builder));
+        Component<C> previous = components.put(identifier, new Component<>(identifier, config, factory));
         if (previous != null) {
             logger.warn("Replaced a previous Component registered under type [{}] and name [{}].", name, type);
         }

@@ -49,49 +49,49 @@ public class Component<C> {
 
     private final Identifier<C> identifier;
     private final Supplier<LifecycleSupportingConfiguration> configSupplier;
-    private final ComponentBuilder<C> builder;
+    private final ComponentFactory<C> factory;
     private final SortedMap<Integer, ComponentDecorator<C>> decorators = new TreeMap<>();
 
     private C instance;
 
     /**
      * Creates a {@code Component} for the given {@code config} with given {@code identifier} created by the given
-     * {@code builder}.
+     * {@code factory}.
      * <p>
      * When the {@link LifecycleSupportingConfiguration} is not initialized yet, consider using
-     * {@link #Component(Identifier, Supplier, ComponentBuilder)} instead.
+     * {@link #Component(Identifier, Supplier, ComponentFactory)} instead.
      *
      * @param identifier The identifier of the component.
      * @param config     The {@code NewConfiguration} the component is part of.
-     * @param builder    The builder function of the component.
+     * @param factory    The factory building the component.
      */
     public Component(@Nonnull Identifier<C> identifier,
                      @Nonnull LifecycleSupportingConfiguration config,
-                     @Nonnull ComponentBuilder<C> builder) {
+                     @Nonnull ComponentFactory<C> factory) {
         this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
         requireNonNull(config, "The configuration supplier cannot be null.");
         this.configSupplier = () -> config;
-        this.builder = requireNonNull(builder, "A Component builder cannot be null.");
+        this.factory = requireNonNull(factory, "A Component factory cannot be null.");
     }
 
     /**
      * Creates a {@code Component} for the given {@code configSupplier} with given {@code identifier} created by the
-     * given {@code builder}.
+     * given {@code factory}.
      *
      * @param identifier     The identifier of the component.
      * @param configSupplier The supplier function of the {@code NewConfiguration}.
-     * @param builder        The builder function of the component.
+     * @param factory        The factory building the component.
      */
     public Component(@Nonnull Identifier<C> identifier,
                      @Nonnull Supplier<LifecycleSupportingConfiguration> configSupplier,
-                     @Nonnull ComponentBuilder<C> builder) {
+                     @Nonnull ComponentFactory<C> factory) {
         this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
         this.configSupplier = requireNonNull(configSupplier, "The configuration supplier cannot be null.");
-        this.builder = requireNonNull(builder, "A Component builder cannot be null.");
+        this.factory = requireNonNull(factory, "A Component factory cannot be null.");
     }
 
     /**
-     * Retrieves the object contained in this {@code Component}, triggering the {@link ComponentBuilder builder} and all
+     * Retrieves the object contained in this {@code Component}, triggering the {@link ComponentFactory factory} and all
      * attached {@link ComponentDecorator decorators} if the component hasn't been built yet.
      * <p>
      * Upon initiation of the instance the
@@ -106,7 +106,7 @@ public class Component<C> {
         }
 
         LifecycleSupportingConfiguration config = configSupplier.get();
-        instance = builder.build(config);
+        instance = factory.build(config);
         decorators.values()
                   .forEach(decorator -> instance = decorator.decorate(config, instance));
         logger.debug("Instantiated component [{}]: {}", identifier, instance);
