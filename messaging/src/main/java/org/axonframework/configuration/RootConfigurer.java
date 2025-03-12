@@ -77,8 +77,7 @@ public interface RootConfigurer extends StartableConfigurer<RootConfigurer> {
                 ServiceLoader.load(ConfigurerEnhancer.class, configurer.getClass().getClassLoader());
         List<ConfigurerEnhancer> enhancers = new ArrayList<>();
         enhancerLoader.forEach(enhancers::add);
-        enhancers.sort(Comparator.comparingInt(ConfigurerEnhancer::order));
-        enhancers.forEach(enhancer -> enhancer.enhance(configurer));
+        enhancers.forEach(configurer::registerEnhancer);
         return configurer;
     }
 
