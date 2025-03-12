@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,16 @@ import org.apache.avro.message.SchemaStore;
 import org.axonframework.spring.serialization.avro.AvroSchemaPackages;
 import org.axonframework.spring.serialization.avro.ClasspathAvroSchemaLoader;
 import org.axonframework.spring.serialization.avro.SpecificRecordBaseClasspathAvroSchemaLoader;
-import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
-import org.springframework.boot.autoconfigure.condition.*;
+import org.springframework.boot.autoconfigure.condition.AllNestedConditions;
+import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.core.io.ResourceLoader;
@@ -51,6 +54,7 @@ public class AvroSerializerAutoConfiguration {
 
     /**
      * Constructs a simple default in-memory schema store filled with schemas.
+     *
      * @param schemas Avro schemas to put into the store.
      * @return schema store instance.
      */
@@ -63,8 +67,8 @@ public class AvroSerializerAutoConfiguration {
     }
 
     /**
-     * Scans classpath for schemas,
-     * configured using {@link org.axonframework.spring.serialization.avro.AvroSchemaScan} annotations.
+     * Scans classpath for schemas, configured using {@link org.axonframework.spring.serialization.avro.AvroSchemaScan}
+     * annotations.
      *
      * @param beanFactory  spring bean factory.
      * @param schemaLoader list of schema loaders.
@@ -72,7 +76,8 @@ public class AvroSerializerAutoConfiguration {
      */
     @Bean
     @Conditional({AvroConfiguredCondition.class})
-    public Set<Schema> collectAvroSchemasFromClassPath(BeanFactory beanFactory, List<ClasspathAvroSchemaLoader> schemaLoader) {
+    public Set<Schema> collectAvroSchemasFromClassPath(BeanFactory beanFactory,
+                                                       List<ClasspathAvroSchemaLoader> schemaLoader) {
         final List<String> packagesCandidates = AvroSchemaPackages.get(beanFactory).getPackages();
         final List<String> packagesToScan = new ArrayList<>();
         if (packagesCandidates.isEmpty() && AutoConfigurationPackages.has(beanFactory)) {
@@ -89,6 +94,7 @@ public class AvroSerializerAutoConfiguration {
 
     /**
      * Constructs default schema loader from Avro-Java-Maven-Generated classes.
+     *
      * @param resourceLoader resource loader.
      * @return ClasspathAvroSchemaLoader instance.
      */
@@ -135,7 +141,7 @@ public class AvroSerializerAutoConfiguration {
 
         @ConditionalOnMissingBean(SchemaStore.class)
         @SuppressWarnings("unused")
-        static class SchemaStoreIsMissingCondition{
+        static class SchemaStoreIsMissingCondition {
 
         }
     }
