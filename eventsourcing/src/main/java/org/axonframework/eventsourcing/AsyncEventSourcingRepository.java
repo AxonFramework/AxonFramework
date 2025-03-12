@@ -105,11 +105,13 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
         ).resultNow();
     }
 
+    @javax.annotation.Nonnull
     @Override
     public Class<M> entityType() {
         return entityType;
     }
 
+    @javax.annotation.Nonnull
     @Override
     public Class<ID> idType() {
         return idType;

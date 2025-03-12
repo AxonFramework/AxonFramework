@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class SimpleEntityAsyncRepositoryTest {
+class SimpleRepositoryTest {
 
     private final AtomicInteger loadedCounter = new AtomicInteger();
     private final AtomicInteger persistCounter = new AtomicInteger();

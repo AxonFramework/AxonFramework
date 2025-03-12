@@ -95,11 +95,13 @@ public class SimpleRepository<I, T> implements AsyncRepository.LifecycleManageme
         ).resultNow();
     }
 
+    @javax.annotation.Nonnull
     @Override
     public Class<T> entityType() {
         return entityType;
     }
 
+    @javax.annotation.Nonnull
     @Override
     public Class<I> idType() {
         return idType;
