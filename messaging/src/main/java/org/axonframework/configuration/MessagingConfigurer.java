@@ -129,8 +129,8 @@ public class MessagingConfigurer
     /**
      * Configures the given Command Bus to use in this configuration.
      * <p>
-     * The {@code commandBusFactory} receives the {@link NewConfiguration} as input and is expected to return a fully
-     * initialized {@link CommandBus} instance.
+     * The {@code commandBusFactory} receives the {@link NewConfiguration} as input and is expected to return a
+     * {@link CommandBus} instance.
      *
      * @param commandBusFactory The factory building the {@link CommandBus}.
      * @return The current instance of the {@code Configurer} for a fluent API.
@@ -142,8 +142,8 @@ public class MessagingConfigurer
     /**
      * Configures the given Event Bus to use in this configuration.
      * <p>
-     * The {@code eventSinkFactory} receives the {@link NewConfiguration} as input and is expected to return a fully
-     * initialized {@link EventSink} instance.
+     * The {@code eventSinkFactory} receives the {@link NewConfiguration} as input and is expected to return a
+     * {@link EventSink} instance.
      *
      * @param eventSinkFactory The factory building the {@link EventSink}.
      * @return The current instance of the {@code Configurer} for a fluent API.
@@ -155,8 +155,8 @@ public class MessagingConfigurer
     /**
      * Configures the given Query Bus to use in this configuration.
      * <p>
-     * The {@code queryBusFactory} receives the {@link NewConfiguration} as input and is expected to return a fully
-     * initialized {@link QueryBus} instance.
+     * The {@code queryBusFactory} receives the {@link NewConfiguration} as input and is expected to return a
+     * {@link QueryBus} instance.
      *
      * @param queryBusFactory The factory building the {@link QueryBus}.
      * @return The current instance of the {@code Configurer} for a fluent API.
@@ -169,7 +169,7 @@ public class MessagingConfigurer
      * Configures the given Query Update Emitter to use in this configuration.
      * <p>
      * The {@code queryUpdateEmitterFactory} receives the {@link NewConfiguration} as input and is expected to return a
-     * fully initialized {@link QueryUpdateEmitter} instance.
+     * {@link QueryUpdateEmitter} instance.
      *
      * @param queryUpdateEmitterFactory The factory building the {@link QueryUpdateEmitter}.
      * @return The current instance of the {@code Configurer} for a fluent API.
