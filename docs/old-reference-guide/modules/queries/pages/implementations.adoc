@@ -44,7 +44,7 @@ Configure your application:
 
 [source,java]
 ----
-// Returns a Configurer instance with default components configured. 
+// Returns a Configurer instance with default components configured.
 // `AxonServerQueryBus` is configured as Query Bus by default.
 Configurer configurer = DefaultConfigurer.defaultConfiguration();
 
@@ -73,6 +73,13 @@ By simply declaring dependency to `axon-spring-boot-starter`, Axon will automati
 ====
 If you exclude the `axon-server-connector` dependency you will fall back to the non-AxonServer query bus option, the `SimpleQueryBus` (see below).
 ====
+
+Queries that have a handler locally can be invoked directly without engaging Axon Server, additional property need to be set:
+
+[source,java]
+----
+axon.axonserver.local-segment-short-cut=true
+----
 
 [[SimpleQueryBus]]
 === `SimpleQueryBus`

@@ -47,7 +47,7 @@ The `DomainEventMessage` additionally contains the type and identifier of the ag
 It also contains the sequence number of the event in the aggregate's event stream, which allows the order of events to be reproduced.
 
 [TIP]
-.Include aggregate identifiers in tyour events
+.Include aggregate identifiers into your events
 ====
 
 Even though the `DomainEventMessage` contains a reference to the Aggregate Identifier, you should always include the identifier in the actual Event itself as well.

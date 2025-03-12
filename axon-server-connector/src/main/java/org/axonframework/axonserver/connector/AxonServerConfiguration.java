@@ -28,7 +28,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -154,6 +158,16 @@ public class AxonServerConfiguration {
     private boolean shortcutQueriesToLocalHandlers = false;
 
     /**
+     * A toggle dictating whether to create persistent streams for all processing groups. Defaults to {@code false}.
+     */
+    private boolean autoPersistentStreamsEnable = false;
+
+    /**
+     * Settings that are used to create persistent stream definition.
+     */
+    private PersistentStreamSettings autoPersistentStreamsSettings = new PersistentStreamSettings();
+
+    /**
      * The number of threads executing commands. Defaults to {@code 10} threads.
      */
     private int commandThreads = 10;
@@ -217,13 +231,15 @@ public class AxonServerConfiguration {
     private boolean suppressDownloadMessage = false;
 
     /**
-     * The gRPC max inbound and outbound message size. Defaults to {@code 0}, keeping the default value (4,194,304 or 4MiB) from the connector.
-     * Upon messages exceeding this size, an exception is thrown to prevent unexpected disconnections.
+     * The gRPC max inbound and outbound message size. Defaults to {@code 0}, keeping the default value (4,194,304 or
+     * 4MiB) from the connector. Upon messages exceeding this size, an exception is thrown to prevent unexpected
+     * disconnections.
      */
     private int maxMessageSize = 0;
 
     /**
-     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to {@code 0.8}.
+     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to
+     * {@code 0.8}.
      */
     private double maxMessageSizeWarningThreshold = 0.8;
 
@@ -375,6 +391,14 @@ public class AxonServerConfiguration {
 
     public void setShortcutQueriesToLocalHandlers(boolean shortcutQueriesToLocalHandlers) {
         this.shortcutQueriesToLocalHandlers = shortcutQueriesToLocalHandlers;
+    }
+
+    public boolean isAutoPersistentStreamsEnable() {
+        return autoPersistentStreamsEnable;
+    }
+
+    public void setAutoPersistentStreamsEnable(boolean autoPersistentStreamsEnable) {
+        this.autoPersistentStreamsEnable = autoPersistentStreamsEnable;
     }
 
     /**
@@ -946,16 +970,19 @@ public class AxonServerConfiguration {
     }
 
     /**
-     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to {@code 0.8}.
+     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to
+     * {@code 0.8}.
      *
-     * @return The threshold (in percentage of 0 to 1) of the max outbound message size at which a warning should be logged.
+     * @return The threshold (in percentage of 0 to 1) of the max outbound message size at which a warning should be
+     * logged.
      */
     public double getMaxMessageSizeWarningThreshold() {
         return maxMessageSizeWarningThreshold;
     }
 
     /**
-     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to {@code 0.8}.
+     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to
+     * {@code 0.8}.
      *
      * @param maxMessageSizeWarningThreshold The threshold (in percentage of 0 to 1) of the max outbound message size at
      *                                       which a warning should be logged.
@@ -1281,6 +1308,24 @@ public class AxonServerConfiguration {
      */
     public Map<String, PersistentStreamSettings> getPersistentStreams() {
         return persistentStreams;
+    }
+
+    /**
+     * Return the settings for all persistent streams that will be created automatically.
+     * <p>
+     * Each persistent stream will be named according to the following pattern:
+     * <p>
+     * processingGroupName + "-stream"
+     *
+     * @return Return the settings for all persistent streams that will be created automatically.
+     */
+    public PersistentStreamSettings getAutoPersistentStreamsSettings() {
+        return autoPersistentStreamsSettings;
+    }
+
+    public void setAutoPersistentStreamsSettings(
+            PersistentStreamSettings autoPersistentStreamsSettings) {
+        this.autoPersistentStreamsSettings = autoPersistentStreamsSettings;
     }
 
     /**

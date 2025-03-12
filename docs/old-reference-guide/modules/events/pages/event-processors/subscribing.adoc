@@ -227,3 +227,27 @@ axon.axonserver.persistent-streams.my-persistent-stream.name=My Persistent Strea
 axon.axonserver.persistent-streams.my-persistent-stream.batch-size=100
 axon.axonserver.persistent-streams.my-persistent-stream.initial-segment-count=4
 ----
+
+To simplify configuration, if you want to apply persistent streams to all processing groups all you have to do is set property:
+
+[source,text]
+----
+axon.axonserver.auto-persistent-streams-enable=true
+----
+
+This will configure persistent streams automatically for all processing groups with default settings.
+Each persistent stream will be named according to the following pattern:
+
+[source,text]
+----
+processingGroupName + "-stream"
+----
+
+You can also override default persistent stream settings
+
+[source,text]
+----
+axon.axonserver.auto-persistent-streams-settings.batch-size=5
+axon.axonserver.auto-persistent-streams-settings.thread-count=10
+axon.axonserver.auto-persistent-streams-settings.initial-segment-count=10
+----
