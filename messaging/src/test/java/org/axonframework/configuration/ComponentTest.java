@@ -146,13 +146,13 @@ class ComponentTest {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
         ComponentDecorator<String> testDecorator = (config, delegate) -> delegate;
 
-        Component<String> testSubject = new Component<>(identifier, config, builder)
+        Component<String> testSubject = new Component<>(identifier, config, factory)
                 .decorate(testDecorator, 1);
 
         testSubject.describeTo(testDescriptor);
 
         verify(testDescriptor).describeProperty("identifier", identifier.toString());
-        verify(testDescriptor).describeProperty("builder", builder);
+        verify(testDescriptor).describeProperty("factory", factory);
         verify(testDescriptor).describeProperty("decorators", Map.of(1, testDecorator));
         verify(testDescriptor).describeProperty("initialized", false);
     }
@@ -162,7 +162,7 @@ class ComponentTest {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
         ComponentDecorator<String> testDecorator = (config, delegate) -> delegate;
 
-        Component<String> testSubject = new Component<>(identifier, config, builder)
+        Component<String> testSubject = new Component<>(identifier, config, factory)
                 .decorate(testDecorator, 1);
 
         // Initialize the component by getting it.
