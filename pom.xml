@@ -80,7 +80,7 @@
         <hsqldb.version>2.5.2</hsqldb.version><!-- Don't upgrade due to JDK8 -->
         <hsqldb.with11.version>2.7.2</hsqldb.with11.version><!-- Don't upgrade due to JDK8 -->
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
-        <hibernate-core.6.version>6.6.10.Final</hibernate-core.6.version>
+        <hibernate-core.6.version>6.6.6.Final</hibernate-core.6.version>
         <mysql-connector-java.version>9.2.0</mysql-connector-java.version>
         <postgresql.version>42.7.5</postgresql.version>
         <!-- Jakarta -->
@@ -102,39 +102,39 @@
         <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
         <!-- Logging -->
         <log4j.version>2.24.3</log4j.version>
-        <slf4j.version>2.0.17</slf4j.version>
+        <slf4j.version>2.0.16</slf4j.version>
         <!-- Metrics -->
         <dropwizard.metrics.version>4.2.30</dropwizard.metrics.version>
-        <micrometer.version>1.14.4</micrometer.version>
+        <micrometer.version>1.14.3</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.17.2</byte-buddy.version>
+        <byte-buddy.version>1.17.0</byte-buddy.version>
         <commons-io.version>2.18.0</commons-io.version>
         <disruptor.version>3.4.4</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.30.2-GA</javassist.version>
         <eaio-uuid.version>3.2</eaio-uuid.version>
         <!-- Reactive -->
-        <projectreactor.version>3.7.3</projectreactor.version>
+        <projectreactor.version>3.7.2</projectreactor.version>
         <reactive.streams.spec.version>1.0.4</reactive.streams.spec.version>
         <!-- Serialization -->
         <avro.version>1.11.4</avro.version><!-- Don't upgrade due to JDK8, the JDK11+ version is defined in profile below -->
         <dom4j.version>2.1.4</dom4j.version>
         <gson.version>2.12.1</gson.version>
-        <jackson.version>2.18.3</jackson.version>
+        <jackson.version>2.18.2</jackson.version>
         <xstream.version>1.4.21</xstream.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version><!-- Don't upgrade due to JDK8 -->
-        <jobrunr.version>7.4.1</jobrunr.version>
+        <jobrunr.version>7.4.0</jobrunr.version>
         <quartz.version>2.4.0</quartz.version>
         <!-- Spring -->
         <spring.version>5.3.39</spring.version>
         <spring.boot.version>2.7.18</spring.boot.version>
         <spring-security.version>5.8.16</spring-security.version>
         <!-- Testing -->
-        <awaitility.version>4.3.0</awaitility.version>
+        <awaitility.version>4.2.2</awaitility.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit4.version>4.13.2</junit4.version>
-        <junit.jupiter.version>5.12.0</junit.jupiter.version>
+        <junit.jupiter.version>5.11.4</junit.jupiter.version>
         <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.19.3</testcontainers.version>
         <!-- Validation -->
@@ -145,13 +145,13 @@
         <felix.maven-bundle-plugin.version>5.1.9</felix.maven-bundle-plugin.version>
         <jacoco-maven.version>0.8.12</jacoco-maven.version>
         <maven-assembly.version>3.7.1</maven-assembly.version>
-        <maven-clean.version>3.4.1</maven-clean.version>
-        <maven-compiler.version>3.14.0</maven-compiler.version>
-        <maven-deploy.version>3.1.4</maven-deploy.version>
+        <maven-clean.version>3.4.0</maven-clean.version>
+        <maven-compiler.version>3.13.0</maven-compiler.version>
+        <maven-deploy.version>3.1.3</maven-deploy.version>
         <maven-enforcer.version>3.5.0</maven-enforcer.version>
         <maven-failsafe.version>3.5.2</maven-failsafe.version>
         <maven-gpg.version>3.2.7</maven-gpg.version>
-        <maven-install.version>3.1.4</maven-install.version>
+        <maven-install.version>3.1.3</maven-install.version>
         <maven-jar.version>3.4.2</maven-jar.version>
         <maven-javadoc.version>3.11.2</maven-javadoc.version>
         <maven-release.version>3.1.1</maven-release.version>
