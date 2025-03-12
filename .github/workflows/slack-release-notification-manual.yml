@@ -1,0 +1,28 @@
+name: Announce release on Slack Manually
+
+on:
+  workflow_dispatch:
+    inputs:
+      releaseName:
+        description: "Release name"
+        required: true
+      releaseUrl:
+        description: "URL of release page"
+        required: true
+
+jobs:
+  my-job:
+    name: Slack notification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send release notification data to Slack workflow (manual)
+        id: slack
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "release-name": "${{ github.event.inputs.releaseName }}",
+              "release-url" : "${{ github.event.inputs.releaseUrl }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
