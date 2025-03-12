@@ -18,6 +18,7 @@ package org.axonframework.eventhandling.scheduling.dbscheduler;
 
 import com.github.kagkarlsson.scheduler.serializer.GsonSerializer;
 import com.github.kagkarlsson.scheduler.serializer.JacksonSerializer;
+import com.github.kagkarlsson.scheduler.serializer.JavaSerializer;
 import com.github.kagkarlsson.scheduler.serializer.Serializer;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -47,6 +48,7 @@ class DbSchedulerHumanReadableEventDataTest {
 
     public static Collection<Serializer> serializers() {
         List<Serializer> serializers = new ArrayList<>();
+        serializers.add(new JavaSerializer());
         serializers.add(new JacksonSerializer());
         serializers.add(new GsonSerializer());
         return serializers;
