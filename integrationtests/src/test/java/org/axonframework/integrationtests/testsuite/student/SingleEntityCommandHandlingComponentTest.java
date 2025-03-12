@@ -31,7 +31,7 @@ import org.junit.jupiter.api.*;
 class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
     @Test
-    void canHandleCommandThatTargetsOneStateViaLambdaStateManager() {
+    void canHandleCommandThatTargetsOneEntityUsingStateManager() {
         var component = StatefulCommandHandlingComponent
                 .create("MyStatefulCommandHandlingComponent", registry)
                 .subscribe(
