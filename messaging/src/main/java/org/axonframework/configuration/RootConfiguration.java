@@ -30,7 +30,7 @@ public interface RootConfiguration extends NewConfiguration {
      * All components defined in this {@code RootConfiguration} will be started.
      * <p>
      * Starting a {@code RootConfiguration} typically results in the invocation of all
-     * {@link #onStart(int, LifecycleHandler) registered start handlers}.
+     * {@link LifecycleRegistry#onStart(int, LifecycleHandler) registered start handlers}.
      */
     void start();
 
@@ -38,7 +38,7 @@ public interface RootConfiguration extends NewConfiguration {
      * Shuts down the components defined in this {@code RootConfiguration}.
      * <p>
      * Shutting down a {@code RootConfiguration} typically results in the invocation of all
-     * {@link #onShutdown(int, LifecycleHandler) registered shutdown handlers}.
+     * {@link LifecycleRegistry#onShutdown(int, LifecycleHandler) registered shutdown handlers}.
      */
     void shutdown();
 }

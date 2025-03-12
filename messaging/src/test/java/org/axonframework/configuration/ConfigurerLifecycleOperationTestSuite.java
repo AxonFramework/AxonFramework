@@ -31,8 +31,8 @@ import org.mockito.*;
  * Test suite validating the workings of the lifecycle operations registered and invoked on {@link StartableConfigurer}
  * implementations and the resulting {@link RootConfiguration}.
  * <p>
- * As such, operations like the {@link LifecycleSupportingConfiguration#onStart(int, LifecycleHandler)},
- * {@link LifecycleSupportingConfiguration#onShutdown(int, LifecycleHandler)}, {@link RootConfigurer#start()},
+ * As such, operations like the {@link LifecycleRegistry#onStart(int, LifecycleHandler)},
+ * {@link LifecycleRegistry#onShutdown(int, LifecycleHandler)}, {@link RootConfigurer#start()},
  * {@link RootConfiguration#start()} and {@link RootConfiguration#shutdown()} will be tested.
  *
  * @author Steven van Beelen
@@ -59,8 +59,6 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
 
     @Test
     void startLifecycleHandlersAreInvokedInAscendingPhaseOrder() {
-        RootConfiguration testSubject = configurer.build();
-
         LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
         LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
         LifecycleManagedInstance phaseTenHandler = spy(new LifecycleManagedInstance());
@@ -455,10 +453,10 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
         }
 
         protected void addLifecycleHandler(LifecycleRegistration lifecycleRegistration,
-                                           LifecycleSupportingConfiguration config,
+                                           LifecycleRegistry lifecycleRegistry,
                                            int phase,
                                            Runnable lifecycleHandler) {
-            lifecycleRegistration.registerLifecycleHandler(config, phase, lifecycleHandler);
+            lifecycleRegistration.registerLifecycleHandler(lifecycleRegistry, phase, lifecycleHandler);
         }
 
         protected void shutdown() {
@@ -483,7 +481,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
     @FunctionalInterface
     protected interface LifecycleRegistration {
 
-        void registerLifecycleHandler(LifecycleSupportingConfiguration configuration,
+        void registerLifecycleHandler(LifecycleRegistry lifecycleRegistry,
                                       int phase,
                                       Runnable lifecycleHandler);
     }

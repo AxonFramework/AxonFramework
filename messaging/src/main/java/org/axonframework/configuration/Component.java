@@ -18,6 +18,7 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.StringUtils;
+import org.axonframework.lifecycle.Lifecycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +49,8 @@ public class Component<C> {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Identifier<C> identifier;
-    private final Supplier<LifecycleSupportingConfiguration> configSupplier;
+    private final Supplier<NewConfiguration> configSupplier;
+    private final LifecycleRegistry lifecycleRegistry = null;
     private final ComponentFactory<C> factory;
     private final SortedMap<Integer, ComponentDecorator<C>> decorators = new TreeMap<>();
 
@@ -110,7 +112,12 @@ public class Component<C> {
         decorators.values()
                   .forEach(decorator -> instance = decorator.decorate(config, instance));
         logger.debug("Instantiated component [{}]: {}", identifier, instance);
-        LifecycleHandlerInspector.registerLifecycleHandlers(config, instance);
+
+
+        if (instance instanceof Lifecycle lifecycleAwareInstance) {
+            lifecycleAwareInstance.registerLifecycleHandlers(lifecycleRegistry);
+        }
+
         return instance;
     }
 

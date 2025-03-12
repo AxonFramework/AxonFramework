@@ -35,7 +35,7 @@ import static java.util.Objects.requireNonNull;
  * @see org.axonframework.lifecycle.Phase
  * @since 4.6.0
  */
-public interface LifecycleOperations {
+public interface LifecycleRegistry {
 
     /**
      * Registers a {@code startHandler} to be executed in the default phase {@code 0} when this Configuration is

@@ -34,15 +34,15 @@ import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
 
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.ReflectionUtils.invokeAndGetMethodValue;
 
 /**
  * Utility class used to resolve {@link LifecycleHandler}s to be registered to the {@link NewConfiguration}.
  * <p>
  * A {@link StartHandler} annotated lifecycle handler will be registered through
- * {@link LifecycleSupportingConfiguration#onStart(int, LifecycleHandler)}, whilst a {@link ShutdownHandler} annotated
- * lifecycle handler will be registered through
- * {@link LifecycleSupportingConfiguration#onShutdown(int, LifecycleHandler)}.
+ * {@link LifecycleRegistry#onStart(int, LifecycleHandler)}, whilst a {@link ShutdownHandler} annotated lifecycle
+ * handler will be registered through {@link LifecycleRegistry#onShutdown(int, LifecycleHandler)}.
  *
  * @author Steven van Beelen
  * @see ShutdownHandler
@@ -62,39 +62,29 @@ public abstract class LifecycleHandlerInspector {
      * If given {@code component} implements {@link Lifecycle}, will allow it to register lifecycle handlers with the
      * config. Otherwise, will resolve {@link StartHandler} and {@link ShutdownHandler} annotated lifecycle handlers in
      * the given {@code component}. If present, they will be registered on the given {@code config} through the
-     * {@link LifecycleSupportingConfiguration#onStart(int, LifecycleHandler)} and
-     * {@link LifecycleSupportingConfiguration#onShutdown(int, LifecycleHandler)} methods. If the given
-     * {@code component} is {@code null} it will be ignored.
+     * {@link LifecycleRegistry#onStart(int, LifecycleHandler)} and
+     * {@link LifecycleRegistry#onShutdown(int, LifecycleHandler)} methods. If the given {@code component} is
+     * {@code null} it will be ignored.
      *
-     * @param config    the {@link NewConfiguration} to register resolved lifecycle handlers to
-     * @param component the object to resolve lifecycle handlers for
+     * @param lifecycleRegistry the {@link NewConfiguration} to register resolved lifecycle handlers to
+     * @param component         the object to resolve lifecycle handlers for
      */
-    public static void registerLifecycleHandlers(@Nonnull LifecycleSupportingConfiguration config, Object component) {
-        if (component == null) {
-            logger.debug("Ignoring [null] component for inspection as it wont participate in the lifecycle.");
-            return;
-        }
-        if (component instanceof Lifecycle) {
-            ((Lifecycle) component).registerLifecycleHandlers(new Lifecycle.LifecycleRegistry() {
-                @Override
-                public void onStart(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
-                    config.onStart(phase, action::run);
-                }
+    public static void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycleRegistry,
+                                                 @Nonnull Object component) {
+        requireNonNull(lifecycleRegistry, "Cannot register lifecycle handlers on a null lifecycle operator.");
+        requireNonNull(component, "Cannot register lifecycle handlers from a null component.");
 
-                @Override
-                public void onShutdown(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
-                    config.onShutdown(phase, action::run);
-                }
-            });
+        if (component instanceof Lifecycle lifecycleAwareComponent) {
+            lifecycleAwareComponent.registerLifecycleHandlers(lifecycleRegistry);
         } else {
-            registerLifecycleHandlers(config, component, StartHandler.class,
-                                      LifecycleSupportingConfiguration::onStart);
-            registerLifecycleHandlers(config, component, ShutdownHandler.class,
-                                      LifecycleSupportingConfiguration::onShutdown);
+            registerLifecycleHandlers(lifecycleRegistry, component, StartHandler.class,
+                                      LifecycleRegistry::onStart);
+            registerLifecycleHandlers(lifecycleRegistry, component, ShutdownHandler.class,
+                                      LifecycleRegistry::onShutdown);
         }
     }
 
-    private static void registerLifecycleHandlers(LifecycleSupportingConfiguration config,
+    private static void registerLifecycleHandlers(LifecycleRegistry config,
                                                   Object component,
                                                   Class<? extends Annotation> lifecycleAnnotation,
                                                   LifecycleRegistration registrationMethod) {
@@ -157,12 +147,12 @@ public abstract class LifecycleHandlerInspector {
 
     /**
      * Functional interface towards the registration of a {@code lifecycleHandler} in the given {@code phase} in the
-     * {@link LifecycleSupportingConfiguration}.
+     * {@link LifecycleRegistry}.
      */
     @FunctionalInterface
     private interface LifecycleRegistration {
 
-        void registerLifecycleHandler(LifecycleSupportingConfiguration config, int phase, LifecycleHandler handler);
+        void registerLifecycleHandler(LifecycleRegistry config, int phase, LifecycleHandler handler);
     }
 
 
