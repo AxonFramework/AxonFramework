@@ -72,7 +72,7 @@ public class SimpleRepository<I, T> implements AsyncRepository.LifecycleManageme
             @Nonnull Class<I> idType,
             @Nonnull Class<T> entityType,
             @Nonnull SimpleEntityLoader<I, T> loader,
-            @Nonnull SimpleEntityPersister<I, T> persister
+            @Nonnull SimpleEntityPersister<I,T> persister
     ) {
         this.idType = requireNonNull(idType, "The entityIdClass may not be null");
         this.entityType = requireNonNull(entityType, "The entityClass may not be null");

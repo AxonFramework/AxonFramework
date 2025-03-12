@@ -60,6 +60,7 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
         this.repositories = builder.repositories;
     }
 
+    @SuppressWarnings("unchecked")
     @Nonnull
     @Override
     public <I, T> CompletableFuture<ManagedEntity<I, T>> loadManagedEntity(
@@ -67,14 +68,20 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
             @Nonnull I id,
             @Nonnull ProcessingContext context
     ) {
-        //noinspection unchecked
-        return repositories.stream()
-                           .filter(r -> r.entityType().equals(entityType))
-                           .filter(r -> r.idType().isAssignableFrom(id.getClass()))
-                           .map(r -> (AsyncRepository<I, T>) r)
-                           .findFirst()
-                           .orElseThrow(() -> new MissingRepositoryException(id.getClass(), entityType))
-                           .load(id, context);
+        return repositories
+                .stream()
+                .filter(r -> r.entityType().isAssignableFrom(entityType))
+                .filter(r -> r.idType().isAssignableFrom(id.getClass()))
+                .map(r -> (AsyncRepository<I, T>) r)
+                .findFirst()
+                .orElseThrow(() -> new MissingRepositoryException(id.getClass(), entityType))
+                .load(id, context)
+                .thenApply(me -> {
+                    if (me.entity() != null && !entityType.isInstance(me.entity())) {
+                        throw new LoadedEntityNotOfExpectedTypeException(me.entity().getClass(), entityType);
+                    }
+                    return me;
+                });
     }
 
     @Override
@@ -125,7 +132,7 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
          * Registers an {@link AsyncRepository} for use with this {@link SimpleStateManager}. The combination of
          * {@link AsyncRepository#entityType()} and {@link AsyncRepository#idType()} must be unique for all registered
          * repositories. If a repository with the same combination is already registered, a
-         * {@link RepositoryAlreadyRegisteredException} is thrown.
+         * {@link ConflictingRepositoryAlreadyRegisteredException} is thrown.
          *
          * @param repository The {@link AsyncRepository} to use for loading state.
          * @param <I>        The type of id.
@@ -139,7 +146,7 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
                     .findFirst();
 
             if (registeredRepository.isPresent()) {
-                throw new RepositoryAlreadyRegisteredException(repository.idType(), repository.entityType());
+                throw new ConflictingRepositoryAlreadyRegisteredException(repository, registeredRepository.get());
             }
 
             repositories.add(repository);
@@ -152,7 +159,7 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
          * <p>
          * The combination of {@code idType} and {@code entityType} must be unique for all registered repositories,
          * whether registered through this method or {@link #register(AsyncRepository)}. If a repository with the same
-         * combination is already registered, a {@link RepositoryAlreadyRegisteredException} is thrown.
+         * combination is already registered, a {@link ConflictingRepositoryAlreadyRegisteredException} is thrown.
          *
          * @param idType     The type of the identifier.
          * @param entityType The type of the state.
@@ -174,9 +181,25 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
             return new SimpleStateManager(this);
         }
 
+        /**
+         * Checks if the given repositories match based on their entity and id types. Types match if it's the same type
+         * or if one type is a superclass of the other. This ensures that there are no conflicts when loading entities.
+         * For any id and entity type combination, only one repository should exist.
+         */
         private boolean match(AsyncRepository<?, ?> repositoryOne, AsyncRepository<?, ?> repositoryTwo) {
-            return repositoryOne.entityType().equals(repositoryTwo.entityType())
-                    && repositoryOne.idType().equals(repositoryTwo.idType());
+            return matchesBasedOnEntityType(repositoryOne, repositoryTwo) && matchesBasedOnIdType(repositoryOne, repositoryTwo);
+        }
+
+        private static boolean matchesBasedOnIdType(AsyncRepository<?, ?> repositoryOne,
+                                                    AsyncRepository<?, ?> repositoryTwo) {
+            return repositoryOne.idType().isAssignableFrom(repositoryTwo.idType())
+                    || repositoryTwo.idType().isAssignableFrom(repositoryOne.idType());
+        }
+
+        private static boolean matchesBasedOnEntityType(AsyncRepository<?, ?> repositoryOne,
+                                                        AsyncRepository<?, ?> repositoryTwo) {
+            return repositoryOne.entityType().isAssignableFrom(repositoryTwo.entityType())
+                    || repositoryTwo.entityType().isAssignableFrom(repositoryOne.entityType());
         }
     }
 }
