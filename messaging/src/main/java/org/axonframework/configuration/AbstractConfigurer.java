@@ -157,12 +157,12 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     @Override
-    public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
+    public S onStart(int phase, @Nonnull LifecycleHandler startHandler) {
         throw new UnsupportedOperationException("Registering start handlers is not supported on this configurer.");
     }
 
     @Override
-    public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
+    public S onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
         throw new UnsupportedOperationException("Registering shutdown handlers is not supported on this configurer.");
     }
 

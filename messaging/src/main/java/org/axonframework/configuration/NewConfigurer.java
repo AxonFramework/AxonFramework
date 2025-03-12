@@ -35,7 +35,7 @@ import org.axonframework.configuration.Component.Identifier;
  * @since 3.0.0
  */
 // TODO Rename to Configurer once the old Configurer is removed
-public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleRegistry {
+public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleRegistry<S> {
 
     // TODO DescribableComponent!
 

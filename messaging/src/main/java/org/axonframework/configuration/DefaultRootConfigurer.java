@@ -16,6 +16,13 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.FutureUtils;
+import org.axonframework.common.IdentifierFactory;
+import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.invoke.MethodHandles;
 import java.util.Comparator;
 import java.util.List;
@@ -32,13 +39,6 @@ import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.assertStrictPositive;
-
-import jakarta.annotation.Nonnull;
-import org.axonframework.common.FutureUtils;
-import org.axonframework.common.IdentifierFactory;
-import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Default implementation of the {@code RootConfigurer}.
@@ -71,13 +71,15 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
     }
 
     @Override
-    public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
+    public RootConfigurer onStart(int phase, @Nonnull LifecycleHandler startHandler) {
         registerLifecycleHandler(startHandlers, phase, startHandler);
+        return this;
     }
 
     @Override
-    public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
+    public RootConfigurer onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
         registerLifecycleHandler(shutdownHandlers, phase, shutdownHandler);
+        return this;
     }
 
     private void registerLifecycleHandler(Map<Integer, List<LifecycleHandler>> lifecycleHandlers,
