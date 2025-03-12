@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,85 @@
 
 package org.axonframework.common.infra;
 
+import jakarta.annotation.Nonnull;
+
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * Contract towards describing the properties an (infrastructure) component might have.
+ *
+ * @author Allard Buijze
+ * @author Mitchel Herrijgers
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
 public interface ComponentDescriptor {
 
-    void describeProperty(String name, Object delegate);
+    /**
+     * Describe the given {@code object} with {@code this} descriptor for the given {@code name}.
+     * <p>
+     * If the {@code object} is a {@link DescribableComponent},
+     * {@link DescribableComponent#describeTo(ComponentDescriptor)} is invoked with {@code this} descriptor.
+     *
+     * @param name   The name for the {@code object} to describe.
+     * @param object The object to describe with {@code this} descriptor.
+     */
+    void describeProperty(@Nonnull String name, @Nonnull Object object);
 
-    void describeProperty(String name, Collection<?> delegate);
+    /**
+     * Describe the given {@code collection} with {@code this} descriptor for the given {@code name}.
+     * <p>
+     * The formatting of the {@code collection} typically takes a regular array structure.
+     *
+     * @param name       The name for the {@code collection} to describe.
+     * @param collection The collection to describe with {@code this} descriptor.
+     */
+    void describeProperty(@Nonnull String name, @Nonnull Collection<?> collection);
 
-    void describeProperty(String name, Map<?, ?> delegate);
+    /**
+     * Describe the given {@code map} with {@code this} descriptor for the given {@code name}.
+     * <p>
+     * The formatting of the {@code map} typically takes a regular key-value structure based on the
+     * {@link Map.Entry entries} of the {@code map}.
+     *
+     * @param name The name for the {@code map} to describe.
+     * @param map  The map to describe with {@code this} descriptor.
+     */
+    void describeProperty(@Nonnull String name, @Nonnull Map<?, ?> map);
 
-    void describeProperty(String name, String value);
+    /**
+     * Describe the given {@code value} with {@code this} descriptor for the given {@code name}.
+     *
+     * @param name  The name for the {@code value} to describe.
+     * @param value The value to describe with {@code this} descriptor.
+     */
+    void describeProperty(@Nonnull String name, @Nonnull String value);
 
-    void describeProperty(String name, long value);
+    /**
+     * Describe the given {@code value} with {@code this} descriptor for the given {@code name}.
+     *
+     * @param name  The name for the {@code value} to describe.
+     * @param value The value to describe with {@code this} descriptor.
+     */
+    void describeProperty(@Nonnull String name, long value);
 
-    void describeProperty(String name, boolean value);
+    /**
+     * Describe the given {@code value} with {@code this} descriptor for the given {@code name}.
+     *
+     * @param name  The name for the {@code value} to describe.
+     * @param value The value to describe with {@code this} descriptor.
+     */
+    void describeProperty(@Nonnull String name, boolean value);
 
+    /**
+     * Describe the given {@code delegate} with {@code this} descriptor under the name {@code "delegate"}.
+     * <p>
+     * If the {@code delegate} is a {@link DescribableComponent},
+     * {@link DescribableComponent#describeTo(ComponentDescriptor)} is invoked with {@code this} descriptor.
+     *
+     * @param delegate The object to describe with {@code this} descriptor.
+     */
     default void describeWrapperOf(Object delegate) {
         describeProperty("delegate", delegate);
     }
