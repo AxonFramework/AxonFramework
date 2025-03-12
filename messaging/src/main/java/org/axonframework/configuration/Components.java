@@ -18,6 +18,8 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Component.Identifier;
 
 import java.util.Map;
@@ -34,7 +36,7 @@ import java.util.function.Function;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class Components {
+public class Components implements DescribableComponent {
 
     private final Map<Identifier<?>, Component<?>> components = new ConcurrentHashMap<>();
 
@@ -110,5 +112,10 @@ public class Components {
      */
     public boolean contains(Identifier<?> identifier) {
         return components.containsKey(identifier);
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("components", components);
     }
 }
