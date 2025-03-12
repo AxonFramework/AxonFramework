@@ -19,6 +19,7 @@ package org.axonframework.configuration;
 import java.util.function.Consumer;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Component.Identifier;
 
 /**
@@ -35,7 +36,7 @@ import org.axonframework.configuration.Component.Identifier;
  * @since 3.0.0
  */
 // TODO Rename to Configurer once the old Configurer is removed
-public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOperations {
+public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOperations, DescribableComponent {
 
     /**
      * Registers a {@link Component} that should be made available to other {@link Component components} or
