@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.config.testsuite.student;
+package org.axonframework.integrationtests.testsuite.student;
 
 
-import org.axonframework.config.testsuite.student.commands.EnrollStudentToCourseCommand;
-import org.axonframework.config.testsuite.student.events.StudentEnrolledEvent;
-import org.axonframework.config.testsuite.student.state.Course;
-import org.axonframework.config.testsuite.student.state.Student;
+import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
+import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
+import org.axonframework.integrationtests.testsuite.student.state.Course;
+import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;

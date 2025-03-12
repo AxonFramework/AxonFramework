@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.config.testsuite.student;
+package org.axonframework.integrationtests.testsuite.student;
 
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.config.testsuite.student.commands.ChangeStudentNameCommand;
-import org.axonframework.config.testsuite.student.commands.EnrollStudentToCourseCommand;
-import org.axonframework.config.testsuite.student.events.StudentEnrolledEvent;
-import org.axonframework.config.testsuite.student.state.Course;
-import org.axonframework.config.testsuite.student.state.Student;
+import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
+import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
+import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
+import org.axonframework.integrationtests.testsuite.student.state.Course;
+import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;

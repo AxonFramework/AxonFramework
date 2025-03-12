@@ -40,7 +40,7 @@ import static java.util.Objects.requireNonNull;
  * {@link ProcessingContext} is committed.
  * <p>
  * Both the {@link #load(Object, ProcessingContext)} and {@link #loadOrCreate(Object, ProcessingContext)} use the
- * {@link SimpleEntityLoader} to load the entity. If you wish to create an entity when it does not exist, you can return
+ * {@link SimpleRepositoryEntityLoader} to load the entity. If you wish to create an entity when it does not exist, you can return
  * a value when you have found none.
  *
  * @param <I> The type of the identifier of the entity.
@@ -55,8 +55,8 @@ public class SimpleRepository<I, T> implements AsyncRepository.LifecycleManageme
 
     private final Class<I> idType;
     private final Class<T> entityType;
-    private final SimpleEntityLoader<I, T> loader;
-    private final SimpleEntityPersister<I, T> persister;
+    private final SimpleRepositoryEntityLoader<I, T> loader;
+    private final SimpleRepositoryEntityPersister<I, T> persister;
 
     /**
      * Constructs a new simple {@link AsyncRepository} for entities of type {@code entityType} with identifiers of type
@@ -71,8 +71,8 @@ public class SimpleRepository<I, T> implements AsyncRepository.LifecycleManageme
     public SimpleRepository(
             @Nonnull Class<I> idType,
             @Nonnull Class<T> entityType,
-            @Nonnull SimpleEntityLoader<I, T> loader,
-            @Nonnull SimpleEntityPersister<I,T> persister
+            @Nonnull SimpleRepositoryEntityLoader<I, T> loader,
+            @Nonnull SimpleRepositoryEntityPersister<I,T> persister
     ) {
         this.idType = requireNonNull(idType, "The entityIdClass may not be null");
         this.entityType = requireNonNull(entityType, "The entityClass may not be null");

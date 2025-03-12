@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.config.testsuite.student.events;
+package org.axonframework.integrationtests.testsuite.student.events;
 
 import org.axonframework.eventsourcing.annotations.EventTag;
 
-public record StudentNameChangedEvent(
+public record StudentEnrolledEvent(
         @EventTag(key = "Student")
-        String id,
-        String name
+        String studentId,
+        @EventTag(key = "Course")
+        String courseId
 ) {
 
 }

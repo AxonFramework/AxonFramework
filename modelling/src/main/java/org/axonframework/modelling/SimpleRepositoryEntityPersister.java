@@ -22,14 +22,14 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Functional interface describing a component capable of persisting an entity with given identifier. The entity is
- * persisted within the given {@link ProcessingContext}.
+ * Functional interface describing a component capable of persisting an entity with given identifier for the
+ * {@link SimpleRepository}. The entity is persisted within the given {@link ProcessingContext}.
  *
  * @param <I> The type of the identifier of the entity.
  * @param <T> The type of the entity.
  */
 @FunctionalInterface
-public interface SimpleEntityPersister<I, T> {
+public interface SimpleRepositoryEntityPersister<I, T> {
 
     /**
      * Persist the given {@code entity} with given {@code id} within the given {@code context}.

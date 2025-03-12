@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.config.testsuite.student.commands;
+package org.axonframework.integrationtests.testsuite.student.commands;
 
-public record EnrollStudentToCourseCommand(
-        String studentId,
-        String courseId
+public record ChangeStudentNameCommand(
+        String id,
+        String name
 ) {
 
 }

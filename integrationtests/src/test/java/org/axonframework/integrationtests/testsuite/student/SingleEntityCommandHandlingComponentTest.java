@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.config.testsuite.student;
+package org.axonframework.integrationtests.testsuite.student;
 
 
-import org.axonframework.config.testsuite.student.commands.ChangeStudentNameCommand;
-import org.axonframework.config.testsuite.student.events.StudentNameChangedEvent;
-import org.axonframework.config.testsuite.student.state.Student;
+import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
+import org.axonframework.integrationtests.testsuite.student.events.StudentNameChangedEvent;
+import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;

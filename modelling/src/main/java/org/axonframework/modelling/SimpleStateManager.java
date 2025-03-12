@@ -24,11 +24,11 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.axonframework.modelling.repository.ManagedEntity;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -121,7 +121,7 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
     public static class Builder {
 
         private final String name;
-        private final List<AsyncRepository<?, ?>> repositories = new CopyOnWriteArrayList<>();
+        private final List<AsyncRepository<?, ?>> repositories = new LinkedList<>();
 
         private Builder(String name) {
             BuilderUtils.assertNonBlank(name, "Name may not be blank");
@@ -171,8 +171,8 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
          */
         public <I, T> Builder register(Class<I> idType,
                                        Class<T> entityType,
-                                       SimpleEntityLoader<I, T> loader,
-                                       SimpleEntityPersister<I, T> persister
+                                       SimpleRepositoryEntityLoader<I, T> loader,
+                                       SimpleRepositoryEntityPersister<I, T> persister
         ) {
             return register(new SimpleRepository<>(idType, entityType, loader, persister));
         }

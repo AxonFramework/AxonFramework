@@ -22,8 +22,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Functional interface describing a component capable of loading an entity with the given identifier. The entity is
- * loaded within the given {@link ProcessingContext}.
+ * Functional interface describing a component capable of loading an entity with the given identifier for the
+ * {@link SimpleRepository}. The entity is loaded within the given {@link ProcessingContext}.
  *
  * @param <I> The type of the identifier of the entity.
  * @param <T> The type of the entity.
@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface SimpleEntityLoader<I, T> {
+public interface SimpleRepositoryEntityLoader<I, T> {
 
     /**
      * Load an entity with given {@code id} within the given {@code context}.

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.config.testsuite.student.state;
+package org.axonframework.integrationtests.testsuite.student.state;
 
-import org.axonframework.config.testsuite.student.events.StudentEnrolledEvent;
-import org.axonframework.config.testsuite.student.events.StudentNameChangedEvent;
+import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
+import org.axonframework.integrationtests.testsuite.student.events.StudentNameChangedEvent;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 
 import java.util.ArrayList;
