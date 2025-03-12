@@ -16,9 +16,9 @@
 
 package org.axonframework.configuration;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import org.junit.jupiter.api.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test suite validating the common behavior of each {@link Module} implementation.
@@ -53,7 +53,7 @@ public abstract class ModuleTestSuite<M extends Module<M>> extends ConfigurerTes
      *
      * @return The test {@link Module} of type {@code M} used for testing.
      */
-    abstract M testSubject(LifecycleSupportingConfiguration config);
+    abstract M testSubject(NewConfiguration config);
 
     @Test
     void onStartThrowsUnsupportedOperationException() {

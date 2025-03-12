@@ -49,17 +49,17 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     private final List<Module<?>> modules = new ArrayList<>();
     private final List<NewConfiguration> moduleConfigurations = new ArrayList<>();
 
-    protected final LifecycleSupportingConfiguration config;
+    protected final NewConfiguration config;
     private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     /**
-     * Initialize the {@code AbstractConfigurer} based on the given {@code config}.
+     * Initialize the {@code AbstractConfigurer} based on the given {@code parent}.
      *
-     * @param config The life cycle supporting configuration used as the <b>parent</b> configuration of the
+     * @param parent The life cycle supporting configuration used as the <b>parent</b> configuration of the
      *               {@link LocalConfiguration}.
      */
-    protected AbstractConfigurer(@Nullable LifecycleSupportingConfiguration config) {
-        this.config = new LocalConfiguration(config);
+    protected AbstractConfigurer(@Nullable NewConfiguration parent) {
+        this.config = new LocalConfiguration(parent);
     }
 
     @Override
@@ -167,22 +167,22 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     /**
-     * Returns the {@link LifecycleSupportingConfiguration} of this {@link NewConfigurer} implementation.
+     * Returns the {@link NewConfiguration} of this {@link NewConfigurer} implementation.
      *
-     * @return The {@link LifecycleSupportingConfiguration} of this {@link NewConfigurer} implementation.
+     * @return The {@link NewConfiguration} of this {@link NewConfigurer} implementation.
      */
-    protected LifecycleSupportingConfiguration config() {
+    protected NewConfiguration config() {
         return config;
     }
 
     /**
-     * A {@link LifecycleSupportingConfiguration} implementation acting as the local configuration of this configurer.
+     * A {@link NewConfiguration} implementation acting as the local configuration of this configurer.
      * Can be implemented by {@link AbstractConfigurer} implementation that need to reuse the access logic for
      * {@link Component Components} and {@link Module Modules} as provided by this implementation.
      */
-    public class LocalConfiguration implements LifecycleSupportingConfiguration {
+    public class LocalConfiguration implements NewConfiguration {
 
-        private final LifecycleSupportingConfiguration parent;
+        private final NewConfiguration parent;
 
         /**
          * Construct a {@code LocalConfiguration} using the given {@code parent} configuration.
@@ -193,26 +193,8 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
          *
          * @param parent The parent life cycle supporting configuration to fall back on when necessary.
          */
-        public LocalConfiguration(@Nullable LifecycleSupportingConfiguration parent) {
+        public LocalConfiguration(@Nullable NewConfiguration parent) {
             this.parent = parent;
-        }
-
-        @Override
-        public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
-            if (parent != null) {
-                parent.onStart(phase, startHandler);
-            } else {
-                AbstractConfigurer.this.onStart(phase, startHandler);
-            }
-        }
-
-        @Override
-        public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
-            if (parent != null) {
-                parent.onShutdown(phase, shutdownHandler);
-            } else {
-                AbstractConfigurer.this.onShutdown(phase, shutdownHandler);
-            }
         }
 
         @Nonnull

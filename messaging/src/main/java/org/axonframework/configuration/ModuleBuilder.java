@@ -17,8 +17,8 @@
 package org.axonframework.configuration;
 
 /**
- * Functional interface describing how to build a {@link Module} of type {@code M} using the
- * {@link LifecycleSupportingConfiguration} during construction.
+ * Functional interface describing how to build a {@link Module} of type {@code M} using a parent
+ * {@link NewConfiguration} during construction.
  *
  * @param <M> The type of module created by this builder.
  * @author Allard Buijze
@@ -28,10 +28,10 @@ package org.axonframework.configuration;
 public interface ModuleBuilder<M extends Module<M>> {
 
     /**
-     * Builds a {@link Module} using the given {@code config} during construction.
+     * Builds a {@link Module} using the given {@code parent} {@link NewConfiguration} during construction.
      *
-     * @param config The configuration from which other components can be retrieved to build the result.
-     * @return A {@link Module} of type {@code M} using the given {@code config} during construction.
+     * @param parent The configuration from which other components can be retrieved to build the result.
+     * @return A {@link Module} of type {@code M} using the given {@code parent} during construction.
      */
-    M build(LifecycleSupportingConfiguration config);
+    M build(NewConfiguration parent);
 }

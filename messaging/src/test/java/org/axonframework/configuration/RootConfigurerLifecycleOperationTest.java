@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.axonframework.configuration;
 
 import java.util.concurrent.TimeUnit;
@@ -40,18 +39,17 @@ class RootConfigurerLifecycleOperationTest extends ConfigurerLifecycleOperationT
     @Test
     void lifecycleHandlersProceedToFollowingPhaseForNeverEndingPhases() {
         AtomicBoolean invoked = new AtomicBoolean(false);
-        RootConfiguration testConfig = configurer.registerLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS)
-                                                 .build();
 
         LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
         LifecycleManagedInstance extremelySlowPhaseOneHandler = spy(new LifecycleManagedInstance(invoked));
         LifecycleManagedInstance phaseTwoHandler = spy(new LifecycleManagedInstance());
 
-        testConfig.onStart(0, phaseZeroHandler::start);
-        testConfig.onStart(1, extremelySlowPhaseOneHandler::uncompletableStart);
-        testConfig.onStart(2, phaseTwoHandler::start);
+        testSubject.onStart(0, phaseZeroHandler::start);
+        testSubject.onStart(1, extremelySlowPhaseOneHandler::uncompletableStart);
+        testSubject.onStart(2, phaseTwoHandler::start);
 
-        testConfig.start();
+        testSubject.registerLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS)
+                   .start();
 
         InOrder lifecycleOrder = inOrder(phaseZeroHandler, extremelySlowPhaseOneHandler, phaseTwoHandler);
         lifecycleOrder.verify(phaseZeroHandler).start();
@@ -64,7 +62,7 @@ class RootConfigurerLifecycleOperationTest extends ConfigurerLifecycleOperationT
     void registerLifecyclePhaseTimeoutWithZeroTimeoutThrowsIllegalArgumentException() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> configurer.registerLifecyclePhaseTimeout(0, TimeUnit.SECONDS)
+                () -> testSubject.registerLifecyclePhaseTimeout(0, TimeUnit.SECONDS)
         );
     }
 
@@ -72,13 +70,13 @@ class RootConfigurerLifecycleOperationTest extends ConfigurerLifecycleOperationT
     void registerLifecyclePhaseTimeoutWithNegativeTimeoutThrowsIllegalArgumentException() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> configurer.registerLifecyclePhaseTimeout(-1, TimeUnit.SECONDS)
+                () -> testSubject.registerLifecyclePhaseTimeout(-1, TimeUnit.SECONDS)
         );
     }
 
     @Test
     void registerLifecyclePhaseTimeoutWithNullTimeUnitThrowsNullPointerException() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> configurer.registerLifecyclePhaseTimeout(1, null));
+        assertThrows(NullPointerException.class, () -> testSubject.registerLifecyclePhaseTimeout(1, null));
     }
 }

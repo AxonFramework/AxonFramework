@@ -35,13 +35,13 @@ class ComponentTest {
     private static final String TEST_COMPONENT = "Hello World!";
 
     private Identifier<String> identifier;
-    private LifecycleSupportingConfiguration config;
+    private NewConfiguration config;
     private ComponentFactory<String> factory;
 
     @BeforeEach
     void setUp() {
         identifier = new Identifier<>(String.class, "id");
-        config = mock(LifecycleSupportingConfiguration.class);
+        config = mock(NewConfiguration.class);
         factory = c -> TEST_COMPONENT;
     }
 
@@ -55,14 +55,14 @@ class ComponentTest {
     void constructorThrowsNullPointerExceptionForNullConfiguration() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class,
-                     () -> new Component<>(identifier, (LifecycleSupportingConfiguration) null, factory));
+                     () -> new Component<>(identifier, (NewConfiguration) null, factory));
     }
 
     @Test
     void constructorThrowsNullPointerExceptionForNullConfigurationSupplier() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class,
-                     () -> new Component<>(identifier, (Supplier<LifecycleSupportingConfiguration>) null, factory));
+                     () -> new Component<>(identifier, (Supplier<NewConfiguration>) null, factory));
     }
 
     @Test

@@ -58,7 +58,7 @@ public class Component<C> {
      * Creates a {@code Component} for the given {@code config} with given {@code identifier} created by the given
      * {@code factory}.
      * <p>
-     * When the {@link LifecycleSupportingConfiguration} is not initialized yet, consider using
+     * When the {@link NewConfiguration} is not initialized yet, consider using
      * {@link #Component(Identifier, Supplier, ComponentFactory)} instead.
      *
      * @param identifier The identifier of the component.
@@ -66,7 +66,7 @@ public class Component<C> {
      * @param factory    The factory building the component.
      */
     public Component(@Nonnull Identifier<C> identifier,
-                     @Nonnull LifecycleSupportingConfiguration config,
+                     @Nonnull NewConfiguration config,
                      @Nonnull ComponentFactory<C> factory) {
         this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
         requireNonNull(config, "The configuration supplier cannot be null.");
@@ -83,7 +83,7 @@ public class Component<C> {
      * @param factory        The factory building the component.
      */
     public Component(@Nonnull Identifier<C> identifier,
-                     @Nonnull Supplier<LifecycleSupportingConfiguration> configSupplier,
+                     @Nonnull Supplier<NewConfiguration> configSupplier,
                      @Nonnull ComponentFactory<C> factory) {
         this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
         this.configSupplier = requireNonNull(configSupplier, "The configuration supplier cannot be null.");
@@ -95,7 +95,7 @@ public class Component<C> {
      * attached {@link ComponentDecorator decorators} if the component hasn't been built yet.
      * <p>
      * Upon initiation of the instance the
-     * {@link LifecycleHandlerInspector#registerLifecycleHandlers(LifecycleSupportingConfiguration, Object)} methods
+     * {@link LifecycleHandlerInspector#registerLifecycleHandlers(LifecycleRegistry, Object)} methods
      * will be called to resolve and register lifecycle methods.
      *
      * @return The initialized component contained in this instance.
@@ -105,7 +105,7 @@ public class Component<C> {
             return instance;
         }
 
-        LifecycleSupportingConfiguration config = configSupplier.get();
+        NewConfiguration config = configSupplier.get();
         instance = factory.build(config);
         decorators.values()
                   .forEach(decorator -> instance = decorator.decorate(config, instance));

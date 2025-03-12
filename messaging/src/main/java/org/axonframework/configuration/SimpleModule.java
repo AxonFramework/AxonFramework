@@ -32,7 +32,7 @@ public class SimpleModule extends AbstractConfigurer<SimpleModule> implements Mo
      * @param config The life cycle supporting configuration used as the <b>parent</b> configuration of this
      *               {@link Module}.
      */
-    public SimpleModule(@Nullable LifecycleSupportingConfiguration config) {
+    public SimpleModule(@Nullable NewConfiguration config) {
         super(config);
     }
 }

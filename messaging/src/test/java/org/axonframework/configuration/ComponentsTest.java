@@ -34,13 +34,13 @@ class ComponentsTest {
 
     private static final Identifier<String> IDENTIFIER = new Identifier<>(String.class, "id");
 
-    private LifecycleSupportingConfiguration config;
+    private NewConfiguration config;
 
     private Components testSubject;
 
     @BeforeEach
     void setUp() {
-        config = mock(LifecycleSupportingConfiguration.class);
+        config = mock(NewConfiguration.class);
 
         testSubject = new Components();
     }

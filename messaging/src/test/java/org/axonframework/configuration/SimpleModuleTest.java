@@ -26,7 +26,7 @@ import jakarta.annotation.Nullable;
 class SimpleModuleTest extends ModuleTestSuite<SimpleModule> {
 
     @Override
-    SimpleModule testSubject(LifecycleSupportingConfiguration config) {
+    SimpleModule testSubject(NewConfiguration config) {
         return new SimpleModule(config);
     }
 

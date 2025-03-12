@@ -24,7 +24,7 @@ package org.axonframework.configuration;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface RootConfiguration extends LifecycleSupportingConfiguration {
+public interface RootConfiguration extends NewConfiguration {
 
     /**
      * All components defined in this {@code RootConfiguration} will be started.
