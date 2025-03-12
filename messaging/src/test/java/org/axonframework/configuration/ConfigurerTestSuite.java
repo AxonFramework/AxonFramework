@@ -16,18 +16,20 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
 
 /**
  * Test suite validating the common behavior of the {@link NewConfigurer}.
@@ -757,6 +759,79 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             testSubject.delegate(delegateType, config -> invoked.set(true));
 
             assertTrue(invoked.get());
+        }
+    }
+
+    @Nested
+    class DescribeTo {
+
+        @Test
+        void configurerDescribeToDescribesBeingUninitializedComponentsEnhancersAndModules() {
+            ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+            ConfigurerEnhancer testEnhancer = configurer -> {
+
+            };
+            AtomicReference<TestModule> moduleReference = new AtomicReference<>();
+
+            // The Component is not yet validated, as I am using a mocked ComponentDescriptor.
+            testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+                       .registerEnhancer(testEnhancer)
+                       .registerModule(c -> {
+                           TestModule testModule = new TestModule(c);
+                           moduleReference.set(testModule);
+                           return testModule;
+                       })
+                       .describeTo(testDescriptor);
+
+            verify(testDescriptor).describeProperty("initialized", false);
+            verify(testDescriptor).describeProperty("configurerEnhancers", List.of(testEnhancer));
+            verify(testDescriptor).describeProperty("modules", List.of(moduleReference.get()));
+        }
+
+        @Test
+        void configurerDescribeToDescribesBeingInitializedComponentsEnhancersAndModules() {
+            ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+            ConfigurerEnhancer testEnhancer = configurer -> {
+
+            };
+            AtomicReference<TestModule> moduleReference = new AtomicReference<>();
+
+            // The Component is not yet validated, as I am using a mocked ComponentDescriptor.
+            testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+                       .registerEnhancer(testEnhancer)
+                       .registerModule(c -> {
+                           TestModule testModule = new TestModule(c);
+                           moduleReference.set(testModule);
+                           return testModule;
+                       })
+                       // Build initializes the configurer
+                       .build();
+
+            testSubject.describeTo(testDescriptor);
+
+            verify(testDescriptor).describeProperty("initialized", true);
+            verify(testDescriptor).describeProperty("configurerEnhancers", List.of(testEnhancer));
+            verify(testDescriptor).describeProperty("modules", List.of(moduleReference.get()));
+        }
+
+        @Test
+        void configurationDescribeToDescribesComponentsAndModules() {
+            ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+            AtomicReference<TestModule> moduleReference = new AtomicReference<>();
+
+            // The Component is not yet validated, as I am using a mocked ComponentDescriptor.
+            testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+                       .registerModule(rootConfig -> {
+                           TestModule testModule = new TestModule(rootConfig)
+                                   .registerComponent(TestComponent.class, c -> TEST_COMPONENT);
+                           moduleReference.set(testModule);
+                           return testModule;
+                       })
+                       .build()
+                       .describeTo(testDescriptor);
+
+            // Build the moduleReference to generate the Module's Configuration result
+            verify(testDescriptor).describeProperty("modules", List.of(moduleReference.get().build()));
         }
     }
 

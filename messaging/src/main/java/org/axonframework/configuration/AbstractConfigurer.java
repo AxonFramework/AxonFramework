@@ -16,6 +16,13 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.configuration.Component.Identifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -24,12 +31,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.configuration.Component.Identifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Abstract implementation of the {@link NewConfigurer} allowing for reuse of {@link Component},
@@ -175,6 +176,14 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         return config;
     }
 
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("initialized", initialized.get());
+        components.describeTo(descriptor);
+        descriptor.describeProperty("configurerEnhancers", enhancers);
+        descriptor.describeProperty("modules", modules);
+    }
+
     /**
      * A {@link LifecycleSupportingConfiguration} implementation acting as the local configuration of this configurer.
      * Can be implemented by {@link AbstractConfigurer} implementation that need to reuse the access logic for
@@ -246,6 +255,12 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         @Override
         public List<NewConfiguration> getModuleConfigurations() {
             return List.copyOf(moduleConfigurations);
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            components.describeTo(descriptor);
+            descriptor.describeProperty("modules", moduleConfigurations);
         }
     }
 }
