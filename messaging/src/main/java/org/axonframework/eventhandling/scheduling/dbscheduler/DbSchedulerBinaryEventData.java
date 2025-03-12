@@ -16,6 +16,7 @@
 
 package org.axonframework.eventhandling.scheduling.dbscheduler;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -30,7 +31,7 @@ import static java.lang.String.format;
  * @author Gerard Klijs
  * @since 4.8.0
  */
-public class DbSchedulerBinaryEventData {
+public class DbSchedulerBinaryEventData implements Serializable {
 
     private byte[] p;
     private String c;

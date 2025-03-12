@@ -28,6 +28,7 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 import static java.lang.String.format;
@@ -42,7 +43,7 @@ import static java.lang.String.format;
  * @since 4.8.0
  */
 @SuppressWarnings("Duplicates")
-public class DbSchedulerHumanReadableDeadlineDetails {
+public class DbSchedulerHumanReadableDeadlineDetails implements Serializable {
 
     private String deadlineName;
     private String type;
