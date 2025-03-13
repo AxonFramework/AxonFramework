@@ -16,6 +16,9 @@
 
 package org.axonframework.common.infra;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.*;
 
@@ -148,9 +151,11 @@ class JacksonComponentDescriptorTest {
         @Test
         void describeCollectionOfDescribableComponentsShouldIncludeTypeAndId() {
             // given
+            var component1 = new SimpleTestComponent("component1", 101);
+            var component2 = new SimpleTestComponent("component2", 102);
             var components = List.of(
-                    new SimpleTestComponent("component1", 101),
-                    new SimpleTestComponent("component2", 102)
+                    component1,
+                    component2
             );
             testSubject.describeProperty("components", components);
 
@@ -158,21 +163,22 @@ class JacksonComponentDescriptorTest {
             var result = testSubject.describe();
 
             // then
-            assertJsonMatchesPattern(result, """
+            assertJsonMatches(result, """
                     {
                       "components" : [ {
                         "name" : "component1",
                         "value" : 101,
                         "_type" : "SimpleTestComponent",
-                        "_id" : "*"
+                        "_id" : "%s"
                       }, {
                         "name" : "component2",
                         "value" : 102,
                         "_type" : "SimpleTestComponent",
-                        "_id" : "*"
+                        "_id" : "%s"
                       } ]
                     }
-                    """);
+                    """.formatted(identityOf(component1), identityOf(component2))
+            );
         }
     }
 
@@ -237,8 +243,9 @@ class JacksonComponentDescriptorTest {
         @Test
         void describeMapWithDescribableComponentsShouldIncludeTypeAndId() {
             // given
+            var component1 = new SimpleTestComponent("value1", 201);
             var map = Map.of(
-                    "component1", new SimpleTestComponent("value1", 201)
+                    "component1", component1
             );
             testSubject.describeProperty("componentMap", map);
 
@@ -246,15 +253,13 @@ class JacksonComponentDescriptorTest {
             var result = testSubject.describe();
 
             // then
-            assertJsonMatchesPattern(
-                    result,
-                    """
-                                {
-                                  "componentMap": {
-                                    "component1":{"name":"value1","value":201,"_type":"SimpleTestComponent","_id":"*"}
-                                  }
-                                }
-                            """
+            assertJsonMatches(result, """
+                        {
+                          "componentMap": {
+                            "component1":{"name":"value1","value":201,"_type":"SimpleTestComponent","_id":"%s"}
+                          }
+                        }
+                    """.formatted(identityOf(component1))
             );
         }
     }
@@ -331,6 +336,111 @@ class JacksonComponentDescriptorTest {
         );
     }
 
+    @Nested
+    class CircularReferencesTests {
+
+        @Test
+        void describeComponentWithCircularReference() {
+            // given
+            var component1 = new CircularComponent("Component1");
+            var component2 = new CircularComponent("Component2");
+            component1.setReference(component2);
+            component2.setReference(component1);
+
+            // Add the component with circular reference
+            testSubject.describeProperty("circularRef", component1);
+
+            // when
+            var result = testSubject.describe();
+
+            // then
+            assertJsonMatches(result, """
+                    {
+                      "circularRef": {
+                        "name": "Component1",
+                        "reference": {
+                          "name": "Component2",
+                          "reference": {
+                            "$ref": "%s"
+                          },
+                          "_type": "CircularComponent",
+                          "_id": "%s"
+                        },
+                        "_type": "CircularComponent",
+                        "_id": "%s"
+                      }
+                    }
+                    """.formatted(identityOf(component1), identityOf(component2), identityOf(component1))
+            );
+        }
+
+        @Test
+        void describeComponentWithCircularReferencesInCollection() {
+            // given
+            var component1 = new CircularComponent("Component1");
+            var component2 = new CircularComponent("Component2");
+            component1.setReference(component2);
+            component2.setReference(component1);
+            var components = List.of(component1, component2);
+            testSubject.describeProperty("components", components);
+
+            // when
+            var result = testSubject.describe();
+
+            // then
+            assertJsonMatches(result, """
+                     {
+                         "components": [
+                             {
+                                 "name":"Component1",
+                                 "reference": {
+                                     "name":"Component2",
+                                     "reference":{"$ref":"%s"},
+                                     "_type":"CircularComponent",
+                                     "_id":"%s"
+                                 },
+                                 "_type":"CircularComponent",
+                                 "_id":"%s"
+                             },
+                             {
+                                 "$ref":"%s"
+                             }
+                         ]
+                    }
+                    """.formatted(identityOf(component1),
+                                  identityOf(component2),
+                                  identityOf(component1),
+                                  identityOf(component2))
+            );
+        }
+
+        /**
+         * A component that can create circular references.
+         */
+        private static class CircularComponent implements DescribableComponent {
+
+            private final String name;
+
+            private CircularComponent reference;
+
+            CircularComponent(String name) {
+                this.name = name;
+            }
+
+            void setReference(CircularComponent reference) {
+                this.reference = reference;
+            }
+
+            @Override
+            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+                descriptor.describeProperty("name", name);
+                if (reference != null) {
+                    descriptor.describeProperty("reference", reference);
+                }
+            }
+        }
+    }
+
     /**
      * Utility method to normalize JSON strings for comparison.
      */
@@ -342,11 +452,25 @@ class JacksonComponentDescriptorTest {
      * Utility method to assert that a JSON string matches a pattern, with dynamic IDs replaced for comparison.
      */
     private void assertJsonMatchesPattern(String actual, String expectedPattern) {
-        String normalizedActual = normalizeJson(actual).replaceAll("\"_id\":\"\\d+\"", "\"_id\":\"*\"");
+        String normalizedActual = normalizeJson(actual)
+                .replaceAll("\"_id\":\"\\d+\"", "\"_id\":\"*\"")
+                .replaceAll("\"$ref\":\"\\d+\"", "\"$ref\":\"*\"");
+
         String normalizedExpected = normalizeJson(expectedPattern);
 
         assertEquals(normalizedExpected, normalizedActual,
                      "JSON does not match expected pattern");
+    }
+
+    private void assertJsonMatches(String actual, String expectedPattern) {
+        String normalizedActual = normalizeJson(actual);
+        String normalizedExpected = normalizeJson(expectedPattern);
+        assertEquals(normalizedExpected, normalizedActual,
+                     "JSON does not match expected");
+    }
+
+    private static int identityOf(Object component) {
+        return System.identityHashCode(component);
     }
 
     private record SimpleTestComponent(String name, int value) implements DescribableComponent {
