@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.config.testsuite.student.events;
+package org.axonframework.integrationtests.testsuite.student.commands;
 
-import org.axonframework.eventsourcing.annotations.EventTag;
+import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;
+import org.axonframework.modelling.command.annotation.TargetEntityId;
 
-public record StudentEnrolledEvent(
-        @EventTag(key = "Student")
-        String studentId,
-        @EventTag(key = "Course")
-        String courseId
+public record AssignMentorCommand(
+        String menteeId,
+        String mentorId
 ) {
-
+    @TargetEntityId
+    public StudentMentorModelIdentifier modelIdentifier() {
+        return new StudentMentorModelIdentifier(mentorId, menteeId);
+    }
 }

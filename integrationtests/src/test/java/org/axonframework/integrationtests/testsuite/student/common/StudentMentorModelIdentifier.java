@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.config.testsuite.student.common;
+package org.axonframework.integrationtests.testsuite.student.common;
 
 public record StudentMentorModelIdentifier(
         String mentorId,

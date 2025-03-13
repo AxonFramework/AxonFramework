@@ -17,22 +17,20 @@
 package org.axonframework.modelling.command.annotation;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.modelling.command.ModelIdentifierResolver;
+import org.axonframework.modelling.command.EntityIdResolver;
 
 import java.util.List;
 
 /**
- * Exception indicating that multiple identifiers were found in the payload of a message, while only one was expected.
- * Models can only have one identifier. If your model has a composite identifier, you should use a single field or
- * method to represent the composite identifier. Alternatively, you can use a custom {@link ModelIdentifierResolver} to resolve
- * the identifier from the payload.
+ * Exception indicating that multiple identifiers were found in the payload of a message. Only one
+ * method or field annotated with {@link TargetEntityId} is allowed to return a non-null value.
  *
- * @see ModelIdentifierResolver
- * @see TargetModelIdentifier
+ * @see EntityIdResolver
+ * @see TargetEntityId
  * @since 5.0.0
  * @author Mitchell Herrijgers
  */
-public class MultipleIdentifiersInPayloadException extends RuntimeException {
+public class MultipleTargetEntityIdsFoundInPayload extends RuntimeException {
 
     /**
      * Initialize the exception with the given {@code identifiers} found in the payload of type {@code payloadClass}.
@@ -40,7 +38,7 @@ public class MultipleIdentifiersInPayloadException extends RuntimeException {
      * @param identifiers  The identifiers found in the payload.
      * @param payloadClass The type of the payload.
      */
-    public MultipleIdentifiersInPayloadException(@Nonnull List<Object> identifiers, @Nonnull Class<?> payloadClass) {
+    public MultipleTargetEntityIdsFoundInPayload(@Nonnull List<Object> identifiers, @Nonnull Class<?> payloadClass) {
         super(String.format("Found multiple identifiers in payload of type [%s]: %s. Only one identifier is allowed.",
                             payloadClass.getName(), identifiers));
     }

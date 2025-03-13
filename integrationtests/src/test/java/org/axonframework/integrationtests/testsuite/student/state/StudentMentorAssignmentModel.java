@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.config.testsuite.student.models;
+package org.axonframework.integrationtests.testsuite.student.state;
 
-import org.axonframework.config.testsuite.student.common.StudentMentorModelIdentifier;
-import org.axonframework.config.testsuite.student.events.MentorAssignedToStudentEvent;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;
+import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
 
 public class StudentMentorAssignmentModel {
 

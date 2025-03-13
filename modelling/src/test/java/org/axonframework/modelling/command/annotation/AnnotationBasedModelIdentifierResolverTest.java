@@ -23,7 +23,7 @@ import org.junit.jupiter.api.*;
 
 class AnnotationBasedModelIdentifierResolverTest {
 
-    private final AnnotationBasedModelIdentifierResolver testSubject = new AnnotationBasedModelIdentifierResolver();
+    private final AnnotationBasedEntityIdResolver testSubject = new AnnotationBasedEntityIdResolver();
 
     @Test
     void testResolvesIdOfSingleTargetCommand() {
@@ -71,7 +71,7 @@ class AnnotationBasedModelIdentifierResolverTest {
         MultipleTargetCommand command = new MultipleTargetCommand("id-2792796", "id-2792797");
 
         // Then
-        Assertions.assertThrows(MultipleIdentifiersInPayloadException.class, () -> testSubject.resolve(
+        Assertions.assertThrows(MultipleTargetEntityIdsFoundInPayload.class, () -> testSubject.resolve(
                 new GenericCommandMessage<>(new MessageType(command.getClass()), command), ProcessingContext.NONE));
     }
 
@@ -91,7 +91,7 @@ class AnnotationBasedModelIdentifierResolverTest {
 
     static class SingleTargetCommand {
 
-        @TargetModelIdentifier
+        @TargetEntityId
         private final String targetId;
 
         SingleTargetCommand(String targetId) {
@@ -106,28 +106,28 @@ class AnnotationBasedModelIdentifierResolverTest {
 
     static class SingleTargetGetterCommand {
 
-        @TargetModelIdentifier
+        @TargetEntityId
         private final String targetId;
 
         SingleTargetGetterCommand(String targetId) {
             this.targetId = targetId;
         }
 
-        @TargetModelIdentifier
+        @TargetEntityId
         public String getTargetId() {
             return targetId;
         }
     }
 
-    static record SingleTargetRecordCommand(@TargetModelIdentifier String targetId) {
+    static record SingleTargetRecordCommand(@TargetEntityId String targetId) {
 
     }
 
     static class MultipleTargetCommand {
 
-        @TargetModelIdentifier
+        @TargetEntityId
         private final String targetId;
-        @TargetModelIdentifier
+        @TargetEntityId
         private final String targetId2;
 
         MultipleTargetCommand(String targetId, String targetId2) {

@@ -17,13 +17,22 @@
 package org.axonframework.integrationtests.testsuite.student;
 
 
+import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
+import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
 import org.axonframework.integrationtests.testsuite.student.events.StudentNameChangedEvent;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
+import org.axonframework.modelling.command.annotation.InjectEntity;
 import org.junit.jupiter.api.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests whether stateful command handling components can handle singular model commands.
@@ -33,7 +42,7 @@ class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite 
     @Test
     void canHandleCommandThatTargetsOneEntityUsingStateManager() {
         var component = StatefulCommandHandlingComponent
-                .create("MyStatefulCommandHandlingComponent", registry)
+                .create("MyStatefulCommandHandlingComponent", stateManager)
                 .subscribe(
                         new QualifiedName(ChangeStudentNameCommand.class),
                         (command, state, context) -> {
@@ -56,5 +65,43 @@ class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite 
         changeStudentName(component, "my-studentId-2", "name-5");
         verifyStudentName("my-studentId-1", "name-4");
         verifyStudentName("my-studentId-2", "name-5");
+    }
+
+    @Test
+    void canHandleCommandThatTargetsOneModelViaAnnotatedModelContainerParameter() {
+        SingleModelAnnotatedCommandHandler handler = new SingleModelAnnotatedCommandHandler();
+
+        var component = StatefulCommandHandlingComponent
+                .create("InjectedStateHandler", stateManager)
+                .subscribe(new AnnotatedCommandHandlingComponent<>(
+                        handler,
+                        getParameterResolverFactory()));
+
+
+        changeStudentName(component, "my-studentId-1", "name-1");
+        verifyStudentName("my-studentId-1", "name-1");
+
+
+        changeStudentName(component, "my-studentId-1", "name-2");
+        verifyStudentName("my-studentId-1", "name-2");
+    }
+
+    class SingleModelAnnotatedCommandHandler {
+
+        @CommandHandler
+        public void handle(
+                ChangeStudentNameCommand command,
+                @InjectEntity Student student,
+                EventSink eventSink,
+                ProcessingContext context
+        ) {
+            // Change name through event
+            eventSink.publish(context, DEFAULT_CONTEXT, new GenericEventMessage<>(
+                    new MessageType(StudentNameChangedEvent.class),
+                    new StudentNameChangedEvent(student.getId(), command.name())
+            ));
+            // Model through magic of repository automatically updated
+            assertEquals(student.getName(), command.name());
+        }
     }
 }

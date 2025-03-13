@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.ModelIdentifierResolver;
+import org.axonframework.modelling.command.EntityIdResolver;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Member;
@@ -30,48 +30,47 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.annotation.Nullable;
 
 /**
- * Implementation of a {@link ModelIdentifierResolver} that inspects the payload of a {@link Message} for an identifier.
- * The identifier is resolved by looking for a field or method annotated with {@link TargetModelIdentifier}.
+ * Implementation of a {@link EntityIdResolver} that inspects the payload of a {@link Message} for fields or methods
+ * annotated with {@link TargetEntityId}. Multiple fields may be annotated, but only exactly one must resolve a non-null
+ * value.
  * <p>
- * If multiple identifiers are found, an {@link MultipleIdentifiersInPayloadException} is thrown. It is advised to
- * implement your own {@link ModelIdentifierResolver} if a compound identifier is expected, or to make a getter method
- * that returns the compound identifier.
- * <p>
- * If no identifier is found, {@code null} is returned. This indicates that either no field has been found, or that the
- * field has a {@code null} value.
+ * If multiple ids are found, an {@link MultipleTargetEntityIdsFoundInPayload} is thrown. If no identifier is found at
+ * all, a {@link NoEntityIdFoundInPayload} is thrown as components depending on the identifier will not work.
  * <p>
  * For performance reasons, the resolved identifier members are cached per payload type.
  *
  * @author Mitchell Herrijgers
- * @see TargetModelIdentifier
- * @see ModelIdentifierResolver
+ * @see TargetEntityId
+ * @see EntityIdResolver
  * @since 5.0.0
  */
-public class AnnotationBasedModelIdentifierResolver implements ModelIdentifierResolver<Object> {
+public class AnnotationBasedEntityIdResolver implements EntityIdResolver<Object> {
 
-    private static final Class<TargetModelIdentifier> IDENTIFIER_ANNOTATION = TargetModelIdentifier.class;
+    private static final Class<TargetEntityId> IDENTIFIER_ANNOTATION = TargetEntityId.class;
     private final Map<Class<?>, List<Member>> cache = new ConcurrentHashMap<>();
 
-    @Nullable
+    @Nonnull
     @Override
     public Object resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
         Object payload = message.getPayload();
-        List<Object> identifiers = getIdentifiers(payload);
+        List<Object> identifiers = getIdentifiers(payload)
+                .stream()
+                .filter(Objects::nonNull)
+                .toList();
         if (identifiers.size() > 1) {
-            throw new MultipleIdentifiersInPayloadException(identifiers, payload.getClass());
+            throw new MultipleTargetEntityIdsFoundInPayload(identifiers, payload.getClass());
         }
         if (identifiers.isEmpty()) {
-            return null;
+            return new NoEntityIdFoundInPayload(payload.getClass());
         }
         return identifiers.getFirst();
     }
 
     /**
-     * Extracts the identifiers from the payload by looking for fields or methods annotated with
-     * {@link TargetModelIdentifier}.
+     * Extracts the ids from the payload by looking for fields and methods annotated with
+     * {@link TargetEntityId}.
      *
      * @param payload The payload to extract the identifiers from.
      * @return The identifiers found in the payload.
@@ -87,21 +86,21 @@ public class AnnotationBasedModelIdentifierResolver implements ModelIdentifierRe
     }
 
     /**
-     * Retrieves the members annotated with {@link TargetModelIdentifier} from the given {@code type}. If not present in
-     * the cache, the members are retrieved and cached.
+     * Retrieves the members annotated with {@link TargetEntityId} from the given {@code type}. If not present in the
+     * cache, the members are retrieved and cached.
      *
      * @param type The type to retrieve the members from.
-     * @return The members annotated with {@link TargetModelIdentifier}.
+     * @return The members annotated with {@link TargetEntityId}.
      */
     private List<Member> getMembers(Class<?> type) {
         return cache.computeIfAbsent(type, this::findMembers);
     }
 
     /**
-     * Finds the members annotated with {@link TargetModelIdentifier} in the given {@code type}.
+     * Finds the members annotated with {@link TargetEntityId} in the given {@code type}.
      *
      * @param type The type to find the members in.
-     * @return The members annotated with {@link TargetModelIdentifier}.
+     * @return The members annotated with {@link TargetEntityId}.
      */
     private List<Member> findMembers(Class<?> type) {
         var fields = StreamSupport.stream(ReflectionUtils.fieldsOf(type).spliterator(), false)
@@ -114,10 +113,10 @@ public class AnnotationBasedModelIdentifierResolver implements ModelIdentifierRe
     }
 
     /**
-     * Checks if the given {@code member} is annotated with {@link TargetModelIdentifier}.
+     * Checks if the given {@code member} is annotated with {@link TargetEntityId}.
      *
      * @param member The member to check for the annotation.
-     * @return {@code true} if the member is annotated with {@link TargetModelIdentifier}, {@code false} otherwise.
+     * @return {@code true} if the member is annotated with {@link TargetEntityId}, {@code false} otherwise.
      */
     private boolean hasIdentifierAnnotation(AnnotatedElement member) {
         return member.isAnnotationPresent(IDENTIFIER_ANNOTATION);

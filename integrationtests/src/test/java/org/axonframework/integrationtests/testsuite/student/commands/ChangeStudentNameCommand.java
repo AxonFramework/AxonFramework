@@ -16,8 +16,10 @@
 
 package org.axonframework.integrationtests.testsuite.student.commands;
 
+import org.axonframework.modelling.command.annotation.TargetEntityId;
+
 public record ChangeStudentNameCommand(
-        String id,
+        @TargetEntityId String id,
         String name
 ) {
 

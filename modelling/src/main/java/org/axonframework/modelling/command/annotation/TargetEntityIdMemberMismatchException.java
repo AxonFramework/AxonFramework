@@ -19,22 +19,22 @@ package org.axonframework.modelling.command.annotation;
 import jakarta.annotation.Nonnull;
 
 /**
- * Exception indicating that while using the {@link PropertyBasedModelIdentifierResolver}, the indicated field can not be found.
- * This indicates a mismatch between the property configured in the {@link InjectModel#idProperty()} and the actual
+ * Exception indicating that while using the {@link PropertyBasedEntityIdResolver} the indicated field could not be found.
+ * This indicates a mismatch between the property configured in the {@link InjectEntity#idProperty()} and the actual
  * payload class.
  *
  * @author Mitchell Herrijgers
- * @see PropertyBasedModelIdentifierResolver
- * @see InjectModel
+ * @see PropertyBasedEntityIdResolver
+ * @see InjectEntity
  * @since 5.0.0
  */
-public class TargetModelIdentifierMemberMismatchException extends RuntimeException {
+public class TargetEntityIdMemberMismatchException extends RuntimeException {
 
     /**
      * Initialize the exception with the given {@code fieldName} that was not found in the payload of type
      * {@code payloadClass}.
      */
-    public TargetModelIdentifierMemberMismatchException(@Nonnull String fieldName, @Nonnull Class<?> payloadClass) {
+    public TargetEntityIdMemberMismatchException(@Nonnull String fieldName, @Nonnull Class<?> payloadClass) {
         super(String.format(
                 "Could not find field [%s] or its accessor in payload of type [%s] as indicated on the @InjectModel annotation.",
                             fieldName,

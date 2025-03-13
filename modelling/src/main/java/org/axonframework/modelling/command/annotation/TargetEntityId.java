@@ -26,11 +26,12 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to be placed on a parameter of a {@link org.axonframework.messaging.MessageHandler} method that should
- * receive a model loaded from the {@link org.axonframework.modelling.command.ModelRegistry}. The parameter should be of
- * the type of the model to inject.
+ * receive an entity loaded from the {@link org.axonframework.modelling.StateManager}. The parameter should be of
+ * the type of the model to inject, or the {@link org.axonframework.modelling.repository.ManagedEntity} with the right
+ * generics.
  * <p>
- * Unless a specific {@code idResolver} is specified, the {@link AnnotationBasedModelIdentifierResolver} is used to resolve the
- * model identifier from the message. This is based on finding a {@link TargetModelIdentifier} annotation on a field or
+ * Unless a specific {@link InjectEntity#idResolver} is specified, the {@link AnnotationBasedEntityIdResolver} is used to resolve the
+ * model identifier from the message. This is based on finding a {@link TargetEntityId} annotation on a field or
  * accessor method of the message payload.
  *
  * @author Mitchell Herrijgers
@@ -39,6 +40,6 @@ import java.lang.annotation.Target;
 @RoutingKey
 @Target({ElementType.METHOD, ElementType.FIELD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface TargetModelIdentifier {
+public @interface TargetEntityId {
 
 }

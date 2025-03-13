@@ -14,32 +14,29 @@
  * limitations under the License.
  */
 
-package org.axonframework.config.testsuite.student;
+package org.axonframework.integrationtests.testsuite.student;
 
 
 import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.config.Configuration;
-import org.axonframework.config.testsuite.student.commands.AssignMentorCommand;
-import org.axonframework.config.testsuite.student.events.MentorAssignedToStudentEvent;
-import org.axonframework.config.testsuite.student.models.StudentMentorAssignmentModel;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.integrationtests.testsuite.student.commands.AssignMentorCommand;
+import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
+import org.axonframework.integrationtests.testsuite.student.state.StudentMentorAssignmentModel;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.ModelRegistry;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
-import org.axonframework.modelling.command.annotation.InjectModel;
+import org.axonframework.modelling.command.annotation.InjectEntity;
 import org.junit.jupiter.api.*;
-import org.mockito.*;
 
 import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests the injection of a compound model based on a compound identifier that loads events of two tags. Currently is
- * disabled, as two requirements are not met:
+ * Tests the injection of a compound entity based on a compound id that loads events of two tags. Currently is disabled,
+ * as two requirements are not met:
  * <ol>
  *     <li>EventStore does not support multiple tags in a single query</li>
  *     <li>EventCriteria does not support OR on tags</li>
@@ -47,19 +44,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * In time, I expect this test to work, and for now it serves as an example.
  * NOTE: Using manual, temporary code edits this test WORKED.
  */
-class CompoundModelIdentifierCommandHandlingComponentTest extends AbstractStudentTestsuite {
+class CompoundModelIdentifierCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
     @Test
     @Disabled
     void canHandleCommandThatTargetsMultipleModelsViaInjectionOfCompoundModel() {
 
-        var configuration = Mockito.mock(Configuration.class);
-        Mockito.when(configuration.getComponent(ModelRegistry.class)).thenReturn(registry);
-        Mockito.when(configuration.getComponent(EventSink.class)).thenReturn(eventStore);
-
         CompoundModelAnnotatedCommandHandler handler = new CompoundModelAnnotatedCommandHandler();
         var component = StatefulCommandHandlingComponent
-                .create("InjectedStateHandler", registry)
+                .create("InjectedStateHandler", stateManager)
                 .subscribe(new AnnotatedCommandHandlingComponent<>(
                         handler,
                         getParameterResolverFactory()));
@@ -71,7 +64,7 @@ class CompoundModelIdentifierCommandHandlingComponentTest extends AbstractStuden
         var exception = assertThrows(CompletionException.class,
                                      () -> sendCommand(component,
                                                        new AssignMentorCommand("my-studentId-1",
-                                                                                       "my-studentId-3")
+                                                                               "my-studentId-3")
                                      ));
         assertInstanceOf(IllegalArgumentException.class, exception.getCause());
         assertTrue(exception.getCause().getMessage().contains("Mentee already has a mentor"));
@@ -81,7 +74,7 @@ class CompoundModelIdentifierCommandHandlingComponentTest extends AbstractStuden
 
         @CommandHandler
         public void handle(AssignMentorCommand command,
-                           @InjectModel StudentMentorAssignmentModel model,
+                           @InjectEntity StudentMentorAssignmentModel model,
                            EventSink eventSink,
                            ProcessingContext context
         ) {

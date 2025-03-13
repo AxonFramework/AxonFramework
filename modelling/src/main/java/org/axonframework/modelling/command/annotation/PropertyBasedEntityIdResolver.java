@@ -22,23 +22,24 @@ import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.ModelIdentifierResolver;
+import org.axonframework.modelling.command.EntityIdResolver;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.annotation.Nullable;
 
 /**
- * Implementation of a {@link ModelIdentifierResolver} that inspects the payload of a {@link Message} for an identifier. The
+ * Implementation of a {@link EntityIdResolver} that inspects the payload of a {@link Message} for an identifier. The
  * identifier is resolved by looking for a field or method with the given {@code property} name. Methods will
  * automatically be resolved by looking for a method with the name {@code get<Property>} or {@code <Property>}.
  * <p>
- * For performance reasons, the resolved identifier members are cached per payload type.
+ * This field or method needs to have or return a non-null value. If a {@code null} value is found, a
+ * {@link NullEntityIdInPayloadException} is thrown. If no member is found at all, a
+ * {@link TargetEntityIdMemberMismatchException} is thrown.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class PropertyBasedModelIdentifierResolver implements ModelIdentifierResolver<Object> {
+public class PropertyBasedEntityIdResolver implements EntityIdResolver<Object> {
 
     private final Map<Class<?>, Property<Object>> propertyCache = new ConcurrentHashMap<>();
     private final String property;
@@ -48,24 +49,28 @@ public class PropertyBasedModelIdentifierResolver implements ModelIdentifierReso
      *
      * @param property The name of the property to resolve the identifier from.
      */
-    public PropertyBasedModelIdentifierResolver(@Nonnull String property) {
+    public PropertyBasedEntityIdResolver(@Nonnull String property) {
         BuilderUtils.assertNonEmpty(property, "Property cannot be empty or null");
         this.property = property;
     }
 
-    @Nullable
+    @Nonnull
     @Override
     public Object resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
         Object payload = message.getPayload();
         Class<?> payloadClass = payload.getClass();
         var property = propertyCache.computeIfAbsent(payloadClass, this::getObjectProperty);
-        return property.getValue(payload);
+        Object value = property.getValue(payload);
+        if (value == null) {
+            throw new NullEntityIdInPayloadException(payloadClass);
+        }
+        return value;
     }
 
     private Property<Object> getObjectProperty(Class<?> payloadClass) {
         Property<Object> foundProperty = PropertyAccessStrategy.getProperty(payloadClass, property);
         if (foundProperty == null) {
-            throw new TargetModelIdentifierMemberMismatchException(property, payloadClass);
+            throw new TargetEntityIdMemberMismatchException(property, payloadClass);
         }
         return foundProperty;
     }

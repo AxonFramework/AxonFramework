@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.config.testsuite.student.commands;
+package org.axonframework.integrationtests.testsuite.student.events;
 
-import org.axonframework.modelling.command.annotation.TargetModelIdentifier;
+import org.axonframework.eventsourcing.annotations.EventTag;
 
-public record ChangeStudentNameCommand(
-        @TargetModelIdentifier
-        String id,
-        String name
+public record MentorAssignedToStudentEvent(
+        @EventTag(key = "Student")
+        String mentorId,
+        @EventTag(key = "Student")
+        String menteeId
 ) {
 
 }
