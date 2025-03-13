@@ -50,6 +50,8 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
     private final ResourceKey<Map<ID, CompletableFuture<EventSourcedEntity<ID, M>>>> managedEntitiesKey =
             ResourceKey.withLabel("managedEntities");
 
+    private final Class<ID> idType;
+    private final Class<M> entityType;
     private final AsyncEventStore eventStore;
     private final CriteriaResolver<ID> criteriaResolver;
     private final EventStateApplier<M> eventStateApplier;
@@ -62,24 +64,29 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
      * the {@link org.axonframework.eventsourcing.eventstore.EventCriteria} of the given identifier type used to source
      * a model.
      *
-     * @param eventStore         The event store to load events from.
-     * @param criteriaResolver   Converts the given identifier to an
-     *                           {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a
-     *                           matching event stream.
-     * @param eventStateApplier  The function to apply event state changes to the loaded entities.
+     * @param eventStore        The event store to load events from.
+     * @param criteriaResolver  Converts the given identifier to an
+     *                          {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a matching
+     *                          event stream.
+     * @param eventStateApplier The function to apply event state changes to the loaded entities.
      * @param newInstanceFactory A factory method to create new instances of the model based on a provided identifier.
      * @param context            The (bounded) context this {@code AsyncEventSourcingRepository} provides access to
      *                           models for.
      */
-    public AsyncEventSourcingRepository(AsyncEventStore eventStore,
-                                        CriteriaResolver<ID> criteriaResolver,
-                                        EventStateApplier<M> eventStateApplier,
-                                        Function<ID, M> newInstanceFactory,
-                                        String context) {
+    public AsyncEventSourcingRepository(
+            Class<ID> idType,
+            Class<M> entityType,
+            AsyncEventStore eventStore,
+            CriteriaResolver<ID> criteriaResolver,
+            EventStateApplier<M> eventStateApplier,
+            Function<ID, M> newInstanceFactory,
+            String context) {
+        this.idType = idType;
+        this.entityType = entityType;
         this.eventStore = eventStore;
         this.criteriaResolver = criteriaResolver;
-        this.newInstanceFactory = newInstanceFactory;
         this.eventStateApplier = eventStateApplier;
+        this.newInstanceFactory = newInstanceFactory;
         this.context = context;
     }
 
@@ -96,6 +103,18 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
                     return CompletableFuture.completedFuture(sourcedEntity);
                 }
         ).resultNow();
+    }
+
+    @Nonnull
+    @Override
+    public Class<M> entityType() {
+        return entityType;
+    }
+
+    @Nonnull
+    @Override
+    public Class<ID> idType() {
+        return idType;
     }
 
     @Override
@@ -117,7 +136,6 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
                                         updateActiveModel(entity, processingContext);
                                     }
                                 })
-
         ).thenApply(Function.identity());
     }
 
@@ -163,6 +181,8 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("idType", idType);
+        descriptor.describeProperty("entityType", entityType);
         descriptor.describeProperty("eventStore", eventStore);
         descriptor.describeProperty("criteriaResolver", criteriaResolver);
         descriptor.describeProperty("eventStateApplier", eventStateApplier);

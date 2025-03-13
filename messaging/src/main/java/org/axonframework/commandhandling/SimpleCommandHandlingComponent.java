@@ -73,9 +73,10 @@ public class SimpleCommandHandlingComponent implements
     @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull QualifiedName name,
                                                     @Nonnull CommandHandler commandHandler) {
-        requireNonNull(name, "The name of the command handler may not be null");
-        requireNonNull(commandHandler, "The command handler may not be null");
-        commandHandlers.put(name, commandHandler);
+        commandHandlers.put(
+                requireNonNull(name, "The name of the command handler may not be null"),
+                requireNonNull(commandHandler, "The command handler may not be null")
+        );
         return this;
     }
 
@@ -108,7 +109,7 @@ public class SimpleCommandHandlingComponent implements
             return commandHandlers.get(qualifiedName).handle(command, context);
         }
         return MessageStream.failed(new NoHandlerForCommandException(
-                "No handler was subscribed for command with qualified name[%s] on component [%s]. Registered handlers: [%s]".formatted(
+                "No handler was subscribed for command with qualified name [%s] on component [%s]. Registered handlers: [%s]".formatted(
                         qualifiedName.fullName(),
                         this.getClass().getName(),
                         supportedCommands()
@@ -120,7 +121,7 @@ public class SimpleCommandHandlingComponent implements
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("commandHandlers", commandHandlers);
-        descriptor.describeProperty("subCommandHandlingComponents", commandHandlers);
+        descriptor.describeProperty("subComponents", subComponents);
     }
 
     @Override

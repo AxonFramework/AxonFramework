@@ -68,6 +68,18 @@ public class AccessSerializingRepository<ID, T>
         return delegate.attach(entity, processingContext);
     }
 
+    @Nonnull
+    @Override
+    public Class<T> entityType() {
+        return delegate.entityType();
+    }
+
+    @Nonnull
+    @Override
+    public Class<ID> idType() {
+        return delegate.idType();
+    }
+
     @Override
     public CompletableFuture<ManagedEntity<ID, T>> load(@Nonnull ID identifier,
                                                         @Nonnull ProcessingContext processingContext) {
