@@ -62,23 +62,23 @@ class ComponentTest {
 
 
     @Test
-    void getThrowsNullPointerExceptionForNullConfiguration() {
+    void initThrowsNullPointerExceptionForNullConfiguration() {
         Component<String> testSubject = new Component<>(identifier, factory);
 
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.get(null, lifecycleRegistry));
+        assertThrows(NullPointerException.class, () -> testSubject.init(null, lifecycleRegistry));
     }
 
     @Test
-    void getThrowsNullPointerExceptionForNullLifecycleRegistry() {
+    void initThrowsNullPointerExceptionForNullLifecycleRegistry() {
         Component<String> testSubject = new Component<>(identifier, factory);
 
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.get(configuration, null));
+        assertThrows(NullPointerException.class, () -> testSubject.init(configuration, null));
     }
 
     @Test
-    void getInvokesComponentBuilderMethodOnlyOnce() {
+    void initInvokesComponentBuilderMethodOnlyOnce() {
         AtomicInteger counter = new AtomicInteger();
 
         Component<String> testSubject = new Component<>(identifier, c -> {
@@ -87,9 +87,9 @@ class ComponentTest {
         });
 
         assertEquals(0, counter.get());
-        testSubject.get(configuration, lifecycleRegistry);
+        testSubject.init(configuration, lifecycleRegistry);
         assertEquals(1, counter.get());
-        testSubject.get(configuration, lifecycleRegistry);
+        testSubject.init(configuration, lifecycleRegistry);
         assertEquals(1, counter.get());
     }
 
@@ -102,7 +102,7 @@ class ComponentTest {
                    .decorate((c, delegate) -> delegate + "b", 1)
                    .decorate((c, delegate) -> delegate + "c", 0);
 
-        assertEquals(expectedComponent, testSubject.get(configuration, lifecycleRegistry));
+        assertEquals(expectedComponent, testSubject.init(configuration, lifecycleRegistry));
     }
 
     @Test
@@ -115,8 +115,8 @@ class ComponentTest {
         testSubject.decorate((c, delegate) -> delegate + replacedDecoration, testOrder)
                    .decorate((c, delegate) -> delegate + keptDecoration, testOrder);
 
-        assertNotEquals(TEST_COMPONENT + replacedDecoration, testSubject.get(configuration, lifecycleRegistry));
-        assertEquals(TEST_COMPONENT + keptDecoration, testSubject.get(configuration, lifecycleRegistry));
+        assertNotEquals(TEST_COMPONENT + replacedDecoration, testSubject.init(configuration, lifecycleRegistry));
+        assertEquals(TEST_COMPONENT + keptDecoration, testSubject.init(configuration, lifecycleRegistry));
     }
 
     @Test
@@ -124,7 +124,7 @@ class ComponentTest {
         Component<String> testSubject = new Component<>(identifier, factory);
 
         assertFalse(testSubject.isInitialized());
-        testSubject.get(configuration, lifecycleRegistry);
+        testSubject.init(configuration, lifecycleRegistry);
         assertTrue(testSubject.isInitialized());
     }
 

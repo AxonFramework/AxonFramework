@@ -202,7 +202,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nonnull String name) {
             return components.get(new Identifier<>(type, name))
-                             .map(component -> component.get(config(), AbstractConfigurer.this))
+                             .map(component -> component.init(config(), AbstractConfigurer.this))
                              .or(() -> optionalFromParent(type, name, () -> null));
         }
 
@@ -218,7 +218,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
                             identifier,
                             c -> optionalFromParent(type, name, defaultImpl).orElseGet(defaultImpl)
                     )
-            ).get(config(), AbstractConfigurer.this);
+            ).init(config(), AbstractConfigurer.this);
             return identifier.type().cast(component);
         }
 

@@ -35,7 +35,7 @@ import static org.axonframework.common.Assert.assertThat;
  * A component describes an object that needs to be created, possibly based on other components in the
  * {@link NewConfiguration}.
  * <p>
- * Components are lazily initialized when they are {@link #get(NewConfiguration, LifecycleRegistry) accessed}. During
+ * Components are lazily initialized when they are {@link #init(NewConfiguration, LifecycleRegistry) accessed}. During
  * the initialization, they may trigger initialization of the components they depend on. Furthermore, if the constructed
  * component is a {@link Lifecycle} implementation, it will be registered with a {@link LifecycleRegistry} during the
  * initialization. If this step registered start handlers in a phase that the {@link RootConfiguration#start()} already
@@ -82,8 +82,8 @@ public class Component<C> {
      *                          {@link Lifecycle}.
      * @return The initialized component contained in this instance.
      */
-    public C get(@Nonnull NewConfiguration configuration,
-                 @Nonnull LifecycleRegistry<?> lifecycleRegistry) {
+    public C init(@Nonnull NewConfiguration configuration,
+                  @Nonnull LifecycleRegistry<?> lifecycleRegistry) {
         if (instance != null) {
             return instance;
         }
@@ -104,7 +104,7 @@ public class Component<C> {
     }
 
     /**
-     * Decorates the contained component upon {@link #get(NewConfiguration, LifecycleRegistry) initialization} by
+     * Decorates the contained component upon {@link #init(NewConfiguration, LifecycleRegistry) initialization} by
      * passing it through the given {@code decorator} at the specified {@code order}.
      * <p>
      * The {@code order} of the {@code decorator} will impact the decoration ordering of the outcome of this component.
@@ -112,7 +112,7 @@ public class Component<C> {
      * present at the given {@code order}.
      *
      * @param decorator The {@code ComponentDecorator} to use on the contained component upon
-     *                  {@link #get(NewConfiguration, LifecycleRegistry) initialization}.
+     *                  {@link #init(NewConfiguration, LifecycleRegistry) initialization}.
      * @param order     Defines the ordering of the given {@code decorator} among all other
      *                  {@link ComponentDecorator ComponentDecorators} that have been registered.
      * @return This {@code Component}, for a fluent API.
