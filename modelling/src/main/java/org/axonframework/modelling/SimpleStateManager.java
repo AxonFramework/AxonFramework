@@ -136,7 +136,7 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
          * <p>
          * The combination of {@link AsyncRepository#entityType() entity type} and
          * {@link AsyncRepository#idType() id type} of all repositories must be unique and unambigious. This means you
-         * can not register a repository if another conflicting repository alread yexists. If you do, a
+         * can not register a repository if another conflicting repository already exists. If you do, a
          * {@link ConflictingRepositoryAlreadyRegisteredException} will be thrown. Note that superclasses and subclasses
          * of each other are considered conflicting.
          *
@@ -169,7 +169,7 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
          * <p>
          * The combination of {@link AsyncRepository#entityType() entity type} and
          * {@link AsyncRepository#idType() id type} of all repositories must be unique and unambigious. This means you
-         * can not register a repository if another conflicting repository alread yexists. If you do, a
+         * can not register a repository if another conflicting repository already exists. If you do, a
          * {@link ConflictingRepositoryAlreadyRegisteredException} will be thrown. Note that superclasses and subclasses
          * of each other are considered conflicting.
          *

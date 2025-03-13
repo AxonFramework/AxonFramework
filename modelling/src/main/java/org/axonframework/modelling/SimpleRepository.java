@@ -95,13 +95,13 @@ public class SimpleRepository<I, T> implements AsyncRepository.LifecycleManageme
         ).resultNow();
     }
 
-    @javax.annotation.Nonnull
+    @Nonnull
     @Override
     public Class<T> entityType() {
         return entityType;
     }
 
-    @javax.annotation.Nonnull
+    @Nonnull
     @Override
     public Class<I> idType() {
         return idType;
@@ -152,6 +152,8 @@ public class SimpleRepository<I, T> implements AsyncRepository.LifecycleManageme
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("idClass", idType);
         descriptor.describeProperty("entityClass", entityType);
+        descriptor.describeProperty("loader", loader);
+        descriptor.describeProperty("persister", persister);
     }
 
     /**
@@ -172,8 +174,8 @@ public class SimpleRepository<I, T> implements AsyncRepository.LifecycleManageme
         }
 
         private static <ID, T> SimpleEntity<ID, T> mapToSimpleEntity(ManagedEntity<ID, T> entity) {
-            return entity instanceof SimpleEntity<ID, T> eventSourcedEntity
-                    ? eventSourcedEntity
+            return entity instanceof SimpleEntity<ID, T> simpleEntity
+                    ? simpleEntity
                     : new SimpleEntity<>(entity.identifier(), entity.entity());
         }
 

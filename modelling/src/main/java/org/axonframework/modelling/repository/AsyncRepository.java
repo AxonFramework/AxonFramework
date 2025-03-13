@@ -42,14 +42,15 @@ public sealed interface AsyncRepository<ID, T>
     /**
      * The type of entity stored in this repository.
      *
-     * @return the type of entity stored in this repository
+     * @return The type of entity stored in this repository.
      */
     @Nonnull
     Class<T> entityType();
 
     /**
      * The type of the identifier used to identify entities in this repository.
-     * @return the type of the identifier used to identify entities in this repository
+     *
+     * @return The type of the identifier used to identify entities in this repository.
      */
     @Nonnull
     Class<ID> idType();

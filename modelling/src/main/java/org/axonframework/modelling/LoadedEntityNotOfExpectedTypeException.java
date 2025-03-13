@@ -30,7 +30,7 @@ import org.axonframework.modelling.repository.AsyncRepository;
 public class LoadedEntityNotOfExpectedTypeException extends RuntimeException {
 
     /**
-     * Initialize the exception with a message containing entity type that was loaded and the type that was expected
+     * Initialize the exception with a message containing entity type that was loaded and the type that was expected.
      *
      * @param entityType   The type of the entity that was loaded and is not assignable to the expected type.
      * @param expectedType The type that was expected.

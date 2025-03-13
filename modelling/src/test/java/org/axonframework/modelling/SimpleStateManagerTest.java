@@ -113,17 +113,17 @@ class SimpleStateManagerTest {
     @Test
     void returnsAllRegisteredIdentifiersForAnEntity() {
         // given
-        SimpleRepository<String, MyFirstImplementingClass> repository = new SimpleRepository<>(
+        SimpleRepository<String, MyFirstImplementingEntity> repository = new SimpleRepository<>(
                 String.class,
-                MyFirstImplementingClass.class,
-                (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingClass()),
+                MyFirstImplementingEntity.class,
+                (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingEntity()),
                 (id, entity, context) -> CompletableFuture.completedFuture(null)
         );
 
-        SimpleRepository<Integer, MyFirstImplementingClass> repository2 = new SimpleRepository<>(
+        SimpleRepository<Integer, MyFirstImplementingEntity> repository2 = new SimpleRepository<>(
                 Integer.class,
-                MyFirstImplementingClass.class,
-                (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingClass()),
+                MyFirstImplementingEntity.class,
+                (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingEntity()),
                 (id, entity, context) -> CompletableFuture.completedFuture(null)
         );
 
@@ -133,7 +133,7 @@ class SimpleStateManagerTest {
                                                             .build();
 
         // when
-        var result = stateManager.registeredIdsFor(MyFirstImplementingClass.class);
+        var result = stateManager.registeredIdsFor(MyFirstImplementingEntity.class);
 
         // then
         assertEquals(2, result.size());
@@ -147,10 +147,10 @@ class SimpleStateManagerTest {
         @Test
         void canRequestMoreSpecificEntityThanDefinedInRepositoryIfTypeMatches() {
             // given
-            SimpleRepository<String, MySuperClass> repository = new SimpleRepository<>(
+            SimpleRepository<String, MySuperEntity> repository = new SimpleRepository<>(
                     String.class,
-                    MySuperClass.class,
-                    (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingClass()),
+                    MySuperEntity.class,
+                    (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
             SimpleStateManager stateManager = SimpleStateManager.builder("test")
@@ -158,7 +158,7 @@ class SimpleStateManagerTest {
                                                                 .build();
 
             // when
-            var result = stateManager.loadManagedEntity(MyFirstImplementingClass.class,
+            var result = stateManager.loadManagedEntity(MyFirstImplementingEntity.class,
                                                         "42",
                                                         new StubProcessingContext()).join();
 
@@ -169,10 +169,10 @@ class SimpleStateManagerTest {
         @Test
         void canNotRequestLessSpecificEntityThanDefinedInRepository() {
             // given
-            SimpleRepository<String, MyFirstImplementingClass> repository = new SimpleRepository<>(
+            SimpleRepository<String, MyFirstImplementingEntity> repository = new SimpleRepository<>(
                     String.class,
-                    MyFirstImplementingClass.class,
-                    (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingClass()),
+                    MyFirstImplementingEntity.class,
+                    (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
             SimpleStateManager stateManager = SimpleStateManager.builder("test")
@@ -181,17 +181,17 @@ class SimpleStateManagerTest {
 
             // when & then
             assertThrows(MissingRepositoryException.class,
-                         () -> stateManager.loadManagedEntity(MySuperClass.class, "42", new StubProcessingContext())
+                         () -> stateManager.loadManagedEntity(MySuperEntity.class, "42", new StubProcessingContext())
                                            .join());
         }
 
         @Test
         void canRequestAnEntityWithAMoreSpecificIdentifierThanDefinedByRepository() {
             // given
-            SimpleRepository<MySuperClass, String> repository = new SimpleRepository<>(
-                    MySuperClass.class,
-                    String.class,
-                    (id, context) -> CompletableFuture.completedFuture("42"),
+            SimpleRepository<MySuperId, MySuperEntity> repository = new SimpleRepository<>(
+                    MySuperId.class,
+                    MySuperEntity.class,
+                    (id, context) -> CompletableFuture.completedFuture(new MySuperEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
             SimpleStateManager stateManager = SimpleStateManager.builder("test")
@@ -199,8 +199,8 @@ class SimpleStateManagerTest {
                                                                 .build();
 
             // when
-            var result = stateManager.loadManagedEntity(String.class,
-                                                        new MyFirstImplementingClass(),
+            var result = stateManager.loadManagedEntity(MySuperEntity.class,
+                                                        new MySuperId(),
                                                         new StubProcessingContext()).join();
 
             // then
@@ -210,10 +210,10 @@ class SimpleStateManagerTest {
         @Test
         void canNotRequestAnEntityWithALessSpecificIdentifierThanDefinedByRepository() {
             // given
-            SimpleRepository<MySecondImplementingClass, String> repository = new SimpleRepository<>(
-                    MySecondImplementingClass.class,
-                    String.class,
-                    (id, context) -> CompletableFuture.completedFuture("something"),
+            SimpleRepository<MyFirstImplementingId, MySuperEntity> repository = new SimpleRepository<>(
+                    MyFirstImplementingId.class,
+                    MySuperEntity.class,
+                    (id, context) -> CompletableFuture.completedFuture(new MySuperEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null));
             SimpleStateManager stateManager = SimpleStateManager.builder("test")
                                                                 .register(repository)
@@ -221,25 +221,25 @@ class SimpleStateManagerTest {
 
             // when & then
             assertThrows(MissingRepositoryException.class,
-                         () -> stateManager.loadManagedEntity(String.class,
-                                                              new MySuperClass(),
+                         () -> stateManager.loadManagedEntity(MySuperEntity.class,
+                                                              new MySuperId(),
                                                               new StubProcessingContext()).join());
         }
 
         @Test
         void canRegisterTwoRepositoriesWithSameSuperClass() {
             // given
-            SimpleRepository<String, MyFirstImplementingClass> repository = new SimpleRepository<>(
+            SimpleRepository<String, MyFirstImplementingEntity> repository = new SimpleRepository<>(
                     String.class,
-                    MyFirstImplementingClass.class,
-                    (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingClass()),
+                    MyFirstImplementingEntity.class,
+                    (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
 
-            SimpleRepository<String, MySecondImplementingClass> repository2 = new SimpleRepository<>(
+            SimpleRepository<String, MySecondImplementingEntity> repository2 = new SimpleRepository<>(
                     String.class,
-                    MySecondImplementingClass.class,
-                    (id, context) -> CompletableFuture.completedFuture(new MySecondImplementingClass()),
+                    MySecondImplementingEntity.class,
+                    (id, context) -> CompletableFuture.completedFuture(new MySecondImplementingEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
 
@@ -249,10 +249,10 @@ class SimpleStateManagerTest {
                                                                 .build();
 
             // when
-            var result = stateManager.loadManagedEntity(MyFirstImplementingClass.class,
+            var result = stateManager.loadManagedEntity(MyFirstImplementingEntity.class,
                                                         "42",
                                                         new StubProcessingContext()).join();
-            var result2 = stateManager.loadManagedEntity(MySecondImplementingClass.class,
+            var result2 = stateManager.loadManagedEntity(MySecondImplementingEntity.class,
                                                          "42",
                                                          new StubProcessingContext()).join();
 
@@ -264,10 +264,10 @@ class SimpleStateManagerTest {
         @Test
         void requestingASpecificClassWhileLoaderReturnsSuperclassShouldFail() {
             // given
-            SimpleRepository<String, MySuperClass> repository = new SimpleRepository<>(
+            SimpleRepository<String, MySuperEntity> repository = new SimpleRepository<>(
                     String.class,
-                    MySuperClass.class,
-                    (id, context) -> CompletableFuture.completedFuture(new MySuperClass()),
+                    MySuperEntity.class,
+                    (id, context) -> CompletableFuture.completedFuture(new MySuperEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
             SimpleStateManager stateManager = SimpleStateManager.builder("test")
@@ -276,7 +276,7 @@ class SimpleStateManagerTest {
 
             // when & then
             var exception = assertThrows(CompletionException.class, () -> stateManager.loadManagedEntity(
-                    MyFirstImplementingClass.class,
+                    MyFirstImplementingEntity.class,
                     "42",
                     new StubProcessingContext()).join());
             assertInstanceOf(LoadedEntityNotOfExpectedTypeException.class, exception.getCause());
@@ -285,17 +285,17 @@ class SimpleStateManagerTest {
         @Test
         void canNotRegisterSubclassOfAlreadyRegisteredEntity() {
             // given
-            SimpleRepository<String, MySuperClass> repository = new SimpleRepository<>(
+            SimpleRepository<String, MySuperEntity> repository = new SimpleRepository<>(
                     String.class,
-                    MySuperClass.class,
-                    (id, context) -> CompletableFuture.completedFuture(new MySuperClass()),
+                    MySuperEntity.class,
+                    (id, context) -> CompletableFuture.completedFuture(new MySuperEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
 
-            SimpleRepository<String, MyFirstImplementingClass> repository2 = new SimpleRepository<>(
+            SimpleRepository<String, MyFirstImplementingEntity> repository2 = new SimpleRepository<>(
                     String.class,
-                    MyFirstImplementingClass.class,
-                    (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingClass()),
+                    MyFirstImplementingEntity.class,
+                    (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
 
@@ -310,16 +310,16 @@ class SimpleStateManagerTest {
         @Test
         void canNotRegisterSuperclassOfAlreadyRegisteredEntity() {
             // given
-            SimpleRepository<String, MyFirstImplementingClass> repository = new SimpleRepository<>(
+            SimpleRepository<String, MyFirstImplementingEntity> repository = new SimpleRepository<>(
                     String.class,
-                    MyFirstImplementingClass.class,
-                    (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingClass()),
+                    MyFirstImplementingEntity.class,
+                    (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
-            SimpleRepository<String, MySuperClass> repository2 = new SimpleRepository<>(
+            SimpleRepository<String, MySuperEntity> repository2 = new SimpleRepository<>(
                     String.class,
-                    MySuperClass.class,
-                    (id, context) -> CompletableFuture.completedFuture(new MySuperClass()),
+                    MySuperEntity.class,
+                    (id, context) -> CompletableFuture.completedFuture(new MySuperEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
 
@@ -334,17 +334,17 @@ class SimpleStateManagerTest {
         @Test
         void canRegisterAndLoadSameEntitywithDifferentIdentifierClasses() {
             // given
-            SimpleRepository<String, MyFirstImplementingClass> repository = new SimpleRepository<>(
+            SimpleRepository<String, MyFirstImplementingEntity> repository = new SimpleRepository<>(
                     String.class,
-                    MyFirstImplementingClass.class,
-                    (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingClass()),
+                    MyFirstImplementingEntity.class,
+                    (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
 
-            SimpleRepository<Integer, MyFirstImplementingClass> repository2 = new SimpleRepository<>(
+            SimpleRepository<Integer, MyFirstImplementingEntity> repository2 = new SimpleRepository<>(
                     Integer.class,
-                    MyFirstImplementingClass.class,
-                    (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingClass()),
+                    MyFirstImplementingEntity.class,
+                    (id, context) -> CompletableFuture.completedFuture(new MyFirstImplementingEntity()),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
 
@@ -354,10 +354,10 @@ class SimpleStateManagerTest {
                                                                 .build();
 
             // when
-            var result = stateManager.loadManagedEntity(MyFirstImplementingClass.class,
+            var result = stateManager.loadManagedEntity(MyFirstImplementingEntity.class,
                                                         "42",
                                                         new StubProcessingContext()).join();
-            var result2 = stateManager.loadManagedEntity(MyFirstImplementingClass.class,
+            var result2 = stateManager.loadManagedEntity(MyFirstImplementingEntity.class,
                                                          42,
                                                          new StubProcessingContext()).join();
 
@@ -369,15 +369,15 @@ class SimpleStateManagerTest {
         @Test
         void canNotRegisterSecondIdClassForSameEntityTypeWhichIsASuperClassOfFirstIdClass() {
             // given
-            SimpleRepository<MyFirstImplementingClass, String> repository = new SimpleRepository<>(
-                    MyFirstImplementingClass.class,
+            SimpleRepository<MyFirstImplementingEntity, String> repository = new SimpleRepository<>(
+                    MyFirstImplementingEntity.class,
                     String.class,
                     (id, context) -> CompletableFuture.completedFuture("42"),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
 
-            SimpleRepository<MySuperClass, String> repository2 = new SimpleRepository<>(
-                    MySuperClass.class,
+            SimpleRepository<MySuperEntity, String> repository2 = new SimpleRepository<>(
+                    MySuperEntity.class,
                     String.class,
                     (id, context) -> CompletableFuture.completedFuture("42"),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
@@ -394,15 +394,15 @@ class SimpleStateManagerTest {
         @Test
         void canNotRegisterSecondIdClassForSameEntityTypeWhichIsASubclassOfFirstIdClass() {
             // given
-            SimpleRepository<MySuperClass, String> repository = new SimpleRepository<>(
-                    MySuperClass.class,
+            SimpleRepository<MySuperEntity, String> repository = new SimpleRepository<>(
+                    MySuperEntity.class,
                     String.class,
                     (id, context) -> CompletableFuture.completedFuture("42"),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
             );
 
-            SimpleRepository<MyFirstImplementingClass, String> repository2 = new SimpleRepository<>(
-                    MyFirstImplementingClass.class,
+            SimpleRepository<MyFirstImplementingEntity, String> repository2 = new SimpleRepository<>(
+                    MyFirstImplementingEntity.class,
                     String.class,
                     (id, context) -> CompletableFuture.completedFuture("42"),
                     (id, entity, context) -> CompletableFuture.completedFuture(null)
@@ -417,15 +417,23 @@ class SimpleStateManagerTest {
     }
 
 
-    class MySuperClass {
+    class MySuperEntity {
 
     }
 
-    class MyFirstImplementingClass extends MySuperClass {
+    class MyFirstImplementingEntity extends MySuperEntity {
 
     }
 
-    class MySecondImplementingClass extends MySuperClass {
+    class MySecondImplementingEntity extends MySuperEntity {
+
+    }
+
+    class MySuperId {
+
+    }
+
+    class MyFirstImplementingId extends MySuperId {
 
     }
 }
