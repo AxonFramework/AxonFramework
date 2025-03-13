@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.config.EventProcessingConfiguration;
+import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
@@ -116,7 +117,7 @@ public class EventProcessorControlService implements Lifecycle {
     }
 
     @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry<?> lifecycle) {
         lifecycle.onStart(Phase.INSTRUCTION_COMPONENTS, this::start);
     }
 

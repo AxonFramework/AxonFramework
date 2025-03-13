@@ -16,19 +16,21 @@
 
 package org.axonframework.springboot;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -338,7 +340,7 @@ class AxonAutoConfigurationTest {
         private boolean invoked;
 
         @Override
-        public void registerLifecycleHandlers(LifecycleRegistry lifecycle) {
+        public void registerLifecycleHandlers(@Nonnull LifecycleRegistry<?> lifecycle) {
             this.invoked = true;
         }
 

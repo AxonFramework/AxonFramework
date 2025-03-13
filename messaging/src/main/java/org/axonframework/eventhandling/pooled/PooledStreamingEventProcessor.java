@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.eventhandling.pooled;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.ErrorHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
@@ -193,7 +194,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     }
 
     @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry<?> handle) {
         handle.onStart(Phase.INBOUND_EVENT_CONNECTORS, this::start);
         handle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdownAsync);
     }
