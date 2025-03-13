@@ -25,19 +25,21 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.assertThat;
 
 /**
- * A component used in the Axon's configuration API.
+ * A wrapper of "components" used in the Axon Framework's configuration API.
  * <p>
  * A component describes an object that needs to be created, possibly based on other components in the
- * {@link LifecycleSupportingConfiguration}, and initialized as part of the {@code NewConfiguration}.
+ * {@link NewConfiguration}.
  * <p>
- * Components are lazily initialized when they are accessed. During the initialization, they may trigger initialization
- * of components they depend on.
+ * Components are lazily initialized when they are {@link #get(NewConfiguration, LifecycleRegistry) accessed}. During
+ * the initialization, they may trigger initialization of the components they depend on. Furthermore, if the constructed
+ * component is a {@link Lifecycle} implementation, it will be registered with a {@link LifecycleRegistry} during the
+ * initialization. If this step registered start handlers in a phase that the {@link RootConfiguration#start()} already
+ * surpassed, they will be invoked immediately.
  *
  * @param <C> The type of component contained.
  * @author Allard Buijze
@@ -49,46 +51,20 @@ public class Component<C> {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Identifier<C> identifier;
-    private final Supplier<NewConfiguration> configSupplier;
-    private final LifecycleRegistry lifecycleRegistry = null;
     private final ComponentFactory<C> factory;
     private final SortedMap<Integer, ComponentDecorator<C>> decorators = new TreeMap<>();
 
     private C instance;
 
     /**
-     * Creates a {@code Component} for the given {@code config} with given {@code identifier} created by the given
-     * {@code factory}.
-     * <p>
-     * When the {@link NewConfiguration} is not initialized yet, consider using
-     * {@link #Component(Identifier, Supplier, ComponentFactory)} instead.
+     * Creates a {@code Component} for the given {@code identifier} created by the given {@code factory}.
      *
      * @param identifier The identifier of the component.
-     * @param config     The {@code NewConfiguration} the component is part of.
      * @param factory    The factory building the component.
      */
     public Component(@Nonnull Identifier<C> identifier,
-                     @Nonnull NewConfiguration config,
                      @Nonnull ComponentFactory<C> factory) {
         this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
-        requireNonNull(config, "The configuration supplier cannot be null.");
-        this.configSupplier = () -> config;
-        this.factory = requireNonNull(factory, "A Component factory cannot be null.");
-    }
-
-    /**
-     * Creates a {@code Component} for the given {@code configSupplier} with given {@code identifier} created by the
-     * given {@code factory}.
-     *
-     * @param identifier     The identifier of the component.
-     * @param configSupplier The supplier function of the {@code NewConfiguration}.
-     * @param factory        The factory building the component.
-     */
-    public Component(@Nonnull Identifier<C> identifier,
-                     @Nonnull Supplier<NewConfiguration> configSupplier,
-                     @Nonnull ComponentFactory<C> factory) {
-        this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
-        this.configSupplier = requireNonNull(configSupplier, "The configuration supplier cannot be null.");
         this.factory = requireNonNull(factory, "A Component factory cannot be null.");
     }
 
@@ -97,20 +73,26 @@ public class Component<C> {
      * attached {@link ComponentDecorator decorators} if the component hasn't been built yet.
      * <p>
      * Upon initiation of the instance the
-     * {@link LifecycleHandlerInspector#registerLifecycleHandlers(LifecycleRegistry, Object)} methods
-     * will be called to resolve and register lifecycle methods.
+     * {@link LifecycleHandlerInspector#registerLifecycleHandlers(LifecycleRegistry, Object)} methods will be called to
+     * resolve and register lifecycle methods.
      *
+     * @param configuration     The configuration to retrieve other components from that
+     *                          {@code this Component's ComponentFactory} may require during initialization.
+     * @param lifecycleRegistry The lifecycle registry to register the constructed component at if it implements
+     *                          {@link Lifecycle}.
      * @return The initialized component contained in this instance.
      */
-    public C get() {
+    public C get(@Nonnull NewConfiguration configuration,
+                 @Nonnull LifecycleRegistry<?> lifecycleRegistry) {
         if (instance != null) {
             return instance;
         }
+        requireNonNull(configuration, "The configuration cannot be null.");
+        requireNonNull(lifecycleRegistry, "The lifecycle registry cannot be null.");
 
-        NewConfiguration config = configSupplier.get();
-        instance = factory.build(config);
+        instance = factory.build(configuration);
         decorators.values()
-                  .forEach(decorator -> instance = decorator.decorate(config, instance));
+                  .forEach(decorator -> instance = decorator.decorate(configuration, instance));
         logger.debug("Instantiated component [{}]: {}", identifier, instance);
 
 
@@ -122,15 +104,15 @@ public class Component<C> {
     }
 
     /**
-     * Decorates the contained component upon {@link #get() initialization} by passing it through the given
-     * {@code decorator} at the specified {@code order}.
+     * Decorates the contained component upon {@link #get(NewConfiguration, LifecycleRegistry) initialization} by
+     * passing it through the given {@code decorator} at the specified {@code order}.
      * <p>
      * The {@code order} of the {@code decorator} will impact the decoration ordering of the outcome of this component.
      * Will override previously registered {@link ComponentDecorator ComponentDecorators} if there already was one
      * present at the given {@code order}.
      *
      * @param decorator The {@code ComponentDecorator} to use on the contained component upon
-     *                  {@link #get() initialization}.
+     *                  {@link #get(NewConfiguration, LifecycleRegistry) initialization}.
      * @param order     Defines the ordering of the given {@code decorator} among all other
      *                  {@link ComponentDecorator ComponentDecorators} that have been registered.
      * @return This {@code Component}, for a fluent API.

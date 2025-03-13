@@ -16,6 +16,12 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.configuration.Component.Identifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -24,12 +30,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.configuration.Component.Identifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Abstract implementation of the {@link NewConfigurer} allowing for reuse of {@link Component},
@@ -68,7 +68,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
                                    @Nonnull ComponentFactory<C> factory) {
         logger.debug("Registering component [{}] of type [{}].", name, type);
         Identifier<C> identifier = new Identifier<>(type, name);
-        Component<C> previous = components.put(identifier, new Component<>(identifier, config, factory));
+        Component<C> previous = components.put(identifier, new Component<>(identifier, factory));
         if (previous != null) {
             logger.warn("Replaced a previous Component registered under type [{}] and name [{}].", name, type);
         }
@@ -176,8 +176,8 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     /**
-     * A {@link NewConfiguration} implementation acting as the local configuration of this configurer.
-     * Can be implemented by {@link AbstractConfigurer} implementation that need to reuse the access logic for
+     * A {@link NewConfiguration} implementation acting as the local configuration of this configurer. Can be
+     * implemented by {@link AbstractConfigurer} implementation that need to reuse the access logic for
      * {@link Component Components} and {@link Module Modules} as provided by this implementation.
      */
     public class LocalConfiguration implements NewConfiguration {
@@ -201,7 +201,8 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nonnull String name) {
-            return components.getUnwrapped(new Identifier<>(type, name))
+            return components.get(new Identifier<>(type, name))
+                             .map(component -> component.get(config(), AbstractConfigurer.this))
                              .or(() -> optionalFromParent(type, name, () -> null));
         }
 
@@ -213,9 +214,11 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
             Identifier<C> identifier = new Identifier<>(type, name);
             Object component = components.computeIfAbsent(
                     identifier,
-                    id -> new Component<>(identifier, config(),
-                                          c -> optionalFromParent(type, name, defaultImpl).orElseGet(defaultImpl))
-            ).get();
+                    id -> new Component<>(
+                            identifier,
+                            c -> optionalFromParent(type, name, defaultImpl).orElseGet(defaultImpl)
+                    )
+            ).get(config(), AbstractConfigurer.this);
             return identifier.type().cast(component);
         }
 
