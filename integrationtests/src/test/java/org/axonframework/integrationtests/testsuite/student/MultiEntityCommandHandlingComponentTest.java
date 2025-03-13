@@ -52,7 +52,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
 
     @Test
-    void canCombineModelsInAnnotatedCommandHandlerViaModelContainerParameter() {
+    void canCombineModelsInAnnotatedCommandHandlerViaStateManagerParameter() {
         MultiModelAnnotatedCommandHandler handler = new MultiModelAnnotatedCommandHandler();
 
         var component = StatefulCommandHandlingComponent

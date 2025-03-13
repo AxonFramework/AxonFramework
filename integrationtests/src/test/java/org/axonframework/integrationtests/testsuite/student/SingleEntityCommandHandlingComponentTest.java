@@ -68,7 +68,7 @@ class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite 
     }
 
     @Test
-    void canHandleCommandThatTargetsOneModelViaAnnotatedModelContainerParameter() {
+    void canHandleCommandThatTargetsOneModelViaStateManagerParameter() {
         SingleModelAnnotatedCommandHandler handler = new SingleModelAnnotatedCommandHandler();
 
         var component = StatefulCommandHandlingComponent
