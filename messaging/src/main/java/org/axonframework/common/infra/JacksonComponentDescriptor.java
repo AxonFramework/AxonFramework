@@ -23,7 +23,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.annotation.Nonnull;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A {@link ComponentDescriptor} implementation that uses Jackson's {@link ObjectMapper} to create JSON representations
@@ -36,23 +39,64 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
 
     private final ObjectMapper objectMapper;
     private final ObjectNode rootNode;
+    private final Set<Object> visitedObjects;
 
+    /**
+     * Constructs a new {@code JacksonComponentDescriptor} with the provided {@link ObjectMapper}.
+     *
+     * @param objectMapper The ObjectMapper to use for JSON serialization
+     */
     public JacksonComponentDescriptor(ObjectMapper objectMapper) {
+        this(objectMapper, createVisitedSet());
+    }
+
+    /**
+     * Constructs a new {@code JacksonComponentDescriptor} with a default {@link ObjectMapper}.
+     */
+    public JacksonComponentDescriptor() {
+        this(createDefaultObjectMapper());
+    }
+
+    private JacksonComponentDescriptor(ObjectMapper objectMapper, Set<Object> visitedObjects) {
         this.objectMapper = objectMapper;
         this.rootNode = objectMapper.createObjectNode();
+        this.visitedObjects = visitedObjects;
     }
 
-    public JacksonComponentDescriptor() {
-        this(new ObjectMapper());
+    private static ObjectMapper createDefaultObjectMapper() {
+        return new ObjectMapper()
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
+    private static Set<Object> createVisitedSet() {
+        return Collections.newSetFromMap(new IdentityHashMap<>());
+    }
 
     @Override
     public void describeProperty(@Nonnull String name, @Nonnull Object object) {
-        if (object instanceof DescribableComponent nestedComponent) {
-            JacksonComponentDescriptor nestedDescriptor = new JacksonComponentDescriptor(this.objectMapper);
-            nestedComponent.describeTo(nestedDescriptor);
-            rootNode.set(name, nestedDescriptor.rootNode);
+        if (object instanceof DescribableComponent component) {
+            if (visitedObjects.contains(object)) {
+                // Handle circular reference by adding a reference marker
+                ObjectNode referenceNode = objectMapper.createObjectNode();
+                referenceNode.put("$ref", System.identityHashCode(object) + "");
+                rootNode.set(name, referenceNode);
+            } else {
+                visitedObjects.add(object);
+                JacksonComponentDescriptor nestedDescriptor =
+                        new JacksonComponentDescriptor(this.objectMapper, visitedObjects);
+                component.describeTo(nestedDescriptor);
+
+                // Add type information to help identify the component
+                if (!nestedDescriptor.rootNode.has("_type")) {
+                    nestedDescriptor.rootNode.put("_type", component.getClass().getSimpleName());
+                }
+
+                // Add an object ID for potential references
+                nestedDescriptor.rootNode.put("_id", System.identityHashCode(object) + "");
+
+                rootNode.set(name, nestedDescriptor.rootNode);
+            }
         } else {
             rootNode.set(name, objectMapper.valueToTree(object));
         }
@@ -60,13 +104,31 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
 
     @Override
     public void describeProperty(@Nonnull String name, @Nonnull Collection<?> collection) {
-        var arrayNode = objectMapper.createArrayNode();
+        ArrayNode arrayNode = objectMapper.createArrayNode();
 
-        for (var item : collection) {
-            if (item instanceof DescribableComponent itemComponent) {
-                JacksonComponentDescriptor itemDescriptor = new JacksonComponentDescriptor();
-                itemComponent.describeTo(itemDescriptor);
-                arrayNode.add(itemDescriptor.rootNode);
+        for (Object item : collection) {
+            if (item instanceof DescribableComponent component) {
+                if (visitedObjects.contains(item)) {
+                    // Handle circular reference by adding a reference marker
+                    ObjectNode referenceNode = objectMapper.createObjectNode();
+                    referenceNode.put("$ref", System.identityHashCode(item) + "");
+                    arrayNode.add(referenceNode);
+                } else {
+                    visitedObjects.add(item);
+                    JacksonComponentDescriptor itemDescriptor =
+                            new JacksonComponentDescriptor(this.objectMapper, visitedObjects);
+                    component.describeTo(itemDescriptor);
+
+                    // Add type information
+                    if (!itemDescriptor.rootNode.has("_type")) {
+                        itemDescriptor.rootNode.put("_type", component.getClass().getSimpleName());
+                    }
+
+                    // Add an object ID for potential references
+                    itemDescriptor.rootNode.put("_id", System.identityHashCode(item) + "");
+
+                    arrayNode.add(itemDescriptor.rootNode);
+                }
             } else {
                 arrayNode.add(objectMapper.valueToTree(item));
             }
@@ -77,16 +139,34 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
 
     @Override
     public void describeProperty(@Nonnull String name, @Nonnull Map<?, ?> map) {
-        var mapNode = objectMapper.createObjectNode();
+        ObjectNode mapNode = objectMapper.createObjectNode();
 
-        for (var entry : map.entrySet()) {
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
             String key = entry.getKey().toString();
             Object value = entry.getValue();
 
-            if (value instanceof DescribableComponent valueComponent) {
-                JacksonComponentDescriptor valueDescriptor = new JacksonComponentDescriptor();
-                valueComponent.describeTo(valueDescriptor);
-                mapNode.set(key, valueDescriptor.rootNode);
+            if (value instanceof DescribableComponent component) {
+                if (visitedObjects.contains(value)) {
+                    // Handle circular reference by adding a reference marker
+                    ObjectNode referenceNode = objectMapper.createObjectNode();
+                    referenceNode.put("$ref", System.identityHashCode(value) + "");
+                    mapNode.set(key, referenceNode);
+                } else {
+                    visitedObjects.add(value);
+                    JacksonComponentDescriptor valueDescriptor =
+                            new JacksonComponentDescriptor(this.objectMapper, visitedObjects);
+                    component.describeTo(valueDescriptor);
+
+                    // Add type information
+                    if (!valueDescriptor.rootNode.has("_type")) {
+                        valueDescriptor.rootNode.put("_type", component.getClass().getSimpleName());
+                    }
+
+                    // Add an object ID for potential references
+                    valueDescriptor.rootNode.put("_id", System.identityHashCode(value) + "");
+
+                    mapNode.set(key, valueDescriptor.rootNode);
+                }
             } else {
                 mapNode.set(key, objectMapper.valueToTree(value));
             }
@@ -115,8 +195,7 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
         try {
             return objectMapper.writeValueAsString(rootNode);
         } catch (Exception e) {
-            throw new RuntimeException(
-                    "Error generating JSON description: " + e.getMessage()); // todo: custom exception
+            throw new RuntimeException("Error generating JSON description: " + e.getMessage(), e);
         }
     }
 }
