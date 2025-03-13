@@ -16,14 +16,14 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.invoke.MethodHandles;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
-
-import jakarta.annotation.Nonnull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A {@link NewConfigurer} implementation delegating all calls to a {@code delegate Configurer}.
@@ -72,7 +72,7 @@ public class DelegatingConfigurer<S extends NewConfigurer<S>> implements NewConf
     }
 
     @Override
-    public S registerEnhancer(@Nonnull ConfigurerEnhancer enhancer) {
+    public S registerEnhancer(@Nonnull ConfigurationEnhancer enhancer) {
         delegate.registerEnhancer(enhancer);
         //noinspection unchecked
         return (S) this;

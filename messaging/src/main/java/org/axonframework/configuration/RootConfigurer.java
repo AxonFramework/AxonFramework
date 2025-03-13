@@ -17,7 +17,6 @@
 package org.axonframework.configuration;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +43,7 @@ public interface RootConfigurer extends StartableConfigurer<RootConfigurer> {
 
     /**
      * Returns a {@code RootConfigurer} instance to start configuring {@link Component components},
-     * {@link ComponentDecorator component decorators}, {@link ConfigurerEnhancer enhancers}, and {@link Module modules}
+     * {@link ComponentDecorator component decorators}, {@link ConfigurationEnhancer enhancers}, and {@link Module modules}
      * for an Axon Framework application.
      *
      * @return A {@code RootConfigurer} instance for further configuring.
@@ -55,14 +54,14 @@ public interface RootConfigurer extends StartableConfigurer<RootConfigurer> {
 
     /**
      * Returns a {@code RootConfigurer} instance to start configuring {@link Component components},
-     * {@link ComponentDecorator component decorators}, {@link ConfigurerEnhancer enhancers}, and {@link Module modules}
+     * {@link ComponentDecorator component decorators}, {@link ConfigurationEnhancer enhancers}, and {@link Module modules}
      * for an Axon Framework application.
      * <p>
      * When {@code autoLocateEnhancers} is {@code true}, a {@link ServiceLoader} will be used to locate all declared
-     * instances of type {@link ConfigurerEnhancer}. Each of the discovered instances will be invoked, allowing it to
+     * instances of type {@link ConfigurationEnhancer}. Each of the discovered instances will be invoked, allowing it to
      * set default values for the returned {@code RootConfigurer}.
      *
-     * @param autoLocateEnhancers Flag indicating whether {@link ConfigurerEnhancer} on the classpath should be
+     * @param autoLocateEnhancers Flag indicating whether {@link ConfigurationEnhancer} on the classpath should be
      *                            automatically retrieved. Should be set to {@code false} when using an application
      *                            container, such as Spring or CDI.
      * @return A {@code RootConfigurer} instance for further configuring.
@@ -73,9 +72,9 @@ public interface RootConfigurer extends StartableConfigurer<RootConfigurer> {
             return configurer;
         }
 
-        ServiceLoader<ConfigurerEnhancer> enhancerLoader =
-                ServiceLoader.load(ConfigurerEnhancer.class, configurer.getClass().getClassLoader());
-        List<ConfigurerEnhancer> enhancers = new ArrayList<>();
+        ServiceLoader<ConfigurationEnhancer> enhancerLoader =
+                ServiceLoader.load(ConfigurationEnhancer.class, configurer.getClass().getClassLoader());
+        List<ConfigurationEnhancer> enhancers = new ArrayList<>();
         enhancerLoader.forEach(enhancers::add);
         enhancers.forEach(configurer::registerEnhancer);
         return configurer;

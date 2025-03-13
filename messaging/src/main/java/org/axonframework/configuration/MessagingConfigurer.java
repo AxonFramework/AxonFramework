@@ -81,7 +81,7 @@ public class MessagingConfigurer
      * <p>
      * Besides the specific operations, the {@code MessagingConfigurer} allows for configuring generic
      * {@link Component components}, {@link ComponentDecorator component decorators},
-     * {@link ConfigurerEnhancer enhancers}, and {@link Module modules} for a message-driven application.
+     * {@link ConfigurationEnhancer enhancers}, and {@link Module modules} for a message-driven application.
      *
      * @return A {@code MessagingConfigurer} instance for further configuring.
      */
@@ -95,13 +95,13 @@ public class MessagingConfigurer
      * <p>
      * Besides the specific operations, the {@code MessagingConfigurer} allows for configuring generic
      * {@link Component components}, {@link ComponentDecorator component decorators},
-     * {@link ConfigurerEnhancer enhancers}, and {@link Module modules} for a message-driven application.
+     * {@link ConfigurationEnhancer enhancers}, and {@link Module modules} for a message-driven application.
      * <p>
      * When {@code autoLocateEnhancers} is {@code true}, a {@link ServiceLoader} will be used to locate all declared
-     * instances of type {@link ConfigurerEnhancer}. Each of the discovered instances will be invoked, allowing it to
+     * instances of type {@link ConfigurationEnhancer}. Each of the discovered instances will be invoked, allowing it to
      * set default values for the returned {@code MessagingConfigurer}.
      *
-     * @param autoLocateEnhancers Flag indicating whether {@link ConfigurerEnhancer} on the classpath should be
+     * @param autoLocateEnhancers Flag indicating whether {@link ConfigurationEnhancer} on the classpath should be
      *                            automatically retrieved. Should be set to {@code false} when using an application
      *                            container, such as Spring or CDI.
      * @return A {@code MessagingConfigurer} instance for further configuring.

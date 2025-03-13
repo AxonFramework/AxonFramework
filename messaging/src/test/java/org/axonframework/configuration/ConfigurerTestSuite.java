@@ -371,7 +371,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         @Test
         void registeredEnhancersAreInvokedBasedOnInsertOrder() {
             //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
-            ConfigurerEnhancer enhancerOne = spy(new ConfigurerEnhancer() {
+            ConfigurationEnhancer enhancerOne = spy(new ConfigurationEnhancer() {
 
                 @Override
                 public void enhance(@Nonnull NewConfigurer<?> configurer) {
@@ -379,14 +379,14 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                 }
             });
             //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
-            ConfigurerEnhancer enhancerTwo = spy(new ConfigurerEnhancer() {
+            ConfigurationEnhancer enhancerTwo = spy(new ConfigurationEnhancer() {
                 @Override
                 public void enhance(@Nonnull NewConfigurer<?> configurer) {
                     // Not important, so do nothing.
                 }
             });
             //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
-            ConfigurerEnhancer enhancerThree = spy(new ConfigurerEnhancer() {
+            ConfigurationEnhancer enhancerThree = spy(new ConfigurationEnhancer() {
 
                 @Override
                 public void enhance(@Nonnull NewConfigurer<?> configurer) {
@@ -407,7 +407,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
 
         @Test
         void registeredEnhancersAreInvokedBasedOnDefinedOrder() {
-            ConfigurerEnhancer enhancerWithLowOrder = spy(new ConfigurerEnhancer() {
+            ConfigurationEnhancer enhancerWithLowOrder = spy(new ConfigurationEnhancer() {
 
                 @Override
                 public void enhance(@Nonnull NewConfigurer<?> configurer) {
@@ -421,14 +421,14 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             });
 
             //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
-            ConfigurerEnhancer enhancerWithDefaultOrder = spy(new ConfigurerEnhancer() {
+            ConfigurationEnhancer enhancerWithDefaultOrder = spy(new ConfigurationEnhancer() {
                 @Override
                 public void enhance(@Nonnull NewConfigurer<?> configurer) {
                     // Not important, so do nothing.
                 }
             });
 
-            ConfigurerEnhancer enhancerWithHighOrder = spy(new ConfigurerEnhancer() {
+            ConfigurationEnhancer enhancerWithHighOrder = spy(new ConfigurationEnhancer() {
 
                 @Override
                 public void enhance(@Nonnull NewConfigurer<?> configurer) {
@@ -466,7 +466,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         @Test
         void registeredEnhancersCanDecorateComponents() {
             TestComponent expected = new TestComponent(TEST_COMPONENT.state() + "-decorated");
-            ConfigurerEnhancer enhancer = configurer -> configurer.registerDecorator(
+            ConfigurationEnhancer enhancer = configurer -> configurer.registerDecorator(
                     TestComponent.class, 0, (c, delegate) -> new TestComponent(delegate.state() + "-decorated")
             );
             testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)

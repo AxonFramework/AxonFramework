@@ -16,6 +16,12 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.configuration.Component.Identifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -25,15 +31,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.axonframework.configuration.Component.Identifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Abstract implementation of the {@link NewConfigurer} allowing for reuse of {@link Component},
- * {@link ComponentDecorator}, {@link ConfigurerEnhancer}, and {@link Module} registration for the {@code NewConfigurer}
+ * {@link ComponentDecorator}, {@link ConfigurationEnhancer}, and {@link Module} registration for the {@code NewConfigurer}
  * and {@link Module} implementations alike.
  *
  * @author Allard Buijze
@@ -45,7 +45,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     protected final Components components = new Components();
-    private final List<ConfigurerEnhancer> enhancers = new ArrayList<>();
+    private final List<ConfigurationEnhancer> enhancers = new ArrayList<>();
     private final List<Module<?>> modules = new ArrayList<>();
     private final List<NewConfiguration> moduleConfigurations = new ArrayList<>();
 
@@ -100,7 +100,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     @Override
-    public S registerEnhancer(@Nonnull ConfigurerEnhancer enhancer) {
+    public S registerEnhancer(@Nonnull ConfigurationEnhancer enhancer) {
         logger.debug("Registering enhancer [{}].", enhancer.getClass().getSimpleName());
         this.enhancers.add(enhancer);
         //noinspection unchecked
@@ -136,13 +136,14 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     /**
-     * Invoke all the {@link #registerEnhancer(ConfigurerEnhancer) registered} {@link ConfigurerEnhancer enhancers} on
-     * this {@code Configurer} implementation in their {@link ConfigurerEnhancer#order()}. This will ensure all sensible
-     * default components and decorators are in place from these enhancers.
+     * Invoke all the {@link #registerEnhancer(ConfigurationEnhancer) registered}
+     * {@link ConfigurationEnhancer enhancers} on this {@code Configurer} implementation in their
+     * {@link ConfigurationEnhancer#order()}. This will ensure all sensible default components and decorators are in
+     * place from these enhancers.
      */
     private void invokeEnhancers() {
         enhancers.stream()
-                 .sorted(Comparator.comparingInt(ConfigurerEnhancer::order))
+                 .sorted(Comparator.comparingInt(ConfigurationEnhancer::order))
                  .forEach(enhancer -> enhancer.enhance(this));
     }
 
