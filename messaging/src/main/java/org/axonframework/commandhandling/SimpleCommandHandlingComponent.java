@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
@@ -26,12 +27,16 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import static java.util.Objects.requireNonNull;
+import static org.axonframework.common.BuilderUtils.assertNonEmpty;
+
 /**
  * A simple implementation of the {@link CommandHandlingComponent} interface, allowing for easy registration of
- * {@link CommandHandler}s and other {@link CommandHandlingComponent}s.
+ * {@link CommandHandler CommandHandlers} and other {@link CommandHandlingComponent CommandHandlingComponents}.
  * <p>
  * Registered subcomponents are preferred over registered command handlers when handling a command.
  *
@@ -54,31 +59,30 @@ public class SimpleCommandHandlingComponent implements
      * Instantiates a simple {@link CommandHandlingComponent} that is able to handle commands and delegate them to
      * subcomponents.
      *
-     * @param name the name of the component, used for {@link DescribableComponent describing} the component
+     * @param name The name of the component, used for {@link DescribableComponent describing} the component.
      */
-    public static SimpleCommandHandlingComponent create(String name) {
+    public static SimpleCommandHandlingComponent create(@Nonnull String name) {
         return new SimpleCommandHandlingComponent(name);
     }
 
-    /**
-     * Instantiates a simple {@link CommandHandlingComponent} that is able to handle commands and delegate them to
-     * subcomponents.
-     *
-     * @param name the name of the component, used for {@link DescribableComponent describing} the component
-     */
-    private SimpleCommandHandlingComponent(String name) {
+    private SimpleCommandHandlingComponent(@Nonnull String name) {
+        assertNonEmpty(name, "The name may not be null or empty");
         this.name = name;
     }
 
     @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull QualifiedName name,
                                                     @Nonnull CommandHandler commandHandler) {
-        commandHandlers.put(name, commandHandler);
+        commandHandlers.put(
+                requireNonNull(name, "The name of the command handler may not be null"),
+                requireNonNull(commandHandler, "The command handler may not be null")
+        );
         return this;
     }
 
     @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull CommandHandlingComponent commandHandlingComponent) {
+        requireNonNull(commandHandlingComponent, "The command handling component may not be null");
         subComponents.add(commandHandlingComponent);
         return this;
     }
@@ -105,10 +109,10 @@ public class SimpleCommandHandlingComponent implements
             return commandHandlers.get(qualifiedName).handle(command, context);
         }
         return MessageStream.failed(new NoHandlerForCommandException(
-                "No handler was subscribed for command with qualified name[%s] on component [%s]. Registered handlers: [%s]".formatted(
+                "No handler was subscribed for command with qualified name [%s] on component [%s]. Registered handlers: [%s]".formatted(
                         qualifiedName.fullName(),
                         this.getClass().getName(),
-                        commandHandlers.keySet()
+                        supportedCommands()
                 ))
         );
     }
@@ -117,7 +121,7 @@ public class SimpleCommandHandlingComponent implements
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("name", name);
         descriptor.describeProperty("commandHandlers", commandHandlers);
-        descriptor.describeProperty("subCommandHandlingComponents", commandHandlers);
+        descriptor.describeProperty("subComponents", subComponents);
     }
 
     @Override

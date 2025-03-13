@@ -28,6 +28,7 @@ import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TagEventCriteria;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
@@ -62,6 +63,8 @@ class AsyncEventSourcingRepositoryTest {
         when(eventStore.transaction(any(), eq(TEST_CONTEXT))).thenReturn(eventStoreTransaction);
 
         testSubject = new AsyncEventSourcingRepository<>(
+                String.class,
+                String.class,
                 eventStore,
                 identifier -> TEST_MODEL_CRITERIA,
                 (currentState, event, ctx) -> currentState + "-" + event.getPayload(),

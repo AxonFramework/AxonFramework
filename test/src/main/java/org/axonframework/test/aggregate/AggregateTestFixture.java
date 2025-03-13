@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.common.Assert;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.Registration;
@@ -217,7 +217,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     public synchronized FixtureConfiguration<T> registerAnnotatedCommandHandler(final Object annotatedCommandHandler) {
         registerAggregateCommandHandlers();
         explicitCommandHandlersSet = true;
-        commandBus.subscribe(new AnnotationCommandHandlerAdapter<>(
+        commandBus.subscribe(new AnnotatedCommandHandlingComponent<>(
                 annotatedCommandHandler,
                 getParameterResolverFactory(),
                 getHandlerDefinition(),

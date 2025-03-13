@@ -18,7 +18,7 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.commandhandling.config.CommandBusBuilder;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
@@ -846,7 +846,7 @@ public class DefaultConfigurer implements Configurer {
                         commandHandlerBuilder,
                         (config, commandHandler) -> {
                             config.commandBus()
-                                  .subscribe(new AnnotationCommandHandlerAdapter<>(
+                                  .subscribe(new AnnotatedCommandHandlingComponent<>(
                                           commandHandler,
                                           config.parameterResolverFactory(),
                                           config.handlerDefinition(commandHandler.getClass()),
