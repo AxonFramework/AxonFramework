@@ -364,10 +364,8 @@ class JacksonComponentDescriptorTest {
             // given
             var component1 = new CircularComponent("Component1");
             var component2 = new CircularComponent("Component2");
-            component1.setReference(component2);
-            component2.setReference(component1);
-
-            // Add the component with circular reference
+            component1.setDependency(component2);
+            component2.setDependency(component1);
             testSubject.describeProperty("circularRef", component1);
 
             // when
@@ -377,17 +375,17 @@ class JacksonComponentDescriptorTest {
             assertJsonMatches(result, """
                     {
                       "circularRef": {
+                        "_id": "%s",
+                        "_type": "CircularComponent",
                         "name": "Component1",
-                        "reference": {
+                        "dependency": {
+                          "_id": "%s",
+                          "_type": "CircularComponent",
                           "name": "Component2",
                           "reference": {
                             "$ref": "%s"
-                          },
-                          "_type": "CircularComponent",
-                          "_id": "%s"
-                        },
-                        "_type": "CircularComponent",
-                        "_id": "%s"
+                          }
+                        }
                       }
                     }
                     """.formatted(identityOf(component1), identityOf(component2), identityOf(component1))
@@ -401,21 +399,21 @@ class JacksonComponentDescriptorTest {
 
             private final String name;
 
-            private CircularComponent reference;
+            private CircularComponent dependency;
 
             CircularComponent(String name) {
                 this.name = name;
             }
 
-            void setReference(CircularComponent reference) {
-                this.reference = reference;
+            void setDependency(CircularComponent dependency) {
+                this.dependency = dependency;
             }
 
             @Override
             public void describeTo(@Nonnull ComponentDescriptor descriptor) {
                 descriptor.describeProperty("name", name);
-                if (reference != null) {
-                    descriptor.describeProperty("reference", reference);
+                if (dependency != null) {
+                    descriptor.describeProperty("reference", dependency);
                 }
             }
         }
