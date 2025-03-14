@@ -97,10 +97,10 @@ class JacksonComponentDescriptorTest {
         assertJsonMatchesPattern(result, """
                 {
                   "component" : {
-                    "name" : "componentValue",
-                    "value" : 100,
+                    "_id" : "*",
                     "_type" : "SimpleTestComponent",
-                    "_id" : "*"
+                    "name" : "componentValue",
+                    "value" : 100
                   }
                 }
                 """);
@@ -148,9 +148,11 @@ class JacksonComponentDescriptorTest {
         @Test
         void describeCollectionOfDescribableComponentsShouldIncludeTypeAndId() {
             // given
+            var component1 = new SimpleTestComponent("component1", 101);
+            var component2 = new SimpleTestComponent("component2", 102);
             var components = List.of(
-                    new SimpleTestComponent("component1", 101),
-                    new SimpleTestComponent("component2", 102)
+                    component1,
+                    component2
             );
             testSubject.describeProperty("components", components);
 
@@ -158,21 +160,22 @@ class JacksonComponentDescriptorTest {
             var result = testSubject.describe();
 
             // then
-            assertJsonMatchesPattern(result, """
+            assertJsonMatches(result, """
                     {
                       "components" : [ {
+                        "_id" : "%s",
+                        "_type" : "SimpleTestComponent",
                         "name" : "component1",
-                        "value" : 101,
-                        "_type" : "SimpleTestComponent",
-                        "_id" : "*"
+                        "value" : 101
                       }, {
-                        "name" : "component2",
-                        "value" : 102,
+                        "_id" : "%s",
                         "_type" : "SimpleTestComponent",
-                        "_id" : "*"
+                        "name" : "component2",
+                        "value" : 102
                       } ]
                     }
-                    """);
+                    """.formatted(identityOf(component1), identityOf(component2))
+            );
         }
     }
 
@@ -237,8 +240,9 @@ class JacksonComponentDescriptorTest {
         @Test
         void describeMapWithDescribableComponentsShouldIncludeTypeAndId() {
             // given
+            var component1 = new SimpleTestComponent("value1", 201);
             var map = Map.of(
-                    "component1", new SimpleTestComponent("value1", 201)
+                    "component1", component1
             );
             testSubject.describeProperty("componentMap", map);
 
@@ -246,15 +250,18 @@ class JacksonComponentDescriptorTest {
             var result = testSubject.describe();
 
             // then
-            assertJsonMatchesPattern(
-                    result,
-                    """
-                                {
-                                  "componentMap": {
-                                    "component1":{"name":"value1","value":201,"_type":"SimpleTestComponent","_id":"*"}
-                                  }
-                                }
-                            """
+            assertJsonMatches(result, """
+                        {
+                          "componentMap": {
+                            "component1":{
+                                "_id":"%s",
+                                "_type":"SimpleTestComponent",
+                                "name":"value1",
+                                "value":201
+                            }
+                          }
+                        }
+                    """.formatted(identityOf(component1))
             );
         }
     }
@@ -308,27 +315,103 @@ class JacksonComponentDescriptorTest {
                 """
                         {
                             "complexStructure":{
+                                "_id":"*",
+                                "_type":"ComplexTestComponent",
                                 "stringValue":"test",
                                 "numberValue":42,
                                 "booleanValue":true,
                                 "component":{
-                                    "name":"nestedComponent",
-                                    "value":300,
+                                    "_id":"*",
                                     "_type":"SimpleTestComponent",
-                                    "_id":"*"
+                                    "name":"nestedComponent",
+                                    "value":300
                                 },
                                 "simpleList":["listItem1","listItem2"],
                                 "componentList":[
-                                    {"name":"listComponent1","value":301,"_type":"SimpleTestComponent","_id":"*"},
-                                    {"name":"listComponent2","value":302,"_type":"SimpleTestComponent","_id":"*"}
+                                    {
+                                        "_id":"*",
+                                        "_type":"SimpleTestComponent",
+                                        "name":"listComponent1",
+                                        "value":301
+                                    },
+                                    {
+                                        "_id":"*",
+                                        "_type":"SimpleTestComponent",
+                                        "name":"listComponent2",
+                                        "value":302
+                                    }
                                 ],
-                                "simpleMap":{"mapKey1":"mapValue1"},
-                                "_type":"ComplexTestComponent",
-                                "_id":"*"
+                                "simpleMap":{"mapKey1":"mapValue1"}
                             }
                         }
                         """
         );
+    }
+
+    @Nested
+    class CircularReferencesTests {
+
+        @Disabled("TODO #XXXX - support circular references")
+        @Test
+        void describeComponentWithCircularReference() {
+            // given
+            var component1 = new CircularComponent("Component1");
+            var component2 = new CircularComponent("Component2");
+            component1.setReference(component2);
+            component2.setReference(component1);
+
+            // Add the component with circular reference
+            testSubject.describeProperty("circularRef", component1);
+
+            // when
+            var result = testSubject.describe();
+
+            // then
+            assertJsonMatches(result, """
+                    {
+                      "circularRef": {
+                        "name": "Component1",
+                        "reference": {
+                          "name": "Component2",
+                          "reference": {
+                            "$ref": "%s"
+                          },
+                          "_type": "CircularComponent",
+                          "_id": "%s"
+                        },
+                        "_type": "CircularComponent",
+                        "_id": "%s"
+                      }
+                    }
+                    """.formatted(identityOf(component1), identityOf(component2), identityOf(component1))
+            );
+        }
+
+        /**
+         * A component that can create circular references.
+         */
+        private static class CircularComponent implements DescribableComponent {
+
+            private final String name;
+
+            private CircularComponent reference;
+
+            CircularComponent(String name) {
+                this.name = name;
+            }
+
+            void setReference(CircularComponent reference) {
+                this.reference = reference;
+            }
+
+            @Override
+            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+                descriptor.describeProperty("name", name);
+                if (reference != null) {
+                    descriptor.describeProperty("reference", reference);
+                }
+            }
+        }
     }
 
     /**
@@ -342,11 +425,24 @@ class JacksonComponentDescriptorTest {
      * Utility method to assert that a JSON string matches a pattern, with dynamic IDs replaced for comparison.
      */
     private void assertJsonMatchesPattern(String actual, String expectedPattern) {
-        String normalizedActual = normalizeJson(actual).replaceAll("\"_id\":\"\\d+\"", "\"_id\":\"*\"");
+        String normalizedActual = normalizeJson(actual)
+                .replaceAll("\"_id\":\"\\d+\"", "\"_id\":\"*\"");
+
         String normalizedExpected = normalizeJson(expectedPattern);
 
         assertEquals(normalizedExpected, normalizedActual,
                      "JSON does not match expected pattern");
+    }
+
+    private void assertJsonMatches(String actual, String expectedPattern) {
+        String normalizedActual = normalizeJson(actual);
+        String normalizedExpected = normalizeJson(expectedPattern);
+        assertEquals(normalizedExpected, normalizedActual,
+                     "JSON does not match expected");
+    }
+
+    private static int identityOf(Object component) {
+        return System.identityHashCode(component);
     }
 
     private record SimpleTestComponent(String name, int value) implements DescribableComponent {
