@@ -16,9 +16,6 @@
 
 package org.axonframework.common.infra;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Nonnull;
 import org.junit.jupiter.api.*;
 
@@ -403,12 +400,16 @@ class JacksonComponentDescriptorTest {
                                  "_id":"%s"
                              },
                              {
-                                 "$ref":"%s"
+                                     "name":"Component2",
+                                     "reference":{"$ref":"%s"},
+                                     "_type":"CircularComponent",
+                                     "_id":"%s"
                              }
                          ]
                     }
                     """.formatted(identityOf(component1),
                                   identityOf(component2),
+                                  identityOf(component1),
                                   identityOf(component1),
                                   identityOf(component2))
             );

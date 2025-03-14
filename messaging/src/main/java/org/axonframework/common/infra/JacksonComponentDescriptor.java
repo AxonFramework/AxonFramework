@@ -30,7 +30,7 @@ import java.util.Set;
 
 /**
  * A {@link ComponentDescriptor} implementation that uses Jackson's {@link ObjectMapper} to create JSON representations
- * of components. This implementation produces a clean, hierarchical JSON structure.
+ * of components. This implementation produces a clean, hierarchical JSON structure and handles circular references.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -39,7 +39,8 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
 
     private final ObjectMapper objectMapper;
     private final ObjectNode rootNode;
-    private final Set<Object> visitedObjects;
+    private final Map<Object, Object> visited;
+    private final boolean inCollection;
 
     /**
      * Constructs a new {@code JacksonComponentDescriptor} with the provided {@link ObjectMapper}.
@@ -47,7 +48,7 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
      * @param objectMapper The ObjectMapper to use for JSON serialization
      */
     public JacksonComponentDescriptor(ObjectMapper objectMapper) {
-        this(objectMapper, createVisitedSet());
+        this(objectMapper, new IdentityHashMap<>(), false);
     }
 
     /**
@@ -57,10 +58,11 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
         this(createDefaultObjectMapper());
     }
 
-    private JacksonComponentDescriptor(ObjectMapper objectMapper, Set<Object> visitedObjects) {
+    private JacksonComponentDescriptor(ObjectMapper objectMapper, Map<Object, Object> visited, boolean inCollection) {
         this.objectMapper = objectMapper;
         this.rootNode = objectMapper.createObjectNode();
-        this.visitedObjects = visitedObjects;
+        this.visited = visited;
+        this.inCollection = inCollection;
     }
 
     private static ObjectMapper createDefaultObjectMapper() {
@@ -69,22 +71,21 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
                 .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
-    private static Set<Object> createVisitedSet() {
-        return Collections.newSetFromMap(new IdentityHashMap<>());
-    }
-
     @Override
     public void describeProperty(@Nonnull String name, @Nonnull Object object) {
         if (object instanceof DescribableComponent component) {
-            if (visitedObjects.contains(object)) {
+            if (visited.containsKey(object)) {
                 // Handle circular reference by adding a reference marker
                 ObjectNode referenceNode = objectMapper.createObjectNode();
-                referenceNode.put("$ref", System.identityHashCode(object) + "");
+                referenceNode.put("$ref", String.valueOf(System.identityHashCode(object)));
                 rootNode.set(name, referenceNode);
             } else {
-                visitedObjects.add(object);
+                // Mark as visited
+                visited.put(object, object);
+
+                // Create a new descriptor with shared visited map
                 JacksonComponentDescriptor nestedDescriptor =
-                        new JacksonComponentDescriptor(this.objectMapper, visitedObjects);
+                        new JacksonComponentDescriptor(this.objectMapper, visited, inCollection);
                 component.describeTo(nestedDescriptor);
 
                 // Add type information to help identify the component
@@ -93,8 +94,9 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
                 }
 
                 // Add an object ID for potential references
-                nestedDescriptor.rootNode.put("_id", System.identityHashCode(object) + "");
+                nestedDescriptor.rootNode.put("_id", String.valueOf(System.identityHashCode(object)));
 
+                // Add the node to the parent
                 rootNode.set(name, nestedDescriptor.rootNode);
             }
         } else {
@@ -106,29 +108,29 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
     public void describeProperty(@Nonnull String name, @Nonnull Collection<?> collection) {
         ArrayNode arrayNode = objectMapper.createArrayNode();
 
+        // Create a special context for collection items
+        Map<Object, Object> collectionVisited = new IdentityHashMap<>();
+
         for (Object item : collection) {
             if (item instanceof DescribableComponent component) {
-                if (visitedObjects.contains(item)) {
-                    // Handle circular reference by adding a reference marker
-                    ObjectNode referenceNode = objectMapper.createObjectNode();
-                    referenceNode.put("$ref", System.identityHashCode(item) + "");
-                    arrayNode.add(referenceNode);
-                } else {
-                    visitedObjects.add(item);
-                    JacksonComponentDescriptor itemDescriptor =
-                            new JacksonComponentDescriptor(this.objectMapper, visitedObjects);
-                    component.describeTo(itemDescriptor);
+                // For collection items, create a fresh descriptor with its own visited map
+                // This ensures we fully serialize each top-level item, even if it's a duplicate
+                JacksonComponentDescriptor itemDescriptor =
+                        new JacksonComponentDescriptor(this.objectMapper, collectionVisited, true);
+                component.describeTo(itemDescriptor);
 
-                    // Add type information
-                    if (!itemDescriptor.rootNode.has("_type")) {
-                        itemDescriptor.rootNode.put("_type", component.getClass().getSimpleName());
-                    }
-
-                    // Add an object ID for potential references
-                    itemDescriptor.rootNode.put("_id", System.identityHashCode(item) + "");
-
-                    arrayNode.add(itemDescriptor.rootNode);
+                // Add type information
+                if (!itemDescriptor.rootNode.has("_type")) {
+                    itemDescriptor.rootNode.put("_type", component.getClass().getSimpleName());
                 }
+
+                // Add an object ID for potential references
+                itemDescriptor.rootNode.put("_id", String.valueOf(System.identityHashCode(item)));
+
+                arrayNode.add(itemDescriptor.rootNode);
+
+                // Mark in our collection context to handle circular refs within this collection
+                collectionVisited.put(item, item);
             } else {
                 arrayNode.add(objectMapper.valueToTree(item));
             }
@@ -146,15 +148,17 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
             Object value = entry.getValue();
 
             if (value instanceof DescribableComponent component) {
-                if (visitedObjects.contains(value)) {
+                if (visited.containsKey(value)) {
                     // Handle circular reference by adding a reference marker
                     ObjectNode referenceNode = objectMapper.createObjectNode();
-                    referenceNode.put("$ref", System.identityHashCode(value) + "");
+                    referenceNode.put("$ref", String.valueOf(System.identityHashCode(value)));
                     mapNode.set(key, referenceNode);
                 } else {
-                    visitedObjects.add(value);
+                    // Mark as visited
+                    visited.put(value, value);
+
                     JacksonComponentDescriptor valueDescriptor =
-                            new JacksonComponentDescriptor(this.objectMapper, visitedObjects);
+                            new JacksonComponentDescriptor(this.objectMapper, visited, inCollection);
                     component.describeTo(valueDescriptor);
 
                     // Add type information
@@ -163,7 +167,7 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
                     }
 
                     // Add an object ID for potential references
-                    valueDescriptor.rootNode.put("_id", System.identityHashCode(value) + "");
+                    valueDescriptor.rootNode.put("_id", String.valueOf(System.identityHashCode(value)));
 
                     mapNode.set(key, valueDescriptor.rootNode);
                 }
