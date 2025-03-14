@@ -382,7 +382,7 @@ class JacksonComponentDescriptorTest {
                           "_id": "%s",
                           "_type": "CircularComponent",
                           "name": "Component2",
-                          "reference": {
+                          "dependency": {
                             "$ref": "%s"
                           }
                         }
