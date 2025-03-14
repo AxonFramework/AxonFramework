@@ -16,10 +16,19 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.FutureUtils;
+import org.axonframework.common.IdentifierFactory;
+import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -32,13 +41,6 @@ import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.assertStrictPositive;
-
-import jakarta.annotation.Nonnull;
-import org.axonframework.common.FutureUtils;
-import org.axonframework.common.IdentifierFactory;
-import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Default implementation of the {@code RootConfigurer}.
@@ -60,8 +62,10 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
     private final TreeMap<Integer, List<LifecycleHandler>> shutdownHandlers = new TreeMap<>(Comparator.reverseOrder());
     private long lifecyclePhaseTimeout = 5;
     private TimeUnit lifecyclePhaseTimeunit = TimeUnit.SECONDS;
+    private boolean enhancerScanning = true;
 
     private final RootConfigurationImpl rootConfig = new RootConfigurationImpl();
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     /**
      * Initialize the {@code RootConfigurer} with a {@code null} {@link LifecycleSupportingConfiguration}.
@@ -101,11 +105,28 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
         return this;
     }
 
+    @Override
+    public RootConfigurer disableEnhancerScanning() {
+        this.enhancerScanning = false;
+        return this;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public RootConfiguration build() {
+        if (!initialized.getAndSet(true) && enhancerScanning) {
+            scanForConfigurationEnhancers();
+        }
         super.build();
         return rootConfig;
+    }
+
+    private void scanForConfigurationEnhancers() {
+        ServiceLoader<ConfigurationEnhancer> enhancerLoader =
+                ServiceLoader.load(ConfigurationEnhancer.class, getClass().getClassLoader());
+        List<ConfigurationEnhancer> enhancers = new ArrayList<>();
+        enhancerLoader.forEach(enhancers::add);
+        enhancers.forEach(this::registerEnhancer);
     }
 
     @Override

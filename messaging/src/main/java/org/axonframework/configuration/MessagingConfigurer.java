@@ -86,28 +86,7 @@ public class MessagingConfigurer
      * @return A {@code MessagingConfigurer} instance for further configuring.
      */
     public static MessagingConfigurer defaultConfigurer() {
-        return configurer(true);
-    }
-
-    /**
-     * Build a {@code MessagingConfigurer} instance with several messaging defaults, as well as methods to register
-     * (e.g.) a {@link #registerCommandBus(ComponentFactory) command bus}.
-     * <p>
-     * Besides the specific operations, the {@code MessagingConfigurer} allows for configuring generic
-     * {@link Component components}, {@link ComponentDecorator component decorators},
-     * {@link ConfigurationEnhancer enhancers}, and {@link Module modules} for a message-driven application.
-     * <p>
-     * When {@code autoLocateEnhancers} is {@code true}, a {@link ServiceLoader} will be used to locate all declared
-     * instances of type {@link ConfigurationEnhancer}. Each of the discovered instances will be invoked, allowing it to
-     * set default values for the returned {@code MessagingConfigurer}.
-     *
-     * @param autoLocateEnhancers Flag indicating whether {@link ConfigurationEnhancer} on the classpath should be
-     *                            automatically retrieved. Should be set to {@code false} when using an application
-     *                            container, such as Spring or CDI.
-     * @return A {@code MessagingConfigurer} instance for further configuring.
-     */
-    public static MessagingConfigurer configurer(boolean autoLocateEnhancers) {
-        return new MessagingConfigurer(RootConfigurer.configurer(autoLocateEnhancers))
+        return new MessagingConfigurer(RootConfigurer.defaultConfigurer())
                 .registerComponent(MessageTypeResolver.class, MessagingConfigurer::defaultMessageTypeResolver)
                 .registerComponent(CommandGateway.class, MessagingConfigurer::defaultCommandGateway)
                 .registerComponent(CommandBus.class, MessagingConfigurer::defaultCommandBus)
@@ -120,7 +99,7 @@ public class MessagingConfigurer
     }
 
     /**
-     * Private constructor to enforce usage of {@link #defaultConfigurer()} or {@link #configurer(boolean)}.
+     * Private constructor to enforce usage of {@link #defaultConfigurer()}.
      */
     private MessagingConfigurer(@Nonnull RootConfigurer delegate) {
         super(delegate);

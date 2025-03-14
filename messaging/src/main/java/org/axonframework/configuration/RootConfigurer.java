@@ -16,12 +16,10 @@
 
 package org.axonframework.configuration;
 
-import java.util.ArrayList;
-import java.util.List;
+import jakarta.annotation.Nonnull;
+
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
-
-import jakarta.annotation.Nonnull;
 
 /**
  * The root {@link NewConfigurer configurer} of any Axon Framework application.
@@ -34,6 +32,11 @@ import jakarta.annotation.Nonnull;
  * invoking {@link #build()}. Starting the {@code NewConfiguration} can be done through a separate
  * {@link RootConfiguration#start()} invocation, or {@link #start()} can be used to build-and-start the project
  * immediately.
+ * <p>
+ * Will automatically search for {@link ConfigurationEnhancer enhancers} and
+ * {@link #registerEnhancer(ConfigurationEnhancer) register} them with this application. This functionality ensures that
+ * the configuration of other Axon Framework modules are automatically added. Can be disabled through the
+ * {@link #disableEnhancerScanning()} method.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -43,41 +46,13 @@ public interface RootConfigurer extends StartableConfigurer<RootConfigurer> {
 
     /**
      * Returns a {@code RootConfigurer} instance to start configuring {@link Component components},
-     * {@link ComponentDecorator component decorators}, {@link ConfigurationEnhancer enhancers}, and {@link Module modules}
-     * for an Axon Framework application.
+     * {@link ComponentDecorator component decorators}, {@link ConfigurationEnhancer enhancers}, and
+     * {@link Module modules} for an Axon Framework application.
      *
      * @return A {@code RootConfigurer} instance for further configuring.
      */
     static RootConfigurer defaultConfigurer() {
-        return configurer(true);
-    }
-
-    /**
-     * Returns a {@code RootConfigurer} instance to start configuring {@link Component components},
-     * {@link ComponentDecorator component decorators}, {@link ConfigurationEnhancer enhancers}, and {@link Module modules}
-     * for an Axon Framework application.
-     * <p>
-     * When {@code autoLocateEnhancers} is {@code true}, a {@link ServiceLoader} will be used to locate all declared
-     * instances of type {@link ConfigurationEnhancer}. Each of the discovered instances will be invoked, allowing it to
-     * set default values for the returned {@code RootConfigurer}.
-     *
-     * @param autoLocateEnhancers Flag indicating whether {@link ConfigurationEnhancer} on the classpath should be
-     *                            automatically retrieved. Should be set to {@code false} when using an application
-     *                            container, such as Spring or CDI.
-     * @return A {@code RootConfigurer} instance for further configuring.
-     */
-    static RootConfigurer configurer(boolean autoLocateEnhancers) {
-        RootConfigurer configurer = new DefaultRootConfigurer();
-        if (!autoLocateEnhancers) {
-            return configurer;
-        }
-
-        ServiceLoader<ConfigurationEnhancer> enhancerLoader =
-                ServiceLoader.load(ConfigurationEnhancer.class, configurer.getClass().getClassLoader());
-        List<ConfigurationEnhancer> enhancers = new ArrayList<>();
-        enhancerLoader.forEach(enhancers::add);
-        enhancers.forEach(configurer::registerEnhancer);
-        return configurer;
+        return new DefaultRootConfigurer();
     }
 
     /**
@@ -97,6 +72,17 @@ public interface RootConfigurer extends StartableConfigurer<RootConfigurer> {
      * @see LifecycleHandler
      */
     RootConfigurer registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit);
+
+    /**
+     * Disables the default behavior to automatically scan and {@link #registerEnhancer(ConfigurationEnhancer) register}
+     * {@link ConfigurationEnhancer enhancers} through a {@link ServiceLoader}.
+     * <p>
+     * Disabling this functionality means you might lose functionality that would otherwise have been included
+     * out-of-the-box by depending on other Axon Framework modules.
+     *
+     * @return A {@code RootConfigurer} instance for further configuring.
+     */
+    RootConfigurer disableEnhancerScanning();
 
     @Override
     default RootConfiguration start() {
