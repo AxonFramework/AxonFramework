@@ -16,10 +16,11 @@
 
 package org.axonframework.common.infra;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Map;
@@ -55,44 +56,39 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
 
     @Override
     public void describeProperty(@Nonnull String name, @Nonnull Object object) {
-        if (object instanceof DescribableComponent component) {
-            JacksonComponentDescriptor nestedDescriptor = new JacksonComponentDescriptor(this.objectMapper);
-            describeIdAndType(object, component, nestedDescriptor);
-            component.describeTo(nestedDescriptor);
-            rootNode.set(name, nestedDescriptor.rootNode);
-        } else {
-            rootNode.set(name, objectMapper.valueToTree(object));
-        }
+        var json = describeObject(object);
+        rootNode.set(name, json);
+    }
+
+    private JsonNode describeObject(@NotNull Object object) {
+        return switch (object) {
+            case DescribableComponent c -> describeComponentJson(c);
+            default -> objectMapper.valueToTree(object);
+        };
+    }
+
+    private ObjectNode describeComponentJson(DescribableComponent component) {
+        var nestedDescriptor = new JacksonComponentDescriptor(this.objectMapper);
+        describeIdAndType(component, nestedDescriptor);
+        component.describeTo(nestedDescriptor);
+        return nestedDescriptor.rootNode;
     }
 
     private static void describeIdAndType(
-            Object object,
             DescribableComponent component,
-            JacksonComponentDescriptor nestedDescriptor
+            JacksonComponentDescriptor componentDescriptor
     ) {
-        // Add an object ID for potential references
-        nestedDescriptor.rootNode.put("_id", System.identityHashCode(object) + "");
-        // Add type information to help identify the component
-        if (!nestedDescriptor.rootNode.has("_type")) {
-            nestedDescriptor.rootNode.put("_type", component.getClass().getSimpleName());
-        }
+        componentDescriptor.rootNode.put("_id", System.identityHashCode(component) + "");
+        componentDescriptor.rootNode.put("_type", component.getClass().getSimpleName());
     }
 
     @Override
     public void describeProperty(@Nonnull String name, @Nonnull Collection<?> collection) {
-        ArrayNode arrayNode = objectMapper.createArrayNode();
-
-        for (Object item : collection) {
-            if (item instanceof DescribableComponent component) {
-                JacksonComponentDescriptor itemDescriptor = new JacksonComponentDescriptor(this.objectMapper);
-                describeIdAndType(item, component, itemDescriptor);
-                component.describeTo(itemDescriptor);
-                arrayNode.add(itemDescriptor.rootNode);
-            } else {
-                arrayNode.add(objectMapper.valueToTree(item));
-            }
+        var arrayNode = objectMapper.createArrayNode();
+        for (var item : collection) {
+            var json = describeObject(item);
+            arrayNode.add(json);
         }
-
         rootNode.set(name, arrayNode);
     }
 
@@ -100,18 +96,11 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
     public void describeProperty(@Nonnull String name, @Nonnull Map<?, ?> map) {
         ObjectNode mapNode = objectMapper.createObjectNode();
 
-        for (Map.Entry<?, ?> entry : map.entrySet()) {
-            String key = entry.getKey().toString();
-            Object value = entry.getValue();
-
-            if (value instanceof DescribableComponent component) {
-                JacksonComponentDescriptor valueDescriptor = new JacksonComponentDescriptor(this.objectMapper);
-                describeIdAndType(value, component, valueDescriptor);
-                component.describeTo(valueDescriptor);
-                mapNode.set(key, valueDescriptor.rootNode);
-            } else {
-                mapNode.set(key, objectMapper.valueToTree(value));
-            }
+        for (var entry : map.entrySet()) {
+            var key = entry.getKey().toString();
+            var value = entry.getValue();
+            var json = describeObject(value);
+            mapNode.set(key, json);
         }
 
         rootNode.set(name, mapNode);
