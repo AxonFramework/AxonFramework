@@ -83,4 +83,8 @@ public record Tag(@Nonnull String key,
     public static Optional<Set<Tag>> fromContext(Context context) {
         return Optional.ofNullable(context.getResource(RESOURCE_KEY));
     }
+
+    public static Tag of(String key, String value) {
+        return new Tag(key, value);
+    }
 }

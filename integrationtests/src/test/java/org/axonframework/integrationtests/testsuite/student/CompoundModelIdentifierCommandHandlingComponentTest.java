@@ -21,11 +21,18 @@ import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComp
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
+import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
+import org.axonframework.eventsourcing.EventStateApplier;
+import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.integrationtests.testsuite.student.commands.AssignMentorCommand;
+import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;
 import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
 import org.axonframework.integrationtests.testsuite.student.state.StudentMentorAssignmentModel;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.command.annotation.InjectEntity;
 import org.junit.jupiter.api.*;
@@ -46,8 +53,34 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class CompoundModelIdentifierCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
+    protected EventStateApplier<StudentMentorAssignmentModel> courseEventStateApplier = new AnnotationBasedEventStateApplier<>(
+            StudentMentorAssignmentModel.class);
+
+
+    protected AsyncEventSourcingRepository<StudentMentorModelIdentifier, StudentMentorAssignmentModel> mentorAssignmentRepository = new AsyncEventSourcingRepository<>(
+            StudentMentorModelIdentifier.class,
+            StudentMentorAssignmentModel.class,
+            eventStore,
+            id -> EventCriteria.both(
+                    EventCriteria.isOneOfTypes(
+                            MentorAssignedToStudentEvent.class.getName()
+                    ),
+                    EventCriteria.either(
+                            EventCriteria.matchesTag(new Tag("Student", id.mentorId())),
+                            EventCriteria.matchesTag(new Tag("Student", id.menteeId()))
+                    )
+            ),
+            courseEventStateApplier,
+            StudentMentorAssignmentModel::new,
+            DEFAULT_CONTEXT
+    );
+
+    @Override
+    protected void registerAdditionalModels(SimpleStateManager.Builder builder) {
+        builder.register(mentorAssignmentRepository);
+    }
+
     @Test
-    @Disabled
     void canHandleCommandThatTargetsMultipleModelsViaInjectionOfCompoundModel() {
 
         CompoundModelAnnotatedCommandHandler handler = new CompoundModelAnnotatedCommandHandler();

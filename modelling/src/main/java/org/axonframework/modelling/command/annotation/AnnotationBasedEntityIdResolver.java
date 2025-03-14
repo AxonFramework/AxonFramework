@@ -63,7 +63,7 @@ public class AnnotationBasedEntityIdResolver implements EntityIdResolver<Object>
             throw new MultipleTargetEntityIdsFoundInPayload(identifiers, payload.getClass());
         }
         if (identifiers.isEmpty()) {
-            return new NoEntityIdFoundInPayload(payload.getClass());
+            throw new NoEntityIdFoundInPayload(payload.getClass());
         }
         return identifiers.getFirst();
     }

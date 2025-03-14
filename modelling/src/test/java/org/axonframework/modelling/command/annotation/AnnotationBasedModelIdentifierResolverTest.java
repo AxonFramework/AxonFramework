@@ -76,16 +76,15 @@ class AnnotationBasedModelIdentifierResolverTest {
     }
 
     @Test
-    void returnsNullWhenNoTargetAnnotationPresent() {
+    void throwsNoEntityIdFoundInPayloadWhenNoTargetAnnotationPresent() {
         // Given
         NoTargetCommand command = new NoTargetCommand();
 
-        // When
-        Object result = testSubject.resolve(new GenericCommandMessage<>(new MessageType(command.getClass()), command
-        ), ProcessingContext.NONE);
-
-        // Then
-        Assertions.assertNull(result);
+        // when & then
+        Assertions.assertThrows(NoEntityIdFoundInPayload.class, () -> {
+            Object result = testSubject.resolve(new GenericCommandMessage<>(new MessageType(command.getClass()), command
+            ), ProcessingContext.NONE);
+        });
     }
 
 
