@@ -96,8 +96,8 @@ public interface EventProcessingConfigurer {
     EventProcessingConfigurer registerEventHandler(Function<Configuration, Object> eventHandlerBuilder);
 
     /**
-     * Registers a {@link Function} that builds the default {@link ListenerInvocationErrorHandler}.
-     * Defaults to a {@link LoggingErrorHandler}.
+     * Registers a {@link Function} that builds the default {@link ListenerInvocationErrorHandler}. Defaults to a
+     * {@link LoggingErrorHandler}.
      *
      * @param listenerInvocationErrorHandlerBuilder a {@link Function} that builds the default
      *                                              {@link ListenerInvocationErrorHandler}
@@ -107,11 +107,12 @@ public interface EventProcessingConfigurer {
             Function<Configuration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder);
 
     /**
-     * Registers a {@link Function} that builds a {@link ListenerInvocationErrorHandler} for the given {@code
-     * processingGroup}.
+     * Registers a {@link Function} that builds a {@link ListenerInvocationErrorHandler} for the given
+     * {@code processingGroup}.
      *
      * @param processingGroup                       a {@link String} specifying the name of a processing group
-     * @param listenerInvocationErrorHandlerBuilder a {@link Function} that builds {@link ListenerInvocationErrorHandler}
+     * @param listenerInvocationErrorHandlerBuilder a {@link Function} that builds
+     *                                              {@link ListenerInvocationErrorHandler}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerListenerInvocationErrorHandler(String processingGroup,
@@ -121,8 +122,8 @@ public interface EventProcessingConfigurer {
      * Registers a {@link org.axonframework.eventhandling.TrackingEventProcessor} with given {@code name} within this
      * Configurer.
      *
-     * @param name a {@link String} specifying the name of the {@link org.axonframework.eventhandling.TrackingEventProcessor}
-     *             being registered
+     * @param name a {@link String} specifying the name of the
+     *             {@link org.axonframework.eventhandling.TrackingEventProcessor} being registered
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     default EventProcessingConfigurer registerTrackingEventProcessor(String name) {
@@ -152,7 +153,8 @@ public interface EventProcessingConfigurer {
      * @param defaultSource a Function that defines the Message source to use
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer configureDefaultStreamableMessageSource(Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> defaultSource);
+    EventProcessingConfigurer configureDefaultStreamableMessageSource(
+            Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> defaultSource);
 
     /**
      * Configures which {@link SubscribableMessageSource} to use for Subscribing Event Processors if none was explicitly
@@ -167,14 +169,15 @@ public interface EventProcessingConfigurer {
      * @param defaultSource a Function that defines the Message source to use
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
-    EventProcessingConfigurer configureDefaultSubscribableMessageSource(Function<Configuration, SubscribableMessageSource<EventMessage<?>>> defaultSource);
+    EventProcessingConfigurer configureDefaultSubscribableMessageSource(
+            Function<Configuration, SubscribableMessageSource<EventMessage<?>>> defaultSource);
 
     /**
-     * Registers a {@link org.axonframework.eventhandling.TrackingEventProcessor} with given {@code name} and {@code
-     * source} within this Configurer.
+     * Registers a {@link org.axonframework.eventhandling.TrackingEventProcessor} with given {@code name} and
+     * {@code source} within this Configurer.
      *
-     * @param name   a {@link String} specifying the name of the {@link org.axonframework.eventhandling.TrackingEventProcessor}
-     *               being registered
+     * @param name   a {@link String} specifying the name of the
+     *               {@link org.axonframework.eventhandling.TrackingEventProcessor} being registered
      * @param source a {@link Function} that builds a {@link StreamableMessageSource}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
@@ -182,11 +185,11 @@ public interface EventProcessingConfigurer {
                                                              Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source);
 
     /**
-     * Registers a {@link org.axonframework.eventhandling.TrackingEventProcessor} with given {@code name}, {@code
-     * source} and {@code processorConfiguration} within this Configurer.
+     * Registers a {@link org.axonframework.eventhandling.TrackingEventProcessor} with given {@code name},
+     * {@code source} and {@code processorConfiguration} within this Configurer.
      *
-     * @param name                   a {@link String} specifying the name of the {@link org.axonframework.eventhandling.TrackingEventProcessor}
-     *                               being registered
+     * @param name                   a {@link String} specifying the name of the
+     *                               {@link org.axonframework.eventhandling.TrackingEventProcessor} being registered
      * @param source                 a {@link Function} that builds {@link StreamableMessageSource}
      * @param processorConfiguration a {@link Function} that builds a {@link TrackingEventProcessorConfiguration}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
@@ -236,8 +239,8 @@ public interface EventProcessingConfigurer {
      * Defaults Event Processors builders to use {@link org.axonframework.eventhandling.SubscribingEventProcessor}.
      * <p>
      * The default behavior depends on the EventBus available in the Configuration. If the Event Bus is a
-     * {@link StreamableMessageSource}, processors are Tracking by default. This method must be used to force the use
-     * of Subscribing Processors, unless specifically overridden for individual processors.
+     * {@link StreamableMessageSource}, processors are Tracking by default. This method must be used to force the use of
+     * Subscribing Processors, unless specifically overridden for individual processors.
      *
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
@@ -247,8 +250,8 @@ public interface EventProcessingConfigurer {
      * Defaults Event Processors builders to use {@link org.axonframework.eventhandling.TrackingEventProcessor}.
      * <p>
      * The default behavior depends on the EventBus available in the Configuration. If the Event Bus is a
-     * {@link StreamableMessageSource}, processors are Tracking by default. This method must be used to force the use
-     * of Tracking Processors, unless specifically overridden for individual processors.
+     * {@link StreamableMessageSource}, processors are Tracking by default. This method must be used to force the use of
+     * Tracking Processors, unless specifically overridden for individual processors.
      *
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
@@ -257,9 +260,9 @@ public interface EventProcessingConfigurer {
     /**
      * Defaults Event Processors builders to use {@link PooledStreamingEventProcessor}.
      * <p>
-     * The default behavior depends on the {@link EventBus} available in the {@link Configuration}. If the {@code
-     * EventBus} is a {@link StreamableMessageSource}, processors are Tracking by default. This method must be used to
-     * force the use of Pooled Streaming Processors, unless specifically overridden for individual processors.
+     * The default behavior depends on the {@link EventBus} available in the {@link Configuration}. If the
+     * {@code EventBus} is a {@link StreamableMessageSource}, processors are Tracking by default. This method must be
+     * used to force the use of Pooled Streaming Processors, unless specifically overridden for individual processors.
      *
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
@@ -288,8 +291,8 @@ public interface EventProcessingConfigurer {
      * Registers a {@link org.axonframework.eventhandling.SubscribingEventProcessor} with given {@code name} within this
      * Configurer.
      *
-     * @param name a {@link String} specyfing the name of the {@link org.axonframework.eventhandling.SubscribingEventProcessor}
-     *             being registered
+     * @param name a {@link String} specyfing the name of the
+     *             {@link org.axonframework.eventhandling.SubscribingEventProcessor} being registered
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     default EventProcessingConfigurer registerSubscribingEventProcessor(String name) {
@@ -297,11 +300,11 @@ public interface EventProcessingConfigurer {
     }
 
     /**
-     * Registers a {@link org.axonframework.eventhandling.SubscribingEventProcessor} with given {@code name} and {@code
-     * messageSource} within this Configuration.
+     * Registers a {@link org.axonframework.eventhandling.SubscribingEventProcessor} with given {@code name} and
+     * {@code messageSource} within this Configuration.
      *
-     * @param name          a {@link String} specyfing the name of the {@link org.axonframework.eventhandling.SubscribingEventProcessor}
-     *                      being registered
+     * @param name          a {@link String} specyfing the name of the
+     *                      {@link org.axonframework.eventhandling.SubscribingEventProcessor} being registered
      * @param messageSource a {@link Function} that builds a {@link SubscribableMessageSource}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
@@ -548,8 +551,8 @@ public interface EventProcessingConfigurer {
                                                          Function<Configuration, TransactionManager> transactionManagerBuilder);
 
     /**
-     * Registers a default {@link TransactionManager} for all {@link EventProcessor}s. The provided {@code
-     * TransactionManager} is used whenever no processor specific {@code TransactionManager} is configured.
+     * Registers a default {@link TransactionManager} for all {@link EventProcessor}s. The provided
+     * {@code TransactionManager} is used whenever no processor specific {@code TransactionManager} is configured.
      *
      * @param transactionManagerBuilder a {@link Function} that builds a {@link TransactionManager}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
@@ -559,12 +562,13 @@ public interface EventProcessingConfigurer {
     );
 
     /**
-     * Register a {@link Function} that builds a {@link TrackingEventProcessorConfiguration} to be used by the {@link
-     * EventProcessor} corresponding to the given {@code name}.
+     * Register a {@link Function} that builds a {@link TrackingEventProcessorConfiguration} to be used by the
+     * {@link EventProcessor} corresponding to the given {@code name}.
      *
-     * @param name                                       a {@link String} specifying the name of an {@link
-     *                                                   EventProcessor}
-     * @param trackingEventProcessorConfigurationBuilder a {@link Function} that builds a {@link TrackingEventProcessorConfiguration}
+     * @param name                                       a {@link String} specifying the name of an
+     *                                                   {@link EventProcessor}
+     * @param trackingEventProcessorConfigurationBuilder a {@link Function} that builds a
+     *                                                   {@link TrackingEventProcessorConfiguration}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
@@ -575,7 +579,8 @@ public interface EventProcessingConfigurer {
     /**
      * Register a {@link Function} that builds a {@link TrackingEventProcessorConfiguration} to use as the default.
      *
-     * @param trackingEventProcessorConfigurationBuilder a {@link Function} that builds a {@link TrackingEventProcessorConfiguration}
+     * @param trackingEventProcessorConfigurationBuilder a {@link Function} that builds a
+     *                                                   {@link TrackingEventProcessorConfiguration}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
@@ -605,12 +610,12 @@ public interface EventProcessingConfigurer {
 
     /**
      * Registers a {@link PooledStreamingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will
-     * receive the given {@code name} and use the outcome of the {@code messageSource} as the {@link
-     * StreamableMessageSource}.
+     * receive the given {@code name} and use the outcome of the {@code messageSource} as the
+     * {@link StreamableMessageSource}.
      *
      * @param name          the name of the {@link PooledStreamingEventProcessor} being registered
-     * @param messageSource constructs a {@link StreamableMessageSource} to be used by the {@link
-     *                      PooledStreamingEventProcessor}
+     * @param messageSource constructs a {@link StreamableMessageSource} to be used by the
+     *                      {@link PooledStreamingEventProcessor}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     default EventProcessingConfigurer registerPooledStreamingEventProcessor(
@@ -622,17 +627,17 @@ public interface EventProcessingConfigurer {
 
     /**
      * Registers a {@link PooledStreamingEventProcessor} in this {@link EventProcessingConfigurer}. The processor will
-     * receive the given {@code name}  and use the outcome of the {@code messageSource} as the {@link
-     * StreamableMessageSource}.
+     * receive the given {@code name}  and use the outcome of the {@code messageSource} as the
+     * {@link StreamableMessageSource}.
      * <p>
      * The {@code processorConfiguration} will be used to further configure the {@code PooledStreamingEventProcessor}
      * upon construction. Note that the {@code processorConfiguration} will override any configuration set through the
-     * {@link #registerPooledStreamingEventProcessorConfiguration(PooledStreamingProcessorConfiguration)} and {@link
-     * #registerPooledStreamingEventProcessorConfiguration(String, PooledStreamingProcessorConfiguration)}.
+     * {@link #registerPooledStreamingEventProcessorConfiguration(PooledStreamingProcessorConfiguration)} and
+     * {@link #registerPooledStreamingEventProcessorConfiguration(String, PooledStreamingProcessorConfiguration)}.
      *
      * @param name                   the name of the {@link PooledStreamingEventProcessor} being registered
-     * @param messageSource          constructs a {@link StreamableMessageSource} to be used by the {@link
-     *                               PooledStreamingEventProcessor}
+     * @param messageSource          constructs a {@link StreamableMessageSource} to be used by the
+     *                               {@link PooledStreamingEventProcessor}
      * @param processorConfiguration allows further customization of the {@link PooledStreamingEventProcessor} under
      *                               construction. The given {@link Configuration} can be used to extract components and
      *                               use them in the {@link PooledStreamingEventProcessor.Builder}
@@ -645,11 +650,11 @@ public interface EventProcessingConfigurer {
     );
 
     /**
-     * Register a default {@link PooledStreamingProcessorConfiguration} to be used when constructing every {@link
-     * PooledStreamingEventProcessor}.
+     * Register a default {@link PooledStreamingProcessorConfiguration} to be used when constructing every
+     * {@link PooledStreamingEventProcessor}.
      *
-     * @param pooledStreamingProcessorConfiguration configuration used when constructing every {@link
-     *                                              PooledStreamingEventProcessor}
+     * @param pooledStreamingProcessorConfiguration configuration used when constructing every
+     *                                              {@link PooledStreamingEventProcessor}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerPooledStreamingEventProcessorConfiguration(
@@ -657,12 +662,12 @@ public interface EventProcessingConfigurer {
     );
 
     /**
-     * Register a {@link PooledStreamingProcessorConfiguration} to be used when constructing a {@link
-     * PooledStreamingEventProcessor} with {@code name}.
+     * Register a {@link PooledStreamingProcessorConfiguration} to be used when constructing a
+     * {@link PooledStreamingEventProcessor} with {@code name}.
      *
      * @param name                                  the name of an {@link PooledStreamingEventProcessor}
-     * @param pooledStreamingProcessorConfiguration configuration used when constructing a {@link PooledStreamingEventProcessor}
-     *                                              with the given {@code name}
+     * @param pooledStreamingProcessorConfiguration configuration used when constructing a
+     *                                              {@link PooledStreamingEventProcessor} with the given {@code name}
      * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
      */
     EventProcessingConfigurer registerPooledStreamingEventProcessorConfiguration(
@@ -758,7 +763,8 @@ public interface EventProcessingConfigurer {
          * {@link EventHandlerInvoker}.
          *
          * @param name                a {@link String} specifying the name of the {@link EventProcessor} to create
-         * @param configuration       the global {@link Configuration} the implementation may use to obtain dependencies
+         * @param configuration       the global {@link Configuration} the implementation may use to obtain
+         *                            dependencies
          * @param eventHandlerInvoker the {@link EventHandlerInvoker} assigned to the {@link EventProcessor} to be
          *                            created, used to invoke event handlers
          * @return an {@link EventProcessor}
@@ -767,8 +773,8 @@ public interface EventProcessingConfigurer {
     }
 
     /**
-     * Contract defining {@link PooledStreamingEventProcessor.Builder} based configuration when constructing a {@link
-     * PooledStreamingEventProcessor}.
+     * Contract defining {@link PooledStreamingEventProcessor.Builder} based configuration when constructing a
+     * {@link PooledStreamingEventProcessor}.
      */
     @FunctionalInterface
     interface PooledStreamingProcessorConfiguration extends
@@ -825,13 +831,15 @@ public interface EventProcessingConfigurer {
     }
 
     // tag::RegisterDeadLetterQueueProvider[]
+
     /**
      * Register the given {@code deadLetterProvider} as a default to build a {@link SequencedDeadLetterQueue} for
      * {@link EventProcessor}s created in this configuration.
      * <p>
      * The {@code deadLetterProvider} might return null if the given processing group name should not have a sequenced
      * dead letter queue. An explicitly sequenced dead letter queue set using
-     * {@link #registerDeadLetterQueue(String, Function)} will always have precedence over the one provided by this method.
+     * {@link #registerDeadLetterQueue(String, Function)} will always have precedence over the one provided by this
+     * method.
      *
      * @param deadLetterQueueProvider a builder {@link Function} that provides a {@link SequencedDeadLetterQueue} for a
      *                                processing group. It's possible to return null depending on the processing group.
@@ -842,4 +850,32 @@ public interface EventProcessingConfigurer {
         return this;
     }
     // end::RegisterDeadLetterQueueProvider[]
+
+    /**
+     * If this method is invoked, Subscribing Event Processors will be created for all processing groups if none was
+     * explicitly provided.
+     *
+     * @param builder a function that creates {@link SubscribableMessageSourceDefinition} for given processing group
+     *                name.
+     * @return the current {@link EventProcessingConfigurer} instance, for fluent interfacing
+     */
+    default EventProcessingConfigurer usingSubscribingEventProcessors(
+            SubscribableMessageSourceDefinitionBuilder builder) {
+        return this;
+    }
+
+    /**
+     * Contract which define how to build {@link SubscribableMessageSourceDefinition}
+     */
+    @FunctionalInterface
+    interface SubscribableMessageSourceDefinitionBuilder {
+
+        /**
+         * Creates a {@code SubscribableMessageSourceDefinition} for the given {@code processingGroupName}.
+         *
+         * @param processingGroupName The name of processing group for which definition is about to be created.
+         * @return A {@code SubscribableMessageSourceDefinition} for the given {@code processingGroupName}.
+         */
+        SubscribableMessageSourceDefinition<EventMessage<?>> build(String processingGroupName);
+    }
 }
