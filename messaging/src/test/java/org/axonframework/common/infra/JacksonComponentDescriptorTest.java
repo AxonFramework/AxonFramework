@@ -387,27 +387,37 @@ class JacksonComponentDescriptorTest {
             // then
             assertJsonMatches(result, """
                      {
-                         "components": [
-                             {
-                                 "name":"Component1",
-                                 "reference": {
-                                     "name":"Component2",
-                                     "reference":{"$ref":"%s"},
+                         "components":[
+                            {
+                               "name":"Component1",
+                               "reference":{
+                                  "name":"Component2",
+                                  "reference":{
+                                     "name":"Component1",
+                                     "reference":{
+                                        "$ref":"%s"
+                                     },
                                      "_type":"CircularComponent",
                                      "_id":"%s"
-                                 },
-                                 "_type":"CircularComponent",
-                                 "_id":"%s"
-                             },
-                             {
-                                     "name":"Component2",
-                                     "reference":{"$ref":"%s"},
-                                     "_type":"CircularComponent",
-                                     "_id":"%s"
-                             }
+                                  },
+                                  "_type":"CircularComponent",
+                                  "_id":"%s"
+                               },
+                               "_type":"CircularComponent",
+                               "_id":"%s"
+                            },
+                            {
+                               "name":"Component2",
+                               "reference":{
+                                  "$ref":"%s"
+                               },
+                               "_type":"CircularComponent",
+                               "_id":"%s"
+                            }
                          ]
-                    }
-                    """.formatted(identityOf(component1),
+                      }
+                    """.formatted(identityOf(component2),
+                                  identityOf(component1),
                                   identityOf(component2),
                                   identityOf(component1),
                                   identityOf(component1),
