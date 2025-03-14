@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.testsuite.student.commands;
+package org.axonframework.integrationtests.testsuite.student.common;
 
-import org.axonframework.modelling.command.annotation.TargetEntityId;
-
-public record ChangeStudentNameCommand(
-        @TargetEntityId String id,
-        String name
+public record StudentMentorModelIdentifier(
+        String mentorId,
+        String menteeId
 ) {
 
 }
