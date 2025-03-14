@@ -217,13 +217,15 @@ public class AxonServerConfiguration {
     private boolean suppressDownloadMessage = false;
 
     /**
-     * The gRPC max inbound and outbound message size. Defaults to {@code 0}, keeping the default value (4,194,304 or 4MiB) from the connector.
-     * Upon messages exceeding this size, an exception is thrown to prevent unexpected disconnections.
+     * The gRPC max inbound and outbound message size. Defaults to {@code 0}, keeping the default value (4,194,304 or
+     * 4MiB) from the connector. Upon messages exceeding this size, an exception is thrown to prevent unexpected
+     * disconnections.
      */
     private int maxMessageSize = 0;
 
     /**
-     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to {@code 0.8}.
+     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to
+     * {@code 0.8}.
      */
     private double maxMessageSizeWarningThreshold = 0.8;
 
@@ -400,6 +402,16 @@ public class AxonServerConfiguration {
     }
 
     /**
+     * A toggle dictating whether to create persistent streams for all processing groups. Defaults to {@code false}.
+     */
+    private boolean autoPersistentStreamsEnable = false;
+
+    /**
+     * Settings that are used to create persistent stream definition.
+     */
+    private PersistentStreamSettings autoPersistentStreamsSettings = new PersistentStreamSettings();
+
+    /**
      * A list of {@link NodeInfo} instances based on the comma separated list of {@link #getServers()}.
      *
      * @return A list of {@link NodeInfo} instances based on the comma separated list of {@link #getServers()}.
@@ -435,6 +447,32 @@ public class AxonServerConfiguration {
      */
     public String getClientId() {
         return clientId;
+    }
+
+    public boolean isAutoPersistentStreamsEnable() {
+        return autoPersistentStreamsEnable;
+    }
+
+    public void setAutoPersistentStreamsEnable(boolean autoPersistentStreamsEnable) {
+        this.autoPersistentStreamsEnable = autoPersistentStreamsEnable;
+    }
+
+    /**
+     * Return the settings for all persistent streams that will be created automatically.
+     * <p>
+     * Each persistent stream will be named according to the following pattern:
+     * <p>
+     * processingGroupName + "-stream"
+     *
+     * @return Return the settings for all persistent streams that will be created automatically.
+     */
+    public PersistentStreamSettings getAutoPersistentStreamsSettings() {
+        return autoPersistentStreamsSettings;
+    }
+
+    public void setAutoPersistentStreamsSettings(
+            PersistentStreamSettings autoPersistentStreamsSettings) {
+        this.autoPersistentStreamsSettings = autoPersistentStreamsSettings;
     }
 
     /**
@@ -946,16 +984,19 @@ public class AxonServerConfiguration {
     }
 
     /**
-     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to {@code 0.8}.
+     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to
+     * {@code 0.8}.
      *
-     * @return The threshold (in percentage of 0 to 1) of the max outbound message size at which a warning should be logged.
+     * @return The threshold (in percentage of 0 to 1) of the max outbound message size at which a warning should be
+     * logged.
      */
     public double getMaxMessageSizeWarningThreshold() {
         return maxMessageSizeWarningThreshold;
     }
 
     /**
-     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to {@code 0.8}.
+     * The threshold (in percentage of 0-1) of the max message size at which a warning should be logged. Defaults to
+     * {@code 0.8}.
      *
      * @param maxMessageSizeWarningThreshold The threshold (in percentage of 0 to 1) of the max outbound message size at
      *                                       which a warning should be logged.
