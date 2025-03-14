@@ -392,9 +392,6 @@ class JacksonComponentDescriptorTest {
             );
         }
 
-        /**
-         * A component that can create circular references.
-         */
         private static class CircularComponent implements DescribableComponent {
 
             private final String name;
@@ -419,16 +416,10 @@ class JacksonComponentDescriptorTest {
         }
     }
 
-    /**
-     * Utility method to normalize JSON strings for comparison.
-     */
     private String normalizeJson(String json) {
         return json.replaceAll("\\s+", "");
     }
 
-    /**
-     * Utility method to assert that a JSON string matches a pattern, with dynamic IDs replaced for comparison.
-     */
     private void assertJsonMatchesPattern(String actual, String expectedPattern) {
         String normalizedActual = normalizeJson(actual)
                 .replaceAll("\"_id\":\"\\d+\"", "\"_id\":\"*\"");
