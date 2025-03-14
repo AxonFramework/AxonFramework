@@ -27,65 +27,66 @@ class AnnotationBasedModelIdentifierResolverTest {
 
     @Test
     void testResolvesIdOfSingleTargetCommand() {
-        // Given
+        // given
         SingleTargetCommand command = new SingleTargetCommand("id-2792793");
 
-        // When
+        // when
         Object result = testSubject.resolve(new GenericCommandMessage<>(new MessageType(command.getClass()), command),
                                             ProcessingContext.NONE);
 
-        // Then
+        // then
         Assertions.assertEquals("id-2792793", result);
     }
 
 
     @Test
     void testResolvesIdOfSingleTargetCommandWithGetterAnnotated() {
-        // Given
+        // given
         SingleTargetGetterCommand command = new SingleTargetGetterCommand("id-2792794");
 
-        // When
+        // when
         Object result = testSubject.resolve(new GenericCommandMessage<>(new MessageType(command.getClass()), command),
                                             ProcessingContext.NONE);
 
-        // Then
+        // then
         Assertions.assertEquals("id-2792794", result);
     }
 
     @Test
     void testResolvesIdOfSingleTargetCommandWithRecord() {
-        // Given
+        // given
         SingleTargetRecordCommand command = new SingleTargetRecordCommand("id-2792795");
 
-        // When
+        // when
         Object result = testSubject.resolve(new GenericCommandMessage<>(new MessageType(command.getClass()), command),
                                             ProcessingContext.NONE);
 
-        // Then
+        // then
         Assertions.assertEquals("id-2792795", result);
     }
 
     @Test
     void throwsExceptionWhenMultipleTargetAnnotationsArePresent() {
-        // Given
+        // given
         MultipleTargetCommand command = new MultipleTargetCommand("id-2792796", "id-2792797");
 
-        // Then
+        // then
         Assertions.assertThrows(MultipleTargetEntityIdsFoundInPayload.class, () -> testSubject.resolve(
                 new GenericCommandMessage<>(new MessageType(command.getClass()), command), ProcessingContext.NONE));
     }
 
     @Test
     void returnsNullWhenNoTargetAnnotationPresent() {
-        // Given
+        // given
         NoTargetCommand command = new NoTargetCommand();
+        GenericCommandMessage<NoTargetCommand> commandMessage = new GenericCommandMessage<>(
+                new MessageType(command.getClass()), command
+        );
 
-        // When
-        Object result = testSubject.resolve(new GenericCommandMessage<>(new MessageType(command.getClass()), command
-        ), ProcessingContext.NONE);
-
-        // Then
-        Assertions.assertNull(result);
+        // when & then
+        Assertions.assertThrows(NoEntityIdFoundInPayload.class, () -> {
+            testSubject.resolve(commandMessage, ProcessingContext.NONE);
+        });
     }
 
 
@@ -119,7 +120,7 @@ class AnnotationBasedModelIdentifierResolverTest {
         }
     }
 
-    static record SingleTargetRecordCommand(@TargetEntityId String targetId) {
+    record SingleTargetRecordCommand(@TargetEntityId String targetId) {
 
     }
 
