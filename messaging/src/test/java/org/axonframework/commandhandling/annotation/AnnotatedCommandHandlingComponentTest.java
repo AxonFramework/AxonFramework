@@ -36,23 +36,24 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test to validate the {@link AnnotationCommandHandlerAdapter}.
+ * Test to validate the {@link AnnotatedCommandHandlingComponent}.
  *
  * @author Allard Buijze
  */
-class AnnotationCommandHandlerAdapterTest {
+class AnnotatedCommandHandlingComponentTest {
 
     private static final MessageType TEST_TYPE = new MessageType("command");
 
     private CommandBus commandBus;
     private MyCommandHandler annotatedCommandHandler;
 
-    private AnnotationCommandHandlerAdapter<MyCommandHandler> testSubject;
+    private AnnotatedCommandHandlingComponent<MyCommandHandler> testSubject;
 
     @BeforeEach
     void setUp() {
@@ -60,7 +61,7 @@ class AnnotationCommandHandlerAdapterTest {
         annotatedCommandHandler = new MyCommandHandler();
         ParameterResolverFactory parameterResolverFactory = ClasspathParameterResolverFactory.forClass(getClass());
 
-        testSubject = new AnnotationCommandHandlerAdapter<>(annotatedCommandHandler, parameterResolverFactory);
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler, parameterResolverFactory);
 
         when(commandBus.subscribe(any(QualifiedName.class), any())).thenReturn(commandBus);
         when(commandBus.subscribe(anySet(), any())).thenReturn(commandBus);
@@ -68,7 +69,7 @@ class AnnotationCommandHandlerAdapterTest {
 
     @Test
     void handlerDispatchingVoidReturnType() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(TEST_TYPE, "");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(new MessageType(String.class), "myStringPayload");
 
         Object result = testSubject.handle(testCommand, mock(ProcessingContext.class))
                                    .first()
@@ -84,7 +85,7 @@ class AnnotationCommandHandlerAdapterTest {
 
     @Test
     void handlerDispatchingWithReturnType() {
-        CommandMessage<Long> testCommand = new GenericCommandMessage<>(TEST_TYPE, 1L);
+        CommandMessage<Long> testCommand = new GenericCommandMessage<>(new MessageType(Long.class), 1L);
 
         Object result = testSubject.handle(testCommand, mock(ProcessingContext.class))
                                    .first()
@@ -101,7 +102,7 @@ class AnnotationCommandHandlerAdapterTest {
     @Test
     void handlerDispatchingWithCustomCommandName() {
         CommandMessage<Long> testCommand =
-                new GenericCommandMessage<>(new GenericMessage<>(TEST_TYPE, 1L), "almostLong");
+                new GenericCommandMessage<>(new GenericMessage<>(new MessageType("almostLong"), 1L), "almostLong");
 
         Object result = testSubject.handle(testCommand, mock(ProcessingContext.class))
                                    .first()
@@ -119,7 +120,7 @@ class AnnotationCommandHandlerAdapterTest {
     @Test
     void handlerDispatchingThrowingException() {
         try {
-            testSubject.handle(new GenericCommandMessage<>(TEST_TYPE, new HashSet<>()), mock(ProcessingContext.class))
+            testSubject.handle(new GenericCommandMessage<>(new MessageType(HashSet.class), new HashSet<>()), mock(ProcessingContext.class))
                        .first()
                        .asCompletableFuture()
                        .join();
@@ -136,19 +137,20 @@ class AnnotationCommandHandlerAdapterTest {
     void handleNoHandlerForCommand() {
         CommandMessage<Object> command = new GenericCommandMessage<>(TEST_TYPE, new LinkedList<>());
 
-        assertThrows(NoHandlerForCommandException.class,
-                     () -> testSubject.handle(command, mock(ProcessingContext.class)));
+        var exception = assertThrows(CompletionException.class,
+                                     () -> testSubject.handle(command, mock(ProcessingContext.class)).first().asCompletableFuture().join());
+        assertInstanceOf(NoHandlerForCommandException.class, exception.getCause());
     }
 
     @Test
     void messageHandlerInterceptorAnnotatedMethodsAreSupportedForCommandHandlingComponents() {
-        CommandMessage<String> testCommandMessage = new GenericCommandMessage<>(TEST_TYPE, "");
+        CommandMessage<String> testCommandMessage = new GenericCommandMessage<>(new MessageType(String.class), "");
         List<CommandMessage<?>> withInterceptor = new ArrayList<>();
         List<CommandMessage<?>> withoutInterceptor = new ArrayList<>();
         annotatedCommandHandler = new MyInterceptingCommandHandler(withoutInterceptor,
                                                                    withInterceptor,
                                                                    new ArrayList<>());
-        testSubject = new AnnotationCommandHandlerAdapter<>(annotatedCommandHandler);
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler);
 
         Object result = testSubject.handle(testCommandMessage, mock(ProcessingContext.class))
                                    .first()
@@ -173,7 +175,7 @@ class AnnotationCommandHandlerAdapterTest {
         annotatedCommandHandler = new MyInterceptingCommandHandler(new ArrayList<>(),
                                                                    new ArrayList<>(),
                                                                    interceptedExceptions);
-        testSubject = new AnnotationCommandHandlerAdapter<>(annotatedCommandHandler);
+        testSubject = new AnnotatedCommandHandlingComponent<>(annotatedCommandHandler);
 
         try {
             testSubject.handle(testCommandMessage, mock(ProcessingContext.class));
