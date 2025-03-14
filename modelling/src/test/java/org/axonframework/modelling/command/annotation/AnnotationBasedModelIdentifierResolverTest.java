@@ -76,7 +76,7 @@ class AnnotationBasedModelIdentifierResolverTest {
     }
 
     @Test
-    void returnsNullWhenNoTargetAnnotationPresent() {
+    void throwsNoEntityIdFoundInPayloadWhenNoTargetAnnotationPresent() {
         // given
         NoTargetCommand command = new NoTargetCommand();
         GenericCommandMessage<NoTargetCommand> commandMessage = new GenericCommandMessage<>(
