@@ -33,77 +33,58 @@ class JacksonComponentDescriptorTest {
         testSubject = new JacksonComponentDescriptor();
     }
 
-    @Test
-    void describeString() {
-        // given
-        testSubject.describeProperty("testName", "testValue");
+    @Nested
+    class PrimitivesTests {
 
-        // when
-        var result = testSubject.describe();
-        var expected = normalizeJson("""
-                                             {
-                                               "testName" : "testValue"
-                                             }
-                                             """);
+        @Test
+        void describeString() {
+            // given
+            testSubject.describeProperty("testName", "testValue");
 
-        // then
-        assertEquals(expected, normalizeJson(result));
-    }
+            // when
+            var result = testSubject.describe();
 
-    @Test
-    void describeLong() {
-        // given
-        testSubject.describeProperty("testName", 42L);
+            // then
+            assertJsonMatches(result, """
+                    {
+                      "testName" : "testValue"
+                    }
+                    """
+            );
+        }
 
-        // when
-        var result = testSubject.describe();
-        var expected = normalizeJson("""
-                                             {
-                                               "testName" : 42
-                                             }
-                                             """);
+        @Test
+        void describeLong() {
+            // given
+            testSubject.describeProperty("testName", 42L);
 
-        // then
-        assertEquals(expected, normalizeJson(result));
-    }
+            // when
+            var result = testSubject.describe();
 
-    @Test
-    void describeBoolean() {
-        // given
-        testSubject.describeProperty("testName", true);
+            // then
+            assertJsonMatches(result, """
+                    {
+                      "testName" : 42
+                    }
+                    """
+            );
+        }
 
-        // when
-        var result = testSubject.describe();
-        var expected = normalizeJson("""
-                                             {
-                                               "testName" : true
-                                             }
-                                             """);
+        @Test
+        void describeBoolean() {
+            // given
+            testSubject.describeProperty("testName", true);
 
-        // then
-        assertEquals(expected, normalizeJson(result));
-    }
+            // when
+            var result = testSubject.describe();
 
-    @Test
-    void describeDescribableComponentShouldIncludeTypeAndId() {
-        // given
-        var component = new SimpleTestComponent("componentValue", 100);
-        testSubject.describeProperty("component", component);
-
-        // when
-        var result = testSubject.describe();
-
-        // then
-        assertJsonMatchesPattern(result, """
-                {
-                  "component" : {
-                    "_id" : "*",
-                    "_type" : "SimpleTestComponent",
-                    "name" : "componentValue",
-                    "value" : 100
-                  }
-                }
-                """);
+            // then
+            assertJsonMatches(result, """
+                    {
+                      "testName" : true
+                    }
+                    """);
+        }
     }
 
     @Nested
@@ -117,14 +98,14 @@ class JacksonComponentDescriptorTest {
 
             // when
             var result = testSubject.describe();
-            var expected = normalizeJson("""
-                                                 {
-                                                   "collection" : [ "value1", "value2", "value3" ]
-                                                 }
-                                                 """);
 
             // then
-            assertEquals(expected, normalizeJson(result));
+            assertJsonMatches(result, """
+                    {
+                      "collection" : [ "value1", "value2", "value3" ]
+                    }
+                    """
+            );
         }
 
         @Test
@@ -135,14 +116,14 @@ class JacksonComponentDescriptorTest {
 
             // when
             var result = testSubject.describe();
-            var expected = normalizeJson("""
-                                                 {
-                                                   "emptyCollection" : [ ]
-                                                 }
-                                                 """);
 
             // then
-            assertEquals(expected, normalizeJson(result));
+            assertJsonMatches(result, """
+                    {
+                      "emptyCollection" : [ ]
+                    }
+                    """
+            );
         }
 
         @Test
@@ -266,92 +247,118 @@ class JacksonComponentDescriptorTest {
         }
     }
 
-    @Test
-    void describeComplexStructureShouldIncludeTypeAndId() {
-        // given
-        record ComplexTestComponent(
-                String stringValue,
-                long numberValue,
-                boolean booleanValue,
-                DescribableComponent component,
-                List<String> simpleList,
-                List<DescribableComponent> componentList,
-                Map<String, String> simpleMap
-        ) implements DescribableComponent {
+    @Nested
+    class ComponentTests {
 
-            @Override
-            public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-                descriptor.describeProperty("stringValue", stringValue);
-                descriptor.describeProperty("numberValue", numberValue);
-                descriptor.describeProperty("booleanValue", booleanValue);
-                descriptor.describeProperty("component", component);
-                descriptor.describeProperty("simpleList", simpleList);
-                descriptor.describeProperty("componentList", componentList);
-                descriptor.describeProperty("simpleMap", simpleMap);
-            }
+        @Test
+        void describeDescribableComponentShouldIncludeTypeAndId() {
+            // given
+            var component = new SimpleTestComponent("componentValue", 100);
+            testSubject.describeProperty("component", component);
+
+            // when
+            var result = testSubject.describe();
+
+            // then
+            assertJsonMatchesPattern(result, """
+                    {
+                      "component" : {
+                        "_id" : "*",
+                        "_type" : "SimpleTestComponent",
+                        "name" : "componentValue",
+                        "value" : 100
+                      }
+                    }
+                    """);
         }
 
-        var structure = new ComplexTestComponent(
-                "test",
-                42L,
-                true,
-                new SimpleTestComponent("nestedComponent", 300),
-                List.of("listItem1", "listItem2"),
-                List.of(
-                        new SimpleTestComponent("listComponent1", 301),
-                        new SimpleTestComponent("listComponent2", 302)
-                ),
-                Map.of("mapKey1", "mapValue1")
-        );
+        @Test
+        void describeComplexStructureShouldIncludeTypeAndId() {
+            // given
+            record ComplexTestComponent(
+                    String stringValue,
+                    long numberValue,
+                    boolean booleanValue,
+                    DescribableComponent component,
+                    List<String> simpleList,
+                    List<DescribableComponent> componentList,
+                    Map<String, String> simpleMap
+            ) implements DescribableComponent {
 
-        testSubject.describeProperty("complexStructure", structure);
+                @Override
+                public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+                    descriptor.describeProperty("stringValue", stringValue);
+                    descriptor.describeProperty("numberValue", numberValue);
+                    descriptor.describeProperty("booleanValue", booleanValue);
+                    descriptor.describeProperty("component", component);
+                    descriptor.describeProperty("simpleList", simpleList);
+                    descriptor.describeProperty("componentList", componentList);
+                    descriptor.describeProperty("simpleMap", simpleMap);
+                }
+            }
 
-        // when
-        var result = testSubject.describe();
+            var structure = new ComplexTestComponent(
+                    "test",
+                    42L,
+                    true,
+                    new SimpleTestComponent("nestedComponent", 300),
+                    List.of("listItem1", "listItem2"),
+                    List.of(
+                            new SimpleTestComponent("listComponent1", 301),
+                            new SimpleTestComponent("listComponent2", 302)
+                    ),
+                    Map.of("mapKey1", "mapValue1")
+            );
 
-        // then
-        assertJsonMatchesPattern(
-                result,
-                """
-                        {
-                            "complexStructure":{
-                                "_id":"*",
-                                "_type":"ComplexTestComponent",
-                                "stringValue":"test",
-                                "numberValue":42,
-                                "booleanValue":true,
-                                "component":{
+            testSubject.describeProperty("complexStructure", structure);
+
+            // when
+            var result = testSubject.describe();
+
+            // then
+            assertJsonMatchesPattern(
+                    result,
+                    """
+                            {
+                                "complexStructure":{
                                     "_id":"*",
-                                    "_type":"SimpleTestComponent",
-                                    "name":"nestedComponent",
-                                    "value":300
-                                },
-                                "simpleList":["listItem1","listItem2"],
-                                "componentList":[
-                                    {
+                                    "_type":"ComplexTestComponent",
+                                    "stringValue":"test",
+                                    "numberValue":42,
+                                    "booleanValue":true,
+                                    "component":{
                                         "_id":"*",
                                         "_type":"SimpleTestComponent",
-                                        "name":"listComponent1",
-                                        "value":301
+                                        "name":"nestedComponent",
+                                        "value":300
                                     },
-                                    {
-                                        "_id":"*",
-                                        "_type":"SimpleTestComponent",
-                                        "name":"listComponent2",
-                                        "value":302
-                                    }
-                                ],
-                                "simpleMap":{"mapKey1":"mapValue1"}
+                                    "simpleList":["listItem1","listItem2"],
+                                    "componentList":[
+                                        {
+                                            "_id":"*",
+                                            "_type":"SimpleTestComponent",
+                                            "name":"listComponent1",
+                                            "value":301
+                                        },
+                                        {
+                                            "_id":"*",
+                                            "_type":"SimpleTestComponent",
+                                            "name":"listComponent2",
+                                            "value":302
+                                        }
+                                    ],
+                                    "simpleMap":{"mapKey1":"mapValue1"}
+                                }
                             }
-                        }
-                        """
-        );
+                            """
+            );
+        }
     }
 
+    @Disabled("TODO #XXXX - support circular references")
     @Nested
     class CircularReferencesTests {
 
-        @Disabled("TODO #XXXX - support circular references")
         @Test
         void describeComponentWithCircularReference() {
             // given
