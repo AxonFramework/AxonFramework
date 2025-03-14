@@ -20,8 +20,6 @@ import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.QualifiedName;
 
-import java.io.Serial;
-
 /**
  * Exception indicating a duplicate Command Handler was subscribed whilst this behavior is purposefully guarded
  * against.
@@ -30,9 +28,6 @@ import java.io.Serial;
  * @since 4.2
  */
 public class DuplicateCommandHandlerSubscriptionException extends AxonNonTransientException {
-
-    @Serial
-    private static final long serialVersionUID = 7168111526309151296L;
 
     /**
      * Initialize a duplicate command handler subscription exception using the given {@code initialHandler} and

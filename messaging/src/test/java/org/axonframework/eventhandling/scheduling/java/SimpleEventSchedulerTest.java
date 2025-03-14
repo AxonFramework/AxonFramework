@@ -84,18 +84,6 @@ class SimpleEventSchedulerTest {
     }
 
     @Test
-    void scheduleTokenIsSerializable() throws IOException, ClassNotFoundException {
-        ScheduleToken token = testSubject.schedule(Duration.ZERO, new Object());
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(token);
-        oos.close();
-        ScheduleToken token2 = (ScheduleToken) new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()))
-                .readObject();
-        testSubject.cancelSchedule(token2);
-    }
-
-    @Test
     void cancelJob() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         doAnswer(invocation -> {

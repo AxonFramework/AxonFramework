@@ -22,7 +22,6 @@ import org.axonframework.queryhandling.QueryResponseMessage;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
-import java.io.Serial;
 import java.util.Map;
 import java.util.Optional;
 
@@ -35,9 +34,6 @@ import java.util.Optional;
  * @since 4.0.0
  */
 public class GenericResultMessage<R> extends MessageDecorator<R> implements ResultMessage<R> {
-
-    @Serial
-    private static final long serialVersionUID = -9086395619674962782L;
 
     private final Throwable exception;
 

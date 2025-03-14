@@ -33,8 +33,6 @@ import static java.lang.String.format;
  */
 public class NoHandlerForCommandException extends AxonTransientException {
 
-    private static final long serialVersionUID = -7202076465339197011L;
-
     /**
      * Initialize this exception with the given {@code message}.
      *

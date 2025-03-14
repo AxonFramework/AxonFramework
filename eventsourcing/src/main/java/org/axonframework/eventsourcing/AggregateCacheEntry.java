@@ -20,9 +20,7 @@ import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 
-import java.io.Serializable;
-
-public class AggregateCacheEntry<T> implements Serializable {
+public class AggregateCacheEntry<T> {
 
     private final T aggregateRoot;
     private final Long version;
@@ -36,9 +34,7 @@ public class AggregateCacheEntry<T> implements Serializable {
         this.aggregateRoot = aggregate.getAggregateRoot();
         this.version = aggregate.version();
         this.deleted = aggregate.isDeleted();
-        this.snapshotTrigger =
-                (aggregate.getSnapshotTrigger() instanceof Serializable) ? aggregate.getSnapshotTrigger() :
-                        NoSnapshotTriggerDefinition.TRIGGER;
+        this.snapshotTrigger = NoSnapshotTriggerDefinition.TRIGGER;
     }
 
     public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model,

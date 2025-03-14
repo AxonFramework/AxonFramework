@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import org.axonframework.modelling.command.AggregateNotFoundException;
  * @since 0.4
  */
 public class AggregateDeletedException extends AggregateNotFoundException {
-
-    private static final long serialVersionUID = 6814686444144567614L;
 
     /**
      * Initialize a AggregateDeletedException for an aggregate identifier by given {@code aggregateIdentifier} and

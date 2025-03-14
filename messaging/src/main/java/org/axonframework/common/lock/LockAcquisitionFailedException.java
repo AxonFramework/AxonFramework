@@ -27,8 +27,6 @@ import org.axonframework.common.AxonTransientException;
  */
 public class LockAcquisitionFailedException extends AxonTransientException {
 
-    private static final long serialVersionUID = 4453369833513201587L;
-
     /**
      * Initialize the exception with given {@code message} and {@code cause}
      *

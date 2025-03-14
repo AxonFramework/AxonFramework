@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,6 @@ import org.apache.avro.specific.SpecificData;
 @org.apache.avro.specific.AvroGenerated
 public class ComplexObject extends org.apache.avro.specific.SpecificRecordBase
         implements org.apache.avro.specific.SpecificRecord {
-
-    private static final long serialVersionUID = -213207546923932305L;
-
 
     public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse(
             "{\"type\":\"record\",\"name\":\"ComplexObject\",\"namespace\":\"org.axonframework.springboot.fixture.avro.test2\",\"fields\":[{\"name\":\"value1\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}},{\"name\":\"value2\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"},\"default\":\"default value\"},{\"name\":\"value3\",\"type\":\"int\"}]}");

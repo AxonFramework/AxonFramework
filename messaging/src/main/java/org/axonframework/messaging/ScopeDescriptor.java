@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging;
 
-import java.io.Serializable;
-
 /**
  * Denotes the description of a {@link Scope}. This can be used to figure out in what scope a given message should be
  * handled.
@@ -25,7 +23,7 @@ import java.io.Serializable;
  * @author Steven van Beelen
  * @since 3.3
  */
-public interface ScopeDescriptor extends Serializable {
+public interface ScopeDescriptor {
 
     /**
      * Retrieve a {@link String} description of a {@link Scope} object.

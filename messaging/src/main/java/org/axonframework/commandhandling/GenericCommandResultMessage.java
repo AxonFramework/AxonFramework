@@ -24,7 +24,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.queryhandling.QueryResponseMessage;
 
-import java.io.Serial;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -37,9 +36,6 @@ import java.util.function.Function;
  * @since 4.0.0
  */
 public class GenericCommandResultMessage<R> extends GenericResultMessage<R> implements CommandResultMessage<R> {
-
-    @Serial
-    private static final long serialVersionUID = 9013948836930094183L;
 
     /**
      * Constructs a {@link GenericResultMessage} for the given {@code type} and {@code commandResult}.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ import static java.lang.String.format;
  * @since 3.1
  */
 public class NoHandlerForQueryException extends AxonNonTransientException {
-
-    private static final long serialVersionUID = 7525883085990429064L;
 
     /**
      * Initialize this exception with the given {@code message}.

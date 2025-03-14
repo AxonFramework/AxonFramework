@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.serialization;
 import java.lang.annotation.*;
 
 /**
- * Annotation that attaches revision information to a Serializable object. The revision identifiers is used by
+ * Annotation that attaches revision information to a serializable object. The revision identifiers is used by
  * upcasters to decide whether they need to process a certain serialized event. Generally, the revision identifier
  * needs to be modified (increased) each time the structure of an event has been changed in an incompatible manner.
  * <p/>

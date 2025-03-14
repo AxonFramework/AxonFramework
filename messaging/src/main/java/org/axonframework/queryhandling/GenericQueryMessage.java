@@ -24,7 +24,6 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.responsetypes.ResponseType;
 
-import java.io.Serial;
 import java.util.Map;
 
 /**
@@ -40,9 +39,6 @@ import java.util.Map;
  * @since 3.1.0
  */
 public class GenericQueryMessage<P, R> extends MessageDecorator<P> implements QueryMessage<P, R> {
-
-    @Serial
-    private static final long serialVersionUID = -3908412412867063631L;
 
     private final String queryName;
     private final ResponseType<R> responseType;

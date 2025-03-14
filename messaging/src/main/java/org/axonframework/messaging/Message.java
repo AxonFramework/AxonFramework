@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -44,7 +43,7 @@ import java.util.function.Function;
  * @see org.axonframework.queryhandling.QueryMessage
  * @since 2.0.0
  */
-public interface Message<P> extends Serializable {
+public interface Message<P> {
 
     /**
      * Returns the identifier of this {@code Message}.

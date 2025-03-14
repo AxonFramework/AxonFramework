@@ -26,8 +26,6 @@ import org.axonframework.common.AxonNonTransientException;
  */
 public class ResetNotSupportedException extends AxonNonTransientException {
 
-    private static final long serialVersionUID = 6915875633006978877L;
-
     /**
      * Initialize the exception with given {@code message}
      *

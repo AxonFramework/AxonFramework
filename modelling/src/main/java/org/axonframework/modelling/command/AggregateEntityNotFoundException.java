@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,6 @@ import org.axonframework.common.AxonNonTransientException;
  * @since 3.3
  */
 public class AggregateEntityNotFoundException extends AxonNonTransientException {
-
-    private static final long serialVersionUID = 3244586128749940025L;
 
     /**
      * Initialize a {@code AggregateEntityNotFoundException} with given {@code message}.

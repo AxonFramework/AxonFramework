@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.common.ExceptionUtils;
 
 import java.beans.ConstructorProperties;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -33,7 +32,7 @@ import java.util.Objects;
  * @author Steven van Beelen
  * @since 4.0
  */
-public class RemoteExceptionDescription implements Serializable {
+public class RemoteExceptionDescription {
 
     private static final String DELIMITER = ": ";
     private static final String CAUSED_BY = "\nCaused by ";

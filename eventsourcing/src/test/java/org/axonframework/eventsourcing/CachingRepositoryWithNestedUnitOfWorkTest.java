@@ -40,7 +40,6 @@ import org.ehcache.core.EhcacheManager;
 import org.ehcache.core.config.DefaultConfiguration;
 import org.junit.jupiter.api.*;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -303,7 +302,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
      * Domain Model
      */
 
-    public static class AggregateCreatedEvent implements Serializable {
+    public static class AggregateCreatedEvent {
 
         @AggregateIdentifier
         private final String id;
@@ -318,7 +317,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         }
     }
 
-    public static class AggregateUpdatedEvent implements Serializable {
+    public static class AggregateUpdatedEvent {
 
         @AggregateIdentifier
         private final String id;
@@ -335,7 +334,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         }
     }
 
-    public static class TestAggregate implements Serializable {
+    public static class TestAggregate {
 
         @AggregateIdentifier
         public String id;

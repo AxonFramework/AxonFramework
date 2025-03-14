@@ -26,8 +26,6 @@ import org.axonframework.common.AxonTransientException;
  */
 public class JdbcException extends AxonTransientException {
 
-    private static final long serialVersionUID = -4361376818435729797L;
-
     /**
      * Initialize the exception with given {@code message} and {@code cause}
      *
