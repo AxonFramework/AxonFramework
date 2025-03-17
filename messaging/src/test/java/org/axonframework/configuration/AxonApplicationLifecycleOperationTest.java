@@ -33,7 +33,7 @@ import static org.mockito.Mockito.*;
 class AxonApplicationLifecycleOperationTest extends ConfigurerLifecycleOperationTestSuite<AxonApplication> {
 
     @Override
-    public AxonApplication buildConfigurer() {
+    public AxonApplication createConfigurer() {
         return AxonApplication.create();
     }
 

@@ -84,7 +84,7 @@ public class MessagingConfigurer
      *
      * @return A {@code MessagingConfigurer} instance for further configuring.
      */
-    public static MessagingConfigurer defaultConfigurer() {
+    public static MessagingConfigurer create() {
         return new MessagingConfigurer(AxonApplication.create())
                 .registerComponent(MessageTypeResolver.class, MessagingConfigurer::defaultMessageTypeResolver)
                 .registerComponent(CommandGateway.class, MessagingConfigurer::defaultCommandGateway)

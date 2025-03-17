@@ -45,7 +45,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
 
     @BeforeEach
     void setUp() {
-        configurer = buildConfigurer();
+        configurer = createConfigurer();
     }
 
     /**
@@ -55,7 +55,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
      * @return The {@link StartableConfigurer} of type {@code S} to be used in this test suite for validating its
      * start-up and shutdown behavior.
      */
-    public abstract S buildConfigurer();
+    public abstract S createConfigurer();
 
     @Test
     void startLifecycleHandlersAreInvokedInAscendingPhaseOrder() {

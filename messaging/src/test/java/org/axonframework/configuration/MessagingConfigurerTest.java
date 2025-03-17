@@ -49,7 +49,7 @@ class MessagingConfigurerTest extends ConfigurerTestSuite<MessagingConfigurer> {
 
     @Override
     public MessagingConfigurer testSubject() {
-        return MessagingConfigurer.defaultConfigurer();
+        return MessagingConfigurer.create();
     }
 
     @SuppressWarnings("unchecked")
