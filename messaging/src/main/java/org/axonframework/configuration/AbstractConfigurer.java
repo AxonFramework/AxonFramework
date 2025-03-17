@@ -33,8 +33,8 @@ import java.util.function.Supplier;
 
 /**
  * Abstract implementation of the {@link NewConfigurer} allowing for reuse of {@link Component},
- * {@link ComponentDecorator}, {@link ConfigurationEnhancer}, and {@link Module} registration for the {@code NewConfigurer}
- * and {@link Module} implementations alike.
+ * {@link ComponentDecorator}, {@link ConfigurationEnhancer}, and {@link Module} registration for the
+ * {@code NewConfigurer} and {@link Module} implementations alike.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -45,12 +45,14 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     protected final Components components = new Components();
+    protected final LifecycleSupportingConfiguration config;
+
     private final List<ConfigurationEnhancer> enhancers = new ArrayList<>();
     private final List<Module<?>> modules = new ArrayList<>();
     private final List<NewConfiguration> moduleConfigurations = new ArrayList<>();
-
-    protected final LifecycleSupportingConfiguration config;
     private final AtomicBoolean initialized = new AtomicBoolean(false);
+
+    private OverrideBehavior overrideBehavior = OverrideBehavior.WARN;
 
     /**
      * Initialize the {@code AbstractConfigurer} based on the given {@code config}.
@@ -68,9 +70,13 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
                                    @Nonnull ComponentFactory<C> factory) {
         logger.debug("Registering component [{}] of type [{}].", name, type);
         Identifier<C> identifier = new Identifier<>(type, name);
+        if (overrideBehavior == OverrideBehavior.THROW && components.contains(identifier)) {
+            throw new ComponentOverrideException(type, name);
+        }
+
         Component<C> previous = components.put(identifier, new Component<>(identifier, config, factory));
-        if (previous != null) {
-            logger.warn("Replaced a previous Component registered under type [{}] and name [{}].", name, type);
+        if (previous != null && overrideBehavior == OverrideBehavior.WARN) {
+            logger.warn("Replaced a previous Component registered for type [{}] and name [{}].", name, type);
         }
         //noinspection unchecked
         return (S) this;
@@ -174,6 +180,20 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
      */
     protected LifecycleSupportingConfiguration config() {
         return config;
+    }
+
+    /**
+     * Sets the {@link OverrideBehavior} for this configurer.
+     * <p>
+     * Intended for the {@link DefaultRootConfigurer} to invoke on
+     * {@link RootConfigurer#registerOverrideBehavior(OverrideBehavior)}.
+     *
+     * @param overrideBehavior The override behavior for this {@code AbstractConfigurer}, intended for the
+     *                         {@link DefaultRootConfigurer} to use on
+     *                         {@link RootConfigurer#registerOverrideBehavior(OverrideBehavior)} invocations.
+     */
+    protected void setOverrideBehavior(OverrideBehavior overrideBehavior) {
+        this.overrideBehavior = overrideBehavior;
     }
 
     /**

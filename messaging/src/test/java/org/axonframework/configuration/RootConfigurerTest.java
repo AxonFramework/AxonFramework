@@ -49,4 +49,21 @@ class RootConfigurerTest extends ConfigurerTestSuite<RootConfigurer> {
 
         assertEquals(testComponent, config.getComponent(TestComponent.class));
     }
+
+    @Test
+    void registerOverrideBehaviorThrowResultsInComponentOverrideExceptionsOnOverriding() {
+        testSubject.registerOverrideBehavior(OverrideBehavior.THROW)
+                   .registerComponent(TestComponent.class, c -> TEST_COMPONENT);
+
+        assertThrows(ComponentOverrideException.class,
+                     () -> testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT));
+    }
+
+    @Test
+    void registerOverrideBehaviorAllowResultsInNothingWhenOverriding() {
+        testSubject.registerOverrideBehavior(OverrideBehavior.ALLOW)
+                   .registerComponent(TestComponent.class, c -> TEST_COMPONENT);
+
+        assertDoesNotThrow(() -> testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT));
+    }
 }

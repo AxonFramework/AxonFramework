@@ -106,6 +106,12 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
     }
 
     @Override
+    public RootConfigurer registerOverrideBehavior(OverrideBehavior behavior) {
+        super.setOverrideBehavior(behavior);
+        return this;
+    }
+
+    @Override
     public RootConfigurer disableEnhancerScanning() {
         this.enhancerScanning = false;
         return this;

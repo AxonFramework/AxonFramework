@@ -74,6 +74,16 @@ public interface RootConfigurer extends StartableConfigurer<RootConfigurer> {
     RootConfigurer registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit);
 
     /**
+     * Registers the component override behavior for this {@code RootConfigurer}.
+     * <p>
+     * Defaults to {@link OverrideBehavior#WARN}, which logs a warn message whenever a component is overridden.
+     *
+     * @param behavior The component override behavior for this {@code RootConfigurer}
+     * @return A {@code RootConfigurer} instance for further configuring.
+     */
+    RootConfigurer registerOverrideBehavior(OverrideBehavior behavior);
+
+    /**
      * Disables the default behavior to automatically scan and {@link #registerEnhancer(ConfigurationEnhancer) register}
      * {@link ConfigurationEnhancer enhancers} through a {@link ServiceLoader}.
      * <p>
