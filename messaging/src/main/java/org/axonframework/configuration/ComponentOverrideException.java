@@ -30,7 +30,7 @@ public class ComponentOverrideException extends RuntimeException {
 
     /**
      * Constructs a {@code ComponentOverrideException} with the given {@code type} and {@code name} as the unique
-     * identifier of the {@link Component} that has been overridden in a {@link RootConfigurer}.
+     * identifier of the {@link Component} that has been overridden in a {@link AxonApplication}.
      *
      * @param type The type of the component this object identifiers, typically an interface.
      * @param name The name of the component this object identifiers.

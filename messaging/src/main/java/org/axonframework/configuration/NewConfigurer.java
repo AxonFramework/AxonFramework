@@ -78,6 +78,11 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
                             @Nonnull String name,
                             @Nonnull ComponentFactory<C> factory);
 
+    //    <C> S registerComponent(@Nonnull Class<C> type,
+//                            @Nonnull String name,
+//                            @Nonnull ComponentFactory<C> factory,
+//                            @Nonnull BiConsumer<Supplier<C>, LifecycleRegistry<S>> lifecycleCallback);
+
     /**
      * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
      * {@link #registerComponent(Class, ComponentFactory) registered} components of the given {@code type}.
@@ -185,14 +190,14 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      * configurer it is delegating too.
      * <p>
      * Note that this method is typically not used directly, but instead used by more specific delegation methods like
-     * {@link MessagingConfigurer#root(Consumer)}, for example.
+     * {@link MessagingConfigurer#axon(Consumer)}, for example.
      *
      * @param type          The delegate type to invoke the given {@code configureTask} on, if it matches with this
      *                      configurers delegate.
      * @param configureTask Lambda consuming the delegate configurer if it matches the given {@code type}.
      * @param <C>           The expected type of the delegate {@code Configurer}.
      * @return The current instance of the {@code Configurer} for a fluent API.
-     * @see MessagingConfigurer#root(Consumer)
+     * @see MessagingConfigurer#axon(Consumer)
      */
     <C extends NewConfigurer<C>> S delegate(@Nonnull Class<C> type,
                                             @Nonnull Consumer<C> configureTask);

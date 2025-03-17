@@ -22,15 +22,15 @@ import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 
 /**
- * The root {@link NewConfigurer configurer} of any Axon Framework application.
+ * The starting point of any Axon Framework application.
  * <p>
  * Provides a means to register {@link #onStart(int, LifecycleHandler) start} and
  * {@link #onShutdown(int, LifecycleHandler) shutdown} handlers for this application, besides containing all
  * {@link Component components}, {@link ComponentDecorator component decorators}, and {@link Module modules}.
  * <p>
- * Once the configuring phase is completed, the {@link RootConfiguration} of the application can be retrieved by
+ * Once the configuring phase is completed, the {@link AxonConfiguration} of the application can be retrieved by
  * invoking {@link #build()}. Starting the {@code NewConfiguration} can be done through a separate
- * {@link RootConfiguration#start()} invocation, or {@link #start()} can be used to build-and-start the project
+ * {@link AxonConfiguration#start()} invocation, or {@link #start()} can be used to build-and-start the project
  * immediately.
  * <p>
  * Will automatically search for {@link ConfigurationEnhancer enhancers} and
@@ -42,17 +42,17 @@ import java.util.concurrent.TimeUnit;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface RootConfigurer extends StartableConfigurer<RootConfigurer> {
+public interface AxonApplication extends StartableConfigurer<AxonApplication> {
 
     /**
-     * Returns a {@code RootConfigurer} instance to start configuring {@link Component components},
+     * Returns a {@code AxonApplication} instance to start configuring {@link Component components},
      * {@link ComponentDecorator component decorators}, {@link ConfigurationEnhancer enhancers}, and
      * {@link Module modules} for an Axon Framework application.
      *
-     * @return A {@code RootConfigurer} instance for further configuring.
+     * @return A {@code AxonApplication} instance for further configuring.
      */
-    static RootConfigurer defaultConfigurer() {
-        return new DefaultRootConfigurer();
+    static AxonApplication create() {
+        return new DefaultAxonApplication();
     }
 
     /**
@@ -67,21 +67,21 @@ public interface RootConfigurer extends StartableConfigurer<RootConfigurer> {
      *
      * @param timeout  The amount of time to wait for lifecycle phase completion.
      * @param timeUnit The unit in which the {@code timeout} is expressed.
-     * @return The current instance of the {@code RootConfigurer}, for chaining purposes.
+     * @return The current instance of the {@code AxonApplication}, for chaining purposes.
      * @see org.axonframework.lifecycle.Phase
      * @see LifecycleHandler
      */
-    RootConfigurer registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit);
+    AxonApplication registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit);
 
     /**
-     * Registers the component override behavior for this {@code RootConfigurer}.
+     * Registers the component override behavior for this {@code AxonApplication}.
      * <p>
      * Defaults to {@link OverrideBehavior#WARN}, which logs a warn message whenever a component is overridden.
      *
-     * @param behavior The component override behavior for this {@code RootConfigurer}
-     * @return A {@code RootConfigurer} instance for further configuring.
+     * @param behavior The component override behavior for this {@code AxonApplication}
+     * @return A {@code AxonApplication} instance for further configuring.
      */
-    RootConfigurer registerOverrideBehavior(OverrideBehavior behavior);
+    AxonApplication registerOverrideBehavior(OverrideBehavior behavior);
 
     /**
      * Disables the default behavior to automatically scan and {@link #registerEnhancer(ConfigurationEnhancer) register}
@@ -90,13 +90,13 @@ public interface RootConfigurer extends StartableConfigurer<RootConfigurer> {
      * Disabling this functionality means you might lose functionality that would otherwise have been included
      * out-of-the-box by depending on other Axon Framework modules.
      *
-     * @return A {@code RootConfigurer} instance for further configuring.
+     * @return A {@code AxonApplication} instance for further configuring.
      */
-    RootConfigurer disableEnhancerScanning();
+    AxonApplication disableEnhancerScanning();
 
     @Override
-    default RootConfiguration start() {
-        RootConfiguration configuration = build();
+    default AxonConfiguration start() {
+        AxonConfiguration configuration = build();
         configuration.start();
         return configuration;
     }

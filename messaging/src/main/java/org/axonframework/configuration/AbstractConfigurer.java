@@ -185,12 +185,12 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     /**
      * Sets the {@link OverrideBehavior} for this configurer.
      * <p>
-     * Intended for the {@link DefaultRootConfigurer} to invoke on
-     * {@link RootConfigurer#registerOverrideBehavior(OverrideBehavior)}.
+     * Intended for the {@link DefaultAxonApplication} to invoke on
+     * {@link AxonApplication#registerOverrideBehavior(OverrideBehavior)}.
      *
      * @param overrideBehavior The override behavior for this {@code AbstractConfigurer}, intended for the
-     *                         {@link DefaultRootConfigurer} to use on
-     *                         {@link RootConfigurer#registerOverrideBehavior(OverrideBehavior)} invocations.
+     *                         {@link DefaultAxonApplication} to use on
+     *                         {@link AxonApplication#registerOverrideBehavior(OverrideBehavior)} invocations.
      */
     protected void setOverrideBehavior(OverrideBehavior overrideBehavior) {
         this.overrideBehavior = overrideBehavior;

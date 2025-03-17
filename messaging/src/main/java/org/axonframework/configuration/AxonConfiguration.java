@@ -17,27 +17,29 @@
 package org.axonframework.configuration;
 
 /**
- * The root configuration of any Axon Framework application. Provides a means to {@link #start()} and
- * {@link #shutdown() stop} the application, besides containing all {@link Component components}.
+ * The configuration of any Axon Framework application.
+ * <p>
+ * Provides a means to {@link #start()} and {@link #shutdown() stop} the application, besides containing all
+ * {@link Component components}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface RootConfiguration extends LifecycleSupportingConfiguration {
+public interface AxonConfiguration extends LifecycleSupportingConfiguration {
 
     /**
-     * All components defined in this {@code RootConfiguration} will be started.
+     * All components defined in this {@code AxonConfiguration} will be started.
      * <p>
-     * Starting a {@code RootConfiguration} typically results in the invocation of all
+     * Starting a {@code AxonConfiguration} typically results in the invocation of all
      * {@link #onStart(int, LifecycleHandler) registered start handlers}.
      */
     void start();
 
     /**
-     * Shuts down the components defined in this {@code RootConfiguration}.
+     * Shuts down the components defined in this {@code AxonConfiguration}.
      * <p>
-     * Shutting down a {@code RootConfiguration} typically results in the invocation of all
+     * Shutting down a {@code AxonConfiguration} typically results in the invocation of all
      * {@link #onShutdown(int, LifecycleHandler) registered shutdown handlers}.
      */
     void shutdown();

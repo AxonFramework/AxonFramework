@@ -43,15 +43,13 @@ import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.assertStrictPositive;
 
 /**
- * Default implementation of the {@code RootConfigurer}.
- * <p>
- * Note that this Configurer implementation is not thread-safe.
+ * Default implementation of the {@code AxonApplication}.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implements RootConfigurer {
+class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> implements AxonApplication {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -64,13 +62,13 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
     private TimeUnit lifecyclePhaseTimeunit = TimeUnit.SECONDS;
     private boolean enhancerScanning = true;
 
-    private final RootConfigurationImpl rootConfig = new RootConfigurationImpl();
+    private final AxonConfigurationImpl axonConfig = new AxonConfigurationImpl();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     /**
-     * Initialize the {@code RootConfigurer} with a {@code null} {@link LifecycleSupportingConfiguration}.
+     * Initialize the {@code AxonApplication} with a {@code null} {@link LifecycleSupportingConfiguration}.
      */
-    protected DefaultRootConfigurer() {
+    protected DefaultAxonApplication() {
         super(null);
     }
 
@@ -97,7 +95,7 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
     }
 
     @Override
-    public RootConfigurer registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit) {
+    public AxonApplication registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit) {
         assertStrictPositive(timeout, "The lifecycle phase timeout should be strictly positive");
         requireNonNull(timeUnit, "The lifecycle phase time unit should not be null");
         this.lifecyclePhaseTimeout = timeout;
@@ -106,25 +104,25 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
     }
 
     @Override
-    public RootConfigurer registerOverrideBehavior(OverrideBehavior behavior) {
+    public AxonApplication registerOverrideBehavior(OverrideBehavior behavior) {
         super.setOverrideBehavior(behavior);
         return this;
     }
 
     @Override
-    public RootConfigurer disableEnhancerScanning() {
+    public AxonApplication disableEnhancerScanning() {
         this.enhancerScanning = false;
         return this;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public RootConfiguration build() {
+    public AxonConfiguration build() {
         if (!initialized.getAndSet(true) && enhancerScanning) {
             scanForConfigurationEnhancers();
         }
         super.build();
-        return rootConfig;
+        return axonConfig;
     }
 
     private void scanForConfigurationEnhancers() {
@@ -137,18 +135,18 @@ class DefaultRootConfigurer extends AbstractConfigurer<RootConfigurer> implement
 
     @Override
     protected LifecycleSupportingConfiguration config() {
-        return rootConfig;
+        return axonConfig;
     }
 
-    private class RootConfigurationImpl
-            extends AbstractConfigurer<RootConfigurer>.LocalConfiguration
-            implements RootConfiguration {
+    private class AxonConfigurationImpl
+            extends AbstractConfigurer<AxonApplication>.LocalConfiguration
+            implements AxonConfiguration {
 
         private final AtomicBoolean isRunning;
         private Integer currentLifecyclePhase = null;
         private LifecycleState lifecycleState = LifecycleState.DOWN;
 
-        private RootConfigurationImpl() {
+        private AxonConfigurationImpl() {
             super(null);
             this.isRunning = new AtomicBoolean(false);
         }

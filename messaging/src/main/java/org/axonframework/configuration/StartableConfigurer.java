@@ -20,7 +20,7 @@ package org.axonframework.configuration;
  * A {@link NewConfigurer configurer} implementation that can be {@link #start() started}.
  * <p>
  * Starting a {@code Configurer} will initiate {@link #onStart(int, LifecycleHandler) registered start operations}
- * contained in the {@link RootConfiguration} to be invoked.
+ * contained in the {@link AxonConfiguration} to be invoked.
  *
  * @param <S> The type of configurer this implementation returns. This generic allows us to support fluent interfacing.
  * @author Mitchell Herrijgers
@@ -35,7 +35,7 @@ public interface StartableConfigurer<S extends NewConfigurer<S>> extends NewConf
      * It is not recommended to change any configuration on {@code this StartableConfigurer} once this method is
      * called.
      *
-     * @return The fully initialized and started {@link RootConfiguration}.
+     * @return The fully initialized and started {@link AxonConfiguration}.
      */
-    RootConfiguration start();
+    AxonConfiguration start();
 }

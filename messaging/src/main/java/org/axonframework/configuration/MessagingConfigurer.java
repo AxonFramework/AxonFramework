@@ -40,7 +40,6 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 
-import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -86,7 +85,7 @@ public class MessagingConfigurer
      * @return A {@code MessagingConfigurer} instance for further configuring.
      */
     public static MessagingConfigurer defaultConfigurer() {
-        return new MessagingConfigurer(RootConfigurer.defaultConfigurer())
+        return new MessagingConfigurer(AxonApplication.create())
                 .registerComponent(MessageTypeResolver.class, MessagingConfigurer::defaultMessageTypeResolver)
                 .registerComponent(CommandGateway.class, MessagingConfigurer::defaultCommandGateway)
                 .registerComponent(CommandBus.class, MessagingConfigurer::defaultCommandBus)
@@ -101,7 +100,7 @@ public class MessagingConfigurer
     /**
      * Private constructor to enforce usage of {@link #defaultConfigurer()}.
      */
-    private MessagingConfigurer(@Nonnull RootConfigurer delegate) {
+    private MessagingConfigurer(@Nonnull AxonApplication delegate) {
         super(delegate);
     }
 
@@ -160,23 +159,23 @@ public class MessagingConfigurer
     }
 
     /**
-     * Delegates the given {@code configureTask} to the {@link RootConfigurer} this {@code MessagingConfigurer}
+     * Delegates the given {@code configureTask} to the {@link AxonApplication} this {@code MessagingConfigurer}
      * delegates to.
      * <p>
-     * Use this operation to invoke registration methods that only exist on the {@code RootConfigurer}.
+     * Use this operation to invoke registration methods that only exist on the {@code AxonApplication}.
      *
-     * @param configureTask Lambda consuming the delegate {@link RootConfigurer}.
+     * @param configureTask Lambda consuming the delegate {@link AxonApplication}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public MessagingConfigurer root(@Nonnull Consumer<RootConfigurer> configureTask) {
-        return delegate(RootConfigurer.class, configureTask);
+    public MessagingConfigurer axon(@Nonnull Consumer<AxonApplication> configureTask) {
+        return delegate(AxonApplication.class, configureTask);
     }
 
     @Override
-    public RootConfiguration start() {
-        AtomicReference<RootConfigurer> rootReference = new AtomicReference<>();
-        root(rootReference::set);
-        return rootReference.get().start();
+    public AxonConfiguration start() {
+        AtomicReference<AxonApplication> axonReference = new AtomicReference<>();
+        axon(axonReference::set);
+        return axonReference.get().start();
     }
 
     private static MessageTypeResolver defaultMessageTypeResolver(NewConfiguration config) {
