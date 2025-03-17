@@ -47,7 +47,7 @@ The `DomainEventMessage` additionally contains the type and identifier of the ag
 It also contains the sequence number of the event in the aggregate's event stream, which allows the order of events to be reproduced.
 
 [TIP]
-.Include aggregate identifiers in tyour events
+.Include aggregate identifiers in into your events
 ====
 
 Even though the `DomainEventMessage` contains a reference to the Aggregate Identifier, you should always include the identifier in the actual Event itself as well.
@@ -72,8 +72,6 @@ Metadata is typically used for reporting, auditing and tracing.
 
 Although not enforced, it is good practice to make domain events immutable, preferably by making all fields final and by initializing the event within the constructor.
 Consider using a Builder pattern if event construction is too cumbersome.
-
-
 
 [TIP]
 .Capture intent in your events
@@ -103,14 +101,15 @@ A query can have multiple handlers.
 When dispatching queries, the client indicates whether he wants a result from one or from all available query handlers.
 
 == Message flow
+
 When building Axon Framework applications, you will typically see a flow of messages.
 Commands are sent to the Command Bus, which dispatches them to the appropriate Command Handler.
 The command handler will apply events that will be published and handled by Event Handlers.
 These handlers can update the read model, which can be queried using Query Messages.
 
-Using xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console],
-you can monitor the flow of messages in your application as you can see in the image below.
+Using xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console], you can monitor the flow of messages in your application as you can see in the image below.
 
 image::axoniq-console-flow.gif[alt="Animated graphic of message flow in AxonIQ Console"]
 
-Besides seeing the flow, every message handler is individually monitored, providing deep insight into the performance and behavior of your application. For more information, see the xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console Reference Guide] or link:https://console.axoniq.io[sign up directly].
+Besides seeing the flow, every message handler is individually monitored, providing deep insight into the performance and behavior of your application.
+For more information, see the xref:axoniq-console-reference:ROOT:index.adoc[AxonIQ Console Reference Guide] or link:https://console.axoniq.io[sign up directly].
