@@ -98,9 +98,11 @@ public class MessagingConfigurer
     }
 
     /**
-     * Private constructor to enforce usage of {@link #defaultConfigurer()}.
+     * Constructs a {@code MessagingConfigurer} based on the given {@code delegate}.
+     *
+     * @param delegate The delegate {@code AxonApplication} the {@code MessagingConfigurer} is based on.
      */
-    private MessagingConfigurer(@Nonnull AxonApplication delegate) {
+    public MessagingConfigurer(@Nonnull AxonApplication delegate) {
         super(delegate);
     }
 
