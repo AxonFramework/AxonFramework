@@ -44,9 +44,9 @@ public class Component<B> {
     private B instance;
 
     /**
-     * Creates a component for the given {@code config} with given {@code name} created by the given
-     * {@code builderFunction}. Then the Configuration is not initialized yet, consider using
-     * {@link #Component(Supplier, String, Function)} instead.
+     * Creates a component for the given {@code config} with given {@code name} created by the given {@code
+     * builderFunction}. Then the Configuration is not initialized yet, consider using {@link #Component(Supplier,
+     * String, Function)} instead.
      *
      * @param config          The Configuration the component is part of
      * @param name            The name of the component
@@ -57,8 +57,8 @@ public class Component<B> {
     }
 
     /**
-     * Creates a component for the given {@code config} with given {@code name} created by the given
-     * {@code builderFunction}.
+     * Creates a component for the given {@code config} with given {@code name} created by the given {@code
+     * builderFunction}.
      *
      * @param config          The supplier function of the configuration
      * @param name            The name of the component
@@ -74,17 +74,12 @@ public class Component<B> {
 
     /**
      * Retrieves the object contained in this component, triggering the builder function if the component hasn't been
-     * built yet.
-     * <p>
-     * This operation is {@code synchronized}, allowing the configuration to be thread-safe.
-     * <p>
-     * Upon initiation of the instance the
-     * {@link LifecycleHandlerInspector#registerLifecycleHandlers(Configuration, Object)} methods will be called to
-     * resolve and register lifecycle methods.
+     * built yet. Upon initiation of the instance the {@link LifecycleHandlerInspector#registerLifecycleHandlers(Configuration,
+     * Object)} methods will be called to resolve and register lifecycle methods.
      *
      * @return the initialized component contained in this instance
      */
-    public synchronized B get() {
+    public B get() {
         if (instance == null) {
             Configuration configuration = configSupplier.get();
             instance = builderFunction.apply(configuration);

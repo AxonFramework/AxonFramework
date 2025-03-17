@@ -94,13 +94,15 @@ public class Component<C> {
      * Retrieves the object contained in this {@code Component}, triggering the {@link ComponentFactory factory} and all
      * attached {@link ComponentDecorator decorators} if the component hasn't been built yet.
      * <p>
+     * This operation is {@code synchronized}, allowing the configuration to be thread-safe.
+     * <p>
      * Upon initiation of the instance the
      * {@link LifecycleHandlerInspector#registerLifecycleHandlers(LifecycleSupportingConfiguration, Object)} methods
      * will be called to resolve and register lifecycle methods.
      *
      * @return The initialized component contained in this instance.
      */
-    public C get() {
+    public synchronized C get() {
         if (instance != null) {
             return instance;
         }
@@ -140,10 +142,12 @@ public class Component<C> {
 
     /**
      * Checks if this {@code Component} is already initialized.
+     * <p>
+     * This operation is {@code synchronized}, allowing the configuration to be thread-safe.
      *
      * @return {@code true} if this {@code Component} is initialized, {@code false} otherwise.
      */
-    public boolean isInitialized() {
+    public synchronized boolean isInitialized() {
         return instance != null;
     }
 
