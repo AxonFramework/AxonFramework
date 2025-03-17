@@ -23,11 +23,10 @@ import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.commandhandling.NoHandlerForCommandException;
+import org.axonframework.commandhandling.SimpleCommandHandlingComponent;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageHandler;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -36,30 +35,29 @@ import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
+import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Collection;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Adapter that turns any {@link @CommandHandler} annotated bean into a {@link MessageHandler} implementation. Each
- * annotated method is subscribed as a Command Handler at the {@link CommandBus} for the command type specified by the
- * parameter of that method.
+ * Adapter that turns any {@link @CommandHandler} annotated bean into a {@link CommandHandlingComponent} implementation.
+ * Each annotated method is subscribed as a {@link org.axonframework.commandhandling.CommandHandler} at the
+ * {@link CommandHandlingComponent} for the command type specified by the parameter of that method.
  *
  * @author Allard Buijze
  * @since 0.5
  */
-public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingComponent {
+public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComponent {
 
     private final T target;
     private final AnnotatedHandlerInspector<T> model;
     private final MessageTypeResolver messageTypeResolver;
+    private final SimpleCommandHandlingComponent handlingComponent;
 
     /**
      * Wraps the given {@code annotatedCommandHandler}, allowing it to be subscribed to a {@link CommandBus} as a
@@ -67,7 +65,7 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
      *
      * @param annotatedCommandHandler The object containing the {@link CommandHandler} annotated methods.
      */
-    public AnnotationCommandHandlerAdapter(@Nonnull T annotatedCommandHandler) {
+    public AnnotatedCommandHandlingComponent(@Nonnull T annotatedCommandHandler) {
         this(annotatedCommandHandler, ClasspathParameterResolverFactory.forClass(annotatedCommandHandler.getClass()));
     }
 
@@ -78,8 +76,8 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
      * @param annotatedCommandHandler  The object containing the {@link CommandHandler} annotated methods.
      * @param parameterResolverFactory The strategy for resolving handler method parameter values.
      */
-    public AnnotationCommandHandlerAdapter(@Nonnull T annotatedCommandHandler,
-                                           @Nonnull ParameterResolverFactory parameterResolverFactory) {
+    public AnnotatedCommandHandlingComponent(@Nonnull T annotatedCommandHandler,
+                                             @Nonnull ParameterResolverFactory parameterResolverFactory) {
         this(annotatedCommandHandler,
              parameterResolverFactory,
              ClasspathHandlerDefinition.forClass(annotatedCommandHandler.getClass()),
@@ -98,50 +96,51 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
      *                                 {@link org.axonframework.commandhandling.CommandMessage CommandMessages}.
      */
     @SuppressWarnings("unchecked")
-    public AnnotationCommandHandlerAdapter(@Nonnull T annotatedCommandHandler,
-                                           @Nonnull ParameterResolverFactory parameterResolverFactory,
-                                           @Nonnull HandlerDefinition handlerDefinition,
-                                           @Nonnull MessageTypeResolver messageTypeResolver) {
+    public AnnotatedCommandHandlingComponent(@Nonnull T annotatedCommandHandler,
+                                             @Nonnull ParameterResolverFactory parameterResolverFactory,
+                                             @Nonnull HandlerDefinition handlerDefinition,
+                                             @Nonnull MessageTypeResolver messageTypeResolver) {
+        this.handlingComponent = SimpleCommandHandlingComponent.create(
+                "AnnotationCommandHandlerAdapter[%s]".formatted(annotatedCommandHandler.getClass().getName())
+        );
         this.target = requireNonNull(annotatedCommandHandler, "The Annotated Command Handler may not be null");
         this.model = AnnotatedHandlerInspector.inspectType((Class<T>) annotatedCommandHandler.getClass(),
                                                            parameterResolverFactory,
                                                            handlerDefinition);
         this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver may not be null");
+
+        initializeHandlersBasedOnModel();
     }
 
-    @Override
-    public AnnotationCommandHandlerAdapter<T> subscribe(@Nonnull QualifiedName name,
-                                                        @Nonnull org.axonframework.commandhandling.CommandHandler commandHandler) {
-        throw new UnsupportedOperationException(
-                "This Command Handling Component does not support direct command handler registration."
-        );
+    private void initializeHandlersBasedOnModel() {
+        model.getAllHandlers().forEach(
+                (modelClass, handlers) ->
+                        handlers.stream()
+                                .filter(h -> h.canHandleMessageType(CommandMessage.class))
+                                .forEach(this::registerHandler));
+    }
+
+    private void registerHandler(MessageHandlingMember<? super T> handler) {
+        QualifiedName qualifiedName = handler.unwrap(CommandMessageHandlingMember.class)
+                                      .map(CommandMessageHandlingMember::commandName)
+                                      .map(QualifiedName::new)
+                                      .orElseGet(() -> new QualifiedName(handler.payloadType()));
+
+        MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
+        handlingComponent.subscribe(qualifiedName, (command, ctx) ->
+                interceptorChain.handle(command, ctx, target, handler)
+                                .mapMessage(this::asCommandResultMessage)
+                                .first()
+                                .cast());
     }
 
     @Nonnull
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                                @Nonnull ProcessingContext processingContext) {
-        MessageHandlingMember<? super T> handler = model.getAllHandlers()
-                                                        .values()
-                                                        .stream()
-                                                        .flatMap(Collection::stream)
-                                                        .filter(ch -> ch.canHandle(command, processingContext))
-                                                        .findFirst()
-                                                        .orElseThrow(() -> new NoHandlerForCommandException(command));
-
-        return model.chainedInterceptor(target.getClass())
-                    .handle(command, processingContext, target, handler)
-                    .mapMessage(this::asCommandResultMessage)
-                    .first()
-                    .cast();
-    }
-
-    public boolean canHandle(CommandMessage<?> message) {
-        return model.getAllHandlers()
-                    .values()
-                    .stream()
-                    .flatMap(Collection::stream)
-                    .anyMatch(h -> h.canHandle(message, null));
+    public MessageStream.Single<? extends CommandResultMessage<?>> handle(
+            @Nonnull CommandMessage<?> command,
+            @Nonnull ProcessingContext processingContext
+    ) {
+        return handlingComponent.handle(command, processingContext);
     }
 
     @SuppressWarnings("unchecked")
@@ -158,15 +157,6 @@ public class AnnotationCommandHandlerAdapter<T> implements CommandHandlingCompon
 
     @Override
     public Set<QualifiedName> supportedCommands() {
-        return model.getAllHandlers()
-                    .values()
-                    .stream()
-                    .flatMap(Collection::stream)
-                    .map(ch -> ch.unwrap(CommandMessageHandlingMember.class)
-                                 .orElse(null))
-                    .filter(Objects::nonNull)
-                    .map(CommandMessageHandlingMember::commandName)
-                    .map(QualifiedName::new)
-                    .collect(Collectors.toSet());
+        return handlingComponent.supportedCommands();
     }
 }

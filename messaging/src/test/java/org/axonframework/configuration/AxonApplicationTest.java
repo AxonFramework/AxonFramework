@@ -16,21 +16,21 @@
 
 package org.axonframework.configuration;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import jakarta.annotation.Nullable;
 import org.junit.jupiter.api.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
- * Test class validating the {@link RootConfigurer}.
+ * Test class validating the {@link AxonApplication}.
  *
  * @author Steven van Beelen
  */
-class RootConfigurerTest extends ConfigurerTestSuite<RootConfigurer> {
+class AxonApplicationTest extends ConfigurerTestSuite<AxonApplication> {
 
     @Override
-    public RootConfigurer testSubject() {
-        return RootConfigurer.defaultConfigurer();
+    public AxonApplication testSubject() {
+        return AxonApplication.create();
     }
 
     @Nullable
@@ -45,8 +45,25 @@ class RootConfigurerTest extends ConfigurerTestSuite<RootConfigurer> {
 
         testSubject.registerComponent(TestComponent.class, c -> testComponent);
 
-        RootConfiguration config = testSubject.start();
+        AxonConfiguration config = testSubject.start();
 
         assertEquals(testComponent, config.getComponent(TestComponent.class));
+    }
+
+    @Test
+    void registerOverrideBehaviorThrowResultsInComponentOverrideExceptionsOnOverriding() {
+        testSubject.registerOverrideBehavior(OverrideBehavior.THROW)
+                   .registerComponent(TestComponent.class, c -> TEST_COMPONENT);
+
+        assertThrows(ComponentOverrideException.class,
+                     () -> testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT));
+    }
+
+    @Test
+    void registerOverrideBehaviorAllowResultsInNothingWhenOverriding() {
+        testSubject.registerOverrideBehavior(OverrideBehavior.ALLOW)
+                   .registerComponent(TestComponent.class, c -> TEST_COMPONENT);
+
+        assertDoesNotThrow(() -> testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT));
     }
 }

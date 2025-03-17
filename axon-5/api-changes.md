@@ -393,7 +393,7 @@ This section contains two tables:
 | org.axonframework.config.Configurer                          | org.axonframework.configuration.Configurer                   | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.Configuration                       | org.axonframework.configuration.Configuration                | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.Component                           | org.axonframework.configuration.Component                    | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.ConfigurerModule                    | org.axonframework.configuration.ConfigurerEnhancer           | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.ConfigurerModule                    | org.axonframework.configuration.ConfigurationEnhancer        | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.ModuleConfiguration                 | org.axonframework.configuration.Module                       | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.LifecycleHandler                    | org.axonframework.configuration.LifecycleHandler             | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.LifecycleHandlerInspector           | org.axonframework.configuration.LifecycleHandlerInspector    | Yes. Moved to `axon-messaging` |

@@ -16,10 +16,6 @@
 
 package org.axonframework.configuration;
 
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -40,6 +36,10 @@ import org.axonframework.queryhandling.SimpleQueryBus;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 import org.junit.jupiter.api.*;
 
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
  * Test class validating the {@link MessagingConfigurer}.
  *
@@ -49,14 +49,14 @@ class MessagingConfigurerTest extends ConfigurerTestSuite<MessagingConfigurer> {
 
     @Override
     public MessagingConfigurer testSubject() {
-        return MessagingConfigurer.defaultConfigurer();
+        return MessagingConfigurer.create();
     }
 
     @SuppressWarnings("unchecked")
     @Nullable
     @Override
-    public Class<RootConfigurer> delegateType() {
-        return RootConfigurer.class;
+    public Class<AxonApplication> delegateType() {
+        return AxonApplication.class;
     }
 
     @Test
@@ -140,9 +140,9 @@ class MessagingConfigurerTest extends ConfigurerTestSuite<MessagingConfigurer> {
     }
 
     @Test
-    void rootDelegatesTasks() {
+    void axonDelegatesTasks() {
         TestComponent result =
-                testSubject.root(root -> root.registerComponent(TestComponent.class, c -> TEST_COMPONENT))
+                testSubject.axon(axon -> axon.registerComponent(TestComponent.class, c -> TEST_COMPONENT))
                            .build()
                            .getComponent(TestComponent.class);
 

@@ -18,6 +18,7 @@ package org.axonframework.messaging.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandHandlerRegistry;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.EventHandlingComponent;
@@ -32,7 +33,6 @@ import java.util.Set;
  * <p>
  * As such, it allows registration of {@code CommandHandlers}, {@code EventHandlers}, and {@code QueryHandlers} through
  * the respective {@code CommandHandlingComponent}, {@code EventHandlingComponent}, and {@code QueryHandlingComponent}.
- * Besides handling and registration, it specifies which {@link #supportedMessages() messages} it supports.
  *
  * @author Allard Buijze
  * @author Gerard Klijs
@@ -43,7 +43,8 @@ import java.util.Set;
  * @since 5.0.0
  */
 public interface MessageHandlingComponent
-        extends CommandHandlingComponent, EventHandlingComponent, QueryHandlingComponent, MessageHandler {
+        extends CommandHandlingComponent, CommandHandlerRegistry<MessageHandlingComponent>,
+        EventHandlingComponent, QueryHandlingComponent, MessageHandler {
 
     /**
      * Subscribe the given {@code handler} for {@link org.axonframework.messaging.Message messages} of the given

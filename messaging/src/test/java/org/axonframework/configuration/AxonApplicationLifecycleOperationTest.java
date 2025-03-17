@@ -16,31 +16,31 @@
 
 package org.axonframework.configuration;
 
+import org.junit.jupiter.api.*;
+import org.mockito.*;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import org.junit.jupiter.api.*;
-import org.mockito.*;
-
 /**
- * Test suite implementation validating the lifecycle operation registration of the {@link RootConfigurer}.
+ * Test suite implementation validating the lifecycle operation registration of the {@link AxonApplication}.
  *
  * @author Steven van Beelen
  */
-class RootConfigurerLifecycleOperationTest extends ConfigurerLifecycleOperationTestSuite<RootConfigurer> {
+class AxonApplicationLifecycleOperationTest extends ConfigurerLifecycleOperationTestSuite<AxonApplication> {
 
     @Override
-    public RootConfigurer buildConfigurer() {
-        return RootConfigurer.defaultConfigurer();
+    public AxonApplication createConfigurer() {
+        return AxonApplication.create();
     }
 
     @Test
     void lifecycleHandlersProceedToFollowingPhaseForNeverEndingPhases() {
         AtomicBoolean invoked = new AtomicBoolean(false);
-        RootConfiguration testConfig = configurer.registerLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS)
+        AxonConfiguration testConfig = configurer.registerLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS)
                                                  .build();
 
         LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());

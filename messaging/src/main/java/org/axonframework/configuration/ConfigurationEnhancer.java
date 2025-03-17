@@ -19,9 +19,10 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 
 /**
- * Interface describing an enhancement of a {@link NewConfigurer configurer} of the Axon Framework configuration API.
+ * Interface describing an enhancement of the {@link NewConfiguration} from the Axon Framework configuration API, taking
+ * effect during {@link NewConfigurer#build() build} of the configurer.
  * <p>
- * Through implementing the {@link #enhance(NewConfigurer)} operation a {@code ConfigurerEnhancer} is able to
+ * Through implementing the {@link #enhance(NewConfigurer)} operation a {@code ConfigurationEnhancer} is able to
  * {@link NewConfigurer#registerComponent(Class, ComponentFactory) register} components and
  * {@link NewConfigurer#registerDecorator(Class, int, ComponentDecorator) register} decorators. The registration of
  * components and/or decorators can be made conditional by using the {@link NewConfigurer#hasComponent(Class)}
@@ -35,11 +36,13 @@ import jakarta.annotation.Nonnull;
  * @since 3.2.0
  */
 @FunctionalInterface
-public interface ConfigurerEnhancer {
+public interface ConfigurationEnhancer {
 
     /**
      * Enhances the given {@code configurer} with, for example, additional {@link Component components} and
      * {@link ComponentDecorator decorators}.
+     * <p>
+     * This method is invoked during {@link NewConfigurer#build()}.
      *
      * @param configurer The configurer instance to enhance.
      */
@@ -48,8 +51,8 @@ public interface ConfigurerEnhancer {
     /**
      * Returns the relative order this enhancer should be invoked in, compared to other instances.
      * <p>
-     * Use lower (negative) values for modules providing sensible defaults, and higher values for modules overriding
-     * values potentially previously set. Defaults to {@code 0} when not set.
+     * Use lower (negative) values for enhancers providing sensible defaults, and higher values for enhancers that
+     * should be able to override values potentially previously set. Defaults to {@code 0} when not set.
      *
      * @return The order in which this enhancer should be invoked.
      */

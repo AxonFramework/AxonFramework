@@ -27,8 +27,8 @@ import java.util.function.Consumer;
  * <p>
  * Provides utilities to {@link #registerComponent(Class, ComponentFactory) register components},
  * {@link #registerDecorator(Class, int, ComponentDecorator) decorators} of these components, check if a component
- * {@link #hasComponent(Class) exists}, register {@link #registerEnhancer(ConfigurerEnhancer) enhancers} for the entire
- * configurer, and {@link #registerModule(ModuleBuilder) modules}.
+ * {@link #hasComponent(Class) exists}, register {@link #registerEnhancer(ConfigurationEnhancer) enhancers} for the
+ * entire configurer, and {@link #registerModule(ModuleBuilder) modules}.
  *
  * @param <S> The type of configurer this implementation returns. This generic allows us to support fluent interfacing.
  * @author Allard Buijze
@@ -78,6 +78,11 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
     <C> S registerComponent(@Nonnull Class<C> type,
                             @Nonnull String name,
                             @Nonnull ComponentFactory<C> factory);
+
+    //    <C> S registerComponent(@Nonnull Class<C> type,
+//                            @Nonnull String name,
+//                            @Nonnull ComponentFactory<C> factory,
+//                            @Nonnull BiConsumer<Supplier<C>, LifecycleRegistry<S>> lifecycleCallback);
 
     /**
      * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
@@ -152,19 +157,20 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
                          @Nonnull String name);
 
     /**
-     * Registers an {@link ConfigurerEnhancer} with this {@code this Configurer}.
+     * Registers an {@link ConfigurationEnhancer} with {@code this Configurer}.
      * <p>
      * An {@code enhancer} is able to invoke <em>any</em> of the method on this {@code Configurer}, allowing it to add
      * (sensible) defaults, decorate {@link Component components}, or replace components entirely.
      * <p>
-     * An enhancer's {@link ConfigurerEnhancer#enhance(NewConfigurer)} method is invoked during the {@link #build()} of
-     * {@code this Configurer}. When multiple enhancers have been provided, their {@link ConfigurerEnhancer#order()}
-     * dictates the enhancement order. For enhancer with the same order, the insert order is leading.
+     * An enhancer's {@link ConfigurationEnhancer#enhance(NewConfigurer)} method is invoked during the {@link #build()}
+     * of {@code this Configurer}. This right before the configurer resolves to a {@link NewConfiguration}. When
+     * multiple enhancers have been provided, their {@link ConfigurationEnhancer#order()} dictates the enhancement
+     * order. For enhancer with the same order, the insert order is leading.
      *
-     * @param enhancer The configurer enhancer to enhance {@code this Configurer}.
+     * @param enhancer The configuration enhancer to enhance {@code this Configurer} during {@link #build()}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    S registerEnhancer(@Nonnull ConfigurerEnhancer enhancer);
+    S registerEnhancer(@Nonnull ConfigurationEnhancer enhancer);
 
     /**
      * Registers a {@link Module} {@code builder} with this {@code Configurer}.
@@ -189,14 +195,14 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      * configurer it is delegating too.
      * <p>
      * Note that this method is typically not used directly, but instead used by more specific delegation methods like
-     * {@link MessagingConfigurer#root(Consumer)}, for example.
+     * {@link MessagingConfigurer#axon(Consumer)}, for example.
      *
      * @param type          The delegate type to invoke the given {@code configureTask} on, if it matches with this
      *                      configurers delegate.
      * @param configureTask Lambda consuming the delegate configurer if it matches the given {@code type}.
      * @param <C>           The expected type of the delegate {@code Configurer}.
      * @return The current instance of the {@code Configurer} for a fluent API.
-     * @see MessagingConfigurer#root(Consumer)
+     * @see MessagingConfigurer#axon(Consumer)
      */
     <C extends NewConfigurer<C>> S delegate(@Nonnull Class<C> type,
                                             @Nonnull Consumer<C> configureTask);

@@ -18,6 +18,7 @@ package org.axonframework.messaging.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.commandhandling.CommandHandlerRegistry;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
@@ -39,13 +40,14 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class CommandModelComponent implements CommandHandlingComponent, EventHandlingComponent {
+public class CommandModelComponent
+        implements CommandHandlingComponent, EventHandlingComponent, CommandHandlerRegistry<CommandModelComponent> {
 
     private final SimpleCommandHandlingComponent commandComponent;
     private final SimpleEventHandlingComponent eventComponent;
 
     public CommandModelComponent() {
-        this.commandComponent = new SimpleCommandHandlingComponent();
+        this.commandComponent = SimpleCommandHandlingComponent.create("CommandModelComponent");
         this.eventComponent = new SimpleEventHandlingComponent();
     }
 

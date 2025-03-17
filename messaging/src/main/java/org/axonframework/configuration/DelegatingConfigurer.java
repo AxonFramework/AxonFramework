@@ -81,7 +81,7 @@ public class DelegatingConfigurer<S extends NewConfigurer<S>> implements NewConf
     }
 
     @Override
-    public S registerEnhancer(@Nonnull ConfigurerEnhancer enhancer) {
+    public S registerEnhancer(@Nonnull ConfigurationEnhancer enhancer) {
         delegate.registerEnhancer(enhancer);
         //noinspection unchecked
         return (S) this;
