@@ -51,8 +51,8 @@ public interface ConfigurationEnhancer {
     /**
      * Returns the relative order this enhancer should be invoked in, compared to other instances.
      * <p>
-     * Use lower (negative) values for modules providing sensible defaults, and higher values for modules overriding
-     * values potentially previously set. Defaults to {@code 0} when not set.
+     * Use lower (negative) values for enhancers providing sensible defaults, and higher values for enhancers that
+     * should be able to override values potentially previously set. Defaults to {@code 0} when not set.
      *
      * @return The order in which this enhancer should be invoked.
      */

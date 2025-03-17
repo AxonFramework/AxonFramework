@@ -86,15 +86,7 @@ public class MessagingConfigurer
      */
     public static MessagingConfigurer create() {
         return new MessagingConfigurer(AxonApplication.create())
-                .registerComponent(MessageTypeResolver.class, MessagingConfigurer::defaultMessageTypeResolver)
-                .registerComponent(CommandGateway.class, MessagingConfigurer::defaultCommandGateway)
-                .registerComponent(CommandBus.class, MessagingConfigurer::defaultCommandBus)
-                .registerComponent(EventGateway.class, MessagingConfigurer::defaultEventGateway)
-                .registerComponent(EventSink.class, MessagingConfigurer::defaultEventSink)
-                .registerComponent(EventBus.class, MessagingConfigurer::defaultEventBus)
-                .registerComponent(QueryGateway.class, MessagingConfigurer::defaultQueryGateway)
-                .registerComponent(QueryBus.class, MessagingConfigurer::defaultQueryBus)
-                .registerComponent(QueryUpdateEmitter.class, MessagingConfigurer::defaultQueryUpdateEmitter);
+                .registerEnhancer(new MessagingConfigurationDefaults());
     }
 
     /**
@@ -178,67 +170,5 @@ public class MessagingConfigurer
         AtomicReference<AxonApplication> axonReference = new AtomicReference<>();
         axon(axonReference::set);
         return axonReference.get().start();
-    }
-
-    private static MessageTypeResolver defaultMessageTypeResolver(NewConfiguration config) {
-        return new ClassBasedMessageTypeResolver();
-    }
-
-    private static CommandBus defaultCommandBus(NewConfiguration config) {
-        // TODO #3067 - Discuss to adjust this to registerComponent-and-Decorator invocations
-        CommandBusBuilder commandBusBuilder = CommandBusBuilder.forSimpleCommandBus();
-        config.getOptionalComponent(TransactionManager.class)
-              .ifPresent(commandBusBuilder::withTransactions);
-        return commandBusBuilder.build();
-    }
-
-    private static CommandGateway defaultCommandGateway(NewConfiguration config) {
-        return new DefaultCommandGateway(
-                config.getComponent(CommandBus.class),
-                config.getComponent(MessageTypeResolver.class)
-        );
-    }
-
-    private static EventBus defaultEventBus(NewConfiguration config) {
-        return SimpleEventBus.builder()
-                             .build();
-    }
-
-    private static EventSink defaultEventSink(NewConfiguration config) {
-        EventBus eventBus = config.getComponent(EventBus.class);
-        return (context, events) -> {
-            eventBus.publish(events);
-            return FutureUtils.emptyCompletedFuture();
-        };
-    }
-
-    private static EventGateway defaultEventGateway(NewConfiguration config) {
-        return DefaultEventGateway.builder()
-                                  .eventBus(config.getComponent(EventBus.class))
-                                  .build();
-    }
-
-    private static QueryGateway defaultQueryGateway(NewConfiguration config) {
-        return DefaultQueryGateway.builder()
-                                  .queryBus(config.getComponent(QueryBus.class))
-                                  .build();
-    }
-
-    private static QueryBus defaultQueryBus(NewConfiguration config) {
-        return SimpleQueryBus.builder()
-                             .transactionManager(config.getComponent(
-                                     TransactionManager.class,
-                                     NoTransactionManager::instance
-                             ))
-                             .errorHandler(config.getComponent(
-                                     QueryInvocationErrorHandler.class,
-                                     () -> LoggingQueryInvocationErrorHandler.builder().build()
-                             ))
-                             .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
-                             .build();
-    }
-
-    private static QueryUpdateEmitter defaultQueryUpdateEmitter(NewConfiguration config) {
-        return SimpleQueryUpdateEmitter.builder().build();
     }
 }
