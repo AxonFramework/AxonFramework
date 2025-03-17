@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test suite validating the workings of the lifecycle operations registered and invoked on {@link StartableConfigurer}
+ * Test suite validating the workings of the lifecycle operations registered and invoked on {@link NewConfigurer}
  * implementations and the resulting {@link AxonConfiguration}.
  * <p>
  * As such, operations like the {@link LifecycleSupportingConfiguration#onStart(int, LifecycleHandler)},
@@ -37,11 +37,11 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
-public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableConfigurer<?>> {
+public abstract class ConfigurerLifecycleOperationTestSuite<C extends NewConfigurer<?>> {
 
     private static final String START_FAILURE_EXCEPTION_MESSAGE = "some start failure";
 
-    protected S configurer;
+    protected C configurer;
 
     @BeforeEach
     void setUp() {
@@ -49,13 +49,21 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
     }
 
     /**
-     * Builds the {@link StartableConfigurer} of type {@code S} to be used in this test suite for validating its
-     * start-up and shutdown behavior.
+     * Builds the {@link NewConfigurer} of type {@code C} to be used in this test suite for validating its start-up and
+     * shutdown behavior.
      *
-     * @return The {@link StartableConfigurer} of type {@code S} to be used in this test suite for validating its
-     * start-up and shutdown behavior.
+     * @return The {@link NewConfigurer} of type {@code C} to be used in this test suite for validating its start-up and
+     * shutdown behavior.
      */
-    public abstract S createConfigurer();
+    public abstract C createConfigurer();
+
+    /**
+     * Starts the given {@code configurer}.
+     *
+     * @param configurer The {@link NewConfigurer} implementation to start.
+     * @return The {@link AxonConfiguration} resulting out of starting the given {@code configurer}.
+     */
+    public abstract AxonConfiguration start(C configurer);
 
     @Test
     void startLifecycleHandlersAreInvokedInAscendingPhaseOrder() {
@@ -93,7 +101,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
         configurer.onStart(1, phaseOneHandler::start);
         configurer.onStart(0, phaseZeroHandler::start);
 
-        configurer.start();
+        this.start(configurer);
 
         InOrder lifecycleOrder =
                 inOrder(phaseZeroHandler, phaseOneHandler, phaseTenHandler, phaseOverNineThousandHandler);
@@ -238,7 +246,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
         configurer.onShutdown(1, phaseOneHandler::shutdown);
         configurer.onShutdown(10, phaseTenHandler::shutdown);
         configurer.onShutdown(9001, phaseOverNineThousandHandler::shutdown);
-        AxonConfiguration config = configurer.start();
+        AxonConfiguration config = this.start(configurer);
 
         config.shutdown();
 

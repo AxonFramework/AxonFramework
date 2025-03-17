@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface AxonApplication extends StartableConfigurer<AxonApplication> {
+public interface AxonApplication extends NewConfigurer<AxonApplication> {
 
     /**
      * Returns a {@code AxonApplication} instance to start configuring {@link Component components},
@@ -94,7 +94,14 @@ public interface AxonApplication extends StartableConfigurer<AxonApplication> {
      */
     AxonApplication disableEnhancerScanning();
 
-    @Override
+    /**
+     * {@link #build() Builds the configuration} and starts it immediately.
+     * <p>
+     * It is not recommended to change any configuration on {@code this StartableConfigurer} once this method is
+     * called.
+     *
+     * @return The fully initialized and started {@link AxonConfiguration}.
+     */
     default AxonConfiguration start() {
         AxonConfiguration configuration = build();
         configuration.start();

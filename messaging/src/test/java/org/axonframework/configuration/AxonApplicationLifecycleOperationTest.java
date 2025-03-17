@@ -37,6 +37,11 @@ class AxonApplicationLifecycleOperationTest extends ConfigurerLifecycleOperation
         return AxonApplication.create();
     }
 
+    @Override
+    public AxonConfiguration start(AxonApplication configurer) {
+        return configurer.start();
+    }
+
     @Test
     void lifecycleHandlersProceedToFollowingPhaseForNeverEndingPhases() {
         AtomicBoolean invoked = new AtomicBoolean(false);
