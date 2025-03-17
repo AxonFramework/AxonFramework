@@ -241,7 +241,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nonnull String name) {
             return components.getUnwrapped(new Identifier<>(type, name))
-                             .or(() -> optionalFromParent(type, name, () -> null));
+                             .or(() -> Optional.ofNullable(fromParent(type, name, () -> null)));
         }
 
         @Nonnull
@@ -252,16 +252,15 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
             Identifier<C> identifier = new Identifier<>(type, name);
             Object component = components.computeIfAbsent(
                     identifier,
-                    id -> new Component<>(identifier, config(),
-                                          c -> optionalFromParent(type, name, defaultImpl).orElseGet(defaultImpl))
+                    id -> new Component<>(identifier, config(), c -> fromParent(type, name, defaultImpl))
             ).get();
             return identifier.type().cast(component);
         }
 
-        private <C> Optional<C> optionalFromParent(Class<C> type, String name, Supplier<C> defaultSupplier) {
+        private <C> C fromParent(Class<C> type, String name, Supplier<C> defaultSupplier) {
             return parent != null
-                    ? parent.getOptionalComponent(type, name).or(() -> Optional.ofNullable(defaultSupplier.get()))
-                    : Optional.ofNullable(defaultSupplier.get());
+                    ? parent.getOptionalComponent(type, name).orElseGet(defaultSupplier)
+                    : defaultSupplier.get();
         }
 
         @Override
