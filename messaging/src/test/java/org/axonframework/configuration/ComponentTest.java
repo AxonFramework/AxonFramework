@@ -89,28 +89,31 @@ class ComponentTest {
 
     @Test
     void decorateInvokesDecoratorsAtGivenOrder() {
-        String expectedComponent = TEST_COMPONENT + "cba";
 
         Component<String> testSubject = new Component<>(identifier, config, factory);
-        testSubject.decorate((c, delegate) -> delegate + "a", 2)
-                   .decorate((c, delegate) -> delegate + "b", 1)
-                   .decorate((c, delegate) -> delegate + "c", 0);
+        Component<String> result1 = testSubject.decorate((c, name, delegate) -> delegate + "a");
+        Component<String> result2 = result1.decorate((c, name, delegate) -> delegate + "b");
+        Component<String> result3 = result2.decorate((c, name, delegate) -> delegate + "c");
 
-        assertEquals(expectedComponent, testSubject.get());
+        assertEquals("Hello World!a", result1.get());
+        assertEquals("Hello World!ab", result2.get());
+        assertEquals("Hello World!abc", result3.get());
     }
 
     @Test
-    void decorateReplacesPreviousDecoratorsForReusedOrder() {
-        int testOrder = 0;
-        String replacedDecoration = "this-will-not-be-there-on-creation";
-        String keptDecoration = "and-this-will-be";
+    void delegateReusesPreviouslyCreatedInstance() {
+        //noinspection unchecked
+        ComponentFactory<String> mock = mock();
+        when(mock.build(any())).thenReturn(TEST_COMPONENT);
+        Component<String> testSubject = new Component<>(identifier, config, mock);
 
-        Component<String> testSubject = new Component<>(identifier, config, factory);
-        testSubject.decorate((c, delegate) -> delegate + replacedDecoration, testOrder)
-                   .decorate((c, delegate) -> delegate + keptDecoration, testOrder);
+        Component<String> decorated = testSubject.decorate((c, name, delegate) -> delegate + "a");
 
-        assertNotEquals(TEST_COMPONENT + replacedDecoration, testSubject.get());
-        assertEquals(TEST_COMPONENT + keptDecoration, testSubject.get());
+        assertEquals(TEST_COMPONENT, testSubject.get());
+        verify(mock, times(1)).build(any());
+
+        assertEquals(TEST_COMPONENT + "a", decorated.get());
+        verify(mock, times(1)).build(any());
     }
 
     @Test

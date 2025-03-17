@@ -16,20 +16,22 @@
 
 package org.axonframework.configuration;
 
-import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.configuration.Component.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.invoke.MethodHandles;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 /**
  * Abstract implementation of the {@link NewConfigurer} allowing for reuse of {@link Component},
@@ -51,6 +53,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
 
     protected final LifecycleSupportingConfiguration config;
     private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final List<RegisteredComponentDecorator<?>> componentDecorators = new ArrayList<>();
 
     /**
      * Initialize the {@code AbstractConfigurer} based on the given {@code config}.
@@ -72,23 +75,33 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         if (previous != null) {
             logger.warn("Replaced a previous Component registered under type [{}] and name [{}].", name, type);
         }
-        //noinspection unchecked
-        return (S) this;
+        return self();
     }
 
     @Override
     public <C> S registerDecorator(@Nonnull Class<C> type,
-                                   @Nonnull String name,
                                    int order,
                                    @Nonnull ComponentDecorator<C> decorator) {
-        logger.debug("Registering decorator for [{}] of type [{}] at order #{}.", name, type, order);
-        Identifier<C> identifier = new Identifier<>(type, name);
-        logger.debug("Registering decorator for [{}] at order #{}.", identifier, order);
-        components.get(identifier)
-                  .map(component -> component.decorate(decorator, order))
-                  .orElseThrow(() -> new IllegalArgumentException(
-                          "Cannot decorate type [" + identifier + "] since there is no component builder for this type."
-                  ));
+        Objects.requireNonNull(type, "type must not be null");
+        Objects.requireNonNull(decorator, "decorator must not be null");
+        logger.debug("Registering decorator for type [{}] at order #{}.", type, order);
+        componentDecorators.add(new RegisteredComponentDecorator<>(i -> i.type().equals(type), order, decorator));
+        return self();
+    }
+
+    @Override
+    public <C> S registerDecorator(@Nonnull Class<C> type, @Nonnull String name, int order,
+                                   @Nonnull ComponentDecorator<C> decorator) {
+        Objects.requireNonNull(name, "name must not be null");
+        logger.debug("Registering decorator for name [{}] and type [{}] at order #{}.", name, type, order);
+        componentDecorators.add(new RegisteredComponentDecorator<>(
+                i -> Objects.equals(i.name(), name) && Objects.equals(
+                        i.type(),
+                        type), order, decorator));
+        return self();
+    }
+
+    private S self() {
         //noinspection unchecked
         return (S) this;
     }
@@ -103,8 +116,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     public S registerEnhancer(@Nonnull ConfigurerEnhancer enhancer) {
         logger.debug("Registering enhancer [{}].", enhancer.getClass().getSimpleName());
         this.enhancers.add(enhancer);
-        //noinspection unchecked
-        return (S) this;
+        return self();
     }
 
     @Override
@@ -112,8 +124,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         Module<?> module = builder.build(config());
         logger.debug("Registering module [{}].", module.getClass().getSimpleName());
         this.modules.add(module);
-        //noinspection unchecked
-        return (S) this;
+        return self();
     }
 
     @Override
@@ -121,18 +132,30 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
                                                    @Nonnull Consumer<C> configureTask) {
         logger.warn("Ignoring configure task on configurer [{}] because there is no delegate configurer of type [{}].",
                     this.getClass(), type);
-        //noinspection unchecked
-        return (S) this;
+        return self();
     }
 
     @Override
     public <C extends NewConfiguration> C build() {
         if (!initialized.getAndSet(true)) {
             invokeEnhancers();
+            decorateComponents();
             buildModules();
         }
         //noinspection unchecked
         return (C) config;
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void decorateComponents() {
+        componentDecorators.sort(Comparator.comparingInt(RegisteredComponentDecorator::order));
+        for (RegisteredComponentDecorator componentDecorator : componentDecorators) {
+            for (Identifier id : components.listComponents()) {
+                if (componentDecorator.componentMatcher.test(id)) {
+                    components.replace(id, previous -> previous.decorate(componentDecorator.decorator));
+                }
+            }
+        }
     }
 
     /**
@@ -247,5 +270,11 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         public List<NewConfiguration> getModuleConfigurations() {
             return List.copyOf(moduleConfigurations);
         }
+    }
+
+    private record RegisteredComponentDecorator<C>(Predicate<Identifier<C>> componentMatcher,
+                                                   int order,
+                                                   ComponentDecorator<C> decorator) {
+
     }
 }

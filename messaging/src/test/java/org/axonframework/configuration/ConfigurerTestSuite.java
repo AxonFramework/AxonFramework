@@ -16,6 +16,11 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,11 +28,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
 
 /**
  * Test suite validating the common behavior of the {@link NewConfigurer}.
@@ -264,36 +264,15 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
 
             testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
                        .registerDecorator(TestComponent.class, 2,
-                                          (c, delegate) -> new TestComponent(delegate.state + "3"))
+                                          (c, name, delegate) -> new TestComponent(delegate.state + "3"))
                        .registerDecorator(TestComponent.class, 1,
-                                          (c, delegate) -> new TestComponent(delegate.state + "2"))
+                                          (c, name, delegate) -> new TestComponent(delegate.state + "2"))
                        .registerDecorator(TestComponent.class, 0,
-                                          (c, delegate) -> new TestComponent(delegate.state + "1"));
+                                          (c, name, delegate) -> new TestComponent(delegate.state + "1"));
 
             TestComponent result = testSubject.build()
                                               .getComponent(TestComponent.class);
 
-            assertEquals(expectedState, result.state());
-        }
-
-        @Test
-        void registerDecoratorReplacesPreviousDecoratorForReusedOrderDecoratesOutcomeOfComponentBuilderInSpecifiedOrder() {
-            String expectedState = TEST_COMPONENT.state() + "bar";
-            AtomicBoolean invoked = new AtomicBoolean(false);
-
-            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
-                       .registerDecorator(TestComponent.class, 0,
-                                          (c, delegate) -> {
-                                              invoked.set(true);
-                                              return new TestComponent(delegate.state + "foo");
-                                          })
-                       .registerDecorator(TestComponent.class, 0,
-                                          (c, delegate) -> new TestComponent(delegate.state + "bar"));
-
-            TestComponent result = testSubject.build()
-                                              .getComponent(TestComponent.class);
-
-            assertFalse(invoked.get());
             assertEquals(expectedState, result.state());
         }
     }
@@ -302,18 +281,12 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
     class ComponentDecorationFailures {
 
         @Test
-        void registerDecoratorThrowsIllegalArgumentExceptionForNonExistingComponentType() {
-            assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.registerDecorator(TestComponent.class, 42, (c, delegate) -> delegate));
-        }
-
-        @Test
         void registerDecoratorThrowsNullPointerExceptionForNullType() {
             testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
 
             //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
-                         () -> testSubject.registerDecorator(null, 42, (c, delegate) -> delegate));
+                         () -> testSubject.registerDecorator(null, 42, (c, name, delegate) -> delegate));
         }
 
         @Test
@@ -322,7 +295,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
 
             //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
-                         () -> testSubject.registerDecorator(Object.class, null, 42, (c, delegate) -> delegate));
+                         () -> testSubject.registerDecorator(Object.class, null, 42, (c, name, delegate) -> delegate));
         }
 
         @Test
@@ -467,7 +440,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         void registeredEnhancersCanDecorateComponents() {
             TestComponent expected = new TestComponent(TEST_COMPONENT.state() + "-decorated");
             ConfigurerEnhancer enhancer = configurer -> configurer.registerDecorator(
-                    TestComponent.class, 0, (c, delegate) -> new TestComponent(delegate.state() + "-decorated")
+                    TestComponent.class, 0, (c, name, delegate) -> new TestComponent(delegate.state() + "-decorated")
             );
             testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
                        .registerEnhancer(enhancer);
@@ -621,7 +594,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                        )
                        .registerDecorator(
                                TestComponent.class, 0,
-                               (rootConfig, delegate) -> new TestComponent(
+                               (rootConfig, name, delegate) -> new TestComponent(
                                        delegate.state() + "-decorated-by-root"
                                )
                        )
@@ -633,7 +606,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                                        )
                                        .registerDecorator(
                                                TestComponent.class, 0,
-                                               (config, delegate) -> new TestComponent(
+                                               (config, name, delegate) -> new TestComponent(
                                                        delegate.state() + "-decorated-by-level-one"
                                                )
                                        )
@@ -645,7 +618,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                                                        )
                                                        .registerDecorator(
                                                                TestComponent.class, 0,
-                                                               (config, delegate) -> new TestComponent(
+                                                               (config, name, delegate) -> new TestComponent(
                                                                        delegate.state() + "-decorated-by-level-two"
                                                                )
                                                        )

@@ -16,14 +16,14 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.invoke.MethodHandles;
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
-
-import jakarta.annotation.Nonnull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A {@link NewConfigurer} implementation delegating all calls to a {@code delegate Configurer}.
@@ -62,6 +62,15 @@ public class DelegatingConfigurer<S extends NewConfigurer<S>> implements NewConf
                                    int order,
                                    @Nonnull ComponentDecorator<C> decorator) {
         delegate.registerDecorator(type, name, order, decorator);
+        //noinspection unchecked
+        return (S) this;
+    }
+
+    @Override
+    public <C> S registerDecorator(@Nonnull Class<C> type,
+                                   int order,
+                                   @Nonnull ComponentDecorator<C> decorator) {
+        delegate.registerDecorator(type, order, decorator);
         //noinspection unchecked
         return (S) this;
     }
