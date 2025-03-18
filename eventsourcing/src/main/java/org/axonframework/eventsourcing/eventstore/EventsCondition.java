@@ -32,9 +32,9 @@ public sealed interface EventsCondition permits SourcingCondition, StreamingCond
     /**
      * The set of criteria against which events must match.
      *
-     * @return The {@link EventCriteria} used to match this condition against Events.
+     * @return The {@link EventCriteria} used to match this condition against.
      */
-    Set<EventCriteria> criteria();
+    EventCriteria criteria();
 
     /**
      * Indicates whether the criteria defined in this condition matches against the given {@code type} and
@@ -43,14 +43,14 @@ public sealed interface EventsCondition permits SourcingCondition, StreamingCond
      * More specifically, this condition matches if any of the provided criteria match the given {@code type} and
      * {@code tags}, or if no criteria have been provided at all.
      * <p>
-     * See {@link EventCriteria#matchingTags(Set)} for more details on matching tags.
+     * See {@link EventCriteria} for more details on matching tags.
      *
      * @param type The type of the event to validate against.
      * @param tags The tags of an event message to match.
      * @return {@code true} if given type and tags match, otherwise {@code false}.
-     * @see EventCriteria#matchingTags(Set)
+     * @see EventCriteria
      */
     default boolean matches(@Nonnull String type, @Nonnull Set<Tag> tags) {
-        return criteria().isEmpty() || criteria().stream().anyMatch(criteria -> criteria.matches(type, tags));
+        return criteria().matches(type, tags);
     }
 }

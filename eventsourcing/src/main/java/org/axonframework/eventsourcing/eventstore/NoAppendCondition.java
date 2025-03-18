@@ -16,8 +16,6 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import java.util.Set;
-
 /**
  * An {@link AppendCondition} implementation that has {@link EventCriteria#anyEvent() no criteria}.
  * <p>
@@ -44,8 +42,8 @@ final class NoAppendCondition implements AppendCondition {
     }
 
     @Override
-    public Set<EventCriteria> criteria() {
-        return Set.of();
+    public EventCriteria criteria() {
+        return EventCriteria.anyEvent();
     }
 
     @Override

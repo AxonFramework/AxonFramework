@@ -37,6 +37,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
@@ -53,8 +54,7 @@ class DefaultEventStoreTransactionTest {
     private static final String TEST_AGGREGATE_ID = "someId";
     public static final Tag AGGREGATE_ID_TAG = new Tag("aggregateIdentifier", TEST_AGGREGATE_ID);
     private static final EventCriteria TEST_AGGREGATE_CRITERIA =
-            EventCriteria.forAnyEventType().withTags(AGGREGATE_ID_TAG);
-
+            EventCriteria.match().anyEventType().withTags(AGGREGATE_ID_TAG);
     private final Context.ResourceKey<EventStoreTransaction> testEventStoreTransactionKey =
             Context.ResourceKey.withLabel("eventStoreTransaction");
     private final AsyncInMemoryEventStorageEngine eventStorageEngine = new AsyncInMemoryEventStorageEngine();
@@ -146,9 +146,9 @@ class DefaultEventStoreTransactionTest {
         @Test
         void appendCommitsOfNonExistentTagWhenOfTwoNonOverlappingTagsOneYieldedNoEvents() {
             Tag nonExistentTag = new Tag("nonExistent", "tag");
-            EventCriteria nonExistingCriteria = EventCriteria.forAnyEventType().withTags(nonExistentTag);
+            EventCriteria nonExistingCriteria = EventCriteria.match().anyEventType().withTags(nonExistentTag);
             Tag existentTag = new Tag("existent", "tag");
-            EventCriteria existingCriteria = EventCriteria.forAnyEventType().withTags(existentTag);
+            EventCriteria existingCriteria = EventCriteria.match().anyEventType().withTags(existentTag);
 
             appendEventForTag(existentTag);
             testCanCommitTag(nonExistingCriteria, existingCriteria, nonExistentTag);
@@ -157,9 +157,9 @@ class DefaultEventStoreTransactionTest {
         @Test
         void appendCommitsOfExistentTagWhenOfTwoNonOverlappingTagsOneYieldedNoEvents() {
             Tag nonExistentTag = new Tag("nonExistent", "tag");
-            EventCriteria nonExistingCriteria = EventCriteria.forAnyEventType().withTags(nonExistentTag);
+            EventCriteria nonExistingCriteria = EventCriteria.match().anyEventType().withTags(nonExistentTag);
             Tag existentTag = new Tag("existent", "tag");
-            EventCriteria existingCriteria = EventCriteria.forAnyEventType().withTags(existentTag);
+            EventCriteria existingCriteria = EventCriteria.match().anyEventType().withTags(existentTag);
 
             appendEventForTag(existentTag);
             testCanCommitTag(nonExistingCriteria, existingCriteria, existentTag);
@@ -396,7 +396,11 @@ class DefaultEventStoreTransactionTest {
         Optional<Set<Tag>> optionalTags = Tag.fromContext(actual);
         assertTrue(optionalTags.isPresent());
         Set<Tag> actualTags = optionalTags.get();
-        assertTrue(actualTags.containsAll(expectedCriteria.tags()));
+        Set<Tag> expectedTags = expectedCriteria.flatten().stream()
+                                                .map(c -> c.tags())
+                                                .flatMap(Set::stream)
+                                                .collect(Collectors.toSet());
+        assertTrue(actualTags.containsAll(expectedTags));
         assertPositionAndEvent(actual, expectedPosition, expectedEvent);
     }
 

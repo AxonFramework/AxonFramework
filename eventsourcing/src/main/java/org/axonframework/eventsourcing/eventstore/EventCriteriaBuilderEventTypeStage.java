@@ -16,16 +16,22 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.junit.jupiter.api.*;
+import jakarta.annotation.Nonnull;
 
-import static org.junit.jupiter.api.Assertions.*;
+public interface EventCriteriaBuilderEventTypeStage {
 
-class AnyEventTest {
+    /**
+     * Adds the given {@code types} to the types that this criteria instance matches with.
+     *
+     * @param types The types to match against.
+     * @return The current Builder instance, for fluent interfacing.
+     */
+    EventCriteriaBuilderTagStage eventTypes(@Nonnull String... types);
 
-    @Test
-    void anyEventDoesNotFlattenToCriterion() {
-        AnyEvent testSubject = AnyEvent.INSTANCE;
-
-        assertTrue(testSubject.flatten().isEmpty());
-    }
+    /**
+     * Marks this criteria instance to match against any event type.
+     *
+     * @return The current Builder instance's {@link TagBuilder}, for fluent interfacing.
+     */
+    EventCriteriaBuilderTagStage anyEventType();
 }

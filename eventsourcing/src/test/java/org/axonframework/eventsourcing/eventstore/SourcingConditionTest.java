@@ -18,8 +18,6 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.junit.jupiter.api.*;
 
-import java.util.Set;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -30,14 +28,14 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SourcingConditionTest {
 
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.forAnyEventType().withTags("key", "value");
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.match().anyEventType().withTags("key", "value");
     private static final long TEST_START = 42L;
 
     @Test
     void conditionForCriteria() {
         SourcingCondition result = SourcingCondition.conditionFor(TEST_CRITERIA);
 
-        assertEquals(Set.of(TEST_CRITERIA), result.criteria());
+        assertEquals(TEST_CRITERIA, result.criteria());
         assertEquals(0, result.start());
         assertEquals(Long.MAX_VALUE, result.end());
     }
@@ -46,7 +44,7 @@ class SourcingConditionTest {
     void conditionForCriteriaAndStartPosition() {
         SourcingCondition result = SourcingCondition.conditionFor(TEST_START, TEST_CRITERIA);
 
-        assertEquals(Set.of(TEST_CRITERIA), result.criteria());
+        assertEquals(TEST_CRITERIA, result.criteria());
         assertEquals(TEST_START, result.start());
         assertEquals(Long.MAX_VALUE, result.end());
     }
@@ -57,7 +55,7 @@ class SourcingConditionTest {
 
         SourcingCondition result = SourcingCondition.conditionFor(TEST_START, testEnd, TEST_CRITERIA);
 
-        assertEquals(Set.of(TEST_CRITERIA), result.criteria());
+        assertEquals(TEST_CRITERIA, result.criteria());
         assertEquals(TEST_START, result.start());
         assertEquals(testEnd, result.end());
     }

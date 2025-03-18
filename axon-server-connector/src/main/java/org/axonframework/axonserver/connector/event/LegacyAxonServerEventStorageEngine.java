@@ -178,6 +178,7 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
         var resultingStream = condition
                 .criteria()
+                .flatten()
                 .stream()
                 .map(criteria -> this.eventsForCriteria(condition, criteria))
                 .reduce(MessageStream.empty().cast(), MessageStream::concatWith);

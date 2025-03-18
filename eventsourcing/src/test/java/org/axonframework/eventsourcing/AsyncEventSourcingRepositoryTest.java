@@ -24,6 +24,7 @@ import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
+import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.StubProcessingContext;
@@ -32,6 +33,7 @@ import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
@@ -46,7 +48,8 @@ import static org.mockito.Mockito.*;
 class AsyncEventSourcingRepositoryTest {
 
     private static final String TEST_CONTEXT = "DEFAULT_CONTEXT";
-    private static final EventCriteria TEST_MODEL_CRITERIA = EventCriteria.forAnyEventType().withTags("aggregateId", "id");
+    private static final Set<Tag> TEST_MODEL_TAGS = Set.of(new Tag("aggregateId", "id"));
+    private static final EventCriteria TEST_MODEL_CRITERIA = EventCriteria.match().anyEventType().withTags("aggregateId", "id");
 
     private AsyncEventStore eventStore;
     private EventStoreTransaction eventStoreTransaction;
@@ -217,7 +220,7 @@ class AsyncEventSourcingRepositoryTest {
     }
 
     private static boolean conditionPredicate(SourcingCondition condition) {
-        return condition.matches("ignored", TEST_MODEL_CRITERIA.tags());
+        return condition.matches("ignored", TEST_MODEL_TAGS);
     }
 
     // TODO - Discuss: Perfect candidate to move to a commons test utils module?

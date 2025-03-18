@@ -38,23 +38,18 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 record DefaultSourcingCondition(
         long start,
         long end,
-        @Nonnull Set<EventCriteria> criteria
+        @Nonnull EventCriteria criteria
 ) implements SourcingCondition {
 
     DefaultSourcingCondition {
         assertNonNull(criteria, "The EventCriteria set cannot be null");
     }
 
-    public DefaultSourcingCondition(long start, long end, @Nonnull EventCriteria eventCriteria) {
-        this(start, end, Set.of(eventCriteria));
-    }
-
     @Override
     public SourcingCondition or(@Nonnull SourcingCondition other) {
-        var combined = new HashSet<>(criteria());
-        combined.addAll(other.criteria());
+        var combinedCriteria = other.criteria().or(this.criteria());
         return new DefaultSourcingCondition(Math.min(this.start, other.start()),
                                             Math.max(this.end, other.end()),
-                                            combined);
+                                            combinedCriteria);
     }
 }

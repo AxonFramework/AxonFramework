@@ -20,13 +20,13 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;
 import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
 
-public class StudentMentorAssignmentModel {
+public class StudentMentorAssignment {
 
     private StudentMentorModelIdentifier identifier;
     private boolean mentorHasMentee;
     private boolean menteeHasMentor;
 
-    public StudentMentorAssignmentModel(
+    public StudentMentorAssignment(
             StudentMentorModelIdentifier identifier) {
         this.identifier = identifier;
     }

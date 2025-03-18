@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DefaultStreamingConditionTest {
 
     private static final GlobalSequenceTrackingToken TEST_POSITION = new GlobalSequenceTrackingToken(1337);
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.forAnyEventType().withTags("key", "value");
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.match().anyEventType().withTags("key", "value");
 
     private DefaultStreamingCondition testSubject;
 
@@ -49,18 +49,18 @@ class DefaultStreamingConditionTest {
 
     @Test
     void throwsExceptionWhenConstructingWithNullCriteria() {
-        assertThrows(NullPointerException.class, () -> new DefaultStreamingCondition(TEST_POSITION, (EventCriteria) null));
+        assertThrows(NullPointerException.class, () -> new DefaultStreamingCondition(TEST_POSITION, null));
     }
 
     @Test
     void containsExpectedData() {
         assertEquals(TEST_POSITION, testSubject.position());
-        assertEquals(Set.of(TEST_CRITERIA), testSubject.criteria());
+        assertEquals(Set.of(TEST_CRITERIA), testSubject.criteria().flatten());
     }
 
     @Test
     void withCriteriaCombinesGivenWithExistingCriteria() {
-        EventCriteria testCriteria = EventCriteria.forEventTypes("test-type").withTags(new Tag("other-key", "other-value"));
+        EventCriteria testCriteria = EventCriteria.match().eventTypes("test-type").withTags(new Tag("other-key", "other-value"));
 
         StreamingCondition result = testSubject.or(testCriteria);
 
