@@ -16,6 +16,11 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,11 +28,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
 
 /**
  * Test suite validating the common behavior of the {@link NewConfigurer}.
@@ -768,6 +768,11 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
 
         protected TestModule(@Nullable LifecycleSupportingConfiguration config) {
             super(config);
+        }
+
+        @Override
+        public String name() {
+            return "test-module";
         }
     }
 }

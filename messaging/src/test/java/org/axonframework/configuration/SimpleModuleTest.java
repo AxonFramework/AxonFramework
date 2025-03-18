@@ -27,7 +27,7 @@ class SimpleModuleTest extends ModuleTestSuite<SimpleModule> {
 
     @Override
     SimpleModule testSubject(LifecycleSupportingConfiguration config) {
-        return new SimpleModule(config);
+        return new SimpleModule(config, "simple-module");
     }
 
     @Nullable

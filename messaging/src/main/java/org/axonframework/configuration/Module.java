@@ -32,4 +32,10 @@ package org.axonframework.configuration;
  */
 public interface Module<M extends Module<M>> extends NewConfigurer<M> {
 
+    /**
+     * The identifying name of {@code this Module}.
+     *
+     * @return The identifying name of {@code this Module}.
+     */
+    String name();
 }
