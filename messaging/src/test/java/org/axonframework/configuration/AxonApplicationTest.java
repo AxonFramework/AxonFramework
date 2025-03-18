@@ -30,7 +30,12 @@ class AxonApplicationTest extends ConfigurerTestSuite<AxonApplication> {
 
     @Override
     public AxonApplication testSubject() {
-        return AxonApplication.create();
+        return testSubject == null ? AxonApplication.create() : testSubject;
+    }
+
+    @Override
+    public NewConfiguration build() {
+        return testSubject().build();
     }
 
     @Nullable

@@ -65,13 +65,6 @@ class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> impleme
     private final AxonConfigurationImpl axonConfig = new AxonConfigurationImpl();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
 
-    /**
-     * Initialize the {@code AxonApplication} with a {@code null} {@link LifecycleSupportingConfiguration}.
-     */
-    protected DefaultAxonApplication() {
-        super(null);
-    }
-
     @Override
     public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
         registerLifecycleHandler(startHandlers, phase, startHandler);
@@ -118,10 +111,12 @@ class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> impleme
     @SuppressWarnings("unchecked")
     @Override
     public AxonConfiguration build() {
-        if (!initialized.getAndSet(true) && enhancerScanning) {
-            scanForConfigurationEnhancers();
+        if (!initialized.getAndSet(true)) {
+            super.enhanceInvocationAndModuleConstruction();
+            if (enhancerScanning) {
+                scanForConfigurationEnhancers();
+            }
         }
-        super.build();
         return axonConfig;
     }
 

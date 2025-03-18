@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Steven van Beelen
  */
-public abstract class ConfigurerLifecycleOperationTestSuite<C extends NewConfigurer<?>> {
+public abstract class ConfigurerLifecycleOperationTestSuite<C extends ApplicationConfigurer<?>> {
 
     private static final String START_FAILURE_EXCEPTION_MESSAGE = "some start failure";
 

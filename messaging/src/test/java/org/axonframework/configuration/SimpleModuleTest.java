@@ -17,6 +17,9 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nullable;
+import org.junit.jupiter.api.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test validating the {@link SimpleModule}.
@@ -26,13 +29,24 @@ import jakarta.annotation.Nullable;
 class SimpleModuleTest extends ModuleTestSuite<SimpleModule> {
 
     @Override
-    SimpleModule testSubject(LifecycleSupportingConfiguration config) {
-        return new SimpleModule(config, "simple-module");
+    SimpleModule testModule() {
+        return new SimpleModule("simple-module");
     }
 
     @Nullable
     @Override
     public <D extends NewConfigurer<D>> Class<D> delegateType() {
         return null;
+    }
+
+    @Test
+    void throwsIllegalArgumentExceptionForEmptyNameString() {
+        assertThrows(IllegalArgumentException.class, () -> new SimpleModule(""));
+    }
+
+    @Test
+    void throwsIllegalArgumentExceptionForNullNameString() {
+        //noinspection DataFlowIssue
+        assertThrows(IllegalArgumentException.class, () -> new SimpleModule(null));
     }
 }

@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  * Provides utilities to {@link #registerComponent(Class, ComponentFactory) register components},
  * {@link #registerDecorator(Class, int, ComponentDecorator) decorators} of these components, check if a component
  * {@link #hasComponent(Class) exists}, register {@link #registerEnhancer(ConfigurationEnhancer) enhancers} for the
- * entire configurer, and {@link #registerModule(ModuleBuilder) modules}.
+ * entire configurer, and {@link #registerModule(Module) modules}.
  *
  * @param <S> The type of configurer this implementation returns. This generic allows us to support fluent interfacing.
  * @author Allard Buijze
@@ -77,11 +77,6 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
     <C> S registerComponent(@Nonnull Class<C> type,
                             @Nonnull String name,
                             @Nonnull ComponentFactory<C> factory);
-
-    //    <C> S registerComponent(@Nonnull Class<C> type,
-//                            @Nonnull String name,
-//                            @Nonnull ComponentFactory<C> factory,
-//                            @Nonnull BiConsumer<Supplier<C>, LifecycleRegistry<S>> lifecycleCallback);
 
     /**
      * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
@@ -157,12 +152,13 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      * An {@code enhancer} is able to invoke <em>any</em> of the method on this {@code Configurer}, allowing it to add
      * (sensible) defaults, decorate {@link Component components}, or replace components entirely.
      * <p>
-     * An enhancer's {@link ConfigurationEnhancer#enhance(NewConfigurer)} method is invoked during the {@link #build()}
-     * of {@code this Configurer}. This right before the configurer resolves to a {@link NewConfiguration}. When
-     * multiple enhancers have been provided, their {@link ConfigurationEnhancer#order()} dictates the enhancement
-     * order. For enhancer with the same order, the insert order is leading.
+     * An enhancer's {@link ConfigurationEnhancer#enhance(NewConfigurer)} method is invoked during the
+     * {@link ApplicationConfigurer#build()} of {@code this Configurer}. This right before the configurer resolves to a
+     * {@link NewConfiguration}. When multiple enhancers have been provided, their {@link ConfigurationEnhancer#order()}
+     * dictates the enhancement order. For enhancer with the same order, the insert order is leading.
      *
-     * @param enhancer The configuration enhancer to enhance {@code this Configurer} during {@link #build()}.
+     * @param enhancer The configuration enhancer to enhance {@code this Configurer} during
+     *                 {@link ApplicationConfigurer#build()}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     S registerEnhancer(@Nonnull ConfigurationEnhancer enhancer);
@@ -175,11 +171,10 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      * <p>
      * The given {@code builder} is typically constructed immediately by the {@code Configurer}.
      *
-     * @param builder The module builder function to register.
-     * @param <M>     The type of {@link Module} constructed by the given {@code builder}.
+     * @param module The module builder function to register.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    <M extends Module<M>> S registerModule(@Nonnull ModuleBuilder<M> builder);
+    S registerModule(@Nonnull Module<?> module);
 
     /**
      * Invokes the given {@code configureTask} if (1) this configurer has a delegate configurer and (2) that delegate is
@@ -201,15 +196,4 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      */
     <C extends NewConfigurer<C>> S delegate(@Nonnull Class<C> type,
                                             @Nonnull Consumer<C> configureTask);
-
-    /**
-     * Returns the completely initialized {@link NewConfiguration} instance of type {@code C} built using this
-     * {@code Configurer} implementation.
-     * <p>
-     * It is not recommended to change any configuration on {@code this NewConfigurer} once this method is called.
-     *
-     * @param <C> The {@link NewConfiguration} implementation of type {@code C} returned by this method.
-     * @return The fully initialized {@link NewConfiguration} instance of type {@code C}.
-     */
-    <C extends NewConfiguration> C build();
 }

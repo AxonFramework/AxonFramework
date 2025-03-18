@@ -54,7 +54,7 @@ import java.util.function.Consumer;
  */
 public class MessagingConfigurer
         extends DelegatingConfigurer<MessagingConfigurer>
-        implements NewConfigurer<MessagingConfigurer> {
+        implements ApplicationConfigurer<MessagingConfigurer> {
 
     /**
      * Build a default {@code MessagingConfigurer} instance with several messaging defaults, as well as methods to
@@ -155,6 +155,7 @@ public class MessagingConfigurer
      *
      * @return The fully initialized and started {@link AxonConfiguration}.
      */
+    @Override
     public AxonConfiguration start() {
         AtomicReference<AxonApplication> axonReference = new AtomicReference<>();
         axon(axonReference::set);

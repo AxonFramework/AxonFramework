@@ -17,7 +17,6 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 
 /**
@@ -33,12 +32,9 @@ public class SimpleModule extends AbstractConfigurer<SimpleModule> implements Mo
     /**
      * Initialize the {@code SimpleModule} based on the given {@code config}.
      *
-     * @param config The life cycle supporting configuration used as the <b>parent</b> configuration of this
-     *               {@link Module}.
+     * @param name The name of {@code this SimpleModule}.
      */
-    public SimpleModule(@Nullable LifecycleSupportingConfiguration config,
-                        @Nonnull String name) {
-        super(config);
+    public SimpleModule(@Nonnull String name) {
         Assert.nonEmpty(name, "The Module name cannot be null or empty.");
         this.name = name;
     }
@@ -46,5 +42,12 @@ public class SimpleModule extends AbstractConfigurer<SimpleModule> implements Mo
     @Override
     public String name() {
         return this.name;
+    }
+
+    @Override
+    public NewConfiguration build(LifecycleSupportingConfiguration parent) {
+        super.setParent(parent);
+        super.enhanceInvocationAndModuleConstruction();
+        return super.config();
     }
 }
