@@ -122,9 +122,9 @@ public sealed interface EventCriteria permits OrEventCriteria, FilteredEventCrit
      *
      * <pre>
      *     {@code
-     *     EventCriteria criteria = EventCriteria.filtered()
-     *     .matchingEventTypes("StudentRegistered", "CourseRegistered")
-     *     .matchingAllTags(Tag.of("studentId", "A"))
+     *     EventCriteria criteria = EventCriteria.match()
+     *     .eventTypes("StudentRegistered", "CourseRegistered")
+     *     .withTags(Tag.of("studentId", "A"))
      *    }
      *    </pre>
      *
