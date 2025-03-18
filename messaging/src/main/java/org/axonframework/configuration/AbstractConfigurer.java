@@ -44,13 +44,13 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    protected final Components components = new Components();
-    protected final LifecycleSupportingConfiguration config;
-
+    private final Components components = new Components();
     private final List<ConfigurationEnhancer> enhancers = new ArrayList<>();
     private final List<Module<?>> modules = new ArrayList<>();
-    private final List<NewConfiguration> moduleConfigurations = new ArrayList<>();
+
     private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final List<NewConfiguration> moduleConfigurations = new ArrayList<>();
+    private final LifecycleSupportingConfiguration config;
 
     private OverrideBehavior overrideBehavior = OverrideBehavior.WARN;
 
@@ -74,7 +74,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
             throw new ComponentOverrideException(type, name);
         }
 
-        Component<C> previous = components.put(identifier, new Component<>(identifier, config, factory));
+        Component<C> previous = components.put(identifier, new Component<>(identifier, () -> config, factory));
         if (previous != null && overrideBehavior == OverrideBehavior.WARN) {
             logger.warn("Replaced a previous Component registered for type [{}] and name [{}].", name, type);
         }
@@ -252,7 +252,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
             Identifier<C> identifier = new Identifier<>(type, name);
             Object component = components.computeIfAbsent(
                     identifier,
-                    id -> new Component<>(identifier, config(), c -> fromParent(type, name, defaultImpl))
+                    id -> new Component<>(identifier, this, c -> fromParent(type, name, defaultImpl))
             ).get();
             return identifier.type().cast(component);
         }
