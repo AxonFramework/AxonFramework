@@ -143,7 +143,7 @@ public abstract class AbstractStudentTestSuite {
      * with the tag "Student" and the given model id.
      */
     protected CriteriaResolver<String> getStudentCriteriaResolver() {
-        return myModelId -> EventCriteria.match().withTags(new Tag("Student", myModelId));
+        return myModelId -> EventCriteria.match().anyEventType().withTags(new Tag("Student", myModelId));
     }
 
     /**
@@ -151,7 +151,7 @@ public abstract class AbstractStudentTestSuite {
      * with the tag "Course" and the given model id.
      */
     protected CriteriaResolver<String> getCourseCriteriaResolver() {
-        return myModelId -> EventCriteria.match().withTags(new Tag("Course", myModelId));
+        return myModelId -> EventCriteria.match().anyEventType().withTags(new Tag("Course", myModelId));
     }
 
 

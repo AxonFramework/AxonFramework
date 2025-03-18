@@ -36,7 +36,7 @@ import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventsourcing.eventstore.EventCriterion;
 import org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils;
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
@@ -180,7 +180,7 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
                 .criteria()
                 .flatten()
                 .stream()
-                .map(criteria -> this.eventsForCriteria(condition, criteria))
+                .map(criteria -> this.eventsForCriterion(condition, criteria))
                 .reduce(MessageStream.empty().cast(), MessageStream::concatWith);
 
         AtomicReference<ConsistencyMarker> consistencyMarker = new AtomicReference<>();
@@ -194,7 +194,7 @@ public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngi
         });
     }
 
-    private MessageStream<EventMessage<?>> eventsForCriteria(SourcingCondition condition, EventCriteria criterion) {
+    private MessageStream<EventMessage<?>> eventsForCriterion(SourcingCondition condition, EventCriterion criterion) {
         String aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
         // axonserver uses 0 to denote the end of a stream, so if 0 is provided, we use 1. For infinity, we use 0.
         long end = condition.end() == Long.MAX_VALUE ? 0 : condition.end() + 1;

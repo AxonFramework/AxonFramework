@@ -19,7 +19,6 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
