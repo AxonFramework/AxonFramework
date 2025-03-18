@@ -31,9 +31,9 @@ import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.ReflectionUtils.ensureAccessible;
 
 /**
- * {@link ParameterResolverFactory} implementation that provides {@link ParameterResolver}s for parameters annotated
- * with {@link InjectEntity}. The parameter can either be a {@link ManagedEntity} or the entity itself. The order of
- * resolving the identity id is as specified on the {@link InjectEntity} annotation.
+ * {@link ParameterResolverFactory} implementation that provides {@link ParameterResolver ParameterResolvers} for
+ * parameters annotated with {@link InjectEntity}. The parameter can either be a {@link ManagedEntity} or the entity
+ * itself. The order of resolving the identity id is as specified on the {@link InjectEntity} annotation.
  *
  * @author Mitchell Herrijgers
  * @see InjectEntity
@@ -80,8 +80,8 @@ public class InjectEntityParameterResolverFactory implements ParameterResolverFa
 
 
     /**
-     * Let's do a boot-time check to see if it's actually valid. As the id type is defined runtime, we can only
-     * check for the entity type. Still better than nothing!
+     * Let's do a boot-time check to see if it's actually valid. As the id type is defined runtime, we can only check
+     * for the entity type. Still better than nothing!
      *
      * @param entityClass The entity class to check
      */
@@ -97,10 +97,10 @@ public class InjectEntityParameterResolverFactory implements ParameterResolverFa
         if (annotation.idProperty() != null && !annotation.idProperty().isEmpty()) {
             return new PropertyBasedEntityIdResolver(annotation.idProperty());
         }
-        return constructCustomEntityIdResolver(annotation);
+        return constructEntityIdResolver(annotation);
     }
 
-    private static EntityIdResolver<?> constructCustomEntityIdResolver(InjectEntity annotation) {
+    private static EntityIdResolver<?> constructEntityIdResolver(InjectEntity annotation) {
         try {
             var constructor = annotation.idResolver().getDeclaredConstructor();
             ensureAccessible(constructor);

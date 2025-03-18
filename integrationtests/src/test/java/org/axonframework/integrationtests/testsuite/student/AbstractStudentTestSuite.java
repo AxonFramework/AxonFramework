@@ -157,7 +157,7 @@ public abstract class AbstractStudentTestSuite {
                 ClasspathParameterResolverFactory.forClass(this.getClass()),
                 // To be able to get components
                 new ConfigurationParameterResolverFactory(configuration),
-                // To be able to get the model, the StateManager needs to be available.
+                // To be able to get the entity, the StateManager needs to be available.
                 // When the new configuration API is there, we should have a way to resolve this
                 new InjectEntityParameterResolverFactory(stateManager)
         ));

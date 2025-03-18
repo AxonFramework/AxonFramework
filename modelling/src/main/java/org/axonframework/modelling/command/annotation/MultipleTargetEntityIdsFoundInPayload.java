@@ -22,13 +22,15 @@ import org.axonframework.modelling.command.EntityIdResolver;
 import java.util.List;
 
 /**
- * Exception indicating that multiple identifiers were found in the payload of a message. Only one
- * method or field annotated with {@link TargetEntityId} is allowed to return a non-null value.
+ * Exception indicating that multiple identifiers were found in the payload of a message. When the
+ * {@link AnnotationBasedEntityIdResolver} resolves an identifier from the payload, it expects only one identifier to be
+ * present. If multiple identifiers are found, this exception is thrown. Multiple {@link TargetEntityId} annotations are
+ * allowed, but out of all non-null values, only one distinct value may be returned.
  *
+ * @author Mitchell Herrijgers
  * @see EntityIdResolver
  * @see TargetEntityId
  * @since 5.0.0
- * @author Mitchell Herrijgers
  */
 public class MultipleTargetEntityIdsFoundInPayload extends RuntimeException {
 

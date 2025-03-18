@@ -17,6 +17,7 @@
 package org.axonframework.modelling.command.annotation;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Assert;
 import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
@@ -50,7 +51,7 @@ public class PropertyBasedEntityIdResolver implements EntityIdResolver<Object> {
      * @param property The name of the property to resolve the identifier from.
      */
     public PropertyBasedEntityIdResolver(@Nonnull String property) {
-        BuilderUtils.assertNonEmpty(property, "Property cannot be empty or null");
+        Assert.nonEmpty(property, "Property cannot be empty or null");
         this.property = property;
     }
 

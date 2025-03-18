@@ -44,11 +44,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * In time, I expect this test to work, and for now it serves as an example.
  * NOTE: Using manual, temporary code edits this test WORKED.
  */
-class CompoundModelIdentifierCommandHandlingComponentTest extends AbstractStudentTestSuite {
+class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
     @Test
     @Disabled
-    void canHandleCommandThatTargetsMultipleModelsViaInjectionOfCompoundModel() {
+    void canHandleCommandThatTargetsCompoundEntityUsingInjection() {
 
         CompoundModelAnnotatedCommandHandler handler = new CompoundModelAnnotatedCommandHandler();
         var component = StatefulCommandHandlingComponent

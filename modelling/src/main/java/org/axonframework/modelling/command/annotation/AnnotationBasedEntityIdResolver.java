@@ -33,8 +33,8 @@ import java.util.stream.StreamSupport;
 
 /**
  * Implementation of a {@link EntityIdResolver} that inspects the payload of a {@link Message} for fields or methods
- * annotated with {@link TargetEntityId}. Multiple fields may be annotated, but only exactly one must resolve a non-null
- * value.
+ * annotated with {@link TargetEntityId}. Multiple fields may be annotated, but only exactly one must resolve one
+ * distinct non-null value.
  * <p>
  * If multiple ids are found, an {@link MultipleTargetEntityIdsFoundInPayload} is thrown. If no identifier is found at
  * all, a {@link NoEntityIdFoundInPayload} is thrown as components depending on the identifier will not work.
@@ -69,8 +69,7 @@ public class AnnotationBasedEntityIdResolver implements EntityIdResolver<Object>
     }
 
     /**
-     * Extracts the ids from the payload by looking for fields and methods annotated with
-     * {@link TargetEntityId}.
+     * Extracts the ids from the payload by looking for fields and methods annotated with {@link TargetEntityId}.
      *
      * @param payload The payload to extract the identifiers from.
      * @return The identifiers found in the payload.

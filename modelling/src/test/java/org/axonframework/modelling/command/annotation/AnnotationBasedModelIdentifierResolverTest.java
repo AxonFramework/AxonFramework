@@ -26,7 +26,7 @@ class AnnotationBasedModelIdentifierResolverTest {
     private final AnnotationBasedEntityIdResolver testSubject = new AnnotationBasedEntityIdResolver();
 
     @Test
-    void testResolvesIdOfSingleTargetCommand() {
+    void resolvesIdOfSingleTargetCommand() {
         // given
         SingleTargetCommand command = new SingleTargetCommand("id-2792793");
 
@@ -40,7 +40,7 @@ class AnnotationBasedModelIdentifierResolverTest {
 
 
     @Test
-    void testResolvesIdOfSingleTargetCommandWithGetterAnnotated() {
+    void resolvesIdOfSingleTargetCommandWithGetterAnnotated() {
         // given
         SingleTargetGetterCommand command = new SingleTargetGetterCommand("id-2792794");
 
@@ -53,7 +53,7 @@ class AnnotationBasedModelIdentifierResolverTest {
     }
 
     @Test
-    void testResolvesIdOfSingleTargetCommandWithRecord() {
+    void resolvesIdOfSingleTargetCommandWithRecord() {
         // given
         SingleTargetRecordCommand command = new SingleTargetRecordCommand("id-2792795");
 
@@ -66,13 +66,40 @@ class AnnotationBasedModelIdentifierResolverTest {
     }
 
     @Test
-    void throwsExceptionWhenMultipleTargetAnnotationsArePresent() {
+    void throwsExceptionWhenMultipleTargetAnnotationsArePresentThatDontMatch() {
         // given
         MultipleTargetCommand command = new MultipleTargetCommand("id-2792796", "id-2792797");
 
         // then
         Assertions.assertThrows(MultipleTargetEntityIdsFoundInPayload.class, () -> testSubject.resolve(
                 new GenericCommandMessage<>(new MessageType(command.getClass()), command), ProcessingContext.NONE));
+    }
+
+
+    @Test
+    void resolvesNonNullIdWhenOnlyOneTargedIdFieldIsNonNull() {
+        // given
+        MultipleTargetCommand command = new MultipleTargetCommand("id-2792798", null);
+
+        // when
+        Object result = testSubject.resolve(new GenericCommandMessage<>(new MessageType(command.getClass()), command),
+                                            ProcessingContext.NONE);
+
+        // then
+        Assertions.assertEquals("id-2792798", result);
+    }
+
+    @Test
+    void resolvesNonNullIdWhenAllTargetIdFieldsHaveSameValue() {
+        // given
+        MultipleTargetCommand command = new MultipleTargetCommand("id-2792700", "id-2792700");
+
+        // when
+        Object result = testSubject.resolve(new GenericCommandMessage<>(new MessageType(command.getClass()), command),
+                                            ProcessingContext.NONE);
+
+        // then
+        Assertions.assertEquals("id-2792700", result);
     }
 
     @Test

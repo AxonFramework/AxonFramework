@@ -20,8 +20,8 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.modelling.command.EntityIdResolver;
 
 /**
- * Exception indicating that no id was found in the payload of a message. Excactly one method or field annotated
- * with {@link TargetEntityId} is required to return a non-null value.
+ * Exception indicating that no id was found in the payload of a message. Exactly one method or field annotated with
+ * {@link TargetEntityId} is required to return a non-null value.
  *
  * @author Mitchell Herrijgers
  * @see EntityIdResolver
@@ -37,7 +37,7 @@ public class NoEntityIdFoundInPayload extends RuntimeException {
      */
     public NoEntityIdFoundInPayload(@Nonnull Class<?> payloadClass) {
         super(String.format(
-                "No non-null @TargetEntityId annotation was found in payload of type [%s]. Exactly one identifier is required.",
+                "No non-null @TargetEntityId annotation was found in payload of type [%s]. Exactly one non-null identifier is required.",
                 payloadClass.getName()));
     }
 }
