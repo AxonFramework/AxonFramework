@@ -778,7 +778,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         }
 
         @Override
-        public NewConfiguration build(LifecycleSupportingConfiguration parent) {
+        public NewConfiguration build(@Nonnull LifecycleSupportingConfiguration parent) {
             super.setParent(parent);
             super.enhanceInvocationAndModuleConstruction();
             return super.config();

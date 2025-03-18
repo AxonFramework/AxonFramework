@@ -19,6 +19,8 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 
+import java.util.Objects;
+
 /**
  * Simple implementation of the {@link Module} to allow for configuration modularization.
  *
@@ -45,8 +47,8 @@ public class SimpleModule extends AbstractConfigurer<SimpleModule> implements Mo
     }
 
     @Override
-    public NewConfiguration build(LifecycleSupportingConfiguration parent) {
-        super.setParent(parent);
+    public NewConfiguration build(@Nonnull LifecycleSupportingConfiguration parent) {
+        super.setParent(Objects.requireNonNull(parent, "The parent Configuration cannot be null."));
         super.enhanceInvocationAndModuleConstruction();
         return super.config();
     }
