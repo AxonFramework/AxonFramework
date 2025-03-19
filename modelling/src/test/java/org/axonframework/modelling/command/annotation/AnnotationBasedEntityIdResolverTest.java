@@ -21,7 +21,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
-class AnnotationBasedModelIdentifierResolverTest {
+class AnnotationBasedEntityIdResolverTest {
 
     private final AnnotationBasedEntityIdResolver testSubject = new AnnotationBasedEntityIdResolver();
 
