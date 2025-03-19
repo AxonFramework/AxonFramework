@@ -355,7 +355,6 @@ class JacksonComponentDescriptorTest {
         }
     }
 
-    @Disabled("TODO #XXXX - support circular references")
     @Nested
     class CircularReferencesTests {
 
@@ -392,6 +391,73 @@ class JacksonComponentDescriptorTest {
             );
         }
 
+        @Test
+        void describeComponentWithSelfReference() {
+            // given
+            var component = new CircularComponent("SelfReferencing");
+            component.setDependency(component);
+            testSubject.describeProperty("selfRef", component);
+
+            // when
+            var result = testSubject.describe();
+
+            // then
+            assertJsonMatches(result, """
+                    {
+                      "selfRef": {
+                        "_id": "%s",
+                        "_type": "CircularComponent",
+                        "name": "SelfReferencing",
+                        "dependency": {
+                          "$ref": "%s"
+                        }
+                      }
+                    }
+                    """.formatted(identityOf(component), identityOf(component))
+            );
+        }
+
+        @Test
+        void describeCollectionWithCircularReferences() {
+            // given
+            var component1 = new CircularComponent("Component1");
+            var component2 = new CircularComponent("Component2");
+            component1.setDependency(component2);
+            component2.setDependency(component1);
+
+            var components = List.of(component1, component2);
+            testSubject.describeProperty("circularRefCollection", components);
+
+            // when
+            var result = testSubject.describe();
+
+            // then
+            assertJsonMatches(result, """
+                    {
+                      "circularRefCollection": [
+                        {
+                          "_id": "%s",
+                          "_type": "CircularComponent",
+                          "name": "Component1",
+                          "dependency": {
+                            "_id": "%s",
+                            "_type": "CircularComponent",
+                            "name": "Component2",
+                            "dependency": {
+                              "$ref": "%s"
+                            }
+                          }
+                        },
+                        {
+                          "$ref": "%s"
+                        }
+                      ]
+                    }
+                    """.formatted(identityOf(component1), identityOf(component2),
+                                  identityOf(component1), identityOf(component2))
+            );
+        }
+
         private static class CircularComponent implements DescribableComponent {
 
             private final String name;
@@ -410,7 +476,7 @@ class JacksonComponentDescriptorTest {
             public void describeTo(@Nonnull ComponentDescriptor descriptor) {
                 descriptor.describeProperty("name", name);
                 if (dependency != null) {
-                    descriptor.describeProperty("reference", dependency);
+                    descriptor.describeProperty("dependency", dependency);
                 }
             }
         }
