@@ -145,9 +145,9 @@ class MessagingConfigurerTest extends ConfigurerTestSuite<MessagingConfigurer> {
     }
 
     @Test
-    void axonDelegatesTasks() {
+    void applicationDelegatesTasks() {
         TestComponent result =
-                testSubject.axon(axon -> axon.registerComponent(TestComponent.class, c -> TEST_COMPONENT))
+                testSubject.application(axon -> axon.registerComponent(TestComponent.class, c -> TEST_COMPONENT))
                            .build()
                            .getComponent(TestComponent.class);
 
