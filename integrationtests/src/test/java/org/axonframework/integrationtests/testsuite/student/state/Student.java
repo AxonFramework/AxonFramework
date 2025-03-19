@@ -16,9 +16,10 @@
 
 package org.axonframework.integrationtests.testsuite.student.state;
 
+import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
 import org.axonframework.integrationtests.testsuite.student.events.StudentNameChangedEvent;
-import org.axonframework.eventsourcing.EventSourcingHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,5 +71,16 @@ public class Student {
     @EventSourcingHandler
     public void handle(StudentNameChangedEvent event) {
         name = event.name();
+    }
+
+    @EventSourcingHandler
+    public void handle(MentorAssignedToStudentEvent event) {
+        if (event.mentorId().equals(this.id)) {
+            // I have been assigned a mentee!
+            this.menteeId = event.menteeId();
+        } else if (event.menteeId().equals(this.id)) {
+            // I have been assigned a mentor!
+            this.mentorId = event.mentorId();
+        }
     }
 }

@@ -16,11 +16,15 @@
 
 package org.axonframework.integrationtests.testsuite.student.commands;
 
+import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;
 import org.axonframework.modelling.command.annotation.TargetEntityId;
 
-public record ChangeStudentNameCommand(
-        @TargetEntityId String id,
-        String name
+public record AssignMentorCommand(
+        String menteeId,
+        String mentorId
 ) {
-
+    @TargetEntityId
+    public StudentMentorModelIdentifier modelIdentifier() {
+        return new StudentMentorModelIdentifier(mentorId, menteeId);
+    }
 }
