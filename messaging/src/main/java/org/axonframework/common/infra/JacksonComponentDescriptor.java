@@ -29,13 +29,12 @@ import java.util.Map;
  * A {@link ComponentDescriptor} implementation that uses Jackson's {@link ObjectMapper} to create JSON representations
  * of components. This implementation produces a clean, hierarchical JSON structure.
  * <p>
- * This implementation supports circular references between components by using a reference mechanism.
- * When a {@link DescribableComponent} is encountered for the first time, it is fully serialized including
- * its unique identifier ({@code _id}). Any subsequent occurrences of the same component instance are
- * replaced with a reference object containing a {@code $ref} field pointing to the original component's
- * identifier and a {@code _type} field indicating the component's type. This prevents infinite recursion
- * and {@link StackOverflowError} when describing components
- * with circular dependencies.
+ * This implementation supports circular references between components by using a reference mechanism. When a
+ * {@link DescribableComponent} is encountered for the first time, it is fully serialized including its unique
+ * identifier ({@code _id}). Any subsequent occurrences of the same component instance are replaced with a reference
+ * object containing a {@code $ref} field pointing to the original component's identifier and a {@code _type} field
+ * indicating the component's type. This prevents infinite recursion and {@link StackOverflowError} when describing
+ * components with circular dependencies.
  * <p>
  * Example JSON with a circular reference:
  * <pre>
@@ -64,7 +63,7 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
 
     private final ObjectMapper objectMapper;
     private final ObjectNode rootNode;
-    private final Map<Object, String> processedComponents;
+    private final Map<DescribableComponent, String> processedComponents;
 
     /**
      * Constructs a new {@code JacksonComponentDescriptor} with a default {@link ObjectMapper}.
@@ -88,7 +87,8 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
      * @param objectMapper        The ObjectMapper to use for JSON serialization.
      * @param processedComponents Map containing already processed components and their IDs.
      */
-    private JacksonComponentDescriptor(ObjectMapper objectMapper, Map<Object, String> processedComponents) {
+    private JacksonComponentDescriptor(ObjectMapper objectMapper,
+                                       Map<DescribableComponent, String> processedComponents) {
         this.objectMapper = objectMapper;
         this.rootNode = objectMapper.createObjectNode();
         this.processedComponents = processedComponents;
@@ -105,9 +105,9 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
             var id = processedComponents.get(component);
             var componentSeenAlready = id != null;
             if (componentSeenAlready) {
-                ObjectNode refNode = objectMapper.createObjectNode();
+                var refNode = objectMapper.createObjectNode();
                 refNode.put("$ref", id);
-                refNode.put("_type", component.getClass().getSimpleName());
+                describeType(component, refNode);
                 return refNode;
             }
             return describeComponentJson(component);
@@ -133,7 +133,11 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
             JacksonComponentDescriptor componentDescriptor
     ) {
         componentDescriptor.rootNode.put("_id", System.identityHashCode(component) + "");
-        componentDescriptor.rootNode.put("_type", component.getClass().getSimpleName());
+        describeType(component, componentDescriptor.rootNode);
+    }
+
+    private static void describeType(DescribableComponent component, ObjectNode objectNode) {
+        objectNode.put("_type", component.getClass().getSimpleName());
     }
 
     @Override
