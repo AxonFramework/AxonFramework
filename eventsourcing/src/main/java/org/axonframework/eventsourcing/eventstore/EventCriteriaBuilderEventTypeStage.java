@@ -18,20 +18,32 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 
-public interface EventCriteriaBuilderEventTypeStage {
+/**
+ * Interface declaring the possible builder actions for the event type stage of the {@link EventCriteriaBuilder}. After
+ * calling any of the methods defined in this interface, the builder will be in the
+ * {@link EventCriteriaBuilderTagStage}.
+ *
+ * @author Mitchell Herrijgers
+ * @see EventCriteria
+ * @see EventCriteriaBuilder
+ * @since 5.0.0
+ */
+public sealed interface EventCriteriaBuilderEventTypeStage permits EventCriteriaBuilder {
 
     /**
-     * Adds the given {@code types} to the types that this criteria instance matches with.
+     * Define that the event must have one of the provided {@code types} to match. If the {@code types} set is empty,
+     * the criteria will match against any type. The types match in an OR relation, meaning that an event must have at
+     * least one of the types to match.
      *
      * @param types The types to match against.
-     * @return The current Builder instance, for fluent interfacing.
+     * @return The current builder as an {@link EventCriteriaBuilderTagStage}, for fluent interfacing.
      */
     EventCriteriaBuilderTagStage eventTypes(@Nonnull String... types);
 
     /**
-     * Marks this criteria instance to match against any event type.
+     * Define that the event matches with any type.
      *
-     * @return The current Builder instance's {@link TagBuilder}, for fluent interfacing.
+     * @return The current builder as an {@link EventCriteriaBuilderTagStage}, for fluent interfacing.
      */
     EventCriteriaBuilderTagStage anyEventType();
 }

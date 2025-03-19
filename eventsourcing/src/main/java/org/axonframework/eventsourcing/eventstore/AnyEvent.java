@@ -48,7 +48,7 @@ final class AnyEvent implements EventCriteria {
 
     @Override
     public Set<EventCriterion> flatten() {
-        // AnyEvent does not have any criteria to flatten
+        // AnyEvent does not have a criterion, as it matches all.
         return Collections.emptySet();
     }
 
@@ -69,6 +69,7 @@ final class AnyEvent implements EventCriteria {
 
     @Override
     public EventCriteria or(EventCriteria criteria) {
+        // The AnyEvent is always matches, so the other criteria has no effect.
         return this;
     }
 }

@@ -21,34 +21,44 @@ import jakarta.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Interface declaring the possible builder actions for the tag stage of the {@link EventCriteriaBuilder}. After calling
+ * any of the methods defined in this interface, the builder will complete and return an {@link EventCriteria}.
+ *
+ * @author Mitchell Herrijgers
+ * @see EventCriteria
+ * @see EventCriteriaBuilder
+ * @since 5.0.0
+ */
 public interface EventCriteriaBuilderTagStage {
 
     /**
-     * Adds the given {@code tags} to the tags that events are expected to have. These tags function in an AND relation,
-     * meaning that an event must have all tags to match this criteria.
+     * Define that the event must contain all the provided {@code tags} to match. These tags function in an AND
+     * relation, meaning that an event must have all tags to match. A partial match is not sufficient.
      *
      * @param tags The tags to match against.
-     * @return The current Builder instance, for fluent interfacing.
+     * @return The completed {@link EventCriteria} instance.
      */
     EventCriteria withTags(@Nonnull Set<Tag> tags);
 
     /**
-     * Adds the given {@code tags} to the tags that events are expected to have. These tags function in an AND relation,
-     * meaning that an event must have all tags to match this criteria.
+     * Define that the event must contain all the provided {@code tags} to match. These tags function in an AND
+     * relation, meaning that an event must have all tags to match. A partial match is not sufficient.
      *
      * @param tags The tags to match against.
-     * @return The current Builder instance, for fluent interfacing.
+     * @return The completed {@link EventCriteria} instance.
      */
     default EventCriteria withTags(@Nonnull Tag... tags) {
         return withTags(Set.of(tags));
     }
 
     /**
-     * Adds key-value pairs to the tags that events are expected to have. These tags function in an AND relation,
-     * meaning that an event must have all tags to match this criteria.
+     * Define, as key-value pairs, that the event must contain all the provided {@code tags} to match. These tags
+     * function in an AND relation, meaning that an event must have all tags to match. A partial match is not
+     * sufficient.
      *
      * @param tags The tags to match against.
-     * @return The current Builder instance, for fluent interfacing.
+     * @return The completed {@link EventCriteria} instance.
      */
     default EventCriteria withTags(@Nonnull String... tags) {
         if (tags.length % 2 != 0) {
@@ -64,9 +74,9 @@ public interface EventCriteriaBuilderTagStage {
 
     /**
      * Finalizes the builder and returns an {@link EventCriteria} instance that matches only based on the types that
-     * were already defined.
+     * were already defined in the previous stage.
      *
-     * @return The built {@link EventCriteria} instance.
+     * @return The completed {@link EventCriteria} instance.
      */
     EventCriteria withAnyTags();
 }

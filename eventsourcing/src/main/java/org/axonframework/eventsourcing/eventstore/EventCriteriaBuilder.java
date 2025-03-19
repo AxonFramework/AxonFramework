@@ -29,7 +29,7 @@ import java.util.Set;
  * <ol>
  *     <li>
  *         {@link EventCriteriaBuilderEventTypeStage The event type stage}, defining the types that this criteria
- *          instance matches with using {@link EventCriteriaBuilderEventTypeStage#eventTypes(String...)}.
+ *          instance matches with using {@link EventCriteriaBuilderEventTypeStage#eventTypes(String...)} or {@link EventCriteriaBuilderEventTypeStage#anyEventType()}.
  *     </li>
  *     <li>
  *         {@link EventCriteriaBuilderEventTypeStage The tag stage}, defining the tags that events are expected to have using
@@ -44,7 +44,7 @@ import java.util.Set;
  * @see EventCriteria
  * @since 5.0.0
  */
-public class EventCriteriaBuilder implements EventCriteriaBuilderEventTypeStage, EventCriteriaBuilderTagStage {
+public final class EventCriteriaBuilder implements EventCriteriaBuilderEventTypeStage, EventCriteriaBuilderTagStage {
 
     private final EventCriteria orCriteria;
     private final Set<String> eventTypes = new HashSet<>();
@@ -66,7 +66,7 @@ public class EventCriteriaBuilder implements EventCriteriaBuilderEventTypeStage,
 
     /**
      * Start building a new {@link EventCriteria} instance that when constructed will be combined with the given
-     * {@code criteria} using an OR operation.
+     * {@code criteria} using an {@link EventCriteria#or(EventCriteria) OR operation}.
      *
      * @param criteria The criteria to combine with the new criteria using an OR operation.
      * @return The builder in the {@link EventCriteriaBuilderEventTypeStage event type stage}.

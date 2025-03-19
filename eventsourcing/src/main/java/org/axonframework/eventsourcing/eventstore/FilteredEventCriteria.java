@@ -18,19 +18,19 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Filtered {@link EventCriteria} that takes both the tags and the type of an event into consideration.
+ * Filtered {@link EventCriteria} that takes both the tags and the event's type into consideration.
  * <p>
- * Events match if:
+ * Events match if the following conditions are met:
  * <ol>
- *     <li>The event type is in the {@code types} set, or the {@code types} set is empty.</li>
+ *     <li>The event's type is in the {@code types} set, or the {@code types} set is empty.</li>
  *     <li>The event tags contain all tags in the {@code tags} set, or the {@code tags} set is empty.</li>
  * </ol>
- * <p>
  * <p>
  * To construct an instance of a filtered {@link EventCriteria}, use the {@link EventCriteria#match()} method.
  *
@@ -88,12 +88,18 @@ record FilteredEventCriteria(@Nonnull Set<String> types,
 
     @Override
     public EventCriteria or(EventCriteria criteria) {
-        if(criteria instanceof AnyEvent) {
+        if (criteria instanceof AnyEvent) {
             return criteria;
         }
-        if(criteria.equals(this)) {
+        if (criteria.equals(this)) {
             return this;
         }
+
+        // If the given criteria is an OrEventCriteria, let it be flattened
+        if (criteria instanceof OrEventCriteria orEventCriteria) {
+            return orEventCriteria.or(this);
+        }
+
         return new OrEventCriteria(Set.of(this, criteria));
     }
 }

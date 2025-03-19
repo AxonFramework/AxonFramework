@@ -97,7 +97,7 @@ public sealed interface EventCriteria permits OrEventCriteria, FilteredEventCrit
      * <p>
      * The event will match on tags if it contains all tags in the
      * {@link EventCriteriaBuilderTagStage#withTags(Tag...)}} set. If the set is empty, the event will match on all
-     * events. For example, given the following set of criteria :
+     * events. For example, given the following set of set:
      * <ul>
      *      <li>STUDENT -> A</li>
      *      <li>COURSE -> X</li>
@@ -116,7 +116,8 @@ public sealed interface EventCriteria permits OrEventCriteria, FilteredEventCrit
      *     <li> Event [STUDENT -> Z]</li>
      * </ul>
      * <p>
-     * Note that constructing a {@link FilteredEventCriteria} makes most sense when Event-Sourcing entities.
+     * Note that constructing a {@link FilteredEventCriteria} makes most sense when
+     * {@link EventStoreTransaction#source(SourcingCondition) sourcing} entities from events.
      * For example, when sourcing events for an Aggregate, the criteria could be constructed as follows:
      *
      * <pre>
@@ -147,7 +148,7 @@ public sealed interface EventCriteria permits OrEventCriteria, FilteredEventCrit
     /**
      * Start a builder to construct an additional {@link FilteredEventCriteria} instance that when constructed matches
      * both the events as defined by the builder and the events as defined by the current criteria. Once construction is
-     * complete, returns an {@link OrEventCriteria} that matches event that match either this {@code EventCriteria} or
+     * complete, returns an {@link OrEventCriteria} that matches events that match either this {@code EventCriteria} or
      * the built one. See {@link EventCriteriaBuilder} for more details.
      *
      * @return A builder to construct a {@link FilteredEventCriteria} instance that, once built, will match events that
@@ -172,8 +173,8 @@ public sealed interface EventCriteria permits OrEventCriteria, FilteredEventCrit
 
     /**
      * Flatten this, possibly nested, {@code EventCriteria} into a {@link Set} of {@link EventCriterion}. These
-     * {@code EventCriterion} instances can be used to construct queries against a data store, without the need to
-     * interpret the criteria.
+     * {@code EventCriterion} instances can be used by the {@link AsyncEventStore} to construct queries without the need
+     * to interpret the criteria.
      *
      * @return The flattened set of {@code EventCriteria}.
      */
