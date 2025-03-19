@@ -23,7 +23,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 
-import java.io.Serial;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -38,9 +37,6 @@ import java.util.function.Supplier;
  * @since 3.3.0
  */
 public class GenericDeadlineMessage<P> extends GenericEventMessage<P> implements DeadlineMessage<P> {
-
-    @Serial
-    private static final long serialVersionUID = 2615162095663478618L;
 
     private final String deadlineName;
 

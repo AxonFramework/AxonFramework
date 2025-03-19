@@ -31,8 +31,6 @@ import org.axonframework.messaging.HandlerExecutionException;
  */
 public class CommandExecutionException extends HandlerExecutionException {
 
-    private static final long serialVersionUID = -4864350962123378098L;
-
     /**
      * Initializes the exception with given {@code message} and {@code cause}.
      *

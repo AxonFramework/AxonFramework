@@ -40,7 +40,6 @@ import org.axonframework.modelling.command.ApplyMore;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 
-import java.io.Serial;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -550,9 +549,6 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
     }
 
     private class LazyIdentifierDomainEventMessage<P> extends GenericDomainEventMessage<P> {
-
-        @Serial
-        private static final long serialVersionUID = -1624446038982565972L;
 
         public LazyIdentifierDomainEventMessage(String aggregateType,
                                                 long seq,

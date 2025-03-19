@@ -23,8 +23,8 @@ import javax.annotation.Nonnull;
  * instances for each Aggregate. The lifecycle of these triggers is attached to the lifecycle of the aggregate itself.
  * This means the trigger is cached if the aggregate is, and it is disposed together with the aggregate.
  * <p>
- * This means aggregate-specific state should be kept in the {@link SnapshotTrigger} instances, and not in the {@code
- * SnapshotTriggerDefinition}
+ * This means aggregate-specific state should be kept in the {@link SnapshotTrigger} instances, and not in the
+ * {@code SnapshotTriggerDefinition}
  *
  * @author Allard Buijze
  * @since 3.0
@@ -36,9 +36,8 @@ public interface SnapshotTriggerDefinition {
      * trigger will be notified of each event applied on the aggregate, as well as the moment at which the aggregate
      * state is fully initialized based on its historic events.
      * <p>
-     * It is highly recommended that the instances returned by this method are {@link java.io.Serializable}. Any
-     * resources that the trigger needs that are not serializable, can be reattached by implementing the {@link
-     * #reconfigure(Class, SnapshotTrigger)} method. This method is invoked when a SnapshotTrigger has been
+     * Any resources that the trigger needs can be reattached by implementing the
+     * {@link #reconfigure(Class, SnapshotTrigger)} method. This method is invoked when a SnapshotTrigger has been
      * deserialized.
      *
      * @param aggregateType The type of aggregate for which to create a trigger
@@ -51,10 +50,10 @@ public interface SnapshotTriggerDefinition {
      * lost in the (de)serialization process.
      * <p>
      * Since implementations of the {@link SnapshotTrigger} often rely on a {@link Snapshotter} which cannot be
-     * serialized, it may be necessary to inject these resourcs after deserialization of a trigger.
+     * serialized, it may be necessary to inject these resources after deserialization of a trigger.
      * <p>
-     * Implementations returning a Serializable SnapshotTrigger (which is recommended), should implement this method if
-     * not all fields could be initialized base don serialized data.
+     * Implementations returning a SnapshotTrigger, should implement this method if
+     * not all fields could be initialized base on serialized data.
      *
      * @param aggregateType The type of aggregate for which this trigger was created
      * @param trigger       The trigger instance formerly created using {@link #prepareTrigger(Class)}

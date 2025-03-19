@@ -21,7 +21,6 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import javax.annotation.Nonnull;
-import java.io.Serializable;
 
 /**
  * Abstract implementation of the {@link org.axonframework.eventsourcing.SnapshotTrigger} that schedules snapshots on
@@ -30,9 +29,8 @@ import java.io.Serializable;
  * @author Yvonne Ceelie
  * @since 4.4.4
  */
-public abstract class AbstractSnapshotTrigger implements SnapshotTrigger, Serializable {
+public abstract class AbstractSnapshotTrigger implements SnapshotTrigger {
 
-    private static final long serialVersionUID = 4129616856823136473L;
     private transient Snapshotter snapshotter;
     private Class<?> aggregateType;
     private boolean initialized;

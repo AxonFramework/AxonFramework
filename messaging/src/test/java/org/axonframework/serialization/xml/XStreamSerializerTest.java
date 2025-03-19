@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import org.axonframework.utils.StubDomainEvent;
 import org.dom4j.Document;
 import org.junit.jupiter.api.*;
 
-import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -270,9 +269,8 @@ class XStreamSerializerTest {
 
     }
 
-    public static class TestEvent implements Serializable {
+    public static class TestEvent {
 
-        private static final long serialVersionUID = 1L;
         private final String name;
         private final LocalDate date;
         private final Instant dateTime;

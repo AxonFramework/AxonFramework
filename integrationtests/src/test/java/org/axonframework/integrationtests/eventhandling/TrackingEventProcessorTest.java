@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2310,8 +2310,6 @@ class TrackingEventProcessorTest {
     }
 
     private static class TestError extends Error {
-
-        private static final long serialVersionUID = -5579826202840099704L;
     }
 
     @SuppressWarnings("unused")

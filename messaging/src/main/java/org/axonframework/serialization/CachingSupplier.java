@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.axonframework.serialization;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -28,7 +27,7 @@ import java.util.function.Supplier;
  *
  * @author Rene de Waele
  */
-public class CachingSupplier<T> implements Supplier<T>, Serializable {
+public class CachingSupplier<T> implements Supplier<T> {
 
     private final AtomicReference<T> value = new AtomicReference<>();
     private transient final Supplier<T> delegate;

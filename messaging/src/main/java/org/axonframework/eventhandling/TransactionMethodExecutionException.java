@@ -27,8 +27,6 @@ import org.axonframework.common.AxonException;
  */
 public class TransactionMethodExecutionException extends AxonException {
 
-    private static final long serialVersionUID = 1952095576024390566L;
-
     /**
      * Initialize the exception with given {@code message} and {@code cause}.
      *

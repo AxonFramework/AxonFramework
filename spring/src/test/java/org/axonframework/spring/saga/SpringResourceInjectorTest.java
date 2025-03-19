@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,8 +60,6 @@ public class SpringResourceInjectorTest {
 
     public static class InjectableSaga {
 
-        private static final long serialVersionUID = 6273830321273396327L;
-
         @Autowired
         private CommandBus commandBus1;
         @SuppressWarnings({"UnusedDeclaration"})
@@ -88,8 +86,6 @@ public class SpringResourceInjectorTest {
     }
 
     public static class ProblematicInjectableSaga extends InjectableSaga {
-
-        private static final long serialVersionUID = 3731262948334502511L;
 
         @Override
         @Autowired(required = true)

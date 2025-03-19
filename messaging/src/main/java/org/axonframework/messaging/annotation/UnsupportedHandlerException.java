@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import java.lang.reflect.Member;
 public class UnsupportedHandlerException extends AxonConfigurationException {
 
     private final Member violatingMethod;
-    private static final long serialVersionUID = 7991150193173243668L;
 
     /**
      * Initialize the exception with a {@code message} and the {@code violatingMethod}.

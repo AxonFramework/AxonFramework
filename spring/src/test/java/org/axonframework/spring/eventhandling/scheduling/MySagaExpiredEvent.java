@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,11 @@
 
 package org.axonframework.spring.eventhandling.scheduling;
 
-import java.io.Serializable;
-
 /**
  * @author Allard Buijze
  */
-public class MySagaExpiredEvent implements Serializable {
+public class MySagaExpiredEvent {
 
-    private static final long serialVersionUID = 131758935012163469L;
     private final String association;
 
     public MySagaExpiredEvent(String association) {

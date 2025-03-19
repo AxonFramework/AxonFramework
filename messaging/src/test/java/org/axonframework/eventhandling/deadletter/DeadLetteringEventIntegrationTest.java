@@ -878,8 +878,6 @@ public abstract class DeadLetteringEventIntegrationTest {
 
     private static class ReferenceException extends AxonException {
 
-        private static final long serialVersionUID = 1380362964599517107L;
-
         ReferenceException(UUID reference) {
             super(reference.toString());
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.AssociationValues;
 import org.axonframework.modelling.saga.SagaRepository;
 
-import java.io.Serializable;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -236,7 +235,7 @@ public class CachingSagaStore<T> implements SagaStore<T> {
         }
     }
 
-    private static class CacheEntry<T> implements Entry<T>, Serializable {
+    private static class CacheEntry<T> implements Entry<T> {
 
         private final T saga;
         private final Set<AssociationValue> associationValues;

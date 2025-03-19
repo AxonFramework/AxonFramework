@@ -206,8 +206,6 @@ public class AnnotatedSagaManagerTest {
     @SuppressWarnings("unused")
     public static class MyTestSaga {
 
-        private static final long serialVersionUID = -1562911263884220240L;
-
         private final List<Object> capturedEvents = new LinkedList<>();
         private int specificHandlerInvocations = 0;
 
