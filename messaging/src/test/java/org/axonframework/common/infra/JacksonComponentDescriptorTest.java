@@ -382,7 +382,8 @@ class JacksonComponentDescriptorTest {
                           "_type": "CircularComponent",
                           "name": "Component2",
                           "dependency": {
-                            "$ref": "%s"
+                            "$ref": "%s",
+                            "_type": "CircularComponent" 
                           }
                         }
                       }
@@ -409,7 +410,8 @@ class JacksonComponentDescriptorTest {
                         "_type": "CircularComponent",
                         "name": "SelfReferencing",
                         "dependency": {
-                          "$ref": "%s"
+                          "$ref": "%s",
+                          "_type": "CircularComponent"
                         }
                       }
                     }
@@ -444,12 +446,14 @@ class JacksonComponentDescriptorTest {
                             "_type": "CircularComponent",
                             "name": "Component2",
                             "dependency": {
-                              "$ref": "%s"
+                              "$ref": "%s",
+                              "_type": "CircularComponent"
                             }
                           }
                         },
                         {
-                          "$ref": "%s"
+                          "$ref": "%s",
+                          "_type": "CircularComponent"
                         }
                       ]
                     }
@@ -457,6 +461,7 @@ class JacksonComponentDescriptorTest {
                                   identityOf(component1), identityOf(component2))
             );
         }
+
 
         private static class CircularComponent implements DescribableComponent {
 

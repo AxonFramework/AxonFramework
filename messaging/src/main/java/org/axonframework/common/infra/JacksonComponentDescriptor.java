@@ -33,7 +33,8 @@ import java.util.Map;
  * When a {@link DescribableComponent} is encountered for the first time, it is fully serialized including
  * its unique identifier ({@code _id}). Any subsequent occurrences of the same component instance are
  * replaced with a reference object containing a {@code $ref} field pointing to the original component's
- * identifier. This prevents infinite recursion and {@link StackOverflowError} when describing components
+ * identifier and a {@code _type} field indicating the component's type. This prevents infinite recursion
+ * and {@link StackOverflowError} when describing components
  * with circular dependencies.
  * <p>
  * Example JSON with a circular reference:
@@ -48,7 +49,8 @@ import java.util.Map;
  *       "_type": "MyComponent",
  *       "name": "Second Component",
  *       "backReference": {
- *         "$ref": "12345"
+ *         "$ref": "12345",
+ *         "_type": "MyComponent"
  *       }
  *     }
  *   }
@@ -105,6 +107,7 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
             if (componentSeenAlready) {
                 ObjectNode refNode = objectMapper.createObjectNode();
                 refNode.put("$ref", id);
+                refNode.put("_type", component.getClass().getSimpleName());
                 return refNode;
             }
             return describeComponentJson(component);
