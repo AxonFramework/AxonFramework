@@ -18,7 +18,6 @@ package org.axonframework.common.caching;
 
 import org.axonframework.common.Registration;
 
-import java.io.Serializable;
 import java.util.function.UnaryOperator;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
@@ -129,9 +128,8 @@ public class JCacheAdapter extends AbstractCacheAdapter<CacheEntryListenerConfig
 
     private static final class JCacheListenerAdapter<K, V> implements CacheEntryListenerConfiguration<K, V>,
             CacheEntryUpdatedListener<K, V>, CacheEntryCreatedListener<K, V>, CacheEntryExpiredListener<K, V>,
-            CacheEntryRemovedListener<K, V>, Factory<CacheEntryListener<? super K, ? super V>>, Serializable {
+            CacheEntryRemovedListener<K, V>, Factory<CacheEntryListener<? super K, ? super V>> {
 
-        private static final long serialVersionUID = 3260575514029378445L;
         private final EntryListener delegate;
 
         public JCacheListenerAdapter(EntryListener delegate) {

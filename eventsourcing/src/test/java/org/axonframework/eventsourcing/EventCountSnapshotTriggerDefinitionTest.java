@@ -156,26 +156,4 @@ class EventCountSnapshotTriggerDefinitionTest {
         verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.getClass(), aggregateIdentifier);
     }
 
-    @Test
-    void counterDoesNotResetWhenSerialized() throws IOException, ClassNotFoundException {
-        SnapshotTrigger trigger = testSubject.prepareTrigger(aggregate.rootType());
-        DomainEventMessage<String> testEvent = new GenericDomainEventMessage<>(
-                "type", aggregateIdentifier, 0, new MessageType("event"), "Mock contents"
-        );
-        trigger.eventHandled(testEvent);
-        trigger.eventHandled(testEvent);
-        trigger.eventHandled(testEvent);
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(trigger);
-        trigger = (SnapshotTrigger) new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray())).readObject();
-        testSubject.reconfigure(aggregate.rootType(), trigger);
-        // this triggers the snapshot
-        trigger.eventHandled(testEvent);
-
-        verify(mockSnapshotter, never()).scheduleSnapshot(aggregate.rootType(), aggregateIdentifier);
-        CurrentUnitOfWork.commit();
-        verify(mockSnapshotter).scheduleSnapshot(aggregate.rootType(), aggregateIdentifier);
-    }
 }

@@ -101,23 +101,6 @@ class GenericEventMessageTest {
     }
 
     @Test
-    void timestampInEventMessageIsAlwaysSerialized() throws IOException, ClassNotFoundException {
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        MessageType testName = new MessageType("event");
-        GenericEventMessage<String> testSubject = new GenericEventMessage<>(
-                new GenericMessage<>(testName, "payload", Collections.singletonMap("key", "value")),
-                Instant::now
-        );
-        oos.writeObject(testSubject);
-        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
-        Object read = ois.readObject();
-
-        assertEquals(GenericEventMessage.class, read.getClass());
-        assertNotNull(((GenericEventMessage<?>) read).getTimestamp());
-    }
-
-    @Test
     void testToString() {
         String actual = EventTestUtils.asEventMessage("MyPayload").andMetaData(MetaData.with("key", "value")
                                                                                        .and("key2", 13))

@@ -18,7 +18,6 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.Message;
 
-import java.io.Serial;
 import java.time.Instant;
 import java.util.function.Supplier;
 
@@ -33,8 +32,6 @@ import java.util.function.Supplier;
 @Deprecated
 public class GenericTrackedEventMessage<T> extends GenericEventMessage<T> implements TrackedEventMessage<T> {
 
-    @Serial
-    private static final long serialVersionUID = -8955035317050776846L;
     private final TrackingToken trackingToken;
 
     /**

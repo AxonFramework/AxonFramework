@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.beans.ConstructorProperties;
-import java.io.Serializable;
 import java.util.Objects;
 import java.util.OptionalLong;
 
@@ -32,10 +31,7 @@ import static org.axonframework.common.Assert.isTrue;
  * @author Rene de Waele
  * @since 3.0
  */
-public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<GlobalSequenceTrackingToken>,
-                                                    Serializable {
-
-    private static final long serialVersionUID = -3658606104934080049L;
+public class GlobalSequenceTrackingToken implements TrackingToken, Comparable<GlobalSequenceTrackingToken> {
 
     private final long globalIndex;
 

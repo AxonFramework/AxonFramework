@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,6 @@ import java.util.TreeSet;
  * @since 1.1
  */
 public class JSR303ViolationException extends AxonNonTransientException {
-
-    private static final long serialVersionUID = -1585918243998401966L;
 
     private final Set<ConstraintViolation<Object>> violations;
 

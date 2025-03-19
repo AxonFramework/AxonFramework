@@ -20,8 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 
-import java.io.Serial;
-
 /**
  * Abstract implementation of a {@link Message} that delegates to an existing message.
  * <p>
@@ -33,9 +31,6 @@ import java.io.Serial;
  * @since 3.0.0
  */
 public abstract class MessageDecorator<P> implements Message<P> {
-
-    @Serial
-    private static final long serialVersionUID = 3969631713723578521L;
 
     private final Message<P> delegate;
 
