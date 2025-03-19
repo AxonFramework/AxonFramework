@@ -260,16 +260,16 @@ class JacksonComponentDescriptorTest {
             var result = testSubject.describe();
 
             // then
-            assertJsonMatchesPattern(result, """
+            assertJsonMatches(result, """
                     {
                       "component" : {
-                        "_id" : "*",
+                        "_id" : "%s",
                         "_type" : "SimpleTestComponent",
                         "name" : "componentValue",
                         "value" : 100
                       }
                     }
-                    """);
+                    """.formatted(identityOf(component)));
         }
 
         @Test
