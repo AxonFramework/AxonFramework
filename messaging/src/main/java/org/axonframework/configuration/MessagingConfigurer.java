@@ -18,27 +18,9 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.config.CommandBusBuilder;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.common.FutureUtils;
-import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.gateway.DefaultEventGateway;
-import org.axonframework.eventhandling.gateway.EventGateway;
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -72,7 +54,7 @@ import java.util.function.Consumer;
  */
 public class MessagingConfigurer
         extends DelegatingConfigurer<MessagingConfigurer>
-        implements StartableConfigurer<MessagingConfigurer> {
+        implements ApplicationConfigurer<MessagingConfigurer> {
 
     /**
      * Build a default {@code MessagingConfigurer} instance with several messaging defaults, as well as methods to
@@ -165,6 +147,14 @@ public class MessagingConfigurer
         return delegate(AxonApplication.class, configureTask);
     }
 
+    /**
+     * {@link #build() Builds the configuration} and starts it immediately.
+     * <p>
+     * It is not recommended to change any configuration on {@code this StartableConfigurer} once this method is
+     * called.
+     *
+     * @return The fully initialized and started {@link AxonConfiguration}.
+     */
     @Override
     public AxonConfiguration start() {
         AtomicReference<AxonApplication> axonReference = new AtomicReference<>();

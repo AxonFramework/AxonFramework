@@ -46,26 +46,17 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    protected final Components components = new Components();
-    protected final LifecycleSupportingConfiguration config;
-
+    private final Components components = new Components();
     private final List<ConfigurationEnhancer> enhancers = new ArrayList<>();
     private final List<Module<?>> modules = new ArrayList<>();
-    private final List<NewConfiguration> moduleConfigurations = new ArrayList<>();
+
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final List<RegisteredComponentDecorator<?>> componentDecorators = new ArrayList<>();
+    private LifecycleSupportingConfiguration parent;
+    private LifecycleSupportingConfiguration config;
+    private final List<NewConfiguration> moduleConfigurations = new ArrayList<>();
 
     private OverrideBehavior overrideBehavior = OverrideBehavior.WARN;
-
-    /**
-     * Initialize the {@code AbstractConfigurer} based on the given {@code config}.
-     *
-     * @param config The life cycle supporting configuration used as the <b>parent</b> configuration of the
-     *               {@link LocalConfiguration}.
-     */
-    protected AbstractConfigurer(@Nullable LifecycleSupportingConfiguration config) {
-        this.config = new LocalConfiguration(config);
-    }
 
     @Override
     public <C> S registerComponent(@Nonnull Class<C> type,
@@ -77,7 +68,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
             throw new ComponentOverrideException(type, name);
         }
 
-        Component<C> previous = components.put(identifier, new Component<>(identifier, config, factory));
+        Component<C> previous = components.put(identifier, new Component<>(identifier, this::config, factory));
         if (previous != null && overrideBehavior == OverrideBehavior.WARN) {
             logger.warn("Replaced a previous Component registered for type [{}] and name [{}].", name, type);
         }
@@ -126,9 +117,8 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     @Override
-    public <M extends Module<M>> S registerModule(@Nonnull ModuleBuilder<M> builder) {
-        Module<?> module = builder.build(config());
-        logger.debug("Registering module [{}].", module.getClass().getSimpleName());
+    public S registerModule(@Nonnull Module<?> module) {
+        logger.debug("Registering module [{}].", module.name());
         this.modules.add(module);
         return self();
     }
@@ -142,14 +132,36 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     @Override
-    public <C extends NewConfiguration> C build() {
+    public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
+        throw new UnsupportedOperationException("Registering start handlers is not supported on this configurer.");
+    }
+
+    @Override
+    public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
+        throw new UnsupportedOperationException("Registering shutdown handlers is not supported on this configurer.");
+    }
+
+    /**
+     * Sets the given {@code parent} as the parent configuration of the {@link LocalConfiguration} of this configurer.
+     *
+     * @param parent The parent configuration of the {@link LocalConfiguration} of this configurer.
+     */
+    protected void setParent(@Nullable LifecycleSupportingConfiguration parent) {
+        this.parent = parent;
+    }
+
+    /**
+     * Common builder activity for any {@code AbstractConfigurer} implementation.
+     * <p>
+     * Will enhance this configurer will all registered {@link ConfigurationEnhancer ConfigurationEnhancers} and
+     * {@link Module#build(LifecycleSupportingConfiguration) builds} all the {@link Module Modules}.
+     */
+    protected void enhanceInvocationAndModuleConstruction() {
         if (!initialized.getAndSet(true)) {
             invokeEnhancers();
             decorateComponents();
             buildModules();
         }
-        //noinspection unchecked
-        return (C) config;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -182,27 +194,22 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
      */
     private void buildModules() {
         for (Module<?> module : modules) {
-            moduleConfigurations.add(module.build());
+            moduleConfigurations.add(module.build(config()));
         }
-    }
-
-    @Override
-    public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
-        throw new UnsupportedOperationException("Registering start handlers is not supported on this configurer.");
-    }
-
-    @Override
-    public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
-        throw new UnsupportedOperationException("Registering shutdown handlers is not supported on this configurer.");
     }
 
     /**
      * Returns the {@link LifecycleSupportingConfiguration} of this {@link NewConfigurer} implementation.
+     * <p>
+     * Will construct it if it has not been initialized yet.
      *
      * @return The {@link LifecycleSupportingConfiguration} of this {@link NewConfigurer} implementation.
      */
     protected LifecycleSupportingConfiguration config() {
-        return config;
+        if (this.config == null) {
+            this.config = new LocalConfiguration(parent);
+        }
+        return this.config;
     }
 
     /**
@@ -275,7 +282,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
             Identifier<C> identifier = new Identifier<>(type, name);
             Object component = components.computeIfAbsent(
                     identifier,
-                    id -> new Component<>(identifier, config(), c -> fromParent(type, name, defaultImpl))
+                    id -> new Component<>(identifier, this, c -> fromParent(type, name, defaultImpl))
             ).get();
             return identifier.type().cast(component);
         }

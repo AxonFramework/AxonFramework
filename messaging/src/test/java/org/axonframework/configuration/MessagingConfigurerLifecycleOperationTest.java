@@ -27,4 +27,9 @@ class MessagingConfigurerLifecycleOperationTest extends ConfigurerLifecycleOpera
     public MessagingConfigurer createConfigurer() {
         return MessagingConfigurer.create();
     }
+
+    @Override
+    public AxonConfiguration start(MessagingConfigurer configurer) {
+        return configurer.start();
+    }
 }

@@ -39,13 +39,13 @@ public abstract class ModuleTestSuite<M extends Module<M>> extends ConfigurerTes
 
     @Override
     public M testSubject() {
-        AxonApplication.create()
-                       .registerModule(config -> {
-                           M testModule = testSubject(config);
-                           this.testModule = testModule;
-                           return testModule;
-                       });
+        this.testModule = testModule();
         return testModule;
+    }
+
+    @Override
+    public NewConfiguration build() {
+        return testModule.build(AxonApplication.create().build());
     }
 
     /**
@@ -53,7 +53,7 @@ public abstract class ModuleTestSuite<M extends Module<M>> extends ConfigurerTes
      *
      * @return The test {@link Module} of type {@code M} used for testing.
      */
-    abstract M testSubject(LifecycleSupportingConfiguration config);
+    abstract M testModule();
 
     @Test
     void onStartThrowsUnsupportedOperationException() {
