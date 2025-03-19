@@ -22,11 +22,38 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.annotation.Nonnull;
 
 import java.util.Collection;
+import java.util.IdentityHashMap;
 import java.util.Map;
 
 /**
  * A {@link ComponentDescriptor} implementation that uses Jackson's {@link ObjectMapper} to create JSON representations
  * of components. This implementation produces a clean, hierarchical JSON structure.
+ * <p>
+ * This implementation supports circular references between components by using a reference mechanism.
+ * When a {@link DescribableComponent} is encountered for the first time, it is fully serialized including
+ * its unique identifier ({@code _id}). Any subsequent occurrences of the same component instance are
+ * replaced with a reference object containing a {@code $ref} field pointing to the original component's
+ * identifier. This prevents infinite recursion and {@link StackOverflowError} when describing components
+ * with circular dependencies.
+ * <p>
+ * Example JSON with a circular reference:
+ * <pre>
+ * {
+ *   "component": {
+ *     "_id": "12345",
+ *     "_type": "MyComponent",
+ *     "name": "First Component",
+ *     "reference": {
+ *       "_id": "67890",
+ *       "_type": "MyComponent",
+ *       "name": "Second Component",
+ *       "backReference": {
+ *         "$ref": "12345"
+ *       }
+ *     }
+ *   }
+ * }
+ * </pre>
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -35,6 +62,7 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
 
     private final ObjectMapper objectMapper;
     private final ObjectNode rootNode;
+    private final Map<Object, String> processedComponents;
 
     /**
      * Constructs a new {@code JacksonComponentDescriptor} with a default {@link ObjectMapper}.
@@ -46,11 +74,22 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
     /**
      * Constructs a new {@code JacksonComponentDescriptor} with the provided {@link ObjectMapper}.
      *
-     * @param objectMapper The ObjectMapper to use for JSON serialization
+     * @param objectMapper The ObjectMapper to use for JSON serialization.
      */
     public JacksonComponentDescriptor(ObjectMapper objectMapper) {
+        this(objectMapper, new IdentityHashMap<>());
+    }
+
+    /**
+     * Private constructor used for creating nested descriptors that share the processed components map.
+     *
+     * @param objectMapper        The ObjectMapper to use for JSON serialization.
+     * @param processedComponents Map containing already processed components and their IDs.
+     */
+    private JacksonComponentDescriptor(ObjectMapper objectMapper, Map<Object, String> processedComponents) {
         this.objectMapper = objectMapper;
         this.rootNode = objectMapper.createObjectNode();
+        this.processedComponents = processedComponents;
     }
 
     @Override
@@ -59,15 +98,28 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
         rootNode.set(name, json);
     }
 
-    private JsonNode describeObject(@NotNull Object object) {
-        return switch (object) {
-            case DescribableComponent c -> describeComponentJson(c);
-            default -> objectMapper.valueToTree(object);
-        };
+    private JsonNode describeObject(Object object) {
+        if (object instanceof DescribableComponent component) {
+            var id = processedComponents.get(component);
+            var componentSeenAlready = id != null;
+            if (componentSeenAlready) {
+                ObjectNode refNode = objectMapper.createObjectNode();
+                refNode.put("$ref", id);
+                return refNode;
+            }
+            return describeComponentJson(component);
+        }
+        return objectMapper.valueToTree(object);
     }
 
     private ObjectNode describeComponentJson(DescribableComponent component) {
-        var nestedDescriptor = new JacksonComponentDescriptor(this.objectMapper);
+        var componentId = System.identityHashCode(component) + "";
+
+        // Register this component before processing its properties.
+        // This prevents infinite recursion with circular references.
+        processedComponents.put(component, componentId);
+
+        var nestedDescriptor = new JacksonComponentDescriptor(this.objectMapper, this.processedComponents);
         describeIdAndType(component, nestedDescriptor);
         component.describeTo(nestedDescriptor);
         return nestedDescriptor.rootNode;
