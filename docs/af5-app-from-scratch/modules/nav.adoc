@@ -1,2 +1,0 @@
-* xref::parameter-resolvers.adoc[]
-* xref::handler-enhancers.adoc[]

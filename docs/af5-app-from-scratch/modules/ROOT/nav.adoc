@@ -1,0 +1,8 @@
+* xref:index.adoc[]
+* xref:create-axon-framework-project.adoc[]
+* xref:bootstraping-axonframework.adoc[]
+* xref:implement-create-bike.adoc[]
+* xref:run-app-with-docker-compose.adoc[]
+* xref:invoking-create-bike-endpoint.adoc[]
+* xref::unit-testing-commands.adoc[]
+* xref:create-bike-status-projection.adoc[]
