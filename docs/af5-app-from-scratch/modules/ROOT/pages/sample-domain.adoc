@@ -1,0 +1,36 @@
+:navtitle: The University domain
+
+= The University domain
+
+== Event Modeling
+
+MIRO board link: https://miro.com/app/board/uXjVKk4QyFc=/?share_link_id=941680447046
+
+== The University Domain
+
+Sometimes, the best way to learn a new concept is through a sample.
+In this sample, we are dealing with the Universty Domain.
+The initial examples will be around the Faculty bounded context.
+
+== Faculty Bounded Context
+
+We have students and courses students can subscribe to.
+Firstly, we must study (no pun intended) the business requirements.
+Here they are:
+
+A student can enroll in the faculty.
+The faculty can decide to create a course with assigned capacity—the number of students who can subscribe to a course.
+The capacity of the course must be maintained.
+After the course has been created, its capacity can be changed.
+A student can subscribe to a course and unsubscribe.
+
+Let’s do a short modeling session to identify events.
+
+- `StudentEnrolledFaculty` - a fact that a student has enrolled faculty
+- `CourseCreated` - a fact that a course has been created with assigned capacity
+- `CourseCapacityChanged` - a fact that the capacity of the course has changed
+- `StudentSubscribed` - a fact that the student has subscribed to the course
+- `StudentUnsubscribed` - a fact that the student has unsubscribed from the course
+
+We will model only commands for Subscribing to/Unsubscribing from a course for the sample's simplicity.
+

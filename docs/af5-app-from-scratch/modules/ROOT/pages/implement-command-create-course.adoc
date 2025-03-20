@@ -1,5 +1,10 @@
-:navtitle: Create source feature
+:navtitle: Create Course Feature
 :reftext: Implementing the create new bike feature
+
+In this sample, we are dealing with the Faculty Domain.
+We have students and courses students can subscribe to.
+Firstly, we must study (no pun intended) the business requirements.
+Here they are:
 
 = Implement Create New Bike Feature
 
