@@ -18,6 +18,7 @@ package org.axonframework.common.infra;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.annotation.Nonnull;
 
@@ -78,7 +79,7 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
      * @param objectMapper The ObjectMapper to use for JSON serialization.
      */
     public JacksonComponentDescriptor(ObjectMapper objectMapper) {
-        this(objectMapper, new IdentityHashMap<>());
+        this(objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS), new IdentityHashMap<>());
     }
 
     /**
