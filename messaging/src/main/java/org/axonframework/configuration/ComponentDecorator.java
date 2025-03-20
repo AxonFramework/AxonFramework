@@ -48,9 +48,11 @@ public interface ComponentDecorator<C> {
      * @param config   The configuration of this Axon application. Provided to support retrieval of other
      *                 {@link NewConfiguration#getComponent(Class) components} for construction or mutation of the given
      *                 {@code delegate}.
+     * @param name     The name of the component to decorate.
      * @param delegate The delegate of type {@code C} to be decorated.
      * @return A decorated component of type {@code C}, typically based on the given {@code delegate}.
      */
     C decorate(@Nonnull NewConfiguration config,
+               @Nonnull String name,
                @Nonnull C delegate);
 }

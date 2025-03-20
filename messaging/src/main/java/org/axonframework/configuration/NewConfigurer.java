@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Assert;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Component.Identifier;
 
@@ -80,49 +81,54 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
                             @Nonnull ComponentFactory<C> factory);
 
     /**
-     * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
-     * {@link #registerComponent(Class, ComponentFactory) registered} components of the given {@code type}.
+     * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on <b>all</b>
+     * {@link #registerComponent(Class, ComponentFactory) registered} components of the given {@code type}, regardless
+     * of component name.
      * <p>
-     * The {@code order} parameter dictates at what point in time the given {@code decorator} is invoked during
-     * construction of the {@code Component} it decorators. If a {@code ComponentDecorator} was already present at the
-     * given {@code order}, it will be replaced by the given {@code decorator}
+     * Decorators are invoked based on the given {@code order}. Decorators with a lower {@code order} will be executed
+     * before those with a higher one. If decorators depend on the result of another decorator, their {@code order} must
+     * be strictly higher than the one they depend on.
+     * <p>
+     * The order in which components are decorated by decorators with the same {@code order} is undefined.
      *
      * @param type      The declared type of the component to decorate, typically an interface.
-     * @param order     The order of the given {@code decorator} among other decorators. Becomes important whenever
-     *                  multiple decorators are present for the given {@code type} <b>and</b> when ordering of these
-     *                  decorators is important.
-     * @param decorator The decoration function of this component.
-     * @param <C>       The type of component the {@code decorator} decorates.
-     * @return The current instance of the {@code Configurer} for a fluent API.
-     */
-    default <C> S registerDecorator(@Nonnull Class<C> type,
-                                    int order,
-                                    @Nonnull ComponentDecorator<C> decorator) {
-        return registerDecorator(type, type.getSimpleName(), order, decorator);
-    }
-
-    /**
-     * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
-     * {@link #registerComponent(Class, String, ComponentFactory) registered} components of the given {@code type} and
-     * {@code name} combination.
-     * <p>
-     * The {@code order} parameter dictates at what point in time the given {@code decorator} is invoked during
-     * construction of the {@code Component} it decorators. If a {@code ComponentDecorator} was already present at the
-     * given {@code order}, it will be replaced by the given {@code decorator}
-     *
-     * @param type      The declared type of the component to decorate, typically an interface.
-     * @param name      The name of the component to decorate.
-     * @param order     The order of the given {@code decorator} among other decorators. Becomes important whenever
-     *                  multiple decorators are present for the given {@code type} <b>and</b> when ordering of these
-     *                  decorators is important.
-     * @param decorator The decoration function of this component.
+     * @param order     The order of the given {@code decorator} among other decorators.
+     * @param decorator The decoration function for a component of type {@code C}.
      * @param <C>       The type of component the {@code decorator} decorates.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     <C> S registerDecorator(@Nonnull Class<C> type,
-                            @Nonnull String name,
                             int order,
                             @Nonnull ComponentDecorator<C> decorator);
+
+    /**
+     * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
+     * {@link #registerComponent(Class, String, ComponentFactory) registered} components of the given {@code type}
+     * <b>and</b> {@code name} combination.
+     * <p>
+     * Decorators are invoked based on the given {@code order}. Decorators with a lowe {@code order} will be executed
+     * before those with a higher one. If decorators depend on the result of another decorator, their {@code order} must
+     * be strictly higher than the one they depend on.
+     * <p>
+     * The order in which components are decorated by decorators with the same {@code order} is undefined.
+     *
+     * @param type      The declared type of the component to decorate, typically an interface.
+     * @param name      The name of the component to decorate.
+     * @param order     The order of the given {@code decorator} among other decorators.
+     * @param decorator The decoration function for a component of type {@code C}.
+     * @param <C>       The type of component the {@code decorator} decorates.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    default <C> S registerDecorator(@Nonnull Class<C> type,
+                                    @Nonnull String name,
+                                    int order,
+                                    @Nonnull ComponentDecorator<C> decorator) {
+        Assert.nonEmpty(name, "The name cannot be empty or null.");
+        return registerDecorator(
+                type, order,
+                (config, n, delegate) -> name.equals(n) ? decorator.decorate(config, n, delegate) : delegate
+        );
+    }
 
     /**
      * Check whether there is a {@link Component} registered with this {@code Configurer} for the given {@code type}.

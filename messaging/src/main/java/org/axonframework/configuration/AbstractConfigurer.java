@@ -30,7 +30,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Abstract implementation of the {@link NewConfigurer} allowing for reuse of {@link Component},
@@ -46,6 +49,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Components components = new Components();
+    private final List<DecoratorRegistration<?>> decoratorRegistrations = new ArrayList<>();
     private final List<ConfigurationEnhancer> enhancers = new ArrayList<>();
     private final List<Module<?>> modules = new ArrayList<>();
 
@@ -70,23 +74,22 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         if (previous != null && overrideBehavior == OverrideBehavior.WARN) {
             logger.warn("Replaced a previous Component registered for type [{}] and name [{}].", name, type);
         }
-        //noinspection unchecked
-        return (S) this;
+        return self();
     }
 
     @Override
     public <C> S registerDecorator(@Nonnull Class<C> type,
-                                   @Nonnull String name,
                                    int order,
                                    @Nonnull ComponentDecorator<C> decorator) {
-        logger.debug("Registering decorator for [{}] of type [{}] at order #{}.", name, type, order);
-        Identifier<C> identifier = new Identifier<>(type, name);
-        logger.debug("Registering decorator for [{}] at order #{}.", identifier, order);
-        components.get(identifier)
-                  .map(component -> component.decorate(decorator, order))
-                  .orElseThrow(() -> new IllegalArgumentException(
-                          "Cannot decorate type [" + identifier + "] since there is no component builder for this type."
-                  ));
+        requireNonNull(type, "The type cannot be null.");
+        requireNonNull(decorator, "The component decorator cannot be null");
+        logger.debug("Registering decorator for type [{}] at order #{}.", type, order);
+
+        decoratorRegistrations.add(new DecoratorRegistration<>(id -> id.type().equals(type), order, decorator));
+        return self();
+    }
+
+    private S self() {
         //noinspection unchecked
         return (S) this;
     }
@@ -101,16 +104,14 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     public S registerEnhancer(@Nonnull ConfigurationEnhancer enhancer) {
         logger.debug("Registering enhancer [{}].", enhancer.getClass().getSimpleName());
         this.enhancers.add(enhancer);
-        //noinspection unchecked
-        return (S) this;
+        return self();
     }
 
     @Override
     public S registerModule(@Nonnull Module<?> module) {
         logger.debug("Registering module [{}].", module.name());
         this.modules.add(module);
-        //noinspection unchecked
-        return (S) this;
+        return self();
     }
 
     @Override
@@ -118,8 +119,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
                                                    @Nonnull Consumer<C> configureTask) {
         logger.warn("Ignoring configure task on configurer [{}] because there is no delegate configurer of type [{}].",
                     this.getClass(), type);
-        //noinspection unchecked
-        return (S) this;
+        return self();
     }
 
     @Override
@@ -150,7 +150,20 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     protected void enhanceInvocationAndModuleConstruction() {
         if (!initialized.getAndSet(true)) {
             invokeEnhancers();
+            decorateComponents();
             buildModules();
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void decorateComponents() {
+        decoratorRegistrations.sort(Comparator.comparingInt(DecoratorRegistration::order));
+        for (DecoratorRegistration decoratorRegistration : decoratorRegistrations) {
+            for (Identifier id : components.identifiers()) {
+                if (decoratorRegistration.idMatcher.test(id)) {
+                    components.replace(id, previous -> previous.decorate(decoratorRegistration.decorator));
+                }
+            }
         }
     }
 
@@ -289,5 +302,21 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
             components.describeTo(descriptor);
             descriptor.describeProperty("modules", moduleConfigurations);
         }
+    }
+
+    /**
+     * Private record representing a {@code decorator} registration. All {@code DecoratorRegistrations} are gathered and
+     * invoked during {@link ApplicationConfigurer#build()} of this configurer.
+     *
+     * @param idMatcher The {@code Predicate} used against a {@link Identifier} to validate if the {@code decorator}
+     *                  should be invoked.
+     * @param order     The order of the given {@code decorator} among other decorators.
+     * @param decorator The decoration function for a component of type {@code C}.
+     * @param <C>       The type of component the {@code decorator} decorates.
+     */
+    private record DecoratorRegistration<C>(Predicate<Identifier<C>> idMatcher,
+                                            int order,
+                                            ComponentDecorator<C> decorator) {
+
     }
 }
