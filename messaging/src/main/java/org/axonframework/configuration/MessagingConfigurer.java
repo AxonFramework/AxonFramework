@@ -143,7 +143,7 @@ public class MessagingConfigurer
      * @param configureTask Lambda consuming the delegate {@link AxonApplication}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public MessagingConfigurer axon(@Nonnull Consumer<AxonApplication> configureTask) {
+    public MessagingConfigurer application(@Nonnull Consumer<AxonApplication> configureTask) {
         return delegate(AxonApplication.class, configureTask);
     }
 
@@ -158,7 +158,7 @@ public class MessagingConfigurer
     @Override
     public AxonConfiguration start() {
         AtomicReference<AxonApplication> axonReference = new AtomicReference<>();
-        axon(axonReference::set);
+        application(axonReference::set);
         return axonReference.get().start();
     }
 }

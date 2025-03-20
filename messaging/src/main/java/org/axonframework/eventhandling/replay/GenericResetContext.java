@@ -25,7 +25,6 @@ import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 
-import java.io.Serial;
 import java.util.Map;
 
 /**
@@ -36,9 +35,6 @@ import java.util.Map;
  * @since 4.4.0
  */
 public class GenericResetContext<P> extends MessageDecorator<P> implements ResetContext<P> {
-
-    @Serial
-    private static final long serialVersionUID = -6872386525166762225L;
 
     /**
      * Constructs a {@link GenericResetContext} for the given {@code type} and {@code payload}.

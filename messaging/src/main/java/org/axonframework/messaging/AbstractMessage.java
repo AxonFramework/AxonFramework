@@ -18,7 +18,6 @@ package org.axonframework.messaging;
 
 import jakarta.annotation.Nonnull;
 
-import java.io.Serial;
 import java.util.Map;
 
 /**
@@ -30,9 +29,6 @@ import java.util.Map;
  * @since 3.0.0
  */
 public abstract class AbstractMessage<P> implements Message<P> {
-
-    @Serial
-    private static final long serialVersionUID = -5847906865361406657L;
 
     private final String identifier;
     private final MessageType type;

@@ -16,16 +16,12 @@
 
 package org.axonframework.eventsourcing.utils;
 
-import java.io.Serializable;
-
 /**
  * Stub Domain Event, used for testing purposes.
  *
  * @author Allard Buijze
  */
-public class StubDomainEvent implements Serializable {
-
-    private static final long serialVersionUID = 834667054977749990L;
+public class StubDomainEvent {
 
     private final String name;
 

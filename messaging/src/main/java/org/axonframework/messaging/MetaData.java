@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.axonframework.messaging;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,9 +37,8 @@ import javax.annotation.Nullable;
  * @author Allard Buijze
  * @since 2.0
  */
-public class MetaData implements Map<String, Object>, Serializable {
+public class MetaData implements Map<String, Object> {
 
-    private static final long serialVersionUID = -7892913866303912970L;
     private static final MetaData EMPTY_META_DATA = new MetaData();
     private static final String UNSUPPORTED_MUTATION_MSG = "Metadata is immutable.";
 

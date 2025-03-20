@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.commandhandling;
+package org.axonframework.integrationtests.testsuite.student.commands;
 
-import java.io.Serializable;
+import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;
+import org.axonframework.modelling.command.annotation.TargetEntityId;
 
-/**
- * @author Allard Buijze
- */
-public class StubDomainEvent implements Serializable {
-
-
+public record AssignMentorCommand(
+        String menteeId,
+        String mentorId
+) {
+    @TargetEntityId
+    public StudentMentorModelIdentifier modelIdentifier() {
+        return new StudentMentorModelIdentifier(mentorId, menteeId);
+    }
 }

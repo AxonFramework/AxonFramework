@@ -111,8 +111,6 @@ public enum TestSerializer {
 
     private static class OnlyAcceptConstructorPropertiesAnnotation extends JacksonAnnotationIntrospector {
 
-        private static final long serialVersionUID = 1L;
-
         public static ObjectMapper attachTo(ObjectMapper objectMapper) {
             return objectMapper.setAnnotationIntrospector(new OnlyAcceptConstructorPropertiesAnnotation());
         }

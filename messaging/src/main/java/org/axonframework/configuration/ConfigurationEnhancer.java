@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 
 /**
  * Interface describing an enhancement of the {@link NewConfiguration} from the Axon Framework configuration API, taking
- * effect during {@link NewConfigurer#build() build} of the configurer.
+ * effect during {@link ApplicationConfigurer#build() build} of the configurer.
  * <p>
  * Through implementing the {@link #enhance(NewConfigurer)} operation a {@code ConfigurationEnhancer} is able to
  * {@link NewConfigurer#registerComponent(Class, ComponentFactory) register} components and
@@ -42,7 +42,7 @@ public interface ConfigurationEnhancer {
      * Enhances the given {@code configurer} with, for example, additional {@link Component components} and
      * {@link ComponentDecorator decorators}.
      * <p>
-     * This method is invoked during {@link NewConfigurer#build()}.
+     * This method is invoked during {@link ApplicationConfigurer#build()}.
      *
      * @param configurer The configurer instance to enhance.
      */

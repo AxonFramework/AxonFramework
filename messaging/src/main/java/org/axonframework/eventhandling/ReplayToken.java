@@ -24,7 +24,6 @@ import org.axonframework.messaging.Message;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.beans.ConstructorProperties;
-import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -36,9 +35,8 @@ import java.util.OptionalLong;
  * @author Allard Buijze
  * @since 3.2
  */
-public class ReplayToken implements TrackingToken, WrappedToken, Serializable {
+public class ReplayToken implements TrackingToken, WrappedToken {
 
-    private static final long serialVersionUID = -4102464856247630944L;
     @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
     private final TrackingToken tokenAtReset;
     @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
