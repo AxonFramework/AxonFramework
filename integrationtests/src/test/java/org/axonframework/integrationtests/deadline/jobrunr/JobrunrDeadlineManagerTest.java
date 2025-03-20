@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
 import org.axonframework.messaging.ScopeAwareProvider;
+import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.modelling.command.AggregateScopeDescriptor;
 import org.axonframework.serialization.TestSerializer;
 import org.jobrunr.configuration.JobRunr;
 import org.jobrunr.scheduling.JobScheduler;
@@ -39,6 +41,7 @@ import java.time.Duration;
 import java.util.Objects;
 
 import static org.jobrunr.server.BackgroundJobServerConfiguration.usingStandardBackgroundJobServerConfiguration;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -114,5 +117,16 @@ class JobrunrDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
     @Test
     @Disabled("Cancel all is not implemented for the non pro version.")
     public void deadlineCancelAllOnSagaIsCorrectlyTraced() {
+    }
+
+    @Test
+    void doNotThrowIllegalJobStateChangeExceptionForAnAlreadyDeletedJob() {
+        DeadlineManager testSubject = configuration.deadlineManager();
+
+        String deadlineName = "doubleDeleteDoesNotThrowException";
+        String scheduleId = testSubject.schedule(Duration.ofMinutes(15), deadlineName, null,
+                                                 new AggregateScopeDescriptor("aggregateType", "aggregateId"));
+        testSubject.cancelSchedule(deadlineName, scheduleId);
+        assertDoesNotThrow(() -> testSubject.cancelSchedule(deadlineName, scheduleId));
     }
 }

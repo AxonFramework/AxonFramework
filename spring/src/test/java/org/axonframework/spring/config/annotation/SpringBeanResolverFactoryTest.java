@@ -23,8 +23,8 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.annotation.UnsupportedHandlerException;
 import org.axonframework.spring.config.AnnotationDriven;
+import org.axonframework.test.FixtureExecutionException;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
@@ -107,8 +107,9 @@ public class SpringBeanResolverFactoryTest {
     void methodsAreProperlyInjected_ErrorOnMissingParameterType() {
         // this should generate an error
         Object bean = applicationContext.getBean("missingResourceHandler");
+        AnnotationEventHandlerAdapter adapter = new AnnotationEventHandlerAdapter(bean, parameterResolver);
         assertThrows(
-                UnsupportedHandlerException.class, () -> new AnnotationEventHandlerAdapter(bean, parameterResolver)
+                FixtureExecutionException.class, () -> adapter.handle(asEventMessage("Hi there"))
         );
     }
 
@@ -124,8 +125,9 @@ public class SpringBeanResolverFactoryTest {
     void methodsAreProperlyInjected_ErrorOnDuplicateParameterType() {
         // this should generate an error
         Object bean = applicationContext.getBean("duplicateResourceHandler");
+        AnnotationEventHandlerAdapter adapter = new AnnotationEventHandlerAdapter(bean, parameterResolver);
         assertThrows(
-                UnsupportedHandlerException.class, () -> new AnnotationEventHandlerAdapter(bean, parameterResolver)
+                FixtureExecutionException.class, () -> adapter.handle(asEventMessage("Hi there"))
         );
     }
 

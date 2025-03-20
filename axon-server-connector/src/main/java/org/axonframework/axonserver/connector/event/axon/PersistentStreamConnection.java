@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,16 +63,16 @@ public class PersistentStreamConnection {
     private static final int MIN_RETRY_INTERVAL_SECONDS = 1;
     private final Logger logger = LoggerFactory.getLogger(PersistentStreamConnection.class);
 
-    private static final int MAX_MESSAGES_PER_RUN = 10_000;
-
     private final String streamId;
     private final Configuration configuration;
     private final PersistentStreamProperties persistentStreamProperties;
 
     private final AtomicReference<PersistentStream> persistentStreamHolder = new AtomicReference<>();
 
-    private final AtomicReference<Consumer<List<? extends EventMessage<?>>>> consumer = new AtomicReference<>(events -> {
-    });
+    private static final Consumer<List<? extends EventMessage<?>>> NO_OP_CONSUMER = events -> {
+    };
+    private final AtomicReference<Consumer<List<? extends EventMessage<?>>>> consumer =
+            new AtomicReference<>(NO_OP_CONSUMER);
     private final ScheduledExecutorService scheduler;
     private final int batchSize;
     private final Map<Integer, SegmentConnection> segments = new ConcurrentHashMap<>();
@@ -83,7 +83,7 @@ public class PersistentStreamConnection {
     /**
      * Instantiates a connection for a persistent stream.
      *
-     * @param streamId                   The identifier of the persistent stream.
+     * @param streamId                   The unique identifier of the persistent stream.
      * @param configuration              Global configuration of Axon components.
      * @param persistentStreamProperties Properties for the persistent stream.
      * @param scheduler                  Scheduler thread pool to schedule tasks.
@@ -105,7 +105,7 @@ public class PersistentStreamConnection {
     /**
      * Instantiates a connection for a persistent stream.
      *
-     * @param streamId                   The identifier of the persistent stream.
+     * @param streamId                   The unique identifier of the persistent stream.
      * @param configuration              Global configuration of Axon components.
      * @param persistentStreamProperties Properties for the persistent stream.
      * @param scheduler                  Scheduler thread pool to schedule tasks.
@@ -128,12 +128,18 @@ public class PersistentStreamConnection {
 
 
     /**
-     * Initiates the connection to Axon Server to read events from the persistent stream.
+     * Initiates the connection to Axon Server to read events from the persistent stream. The stream can be opened just
+     * once with a single consumer. The connection is exclusive to that consumer. If you try to open it again, an
+     * {@link IllegalStateException} is thrown.
      *
      * @param consumer The consumer of batches of event messages.
+     * @throws IllegalStateException if the stream was already opened.
      */
     public void open(Consumer<List<? extends EventMessage<?>>> consumer) {
-        this.consumer.set(consumer);
+        if (!this.consumer.compareAndSet(NO_OP_CONSUMER, consumer)) {
+            throw new IllegalStateException(
+                    String.format("%s: Persistent Stream has already been opened.", streamId));
+        }
         start();
     }
 
@@ -166,11 +172,7 @@ public class PersistentStreamConnection {
     }
 
     private void segmentClosed(PersistentStreamSegment persistentStreamSegment) {
-        SegmentConnection segmentConnection = segments.remove(persistentStreamSegment.segment());
-        if (segmentConnection != null) {
-            segmentConnection.close();
-        }
-
+        segments.remove(persistentStreamSegment.segment());
         logger.info("Segment closed: {}", persistentStreamSegment);
     }
 
@@ -198,6 +200,7 @@ public class PersistentStreamConnection {
         PersistentStream persistentStream = persistentStreamHolder.getAndSet(null);
         if (persistentStream != null) {
             persistentStream.close();
+            this.consumer.set(NO_OP_CONSUMER);
         }
     }
 
@@ -210,7 +213,6 @@ public class PersistentStreamConnection {
 
         private final AtomicBoolean processGate = new AtomicBoolean();
         private final AtomicBoolean doneConfirmed = new AtomicBoolean();
-        private final AtomicBoolean closed = new AtomicBoolean();
         private final PersistentStreamSegment persistentStreamSegment;
         private final GrpcMetaDataAwareSerializer serializer;
         private final AtomicReference<SegmentState> currentState = new AtomicReference<>(new ProcessingState());
@@ -260,45 +262,37 @@ public class PersistentStreamConnection {
 
                 if (logger.isTraceEnabled()) {
                     logger.trace("{}[{}] readMessagesFromSegment - closed: {}",
-                                 streamId, persistentStreamSegment.segment(), persistentStreamSegment.isClosed());
+                            streamId, persistentStreamSegment.segment(), persistentStreamSegment.isClosed());
                 }
 
                 try {
-                    int remaining = Math.max(MAX_MESSAGES_PER_RUN, batchSize);
-                    while (remaining > 0 && !closed.get()) {
+                    if (!persistentStreamSegment.isClosed()) {
                         List<PersistentStreamEvent> batch = readBatch(persistentStreamSegment);
-                        if (batch.isEmpty()) {
-                            break;
-                        }
-
-                        try {
-                            processBatch(batch);
-                            remaining -= batch.size();
-                        } catch (Exception ex) {
-                            logger.warn("{}: Exception while processing events for segment {}, retrying after {} second",
+                        if (!batch.isEmpty()) {
+                            try {
+                                processBatch(batch);
+                            } catch (Exception ex) {
+                                logger.warn("{}: Exception while processing events for segment {}, retrying after {} second",
                                         streamId, persistentStreamSegment.segment(), MIN_RETRY_INTERVAL_SECONDS, ex);
 
-                            currentState.set(new RetryState(batch));
-                            remaining = 0;
+                                currentState.set(new RetryState(batch));
+                            }
                         }
                     }
 
                     acknowledgeDoneWhenClosed(persistentStreamSegment);
                 } catch (StreamClosedException e) {
                     logger.debug("{}: Stream closed for segment {}", streamId, persistentStreamSegment.segment());
-                    close();
-                    // stop loop
                 } catch (Exception e) {
                     if (e instanceof InterruptedException) {
                         Thread.currentThread().interrupt();
                     }
                     persistentStreamSegment.error(e.getMessage());
                     logger.warn("{}: Exception while processing events for segment {}",
-                                streamId, persistentStreamSegment.segment(), e);
-                    close();
+                            streamId, persistentStreamSegment.segment(), e);
                 } finally {
                     processGate.set(false);
-                    if (!closed.get() && persistentStreamSegment.peek() != null) {
+                    if (!persistentStreamSegment.isClosed() && persistentStreamSegment.peek() != null) {
                         scheduler.submit(SegmentConnection.this::readMessagesFromSegment);
                     }
                 }
@@ -315,7 +309,7 @@ public class PersistentStreamConnection {
                 }
                 batch.add(event);
                 // allow next event to arrive within a small amount of time
-                while (batch.size() < batchSize && !closed.get()
+                while (batch.size() < batchSize && !persistentStreamSegment.isClosed()
                         && (event = persistentStreamSegment.nextIfAvailable(1, TimeUnit.MILLISECONDS)) != null) {
                     batch.add(event);
                 }
@@ -323,7 +317,7 @@ public class PersistentStreamConnection {
             }
 
             private void acknowledgeDoneWhenClosed(PersistentStreamSegment persistentStreamSegment) {
-                if (closed.get() && doneConfirmed.compareAndSet(false, true)) {
+                if (persistentStreamSegment.isClosed() && doneConfirmed.compareAndSet(false, true)) {
                     persistentStreamSegment.acknowledge(PENDING_WORK_DONE_MARKER);
                 }
             }
@@ -331,14 +325,14 @@ public class PersistentStreamConnection {
 
         private void processBatch(List<PersistentStreamEvent> batch) {
             List<TrackedEventMessage<?>> eventMessages = upcastAndDeserialize(batch);
-            if (!closed.get()) {
+            if (!persistentStreamSegment.isClosed()) {
                 long token = batch.get(batch.size() - 1).getEvent().getToken();
                 consumer.get().accept(eventMessages);
                 if (logger.isTraceEnabled()) {
                     logger.trace("{}/{} processed {} entries",
-                                 streamId,
-                                 persistentStreamSegment.segment(),
-                                 eventMessages.size());
+                            streamId,
+                            persistentStreamSegment.segment(),
+                            eventMessages.size());
                 }
                 persistentStreamSegment.acknowledge(token);
             }
@@ -376,10 +370,6 @@ public class PersistentStreamConnection {
             }
             return ReplayToken.createReplayToken(new GlobalSequenceTrackingToken(event.getEvent().getToken() + 1),
                                                  new GlobalSequenceTrackingToken(event.getEvent().getToken()));
-        }
-
-        public void close() {
-            closed.set(true);
         }
     }
 }
