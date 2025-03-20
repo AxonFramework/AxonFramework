@@ -56,7 +56,19 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     private LifecycleSupportingConfiguration config;
     private final List<NewConfiguration> moduleConfigurations = new ArrayList<>();
 
+    protected final NewConfiguration config;
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
     private OverrideBehavior overrideBehavior = OverrideBehavior.WARN;
+
+    /**
+     * Initialize the {@code AbstractConfigurer} based on the given {@code parent}.
+     *
+     * @param parent The life cycle supporting configuration used as the <b>parent</b> configuration of the
+     *               {@link LocalConfiguration}.
+     */
+    protected AbstractConfigurer(@Nullable NewConfiguration parent) {
+        this.config = new LocalConfiguration(parent);
+    }
 
     @Override
     public <C> S registerComponent(@Nonnull Class<C> type,
@@ -199,13 +211,13 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     /**
-     * Returns the {@link LifecycleSupportingConfiguration} of this {@link NewConfigurer} implementation.
+     * Returns the {@link NewConfiguration} of this {@link NewConfigurer} implementation.
      * <p>
      * Will construct it if it has not been initialized yet.
      *
-     * @return The {@link LifecycleSupportingConfiguration} of this {@link NewConfigurer} implementation.
+     * @return The {@link NewConfiguration} of this {@link NewConfigurer} implementation.
      */
-    protected LifecycleSupportingConfiguration config() {
+    protected NewConfiguration config() {
         if (this.config == null) {
             this.config = new LocalConfiguration(parent);
         }
@@ -227,13 +239,13 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     /**
-     * A {@link LifecycleSupportingConfiguration} implementation acting as the local configuration of this configurer.
-     * Can be implemented by {@link AbstractConfigurer} implementation that need to reuse the access logic for
+     * A {@link NewConfiguration} implementation acting as the local configuration of this configurer. Can be
+     * implemented by {@link AbstractConfigurer} implementation that need to reuse the access logic for
      * {@link Component Components} and {@link Module Modules} as provided by this implementation.
      */
-    public class LocalConfiguration implements LifecycleSupportingConfiguration {
+    public class LocalConfiguration implements NewConfiguration {
 
-        private final LifecycleSupportingConfiguration parent;
+        private final NewConfiguration parent;
 
         /**
          * Construct a {@code LocalConfiguration} using the given {@code parent} configuration.
@@ -244,33 +256,16 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
          *
          * @param parent The parent life cycle supporting configuration to fall back on when necessary.
          */
-        public LocalConfiguration(@Nullable LifecycleSupportingConfiguration parent) {
+        public LocalConfiguration(@Nullable NewConfiguration parent) {
             this.parent = parent;
-        }
-
-        @Override
-        public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
-            if (parent != null) {
-                parent.onStart(phase, startHandler);
-            } else {
-                AbstractConfigurer.this.onStart(phase, startHandler);
-            }
-        }
-
-        @Override
-        public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
-            if (parent != null) {
-                parent.onShutdown(phase, shutdownHandler);
-            } else {
-                AbstractConfigurer.this.onShutdown(phase, shutdownHandler);
-            }
         }
 
         @Nonnull
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nonnull String name) {
-            return components.getUnwrapped(new Identifier<>(type, name))
+            return components.get(new Identifier<>(type, name))
+                             .map(component -> component.init(config(), AbstractConfigurer.this))
                              .or(() -> Optional.ofNullable(fromParent(type, name, () -> null)));
         }
 
@@ -282,8 +277,11 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
             Identifier<C> identifier = new Identifier<>(type, name);
             Object component = components.computeIfAbsent(
                     identifier,
-                    id -> new Component<>(identifier, this, c -> fromParent(type, name, defaultImpl))
-            ).get();
+                    id -> new Component<>(
+                            identifier,
+                            c -> optionalFromParent(type, name, defaultImpl).orElseGet(defaultImpl)
+                    )
+            ).init(config(), AbstractConfigurer.this);
             return identifier.type().cast(component);
         }
 

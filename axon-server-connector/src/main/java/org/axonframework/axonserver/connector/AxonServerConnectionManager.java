@@ -27,6 +27,7 @@ import org.axonframework.axonserver.connector.util.GrpcMessageSizeInterceptor;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.config.TagsConfiguration;
+import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 
@@ -94,7 +95,7 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
     }
 
     @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry<?> lifecycle) {
         lifecycle.onStart(Phase.INSTRUCTION_COMPONENTS, this::start);
         lifecycle.onShutdown(Phase.EXTERNAL_CONNECTIONS, this::shutdown);
     }

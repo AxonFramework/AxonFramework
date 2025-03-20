@@ -53,20 +53,6 @@ public class Components {
     }
 
     /**
-     * Get an {@link Optional} on the unwrapped {@link Component} registered under the given {@code identifier}.
-     * <p>
-     * This operation will invoke {@link Component#get()} as part of the retrieval.
-     *
-     * @param identifier The identifier to retrieve a component for.
-     * @param <C>        The type of the component to retrieve.
-     * @return An {@code Optional} on the component of type {@code C} registered under the given {@code identifier}.
-     */
-    @Nonnull
-    public <C> Optional<C> getUnwrapped(@Nonnull Identifier<C> identifier) {
-        return get(identifier).map(Component::get);
-    }
-
-    /**
      * Puts the given {@code component}, identified by the given {@code identifier}, in this collection.
      *
      * @param identifier The identifier for the {@code component} to put.

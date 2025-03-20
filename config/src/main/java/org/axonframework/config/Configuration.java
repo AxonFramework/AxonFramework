@@ -19,6 +19,7 @@ package org.axonframework.config;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.gateway.EventGateway;
@@ -27,7 +28,6 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
-import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -44,10 +44,10 @@ import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.tracing.SpanFactory;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 /**
  * Interface describing the Global Configuration for Axon components. It provides access to the components configured,
@@ -78,19 +78,28 @@ public interface Configuration extends LifecycleOperations {
      *
      * @return the lifecycle registry for this configuration
      */
-    default Lifecycle.LifecycleRegistry lifecycleRegistry() {
-        return new Lifecycle.LifecycleRegistry() {
+    default LifecycleRegistry<?> lifecycleRegistry() {
+        return new LifecycleRegistry() {
             @Override
-            public void onStart(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
-                Configuration.this.onStart(phase, action::run);
+            public LifecycleRegistry<?> onStart(
+                    int phase,
+                    @jakarta.annotation.Nonnull org.axonframework.configuration.LifecycleHandler startHandler
+            ) {
+                Configuration.this.onStart(phase, startHandler::run);
+                return this;
             }
 
             @Override
-            public void onShutdown(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
-                Configuration.this.onShutdown(phase, action::run);
+            public LifecycleRegistry<?> onShutdown(
+                    int phase,
+                    @jakarta.annotation.Nonnull org.axonframework.configuration.LifecycleHandler shutdownHandler
+            ) {
+                Configuration.this.onShutdown(phase, shutdownHandler::run);
+                return this;
             }
         };
     }
+
     /**
      * Returns the Event Store in this Configuration, if it is defined. If no Event Store is defined (but an Event Bus
      * instead), this method throws an {@link AxonConfigurationException}.

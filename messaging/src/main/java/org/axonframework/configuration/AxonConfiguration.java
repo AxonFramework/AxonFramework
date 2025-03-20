@@ -26,13 +26,13 @@ package org.axonframework.configuration;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface AxonConfiguration extends LifecycleSupportingConfiguration {
+public interface AxonConfiguration extends NewConfiguration {
 
     /**
      * All components defined in this {@code AxonConfiguration} will be started.
      * <p>
      * Starting a {@code AxonConfiguration} typically results in the invocation of all
-     * {@link #onStart(int, LifecycleHandler) registered start handlers}.
+     * {@link LifecycleRegistry#onStart(int, LifecycleHandler) registered start handlers}.
      */
     void start();
 
@@ -40,7 +40,7 @@ public interface AxonConfiguration extends LifecycleSupportingConfiguration {
      * Shuts down the components defined in this {@code AxonConfiguration}.
      * <p>
      * Shutting down a {@code AxonConfiguration} typically results in the invocation of all
-     * {@link #onShutdown(int, LifecycleHandler) registered shutdown handlers}.
+     * {@link LifecycleRegistry#onShutdown(int, LifecycleHandler) registered shutdown handlers}.
      */
     void shutdown();
 }

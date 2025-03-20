@@ -34,14 +34,10 @@ class ComponentsTest {
 
     private static final Identifier<String> IDENTIFIER = new Identifier<>(String.class, "id");
 
-    private LifecycleSupportingConfiguration config;
-
     private Components testSubject;
 
     @BeforeEach
     void setUp() {
-        config = mock(LifecycleSupportingConfiguration.class);
-
         testSubject = new Components();
     }
 
@@ -58,7 +54,7 @@ class ComponentsTest {
 
     @Test
     void getReturnsPutComponent() {
-        Component<String> testComponent = new Component<>(IDENTIFIER, config, c -> "some-state");
+        Component<String> testComponent = new Component<>(IDENTIFIER, c -> "some-state");
 
         testSubject.put(IDENTIFIER, testComponent);
 
@@ -68,30 +64,8 @@ class ComponentsTest {
     }
 
     @Test
-    void getUnwrappedThrowsNullPointerExceptionForNullIdentifier() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.getUnwrapped(null));
-    }
-
-    @Test
-    void getUnwrappedReturnsEmpty() {
-        assertTrue(testSubject.getUnwrapped(IDENTIFIER).isEmpty());
-    }
-
-    @Test
-    void getUnwrappedReturnsPutComponent() {
-        Component<String> testComponent = new Component<>(IDENTIFIER, config, c -> "some-state");
-
-        testSubject.put(IDENTIFIER, testComponent);
-
-        Optional<String> result = testSubject.getUnwrapped(IDENTIFIER);
-        assertTrue(result.isPresent());
-        assertEquals(testComponent.get(), result.get());
-    }
-
-    @Test
     void computeIfAbsentDoesNotComputeIfIdentifierIsAlreadyPresent() {
-        Component<String> testComponent = new Component<>(IDENTIFIER, config, c -> "some-state");
+        Component<String> testComponent = new Component<>(IDENTIFIER, c -> "some-state");
         AtomicBoolean invoked = new AtomicBoolean(false);
 
         testSubject.put(IDENTIFIER, testComponent);
@@ -102,15 +76,15 @@ class ComponentsTest {
 
 
         assertFalse(invoked.get());
-        Optional<String> optionalResult = testSubject.getUnwrapped(IDENTIFIER);
+        Optional<Component<String>> optionalResult = testSubject.get(IDENTIFIER);
         assertTrue(optionalResult.isPresent());
-        assertEquals(testComponent.get(), optionalResult.get());
+        assertEquals(testComponent, optionalResult.get());
     }
 
     @Test
     void computeIfAbsentComputesForAbsentIdentifier() {
         AtomicBoolean invoked = new AtomicBoolean(false);
-        Component<String> testComponent = new Component<>(IDENTIFIER, config, c -> "some-state");
+        Component<String> testComponent = new Component<>(IDENTIFIER, c -> "some-state");
 
         testSubject.computeIfAbsent(IDENTIFIER, id -> {
             invoked.set(true);
@@ -118,15 +92,15 @@ class ComponentsTest {
         });
 
         assertTrue(invoked.get());
-        Optional<String> optionalResult = testSubject.getUnwrapped(IDENTIFIER);
+        Optional<Component<String>> optionalResult = testSubject.get(IDENTIFIER);
         assertTrue(optionalResult.isPresent());
-        assertEquals(testComponent.get(), optionalResult.get());
+        assertEquals(testComponent, optionalResult.get());
     }
 
     @Test
     void containsReturnsAsExpected() {
         Identifier<Integer> unknownIdentifier = new Identifier<>(Integer.class, "some-unknown-id");
-        testSubject.put(IDENTIFIER, new Component<>(IDENTIFIER, config, c -> "some-state"));
+        testSubject.put(IDENTIFIER, new Component<>(IDENTIFIER, c -> "some-state"));
 
         assertTrue(testSubject.contains(IDENTIFIER));
         assertFalse(testSubject.contains(unknownIdentifier));

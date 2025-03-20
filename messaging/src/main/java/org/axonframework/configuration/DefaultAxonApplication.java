@@ -66,13 +66,15 @@ class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> impleme
     private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     @Override
-    public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
+    public RootConfigurer onStart(int phase, @Nonnull LifecycleHandler startHandler) {
         registerLifecycleHandler(startHandlers, phase, startHandler);
+        return this;
     }
 
     @Override
-    public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
+    public RootConfigurer onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
         registerLifecycleHandler(shutdownHandlers, phase, shutdownHandler);
+        return this;
     }
 
     private void registerLifecycleHandler(Map<Integer, List<LifecycleHandler>> lifecycleHandlers,
@@ -129,7 +131,7 @@ class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> impleme
     }
 
     @Override
-    protected LifecycleSupportingConfiguration config() {
+    protected NewConfiguration config() {
         return axonConfig;
     }
 
@@ -256,41 +258,41 @@ class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> impleme
             currentLifecyclePhase = null;
         }
 
-        @Override
-        public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
-            if (isEarlierPhaseDuringStartUp(phase)) {
-                logger.info(
-                        "A start handler is being registered for phase [{}] whilst phase [{}] is in progress. "
-                                + "Will run provided handler immediately instead.",
-                        phase, currentLifecyclePhase
-                );
-                requireNonNull(startHandler, "Cannot run a null start handler.").run().join();
-            }
-            registerLifecycleHandler(startHandlers, phase, startHandler);
-        }
-
-        private boolean isEarlierPhaseDuringStartUp(int phase) {
-            return lifecycleState == LifecycleState.STARTING_UP
-                    && currentLifecyclePhase != null && phase <= currentLifecyclePhase;
-        }
-
-        @Override
-        public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
-            if (isEarlierPhaseDuringShutdown(phase)) {
-                logger.info(
-                        "A shutdown handler is being registered for phase [{}] whilst phase [{}] is in progress. "
-                                + "Will run provided handler immediately instead.",
-                        phase, currentLifecyclePhase
-                );
-                requireNonNull(shutdownHandler, "Cannot run a null shutdown handler.").run().join();
-            }
-            registerLifecycleHandler(shutdownHandlers, phase, shutdownHandler);
-        }
-
-        private boolean isEarlierPhaseDuringShutdown(int phase) {
-            return lifecycleState == LifecycleState.SHUTTING_DOWN
-                    && currentLifecyclePhase != null && phase >= currentLifecyclePhase;
-        }
+//        @Override
+//        public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
+//            if (isEarlierPhaseDuringStartUp(phase)) {
+//                logger.info(
+//                        "A start handler is being registered for phase [{}] whilst phase [{}] is in progress. "
+//                                + "Will run provided handler immediately instead.",
+//                        phase, currentLifecyclePhase
+//                );
+//                requireNonNull(startHandler, "Cannot run a null start handler.").run().join();
+//            }
+//            registerLifecycleHandler(startHandlers, phase, startHandler);
+//        }
+//
+//        private boolean isEarlierPhaseDuringStartUp(int phase) {
+//            return lifecycleState == LifecycleState.STARTING_UP
+//                    && currentLifecyclePhase != null && phase <= currentLifecyclePhase;
+//        }
+//
+//        @Override
+//        public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
+//            if (isEarlierPhaseDuringShutdown(phase)) {
+//                logger.info(
+//                        "A shutdown handler is being registered for phase [{}] whilst phase [{}] is in progress. "
+//                                + "Will run provided handler immediately instead.",
+//                        phase, currentLifecyclePhase
+//                );
+//                requireNonNull(shutdownHandler, "Cannot run a null shutdown handler.").run().join();
+//            }
+//            registerLifecycleHandler(shutdownHandlers, phase, shutdownHandler);
+//        }
+//
+//        private boolean isEarlierPhaseDuringShutdown(int phase) {
+//            return lifecycleState == LifecycleState.SHUTTING_DOWN
+//                    && currentLifecyclePhase != null && phase >= currentLifecyclePhase;
+//        }
     }
 
     private enum LifecycleState {

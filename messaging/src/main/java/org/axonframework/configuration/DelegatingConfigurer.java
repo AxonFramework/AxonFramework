@@ -95,13 +95,17 @@ public class DelegatingConfigurer<S extends ApplicationConfigurer<S>> implements
     }
 
     @Override
-    public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
+    public S onStart(int phase, @Nonnull LifecycleHandler startHandler) {
         delegate.onStart(phase, startHandler);
+        //noinspection unchecked
+        return (S) this;
     }
 
     @Override
-    public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
+    public S onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
         delegate.onShutdown(phase, shutdownHandler);
+        //noinspection unchecked
+        return (S) this;
     }
 
     @Override
