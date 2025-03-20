@@ -18,6 +18,8 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Component.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -216,6 +218,15 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         this.overrideBehavior = overrideBehavior;
     }
 
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("initialized", initialized.get());
+        descriptor.describeProperty("components", components);
+        descriptor.describeProperty("decorators", decoratorRegistrations);
+        descriptor.describeProperty("configurerEnhancers", enhancers);
+        descriptor.describeProperty("modules", modules);
+    }
+
     /**
      * A {@link LifecycleSupportingConfiguration} implementation acting as the local configuration of this configurer.
      * Can be implemented by {@link AbstractConfigurer} implementation that need to reuse the access logic for
@@ -287,6 +298,12 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         public List<NewConfiguration> getModuleConfigurations() {
             return List.copyOf(moduleConfigurations);
         }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            descriptor.describeProperty("components", components);
+            descriptor.describeProperty("modules", moduleConfigurations);
+        }
     }
 
     /**
@@ -301,7 +318,12 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
      */
     private record DecoratorRegistration<C>(Predicate<Identifier<C>> idMatcher,
                                             int order,
-                                            ComponentDecorator<C> decorator) {
+                                            ComponentDecorator<C> decorator) implements DescribableComponent {
 
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            descriptor.describeProperty("order", order);
+            descriptor.describeProperty("decorator", decorator);
+        }
     }
 }

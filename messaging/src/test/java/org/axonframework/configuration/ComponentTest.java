@@ -16,6 +16,7 @@
 
 package org.axonframework.configuration;
 
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component.Identifier;
 import org.junit.jupiter.api.*;
 
@@ -140,5 +141,33 @@ class ComponentTest {
     @Test
     void identifierConstructorThrowsIllegalArgumentExceptionForEmptyName() {
         assertThrows(IllegalArgumentException.class, () -> new Identifier<>(String.class, ""));
+    }
+
+    @Test
+    void describeToDescribesBuilderWhenUninitialized() {
+        ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+
+        Component<String> testSubject = new Component<>(identifier, config, factory);
+
+        testSubject.describeTo(testDescriptor);
+
+        verify(testDescriptor).describeProperty("identifier", identifier.toString());
+        verify(testDescriptor).describeProperty("factory", factory);
+        verify(testDescriptor).describeProperty("initialized", false);
+    }
+
+    @Test
+    void describeToDescribesInstanceWhenInitialized() {
+        ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+
+        Component<String> testSubject = new Component<>(identifier, config, factory);
+
+        // Initialize the component by getting it.
+        testSubject.get();
+        testSubject.describeTo(testDescriptor);
+
+        verify(testDescriptor).describeProperty("identifier", identifier.toString());
+        verify(testDescriptor).describeProperty("component", (Object) TEST_COMPONENT);
+        verify(testDescriptor).describeProperty("initialized", true);
     }
 }

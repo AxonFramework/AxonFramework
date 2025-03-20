@@ -16,9 +16,11 @@
 
 package org.axonframework.configuration;
 
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component.Identifier;
 import org.junit.jupiter.api.*;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -172,5 +174,16 @@ class ComponentsTest {
         Optional<String> resultComponent = testSubject.getUnwrapped(IDENTIFIER);
         assertTrue(resultComponent.isPresent());
         assertEquals("replacement", resultComponent.get());
+    }
+
+    @Test
+    void describeToDescribesComponents() {
+        ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+        Component<String> testComponent = new Component<>(IDENTIFIER, config, c -> "some-state");
+        testSubject.put(IDENTIFIER, testComponent);
+
+        testSubject.describeTo(testDescriptor);
+
+        verify(testDescriptor).describeProperty("components", Map.of(IDENTIFIER, testComponent));
     }
 }
