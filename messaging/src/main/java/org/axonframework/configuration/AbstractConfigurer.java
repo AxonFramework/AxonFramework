@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -76,6 +77,15 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
             logger.warn("Replaced a previous Component registered for type [{}] and name [{}].", name, type);
         }
         return self();
+    }
+
+    @Override
+    public <C> S registerComponent(@Nonnull Class<C> type,
+                                   @Nonnull String name,
+                                   @Nonnull ComponentFactory<C> factory,
+                                   @Nonnull BiConsumer<C, LifecycleRegistry<S>> lifecycleCallback) {
+        // TODO implement
+        return null;
     }
 
     @Override

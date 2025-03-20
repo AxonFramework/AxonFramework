@@ -21,7 +21,9 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Component.Identifier;
 
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * The starting point when configuring any Axon Framework application.
@@ -79,6 +81,21 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleRegi
     <C> S registerComponent(@Nonnull Class<C> type,
                             @Nonnull String name,
                             @Nonnull ComponentFactory<C> factory);
+
+    /**
+     * TODO document
+     * @param type
+     * @param name
+     * @param factory
+     * @param lifecycleCallback
+     * @return
+     * @param <C>
+     */
+    <C> S registerComponent(@Nonnull Class<C> type,
+                            @Nonnull String name,
+                            @Nonnull ComponentFactory<C> factory,
+                            // TODO replace BiConsumer for custom functional interface
+                            @Nonnull BiConsumer<C, LifecycleRegistry<S>> lifecycleCallback);
 
     /**
      * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on <b>all</b>
