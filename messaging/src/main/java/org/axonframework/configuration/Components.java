@@ -22,8 +22,10 @@ import org.axonframework.configuration.Component.Identifier;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Wrapper around a {@link Map} of {@link Component Components} stored per {@link Component.Identifier}.
@@ -108,7 +110,36 @@ public class Components {
      * @return {@code true} if this collection contains a {@link Component} identified by the given {@code identifier},
      * {@code false} otherwise.
      */
-    public boolean contains(Identifier<?> identifier) {
+    public boolean contains(@Nonnull Identifier<?> identifier) {
         return components.containsKey(identifier);
+    }
+
+    /**
+     * Returns the identifiers of the components currently registered.
+     *
+     * @return A set with the identifiers of registered components.
+     */
+    public Set<Identifier<?>> identifiers() {
+        return Set.copyOf(components.keySet());
+    }
+
+    /**
+     * Replace the component registered under the given {@code identifier} with the instance returned by given
+     * {@code replacement} function. If no component is registered under the given identifier, nothing happens.
+     * <p>
+     * If the given {@code replacement} function returns null, the component registration is removed.
+     *
+     * @param identifier  The identifier of the component to replace.
+     * @param replacement The function providing the replacement value, based on the currently registered component.
+     * @param <C>         The type of component registered.
+     * @return {@code true} if a component is present and has been replaced, {@code false} if no component was present,
+     * or has been removed by the replacement function.
+     */
+    public <C> boolean replace(@Nonnull Identifier<C> identifier,
+                               @Nonnull UnaryOperator<Component<? extends C>> replacement) {
+        //noinspection unchecked
+        Component<?> newValue = components.computeIfPresent(identifier,
+                                                            (i, c) -> replacement.apply((Component<? extends C>) c));
+        return newValue != null;
     }
 }

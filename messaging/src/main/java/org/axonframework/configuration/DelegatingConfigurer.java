@@ -67,6 +67,15 @@ public class DelegatingConfigurer<S extends ApplicationConfigurer<S>> implements
     }
 
     @Override
+    public <C> S registerDecorator(@Nonnull Class<C> type,
+                                   int order,
+                                   @Nonnull ComponentDecorator<C> decorator) {
+        delegate.registerDecorator(type, order, decorator);
+        //noinspection unchecked
+        return (S) this;
+    }
+
+    @Override
     public boolean hasComponent(@Nonnull Class<?> type, @Nonnull String name) {
         return delegate.hasComponent(type, name);
     }

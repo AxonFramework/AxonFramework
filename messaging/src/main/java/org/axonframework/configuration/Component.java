@@ -22,8 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -50,7 +48,6 @@ public class Component<C> {
     private final Identifier<C> identifier;
     private final Supplier<LifecycleSupportingConfiguration> configSupplier;
     private final ComponentFactory<C> factory;
-    private final SortedMap<Integer, ComponentDecorator<C>> decorators = new TreeMap<>();
 
     private C instance;
 
@@ -109,35 +106,9 @@ public class Component<C> {
 
         LifecycleSupportingConfiguration config = configSupplier.get();
         instance = factory.build(config);
-        decorators.values()
-                  .forEach(decorator -> instance = decorator.decorate(config, instance));
         logger.debug("Instantiated component [{}]: {}", identifier, instance);
         LifecycleHandlerInspector.registerLifecycleHandlers(config, instance);
         return instance;
-    }
-
-    /**
-     * Decorates the contained component upon {@link #get() initialization} by passing it through the given
-     * {@code decorator} at the specified {@code order}.
-     * <p>
-     * The {@code order} of the {@code decorator} will impact the decoration ordering of the outcome of this component.
-     * Will override previously registered {@link ComponentDecorator ComponentDecorators} if there already was one
-     * present at the given {@code order}.
-     *
-     * @param decorator The {@code ComponentDecorator} to use on the contained component upon
-     *                  {@link #get() initialization}.
-     * @param order     Defines the ordering of the given {@code decorator} among all other
-     *                  {@link ComponentDecorator ComponentDecorators} that have been registered.
-     * @return This {@code Component}, for a fluent API.
-     */
-    public Component<C> decorate(@Nonnull ComponentDecorator<C> decorator,
-                                 int order) {
-        ComponentDecorator<C> previous =
-                decorators.put(order, requireNonNull(decorator, "Component decorators cannot be null."));
-        if (previous != null) {
-            logger.warn("Replaced decorator [{}] at order [{}] with [{}].", previous, order, decorator);
-        }
-        return this;
     }
 
     /**
@@ -149,6 +120,18 @@ public class Component<C> {
      */
     public synchronized boolean isInitialized() {
         return instance != null;
+    }
+
+    /**
+     * Returns a {@code Component} that decorates this component, calling given {@code decorator} to wrap (or replace)
+     * the instance created by this {@code Component}.
+     *
+     * @param decorator The function that decorates the instance contained in this component.
+     * @return A new component that represents the decorated instance.
+     */
+    public Component<C> decorate(ComponentDecorator<C> decorator) {
+        return new Component<>(identifier, configSupplier,
+                               config -> decorator.decorate(config, identifier.name(), get()));
     }
 
     /**
