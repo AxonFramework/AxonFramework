@@ -23,9 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.assertThat;
@@ -39,7 +36,7 @@ import static org.axonframework.common.Assert.assertThat;
  * Components are lazily initialized when they are {@link #init(NewConfiguration, LifecycleRegistry) accessed}. During
  * the initialization, they may trigger initialization of the components they depend on. Furthermore, if the constructed
  * component is a {@link Lifecycle} implementation, it will be registered with a {@link LifecycleRegistry} during the
- * initialization. If this step registered start handlers in a phase that the {@link RootConfiguration#start()} already
+ * initialization. If this step registered start handlers in a phase that the {@link AxonApplication#start()} already
  * surpassed, they will be invoked immediately.
  *
  * @param <C> The type of component contained.
@@ -118,12 +115,17 @@ public class Component<C> {
      * Returns a {@code Component} that decorates this component, calling given {@code decorator} to wrap (or replace)
      * the instance created by this {@code Component}.
      *
-     * @param decorator The function that decorates the instance contained in this component.
+     * @param decorator         The function that decorates the instance contained in this component.
+     * @param lifecycleRegistry The lifecycle registry to register the life cycle handlers at from the component to be
+     *                          decorated.
      * @return A new component that represents the decorated instance.
      */
-    public Component<C> decorate(ComponentDecorator<C> decorator) {
-        return new Component<>(identifier, configSupplier,
-                               config -> decorator.decorate(config, identifier.name(), get()));
+    public Component<C> decorate(@Nonnull ComponentDecorator<C> decorator,
+                                 @Nonnull LifecycleRegistry<?> lifecycleRegistry) {
+        return new Component<>(
+                identifier,
+                config -> decorator.decorate(config, identifier.name(), init(config, lifecycleRegistry))
+        );
     }
 
     /**

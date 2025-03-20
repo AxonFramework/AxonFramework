@@ -41,11 +41,11 @@ public abstract class ConfigurerLifecycleOperationTestSuite<C extends Applicatio
 
     private static final String START_FAILURE_EXCEPTION_MESSAGE = "some start failure";
 
-    protected C configurer;
+    protected C testSubject;
 
     @BeforeEach
     void setUp() {
-        configurer = createConfigurer();
+        testSubject = createTestSubject();
     }
 
     /**
@@ -55,7 +55,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<C extends Applicatio
      * @return The {@link NewConfigurer} of type {@code C} to be used in this test suite for validating its start-up and
      * shutdown behavior.
      */
-    public abstract C createConfigurer();
+    public abstract C createTestSubject();
 
     /**
      * Starts the given {@code configurer}.
@@ -99,7 +99,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<C extends Applicatio
         testSubject.onStart(1, phaseOneHandler::start);
         testSubject.onStart(0, phaseZeroHandler::start);
 
-        this.start(configurer);
+        testSubject.start();
 
         InOrder lifecycleOrder =
                 inOrder(phaseZeroHandler, phaseOneHandler, phaseTenHandler, phaseOverNineThousandHandler);
@@ -217,7 +217,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<C extends Applicatio
         testSubject.onShutdown(1, phaseOneHandler::shutdown);
         testSubject.onShutdown(0, phaseZeroHandler::shutdown);
 
-        RootConfiguration rootConfig = testSubject.start();
+        AxonConfiguration rootConfig = testSubject.start();
         rootConfig.shutdown();
 
         InOrder lifecycleOrder =
@@ -240,7 +240,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<C extends Applicatio
         testSubject.onShutdown(10, phaseTenHandler::shutdown);
         testSubject.onShutdown(9001, phaseOverNineThousandHandler::shutdown);
 
-        RootConfiguration rootConfig = testSubject.start();
+        AxonConfiguration rootConfig = testSubject.start();
         rootConfig.shutdown();
 
         InOrder lifecycleOrder =
@@ -266,7 +266,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<C extends Applicatio
         testSubject.onShutdown(1, slowPhaseOneHandler::slowShutdown);
         testSubject.onShutdown(0, phaseZeroHandler::shutdown);
 
-        RootConfiguration rootConfig = testSubject.start();
+        AxonConfiguration rootConfig = testSubject.start();
         rootConfig.shutdown();
         // Start in a different thread as the 'slowPhaseOneHandler' will otherwise not lock
         Thread shutdownThread = new Thread(rootConfig::shutdown);
@@ -309,7 +309,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<C extends Applicatio
         testSubject.onShutdown(1, phaseOneHandler::shutdown);
         testSubject.onShutdown(0, phaseZeroHandler::shutdown);
 
-        RootConfiguration rootConfig = testSubject.start();
+        AxonConfiguration rootConfig = testSubject.start();
         rootConfig.shutdown();
 
         InOrder lifecycleOrder = inOrder(
@@ -341,7 +341,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<C extends Applicatio
         testSubject.onShutdown(1, phaseOneHandler::shutdown);
         testSubject.onShutdown(0, phaseZeroHandler::shutdown);
 
-        RootConfiguration rootConfig = testSubject.start();
+        AxonConfiguration rootConfig = testSubject.start();
         rootConfig.shutdown();
 
         InOrder lifecycleOrder = inOrder(phaseTwoHandler, phaseOneHandlerAdder, phaseOneHandler, phaseZeroHandler);

@@ -54,5 +54,5 @@ public interface Module<M extends Module<M>> extends NewConfigurer<M> {
      *               components.
      * @return The fully initialized {@link NewConfiguration} instance from {@code this Module} specifically.
      */
-    NewConfiguration build(@Nonnull LifecycleSupportingConfiguration parent);
+    NewConfiguration build(@Nonnull NewConfiguration parent);
 }

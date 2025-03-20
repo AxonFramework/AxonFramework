@@ -95,10 +95,10 @@ class ComponentTest {
 
     @Test
     void decorateInvokesDecoratorsAtGivenOrder() {
-        Component<String> testSubject = new Component<>(identifier, config, factory);
-        Component<String> result1 = testSubject.decorate((c, name, delegate) -> delegate + "a");
-        Component<String> result2 = result1.decorate((c, name, delegate) -> delegate + "b");
-        Component<String> result3 = result2.decorate((c, name, delegate) -> delegate + "c");
+        Component<String> testSubject = new Component<>(identifier, factory);
+        Component<String> result1 = testSubject.decorate((c, name, delegate) -> delegate + "a", lifecycleRegistry);
+        Component<String> result2 = result1.decorate((c, name, delegate) -> delegate + "b", lifecycleRegistry);
+        Component<String> result3 = result2.decorate((c, name, delegate) -> delegate + "c", lifecycleRegistry);
 
         assertEquals("Hello World!a", result1.init(configuration, lifecycleRegistry));
         assertEquals("Hello World!ab", result2.init(configuration, lifecycleRegistry));
@@ -110,9 +110,9 @@ class ComponentTest {
         //noinspection unchecked
         ComponentFactory<String> mock = mock();
         when(mock.build(any())).thenReturn(TEST_COMPONENT);
-        Component<String> testSubject = new Component<>(identifier, config, mock);
+        Component<String> testSubject = new Component<>(identifier, mock);
 
-        Component<String> decorated = testSubject.decorate((c, name, delegate) -> delegate + "a");
+        Component<String> decorated = testSubject.decorate((c, name, delegate) -> delegate + "a", lifecycleRegistry);
 
         assertEquals(TEST_COMPONENT, testSubject.init(configuration, lifecycleRegistry));
         verify(mock, times(1)).build(any());

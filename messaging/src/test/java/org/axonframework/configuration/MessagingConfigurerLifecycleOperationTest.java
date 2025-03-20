@@ -24,7 +24,7 @@ package org.axonframework.configuration;
 class MessagingConfigurerLifecycleOperationTest extends ConfigurerLifecycleOperationTestSuite<MessagingConfigurer> {
 
     @Override
-    public MessagingConfigurer createConfigurer() {
+    public MessagingConfigurer createTestSubject() {
         return MessagingConfigurer.create();
     }
 

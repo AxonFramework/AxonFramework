@@ -111,7 +111,7 @@ class ComponentsTest {
     void identifiersReturnsAllRegisteredComponentsTheirIdentifiers() {
         assertTrue(testSubject.identifiers().isEmpty());
 
-        testSubject.put(IDENTIFIER, new Component<>(IDENTIFIER, config, c -> "some-state"));
+        testSubject.put(IDENTIFIER, new Component<>(IDENTIFIER, c -> "some-state"));
 
         Set<Identifier<?>> result = testSubject.identifiers();
         assertFalse(result.isEmpty());
@@ -124,7 +124,7 @@ class ComponentsTest {
 
         boolean result = testSubject.replace(IDENTIFIER, old -> {
             invoked.set(true);
-            return new Component<>(IDENTIFIER, config, c -> "replacement");
+            return new Component<>(IDENTIFIER, c -> "replacement");
         });
 
         assertFalse(invoked.get());
@@ -134,17 +134,18 @@ class ComponentsTest {
     @Test
     void replaceReplacesComponents() {
         AtomicBoolean invoked = new AtomicBoolean(false);
-        testSubject.put(IDENTIFIER, new Component<>(IDENTIFIER, config, c -> "some-state"));
+        testSubject.put(IDENTIFIER, new Component<>(IDENTIFIER, c -> "some-state"));
 
         boolean result = testSubject.replace(IDENTIFIER, old -> {
             invoked.set(true);
-            return new Component<>(IDENTIFIER, config, c -> "replacement");
+            return new Component<>(IDENTIFIER, c -> "replacement");
         });
 
         assertTrue(invoked.get());
         assertTrue(result);
-        Optional<String> resultComponent = testSubject.getUnwrapped(IDENTIFIER);
+        Optional<Component<String>> resultComponent = testSubject.get(IDENTIFIER);
         assertTrue(resultComponent.isPresent());
-        assertEquals("replacement", resultComponent.get());
+        String resultState = resultComponent.get().init(mock(NewConfiguration.class), mock(LifecycleRegistry.class));
+        assertEquals("replacement", resultState);
     }
 }

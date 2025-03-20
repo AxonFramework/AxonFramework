@@ -122,12 +122,12 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     @Override
-    public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
+    public S onStart(int phase, @Nonnull LifecycleHandler startHandler) {
         throw new UnsupportedOperationException("Registering start handlers is not supported on this configurer.");
     }
 
     @Override
-    public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
+    public S onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
         throw new UnsupportedOperationException("Registering shutdown handlers is not supported on this configurer.");
     }
 
@@ -136,7 +136,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
      *
      * @param parent The parent configuration of the {@link LocalConfiguration} of this configurer.
      */
-    protected void setParent(@Nullable LifecycleSupportingConfiguration parent) {
+    protected void setParent(@Nullable NewConfiguration parent) {
         this.parent = parent;
     }
 
@@ -144,7 +144,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
      * Common builder activity for any {@code AbstractConfigurer} implementation.
      * <p>
      * Will enhance this configurer will all registered {@link ConfigurationEnhancer ConfigurationEnhancers} and
-     * {@link Module#build(LifecycleSupportingConfiguration) builds} all the {@link Module Modules}.
+     * {@link Module#build(NewConfiguration) builds} all the {@link Module Modules}.
      */
     protected void enhanceInvocationAndModuleConstruction() {
         if (!initialized.getAndSet(true)) {
@@ -160,7 +160,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         for (DecoratorRegistration decoratorRegistration : decoratorRegistrations) {
             for (Identifier id : components.identifiers()) {
                 if (decoratorRegistration.idMatcher.test(id)) {
-                    components.replace(id, previous -> previous.decorate(decoratorRegistration.decorator));
+                    components.replace(id, previous -> previous.decorate(decoratorRegistration.decorator, this));
                 }
             }
         }
@@ -242,9 +242,9 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nonnull String name) {
-            return components.getUnwrapped(new Identifier<>(type, name))
-                             .or(() -> Optional.ofNullable(fromParent(type, name, () -> null)))
-                             .map(component -> component.init(config(), AbstractConfigurer.this));
+            return components.get(new Identifier<>(type, name))
+                             .map(component -> component.init(config(), AbstractConfigurer.this))
+                             .or(() -> Optional.ofNullable(fromParent(type, name, () -> null)));
         }
 
         @Nonnull
@@ -256,7 +256,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
             Object component = components.computeIfAbsent(
                     identifier,
                     id -> new Component<>(identifier, c -> fromParent(type, name, defaultImpl))
-            ).init(config(), this);
+            ).init(this, AbstractConfigurer.this);
             return identifier.type().cast(component);
         }
 

@@ -66,13 +66,13 @@ class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> impleme
     private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     @Override
-    public RootConfigurer onStart(int phase, @Nonnull LifecycleHandler startHandler) {
+    public AxonApplication onStart(int phase, @Nonnull LifecycleHandler startHandler) {
         registerLifecycleHandler(startHandlers, phase, startHandler);
         return this;
     }
 
     @Override
-    public RootConfigurer onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
+    public AxonApplication onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
         registerLifecycleHandler(shutdownHandlers, phase, shutdownHandler);
         return this;
     }
