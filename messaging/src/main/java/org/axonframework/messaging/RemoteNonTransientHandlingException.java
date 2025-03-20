@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import java.util.List;
  */
 public class RemoteNonTransientHandlingException extends AxonNonTransientException {
 
-    private static final long serialVersionUID = 7481427660341420212L;
     private final List<String> exceptionDescriptions;
 
     /**

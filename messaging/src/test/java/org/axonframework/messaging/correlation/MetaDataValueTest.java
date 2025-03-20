@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,27 +88,6 @@ class MetaDataValueTest {
         // Map requires that Maps are equal, even if their implementation is different
         assertEquals(metaData2, metaDataValues);
         assertEquals(metaDataValues, metaData2);
-    }
-
-    @Test
-    void serialization() throws IOException, ClassNotFoundException {
-        MetaData metaData1 = MetaData.from(Collections.singletonMap("Key1", "Value"));
-        MetaData metaData2 = MetaData.from(Collections.singletonMap("Key2", "Value"));
-        MetaData emptyMetaData = MetaData.emptyInstance();
-
-        assertEquals(metaData1, serialize(metaData1));
-        assertEquals(metaData2, serialize(metaData2));
-        assertSame(emptyMetaData, serialize(emptyMetaData));
-    }
-
-    private MetaData serialize(MetaData metaData1) throws IOException, ClassNotFoundException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(metaData1);
-        oos.close();
-        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        ObjectInputStream ois = new ObjectInputStream(bais);
-        return (MetaData) ois.readObject();
     }
 
     @Test

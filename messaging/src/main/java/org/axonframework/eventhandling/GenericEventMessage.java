@@ -24,7 +24,6 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.CachingSupplier;
 
-import java.io.Serial;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
@@ -42,9 +41,6 @@ import java.util.function.Supplier;
  * @since 2.0.0
  */
 public class GenericEventMessage<P> extends MessageDecorator<P> implements EventMessage<P> {
-
-    @Serial
-    private static final long serialVersionUID = -8296350547944518544L;
 
     private final Supplier<Instant> timestampSupplier;
 

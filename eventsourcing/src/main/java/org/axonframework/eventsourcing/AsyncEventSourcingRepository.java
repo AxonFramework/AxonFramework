@@ -33,7 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 /**
@@ -51,10 +50,13 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
     private final ResourceKey<Map<ID, CompletableFuture<EventSourcedEntity<ID, M>>>> managedEntitiesKey =
             ResourceKey.withLabel("managedEntities");
 
+    private final Class<ID> idType;
+    private final Class<M> entityType;
     private final AsyncEventStore eventStore;
     private final CriteriaResolver<ID> criteriaResolver;
     private final EventStateApplier<M> eventStateApplier;
     private final String context;
+    private final Function<ID, M> newInstanceFactory;
 
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
@@ -67,16 +69,24 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
      *                          {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a matching
      *                          event stream.
      * @param eventStateApplier The function to apply event state changes to the loaded entities.
-     * @param context           The (bounded) context this {@code AsyncEventSourcingRepository} provides access to
-     *                          models for.
+     * @param newInstanceFactory A factory method to create new instances of the model based on a provided identifier.
+     * @param context            The (bounded) context this {@code AsyncEventSourcingRepository} provides access to
+     *                           models for.
      */
-    public AsyncEventSourcingRepository(AsyncEventStore eventStore,
-                                        CriteriaResolver<ID> criteriaResolver,
-                                        EventStateApplier<M> eventStateApplier,
-                                        String context) {
+    public AsyncEventSourcingRepository(
+            Class<ID> idType,
+            Class<M> entityType,
+            AsyncEventStore eventStore,
+            CriteriaResolver<ID> criteriaResolver,
+            EventStateApplier<M> eventStateApplier,
+            Function<ID, M> newInstanceFactory,
+            String context) {
+        this.idType = idType;
+        this.entityType = entityType;
         this.eventStore = eventStore;
         this.criteriaResolver = criteriaResolver;
         this.eventStateApplier = eventStateApplier;
+        this.newInstanceFactory = newInstanceFactory;
         this.context = context;
     }
 
@@ -95,6 +105,18 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
         ).resultNow();
     }
 
+    @Nonnull
+    @Override
+    public Class<M> entityType() {
+        return entityType;
+    }
+
+    @Nonnull
+    @Override
+    public Class<ID> idType() {
+        return idType;
+    }
+
     @Override
     public CompletableFuture<ManagedEntity<ID, M>> load(@Nonnull ID identifier,
                                                         @Nonnull ProcessingContext processingContext) {
@@ -104,7 +126,8 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
                 identifier,
                 id -> eventStore.transaction(processingContext, context)
                                 .source(SourcingCondition.conditionFor(criteriaResolver.resolve(id)))
-                                .reduce(new EventSourcedEntity<>(identifier, (M) null), (entity, entry) -> {
+                                .reduce(new EventSourcedEntity<>(identifier, newInstanceFactory.apply(identifier)),
+                                        (entity, entry) -> {
                                     entity.applyStateChange(entry.message(), eventStateApplier, processingContext);
                                     return entity;
                                 })
@@ -118,12 +141,11 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
 
     @Override
     public CompletableFuture<ManagedEntity<ID, M>> loadOrCreate(@Nonnull ID identifier,
-                                                                @Nonnull ProcessingContext processingContext,
-                                                                @Nonnull Supplier<M> factoryMethod) {
+                                                                @Nonnull ProcessingContext processingContext) {
         return load(identifier, processingContext).thenApply(
                 managedEntity -> {
                     managedEntity.applyStateChange(
-                            entity -> entity != null ? entity : factoryMethod.get()
+                            entity -> entity != null ? entity : newInstanceFactory.apply(identifier)
                     );
                     return managedEntity;
                 }
@@ -159,6 +181,8 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("idType", idType);
+        descriptor.describeProperty("entityType", entityType);
         descriptor.describeProperty("eventStore", eventStore);
         descriptor.describeProperty("criteriaResolver", criteriaResolver);
         descriptor.describeProperty("eventStateApplier", eventStateApplier);

@@ -29,12 +29,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Abstract implementation of the {@link NewConfigurer} allowing for reuse of {@link Component},
- * {@link ComponentDecorator}, {@link ConfigurerEnhancer}, and {@link Module} registration for the {@code NewConfigurer}
- * and {@link Module} implementations alike.
+ * {@link ComponentDecorator}, {@link ConfigurationEnhancer}, and {@link Module} registration for the
+ * {@code NewConfigurer} and {@link Module} implementations alike.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -44,23 +47,17 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    protected final Components components = new Components();
-    private final List<ConfigurerEnhancer> enhancers = new ArrayList<>();
+    private final Components components = new Components();
+    private final List<DecoratorRegistration<?>> decoratorRegistrations = new ArrayList<>();
+    private final List<ConfigurationEnhancer> enhancers = new ArrayList<>();
     private final List<Module<?>> modules = new ArrayList<>();
+
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private NewConfiguration parent;
+    private NewConfiguration config;
     private final List<NewConfiguration> moduleConfigurations = new ArrayList<>();
 
-    protected final NewConfiguration config;
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
-
-    /**
-     * Initialize the {@code AbstractConfigurer} based on the given {@code parent}.
-     *
-     * @param parent The life cycle supporting configuration used as the <b>parent</b> configuration of the
-     *               {@link LocalConfiguration}.
-     */
-    protected AbstractConfigurer(@Nullable NewConfiguration parent) {
-        this.config = new LocalConfiguration(parent);
-    }
+    private OverrideBehavior overrideBehavior = OverrideBehavior.WARN;
 
     @Override
     public <C> S registerComponent(@Nonnull Class<C> type,
@@ -68,27 +65,30 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
                                    @Nonnull ComponentFactory<C> factory) {
         logger.debug("Registering component [{}] of type [{}].", name, type);
         Identifier<C> identifier = new Identifier<>(type, name);
-        Component<C> previous = components.put(identifier, new Component<>(identifier, factory));
-        if (previous != null) {
-            logger.warn("Replaced a previous Component registered under type [{}] and name [{}].", name, type);
+        if (overrideBehavior == OverrideBehavior.THROW && components.contains(identifier)) {
+            throw new ComponentOverrideException(type, name);
         }
-        //noinspection unchecked
-        return (S) this;
+
+        Component<C> previous = components.put(identifier, new Component<>(identifier, factory));
+        if (previous != null && overrideBehavior == OverrideBehavior.WARN) {
+            logger.warn("Replaced a previous Component registered for type [{}] and name [{}].", name, type);
+        }
+        return self();
     }
 
     @Override
     public <C> S registerDecorator(@Nonnull Class<C> type,
-                                   @Nonnull String name,
                                    int order,
                                    @Nonnull ComponentDecorator<C> decorator) {
-        logger.debug("Registering decorator for [{}] of type [{}] at order #{}.", name, type, order);
-        Identifier<C> identifier = new Identifier<>(type, name);
-        logger.debug("Registering decorator for [{}] at order #{}.", identifier, order);
-        components.get(identifier)
-                  .map(component -> component.decorate(decorator, order))
-                  .orElseThrow(() -> new IllegalArgumentException(
-                          "Cannot decorate type [" + identifier + "] since there is no component builder for this type."
-                  ));
+        requireNonNull(type, "The type cannot be null.");
+        requireNonNull(decorator, "The component decorator cannot be null");
+        logger.debug("Registering decorator for type [{}] at order #{}.", type, order);
+
+        decoratorRegistrations.add(new DecoratorRegistration<>(id -> id.type().equals(type), order, decorator));
+        return self();
+    }
+
+    private S self() {
         //noinspection unchecked
         return (S) this;
     }
@@ -100,20 +100,17 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     @Override
-    public S registerEnhancer(@Nonnull ConfigurerEnhancer enhancer) {
+    public S registerEnhancer(@Nonnull ConfigurationEnhancer enhancer) {
         logger.debug("Registering enhancer [{}].", enhancer.getClass().getSimpleName());
         this.enhancers.add(enhancer);
-        //noinspection unchecked
-        return (S) this;
+        return self();
     }
 
     @Override
-    public <M extends Module<M>> S registerModule(@Nonnull ModuleBuilder<M> builder) {
-        Module<?> module = builder.build(config());
-        logger.debug("Registering module [{}].", module.getClass().getSimpleName());
+    public S registerModule(@Nonnull Module<?> module) {
+        logger.debug("Registering module [{}].", module.name());
         this.modules.add(module);
-        //noinspection unchecked
-        return (S) this;
+        return self();
     }
 
     @Override
@@ -121,28 +118,63 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
                                                    @Nonnull Consumer<C> configureTask) {
         logger.warn("Ignoring configure task on configurer [{}] because there is no delegate configurer of type [{}].",
                     this.getClass(), type);
-        //noinspection unchecked
-        return (S) this;
+        return self();
     }
 
     @Override
-    public <C extends NewConfiguration> C build() {
-        if (!initialized.getAndSet(true)) {
-            invokeEnhancers();
-            buildModules();
-        }
-        //noinspection unchecked
-        return (C) config;
+    public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
+        throw new UnsupportedOperationException("Registering start handlers is not supported on this configurer.");
+    }
+
+    @Override
+    public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
+        throw new UnsupportedOperationException("Registering shutdown handlers is not supported on this configurer.");
     }
 
     /**
-     * Invoke all the {@link #registerEnhancer(ConfigurerEnhancer) registered} {@link ConfigurerEnhancer enhancers} on
-     * this {@code Configurer} implementation in their {@link ConfigurerEnhancer#order()}. This will ensure all sensible
-     * default components and decorators are in place from these enhancers.
+     * Sets the given {@code parent} as the parent configuration of the {@link LocalConfiguration} of this configurer.
+     *
+     * @param parent The parent configuration of the {@link LocalConfiguration} of this configurer.
+     */
+    protected void setParent(@Nullable LifecycleSupportingConfiguration parent) {
+        this.parent = parent;
+    }
+
+    /**
+     * Common builder activity for any {@code AbstractConfigurer} implementation.
+     * <p>
+     * Will enhance this configurer will all registered {@link ConfigurationEnhancer ConfigurationEnhancers} and
+     * {@link Module#build(LifecycleSupportingConfiguration) builds} all the {@link Module Modules}.
+     */
+    protected void enhanceInvocationAndModuleConstruction() {
+        if (!initialized.getAndSet(true)) {
+            invokeEnhancers();
+            decorateComponents();
+            buildModules();
+        }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void decorateComponents() {
+        decoratorRegistrations.sort(Comparator.comparingInt(DecoratorRegistration::order));
+        for (DecoratorRegistration decoratorRegistration : decoratorRegistrations) {
+            for (Identifier id : components.identifiers()) {
+                if (decoratorRegistration.idMatcher.test(id)) {
+                    components.replace(id, previous -> previous.decorate(decoratorRegistration.decorator));
+                }
+            }
+        }
+    }
+
+    /**
+     * Invoke all the {@link #registerEnhancer(ConfigurationEnhancer) registered}
+     * {@link ConfigurationEnhancer enhancers} on this {@code Configurer} implementation in their
+     * {@link ConfigurationEnhancer#order()}. This will ensure all sensible default components and decorators are in
+     * place from these enhancers.
      */
     private void invokeEnhancers() {
         enhancers.stream()
-                 .sorted(Comparator.comparingInt(ConfigurerEnhancer::order))
+                 .sorted(Comparator.comparingInt(ConfigurationEnhancer::order))
                  .forEach(enhancer -> enhancer.enhance(this));
     }
 
@@ -152,27 +184,36 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
      */
     private void buildModules() {
         for (Module<?> module : modules) {
-            moduleConfigurations.add(module.build());
+            moduleConfigurations.add(module.build(config()));
         }
-    }
-
-    @Override
-    public S onStart(int phase, @Nonnull LifecycleHandler startHandler) {
-        throw new UnsupportedOperationException("Registering start handlers is not supported on this configurer.");
-    }
-
-    @Override
-    public S onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
-        throw new UnsupportedOperationException("Registering shutdown handlers is not supported on this configurer.");
     }
 
     /**
      * Returns the {@link NewConfiguration} of this {@link NewConfigurer} implementation.
+     * <p>
+     * Will construct it if it has not been initialized yet.
      *
      * @return The {@link NewConfiguration} of this {@link NewConfigurer} implementation.
      */
     protected NewConfiguration config() {
-        return config;
+        if (this.config == null) {
+            this.config = new LocalConfiguration(parent);
+        }
+        return this.config;
+    }
+
+    /**
+     * Sets the {@link OverrideBehavior} for this configurer.
+     * <p>
+     * Intended for the {@link DefaultAxonApplication} to invoke on
+     * {@link AxonApplication#registerOverrideBehavior(OverrideBehavior)}.
+     *
+     * @param overrideBehavior The override behavior for this {@code AbstractConfigurer}, intended for the
+     *                         {@link DefaultAxonApplication} to use on
+     *                         {@link AxonApplication#registerOverrideBehavior(OverrideBehavior)} invocations.
+     */
+    protected void setOverrideBehavior(OverrideBehavior overrideBehavior) {
+        this.overrideBehavior = overrideBehavior;
     }
 
     /**
@@ -201,9 +242,9 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nonnull String name) {
-            return components.get(new Identifier<>(type, name))
-                             .map(component -> component.init(config(), AbstractConfigurer.this))
-                             .or(() -> optionalFromParent(type, name, () -> null));
+            return components.getUnwrapped(new Identifier<>(type, name))
+                             .or(() -> Optional.ofNullable(fromParent(type, name, () -> null)))
+                             .map(component -> component.init(config(), AbstractConfigurer.this));
         }
 
         @Nonnull
@@ -214,23 +255,36 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
             Identifier<C> identifier = new Identifier<>(type, name);
             Object component = components.computeIfAbsent(
                     identifier,
-                    id -> new Component<>(
-                            identifier,
-                            c -> optionalFromParent(type, name, defaultImpl).orElseGet(defaultImpl)
-                    )
-            ).init(config(), AbstractConfigurer.this);
+                    id -> new Component<>(identifier, c -> fromParent(type, name, defaultImpl))
+            ).init(config(), this);
             return identifier.type().cast(component);
         }
 
-        private <C> Optional<C> optionalFromParent(Class<C> type, String name, Supplier<C> defaultSupplier) {
+        private <C> C fromParent(Class<C> type, String name, Supplier<C> defaultSupplier) {
             return parent != null
-                    ? parent.getOptionalComponent(type, name).or(() -> Optional.ofNullable(defaultSupplier.get()))
-                    : Optional.ofNullable(defaultSupplier.get());
+                    ? parent.getOptionalComponent(type, name).orElseGet(defaultSupplier)
+                    : defaultSupplier.get();
         }
 
         @Override
         public List<NewConfiguration> getModuleConfigurations() {
             return List.copyOf(moduleConfigurations);
         }
+    }
+
+    /**
+     * Private record representing a {@code decorator} registration. All {@code DecoratorRegistrations} are gathered and
+     * invoked during {@link ApplicationConfigurer#build()} of this configurer.
+     *
+     * @param idMatcher The {@code Predicate} used against a {@link Identifier} to validate if the {@code decorator}
+     *                  should be invoked.
+     * @param order     The order of the given {@code decorator} among other decorators.
+     * @param decorator The decoration function for a component of type {@code C}.
+     * @param <C>       The type of component the {@code decorator} decorates.
+     */
+    private record DecoratorRegistration<C>(Predicate<Identifier<C>> idMatcher,
+                                            int order,
+                                            ComponentDecorator<C> decorator) {
+
     }
 }

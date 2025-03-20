@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
-import java.io.Serializable;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -204,7 +203,7 @@ class EventTypeUpcasterTest {
      * A simple event used for testing.
      */
     @SuppressWarnings("unused")
-    private static class TestEvent implements Serializable {
+    private static class TestEvent {
 
         private String testField;
 
@@ -228,7 +227,7 @@ class EventTypeUpcasterTest {
      * Latest revision of {@code TestEvent} (renamed event type).
      */
     @SuppressWarnings("unused")
-    private static class RenamedTestEvent implements Serializable {
+    private static class RenamedTestEvent {
 
         private String testField;
 

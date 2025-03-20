@@ -46,7 +46,7 @@ public interface LifecycleRegistry<S extends LifecycleRegistry<S>> {
      *
      * @param startHandler The handler to execute when the configuration is started.
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
-     * @see RootConfiguration#start()
+     * @see AxonConfiguration#start()
      */
     default S onStart(@Nonnull Runnable startHandler) {
         return onStart(0, startHandler);
@@ -58,11 +58,11 @@ public interface LifecycleRegistry<S extends LifecycleRegistry<S>> {
      * The behavior for handlers that are registered when the Configuration is already started is undefined.
      *
      * @param phase        Defines a {@code phase} in which the start handler will be invoked during
-     *                     {@link RootConfiguration#start()}. When starting the configuration the given handlers are
+     *                     {@link AxonConfiguration#start()}. When starting the configuration the given handlers are
      *                     started in ascending order based on their {@code phase}.
      * @param startHandler The handler to execute when the configuration is started.
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
-     * @see RootConfiguration#start()
+     * @see AxonConfiguration#start()
      */
     default S onStart(int phase, @Nonnull Runnable startHandler) {
         return onStart(phase, () -> {
@@ -84,11 +84,11 @@ public interface LifecycleRegistry<S extends LifecycleRegistry<S>> {
      * The behavior for handlers that are registered when the Configuration is already started is undefined.
      *
      * @param phase        Defines a {@code phase} in which the start handler will be invoked during
-     *                     {@link RootConfiguration#start()}. When starting the configuration the given handlers are
+     *                     {@link AxonConfiguration#start()}. When starting the configuration the given handlers are
      *                     started in ascending order based on their {@code phase}.
      * @param startHandler The handler to be executed asynchronously when the configuration is started.
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
-     * @see RootConfiguration#start()
+     * @see AxonConfiguration#start()
      */
     S onStart(int phase, @Nonnull LifecycleHandler startHandler);
 
@@ -100,7 +100,7 @@ public interface LifecycleRegistry<S extends LifecycleRegistry<S>> {
      *
      * @param shutdownHandler The handler to execute when the Configuration is shut down.
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
-     * @see RootConfiguration#shutdown()
+     * @see AxonConfiguration#shutdown()
      */
     default S onShutdown(@Nonnull Runnable shutdownHandler) {
         return onShutdown(0, shutdownHandler);
@@ -113,11 +113,11 @@ public interface LifecycleRegistry<S extends LifecycleRegistry<S>> {
      * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
      *
      * @param phase           Defines a phase in which the shutdown handler will be invoked during
-     *                        {@link RootConfiguration#shutdown()}. When shutting down the configuration the given
+     *                        {@link AxonConfiguration#shutdown()}. When shutting down the configuration the given
      *                        handlers are executing in descending order based on their {@code phase}
      * @param shutdownHandler The handler to execute when the Configuration is shut down.
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
-     * @see RootConfiguration#shutdown()
+     * @see AxonConfiguration#shutdown()
      */
     default S onShutdown(int phase, Runnable shutdownHandler) {
         return onShutdown(phase, () -> {
@@ -139,11 +139,11 @@ public interface LifecycleRegistry<S extends LifecycleRegistry<S>> {
      * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
      *
      * @param phase           Defines a phase in which the shutdown handler will be invoked during
-     *                        {@link RootConfiguration#shutdown()}. When shutting down the configuration the given
+     *                        {@link AxonConfiguration#shutdown()}. When shutting down the configuration the given
      *                        handlers are executing in descending order based on their {@code phase}.
      * @param shutdownHandler The handler to be executed asynchronously when the Configuration is shut down.
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
-     * @see RootConfiguration#shutdown()
+     * @see AxonConfiguration#shutdown()
      */
     S onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler);
 }

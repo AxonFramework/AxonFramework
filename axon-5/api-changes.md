@@ -161,7 +161,7 @@ retrieve components, and it's modules' components.
 
 So, how do you start Axon's configuration? That depends on what you are going to use from Axon Framework. If you, for
 example, only want to use the basic messaging concepts, you can start with the `MessagingConfigurer`. You can construct
-one through the static `MessagingConfigurer#defaultConfigurer` method. This `MessagingConfigurer` will provide you a
+one through the static `MessagingConfigurer#create` method. This `MessagingConfigurer` will provide you a
 couple of defaults, like the `CommandBus` and `QueryBus`. Furthermore, on this configurer, you are able to provide new
 or replace existing components, decorate these components, and register the aforementioned module-specific `Modules`.
 
@@ -187,7 +187,7 @@ Here's an example of how to register a `DefaultCommandGateway` in Java:
 
 ```java
 public static void main(String[] args) {
-    MessagingConfigurer.defaultConfigurer()
+    MessagingConfigurer.create()
                        .registerComponent(CommandGateway.class, config -> new DefaultCommandGateway(
                                config.getComponent(CommandBus.class),
                                config.getComponent(MessageTypeResolver.class)
@@ -211,7 +211,7 @@ Here's an example of how we can decorate the `SimpleCommandBus` in with a `Compo
 
 ```java
 public static void main(String[] args) {
-    MessagingConfigurer.defaultConfigurer()
+    MessagingConfigurer.create()
                        .registerComponent(CommandBus.class, config -> new SimpleCommandBus())
                        .registerDecorator(
                                CommandBus.class,
@@ -247,7 +247,7 @@ present:
 
 ```java
 public static void main(String[] args) {
-    MessagingConfigurer.defaultConfigurer()
+    MessagingConfigurer.create()
                        .registerEnhancer(configurer -> {
                            if (configurer.hasComponent(CommandBus.class)) {
                                configurer.registerDecorator(
@@ -288,7 +288,7 @@ retrieve those. Down below is an example usage of the `SimpleModule` to achieve 
 
 ```java
 public static void main(String[] args) {
-    MessagingConfigurer.defaultConfigurer()
+    MessagingConfigurer.create()
                        .registerModule(config -> new SimpleModule(config)
                                .registerComponent(CommandBus.class, c -> new SimpleCommandBus())
                        );
@@ -306,30 +306,30 @@ However, the specific `MessagingConfigurer` still has this operation, as registe
 layer is intuitive.
 
 To not overencumber users of the `MessagingConfigurer`, we did not give it lifecycle specific configuration operations
-like the `RootConfigurer#registerLifecyclePhaseTimeout` operation. The same will apply for modelling and event sourcing
+like the `AxonApplication#registerLifecyclePhaseTimeout` operation. The same will apply for modelling and event sourcing
 configurers: these will not override the registration operations of their delegates.
 
 To be able to access a delegate `Configurer`, you can use the `Configurer#delegate` operation:
 
 ```java
 public static void main(String[] args) {
-    MessagingConfigurer.defaultConfigurer()
+    MessagingConfigurer.create()
                        .delegate(
-                               RootConfigurer.class,
-                               root -> root.registerLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS)
+                               AxonApplication.class,
+                               axonApp -> axonApp.registerLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS)
                        )
                        .build();
     // Further configuration...
 }
 ```
 
-As specifying the `Configurer` type can become verbose, the `MessagingConfigurer` has a `root` operation to allow for
+As specifying the `Configurer` type can become verbose, the `MessagingConfigurer` has a `axon` operation to allow for
 the exact same operation:
 
 ```java
 public static void main(String[] args) {
-    MessagingConfigurer.defaultConfigurer()
-                       .root(root -> root.registerLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS))
+    MessagingConfigurer.create()
+                       .axon(axon -> axon.registerLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS))
                        .build();
     // Further configuration...
 }
@@ -393,7 +393,7 @@ This section contains two tables:
 | org.axonframework.config.Configurer                          | org.axonframework.configuration.Configurer                   | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.Configuration                       | org.axonframework.configuration.Configuration                | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.Component                           | org.axonframework.configuration.Component                    | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.ConfigurerModule                    | org.axonframework.configuration.ConfigurerEnhancer           | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.ConfigurerModule                    | org.axonframework.configuration.ConfigurationEnhancer        | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.ModuleConfiguration                 | org.axonframework.configuration.Module                       | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.LifecycleHandler                    | org.axonframework.configuration.LifecycleHandler             | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.LifecycleHandlerInspector           | org.axonframework.configuration.LifecycleHandlerInspector    | Yes. Moved to `axon-messaging` |

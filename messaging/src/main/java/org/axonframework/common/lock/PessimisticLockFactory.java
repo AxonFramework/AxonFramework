@@ -140,8 +140,6 @@ public class PessimisticLockFactory implements LockFactory {
 
     private static final class PubliclyOwnedReentrantLock extends ReentrantLock {
 
-        private static final long serialVersionUID = -2259228494514612163L;
-
         @Override
         public Collection<Thread> getQueuedThreads() { // NOSONAR
             return super.getQueuedThreads();

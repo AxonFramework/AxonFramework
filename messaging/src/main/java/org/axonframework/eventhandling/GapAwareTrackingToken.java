@@ -22,7 +22,6 @@ import org.axonframework.common.Assert;
 import org.axonframework.common.CollectionUtils;
 
 import java.beans.ConstructorProperties;
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
@@ -43,9 +42,7 @@ import java.util.stream.LongStream;
  *
  * @author Rene de Waele
  */
-public class GapAwareTrackingToken implements TrackingToken, Serializable {
-
-    private static final long serialVersionUID = -3190388158060110593L;
+public class GapAwareTrackingToken implements TrackingToken {
 
     private final long index;
     private final SortedSet<Long> gaps;

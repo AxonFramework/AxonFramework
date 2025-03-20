@@ -21,8 +21,6 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.Assert;
 import org.axonframework.common.StringUtils;
 
-import java.io.Serializable;
-
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -45,7 +43,7 @@ import static java.util.Objects.requireNonNull;
  * @see MessageType
  * @since 5.0.0
  */
-public record QualifiedName(@Nonnull String name) implements Serializable {
+public record QualifiedName(@Nonnull String name) {
 
     private static final String DELIMITER = ".";
 

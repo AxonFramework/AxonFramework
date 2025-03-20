@@ -32,18 +32,18 @@ import static java.util.Objects.requireNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class DelegatingConfigurer<S extends NewConfigurer<S>> implements NewConfigurer<S> {
+public class DelegatingConfigurer<S extends ApplicationConfigurer<S>> implements ApplicationConfigurer<S> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final NewConfigurer<?> delegate;
+    private final ApplicationConfigurer<?> delegate;
 
     /**
      * Construct a {@code DelegatingConfigurer} using the given {@code delegate} to delegate all operations to.
      *
      * @param delegate The configurer to delegate all operations too.
      */
-    public DelegatingConfigurer(@Nonnull NewConfigurer<?> delegate) {
+    public DelegatingConfigurer(@Nonnull ApplicationConfigurer<?> delegate) {
         this.delegate = requireNonNull(delegate, "A delegate configuration is required");
     }
 
@@ -67,20 +67,29 @@ public class DelegatingConfigurer<S extends NewConfigurer<S>> implements NewConf
     }
 
     @Override
+    public <C> S registerDecorator(@Nonnull Class<C> type,
+                                   int order,
+                                   @Nonnull ComponentDecorator<C> decorator) {
+        delegate.registerDecorator(type, order, decorator);
+        //noinspection unchecked
+        return (S) this;
+    }
+
+    @Override
     public boolean hasComponent(@Nonnull Class<?> type, @Nonnull String name) {
         return delegate.hasComponent(type, name);
     }
 
     @Override
-    public S registerEnhancer(@Nonnull ConfigurerEnhancer enhancer) {
+    public S registerEnhancer(@Nonnull ConfigurationEnhancer enhancer) {
         delegate.registerEnhancer(enhancer);
         //noinspection unchecked
         return (S) this;
     }
 
     @Override
-    public <M extends Module<M>> S registerModule(@Nonnull ModuleBuilder<M> builder) {
-        delegate.registerModule(builder);
+    public S registerModule(@Nonnull Module<?> module) {
+        delegate.registerModule(module);
         //noinspection unchecked
         return (S) this;
     }

@@ -26,8 +26,6 @@ import org.axonframework.common.AxonTransientException;
  */
 public class DeadlineException extends AxonTransientException {
 
-    private static final long serialVersionUID = 6419272092915164035L;
-
     /**
      * Initializes deadline exception with message and no cause.
      *

@@ -55,6 +55,14 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
     public abstract C testSubject();
 
     /**
+     * Builds the {@link #testSubject()} returning the {@link NewConfiguration} exposing all registered components and
+     * modules.
+     *
+     * @return The result of building the {@link #testSubject()}.
+     */
+    public abstract NewConfiguration build();
+
+    /**
      * Returns type {@code D} that this {@link #testSubject()} can delegate operations to.
      * <p>
      * Returns {@code null} when the implementation does not have a delegate.
@@ -74,7 +82,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             TestComponent testComponent = TEST_COMPONENT;
             testSubject.registerComponent(TestComponent.class, c -> testComponent);
 
-            NewConfiguration config = testSubject.build();
+            NewConfiguration config = build();
 
             assertEquals(testComponent, config.getComponent(TestComponent.class));
         }
@@ -83,7 +91,8 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         void registerComponentExposesRegisteredComponentOnOptionalGet() {
             TestComponent testComponent = TEST_COMPONENT;
             testSubject.registerComponent(TestComponent.class, c -> testComponent);
-            NewConfiguration config = testSubject.build();
+
+            NewConfiguration config = build();
 
             Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class);
 
@@ -93,8 +102,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
 
         @Test
         void getOptionalComponentResultsInEmptyOptionalForUnregisteredComponent() {
-            Optional<TestComponent> result = testSubject.build()
-                                                        .getOptionalComponent(TestComponent.class);
+            Optional<TestComponent> result = build().getOptionalComponent(TestComponent.class);
 
             assertFalse(result.isPresent());
         }
@@ -105,11 +113,10 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             String testNameTwo = "two";
             TestComponent testComponentOne = new TestComponent(testNameOne);
             TestComponent testComponentTwo = new TestComponent(testNameTwo);
+            testSubject.registerComponent(TestComponent.class, testNameOne, c -> testComponentOne)
+                       .registerComponent(TestComponent.class, testNameTwo, c -> testComponentTwo);
 
-            NewConfiguration config =
-                    testSubject.registerComponent(TestComponent.class, testNameOne, c -> testComponentOne)
-                               .registerComponent(TestComponent.class, testNameTwo, c -> testComponentTwo)
-                               .build();
+            NewConfiguration config = build();
 
             assertEquals(testComponentOne, config.getComponent(TestComponent.class, testNameOne));
             assertEquals(testComponentTwo, config.getComponent(TestComponent.class, testNameTwo));
@@ -118,12 +125,12 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         @Test
         void componentBuilderIsInvokedOnceUponRetrievalOfComponent() {
             AtomicInteger invocationCounter = new AtomicInteger(0);
+            testSubject.registerComponent(TestComponent.class, "name", c -> {
+                invocationCounter.incrementAndGet();
+                return TEST_COMPONENT;
+            });
 
-            NewConfiguration config = testSubject.registerComponent(TestComponent.class, "name", c -> {
-                                                     invocationCounter.incrementAndGet();
-                                                     return TEST_COMPONENT;
-                                                 })
-                                                 .build();
+            NewConfiguration config = build();
 
             assertEquals(0, invocationCounter.get());
             config.getComponent(TestComponent.class, "name");
@@ -136,10 +143,10 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         void registeringComponentsForTheSameTypeReplacesThePreviousComponentBuilder() {
             TestComponent testComponent = new TestComponent("replaced-component");
             TestComponent expectedComponent = new TestComponent("the-winner");
+            testSubject.registerComponent(TestComponent.class, c -> testComponent)
+                       .registerComponent(TestComponent.class, c -> expectedComponent);
 
-            NewConfiguration config = testSubject.registerComponent(TestComponent.class, c -> testComponent)
-                                                 .registerComponent(TestComponent.class, c -> expectedComponent)
-                                                 .build();
+            NewConfiguration config = build();
 
             assertNotEquals(testComponent, config.getComponent(TestComponent.class));
             assertEquals(expectedComponent, config.getComponent(TestComponent.class));
@@ -149,11 +156,10 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         void registeringComponentsForTheSameTypeAndNameReplacesThePreviousComponentBuilder() {
             TestComponent testComponent = new TestComponent("replaced-component");
             TestComponent expectedComponent = new TestComponent("the-winner");
+            testSubject.registerComponent(TestComponent.class, "name", c -> testComponent)
+                       .registerComponent(TestComponent.class, "name", c -> expectedComponent);
 
-            NewConfiguration config =
-                    testSubject.registerComponent(TestComponent.class, "name", c -> testComponent)
-                               .registerComponent(TestComponent.class, "name", c -> expectedComponent)
-                               .build();
+            NewConfiguration config = build();
 
             assertNotEquals(testComponent, config.getComponent(TestComponent.class, "name"));
             assertEquals(expectedComponent, config.getComponent(TestComponent.class, "name"));
@@ -163,11 +169,10 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         void registeringComponentsForTheSameTypeAndNameCombinationReplacesThePreviousComponentBuilder() {
             TestComponent testComponent = new TestComponent("replaced-component");
             TestComponent expectedComponent = new TestComponent("the-winner");
+            testSubject.registerComponent(TestComponent.class, "name", c -> testComponent)
+                       .registerComponent(TestComponent.class, "name", c -> expectedComponent);
 
-            NewConfiguration config =
-                    testSubject.registerComponent(TestComponent.class, "name", c -> testComponent)
-                               .registerComponent(TestComponent.class, "name", c -> expectedComponent)
-                               .build();
+            NewConfiguration config = build();
 
             assertNotEquals(testComponent, config.getComponent(TestComponent.class, "name"));
             assertEquals(expectedComponent, config.getComponent(TestComponent.class, "name"));
@@ -178,9 +183,9 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             AtomicBoolean invoked = new AtomicBoolean(false);
             TestComponent defaultComponent = new TestComponent("default");
             TestComponent registeredComponent = TEST_COMPONENT;
+            testSubject.registerComponent(TestComponent.class, "id", c -> registeredComponent);
 
-            NewConfiguration config = testSubject.registerComponent(TestComponent.class, "id", c -> registeredComponent)
-                                                 .build();
+            NewConfiguration config = build();
 
             TestComponent result = config.getComponent(TestComponent.class, "id", () -> {
                 invoked.set(true);
@@ -259,42 +264,86 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
     class ComponentDecoration {
 
         @Test
+        void registerDecoratorDecoratesAllComponentsForMatchingType() {
+            TestComponent foo = new TestComponent("foo");
+            TestComponent bar = new TestComponent("bar");
+            TestComponent baz = new TestComponent("baz");
+
+            String expectedFooState = foo.state() + "-decorate-all-for-type";
+            String expectedBarState = bar.state() + "-decorate-all-for-type";
+            String expectedBazState = baz.state() + "-decorate-all-for-type";
+
+            testSubject.registerDecorator(
+                               TestComponent.class, 0,
+                               (c, name, delegate) -> new TestComponent(delegate.state + "-decorate-all-for-type")
+                       )
+                       .registerComponent(TestComponent.class, "foo", config -> foo)
+                       .registerComponent(TestComponent.class, "bar", config -> bar)
+                       .registerComponent(TestComponent.class, "baz", config -> baz);
+
+            NewConfiguration result = build();
+
+            assertEquals(expectedFooState, result.getComponent(TestComponent.class, "foo").state());
+            assertEquals(expectedBarState, result.getComponent(TestComponent.class, "bar").state());
+            assertEquals(expectedBazState, result.getComponent(TestComponent.class, "baz").state());
+        }
+
+        @Test
+        void registerDecoratorDecoratesSpecificComponentsWhenMatchingOnTypeAndName() {
+            TestComponent foo = new TestComponent("foo");
+            TestComponent bar = new TestComponent("bar");
+            TestComponent baz = new TestComponent("baz");
+
+            String expectedFooState = foo.state();
+            String expectedBarState = bar.state();
+            String expectedBazState = baz.state() + "-decorate-specific-component";
+
+            testSubject.registerDecorator(
+                               TestComponent.class, "baz", 0,
+                               (c, name, delegate) -> new TestComponent(delegate.state + "-decorate-specific-component")
+                       )
+                       .registerComponent(TestComponent.class, "foo", config -> foo)
+                       .registerComponent(TestComponent.class, "bar", config -> bar)
+                       .registerComponent(TestComponent.class, "baz", config -> baz);
+
+            NewConfiguration result = build();
+
+            assertEquals(expectedFooState, result.getComponent(TestComponent.class, "foo").state());
+            assertEquals(expectedBarState, result.getComponent(TestComponent.class, "bar").state());
+            assertEquals(expectedBazState, result.getComponent(TestComponent.class, "baz").state());
+        }
+
+        @Test
         void registerDecoratorDecoratesOutcomeOfComponentBuilderInSpecifiedOrder() {
             String expectedState = TEST_COMPONENT.state() + "123";
 
             testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
                        .registerDecorator(TestComponent.class, 2,
-                                          (c, delegate) -> new TestComponent(delegate.state + "3"))
+                                          (c, name, delegate) -> new TestComponent(delegate.state + "3"))
                        .registerDecorator(TestComponent.class, 1,
-                                          (c, delegate) -> new TestComponent(delegate.state + "2"))
+                                          (c, name, delegate) -> new TestComponent(delegate.state + "2"))
                        .registerDecorator(TestComponent.class, 0,
-                                          (c, delegate) -> new TestComponent(delegate.state + "1"));
+                                          (c, name, delegate) -> new TestComponent(delegate.state + "1"));
 
-            TestComponent result = testSubject.build()
-                                              .getComponent(TestComponent.class);
+            TestComponent result = build().getComponent(TestComponent.class);
 
             assertEquals(expectedState, result.state());
         }
 
         @Test
-        void registerDecoratorReplacesPreviousDecoratorForReusedOrderDecoratesOutcomeOfComponentBuilderInSpecifiedOrder() {
-            String expectedState = TEST_COMPONENT.state() + "bar";
+        void registeredDecoratorIsNotInvokedWhenItDoesNotMatchAnyRegisteredComponent() {
             AtomicBoolean invoked = new AtomicBoolean(false);
 
             testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
-                       .registerDecorator(TestComponent.class, 0,
-                                          (c, delegate) -> {
+                       .registerDecorator(String.class, 0,
+                                          (c, name, delegate) -> {
                                               invoked.set(true);
-                                              return new TestComponent(delegate.state + "foo");
-                                          })
-                       .registerDecorator(TestComponent.class, 0,
-                                          (c, delegate) -> new TestComponent(delegate.state + "bar"));
+                                              return delegate;
+                                          });
 
-            TestComponent result = testSubject.build()
-                                              .getComponent(TestComponent.class);
+            build();
 
             assertFalse(invoked.get());
-            assertEquals(expectedState, result.state());
         }
     }
 
@@ -302,27 +351,29 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
     class ComponentDecorationFailures {
 
         @Test
-        void registerDecoratorThrowsIllegalArgumentExceptionForNonExistingComponentType() {
-            assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.registerDecorator(TestComponent.class, 42, (c, delegate) -> delegate));
-        }
-
-        @Test
         void registerDecoratorThrowsNullPointerExceptionForNullType() {
             testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
 
             //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
-                         () -> testSubject.registerDecorator(null, 42, (c, delegate) -> delegate));
+                         () -> testSubject.registerDecorator(null, 42, (c, name, delegate) -> delegate));
         }
 
         @Test
-        void registerDecoratorThrowsNullPointerExceptionForNullName() {
+        void registerDecoratorThrowsIllegalArgumentExceptionForNullName() {
             testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
 
             //noinspection DataFlowIssue
-            assertThrows(NullPointerException.class,
-                         () -> testSubject.registerDecorator(Object.class, null, 42, (c, delegate) -> delegate));
+            assertThrows(IllegalArgumentException.class,
+                         () -> testSubject.registerDecorator(Object.class, null, 42, (c, name, delegate) -> delegate));
+        }
+
+        @Test
+        void registerDecoratorThrowsIllegalArgumentExceptionForEmptyName() {
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
+
+            assertThrows(IllegalArgumentException.class,
+                         () -> testSubject.registerDecorator(Object.class, "", 42, (c, name, delegate) -> delegate));
         }
 
         @Test
@@ -350,7 +401,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
 
             testSubject.registerEnhancer(configurer -> invoked.set(true));
 
-            testSubject.build();
+            build();
 
             assertTrue(invoked.get());
         }
@@ -361,9 +412,9 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
 
             testSubject.registerEnhancer(configurer -> counter.getAndIncrement());
             // First build
-            testSubject.build();
+            build();
             // Second build
-            testSubject.build();
+            build();
 
             assertEquals(1, counter.get());
         }
@@ -371,7 +422,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         @Test
         void registeredEnhancersAreInvokedBasedOnInsertOrder() {
             //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
-            ConfigurerEnhancer enhancerOne = spy(new ConfigurerEnhancer() {
+            ConfigurationEnhancer enhancerOne = spy(new ConfigurationEnhancer() {
 
                 @Override
                 public void enhance(@Nonnull NewConfigurer<?> configurer) {
@@ -379,25 +430,25 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                 }
             });
             //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
-            ConfigurerEnhancer enhancerTwo = spy(new ConfigurerEnhancer() {
+            ConfigurationEnhancer enhancerTwo = spy(new ConfigurationEnhancer() {
                 @Override
                 public void enhance(@Nonnull NewConfigurer<?> configurer) {
                     // Not important, so do nothing.
                 }
             });
             //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
-            ConfigurerEnhancer enhancerThree = spy(new ConfigurerEnhancer() {
+            ConfigurationEnhancer enhancerThree = spy(new ConfigurationEnhancer() {
 
                 @Override
                 public void enhance(@Nonnull NewConfigurer<?> configurer) {
                     // Not important, so do nothing.
                 }
             });
-
             testSubject.registerEnhancer(enhancerOne)
                        .registerEnhancer(enhancerTwo)
-                       .registerEnhancer(enhancerThree)
-                       .build();
+                       .registerEnhancer(enhancerThree);
+
+            build();
 
             InOrder enhancementOrder = inOrder(enhancerOne, enhancerTwo, enhancerThree);
             enhancementOrder.verify(enhancerOne).enhance(any());
@@ -407,7 +458,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
 
         @Test
         void registeredEnhancersAreInvokedBasedOnDefinedOrder() {
-            ConfigurerEnhancer enhancerWithLowOrder = spy(new ConfigurerEnhancer() {
+            ConfigurationEnhancer enhancerWithLowOrder = spy(new ConfigurationEnhancer() {
 
                 @Override
                 public void enhance(@Nonnull NewConfigurer<?> configurer) {
@@ -421,14 +472,14 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             });
 
             //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
-            ConfigurerEnhancer enhancerWithDefaultOrder = spy(new ConfigurerEnhancer() {
+            ConfigurationEnhancer enhancerWithDefaultOrder = spy(new ConfigurationEnhancer() {
                 @Override
                 public void enhance(@Nonnull NewConfigurer<?> configurer) {
                     // Not important, so do nothing.
                 }
             });
 
-            ConfigurerEnhancer enhancerWithHighOrder = spy(new ConfigurerEnhancer() {
+            ConfigurationEnhancer enhancerWithHighOrder = spy(new ConfigurationEnhancer() {
 
                 @Override
                 public void enhance(@Nonnull NewConfigurer<?> configurer) {
@@ -440,11 +491,11 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                     return 42;
                 }
             });
-
             testSubject.registerEnhancer(enhancerWithDefaultOrder)
                        .registerEnhancer(enhancerWithHighOrder)
-                       .registerEnhancer(enhancerWithLowOrder)
-                       .build();
+                       .registerEnhancer(enhancerWithLowOrder);
+
+            build();
 
             InOrder enhancementOrder = inOrder(enhancerWithLowOrder, enhancerWithDefaultOrder, enhancerWithHighOrder);
             enhancementOrder.verify(enhancerWithLowOrder).enhance(any());
@@ -458,7 +509,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                     configurer -> configurer.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
             );
 
-            NewConfiguration config = testSubject.build();
+            NewConfiguration config = build();
 
             assertEquals(TEST_COMPONENT, config.getComponent(TestComponent.class));
         }
@@ -466,13 +517,13 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         @Test
         void registeredEnhancersCanDecorateComponents() {
             TestComponent expected = new TestComponent(TEST_COMPONENT.state() + "-decorated");
-            ConfigurerEnhancer enhancer = configurer -> configurer.registerDecorator(
-                    TestComponent.class, 0, (c, delegate) -> new TestComponent(delegate.state() + "-decorated")
+            ConfigurationEnhancer enhancer = configurer -> configurer.registerDecorator(
+                    TestComponent.class, 0, (c, name, delegate) -> new TestComponent(delegate.state() + "-decorated")
             );
             testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
                        .registerEnhancer(enhancer);
 
-            NewConfiguration config = testSubject.build();
+            NewConfiguration config = build();
 
             assertEquals(expected, config.getComponent(TestComponent.class));
         }
@@ -485,7 +536,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                        .registerEnhancer(configurer -> configurer.registerComponent(TestComponent.class,
                                                                                     c -> expected));
 
-            NewConfiguration config = testSubject.build();
+            NewConfiguration config = build();
 
             assertNotEquals(TEST_COMPONENT, config.getComponent(TestComponent.class));
             assertEquals(expected, config.getComponent(TestComponent.class));
@@ -502,7 +553,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                            }
                        });
 
-            NewConfiguration config = testSubject.build();
+            NewConfiguration config = build();
 
             assertEquals(TEST_COMPONENT, config.getComponent(TestComponent.class));
             assertEquals(expected, config.getComponent(TestComponent.class, "conditional"));
@@ -520,10 +571,10 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
 
         @Test
         void registerModuleExposesModulesConfigurationsUponBuild() {
-            testSubject.registerModule(TestModule::new)
-                       .registerModule(TestModule::new);
+            testSubject.registerModule(new TestModule("one"))
+                       .registerModule(new TestModule("two"));
 
-            List<NewConfiguration> result = testSubject.build().getModuleConfigurations();
+            List<NewConfiguration> result = build().getModuleConfigurations();
 
             assertEquals(2, result.size());
         }
@@ -536,7 +587,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
 
             testSubject.registerComponent(TestComponent.class, "root", rootConfig -> rootComponent)
                        .registerModule(
-                               rootConfig -> new TestModule(rootConfig)
+                               new TestModule("one")
                                        .registerComponent(
                                                TestComponent.class, "one",
                                                c -> c.getOptionalComponent(TestComponent.class, "root")
@@ -544,7 +595,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                                                      .orElseThrow()
                                        )
                                        .registerModule(
-                                               moduleConfig -> new TestModule(moduleConfig)
+                                               new TestModule("two")
                                                        .registerComponent(
                                                                TestComponent.class, "two",
                                                                c -> c.getOptionalComponent(TestComponent.class, "root")
@@ -557,7 +608,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                        );
 
             // Root configurer outcome only has own components.
-            NewConfiguration rootConfig = testSubject.build();
+            NewConfiguration rootConfig = build();
             assertEquals(rootComponent, rootConfig.getComponent(TestComponent.class, "root"));
             assertFalse(rootConfig.getOptionalComponent(TestComponent.class, "one").isPresent());
             assertFalse(rootConfig.getOptionalComponent(TestComponent.class, "two").isPresent());
@@ -584,16 +635,16 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             TestComponent rightModuleComponent = new TestComponent("right");
             testSubject.registerComponent(TestComponent.class, "root", rootConfig -> rootComponent)
                        .registerModule(
-                               rootConfig -> new TestModule(rootConfig)
+                               new TestModule("left")
                                        .registerComponent(TestComponent.class, "left", c -> leftModuleComponent)
                        )
                        .registerModule(
-                               rootConfig -> new TestModule(rootConfig)
+                               new TestModule("right")
                                        .registerComponent(TestComponent.class, "right", c -> rightModuleComponent)
                        );
 
             // Root configurer outcome only has own components.
-            NewConfiguration rootConfig = testSubject.build();
+            NewConfiguration rootConfig = build();
             assertEquals(rootComponent, rootConfig.getComponent(TestComponent.class, "root"));
             assertFalse(rootConfig.getOptionalComponent(TestComponent.class, "one").isPresent());
             assertFalse(rootConfig.getOptionalComponent(TestComponent.class, "two").isPresent());
@@ -621,31 +672,31 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                        )
                        .registerDecorator(
                                TestComponent.class, 0,
-                               (rootConfig, delegate) -> new TestComponent(
+                               (rootConfig, name, delegate) -> new TestComponent(
                                        delegate.state() + "-decorated-by-root"
                                )
                        )
                        .registerModule(
-                               rootConfig -> new TestModule(rootConfig)
+                               new TestModule("level-one")
                                        .registerComponent(
                                                TestComponent.class,
                                                c -> new TestComponent("level-one")
                                        )
                                        .registerDecorator(
                                                TestComponent.class, 0,
-                                               (config, delegate) -> new TestComponent(
+                                               (config, name, delegate) -> new TestComponent(
                                                        delegate.state() + "-decorated-by-level-one"
                                                )
                                        )
                                        .registerModule(
-                                               moduleConfig -> new TestModule(moduleConfig)
+                                               new TestModule("level-two")
                                                        .registerComponent(
                                                                TestComponent.class,
                                                                config -> new TestComponent("level-two")
                                                        )
                                                        .registerDecorator(
                                                                TestComponent.class, 0,
-                                                               (config, delegate) -> new TestComponent(
+                                                               (config, name, delegate) -> new TestComponent(
                                                                        delegate.state() + "-decorated-by-level-two"
                                                                )
                                                        )
@@ -653,7 +704,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                        );
 
             // Check decoration on root level.
-            NewConfiguration root = testSubject.build();
+            NewConfiguration root = build();
             assertEquals(expectedRootComponentState, root.getComponent(TestComponent.class).state());
             assertNotEquals(expectedLevelOneComponentState, root.getComponent(TestComponent.class).state());
             assertNotEquals(expectedLevelTwoComponentState, root.getComponent(TestComponent.class).state());
@@ -678,16 +729,13 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             AtomicBoolean invoked = new AtomicBoolean(false);
             TestComponent defaultComponent = new TestComponent("default");
             TestComponent registeredComponent = TEST_COMPONENT;
-
-            NewConfiguration rootConfig =
-                    testSubject.registerModule(
-                                       config -> new TestModule(config)
+            testSubject.registerModule(new TestModule("test-module")
                                                .registerComponent(
                                                        TestComponent.class, "id",
                                                        c -> registeredComponent
-                                               )
-                               )
-                               .build();
+                                               ));
+
+            NewConfiguration rootConfig = build();
 
             TestComponent result = rootConfig.getComponent(TestComponent.class, "id", () -> {
                 invoked.set(true);
@@ -766,8 +814,22 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
 
     protected static class TestModule extends AbstractConfigurer<TestModule> implements Module<TestModule> {
 
-        protected TestModule(@Nullable NewConfiguration parent) {
-            super(parent);
+        private final String name;
+
+        protected TestModule(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String name() {
+            return this.name;
+        }
+
+        @Override
+        public NewConfiguration build(@Nonnull NewConfiguration parent) {
+            super.setParent(parent);
+            super.enhanceInvocationAndModuleConstruction();
+            return super.config();
         }
     }
 }

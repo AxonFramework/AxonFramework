@@ -22,7 +22,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.axonframework.common.Assert;
 
 import java.beans.ConstructorProperties;
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -36,9 +35,7 @@ import java.util.StringJoiner;
  * @author Greg Woods
  * @since 4.2
  */
-public class MultiSourceTrackingToken implements TrackingToken, Serializable {
-
-    private static final long serialVersionUID = 4541799074835933645L;
+public class MultiSourceTrackingToken implements TrackingToken {
 
     @JsonTypeInfo(use = JsonTypeInfo.Id.MINIMAL_CLASS)
     private final Map<String, TrackingToken> trackingTokens;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.axonframework.messaging.ScopeDescriptor;
 
 import java.beans.ConstructorProperties;
-import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -34,8 +33,6 @@ import static org.axonframework.common.Assert.notNull;
  * @since 3.3
  */
 public class AggregateScopeDescriptor implements ScopeDescriptor {
-
-    private static final long serialVersionUID = 3584695571254668002L;
 
     private final String type;
     private Object identifier;
@@ -98,15 +95,6 @@ public class AggregateScopeDescriptor implements ScopeDescriptor {
     @Override
     public String scopeDescription() {
         return String.format("AggregateScopeDescriptor for type [%s] and identifier [%s]", type, getIdentifier());
-    }
-
-    /**
-     * This function is provided for Java serialization, such that it will ensure the {@code identifierSupplier} is
-     * called, thus setting the {@code identifier}, prior to serializing this AggregateScopeDescriptor.
-     */
-    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
-        getIdentifier();
-        out.defaultWriteObject();
     }
 
     @Override

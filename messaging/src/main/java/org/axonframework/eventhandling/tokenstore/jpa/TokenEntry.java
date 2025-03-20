@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.axonframework.common.DateTimeUtils;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.serialization.*;
 
-import java.io.Serializable;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
@@ -226,8 +225,7 @@ public class TokenEntry {
      * Primary key for token entries used by JPA
      */
     @SuppressWarnings("UnusedDeclaration")
-    public static class PK implements Serializable {
-        private static final long serialVersionUID = 1L;
+    public static class PK {
 
         private String processorName;
         private int segment;

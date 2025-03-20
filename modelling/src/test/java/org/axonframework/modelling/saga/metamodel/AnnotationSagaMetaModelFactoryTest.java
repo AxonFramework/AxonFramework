@@ -154,8 +154,6 @@ class AnnotationSagaMetaModelFactoryTest {
 
     private static class FooException extends AxonException {
 
-        private static final long serialVersionUID = 6212176261668474654L;
-
         public FooException(String message) {
             super(message);
         }

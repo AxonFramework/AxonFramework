@@ -16,6 +16,10 @@
 
 package org.axonframework.configuration;
 
+import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -23,39 +27,43 @@ import java.util.concurrent.locks.ReentrantLock;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
-
 /**
- * Test suite validating the workings of the lifecycle operations registered and invoked on {@link StartableConfigurer}
- * implementations and the resulting {@link RootConfiguration}.
+ * Test suite validating the workings of the lifecycle operations registered and invoked on {@link NewConfigurer}
+ * implementations and the resulting {@link AxonConfiguration}.
  * <p>
  * As such, operations like the {@link LifecycleRegistry#onStart(int, LifecycleHandler)},
- * {@link LifecycleRegistry#onShutdown(int, LifecycleHandler)}, {@link RootConfigurer#start()},
- * {@link RootConfiguration#start()} and {@link RootConfiguration#shutdown()} will be tested.
+ * {@link LifecycleRegistry#onShutdown(int, LifecycleHandler)}, {@link AxonApplication#start()},
+ * {@link AxonConfiguration#start()} and {@link AxonConfiguration#shutdown()} will be tested.
  *
  * @author Steven van Beelen
  */
-public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableConfigurer<?>> {
+public abstract class ConfigurerLifecycleOperationTestSuite<C extends ApplicationConfigurer<?>> {
 
     private static final String START_FAILURE_EXCEPTION_MESSAGE = "some start failure";
 
-    protected S testSubject;
+    protected C configurer;
 
     @BeforeEach
     void setUp() {
-        testSubject = buildConfigurer();
+        configurer = createConfigurer();
     }
 
     /**
-     * Builds the {@link StartableConfigurer} of type {@code S} to be used in this test suite for validating its
-     * start-up and shutdown behavior.
+     * Builds the {@link NewConfigurer} of type {@code C} to be used in this test suite for validating its start-up and
+     * shutdown behavior.
      *
-     * @return The {@link StartableConfigurer} of type {@code S} to be used in this test suite for validating its
-     * start-up and shutdown behavior.
+     * @return The {@link NewConfigurer} of type {@code C} to be used in this test suite for validating its start-up and
+     * shutdown behavior.
      */
-    public abstract S buildConfigurer();
+    public abstract C createConfigurer();
+
+    /**
+     * Starts the given {@code configurer}.
+     *
+     * @param configurer The {@link NewConfigurer} implementation to start.
+     * @return The {@link AxonConfiguration} resulting out of starting the given {@code configurer}.
+     */
+    public abstract AxonConfiguration start(C configurer);
 
     @Test
     void startLifecycleHandlersAreInvokedInAscendingPhaseOrder() {
@@ -91,7 +99,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
         testSubject.onStart(1, phaseOneHandler::start);
         testSubject.onStart(0, phaseZeroHandler::start);
 
-        testSubject.start();
+        this.start(configurer);
 
         InOrder lifecycleOrder =
                 inOrder(phaseZeroHandler, phaseOneHandler, phaseTenHandler, phaseOverNineThousandHandler);

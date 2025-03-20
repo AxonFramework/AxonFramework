@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.assertThat;
@@ -52,7 +53,6 @@ public class Component<C> {
 
     private final Identifier<C> identifier;
     private final ComponentFactory<C> factory;
-    private final SortedMap<Integer, ComponentDecorator<C>> decorators = new TreeMap<>();
 
     private C instance;
 
@@ -72,6 +72,8 @@ public class Component<C> {
      * Retrieves the object contained in this {@code Component}, triggering the {@link ComponentFactory factory} and all
      * attached {@link ComponentDecorator decorators} if the component hasn't been built yet.
      * <p>
+     * This operation is {@code synchronized}, allowing the configuration to be thread-safe.
+     * <p>
      * Upon initiation of the instance the
      * {@link LifecycleHandlerInspector#registerLifecycleHandlers(LifecycleRegistry, Object)} methods will be called to
      * resolve and register lifecycle methods.
@@ -82,8 +84,8 @@ public class Component<C> {
      *                          {@link Lifecycle}.
      * @return The initialized component contained in this instance.
      */
-    public C init(@Nonnull NewConfiguration configuration,
-                  @Nonnull LifecycleRegistry<?> lifecycleRegistry) {
+    public synchronized C init(@Nonnull NewConfiguration configuration,
+                               @Nonnull LifecycleRegistry<?> lifecycleRegistry) {
         if (instance != null) {
             return instance;
         }
@@ -91,8 +93,6 @@ public class Component<C> {
         requireNonNull(lifecycleRegistry, "The lifecycle registry cannot be null.");
 
         instance = factory.build(configuration);
-        decorators.values()
-                  .forEach(decorator -> instance = decorator.decorate(configuration, instance));
         logger.debug("Instantiated component [{}]: {}", identifier, instance);
 
 
@@ -104,36 +104,26 @@ public class Component<C> {
     }
 
     /**
-     * Decorates the contained component upon {@link #init(NewConfiguration, LifecycleRegistry) initialization} by
-     * passing it through the given {@code decorator} at the specified {@code order}.
-     * <p>
-     * The {@code order} of the {@code decorator} will impact the decoration ordering of the outcome of this component.
-     * Will override previously registered {@link ComponentDecorator ComponentDecorators} if there already was one
-     * present at the given {@code order}.
-     *
-     * @param decorator The {@code ComponentDecorator} to use on the contained component upon
-     *                  {@link #init(NewConfiguration, LifecycleRegistry) initialization}.
-     * @param order     Defines the ordering of the given {@code decorator} among all other
-     *                  {@link ComponentDecorator ComponentDecorators} that have been registered.
-     * @return This {@code Component}, for a fluent API.
-     */
-    public Component<C> decorate(@Nonnull ComponentDecorator<C> decorator,
-                                 int order) {
-        ComponentDecorator<C> previous =
-                decorators.put(order, requireNonNull(decorator, "Component decorators cannot be null."));
-        if (previous != null) {
-            logger.warn("Replaced decorator [{}] at order [{}] with [{}].", previous, order, decorator);
-        }
-        return this;
-    }
-
-    /**
      * Checks if this {@code Component} is already initialized.
+     * <p>
+     * This operation is {@code synchronized}, allowing the configuration to be thread-safe.
      *
      * @return {@code true} if this {@code Component} is initialized, {@code false} otherwise.
      */
-    public boolean isInitialized() {
+    public synchronized boolean isInitialized() {
         return instance != null;
+    }
+
+    /**
+     * Returns a {@code Component} that decorates this component, calling given {@code decorator} to wrap (or replace)
+     * the instance created by this {@code Component}.
+     *
+     * @param decorator The function that decorates the instance contained in this component.
+     * @return A new component that represents the decorated instance.
+     */
+    public Component<C> decorate(ComponentDecorator<C> decorator) {
+        return new Component<>(identifier, configSupplier,
+                               config -> decorator.decorate(config, identifier.name(), get()));
     }
 
     /**

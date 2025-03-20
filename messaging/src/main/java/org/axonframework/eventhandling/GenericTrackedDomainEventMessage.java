@@ -18,7 +18,6 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.messaging.Message;
 
-import java.io.Serial;
 import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -37,8 +36,6 @@ public class GenericTrackedDomainEventMessage<T>
         extends GenericDomainEventMessage<T>
         implements TrackedEventMessage<T> {
 
-    @Serial
-    private static final long serialVersionUID = 6211645167637822558L;
     private final TrackingToken trackingToken;
 
     /**

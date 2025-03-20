@@ -29,3 +29,4 @@ org.axonframework.messaging.annotation.ResultParameterResolverFactory
 org.axonframework.messaging.annotation.ScopeDescriptorParameterResolverFactory
 org.axonframework.messaging.annotation.AggregateTypeParameterResolverFactory
 org.axonframework.messaging.deadletter.DeadLetterParameterResolverFactory
+org.axonframework.messaging.unitofwork.ProcessingContextParameterResolverFactory

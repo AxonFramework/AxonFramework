@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package org.axonframework.test.aggregate;
 
 /** @author Allard Buijze */
 class StrangeCommandReceivedException extends RuntimeException {
-
-    private static final long serialVersionUID = -486498386422064414L;
 
     StrangeCommandReceivedException(String message) {
         super(message);

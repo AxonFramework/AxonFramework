@@ -18,29 +18,10 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.config.CommandBusBuilder;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
-import org.axonframework.common.FutureUtils;
-import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventhandling.SimpleEventBus;
-import org.axonframework.eventhandling.gateway.DefaultEventGateway;
-import org.axonframework.eventhandling.gateway.EventGateway;
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.queryhandling.DefaultQueryGateway;
-import org.axonframework.queryhandling.LoggingQueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryBus;
-import org.axonframework.queryhandling.QueryGateway;
-import org.axonframework.queryhandling.QueryInvocationErrorHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
-import org.axonframework.queryhandling.SimpleQueryBus;
-import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
 
-import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -73,7 +54,7 @@ import java.util.function.Consumer;
  */
 public class MessagingConfigurer
         extends DelegatingConfigurer<MessagingConfigurer>
-        implements StartableConfigurer<MessagingConfigurer> {
+        implements ApplicationConfigurer<MessagingConfigurer> {
 
     /**
      * Build a default {@code MessagingConfigurer} instance with several messaging defaults, as well as methods to
@@ -81,48 +62,21 @@ public class MessagingConfigurer
      * <p>
      * Besides the specific operations, the {@code MessagingConfigurer} allows for configuring generic
      * {@link Component components}, {@link ComponentDecorator component decorators},
-     * {@link ConfigurerEnhancer enhancers}, and {@link Module modules} for a message-driven application.
+     * {@link ConfigurationEnhancer enhancers}, and {@link Module modules} for a message-driven application.
      *
      * @return A {@code MessagingConfigurer} instance for further configuring.
      */
-    public static MessagingConfigurer defaultConfigurer() {
-        return configurer(true);
+    public static MessagingConfigurer create() {
+        return new MessagingConfigurer(AxonApplication.create())
+                .registerEnhancer(new MessagingConfigurationDefaults());
     }
 
     /**
-     * Build a {@code MessagingConfigurer} instance with several messaging defaults, as well as methods to register
-     * (e.g.) a {@link #registerCommandBus(ComponentFactory) command bus}.
-     * <p>
-     * Besides the specific operations, the {@code MessagingConfigurer} allows for configuring generic
-     * {@link Component components}, {@link ComponentDecorator component decorators},
-     * {@link ConfigurerEnhancer enhancers}, and {@link Module modules} for a message-driven application.
-     * <p>
-     * When {@code autoLocateEnhancers} is {@code true}, a {@link ServiceLoader} will be used to locate all declared
-     * instances of type {@link ConfigurerEnhancer}. Each of the discovered instances will be invoked, allowing it to
-     * set default values for the returned {@code MessagingConfigurer}.
+     * Constructs a {@code MessagingConfigurer} based on the given {@code delegate}.
      *
-     * @param autoLocateEnhancers Flag indicating whether {@link ConfigurerEnhancer} on the classpath should be
-     *                            automatically retrieved. Should be set to {@code false} when using an application
-     *                            container, such as Spring or CDI.
-     * @return A {@code MessagingConfigurer} instance for further configuring.
+     * @param delegate The delegate {@code AxonApplication} the {@code MessagingConfigurer} is based on.
      */
-    public static MessagingConfigurer configurer(boolean autoLocateEnhancers) {
-        return new MessagingConfigurer(RootConfigurer.configurer(autoLocateEnhancers))
-                .registerComponent(MessageTypeResolver.class, MessagingConfigurer::defaultMessageTypeResolver)
-                .registerComponent(CommandGateway.class, MessagingConfigurer::defaultCommandGateway)
-                .registerComponent(CommandBus.class, MessagingConfigurer::defaultCommandBus)
-                .registerComponent(EventGateway.class, MessagingConfigurer::defaultEventGateway)
-                .registerComponent(EventSink.class, MessagingConfigurer::defaultEventSink)
-                .registerComponent(EventBus.class, MessagingConfigurer::defaultEventBus)
-                .registerComponent(QueryGateway.class, MessagingConfigurer::defaultQueryGateway)
-                .registerComponent(QueryBus.class, MessagingConfigurer::defaultQueryBus)
-                .registerComponent(QueryUpdateEmitter.class, MessagingConfigurer::defaultQueryUpdateEmitter);
-    }
-
-    /**
-     * Private constructor to enforce usage of {@link #defaultConfigurer()} or {@link #configurer(boolean)}.
-     */
-    private MessagingConfigurer(@Nonnull RootConfigurer delegate) {
+    public MessagingConfigurer(@Nonnull AxonApplication delegate) {
         super(delegate);
     }
 
@@ -181,84 +135,30 @@ public class MessagingConfigurer
     }
 
     /**
-     * Delegates the given {@code configureTask} to the {@link RootConfigurer} this {@code MessagingConfigurer}
+     * Delegates the given {@code configureTask} to the {@link AxonApplication} this {@code MessagingConfigurer}
      * delegates to.
      * <p>
-     * Use this operation to invoke registration methods that only exist on the {@code RootConfigurer}.
+     * Use this operation to invoke registration methods that only exist on the {@code AxonApplication}.
      *
-     * @param configureTask Lambda consuming the delegate {@link RootConfigurer}.
+     * @param configureTask Lambda consuming the delegate {@link AxonApplication}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public MessagingConfigurer root(@Nonnull Consumer<RootConfigurer> configureTask) {
-        return delegate(RootConfigurer.class, configureTask);
+    public MessagingConfigurer application(@Nonnull Consumer<AxonApplication> configureTask) {
+        return delegate(AxonApplication.class, configureTask);
     }
 
+    /**
+     * {@link #build() Builds the configuration} and starts it immediately.
+     * <p>
+     * It is not recommended to change any configuration on {@code this StartableConfigurer} once this method is
+     * called.
+     *
+     * @return The fully initialized and started {@link AxonConfiguration}.
+     */
     @Override
-    public RootConfiguration start() {
-        AtomicReference<RootConfigurer> rootReference = new AtomicReference<>();
-        root(rootReference::set);
-        return rootReference.get().start();
-    }
-
-    private static MessageTypeResolver defaultMessageTypeResolver(NewConfiguration config) {
-        return new ClassBasedMessageTypeResolver();
-    }
-
-    private static CommandBus defaultCommandBus(NewConfiguration config) {
-        // TODO #3067 - Discuss to adjust this to registerComponent-and-Decorator invocations
-        CommandBusBuilder commandBusBuilder = CommandBusBuilder.forSimpleCommandBus();
-        config.getOptionalComponent(TransactionManager.class)
-              .ifPresent(commandBusBuilder::withTransactions);
-        return commandBusBuilder.build();
-    }
-
-    private static CommandGateway defaultCommandGateway(NewConfiguration config) {
-        return new DefaultCommandGateway(
-                config.getComponent(CommandBus.class),
-                config.getComponent(MessageTypeResolver.class)
-        );
-    }
-
-    private static EventBus defaultEventBus(NewConfiguration config) {
-        return SimpleEventBus.builder()
-                             .build();
-    }
-
-    private static EventSink defaultEventSink(NewConfiguration config) {
-        EventBus eventBus = config.getComponent(EventBus.class);
-        return (context, events) -> {
-            eventBus.publish(events);
-            return FutureUtils.emptyCompletedFuture();
-        };
-    }
-
-    private static EventGateway defaultEventGateway(NewConfiguration config) {
-        return DefaultEventGateway.builder()
-                                  .eventBus(config.getComponent(EventBus.class))
-                                  .build();
-    }
-
-    private static QueryGateway defaultQueryGateway(NewConfiguration config) {
-        return DefaultQueryGateway.builder()
-                                  .queryBus(config.getComponent(QueryBus.class))
-                                  .build();
-    }
-
-    private static QueryBus defaultQueryBus(NewConfiguration config) {
-        return SimpleQueryBus.builder()
-                             .transactionManager(config.getComponent(
-                                     TransactionManager.class,
-                                     NoTransactionManager::instance
-                             ))
-                             .errorHandler(config.getComponent(
-                                     QueryInvocationErrorHandler.class,
-                                     () -> LoggingQueryInvocationErrorHandler.builder().build()
-                             ))
-                             .queryUpdateEmitter(config.getComponent(QueryUpdateEmitter.class))
-                             .build();
-    }
-
-    private static QueryUpdateEmitter defaultQueryUpdateEmitter(NewConfiguration config) {
-        return SimpleQueryUpdateEmitter.builder().build();
+    public AxonConfiguration start() {
+        AtomicReference<AxonApplication> axonReference = new AtomicReference<>();
+        application(axonReference::set);
+        return axonReference.get().start();
     }
 }

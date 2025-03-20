@@ -23,7 +23,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.beans.ConstructorProperties;
-import java.io.Serializable;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -36,9 +35,7 @@ import java.util.OptionalLong;
  * @author Allard Buijze
  * @since 4.1
  */
-public class MergedTrackingToken implements TrackingToken, Serializable, WrappedToken {
-
-    private static final long serialVersionUID = 382974732408053911L;
+public class MergedTrackingToken implements TrackingToken, WrappedToken {
 
     private final TrackingToken lowerSegmentToken;
     private final TrackingToken upperSegmentToken;

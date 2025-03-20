@@ -17,59 +17,117 @@
 package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.BuilderUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+
+import static java.util.Objects.requireNonNull;
+import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 
 /**
- * TODO This should be regarded as a playground object to verify the API. Feel free to remove, adjust, or replicate this class to your needs.
+ * A simple implementation of the {@link CommandHandlingComponent} interface, allowing for easy registration of
+ * {@link CommandHandler CommandHandlers} and other {@link CommandHandlingComponent CommandHandlingComponents}.
+ * <p>
+ * Registered subcomponents are preferred over registered command handlers when handling a command.
  *
- * @author Steven van Beelen
  * @since 5.0.0
+ * @author Allard Buijze
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
+ * @author Mateusz Nowak
  */
-public class SimpleCommandHandlingComponent implements CommandHandlingComponent {
+public class SimpleCommandHandlingComponent implements
+        CommandHandlingComponent,
+        CommandHandlerRegistry<SimpleCommandHandlingComponent>,
+        DescribableComponent {
 
-    private final ConcurrentHashMap<QualifiedName, CommandHandler> commandHandlers;
+    private final String name;
+    private final Map<QualifiedName, CommandHandler> commandHandlers = new HashMap<>();
+    private final Set<CommandHandlingComponent> subComponents = new HashSet<>();
 
-    public SimpleCommandHandlingComponent() {
-        this.commandHandlers = new ConcurrentHashMap<>();
+    /**
+     * Instantiates a simple {@link CommandHandlingComponent} that is able to handle commands and delegate them to
+     * subcomponents.
+     *
+     * @param name The name of the component, used for {@link DescribableComponent describing} the component.
+     */
+    public static SimpleCommandHandlingComponent create(@Nonnull String name) {
+        return new SimpleCommandHandlingComponent(name);
+    }
+
+    private SimpleCommandHandlingComponent(@Nonnull String name) {
+        assertNonEmpty(name, "The name may not be null or empty");
+        this.name = name;
+    }
+
+    @Override
+    public SimpleCommandHandlingComponent subscribe(@Nonnull QualifiedName name,
+                                                    @Nonnull CommandHandler commandHandler) {
+        commandHandlers.put(
+                requireNonNull(name, "The name of the command handler may not be null"),
+                requireNonNull(commandHandler, "The command handler may not be null")
+        );
+        return this;
+    }
+
+    @Override
+    public SimpleCommandHandlingComponent subscribe(@Nonnull CommandHandlingComponent commandHandlingComponent) {
+        requireNonNull(commandHandlingComponent, "The command handling component may not be null");
+        subComponents.add(commandHandlingComponent);
+        return this;
     }
 
     @Nonnull
     @Override
     public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                           @Nonnull ProcessingContext context) {
-        QualifiedName name = command.type().qualifiedName();
+        QualifiedName qualifiedName = command.type().qualifiedName();
         // TODO #3103 - add interceptor knowledge
-        CommandHandler handler = commandHandlers.get(name);
-        if (handler == null) {
-            // TODO this would benefit from a dedicate exception
-            return MessageStream.failed(new IllegalArgumentException(
-                    "No handler found for command with name [" + name + "]"
-            ));
+        Optional<CommandHandlingComponent> optionalSubHandler = subComponents
+                .stream()
+                .filter(subComponent ->
+                                subComponent.supportedCommands().contains(qualifiedName)
+                )
+                .findFirst();
+
+        if (optionalSubHandler.isPresent()) {
+            return optionalSubHandler.get().handle(command, context);
         }
-        return handler.handle(command, context);
+
+
+        if (commandHandlers.containsKey(qualifiedName)) {
+            return commandHandlers.get(qualifiedName).handle(command, context);
+        }
+        return MessageStream.failed(new NoHandlerForCommandException(
+                "No handler was subscribed for command with qualified name [%s] on component [%s]. Registered handlers: [%s]".formatted(
+                        qualifiedName.fullName(),
+                        this.getClass().getName(),
+                        supportedCommands()
+                ))
+        );
     }
 
     @Override
-    public SimpleCommandHandlingComponent subscribe(@Nonnull Set<QualifiedName> names,
-                                                    @Nonnull CommandHandler handler) {
-        names.forEach(name -> commandHandlers.put(name, Objects.requireNonNull(handler, "TODO")));
-        return this;
-    }
-
-    @Override
-    public SimpleCommandHandlingComponent subscribe(@Nonnull QualifiedName name,
-                                                    @Nonnull CommandHandler messageHandler) {
-        return subscribe(Set.of(name), messageHandler);
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("name", name);
+        descriptor.describeProperty("commandHandlers", commandHandlers);
+        descriptor.describeProperty("subComponents", subComponents);
     }
 
     @Override
     public Set<QualifiedName> supportedCommands() {
-        return Set.copyOf(commandHandlers.keySet());
+        var combinedNames = new HashSet<>(commandHandlers.keySet());
+        subComponents.forEach(subComponent -> combinedNames.addAll(subComponent.supportedCommands()));
+        return combinedNames;
     }
 }

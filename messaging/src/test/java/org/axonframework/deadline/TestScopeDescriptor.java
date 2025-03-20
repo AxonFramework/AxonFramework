@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import org.axonframework.messaging.ScopeDescriptor;
 import java.util.Objects;
 
 public class TestScopeDescriptor implements ScopeDescriptor {
-
-    private static final long serialVersionUID = 3584695571254668002L;
 
     private final String type;
     private Object identifier;

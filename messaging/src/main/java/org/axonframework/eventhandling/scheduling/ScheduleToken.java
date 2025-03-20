@@ -18,8 +18,6 @@ package org.axonframework.eventhandling.scheduling;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
-import java.io.Serializable;
-
 /**
  * Token that identifies a single scheduled Event. This token can be used to refer to a specific scheduled event to
  * cancel that timer.
@@ -28,6 +26,6 @@ import java.io.Serializable;
  * @since 0.7
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "@class")
-public interface ScheduleToken extends Serializable {
+public interface ScheduleToken {
 
 }

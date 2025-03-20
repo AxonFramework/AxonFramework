@@ -39,7 +39,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Allard Buijze
  * @since 0.5
  */
-public interface CommandBus extends CommandHandlerRegistry, DescribableComponent {
+public interface CommandBus extends CommandHandlerRegistry<CommandBus>, DescribableComponent {
 
     /**
      * Dispatch the given {@code command} to the {@link CommandHandler command handler}

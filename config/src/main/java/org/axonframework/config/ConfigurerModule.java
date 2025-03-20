@@ -24,7 +24,7 @@ import javax.annotation.Nonnull;
  *
  * @author Steven van Beelen
  * @since 3.2
- * @deprecated In favor of the {@link org.axonframework.configuration.ConfigurerEnhancer}.
+ * @deprecated In favor of the {@link org.axonframework.configuration.ConfigurationEnhancer}.
  */
 @Deprecated
 public interface ConfigurerModule {
