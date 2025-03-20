@@ -69,7 +69,7 @@ public abstract class LifecycleHandlerInspector {
      * @param lifecycleRegistry the {@link NewConfiguration} to register resolved lifecycle handlers to
      * @param component         the object to resolve lifecycle handlers for
      */
-    public static void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycleRegistry,
+    public static void registerLifecycleHandlers(@Nonnull LifecycleRegistry<?> lifecycleRegistry,
                                                  @Nonnull Object component) {
         requireNonNull(lifecycleRegistry, "Cannot register lifecycle handlers on a null lifecycle operator.");
         requireNonNull(component, "Cannot register lifecycle handlers from a null component.");
