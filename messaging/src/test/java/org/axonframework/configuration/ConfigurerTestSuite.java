@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -768,70 +767,68 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         @Test
         void configurerDescribeToDescribesBeingUninitializedComponentsEnhancersAndModules() {
             ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
-            ConfigurerEnhancer testEnhancer = configurer -> {
+            ConfigurationEnhancer testEnhancer = configurer -> {
 
             };
-            AtomicReference<TestModule> moduleReference = new AtomicReference<>();
+            TestModule testModule = new TestModule("module");
 
             // The Component is not yet validated, as I am using a mocked ComponentDescriptor.
             testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
                        .registerEnhancer(testEnhancer)
-                       .registerModule(c -> {
-                           TestModule testModule = new TestModule(c);
-                           moduleReference.set(testModule);
-                           return testModule;
-                       })
+                       .registerModule(testModule)
                        .describeTo(testDescriptor);
 
             verify(testDescriptor).describeProperty("initialized", false);
-            verify(testDescriptor).describeProperty("configurerEnhancers", List.of(testEnhancer));
-            verify(testDescriptor).describeProperty("modules", List.of(moduleReference.get()));
+            verify(testDescriptor).describeProperty("modules", List.of(testModule));
+            //noinspection unchecked
+            ArgumentCaptor<List<ConfigurationEnhancer>> enhancerCaptor = ArgumentCaptor.forClass(List.class);
+            verify(testDescriptor).describeProperty(eq("configurerEnhancers"), enhancerCaptor.capture());
+            List<ConfigurationEnhancer> enhancers = enhancerCaptor.getValue();
+            assertTrue(enhancers.contains(testEnhancer));
         }
 
         @Test
         void configurerDescribeToDescribesBeingInitializedComponentsEnhancersAndModules() {
             ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
-            ConfigurerEnhancer testEnhancer = configurer -> {
+            ConfigurationEnhancer testEnhancer = configurer -> {
 
             };
-            AtomicReference<TestModule> moduleReference = new AtomicReference<>();
+            TestModule testModule = new TestModule("module");
 
             // The Component is not yet validated, as I am using a mocked ComponentDescriptor.
             testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
                        .registerEnhancer(testEnhancer)
-                       .registerModule(c -> {
-                           TestModule testModule = new TestModule(c);
-                           moduleReference.set(testModule);
-                           return testModule;
-                       })
-                       // Build initializes the configurer
-                       .build();
+                       .registerModule(testModule);
+
+            // Build initializes the configurer
+            build();
 
             testSubject.describeTo(testDescriptor);
 
             verify(testDescriptor).describeProperty("initialized", true);
-            verify(testDescriptor).describeProperty("configurerEnhancers", List.of(testEnhancer));
-            verify(testDescriptor).describeProperty("modules", List.of(moduleReference.get()));
+            verify(testDescriptor).describeProperty("modules", List.of(testModule));
+            //noinspection unchecked
+            ArgumentCaptor<List<ConfigurationEnhancer>> enhancerCaptor = ArgumentCaptor.forClass(List.class);
+            verify(testDescriptor).describeProperty(eq("configurerEnhancers"), enhancerCaptor.capture());
+            List<ConfigurationEnhancer> enhancers = enhancerCaptor.getValue();
+            assertTrue(enhancers.contains(testEnhancer));
         }
 
         @Test
         void configurationDescribeToDescribesComponentsAndModules() {
             ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
-            AtomicReference<TestModule> moduleReference = new AtomicReference<>();
+
+            TestModule testModule = new TestModule("module");
 
             // The Component is not yet validated, as I am using a mocked ComponentDescriptor.
             testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
-                       .registerModule(rootConfig -> {
-                           TestModule testModule = new TestModule(rootConfig)
-                                   .registerComponent(TestComponent.class, c -> TEST_COMPONENT);
-                           moduleReference.set(testModule);
-                           return testModule;
-                       })
-                       .build()
-                       .describeTo(testDescriptor);
+                       .registerModule(testModule.registerComponent(TestComponent.class, c -> TEST_COMPONENT));
+
+            LifecycleSupportingConfiguration result = (LifecycleSupportingConfiguration) build();
+            result.describeTo(testDescriptor);
 
             // Build the moduleReference to generate the Module's Configuration result
-            verify(testDescriptor).describeProperty("modules", List.of(moduleReference.get().build()));
+            verify(testDescriptor).describeProperty("modules", List.of(testModule.build(result)));
         }
     }
 
