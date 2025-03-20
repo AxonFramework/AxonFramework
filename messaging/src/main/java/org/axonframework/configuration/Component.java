@@ -18,6 +18,8 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.StringUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.lifecycle.Lifecycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +46,7 @@ import static org.axonframework.common.Assert.assertThat;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public class Component<C> {
+public class Component<C> implements DescribableComponent {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -109,6 +111,18 @@ public class Component<C> {
      */
     public synchronized boolean isInitialized() {
         return instance != null;
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("identifier", identifier.toString());
+        if (isInitialized()) {
+            descriptor.describeProperty("component", instance);
+            descriptor.describeProperty("initialized", true);
+        } else {
+            descriptor.describeProperty("factory", factory);
+            descriptor.describeProperty("initialized", false);
+        }
     }
 
     /**

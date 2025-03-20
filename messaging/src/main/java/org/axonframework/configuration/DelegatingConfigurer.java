@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,5 +131,10 @@ public class DelegatingConfigurer<S extends ApplicationConfigurer<S>> implements
     @Override
     public <C extends NewConfiguration> C build() {
         return delegate.build();
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        delegate.describeTo(descriptor);
     }
 }
