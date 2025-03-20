@@ -126,10 +126,10 @@ public interface NewConfiguration extends DescribableComponent {
 
     /**
      * Returns all {@code Configurations} from the {@link Module Modules} that have been
-     * {@link NewConfigurer#registerModule(ModuleBuilder) registered} with this {@code Configuration}.
+     * {@link NewConfigurer#registerModule(Module) registered} with this {@code Configuration}.
      *
      * @return The resulting {@code Configuration} from each
-     * {@link NewConfigurer#registerModule(ModuleBuilder) registered module} with this {@code Configuration}.
+     * {@link NewConfigurer#registerModule(Module) registered module} with this {@code Configuration}.
      */
     List<NewConfiguration> getModuleConfigurations();
 }

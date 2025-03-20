@@ -27,8 +27,6 @@ package org.axonframework.common;
  */
 public abstract class AxonNonTransientException extends AxonException {
 
-    private static final long serialVersionUID = -2119569988731244940L;
-
     /**
      * Indicates whether the given {@code throwable} is a AxonNonTransientException exception or indicates to be
      * caused by one.

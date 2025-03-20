@@ -23,7 +23,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.NoHandlerForCommandException;
-import org.axonframework.commandhandling.annotation.AnnotationCommandHandlerAdapter;
+import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.commandhandling.annotation.CommandMessageHandlingMember;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
@@ -149,14 +149,6 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
             );
         }
         return typeToFactory;
-    }
-
-    @Override
-    public AggregateAnnotationCommandHandler<T> subscribe(@Nonnull QualifiedName name,
-                                                          @Nonnull CommandHandler commandHandler) {
-        throw new UnsupportedOperationException(
-                "This Command Handling Component does not support direct command handler registration."
-        );
     }
 
     /**
@@ -372,7 +364,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
 
         /**
          * Sets the {@link AggregateModel} of generic type {@code T}, describing the structure of the aggregate the
-         * {@link AnnotationCommandHandlerAdapter} will handle. Either this field or the {@link #aggregateType(Class)}
+         * {@link AnnotatedCommandHandlingComponent} will handle. Either this field or the {@link #aggregateType(Class)}
          * should be provided to correctly instantiate an {@link AggregateAnnotationCommandHandler}.
          *
          * @param aggregateModel the {@link AggregateModel} of generic type {@code T} of the aggregate this

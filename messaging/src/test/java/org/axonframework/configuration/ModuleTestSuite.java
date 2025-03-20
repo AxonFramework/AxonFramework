@@ -16,16 +16,16 @@
 
 package org.axonframework.configuration;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import org.junit.jupiter.api.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test suite validating the common behavior of each {@link Module} implementation.
  * <p>
  * This test suite includes the {@link ConfigurerTestSuite}, since each module is a configurer implementation.
  * Furthermore, it implements the {@link ConfigurerTestSuite#testSubject()} operation, constructing a
- * {@link RootConfigurer} as the parent of the module under test.
+ * {@link AxonApplication} as the parent of the module under test.
  *
  * @param <M> The {@link Module} implementation under test.
  * @author Steven van Beelen
@@ -39,13 +39,13 @@ public abstract class ModuleTestSuite<M extends Module<M>> extends ConfigurerTes
 
     @Override
     public M testSubject() {
-        RootConfigurer.defaultConfigurer()
-                      .registerModule(config -> {
-                          M testModule = testSubject(config);
-                          this.testModule = testModule;
-                          return testModule;
-                      });
+        this.testModule = testModule();
         return testModule;
+    }
+
+    @Override
+    public NewConfiguration build() {
+        return testModule.build(AxonApplication.create().build());
     }
 
     /**
@@ -53,7 +53,7 @@ public abstract class ModuleTestSuite<M extends Module<M>> extends ConfigurerTes
      *
      * @return The test {@link Module} of type {@code M} used for testing.
      */
-    abstract M testSubject(LifecycleSupportingConfiguration config);
+    abstract M testModule();
 
     @Test
     void onStartThrowsUnsupportedOperationException() {

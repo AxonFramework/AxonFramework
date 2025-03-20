@@ -30,8 +30,6 @@ import org.axonframework.common.AxonException;
  */
 public class CommandDispatchException extends AxonException {
 
-    private static final long serialVersionUID = 4587368927394283730L;
-
     /**
      * Initializes the exception using the given {@code message}.
      *

@@ -26,8 +26,6 @@ import org.axonframework.common.AxonTransientException;
  */
 public class SchedulingException extends AxonTransientException {
 
-    private static final long serialVersionUID = -3633716643792480973L;
-
     /**
      * Initialize a SchedulingException with the given {@code message}.
      *

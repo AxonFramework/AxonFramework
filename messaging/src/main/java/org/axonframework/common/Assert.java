@@ -153,7 +153,10 @@ public abstract class Assert {
      * @param exceptionMessage The message for the exception.
      */
     public static void assertStrictPositive(int i, String exceptionMessage) {
-        assertThat(i, number -> number > 0, () -> new IllegalArgumentException(exceptionMessage));
+        if (i > 0) {
+            return;
+        }
+        throw new IllegalArgumentException(exceptionMessage);
     }
 
     /**
@@ -165,6 +168,9 @@ public abstract class Assert {
      * @param exceptionMessage The message for the exception.
      */
     public static void assertStrictPositive(long i, String exceptionMessage) {
-        assertThat(i, number -> number > 0, () -> new IllegalArgumentException(exceptionMessage));
+        if (i > 0) {
+            return;
+        }
+        throw new IllegalArgumentException(exceptionMessage);
     }
 }

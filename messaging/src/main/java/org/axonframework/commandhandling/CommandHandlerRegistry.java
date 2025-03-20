@@ -19,7 +19,10 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
 
+import java.util.Objects;
 import java.util.Set;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Interface describing a registry of {@link CommandHandler command handlers}.
@@ -31,8 +34,9 @@ import java.util.Set;
  * @author Sara Pellegrini
  * @author Steven van Beelen
  * @since 5.0.0
+ * @param <S> the type of the registry itself, used for fluent interfacing.
  */
-public interface CommandHandlerRegistry {
+public interface CommandHandlerRegistry<S extends CommandHandlerRegistry<S>> {
 
     /**
      * Subscribe the given {@code handler} for {@link CommandMessage commands} of the given {@code names}.
@@ -45,10 +49,13 @@ public interface CommandHandlerRegistry {
      * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given names.
      * @return This registry for fluent interfacing.
      */
-    default CommandHandlerRegistry subscribe(@Nonnull Set<QualifiedName> names,
-                                             @Nonnull CommandHandler commandHandler) {
+    default S subscribe(@Nonnull Set<QualifiedName> names,
+                        @Nonnull CommandHandler commandHandler) {
+        requireNonNull(names, "The set of names may not be null");
+        requireNonNull(commandHandler, "The commandHandler may not be null");
         names.forEach(name -> subscribe(name, commandHandler));
-        return this;
+        //noinspection unchecked
+        return (S) this;
     }
 
     /**
@@ -62,8 +69,9 @@ public interface CommandHandlerRegistry {
      * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given name.
      * @return This registry for fluent interfacing.
      */
-    CommandHandlerRegistry subscribe(@Nonnull QualifiedName name,
-                                     @Nonnull CommandHandler commandHandler);
+    S subscribe(@Nonnull QualifiedName name,
+                @Nonnull CommandHandler commandHandler);
+
 
     /**
      * Subscribe the given {@code handlingComponent} with this registry.
@@ -79,7 +87,7 @@ public interface CommandHandlerRegistry {
      * @param handlingComponent The command handling component instance to subscribe with this registry.
      * @return This registry for fluent interfacing.
      */
-    default CommandHandlerRegistry subscribe(@Nonnull CommandHandlingComponent handlingComponent) {
+    default S subscribe(@Nonnull CommandHandlingComponent handlingComponent) {
         return subscribe(handlingComponent.supportedCommands(), handlingComponent);
     }
 }

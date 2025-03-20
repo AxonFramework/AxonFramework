@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,6 @@ import org.axonframework.common.AxonException;
  * @since 2.1
  */
 public class MessageHandlerInvocationException extends AxonException {
-
-    private static final long serialVersionUID = 664867158607341533L;
 
     /**
      * Initialize the MessageHandlerInvocationException using given {@code message} and {@code cause}.

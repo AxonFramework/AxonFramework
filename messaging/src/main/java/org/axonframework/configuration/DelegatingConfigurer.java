@@ -16,15 +16,15 @@
 
 package org.axonframework.configuration;
 
-import java.lang.invoke.MethodHandles;
-import java.util.function.Consumer;
-
-import static java.util.Objects.requireNonNull;
-
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.invoke.MethodHandles;
+import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A {@link NewConfigurer} implementation delegating all calls to a {@code delegate Configurer}.
@@ -33,18 +33,18 @@ import org.slf4j.LoggerFactory;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class DelegatingConfigurer<S extends NewConfigurer<S>> implements NewConfigurer<S> {
+public class DelegatingConfigurer<S extends ApplicationConfigurer<S>> implements ApplicationConfigurer<S> {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final NewConfigurer<?> delegate;
+    private final ApplicationConfigurer<?> delegate;
 
     /**
      * Construct a {@code DelegatingConfigurer} using the given {@code delegate} to delegate all operations to.
      *
      * @param delegate The configurer to delegate all operations too.
      */
-    public DelegatingConfigurer(@Nonnull NewConfigurer<?> delegate) {
+    public DelegatingConfigurer(@Nonnull ApplicationConfigurer<?> delegate) {
         this.delegate = requireNonNull(delegate, "A delegate configuration is required");
     }
 
@@ -73,15 +73,15 @@ public class DelegatingConfigurer<S extends NewConfigurer<S>> implements NewConf
     }
 
     @Override
-    public S registerEnhancer(@Nonnull ConfigurerEnhancer enhancer) {
+    public S registerEnhancer(@Nonnull ConfigurationEnhancer enhancer) {
         delegate.registerEnhancer(enhancer);
         //noinspection unchecked
         return (S) this;
     }
 
     @Override
-    public <M extends Module<M>> S registerModule(@Nonnull ModuleBuilder<M> builder) {
-        delegate.registerModule(builder);
+    public S registerModule(@Nonnull Module<?> module) {
+        delegate.registerModule(module);
         //noinspection unchecked
         return (S) this;
     }

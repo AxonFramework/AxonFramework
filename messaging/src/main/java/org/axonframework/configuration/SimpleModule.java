@@ -16,7 +16,10 @@
 
 package org.axonframework.configuration;
 
-import jakarta.annotation.Nullable;
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.Assert;
+
+import java.util.Objects;
 
 /**
  * Simple implementation of the {@link Module} to allow for configuration modularization.
@@ -26,13 +29,27 @@ import jakarta.annotation.Nullable;
  */
 public class SimpleModule extends AbstractConfigurer<SimpleModule> implements Module<SimpleModule> {
 
+    private final String name;
+
     /**
      * Initialize the {@code SimpleModule} based on the given {@code config}.
      *
-     * @param config The life cycle supporting configuration used as the <b>parent</b> configuration of this
-     *               {@link Module}.
+     * @param name The name of {@code this SimpleModule}.
      */
-    public SimpleModule(@Nullable LifecycleSupportingConfiguration config) {
-        super(config);
+    public SimpleModule(@Nonnull String name) {
+        Assert.nonEmpty(name, "The Module name cannot be null or empty.");
+        this.name = name;
+    }
+
+    @Override
+    public String name() {
+        return this.name;
+    }
+
+    @Override
+    public NewConfiguration build(@Nonnull LifecycleSupportingConfiguration parent) {
+        super.setParent(Objects.requireNonNull(parent, "The parent Configuration cannot be null."));
+        super.enhanceInvocationAndModuleConstruction();
+        return super.config();
     }
 }

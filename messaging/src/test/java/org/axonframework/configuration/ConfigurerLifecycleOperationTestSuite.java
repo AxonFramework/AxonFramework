@@ -16,6 +16,10 @@
 
 package org.axonframework.configuration;
 
+import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -23,43 +27,47 @@ import java.util.concurrent.locks.ReentrantLock;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
-
 /**
- * Test suite validating the workings of the lifecycle operations registered and invoked on {@link StartableConfigurer}
- * implementations and the resulting {@link RootConfiguration}.
+ * Test suite validating the workings of the lifecycle operations registered and invoked on {@link NewConfigurer}
+ * implementations and the resulting {@link AxonConfiguration}.
  * <p>
  * As such, operations like the {@link LifecycleSupportingConfiguration#onStart(int, LifecycleHandler)},
- * {@link LifecycleSupportingConfiguration#onShutdown(int, LifecycleHandler)}, {@link RootConfigurer#start()},
- * {@link RootConfiguration#start()} and {@link RootConfiguration#shutdown()} will be tested.
+ * {@link LifecycleSupportingConfiguration#onShutdown(int, LifecycleHandler)}, {@link AxonApplication#start()},
+ * {@link AxonConfiguration#start()} and {@link AxonConfiguration#shutdown()} will be tested.
  *
  * @author Steven van Beelen
  */
-public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableConfigurer<?>> {
+public abstract class ConfigurerLifecycleOperationTestSuite<C extends ApplicationConfigurer<?>> {
 
     private static final String START_FAILURE_EXCEPTION_MESSAGE = "some start failure";
 
-    protected S configurer;
+    protected C configurer;
 
     @BeforeEach
     void setUp() {
-        configurer = buildConfigurer();
+        configurer = createConfigurer();
     }
 
     /**
-     * Builds the {@link StartableConfigurer} of type {@code S} to be used in this test suite for validating its
-     * start-up and shutdown behavior.
+     * Builds the {@link NewConfigurer} of type {@code C} to be used in this test suite for validating its start-up and
+     * shutdown behavior.
      *
-     * @return The {@link StartableConfigurer} of type {@code S} to be used in this test suite for validating its
-     * start-up and shutdown behavior.
+     * @return The {@link NewConfigurer} of type {@code C} to be used in this test suite for validating its start-up and
+     * shutdown behavior.
      */
-    public abstract S buildConfigurer();
+    public abstract C createConfigurer();
+
+    /**
+     * Starts the given {@code configurer}.
+     *
+     * @param configurer The {@link NewConfigurer} implementation to start.
+     * @return The {@link AxonConfiguration} resulting out of starting the given {@code configurer}.
+     */
+    public abstract AxonConfiguration start(C configurer);
 
     @Test
     void startLifecycleHandlersAreInvokedInAscendingPhaseOrder() {
-        RootConfiguration testSubject = configurer.build();
+        AxonConfiguration testSubject = configurer.build();
 
         LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
         LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
@@ -93,7 +101,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
         configurer.onStart(1, phaseOneHandler::start);
         configurer.onStart(0, phaseZeroHandler::start);
 
-        configurer.start();
+        this.start(configurer);
 
         InOrder lifecycleOrder =
                 inOrder(phaseZeroHandler, phaseOneHandler, phaseTenHandler, phaseOverNineThousandHandler);
@@ -106,7 +114,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
     @Test
     void startLifecycleHandlersWillOnlyProceedToFollowingPhaseAfterCurrentPhaseIsFinalized()
             throws InterruptedException {
-        RootConfiguration testSubject = configurer.build();
+        AxonConfiguration testSubject = configurer.build();
         // Create a lock for the slow handler and lock it immediately, to spoof the handler's slow/long process
         ReentrantLock slowHandlerLock = new ReentrantLock();
         slowHandlerLock.lock();
@@ -147,7 +155,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
 
     @Test
     void outOfOrderAddedStartHandlerHasPrecedenceOverSubsequentHandlers() {
-        RootConfiguration testSubject = configurer.build();
+        AxonConfiguration testSubject = configurer.build();
 
         LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
         LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
@@ -176,7 +184,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
 
     @Test
     void outOfOrderAddedShutdownHandlerDuringStartUpIsNotCalledImmediately() {
-        RootConfiguration testSubject = configurer.build();
+        AxonConfiguration testSubject = configurer.build();
 
         LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
         LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
@@ -204,7 +212,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
 
     @Test
     void shutdownLifecycleHandlersAreInvokedInDescendingPhaseOrder() {
-        RootConfiguration testSubject = configurer.build();
+        AxonConfiguration testSubject = configurer.build();
 
         LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
         LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
@@ -238,7 +246,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
         configurer.onShutdown(1, phaseOneHandler::shutdown);
         configurer.onShutdown(10, phaseTenHandler::shutdown);
         configurer.onShutdown(9001, phaseOverNineThousandHandler::shutdown);
-        RootConfiguration config = configurer.start();
+        AxonConfiguration config = this.start(configurer);
 
         config.shutdown();
 
@@ -253,7 +261,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
     @Test
     void shutdownLifecycleHandlersWillOnlyProceedToFollowingPhaseAfterCurrentPhaseIsFinalized()
             throws InterruptedException {
-        RootConfiguration testSubject = configurer.build();
+        AxonConfiguration testSubject = configurer.build();
         // Create a lock for the slow handler and lock it immediately, to spoof the handler's slow/long process
         ReentrantLock slowHandlerLock = new ReentrantLock();
         slowHandlerLock.lock();
@@ -295,7 +303,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
 
     @Test
     void outOfOrderAddedShutdownHandlerHasPrecedenceOverSubsequentHandlers() {
-        RootConfiguration testSubject = configurer.build();
+        AxonConfiguration testSubject = configurer.build();
 
         LifecycleManagedInstance phaseTwoHandler = spy(new LifecycleManagedInstance());
         LifecycleManagedInstance phaseOneHandlerAdder = spy(new LifecycleManagedInstance());
@@ -329,7 +337,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
      */
     @Test
     void outOfOrderAddedStartHandlerDuringShutdownIsNotCalledImmediately() {
-        RootConfiguration testSubject = configurer.build();
+        AxonConfiguration testSubject = configurer.build();
 
         LifecycleManagedInstance phaseTwoHandler = spy(new LifecycleManagedInstance());
         LifecycleManagedInstance phaseOneHandlerAdder = spy(new LifecycleManagedInstance());
@@ -358,7 +366,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
 
     @Test
     void failingStartLifecycleProceedsIntoShutdownOrderAtFailingPhase() {
-        RootConfiguration testSubject = configurer.build();
+        AxonConfiguration testSubject = configurer.build();
 
         LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
         LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance());
@@ -401,7 +409,7 @@ public abstract class ConfigurerLifecycleOperationTestSuite<S extends StartableC
     @Test
     void lifecycleHandlersProceedToFollowingPhaseWhenTheThreadIsInterrupted() throws InterruptedException {
         AtomicBoolean invoked = new AtomicBoolean(false);
-        RootConfiguration testSubject = configurer.build();
+        AxonConfiguration testSubject = configurer.build();
 
         LifecycleManagedInstance phaseZeroHandler = spy(new LifecycleManagedInstance());
         LifecycleManagedInstance phaseOneHandler = spy(new LifecycleManagedInstance(invoked));

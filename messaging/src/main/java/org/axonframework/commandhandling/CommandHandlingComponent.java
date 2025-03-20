@@ -21,17 +21,15 @@ import org.axonframework.messaging.QualifiedName;
 import java.util.Set;
 
 /**
- * Interface describing a group of {@code CommandHandlers} belonging to a single component.
- * <p>
- * As such, it allows registration of {@code CommandHandlers} through the {@code CommandHandlerRegistry}. Besides
- * handling and registration, it specifies which {@link #supportedCommands() commands} it supports.
+ * Interface describing a group of {@link CommandHandler CommandHandlers} belonging to a single component.
+ * It specifies the {@link #supportedCommands() commands} it supports.
  *
  * @author Allard Buijze
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface CommandHandlingComponent extends CommandHandler, CommandHandlerRegistry {
+public interface CommandHandlingComponent extends CommandHandler {
 
     /**
      * All supported {@link CommandMessage commands}, referenced through a {@link QualifiedName}.

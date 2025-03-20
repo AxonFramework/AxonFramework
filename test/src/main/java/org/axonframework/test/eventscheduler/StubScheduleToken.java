@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@ import java.util.Objects;
  * @since 1.1
  */
 public class StubScheduleToken implements ScheduleToken, Comparable<StubScheduleToken>, ScheduledItem {
-
-    private static final long serialVersionUID = 3763093001261110665L;
 
     private final Instant scheduleTime;
     private final EventMessage<?> event;

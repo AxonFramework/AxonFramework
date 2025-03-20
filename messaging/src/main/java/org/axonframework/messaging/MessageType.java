@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 import org.axonframework.common.StringUtils;
 
-import java.io.Serializable;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,8 +41,7 @@ import static java.util.Objects.requireNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public record MessageType(@Nonnull QualifiedName qualifiedName,
-                          @Nonnull String version) implements Serializable {
+public record MessageType(@Nonnull QualifiedName qualifiedName, @Nonnull String version) {
 
     /**
      * The default version of a {@code MessageType} when none is given. Set to {@code 0.0.1}.
