@@ -220,7 +220,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("initialized", initialized.get());
-        components.describeTo(descriptor);
+        descriptor.describeProperty("components", components);
         descriptor.describeProperty("configurerEnhancers", enhancers);
         descriptor.describeProperty("modules", modules);
     }

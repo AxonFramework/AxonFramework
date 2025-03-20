@@ -827,6 +827,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
                        .describeTo(testDescriptor);
 
             verify(testDescriptor).describeProperty("initialized", false);
+            verify(testDescriptor).describeProperty(eq("components"), isA(Components.class));
             verify(testDescriptor).describeProperty("modules", List.of(testModule));
             //noinspection unchecked
             ArgumentCaptor<List<ConfigurationEnhancer>> enhancerCaptor = ArgumentCaptor.forClass(List.class);
@@ -854,6 +855,7 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             testSubject.describeTo(testDescriptor);
 
             verify(testDescriptor).describeProperty("initialized", true);
+            verify(testDescriptor).describeProperty(eq("components"), isA(Components.class));
             verify(testDescriptor).describeProperty("modules", List.of(testModule));
             //noinspection unchecked
             ArgumentCaptor<List<ConfigurationEnhancer>> enhancerCaptor = ArgumentCaptor.forClass(List.class);
