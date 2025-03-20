@@ -17,6 +17,7 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.eventsourcing.AggregateDeletedException;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -30,6 +31,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -194,6 +196,14 @@ class FixtureTest_CreationPolicy {
                 .when(new AlwaysCreateWithoutResultCommand(AGGREGATE_ID, PUBLISH_EVENTS))
                 .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
                 .expectSuccessfulHandlerExecution();
+    }
+
+    @Test
+    void markedDeletedAggregateDoesNotAllowForCreateIfMissingButRethrowsAggregateDeletedException() {
+        fixture.given(new CreatedEvent(AGGREGATE_ID), new MarkedDeleted(AGGREGATE_ID))
+               .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_EVENTS))
+               .expectNoEvents()
+               .expectException(AggregateDeletedException.class);
     }
 
     private static class CreateCommand {
@@ -424,6 +434,19 @@ class FixtureTest_CreationPolicy {
         }
     }
 
+    private static class MarkedDeleted {
+
+        private final ComplexAggregateId id;
+
+        private MarkedDeleted(ComplexAggregateId id) {
+            this.id = id;
+        }
+
+        public ComplexAggregateId id() {
+            return id;
+        }
+    }
+
     @SuppressWarnings("unused")
     public static class TestAggregate implements TestAggregateInterface {
 
@@ -495,6 +518,11 @@ class FixtureTest_CreationPolicy {
         @EventSourcingHandler
         public void on(AlwaysCreatedEvent event) {
             this.id = event.getId();
+        }
+
+        @EventSourcingHandler
+        public void on(MarkedDeleted event) {
+            markDeleted();
         }
     }
 
