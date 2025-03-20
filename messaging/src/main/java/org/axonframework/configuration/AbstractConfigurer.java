@@ -26,12 +26,13 @@ import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Abstract implementation of the {@link NewConfigurer} allowing for reuse of {@link Component},
@@ -47,11 +48,11 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Components components = new Components();
+    private final List<DecoratorRegistration<?>> decoratorRegistrations = new ArrayList<>();
     private final List<ConfigurationEnhancer> enhancers = new ArrayList<>();
     private final List<Module<?>> modules = new ArrayList<>();
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
-    private final List<RegisteredComponentDecorator<?>> componentDecorators = new ArrayList<>();
     private LifecycleSupportingConfiguration parent;
     private LifecycleSupportingConfiguration config;
     private final List<NewConfiguration> moduleConfigurations = new ArrayList<>();
@@ -79,22 +80,11 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     public <C> S registerDecorator(@Nonnull Class<C> type,
                                    int order,
                                    @Nonnull ComponentDecorator<C> decorator) {
-        Objects.requireNonNull(type, "type must not be null");
-        Objects.requireNonNull(decorator, "decorator must not be null");
+        requireNonNull(type, "The type cannot be null.");
+        requireNonNull(decorator, "The component decorator cannot be null");
         logger.debug("Registering decorator for type [{}] at order #{}.", type, order);
-        componentDecorators.add(new RegisteredComponentDecorator<>(i -> i.type().equals(type), order, decorator));
-        return self();
-    }
 
-    @Override
-    public <C> S registerDecorator(@Nonnull Class<C> type, @Nonnull String name, int order,
-                                   @Nonnull ComponentDecorator<C> decorator) {
-        Objects.requireNonNull(name, "name must not be null");
-        logger.debug("Registering decorator for name [{}] and type [{}] at order #{}.", name, type, order);
-        componentDecorators.add(new RegisteredComponentDecorator<>(
-                i -> Objects.equals(i.name(), name) && Objects.equals(
-                        i.type(),
-                        type), order, decorator));
+        decoratorRegistrations.add(new DecoratorRegistration<>(id -> id.type().equals(type), order, decorator));
         return self();
     }
 
@@ -166,11 +156,11 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void decorateComponents() {
-        componentDecorators.sort(Comparator.comparingInt(RegisteredComponentDecorator::order));
-        for (RegisteredComponentDecorator componentDecorator : componentDecorators) {
-            for (Identifier id : components.listComponents()) {
-                if (componentDecorator.componentMatcher.test(id)) {
-                    components.replace(id, previous -> previous.decorate(componentDecorator.decorator));
+        decoratorRegistrations.sort(Comparator.comparingInt(DecoratorRegistration::order));
+        for (DecoratorRegistration decoratorRegistration : decoratorRegistrations) {
+            for (Identifier id : components.identifiers()) {
+                if (decoratorRegistration.idMatcher.test(id)) {
+                    components.replace(id, previous -> previous.decorate(decoratorRegistration.decorator));
                 }
             }
         }
@@ -299,9 +289,19 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         }
     }
 
-    private record RegisteredComponentDecorator<C>(Predicate<Identifier<C>> componentMatcher,
-                                                   int order,
-                                                   ComponentDecorator<C> decorator) {
+    /**
+     * Private record representing a {@code decorator} registration. All {@code DecoratorRegistrations} are gathered and
+     * invoked during {@link ApplicationConfigurer#build()} of this configurer.
+     *
+     * @param idMatcher The {@code Predicate} used against a {@link Identifier} to validate if the {@code decorator}
+     *                  should be invoked.
+     * @param order     The order of the given {@code decorator} among other decorators.
+     * @param decorator The decoration function for a component of type {@code C}.
+     * @param <C>       The type of component the {@code decorator} decorates.
+     */
+    private record DecoratorRegistration<C>(Predicate<Identifier<C>> idMatcher,
+                                            int order,
+                                            ComponentDecorator<C> decorator) {
 
     }
 }

@@ -116,9 +116,9 @@ public class Components {
     /**
      * Returns the identifiers of the components currently registered.
      *
-     * @return a set with the identifiers of registered components
+     * @return A set with the identifiers of registered components.
      */
-    public Set<Identifier<?>> listComponents() {
+    public Set<Identifier<?>> identifiers() {
         return Set.copyOf(components.keySet());
     }
 
@@ -128,11 +128,11 @@ public class Components {
      * <p>
      * If the given {@code replacement} function returns null, the component registration is removed.
      *
-     * @param identifier  The identifier of the component to replace
-     * @param replacement The function providing the replacement value, based on the currently registered component
-     * @param <C>         The type of component registered
+     * @param identifier  The identifier of the component to replace.
+     * @param replacement The function providing the replacement value, based on the currently registered component.
+     * @param <C>         The type of component registered.
      * @return {@code true} if a component is present and has been replaced, {@code false} if no component was present,
-     * or has been removed by the replacement function
+     * or has been removed by the replacement function.
      */
     public <C> boolean replace(Identifier<C> identifier,
                                Function<Component<? extends C>, Component<? extends C>> replacement) {

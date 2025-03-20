@@ -123,14 +123,15 @@ public class Component<C> {
     }
 
     /**
-     * Returns a Component that decorates this component, calling given {@code decorator} to wrap (or replace) the
-     * instance created by this Component.
+     * Returns a {@code Component} that decorates this component, calling given {@code decorator} to wrap (or replace)
+     * the instance created by this {@code Component}.
      *
-     * @param decorator the function that decorates the instance contained in this component
-     * @return a new component that represents the decorated instance
+     * @param decorator The function that decorates the instance contained in this component.
+     * @return A new component that represents the decorated instance.
      */
     public Component<C> decorate(ComponentDecorator<C> decorator) {
-        return new Component<>(identifier, configSupplier, c -> decorator.decorate(c, identifier.name(), get()));
+        return new Component<>(identifier, configSupplier,
+                               config -> decorator.decorate(config, identifier.name(), get()));
     }
 
     /**

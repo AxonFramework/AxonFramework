@@ -20,6 +20,7 @@ import org.axonframework.configuration.Component.Identifier;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -130,5 +131,46 @@ class ComponentsTest {
 
         assertTrue(testSubject.contains(IDENTIFIER));
         assertFalse(testSubject.contains(unknownIdentifier));
+    }
+
+    @Test
+    void identifiersReturnsAllRegisteredComponentsTheirIdentifiers() {
+        assertTrue(testSubject.identifiers().isEmpty());
+
+        testSubject.put(IDENTIFIER, new Component<>(IDENTIFIER, config, c -> "some-state"));
+
+        Set<Identifier<?>> result = testSubject.identifiers();
+        assertFalse(result.isEmpty());
+        assertTrue(result.contains(IDENTIFIER));
+    }
+
+    @Test
+    void replaceDoesNothingIfThereIsNoComponentToReplaceForTheGivenIdentifier() {
+        AtomicBoolean invoked = new AtomicBoolean(false);
+
+        boolean result = testSubject.replace(IDENTIFIER, old -> {
+            invoked.set(true);
+            return new Component<>(IDENTIFIER, config, c -> "replacement");
+        });
+
+        assertFalse(invoked.get());
+        assertFalse(result);
+    }
+
+    @Test
+    void replaceReplacesComponents() {
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        testSubject.put(IDENTIFIER, new Component<>(IDENTIFIER, config, c -> "some-state"));
+
+        boolean result = testSubject.replace(IDENTIFIER, old -> {
+            invoked.set(true);
+            return new Component<>(IDENTIFIER, config, c -> "replacement");
+        });
+
+        assertTrue(invoked.get());
+        assertTrue(result);
+        Optional<String> resultComponent = testSubject.getUnwrapped(IDENTIFIER);
+        assertTrue(resultComponent.isPresent());
+        assertEquals("replacement", resultComponent.get());
     }
 }

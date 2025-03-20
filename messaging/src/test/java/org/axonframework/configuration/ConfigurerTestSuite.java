@@ -264,6 +264,56 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
     class ComponentDecoration {
 
         @Test
+        void registerDecoratorDecoratesAllComponentsForMatchingType() {
+            TestComponent foo = new TestComponent("foo");
+            TestComponent bar = new TestComponent("bar");
+            TestComponent baz = new TestComponent("baz");
+
+            String expectedFooState = foo.state() + "-decorate-all-for-type";
+            String expectedBarState = bar.state() + "-decorate-all-for-type";
+            String expectedBazState = baz.state() + "-decorate-all-for-type";
+
+            testSubject.registerDecorator(
+                               TestComponent.class, 0,
+                               (c, name, delegate) -> new TestComponent(delegate.state + "-decorate-all-for-type")
+                       )
+                       .registerComponent(TestComponent.class, "foo", config -> foo)
+                       .registerComponent(TestComponent.class, "bar", config -> bar)
+                       .registerComponent(TestComponent.class, "baz", config -> baz);
+
+            NewConfiguration result = build();
+
+            assertEquals(expectedFooState, result.getComponent(TestComponent.class, "foo").state());
+            assertEquals(expectedBarState, result.getComponent(TestComponent.class, "bar").state());
+            assertEquals(expectedBazState, result.getComponent(TestComponent.class, "baz").state());
+        }
+
+        @Test
+        void registerDecoratorDecoratesSpecificComponentsWhenMatchingOnTypeAndName() {
+            TestComponent foo = new TestComponent("foo");
+            TestComponent bar = new TestComponent("bar");
+            TestComponent baz = new TestComponent("baz");
+
+            String expectedFooState = foo.state();
+            String expectedBarState = bar.state();
+            String expectedBazState = baz.state() + "-decorate-specific-component";
+
+            testSubject.registerDecorator(
+                               TestComponent.class, "baz", 0,
+                               (c, name, delegate) -> new TestComponent(delegate.state + "-decorate-specific-component")
+                       )
+                       .registerComponent(TestComponent.class, "foo", config -> foo)
+                       .registerComponent(TestComponent.class, "bar", config -> bar)
+                       .registerComponent(TestComponent.class, "baz", config -> baz);
+
+            NewConfiguration result = build();
+
+            assertEquals(expectedFooState, result.getComponent(TestComponent.class, "foo").state());
+            assertEquals(expectedBarState, result.getComponent(TestComponent.class, "bar").state());
+            assertEquals(expectedBazState, result.getComponent(TestComponent.class, "baz").state());
+        }
+
+        @Test
         void registerDecoratorDecoratesOutcomeOfComponentBuilderInSpecifiedOrder() {
             String expectedState = TEST_COMPONENT.state() + "123";
 
@@ -278,6 +328,22 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             TestComponent result = build().getComponent(TestComponent.class);
 
             assertEquals(expectedState, result.state());
+        }
+
+        @Test
+        void registeredDecoratorIsNotInvokedWhenItDoesNotMatchAnyRegisteredComponent() {
+            AtomicBoolean invoked = new AtomicBoolean(false);
+
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
+                       .registerDecorator(String.class, 0,
+                                          (c, name, delegate) -> {
+                                              invoked.set(true);
+                                              return delegate;
+                                          });
+
+            build();
+
+            assertFalse(invoked.get());
         }
     }
 
@@ -294,12 +360,20 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
         }
 
         @Test
-        void registerDecoratorThrowsNullPointerExceptionForNullName() {
+        void registerDecoratorThrowsIllegalArgumentExceptionForNullName() {
             testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
 
             //noinspection DataFlowIssue
-            assertThrows(NullPointerException.class,
+            assertThrows(IllegalArgumentException.class,
                          () -> testSubject.registerDecorator(Object.class, null, 42, (c, name, delegate) -> delegate));
+        }
+
+        @Test
+        void registerDecoratorThrowsIllegalArgumentExceptionForEmptyName() {
+            testSubject.registerComponent(TestComponent.class, config -> TEST_COMPONENT);
+
+            assertThrows(IllegalArgumentException.class,
+                         () -> testSubject.registerDecorator(Object.class, "", 42, (c, name, delegate) -> delegate));
         }
 
         @Test
