@@ -828,12 +828,16 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
 
             verify(testDescriptor).describeProperty("initialized", false);
             verify(testDescriptor).describeProperty(eq("components"), isA(Components.class));
+            verify(testDescriptor).describeProperty(eq("decorators"), isA(List.class));
             verify(testDescriptor).describeProperty("modules", List.of(testModule));
             //noinspection unchecked
             ArgumentCaptor<List<ConfigurationEnhancer>> enhancerCaptor = ArgumentCaptor.forClass(List.class);
             verify(testDescriptor).describeProperty(eq("configurerEnhancers"), enhancerCaptor.capture());
             List<ConfigurationEnhancer> enhancers = enhancerCaptor.getValue();
             assertTrue(enhancers.contains(testEnhancer));
+
+            // Ensure new fields added to the describeTo implementation are validated
+            verifyNoMoreInteractions(testDescriptor);
         }
 
         @Test
@@ -856,12 +860,16 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
 
             verify(testDescriptor).describeProperty("initialized", true);
             verify(testDescriptor).describeProperty(eq("components"), isA(Components.class));
+            verify(testDescriptor).describeProperty(eq("decorators"), isA(List.class));
             verify(testDescriptor).describeProperty("modules", List.of(testModule));
             //noinspection unchecked
             ArgumentCaptor<List<ConfigurationEnhancer>> enhancerCaptor = ArgumentCaptor.forClass(List.class);
             verify(testDescriptor).describeProperty(eq("configurerEnhancers"), enhancerCaptor.capture());
             List<ConfigurationEnhancer> enhancers = enhancerCaptor.getValue();
             assertTrue(enhancers.contains(testEnhancer));
+
+            // Ensure new fields added to the describeTo implementation are validated
+            verifyNoMoreInteractions(testDescriptor);
         }
 
         @Test
@@ -877,8 +885,12 @@ public abstract class ConfigurerTestSuite<C extends NewConfigurer<C>> {
             LifecycleSupportingConfiguration result = (LifecycleSupportingConfiguration) build();
             result.describeTo(testDescriptor);
 
+            verify(testDescriptor).describeProperty(eq("components"), isA(Components.class));
             // Build the moduleReference to generate the Module's Configuration result
             verify(testDescriptor).describeProperty("modules", List.of(testModule.build(result)));
+
+            // Ensure new fields added to the describeTo implementation are validated
+            verifyNoMoreInteractions(testDescriptor);
         }
     }
 

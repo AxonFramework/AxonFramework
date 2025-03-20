@@ -20,7 +20,6 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component.Identifier;
 import org.junit.jupiter.api.*;
 
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -147,26 +146,21 @@ class ComponentTest {
     @Test
     void describeToDescribesBuilderWhenUninitialized() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
-        ComponentDecorator<String> testDecorator = (config, delegate) -> delegate;
 
-        Component<String> testSubject = new Component<>(identifier, config, factory)
-                .decorate(testDecorator, 1);
+        Component<String> testSubject = new Component<>(identifier, config, factory);
 
         testSubject.describeTo(testDescriptor);
 
         verify(testDescriptor).describeProperty("identifier", identifier.toString());
         verify(testDescriptor).describeProperty("factory", factory);
-        verify(testDescriptor).describeProperty("decorators", Map.of(1, testDecorator));
         verify(testDescriptor).describeProperty("initialized", false);
     }
 
     @Test
     void describeToDescribesInstanceWhenInitialized() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
-        ComponentDecorator<String> testDecorator = (config, delegate) -> delegate;
 
-        Component<String> testSubject = new Component<>(identifier, config, factory)
-                .decorate(testDecorator, 1);
+        Component<String> testSubject = new Component<>(identifier, config, factory);
 
         // Initialize the component by getting it.
         testSubject.get();

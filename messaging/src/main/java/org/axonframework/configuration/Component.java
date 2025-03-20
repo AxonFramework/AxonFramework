@@ -132,7 +132,6 @@ public class Component<C> implements DescribableComponent {
             descriptor.describeProperty("initialized", true);
         } else {
             descriptor.describeProperty("factory", factory);
-            descriptor.describeProperty("decorators", decorators);
             descriptor.describeProperty("initialized", false);
         }
     }

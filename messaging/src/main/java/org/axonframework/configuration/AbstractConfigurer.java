@@ -19,6 +19,7 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Component.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -221,6 +222,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("initialized", initialized.get());
         descriptor.describeProperty("components", components);
+        descriptor.describeProperty("decorators", decoratorRegistrations);
         descriptor.describeProperty("configurerEnhancers", enhancers);
         descriptor.describeProperty("modules", modules);
     }
@@ -299,7 +301,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
 
         @Override
         public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-            components.describeTo(descriptor);
+            descriptor.describeProperty("components", components);
             descriptor.describeProperty("modules", moduleConfigurations);
         }
     }
@@ -316,7 +318,12 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
      */
     private record DecoratorRegistration<C>(Predicate<Identifier<C>> idMatcher,
                                             int order,
-                                            ComponentDecorator<C> decorator) {
+                                            ComponentDecorator<C> decorator) implements DescribableComponent {
 
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            descriptor.describeProperty("order", order);
+            descriptor.describeProperty("decorator", decorator);
+        }
     }
 }
