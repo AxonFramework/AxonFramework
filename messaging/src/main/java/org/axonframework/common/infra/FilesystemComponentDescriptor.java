@@ -92,10 +92,7 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
             return;
         }
 
-        // Register this component before processing its properties.
-        // This prevents infinite recursion with circular references.
         componentPaths.put(component, componentPath);
-
         properties.put(name, componentDescriptor(component, componentPath));
     }
 
@@ -170,7 +167,7 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
         }
     }
 
-    private FilesystemComponentDescriptor componentDescriptor(
+    private ComponentDescriptor componentDescriptor(
             DescribableComponent component,
             String itemPath
     ) {
@@ -281,7 +278,9 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
                 RenderContext context,
                 boolean isLastInCollection
         ) {
+            // Render the list name as a directory
             result.append(context.indent).append(isLastInCollection ? CORNER : TEE).append(name).append("/\n");
+
             var listContext = context.indented(name, isLastInCollection);
             for (int j = 0; j < list.size(); j++) {
                 var item = list.get(j);
@@ -297,16 +296,16 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
                 RenderContext listContext,
                 boolean isLastInCollection
         ) {
+            result.append(listContext.indent).append(isLastInCollection ? CORNER : TEE).append(key);
+
             if (item instanceof FilesystemComponentDescriptor itemDescriptor) {
-                result.append(listContext.indent).append(isLastInCollection ? CORNER : TEE).append(key).append("/\n");
+                result.append("/\n");
                 var itemContext = listContext.indented(key, isLastInCollection);
                 render(itemDescriptor.properties, itemContext);
             } else if (item instanceof SymbolicLink link) {
-                result.append(listContext.indent).append(isLastInCollection ? CORNER : TEE).append(key)
-                      .append(link).append("\n");
+                result.append(link).append("\n");
             } else {
-                result.append(listContext.indent).append(isLastInCollection ? CORNER : TEE).append(key)
-                      .append(": ").append(valueOrNull(item)).append("\n");
+                result.append(": ").append(valueOrNull(item)).append("\n");
             }
         }
 
