@@ -27,7 +27,7 @@ import jakarta.annotation.Nonnull;
  * displayed. This separation of concerns allows for multiple output formats from the same component hierarchy.
  *
  * @author Allard Buijze
- * @author Mitchel Herrijgers
+ * @author Mitchell Herrijgers
  * @author Steven van Beelen
  * @since 5.0.0
  */
