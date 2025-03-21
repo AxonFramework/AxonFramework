@@ -148,9 +148,11 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
     }
 
     @Override
-    void assertDescribeCollectionOfDescribableComponentsShouldIncludeTypeAndId(String result,
-                                                                               ComponentDescriptorTestSuite.SimpleTestComponent component1,
-                                                                               ComponentDescriptorTestSuite.SimpleTestComponent component2) {
+    void assertDescribeCollectionOfDescribableComponentsShouldIncludeTypeAndId(
+            String result,
+            ComponentDescriptorTestSuite.SimpleTestComponent component1,
+            ComponentDescriptorTestSuite.SimpleTestComponent component2
+    ) {
         assertJsonMatches(result, """
                 {
                   "components" : [ {
@@ -246,8 +248,10 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
     }
 
     @Override
-    void assertDescribeDescribableComponentShouldIncludeTypeAndId(String result,
-                                                                  ComponentDescriptorTestSuite.SimpleTestComponent component) {
+    void assertDescribeDescribableComponentShouldIncludeTypeAndId(
+            String result,
+            ComponentDescriptorTestSuite.SimpleTestComponent component
+    ) {
         assertJsonMatches(result, """
                 {
                   "component" : {
@@ -261,9 +265,11 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
     }
 
     @Override
-    void assertDescribeCollectionWithCircularReferences(String result,
-                                                        ComponentDescriptorTestSuite.CircularReferencesTests.CircularComponent component1,
-                                                        ComponentDescriptorTestSuite.CircularReferencesTests.CircularComponent component2) {
+    void assertDescribeCollectionWithCircularReferences(
+            String result,
+            ComponentDescriptorTestSuite.CircularReferencesTests.CircularComponent component1,
+            ComponentDescriptorTestSuite.CircularReferencesTests.CircularComponent component2
+    ) {
         assertJsonMatches(result, """
                 {
                   "circularRefCollection": [
@@ -293,8 +299,10 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
     }
 
     @Override
-    void assertDescribeComponentWithSelfReference(String result,
-                                                  ComponentDescriptorTestSuite.CircularReferencesTests.CircularComponent component) {
+    void assertDescribeComponentWithSelfReference(
+            String result,
+            ComponentDescriptorTestSuite.CircularReferencesTests.CircularComponent component
+    ) {
         assertJsonMatches(result, """
                 {
                   "selfRef": {
@@ -312,9 +320,11 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
     }
 
     @Override
-    void assertDescribeComponentWithCircularReference(String result,
-                                                      ComponentDescriptorTestSuite.CircularReferencesTests.CircularComponent component1,
-                                                      ComponentDescriptorTestSuite.CircularReferencesTests.CircularComponent component2) {
+    void assertDescribeComponentWithCircularReference(
+            String result,
+            ComponentDescriptorTestSuite.CircularReferencesTests.CircularComponent component1,
+            ComponentDescriptorTestSuite.CircularReferencesTests.CircularComponent component2
+    ) {
         assertJsonMatches(result, """
                 {
                   "circularRef": {

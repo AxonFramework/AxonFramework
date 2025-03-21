@@ -227,9 +227,11 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
     }
 
     @Override
-    void assertDescribeCollectionWithCircularReferences(String result,
-                                                        CircularReferencesTests.CircularComponent component1,
-                                                        CircularReferencesTests.CircularComponent component2) {
+    void assertDescribeCollectionWithCircularReferences(
+            String result,
+            CircularReferencesTests.CircularComponent component1,
+            CircularReferencesTests.CircularComponent component2
+    ) {
         var expected = """
                 /
                 └── circularRefCollection/
@@ -261,9 +263,11 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
     }
 
     @Override
-    void assertDescribeComponentWithCircularReference(String result,
-                                                      CircularReferencesTests.CircularComponent component1,
-                                                      CircularReferencesTests.CircularComponent component2) {
+    void assertDescribeComponentWithCircularReference(
+            String result,
+            CircularReferencesTests.CircularComponent component1,
+            CircularReferencesTests.CircularComponent component2
+    ) {
         var expected = """
                 /
                 └── circularRef/
