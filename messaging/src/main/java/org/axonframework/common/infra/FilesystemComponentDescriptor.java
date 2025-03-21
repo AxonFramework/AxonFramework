@@ -83,13 +83,10 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
     }
 
     private void describeComponent(String name, DescribableComponent component) {
-        // Create the path for this component
-        String componentPath = createPath(name);
+        var componentPath = createPath(name);
 
-        // Check if we've already processed this component
         if (componentPaths.containsKey(component)) {
-            // Create a symbolic link to the existing component
-            String existingPath = componentPaths.get(component);
+            var existingPath = componentPaths.get(component);
             properties.put(name, new SymbolicLink(existingPath));
             return;
         }
@@ -103,7 +100,7 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
                 new FilesystemComponentDescriptor(componentPaths, componentPath);
 
         // Add type information
-        childDescriptor.properties.put("_type", component.getClass().getSimpleName());
+        describeType(component, childDescriptor);
 
         // Let the component describe itself
         component.describeTo(childDescriptor);
@@ -113,10 +110,9 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
     }
 
     private String createPath(String name) {
-        if (currentPath.equals(ROOT_PATH)) {
-            return currentPath + name;
-        }
-        return currentPath + PATH_SEPARATOR + name;
+        return currentPath.equals(ROOT_PATH)
+                ? currentPath + name
+                : currentPath + PATH_SEPARATOR + name;
     }
 
     @Override
@@ -142,7 +138,7 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
                     FilesystemComponentDescriptor childDescriptor =
                             new FilesystemComponentDescriptor(componentPaths, itemPath);
 
-                    childDescriptor.properties.put("_type", component.getClass().getSimpleName());
+                    describeType(component, childDescriptor);
                     component.describeTo(childDescriptor);
                     items.add(childDescriptor);
                 }
@@ -181,7 +177,7 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
                     FilesystemComponentDescriptor childDescriptor =
                             new FilesystemComponentDescriptor(componentPaths, itemPath);
 
-                    childDescriptor.properties.put("_type", component.getClass().getSimpleName());
+                    describeType(component, childDescriptor);
                     component.describeTo(childDescriptor);
                     mappedItems.put(key, childDescriptor);
                 }
@@ -192,6 +188,10 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
         }
 
         properties.put(name, mappedItems);
+    }
+
+    private static void describeType(DescribableComponent component, FilesystemComponentDescriptor descriptor) {
+        descriptor.describeProperty("_type", component.getClass().getSimpleName());
     }
 
     @Override
@@ -211,7 +211,7 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
 
     @Override
     public String describe() {
-        return TreeRenderer.render(properties);
+        return new TreeRenderer().render(properties);
     }
 
     private record SymbolicLink(String targetPath) {
@@ -222,37 +222,27 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
         }
     }
 
+    /**
+     * Responsible for rendering the component hierarchy as a tree.
+     */
     private static class TreeRenderer {
 
-        /**
-         * Recursively renders the properties as a filesystem-like tree structure.
-         *
-         * @param props The properties to render
-         * @return The rendered tree as a string
-         */
-        private static String render(Map<String, Object> props) {
-            var result = new StringBuilder();
+        private static final String CORNER = "└── ";
+        private static final String TEE = "├── ";
+        private static final String VERTICAL = "│   ";
+        private static final String SPACE = "    ";
+
+        private final StringBuilder result = new StringBuilder();
+
+        String render(Map<String, Object> properties) {
             result.append(ROOT_PATH).append("\n");
-
-            renderProperties(result, props, "", "");
-
+            var context = new RenderContext("", "");
+            render(properties, context);
             return result.toString();
         }
 
-        /**
-         * Recursively renders properties as a filesystem-like tree.
-         *
-         * @param result The StringBuilder to append the result to
-         * @param props  The properties to render
-         * @param indent The current indentation string
-         * @param path   The current path in the tree
-         */
-        private static void renderProperties(
-                StringBuilder result,
-                Map<String, Object> props,
-                String indent,
-                String path) {
-            var entries = new ArrayList<>(props.entrySet());
+        private void render(Map<String, Object> properties, RenderContext context) {
+            var entries = new ArrayList<>(properties.entrySet());
 
             for (int i = 0; i < entries.size(); i++) {
                 var entry = entries.get(i);
@@ -260,130 +250,135 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
                 var value = entry.getValue();
 
                 var isLast = (i == entries.size() - 1);
-                var connector = isLast ? "└── " : "├── ";
-                var childIndent = indent + (isLast ? "    " : "│   ");
+                var connector = isLast ? CORNER : TEE;
 
-                renderProperty(result, name, value, indent, childIndent, connector, path);
+                renderProperty(name, value, connector, context, isLast);
             }
         }
 
-        /**
-         * Renders a single property based on its type.
-         */
-        private static void renderProperty(StringBuilder result, String name, Object value,
-                                           String indent, String childIndent, String connector, String path) {
+        private void renderProperty(
+                String name,
+                Object value,
+                String connector,
+                RenderContext context,
+                boolean isLast
+        ) {
             switch (value) {
-                case FilesystemComponentDescriptor descriptor -> renderComponentDirectory(result,
-                                                                                          name,
+                case FilesystemComponentDescriptor descriptor -> renderComponentDirectory(name,
                                                                                           descriptor,
-                                                                                          indent,
-                                                                                          childIndent,
-                                                                                          connector,
-                                                                                          path);
-                case List<?> list -> renderList(result, name, list, indent, childIndent, connector, path);
-                case Map<?, ?> map -> renderMap(result, name, map, indent, childIndent, connector, path);
-                case SymbolicLink link -> renderSymlink(result, name, link, indent, connector);
-                case null, default -> renderSimpleValue(result, name, value, indent, connector);
+                                                                                          context,
+                                                                                          isLast);
+                case List<?> list -> renderList(name, list, context, isLast);
+                case Map<?, ?> map -> renderMap(name, map, context, isLast);
+                case SymbolicLink link -> renderSymlink(name, link, connector, context);
+                case null, default -> renderSimpleValue(name, value, connector, context);
             }
         }
 
-        /**
-         * Renders a component as a directory.
-         */
-        private static void renderComponentDirectory(StringBuilder result, String name,
-                                                     FilesystemComponentDescriptor descriptor,
-                                                     String indent, String childIndent,
-                                                     String connector, String path) {
-            result.append(indent).append(connector).append(name).append("/\n");
-            renderProperties(result, descriptor.properties, childIndent, path + "/" + name);
+
+        private void renderComponentDirectory(
+                String name,
+                FilesystemComponentDescriptor descriptor,
+                RenderContext context,
+                boolean isLastInCollection
+        ) {
+            result.append(context.indent).append(isLastInCollection ? CORNER : TEE).append(name).append("/\n");
+            var childContext = context.indented(name, isLastInCollection);
+            render(descriptor.properties, childContext);
         }
 
-        /**
-         * Renders a list as a directory with numbered items.
-         */
-        private static void renderList(StringBuilder result, String name, List<?> list,
-                                       String indent, String childIndent, String connector, String path) {
-            result.append(indent).append(connector).append(name).append("/\n");
+        private void renderList(
+                String name,
+                List<?> list,
+                RenderContext context,
+                boolean isLastInCollection
+        ) {
+            // Render the list name as a directory
+            result.append(context.indent).append(isLastInCollection ? CORNER : TEE).append(name).append("/\n");
 
+            // Create a new context for list items
+            var listContext = context.indented(name, isLastInCollection);
+
+            // Render each item in the list
             for (int j = 0; j < list.size(); j++) {
                 var item = list.get(j);
                 var isLastItem = (j == list.size() - 1);
-                var itemConnector = isLastItem ? "└── " : "├── ";
-                var itemIndent = childIndent + (isLastItem ? "    " : "│   ");
-                var indexName = "[" + j + "]";
-
-                renderSingleEntry(result, indexName, item, childIndent, itemIndent, itemConnector, path + "/" + name);
+                var key = "[" + j + "]";
+                renderMapOrListEntry(key, item, listContext, isLastItem);
             }
         }
 
-        private static void renderSingleEntry(StringBuilder result, String indexName, Object item, String indent,
-                                              String childIndent,
-                                              String connector, String path) {
+        private void renderMapOrListEntry(
+                String key,
+                Object item,
+                RenderContext listContext,
+                boolean isLastInCollection
+        ) {
             if (item instanceof FilesystemComponentDescriptor itemDescriptor) {
-                result.append(indent).append(connector).append(indexName).append("/\n");
-                renderProperties(result, itemDescriptor.properties, childIndent, path + "/" + indexName);
+                // Render as subdirectory
+                result.append(listContext.indent).append(isLastInCollection ? CORNER : TEE).append(key).append("/\n");
+
+                // Create context for this item's properties
+                var itemContext = listContext.indented(key, isLastInCollection);
+
+                // Render the item's properties
+                render(itemDescriptor.properties, itemContext);
             } else if (item instanceof SymbolicLink link) {
-                result.append(indent).append(connector).append(indexName)
+                result.append(listContext.indent).append(isLastInCollection ? CORNER : TEE).append(key)
                       .append(SYMLINK_INDICATOR).append(link.targetPath).append("\n");
             } else {
-                result.append(indent).append(connector).append(indexName)
-                      .append(": ").append(formatValue(item)).append("\n");
+                result.append(listContext.indent).append(isLastInCollection ? CORNER : TEE).append(key)
+                      .append(": ").append(valueOrNull(item)).append("\n");
             }
         }
 
-        /**
-         * Renders a map as a directory with named entries.
-         */
-        private static void renderMap(
-                StringBuilder result,
+        private void renderMap(
                 String name,
                 Map<?, ?> map,
-                String indent,
-                String childIndent,
-                String connector,
-                String path) {
-            result.append(indent).append(connector).append(name).append("/\n");
+                RenderContext context,
+                boolean isLastInCollection
+        ) {
+            // Render the map name as a directory
+            result.append(context.indent).append(isLastInCollection ? CORNER : TEE).append(name).append("/\n");
 
+            // Create a new context for map entries
+            var mapContext = context.indented(name, isLastInCollection);
+
+            // Render each entry in the map
             var mapEntries = new ArrayList<>(map.entrySet());
-            mapEntries.sort(Comparator.comparing(e -> e.getKey().toString()));
+            mapEntries.sort(Comparator.comparing(entry -> entry.getKey().toString()));
             for (int j = 0; j < mapEntries.size(); j++) {
                 var mapEntry = mapEntries.get(j);
                 var key = mapEntry.getKey().toString();
                 var mapValue = mapEntry.getValue();
                 var isLastMapEntry = (j == mapEntries.size() - 1);
-                var mapConnector = isLastMapEntry ? "└── " : "├── ";
-                var mapIndent = childIndent + (isLastMapEntry ? "    " : "│   ");
 
-                renderSingleEntry(result, key, mapValue, childIndent, mapIndent, mapConnector, path + "/" + name);
+                // Handle different value types
+                renderMapOrListEntry(key, mapValue, mapContext, isLastMapEntry);
             }
         }
 
-        /**
-         * Renders a symbolic link.
-         */
-        private static void renderSymlink(StringBuilder result, String name, SymbolicLink link, String indent,
-                                          String connector) {
-            result.append(indent).append(connector).append(name)
+        private void renderSymlink(String name, SymbolicLink link, String connector, RenderContext context) {
+            result.append(context.indent).append(connector).append(name)
                   .append(SYMLINK_INDICATOR).append(link.targetPath).append("\n");
         }
 
-        /**
-         * Renders a simple value (string, number, boolean).
-         */
-        private static void renderSimpleValue(StringBuilder result, String name, Object value, String indent,
-                                              String connector) {
-            result.append(indent).append(connector).append(name)
-                  .append(": ").append(formatValue(value)).append("\n");
+        private void renderSimpleValue(String name, Object value, String connector, RenderContext context) {
+            result.append(context.indent).append(connector).append(name)
+                  .append(": ").append(valueOrNull(value)).append("\n");
         }
 
-        /**
-         * Formats a value for display in the tree structure.
-         */
-        private static String formatValue(Object value) {
-            if (value == null) {
-                return "null";
+        private String valueOrNull(Object value) {
+            return value == null ? "null" : value.toString();
+        }
+
+        private record RenderContext(String path, String indent) {
+
+            RenderContext indented(String name, boolean isLast) {
+                var childPath = path.isEmpty() ? name : path + PATH_SEPARATOR + name;
+                var childIndent = indent + (isLast ? SPACE : VERTICAL);
+                return new RenderContext(childPath, childIndent);
             }
-            return value.toString();
         }
     }
 }
