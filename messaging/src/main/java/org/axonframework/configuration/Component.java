@@ -171,7 +171,7 @@ public class Component<C> implements DescribableComponent {
 
         @Override
         public String toString() {
-            return type.getName() + ":" + name;
+            return type.getSimpleName() + ":" + name;
         }
     }
 }
