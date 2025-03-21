@@ -17,6 +17,7 @@
 package org.axonframework.common.infra;
 
 import jakarta.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -48,7 +49,6 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
 
     private static final String ROOT_PATH = "/";
     private static final String PATH_SEPARATOR = "/";
-    private static final String SYMLINK_INDICATOR = " -> ";
 
     private final Map<Object, String> componentPaths;
     private final Map<String, Object> properties;
@@ -64,8 +64,8 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
     /**
      * Private constructor used for creating nested descriptors that share the component paths map.
      *
-     * @param componentPaths Map containing paths to already processed components
-     * @param currentPath    The current path in the virtual filesystem
+     * @param componentPaths Map containing paths to already processed components.
+     * @param currentPath    The current path in the virtual filesystem.
      */
     private FilesystemComponentDescriptor(Map<Object, String> componentPaths, String currentPath) {
         this.componentPaths = componentPaths;
@@ -83,9 +83,10 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
     }
 
     private void describeComponent(String name, DescribableComponent component) {
-        var componentPath = createPath(name);
+        var componentPath = currentPathChild(name);
 
-        if (componentPaths.containsKey(component)) {
+        boolean componentSeenAlready = componentPaths.containsKey(component);
+        if (componentSeenAlready) {
             var existingPath = componentPaths.get(component);
             properties.put(name, new SymbolicLink(existingPath));
             return;
@@ -95,21 +96,10 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
         // This prevents infinite recursion with circular references.
         componentPaths.put(component, componentPath);
 
-        // Create a nested descriptor for this component
-        FilesystemComponentDescriptor childDescriptor =
-                new FilesystemComponentDescriptor(componentPaths, componentPath);
-
-        // Add type information
-        describeType(component, childDescriptor);
-
-        // Let the component describe itself
-        component.describeTo(childDescriptor);
-
-        // Add the component as a child node
-        properties.put(name, childDescriptor);
+        properties.put(name, componentDescriptor(component, componentPath));
     }
 
-    private String createPath(String name) {
+    private String currentPathChild(String name) {
         return currentPath.equals(ROOT_PATH)
                 ? currentPath + name
                 : currentPath + PATH_SEPARATOR + name;
@@ -117,81 +107,77 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
 
     @Override
     public void describeProperty(@Nonnull String name, @Nonnull Collection<?> collection) {
-        List<Object> items = new ArrayList<>();
+        var items = new ArrayList<>();
 
         int index = 0;
-        for (Object item : collection) {
-            if (item instanceof DescribableComponent component) {
-                // For components in a collection, we use indexed paths
-                String itemName = name + "[" + index + "]";
-                String itemPath = createPath(itemName);
-
-                // Check if this component has already been processed
-                if (componentPaths.containsKey(component)) {
-                    // Create a reference to the existing component
-                    String existingPath = componentPaths.get(component);
-                    items.add(new SymbolicLink(existingPath));
-                } else {
-                    // Process a new component
-                    componentPaths.put(component, itemPath);
-
-                    FilesystemComponentDescriptor childDescriptor =
-                            new FilesystemComponentDescriptor(componentPaths, itemPath);
-
-                    describeType(component, childDescriptor);
-                    component.describeTo(childDescriptor);
-                    items.add(childDescriptor);
-                }
-            } else {
-                // For non-component items, just add the value
-                items.add(item);
-            }
+        for (var item : collection) {
+            var property = item instanceof DescribableComponent component
+                    ? describeComponentInCollection(name, index, component)
+                    : item;
+            items.add(property);
             index++;
         }
 
         properties.put(name, items);
     }
 
+    private Object describeComponentInCollection(
+            String name,
+            int index,
+            DescribableComponent component
+    ) {
+        var itemName = name + "[" + index + "]";
+        var itemPath = currentPathChild(itemName);
+
+        boolean componentSeenAlready = componentPaths.containsKey(component);
+        if (componentSeenAlready) {
+            var existingPath = componentPaths.get(component);
+            return new SymbolicLink(existingPath);
+        } else {
+            componentPaths.put(component, itemPath);
+            return componentDescriptor(component, itemPath);
+        }
+    }
+
     @Override
     public void describeProperty(@Nonnull String name, @Nonnull Map<?, ?> map) {
-        Map<String, Object> mappedItems = new LinkedHashMap<>();
-
-        for (Map.Entry<?, ?> entry : map.entrySet()) {
-            String key = entry.getKey().toString();
-            Object value = entry.getValue();
-
-            if (value instanceof DescribableComponent component) {
-                // For components in a map, we use key-based paths
-                String itemName = name + "[" + key + "]";
-                String itemPath = createPath(itemName);
-
-                // Check if this component has already been processed
-                if (componentPaths.containsKey(component)) {
-                    // Create a reference to the existing component
-                    String existingPath = componentPaths.get(component);
-                    mappedItems.put(key, new SymbolicLink(existingPath));
-                } else {
-                    // Process a new component
-                    componentPaths.put(component, itemPath);
-
-                    FilesystemComponentDescriptor childDescriptor =
-                            new FilesystemComponentDescriptor(componentPaths, itemPath);
-
-                    describeType(component, childDescriptor);
-                    component.describeTo(childDescriptor);
-                    mappedItems.put(key, childDescriptor);
-                }
-            } else {
-                // For non-component values, just add the value
-                mappedItems.put(key, value);
-            }
+        var mappedItems = new LinkedHashMap<>();
+        for (var entry : map.entrySet()) {
+            var key = entry.getKey().toString();
+            var value = entry.getValue();
+            var property = value instanceof DescribableComponent component
+                    ? describeComponentInMap(name, key, component)
+                    : value;
+            mappedItems.put(key, property);
         }
-
         properties.put(name, mappedItems);
     }
 
-    private static void describeType(DescribableComponent component, FilesystemComponentDescriptor descriptor) {
+    private Object describeComponentInMap(
+            String name,
+            String key,
+            DescribableComponent component
+    ) {
+        boolean componentSeenAlready = componentPaths.containsKey(component);
+        if (componentSeenAlready) {
+            var existingPath = componentPaths.get(component);
+            return new SymbolicLink(existingPath);
+        } else {
+            var itemName = name + "[" + key + "]";
+            var itemPath = currentPathChild(itemName);
+            componentPaths.put(component, itemPath);
+            return componentDescriptor(component, itemPath);
+        }
+    }
+
+    private FilesystemComponentDescriptor componentDescriptor(
+            DescribableComponent component,
+            String itemPath
+    ) {
+        var descriptor = new FilesystemComponentDescriptor(componentPaths, itemPath);
         descriptor.describeProperty("_type", component.getClass().getSimpleName());
+        component.describeTo(descriptor);
+        return descriptor;
     }
 
     @Override
@@ -215,6 +201,8 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
     }
 
     private record SymbolicLink(String targetPath) {
+
+        private static final String SYMLINK_INDICATOR = " -> ";
 
         @Override
         public String toString() {
@@ -261,15 +249,15 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
                 Object value,
                 String connector,
                 RenderContext context,
-                boolean isLast
+                boolean isLastInCollection
         ) {
             switch (value) {
                 case FilesystemComponentDescriptor descriptor -> renderComponentDirectory(name,
                                                                                           descriptor,
                                                                                           context,
-                                                                                          isLast);
-                case List<?> list -> renderList(name, list, context, isLast);
-                case Map<?, ?> map -> renderMap(name, map, context, isLast);
+                                                                                          isLastInCollection);
+                case List<?> list -> renderList(name, list, context, isLastInCollection);
+                case Map<?, ?> map -> renderMap(name, map, context, isLastInCollection);
                 case SymbolicLink link -> renderSymlink(name, link, connector, context);
                 case null, default -> renderSimpleValue(name, value, connector, context);
             }
@@ -293,13 +281,8 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
                 RenderContext context,
                 boolean isLastInCollection
         ) {
-            // Render the list name as a directory
             result.append(context.indent).append(isLastInCollection ? CORNER : TEE).append(name).append("/\n");
-
-            // Create a new context for list items
             var listContext = context.indented(name, isLastInCollection);
-
-            // Render each item in the list
             for (int j = 0; j < list.size(); j++) {
                 var item = list.get(j);
                 var isLastItem = (j == list.size() - 1);
@@ -315,17 +298,12 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
                 boolean isLastInCollection
         ) {
             if (item instanceof FilesystemComponentDescriptor itemDescriptor) {
-                // Render as subdirectory
                 result.append(listContext.indent).append(isLastInCollection ? CORNER : TEE).append(key).append("/\n");
-
-                // Create context for this item's properties
                 var itemContext = listContext.indented(key, isLastInCollection);
-
-                // Render the item's properties
                 render(itemDescriptor.properties, itemContext);
             } else if (item instanceof SymbolicLink link) {
                 result.append(listContext.indent).append(isLastInCollection ? CORNER : TEE).append(key)
-                      .append(SYMLINK_INDICATOR).append(link.targetPath).append("\n");
+                      .append(link).append("\n");
             } else {
                 result.append(listContext.indent).append(isLastInCollection ? CORNER : TEE).append(key)
                       .append(": ").append(valueOrNull(item)).append("\n");
@@ -352,15 +330,13 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
                 var key = mapEntry.getKey().toString();
                 var mapValue = mapEntry.getValue();
                 var isLastMapEntry = (j == mapEntries.size() - 1);
-
-                // Handle different value types
                 renderMapOrListEntry(key, mapValue, mapContext, isLastMapEntry);
             }
         }
 
         private void renderSymlink(String name, SymbolicLink link, String connector, RenderContext context) {
             result.append(context.indent).append(connector).append(name)
-                  .append(SYMLINK_INDICATOR).append(link.targetPath).append("\n");
+                  .append(link).append("\n");
         }
 
         private void renderSimpleValue(String name, Object value, String connector, RenderContext context) {
