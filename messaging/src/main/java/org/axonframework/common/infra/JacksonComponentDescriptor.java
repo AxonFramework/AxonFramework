@@ -185,7 +185,7 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
         try {
             return objectMapper.writeValueAsString(rootNode);
         } catch (Exception e) {
-            throw new RuntimeException("Error generating JSON description: " + e.getMessage(), e);
+            throw new ComponentDescriptorException("Error generating JSON description", e);
         }
     }
 }
