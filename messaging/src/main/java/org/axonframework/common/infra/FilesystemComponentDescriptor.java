@@ -17,6 +17,7 @@
 package org.axonframework.common.infra;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.Component;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -172,7 +173,9 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
             String itemPath
     ) {
         var descriptor = new FilesystemComponentDescriptor(componentPaths, itemPath);
-        descriptor.describeProperty("_type", component.getClass().getSimpleName());
+        var type = component.getClass().getName();
+        descriptor.describeProperty("_id", System.identityHashCode(component));
+        descriptor.describeProperty("_type", type);
         component.describeTo(descriptor);
         return descriptor;
     }
