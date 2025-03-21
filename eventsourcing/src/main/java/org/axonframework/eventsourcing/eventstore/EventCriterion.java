@@ -29,10 +29,10 @@ import java.util.Set;
 public sealed interface EventCriterion extends EventCriteria permits FilteredEventCriteria {
 
     /**
-     * A {@link Set} of {@link String} containing all the types of events applicable for sourcing, streaming, or
+     * A {@link Set} of {@link String Strings} containing all the types of events applicable for sourcing, streaming, or
      * appending events.
      *
-     * @return The {@link Set} of {@link String} containing all the types of events applicable for sourcing, streaming,
+     * @return The {@link Set} of {@link String Strings} containing all the types of events applicable for sourcing, streaming,
      * or appending events.
      */
     Set<String> types();

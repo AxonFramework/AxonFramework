@@ -49,7 +49,7 @@ class AsyncEventSourcingRepositoryTest {
 
     private static final String TEST_CONTEXT = "DEFAULT_CONTEXT";
     private static final Set<Tag> TEST_MODEL_TAGS = Set.of(new Tag("aggregateId", "id"));
-    private static final EventCriteria TEST_MODEL_CRITERIA = EventCriteria.match().anyEventType().withTags("aggregateId", "id");
+    private static final EventCriteria TEST_MODEL_CRITERIA = EventCriteria.match().eventsOfAnyType().withTags("aggregateId", "id");
 
     private AsyncEventStore eventStore;
     private EventStoreTransaction eventStoreTransaction;

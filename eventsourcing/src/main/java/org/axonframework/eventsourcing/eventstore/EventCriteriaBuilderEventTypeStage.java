@@ -38,12 +38,12 @@ public sealed interface EventCriteriaBuilderEventTypeStage permits EventCriteria
      * @param types The types to match against.
      * @return The current builder as an {@link EventCriteriaBuilderTagStage}, for fluent interfacing.
      */
-    EventCriteriaBuilderTagStage eventTypes(@Nonnull String... types);
+    EventCriteriaBuilderTagStage eventsOfTypes(@Nonnull String... types);
 
     /**
      * Define that the event matches with any type.
      *
      * @return The current builder as an {@link EventCriteriaBuilderTagStage}, for fluent interfacing.
      */
-    EventCriteriaBuilderTagStage anyEventType();
+    EventCriteriaBuilderTagStage eventsOfAnyType();
 }

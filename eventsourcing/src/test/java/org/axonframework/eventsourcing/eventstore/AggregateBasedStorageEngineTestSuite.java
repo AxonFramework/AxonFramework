@@ -69,9 +69,9 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         OTHER_AGGREGATE_ID = UUID.randomUUID().toString();
 
         TEST_AGGREGATE_TAGS = Set.of(new Tag(TEST_AGGREGATE_TYPE, TEST_AGGREGATE_ID));
-        TEST_AGGREGATE_CRITERIA = EventCriteria.match().anyEventType().withTags(TEST_AGGREGATE_TYPE, TEST_AGGREGATE_ID);
+        TEST_AGGREGATE_CRITERIA = EventCriteria.match().eventsOfAnyType().withTags(TEST_AGGREGATE_TYPE, TEST_AGGREGATE_ID);
         OTHER_AGGREGATE_TAGS = Set.of(new Tag("OTHER_AGGREGATE", OTHER_AGGREGATE_ID));
-        OTHER_AGGREGATE_CRITERIA = EventCriteria.match().anyEventType().withTags("OTHER_AGGREGATE", OTHER_AGGREGATE_ID);
+        OTHER_AGGREGATE_CRITERIA = EventCriteria.match().eventsOfAnyType().withTags("OTHER_AGGREGATE", OTHER_AGGREGATE_ID);
 
         testSubject = buildStorageEngine();
     }

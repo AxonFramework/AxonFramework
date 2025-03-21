@@ -42,7 +42,7 @@ record DefaultSourcingCondition(
 ) implements SourcingCondition {
 
     DefaultSourcingCondition {
-        assertNonNull(criteria, "The EventCriteria set cannot be null");
+        assertNonNull(criteria, "The EventCriteria cannot be null");
     }
 
     @Override

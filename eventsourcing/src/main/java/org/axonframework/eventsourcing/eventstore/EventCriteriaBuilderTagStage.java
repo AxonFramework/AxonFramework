@@ -61,7 +61,7 @@ public interface EventCriteriaBuilderTagStage {
      * @return The completed {@link EventCriteria} instance.
      */
     default EventCriteria withTags(@Nonnull String... tags) {
-        if (tags.length % 2 != 0) {
+        if ((tags.length & 1) == 1) {
             throw new IllegalArgumentException("Tags must be in pairs of key and value");
         }
         var tagSet = new HashSet<Tag>();

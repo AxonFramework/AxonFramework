@@ -64,9 +64,9 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
         OTHER_DOMAIN_ID = UUID.randomUUID().toString();
 
         TEST_CRITERIA_TAGS = Set.of(new Tag("TEST", TEST_DOMAIN_ID));
-        TEST_CRITERIA = EventCriteria.match().anyEventType().withTags(new Tag("TEST", TEST_DOMAIN_ID));
+        TEST_CRITERIA = EventCriteria.match().eventsOfAnyType().withTags(new Tag("TEST", TEST_DOMAIN_ID));
         OTHER_CRITERIA_TAGS = Set.of(new Tag("OTHER", OTHER_DOMAIN_ID));
-        OTHER_CRITERIA = EventCriteria.match().anyEventType().withTags(new Tag("OTHER", OTHER_DOMAIN_ID));
+        OTHER_CRITERIA = EventCriteria.match().eventsOfAnyType().withTags(new Tag("OTHER", OTHER_DOMAIN_ID));
 
         testSubject = buildStorageEngine();
     }

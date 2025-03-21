@@ -19,7 +19,9 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 
+import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Describes the criteria for {@link EventStoreTransaction#source(SourcingCondition) sourcing} or
@@ -28,34 +30,34 @@ import java.util.Set;
  * <p>
  * The criteria can be singular, or a combination of multiple criteria. Criteria can be combined using
  * {@link #or(EventCriteria)} or {@link #or()}, after which events will match either of the multiple criteria. For
- * example, given the following set of criteria in which we load the events required to decide if "student A" can be
- * added to "course B":
+ * example, given the following set of criteria in which we load the events required to decide if "matchingStudent" can be
+ * added to "matchingCourse":
  * <pre>
  *     {@code
  *     EventCriteria criteria = EventCriteria
  *         .match()
  *         .eventTypes("StudentRegistered")
- *         .withTags(Tag.of("student", "studentA"))
+ *         .withTags(Tag.of("student", "matchingStudent"))
  *         .or()
  *         .eventTypes("StudentAssignedToCourse", "CourseRegistered")
- *         .withTags(Tag.of("course", "courseB"))
+ *         .withTags(Tag.of("course", "matchingCourse"))
  *
  *    }
  *    </pre>
  * <p>
  * The following events will match:
  * <ul>
- *     <li> Event [StudentRegistered, student -> studentA]</li>
- *     <li> Event [StudentAssignedToCourse, student -> studentB, course -> courseB]</li>
- *     <li> Event [CourseRegistered, course -> courseB]</li>
+ *     <li> Event [StudentRegistered, student -> matchingStudent]</li>
+ *     <li> Event [CourseRegistered, course -> matchingCourse]</li>
+ *     <li> Event [StudentAssignedToCourse, student -> nonMatchingStudent, course -> matchingCourse]</li>
+ *     <li> Event [StudentAssignedToCourse, student -> matchingStudent, course -> nonMatchingCourse]</li>
  * </ul>
  * <p>
  * The following events do not match:
  * <ul>
- *     <li> Event [StudentRegistered, student -> studentB]</li>
- *     <li> Event [StudentAssignedToCourse, student -> studentA, course -> courseA]</li>
- *     <li> Event [CourseRegistered, course -> courseA]</li>
- *     <li> Event [StudentAssignedToCourse, student -> studentB, course -> courseA]</li>
+ *     <li> Event [StudentRegistered, student -> nonMatchingStudent]</li>
+ *     <li> Event [CourseRegistered, course -> nonMatchingCourse]</li>
+ *     <li> Event [StudentAssignedToCourse, student -> nonMatchingStudent, course -> nonMatchingCourse]</li>
  * </ul>
  * <p>
  * The criteria can be flattened into a {@link Set} of {@link EventCriterion} instances, which are a specialized
@@ -92,12 +94,11 @@ public sealed interface EventCriteria permits OrEventCriteria, FilteredEventCrit
      * Create a builder to construct a {@link FilteredEventCriteria} instance. This criteria will match events that
      * match the given type and tags.
      * <p>
-     * The event will match on type if it is contained in the {@link EventCriteriaBuilder#eventTypes(String...)} set, or
+     * The event will match on type if it is contained in the {@link EventCriteriaBuilder#eventsOfTypes(String...)} set, or
      * if the set is empty.
      * <p>
-     * The event will match on tags if it contains all tags in the
-     * {@link EventCriteriaBuilderTagStage#withTags(Tag...)}} set. If the set is empty, the event will match on all
-     * events. For example, given the following set of set:
+     * The event will match on tags if it contains all tags provided during building. If there are no tags, the event
+     * will match on all events. For example, given the following set of tags:
      * <ul>
      *      <li>STUDENT -> A</li>
      *      <li>COURSE -> X</li>
@@ -135,8 +136,8 @@ public sealed interface EventCriteria permits OrEventCriteria, FilteredEventCrit
     }
 
     /**
-     * Create an {@code EventCriteria} that matches events that match either this {@code EventCriteria} or the given
-     * {@code EventCriteria}.
+     * Create an {@code EventCriteria} that matches events from either {@code this} or the given
+     * {@code criteria EventCriteria}.
      *
      * @param criteria The {@code EventCriteria} to match in addition to this {@code EventCriteria}.
      * @return An {@code EventCriteria} that matches events that match either this {@code EventCriteria} or the given
@@ -146,9 +147,20 @@ public sealed interface EventCriteria permits OrEventCriteria, FilteredEventCrit
 
 
     /**
+     * Create an {@code EventCriteria} that matches events that match either of the given {@code EventCriteria}.
+     *
+     * @param eventCriteria The {@code EventCriteria} of which one must match.
+     * @return An {@code EventCriteria} that matches events that match either of the given {@code EventCriteria}.
+     */
+    static EventCriteria either(EventCriteria... eventCriteria) {
+        return new OrEventCriteria(Arrays.stream(eventCriteria).collect(Collectors.toSet()));
+    }
+
+
+    /**
      * Start a builder to construct an additional {@link FilteredEventCriteria} instance that when constructed matches
      * both the events as defined by the builder and the events as defined by the current criteria. Once construction is
-     * complete, returns an {@link OrEventCriteria} that matches events that match either this {@code EventCriteria} or
+     * complete, returns an {@link OrEventCriteria} that matches events from either {@code this EventCriteria} or
      * the built one. See {@link EventCriteriaBuilder} for more details.
      *
      * @return A builder to construct a {@link FilteredEventCriteria} instance that, once built, will match events that

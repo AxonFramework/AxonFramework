@@ -56,12 +56,15 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
             StudentMentorModelIdentifier.class,
             StudentMentorAssignment.class,
             eventStore,
-            id -> EventCriteria.match()
-                               .anyEventType()
-                               .withTags(new Tag("Student", id.mentorId()))
-                               .or()
-                               .eventTypes(MentorAssignedToStudentEvent.class.getName())
-                               .withTags(new Tag("Student", id.menteeId())),
+            id ->
+                    EventCriteria.either(
+                            EventCriteria.match()
+                                         .eventsOfTypes(MentorAssignedToStudentEvent.class.getName())
+                                         .withTags(new Tag("Student", id.menteeId())),
+                            EventCriteria.match()
+                                         .eventsOfTypes(MentorAssignedToStudentEvent.class.getName())
+                                         .withTags(new Tag("Student", id.mentorId()))
+                    ),
             studentMentorModelApplier,
             StudentMentorAssignment::new,
             DEFAULT_CONTEXT

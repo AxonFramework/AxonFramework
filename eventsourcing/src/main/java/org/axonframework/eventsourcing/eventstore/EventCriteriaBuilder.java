@@ -29,7 +29,7 @@ import java.util.Set;
  * <ol>
  *     <li>
  *         {@link EventCriteriaBuilderEventTypeStage The event type stage}, defining the types that this criteria
- *          instance matches with using {@link EventCriteriaBuilderEventTypeStage#eventTypes(String...)} or {@link EventCriteriaBuilderEventTypeStage#anyEventType()}.
+ *          instance matches with using {@link EventCriteriaBuilderEventTypeStage#eventsOfTypes(String...)} or {@link EventCriteriaBuilderEventTypeStage#eventsOfAnyType()}.
  *     </li>
  *     <li>
  *         {@link EventCriteriaBuilderEventTypeStage The tag stage}, defining the tags that events are expected to have using
@@ -44,7 +44,7 @@ import java.util.Set;
  * @see EventCriteria
  * @since 5.0.0
  */
-public final class EventCriteriaBuilder implements EventCriteriaBuilderEventTypeStage, EventCriteriaBuilderTagStage {
+final class EventCriteriaBuilder implements EventCriteriaBuilderEventTypeStage, EventCriteriaBuilderTagStage {
 
     private final EventCriteria orCriteria;
     private final Set<String> eventTypes = new HashSet<>();
@@ -75,23 +75,27 @@ public final class EventCriteriaBuilder implements EventCriteriaBuilderEventType
         return new EventCriteriaBuilder(criteria);
     }
 
-    public EventCriteriaBuilderTagStage eventTypes(@Nonnull String... types) {
+    @Override
+    public EventCriteriaBuilderTagStage eventsOfTypes(@Nonnull String... types) {
         eventTypes.addAll(Arrays.asList(types));
         return this;
     }
 
-    public EventCriteriaBuilderTagStage anyEventType() {
+    @Override
+    public EventCriteriaBuilderTagStage eventsOfAnyType() {
         return this;
     }
 
+    @Override
     public EventCriteria withTags(@Nonnull Set<Tag> tags) {
         if (tags.isEmpty()) {
             return withAnyTags();
         }
-        FilteredEventCriteria criterion = new FilteredEventCriteria(eventTypes, tags);
-        return wrapWithOrIfNecessary(criterion);
+        FilteredEventCriteria filteredEventCriteria = new FilteredEventCriteria(eventTypes, tags);
+        return wrapWithOrIfNecessary(filteredEventCriteria);
     }
 
+    @Override
     public EventCriteria withAnyTags() {
         if (eventTypes.isEmpty()) {
             return wrapWithOrIfNecessary(AnyEvent.INSTANCE);

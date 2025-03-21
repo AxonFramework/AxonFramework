@@ -36,7 +36,7 @@ class EventCriteriaTest {
 
     @Test
     void criteriaForEventsOfSpecificTypeIgnoresOtherTypes() {
-        EventCriteria testSubject = EventCriteria.match().eventTypes("OneType").withAnyTags();
+        EventCriteria testSubject = EventCriteria.match().eventsOfTypes("OneType").withAnyTags();
 
         assertTrue(testSubject.matches("OneType", Set.of()));
         assertTrue(testSubject.matches("OneType", Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
@@ -47,7 +47,7 @@ class EventCriteriaTest {
 
     @Test
     void criteriaWithTypesAndTagsIgnoresTagsForOtherTypes() {
-        EventCriteria testSubject = EventCriteria.match().eventTypes("OneType").withTags("key1", "value1");
+        EventCriteria testSubject = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1");
 
         assertTrue(testSubject.matches("OneType", Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
 
@@ -58,10 +58,10 @@ class EventCriteriaTest {
 
     @Test
     void criteriaWithTypesAndTagsIgnoresEventsWithSubsetOfTags() {
-        EventCriteria testSubject = EventCriteria.match().eventTypes("OneType").withTags("key1",
-                                                                                         "value1",
-                                                                                         "key2",
-                                                                                         "value2");
+        EventCriteria testSubject = EventCriteria.match().eventsOfTypes("OneType").withTags("key1",
+                                                                                            "value1",
+                                                                                            "key2",
+                                                                                            "value2");
 
         assertTrue(testSubject.matches("OneType", Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
 
@@ -73,19 +73,19 @@ class EventCriteriaTest {
 
     @Test
     void criteriaWithOddParameterCountForTagsIsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> EventCriteria.match().anyEventType().withTags("odd"));
+        assertThrows(IllegalArgumentException.class, () -> EventCriteria.match().eventsOfAnyType().withTags("odd"));
         assertThrows(IllegalArgumentException.class,
-                     () -> EventCriteria.match().anyEventType().withTags("odd", "even", "odd"));
+                     () -> EventCriteria.match().eventsOfAnyType().withTags("odd", "even", "odd"));
     }
 
     @Test
     void criteriaWithEqualParametersAreConsideredEqual() {
-        EventCriteria testSubject1 = EventCriteria.match().eventTypes("OneType").withTags("key1", "value1");
-        EventCriteria testSubject2 = EventCriteria.match().eventTypes("OneType").withTags(new Tag("key1", "value1"));
-        EventCriteria testSubject3 = EventCriteria.match().eventTypes("OtherType").withTags(new Tag("key1", "value1"));
-        EventCriteria testSubject4 = EventCriteria.match().eventTypes("OneType").withTags(new Tag("key2", "value2s"));
+        EventCriteria testSubject1 = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1");
+        EventCriteria testSubject2 = EventCriteria.match().eventsOfTypes("OneType").withTags(new Tag("key1", "value1"));
+        EventCriteria testSubject3 = EventCriteria.match().eventsOfTypes("OtherType").withTags(new Tag("key1", "value1"));
+        EventCriteria testSubject4 = EventCriteria.match().eventsOfTypes("OneType").withTags(new Tag("key2", "value2s"));
         EventCriteria testSubject5 = EventCriteria.anyEvent();
-        EventCriteria testSubject6 = EventCriteria.match().anyEventType().withTags(Set.of());
+        EventCriteria testSubject6 = EventCriteria.match().eventsOfAnyType().withTags(Set.of());
 
         assertEquals(testSubject1, testSubject2);
         assertEquals(testSubject5, testSubject6);
@@ -110,8 +110,8 @@ class EventCriteriaTest {
 
     @Test
     void criteriaWithOrConditionMatchBoth() {
-        EventCriteria testSubject = EventCriteria.match().eventTypes("OneType").withTags("key1", "value1")
-                                                 .or().eventTypes("OtherType").withTags("key2", "value2");
+        EventCriteria testSubject = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1")
+                                                 .or().eventsOfTypes("OtherType").withTags("key2", "value2");
 
         assertTrue(testSubject.matches("OneType", Set.of(new Tag("key1", "value1"))));
         assertTrue(testSubject.matches("OtherType", Set.of(new Tag("key2", "value2"))));
@@ -122,8 +122,8 @@ class EventCriteriaTest {
 
     @Test
     void criteriaWithOrOnAnyEventWillMatchAllEvents() {
-        EventCriteria testSubject = EventCriteria.match().anyEventType().withTags("key1", "value1")
-                                                 .or().anyEventType().withAnyTags();
+        EventCriteria testSubject = EventCriteria.match().eventsOfAnyType().withTags("key1", "value1")
+                                                 .or().eventsOfAnyType().withAnyTags();
 
         assertTrue(testSubject.matches("OneType", Set.of(new Tag("key1", "value1"))));
         assertTrue(testSubject.matches("OtherType", Set.of(new Tag("key2", "value2"))));
@@ -131,7 +131,7 @@ class EventCriteriaTest {
 
     @Test
     void criteriaWithAnyTagsWillMatchAllEventsOfThatType() {
-        EventCriteria testSubject = EventCriteria.match().eventTypes("OneType").withAnyTags();
+        EventCriteria testSubject = EventCriteria.match().eventsOfTypes("OneType").withAnyTags();
 
         assertTrue(testSubject.matches("OneType", Set.of(new Tag("key1", "value1"))));
         assertTrue(testSubject.matches("OneType", Set.of(new Tag("key2", "value2"))));
@@ -143,8 +143,8 @@ class EventCriteriaTest {
 
     @Test
     void combiningSameCriteriaInOrLeadsToSingularCriteriaDuringFlatten() {
-        EventCriteria testSubject1 = EventCriteria.match().eventTypes("OneType").withTags("key1", "value1");
-        EventCriteria testSubject2 = EventCriteria.match().eventTypes("OneType").withTags("key1", "value1");
+        EventCriteria testSubject1 = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1");
+        EventCriteria testSubject2 = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1");
         EventCriteria combined = testSubject1.or(testSubject2);
 
         assertEquals(1, combined.flatten().size());
@@ -152,8 +152,8 @@ class EventCriteriaTest {
 
     @Test
     void flatteningTwoConditionsInOrLeadsToTwoCriteria() {
-        EventCriteria testSubject1 = EventCriteria.match().eventTypes("OneType").withTags("key1", "value1");
-        EventCriteria testSubject2 = EventCriteria.match().eventTypes("OneType").withTags("key2", "value2");
+        EventCriteria testSubject1 = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1");
+        EventCriteria testSubject2 = EventCriteria.match().eventsOfTypes("OneType").withTags("key2", "value2");
         EventCriteria combined = testSubject1.or(testSubject2);
 
         Set<EventCriterion> flattened = combined.flatten();
@@ -164,12 +164,12 @@ class EventCriteriaTest {
 
     @Test
     void whenNestingIsDifferentSameCriteriaStillLeadToEquals() {
-        EventCriteria testSubject1 = EventCriteria.match().eventTypes("OneType").withTags("key1", "value1")
-                                                  .or().eventTypes("OtherType").withTags("key2", "value2")
-                                                  .or().eventTypes("ThirdType").withAnyTags();
-        EventCriteria testSubject2 = EventCriteria.match().eventTypes("OtherType").withTags("key2", "value2")
-                                                  .or().eventTypes("OneType").withTags("key1", "value1")
-                                                  .or().eventTypes("ThirdType").withAnyTags();
+        EventCriteria testSubject1 = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1")
+                                                  .or().eventsOfTypes("OtherType").withTags("key2", "value2")
+                                                  .or().eventsOfTypes("ThirdType").withAnyTags();
+        EventCriteria testSubject2 = EventCriteria.match().eventsOfTypes("OtherType").withTags("key2", "value2")
+                                                  .or().eventsOfTypes("OneType").withTags("key1", "value1")
+                                                  .or().eventsOfTypes("ThirdType").withAnyTags();
 
         assertEquals(testSubject1, testSubject2);
     }
@@ -183,9 +183,9 @@ class EventCriteriaTest {
 
     @Test
     void makingOrOfOrCriteriaWillMergeCriteria() {
-        EventCriteria testSubject1 = EventCriteria.match().eventTypes("OneType").withTags("key1", "value1");
-        EventCriteria testSubject2 = EventCriteria.match().eventTypes("OneType").withTags("key2", "value2");
-        EventCriteria testSubject3 = EventCriteria.match().eventTypes("OneType").withTags("key3", "value3");
+        EventCriteria testSubject1 = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1");
+        EventCriteria testSubject2 = EventCriteria.match().eventsOfTypes("OneType").withTags("key2", "value2");
+        EventCriteria testSubject3 = EventCriteria.match().eventsOfTypes("OneType").withTags("key3", "value3");
         EventCriteria combined1 = testSubject1.or(testSubject2);
         EventCriteria combined2 = testSubject1.or(testSubject3);
         EventCriteria combined = combined1.or(combined2);
