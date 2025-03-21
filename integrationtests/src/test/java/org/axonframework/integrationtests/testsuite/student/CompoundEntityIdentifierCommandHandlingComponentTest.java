@@ -21,11 +21,20 @@ import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComp
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
+import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
+import org.axonframework.eventsourcing.EventStateApplier;
+import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.integrationtests.testsuite.student.commands.AssignMentorCommand;
+import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;
 import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
-import org.axonframework.integrationtests.testsuite.student.state.StudentMentorAssignmentModel;
+import org.axonframework.integrationtests.testsuite.student.state.StudentMentorAssignment;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.command.annotation.InjectEntity;
 import org.junit.jupiter.api.*;
@@ -35,20 +44,39 @@ import java.util.concurrent.CompletionException;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests the injection of a compound entity based on a compound id that loads events of two tags. Currently is disabled,
- * as two requirements are not met:
- * <ol>
- *     <li>EventStore does not support multiple tags in a single query</li>
- *     <li>EventCriteria does not support OR on tags</li>
- * </ol>
- * In time, I expect this test to work, and for now it serves as an example.
- * NOTE: Using manual, temporary code edits this test WORKED.
+ * Tests the injection of a compound entity based on a compound id that loads events of two tags.
  */
 class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
+    protected EventStateApplier<StudentMentorAssignment> studentMentorModelApplier = new AnnotationBasedEventStateApplier<>(
+            StudentMentorAssignment.class);
+
+
+    protected AsyncEventSourcingRepository<StudentMentorModelIdentifier, StudentMentorAssignment> mentorAssignmentRepository = new AsyncEventSourcingRepository<>(
+            StudentMentorModelIdentifier.class,
+            StudentMentorAssignment.class,
+            eventStore,
+            id ->
+                    EventCriteria.either(
+                            EventCriteria.match()
+                                         .eventsOfTypes(MentorAssignedToStudentEvent.class.getName())
+                                         .withTags(new Tag("Student", id.menteeId())),
+                            EventCriteria.match()
+                                         .eventsOfTypes(MentorAssignedToStudentEvent.class.getName())
+                                         .withTags(new Tag("Student", id.mentorId()))
+                    ),
+            studentMentorModelApplier,
+            StudentMentorAssignment::new,
+            DEFAULT_CONTEXT
+    );
+
+    @Override
+    protected void registerAdditionalModels(SimpleStateManager.Builder builder) {
+        builder.register(mentorAssignmentRepository);
+    }
+
     @Test
-    @Disabled
-    void canHandleCommandThatTargetsCompoundEntityUsingInjection() {
+    void canHandleCommandThatTargetsMultipleModelsViaInjectionOfCompoundModel() {
 
         CompoundModelAnnotatedCommandHandler handler = new CompoundModelAnnotatedCommandHandler();
         var component = StatefulCommandHandlingComponent
@@ -57,6 +85,10 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                         handler,
                         getParameterResolverFactory()));
 
+        verifyMentorLogicForComponent(component);
+    }
+
+    private void verifyMentorLogicForComponent(StatefulCommandHandlingComponent component) {
         // Can assign mentor to mentee
         sendCommand(component, new AssignMentorCommand("my-studentId-1", "my-studentId-2"));
 
@@ -68,20 +100,63 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                                      ));
         assertInstanceOf(IllegalArgumentException.class, exception.getCause());
         assertTrue(exception.getCause().getMessage().contains("Mentee already has a mentor"));
+
+        // And a third student can't become the mentee of the second, because the second is already a mentor
+        var exception2 = assertThrows(CompletionException.class,
+                                      () -> sendCommand(component,
+                                                        new AssignMentorCommand("my-studentId-3",
+                                                                                "my-studentId-2")
+                                      ));
+        assertInstanceOf(IllegalArgumentException.class, exception2.getCause());
+        assertTrue(exception2.getCause().getMessage().contains("Mentor already assigned to a mentee"));
+
+        // But the mentee can become a mentor for a third student
+        sendCommand(component, new AssignMentorCommand("my-studentId-2", "my-studentId-3"));
+
+        // And that third can become a mentor for the first
+        sendCommand(component, new AssignMentorCommand("my-studentId-3", "my-studentId-1"));
+    }
+
+
+    @Test
+    void canHandleCommandThatTargetsMultipleModelsViaStatefulCommandHandler() {
+        var component = StatefulCommandHandlingComponent
+                .create("InjectedStateHandler", stateManager)
+                .subscribe(
+                        new QualifiedName(AssignMentorCommand.class),
+                        (command, state, context) -> {
+                            AssignMentorCommand payload = (AssignMentorCommand) command.getPayload();
+                            StudentMentorAssignment assignment = stateManager.loadEntity(
+                                    StudentMentorAssignment.class, payload.modelIdentifier(), context
+                            ).join();
+
+                            if (assignment.isMentorHasMentee()) {
+                                throw new IllegalArgumentException("Mentor already assigned to a mentee");
+                            }
+                            if (assignment.isMenteeHasMentor()) {
+                                throw new IllegalArgumentException("Mentee already has a mentor");
+                            }
+                            appendEvent(context,
+                                        new MentorAssignedToStudentEvent(payload.mentorId(), payload.menteeId()));
+                            return MessageStream.empty().cast();
+                        });
+
+        // Can assign mentor to mentee
+        verifyMentorLogicForComponent(component);
     }
 
     class CompoundModelAnnotatedCommandHandler {
 
         @CommandHandler
         public void handle(AssignMentorCommand command,
-                           @InjectEntity StudentMentorAssignmentModel model,
+                           @InjectEntity StudentMentorAssignment assignment,
                            EventSink eventSink,
                            ProcessingContext context
         ) {
-            if (model.isMentorHasMentee()) {
+            if (assignment.isMentorHasMentee()) {
                 throw new IllegalArgumentException("Mentor already assigned to a mentee");
             }
-            if (model.isMenteeHasMentor()) {
+            if (assignment.isMenteeHasMentor()) {
                 throw new IllegalArgumentException("Mentee already has a mentor");
             }
 

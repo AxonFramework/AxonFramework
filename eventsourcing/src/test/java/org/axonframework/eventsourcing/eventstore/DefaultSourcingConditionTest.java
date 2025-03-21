@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.common.AxonConfigurationException;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class DefaultSourcingConditionTest {
 
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.forAnyEventType().withTags("key", "value");
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.match().eventsOfAnyType().withTags("key", "value");
     private static final long TEST_START = 1L;
     private static final long TEST_END = 10L;
 
@@ -41,8 +42,8 @@ class DefaultSourcingConditionTest {
     @Test
     void throwsExceptionWhenConstructingWithNullEventCriteria() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class,
-                     () -> new DefaultSourcingCondition(TEST_START, TEST_END, (EventCriteria) null));
+        assertThrows(AxonConfigurationException.class,
+                     () -> new DefaultSourcingCondition(TEST_START, TEST_END, null));
     }
 
     @Test

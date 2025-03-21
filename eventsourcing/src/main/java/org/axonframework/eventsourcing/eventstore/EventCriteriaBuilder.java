@@ -17,50 +17,97 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-final class EventCriteriaBuilder implements EventCriteria.Builder {
+/**
+ * Builder class to construct a {@link FilteredEventCriteria} instance. The builder executes in two steps:
+ *
+ * <ol>
+ *     <li>
+ *         {@link EventCriteriaBuilderEventTypeStage The event type stage}, defining the types that this criteria
+ *          instance matches with using {@link EventCriteriaBuilderEventTypeStage#eventsOfTypes(String...)} or {@link EventCriteriaBuilderEventTypeStage#eventsOfAnyType()}.
+ *     </li>
+ *     <li>
+ *         {@link EventCriteriaBuilderEventTypeStage The tag stage}, defining the tags that events are expected to have using
+ *          {@link EventCriteriaBuilderTagStage#withTags(Tag...)}, {@link EventCriteriaBuilderTagStage#withTags(Set)}, or
+ *          {@link EventCriteriaBuilderTagStage#withTags(String...)}.
+ *     </li>
+ * </ol>
+ * <p>
+ * The builder will return an {@link EventCriteria} instance that matches on the defined types and tags.
+ *
+ * @author Mitchell Herrijgers
+ * @see EventCriteria
+ * @since 5.0.0
+ */
+final class EventCriteriaBuilder implements EventCriteriaBuilderEventTypeStage, EventCriteriaBuilderTagStage {
 
-    private final String[] types;
+    private final EventCriteria orCriteria;
+    private final Set<String> eventTypes = new HashSet<>();
 
-    static final EventCriteriaBuilder NO_TYPES = new EventCriteriaBuilder();
 
-    EventCriteriaBuilder(String... types) {
-        this.types = types;
+    private EventCriteriaBuilder(@Nullable EventCriteria orCriteria) {
+        this.orCriteria = orCriteria;
+    }
+
+
+    /**
+     * Start building a new {@link EventCriteria} instance.
+     *
+     * @return The builder in the {@link EventCriteriaBuilderEventTypeStage event type stage}.
+     */
+    public static EventCriteriaBuilderEventTypeStage match() {
+        return new EventCriteriaBuilder(null);
+    }
+
+    /**
+     * Start building a new {@link EventCriteria} instance that when constructed will be combined with the given
+     * {@code criteria} using an {@link EventCriteria#or(EventCriteria) OR operation}.
+     *
+     * @param criteria The criteria to combine with the new criteria using an OR operation.
+     * @return The builder in the {@link EventCriteriaBuilderEventTypeStage event type stage}.
+     */
+    public static EventCriteriaBuilderEventTypeStage or(EventCriteria criteria) {
+        return new EventCriteriaBuilder(criteria);
+    }
+
+    @Override
+    public EventCriteriaBuilderTagStage eventsOfTypes(@Nonnull String... types) {
+        eventTypes.addAll(Arrays.asList(types));
+        return this;
+    }
+
+    @Override
+    public EventCriteriaBuilderTagStage eventsOfAnyType() {
+        return this;
     }
 
     @Override
     public EventCriteria withTags(@Nonnull Set<Tag> tags) {
-        if (tags.isEmpty() && types.length == 0) {
-            return AnyEvent.INSTANCE;
+        if (tags.isEmpty()) {
+            return withAnyTags();
         }
-        return new DefaultEventCriteria(Set.of(types), tags);
-    }
-
-    @Override
-    public EventCriteria withTags(@Nonnull Tag... tags) {
-        return withTags(Set.of(tags));
-    }
-
-    @Override
-    public EventCriteria withTags(@Nonnull String... tagKeyValuePairs) {
-        if (tagKeyValuePairs.length % 2 != 0) {
-            throw new IllegalArgumentException("tagKeyValuePairs must have even length");
-        }
-        Set<Tag> tags = new HashSet<>();
-        for (int i = 0; i < tagKeyValuePairs.length; i = i + 2) {
-            tags.add(new Tag(tagKeyValuePairs[i], tagKeyValuePairs[i + 1]));
-        }
-        return withTags(tags);
+        FilteredEventCriteria filteredEventCriteria = new FilteredEventCriteria(eventTypes, tags);
+        return wrapWithOrIfNecessary(filteredEventCriteria);
     }
 
     @Override
     public EventCriteria withAnyTags() {
-        if (types.length == 0) {
-            return AnyEvent.INSTANCE;
+        if (eventTypes.isEmpty()) {
+            return wrapWithOrIfNecessary(AnyEvent.INSTANCE);
         }
-        return new DefaultEventCriteria(Set.of(types), Set.of());
+        FilteredEventCriteria filteredEventCriteria = new FilteredEventCriteria(eventTypes, Set.of());
+        return wrapWithOrIfNecessary(filteredEventCriteria);
+    }
+
+    private EventCriteria wrapWithOrIfNecessary(EventCriteria criteria) {
+        if (orCriteria == null) {
+            return criteria;
+        }
+        return orCriteria.or(criteria);
     }
 }

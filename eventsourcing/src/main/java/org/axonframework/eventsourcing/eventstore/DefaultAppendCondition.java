@@ -18,8 +18,6 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 
-import java.util.Set;
-
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -33,22 +31,12 @@ import static java.util.Objects.requireNonNull;
  */
 record DefaultAppendCondition(
         @Nonnull ConsistencyMarker consistencyMarker,
-        @Nonnull Set<EventCriteria> criteria
+        @Nonnull EventCriteria criteria
 ) implements AppendCondition {
 
     DefaultAppendCondition {
         requireNonNull(consistencyMarker, "The ConsistencyMarker cannot be null");
-        requireNonNull(criteria, "The EventCriteria set cannot be null");
-    }
-
-    /**
-     * Creates an appendCondition with given {@code consistencyMarker} and a single {@code eventCriteria}.
-     *
-     * @param consistencyMarker The consistency marker for this append condition.
-     * @param eventCriteria     The criteria for the append condition.
-     */
-    public DefaultAppendCondition(@Nonnull ConsistencyMarker consistencyMarker, @Nonnull EventCriteria eventCriteria) {
-        this(consistencyMarker, Set.of(requireNonNull(eventCriteria, "The EventCriteria cannot be null")));
+        requireNonNull(criteria, "The EventCriteria cannot be null");
     }
 
     @Override

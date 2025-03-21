@@ -21,11 +21,6 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.ConfigurationParameterResolverFactory;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
-import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
-import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
-import org.axonframework.integrationtests.testsuite.student.state.Course;
-import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
@@ -37,6 +32,11 @@ import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventStorageEngine;
+import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
+import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
+import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
+import org.axonframework.integrationtests.testsuite.student.state.Course;
+import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
@@ -45,6 +45,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.annotation.InjectEntityParameterResolverFactory;
+import org.junit.jupiter.api.*;
 import org.mockito.*;
 
 import java.util.List;
@@ -90,11 +91,21 @@ public abstract class AbstractStudentTestSuite {
     );
 
 
-    protected StateManager stateManager = SimpleStateManager
-            .builder("MyModelRegistry")
-            .register(studentRepository)
-            .register(courseRepository)
-            .build();
+    protected StateManager stateManager;
+
+    @BeforeEach
+    void setUp() {
+        SimpleStateManager.Builder builder = SimpleStateManager
+                .builder("MyModelRegistry")
+                .register(studentRepository)
+                .register(courseRepository);
+        registerAdditionalModels(builder);
+        stateManager = builder.build();
+    }
+
+    protected void registerAdditionalModels(SimpleStateManager.Builder builder) {
+        // Test suites can override this method to register additional models
+    }
 
 
     /**
@@ -132,7 +143,7 @@ public abstract class AbstractStudentTestSuite {
      * with the tag "Student" and the given model id.
      */
     protected CriteriaResolver<String> getStudentCriteriaResolver() {
-        return myModelId -> EventCriteria.forAnyEventType().withTags(new Tag("Student", myModelId));
+        return myModelId -> EventCriteria.match().eventsOfAnyType().withTags(new Tag("Student", myModelId));
     }
 
     /**
@@ -140,7 +151,7 @@ public abstract class AbstractStudentTestSuite {
      * with the tag "Course" and the given model id.
      */
     protected CriteriaResolver<String> getCourseCriteriaResolver() {
-        return myModelId -> EventCriteria.forAnyEventType().withTags(new Tag("Course", myModelId));
+        return myModelId -> EventCriteria.match().eventsOfAnyType().withTags(new Tag("Course", myModelId));
     }
 
 

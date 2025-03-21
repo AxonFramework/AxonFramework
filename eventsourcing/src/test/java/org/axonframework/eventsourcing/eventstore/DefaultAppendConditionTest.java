@@ -31,7 +31,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class DefaultAppendConditionTest {
 
     private static final ConsistencyMarker TEST_CONSISTENCY_MARKER = new GlobalIndexConsistencyMarker(10);
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.forAnyEventType().withTags("key", "value");
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.match().eventsOfAnyType().withTags("key", "value");
+    private static final EventCriteria OTHER_CRITERIA = EventCriteria.match().eventsOfAnyType().withTags("other_key", "other");
 
     private AppendCondition testSubject;
 
@@ -43,13 +44,14 @@ class DefaultAppendConditionTest {
     @Test
     void throwsExceptionWhenConstructingWithNullEventCriteria() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new DefaultAppendCondition(ConsistencyMarker.ORIGIN, (EventCriteria) null));
+        assertThrows(NullPointerException.class,
+                     () -> new DefaultAppendCondition(ConsistencyMarker.ORIGIN, (EventCriteria) null));
     }
 
     @Test
     void containsExpectedData() {
         assertEquals(TEST_CONSISTENCY_MARKER, testSubject.consistencyMarker());
-        assertEquals(Set.of(TEST_CRITERIA), testSubject.criteria());
+        assertEquals(Set.of(TEST_CRITERIA), testSubject.criteria().flatten());
     }
 
     @Test
@@ -66,10 +68,10 @@ class DefaultAppendConditionTest {
     void orCriteriaAreCombinedWithExistingCriteria() {
         ConsistencyMarker testConsistencyMarker = new GlobalIndexConsistencyMarker(5);
 
-        EventCriteria otherCriteria = EventCriteria.forAnyEventType().withAnyTags();
-        AppendCondition result = testSubject.withMarker(testConsistencyMarker).orCriteria(TEST_CRITERIA)
-                .orCriteria(otherCriteria);
-        assertTrue(result.criteria().contains(TEST_CRITERIA));
-        assertTrue(result.criteria().contains(otherCriteria));
+        AppendCondition result = testSubject.withMarker(testConsistencyMarker)
+                                            .orCriteria(TEST_CRITERIA)
+                                            .orCriteria(OTHER_CRITERIA);
+        assertTrue(result.criteria().flatten().contains(TEST_CRITERIA));
+        assertTrue(result.criteria().flatten().contains(OTHER_CRITERIA));
     }
 }

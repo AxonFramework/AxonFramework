@@ -19,7 +19,6 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.TrackingToken;
 
-import java.util.Set;
 import javax.annotation.Nullable;
 
 /**
@@ -37,6 +36,6 @@ record StartingFrom(@Nullable TrackingToken position) implements StreamingCondit
         if (position == null) {
             throw new IllegalArgumentException("The position may not be null when adding criteria to it");
         }
-        return new DefaultStreamingCondition(position, Set.of(criteria));
+        return new DefaultStreamingCondition(position, criteria);
     }
 }

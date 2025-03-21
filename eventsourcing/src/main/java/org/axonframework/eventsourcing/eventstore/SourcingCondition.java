@@ -17,13 +17,10 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-
-import java.util.Set;
 
 /**
  * Interface describing the condition to
- * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) source} events from an Event Store.
+ * {@link EventStoreTransaction#source(SourcingCondition) source} events from an Event Store.
  * <p>
  * The condition has a mandatory {@link #criteria()} used to retrieve the exact sequence of events to source the
  * model(s). The {@link #start()} and {@link #end()} operations define the window of events that the
@@ -44,7 +41,7 @@ public sealed interface SourcingCondition extends EventsCondition permits Defaul
      * @param criteria The {@link EventCriteria} used as the {@link SourcingCondition#criteria()}.
      * @return A {@code SourcingCondition} that will retrieve an event sequence matching the given {@code criteria}.
      */
-    static SourcingCondition conditionFor(@Nonnull EventCriteria... criteria) {
+    static SourcingCondition conditionFor(@Nonnull EventCriteria criteria) {
         return conditionFor(0, criteria);
     }
 
@@ -58,7 +55,7 @@ public sealed interface SourcingCondition extends EventsCondition permits Defaul
      * @return A {@code SourcingCondition} that will retrieve an event sequence matching the given {@code criteria},
      * starting at the given {@code start}.
      */
-    static SourcingCondition conditionFor(long start, @Nonnull EventCriteria... criteria) {
+    static SourcingCondition conditionFor(long start, @Nonnull EventCriteria criteria) {
         return conditionFor(start, Long.MAX_VALUE, criteria);
     }
 
@@ -73,8 +70,8 @@ public sealed interface SourcingCondition extends EventsCondition permits Defaul
      * @return A {@code SourcingCondition} that will retrieve an event sequence matching the given {@code criteria},
      * starting at the given {@code start} and ending at the given {@code end}.
      */
-    static SourcingCondition conditionFor(long start, long end, @Nonnull EventCriteria... criteria) {
-        return new DefaultSourcingCondition(start, end, Set.of(criteria));
+    static SourcingCondition conditionFor(long start, long end, @Nonnull EventCriteria criteria) {
+        return new DefaultSourcingCondition(start, end, criteria);
     }
 
     /**

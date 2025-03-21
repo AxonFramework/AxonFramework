@@ -23,10 +23,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class AnyEventTest {
 
     @Test
-    void anyEventDoesNotContainTagsOrTypes() {
+    void anyEventDoesNotFlattenToCriterion() {
         AnyEvent testSubject = AnyEvent.INSTANCE;
 
-        assertTrue(testSubject.types().isEmpty());
-        assertTrue(testSubject.tags().isEmpty());
+        assertTrue(testSubject.flatten().isEmpty());
     }
 }

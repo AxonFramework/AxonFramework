@@ -19,16 +19,17 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 
+import java.util.Collections;
 import java.util.Set;
 
 /**
- * Implementation of the {@link EventCriteria} allowing <b>any</b> event.
+ * Implementation of the {@link EventCriteria} allowing <b>any</b> event, regardless of its type or tags.
  * <p>
  * Use this instance when all events are of interest during
  * {@link StreamableEventSource#open(String, org.axonframework.eventsourcing.eventstore.StreamingCondition) streaming}
  * or when there are no consistency boundaries to validate during
- * {@link EventStoreTransaction#appendEvent(EventMessage) appending}. Note that {@code AnyEvent} criteria does not
- * make sense for {@link EventStoreTransaction#source(SourcingCondition) sourcing}, as it is
+ * {@link EventStoreTransaction#appendEvent(EventMessage) appending}. Note that {@code AnyEvent} criteria does not make
+ * sense for {@link EventStoreTransaction#source(SourcingCondition) sourcing}, as it is
  * <b>not</b> recommended to source the entire event store.
  *
  * @author Steven van Beelen
@@ -46,22 +47,29 @@ final class AnyEvent implements EventCriteria {
     }
 
     @Override
-    public Set<String> types() {
-        return Set.of();
+    public Set<EventCriterion> flatten() {
+        // AnyEvent does not have a criterion, as it matches all.
+        return Collections.emptySet();
     }
 
     @Override
-    public Set<Tag> tags() {
-        return Set.of();
-    }
-
-    @Override
-    public boolean matchingTags(@Nonnull Set<Tag> tags) {
+    public boolean matches(@Nonnull String type, @Nonnull Set<Tag> tags) {
         return true;
     }
 
     @Override
     public String toString() {
         return "AnyEvent";
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof AnyEvent;
+    }
+
+    @Override
+    public EventCriteria or(EventCriteria criteria) {
+        // The AnyEvent is always matches, so the other criteria has no effect.
+        return this;
     }
 }

@@ -19,9 +19,6 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.junit.jupiter.api.*;
 
-import java.util.Collections;
-import java.util.Set;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -32,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class StartingFromTest {
 
     private static final GlobalSequenceTrackingToken TEST_POSITION = new GlobalSequenceTrackingToken(1337);
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.forAnyEventType().withTags("key", "value");
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.match().eventsOfAnyType().withTags("key", "value");
 
     private StreamingCondition testSubject;
 
@@ -44,16 +41,16 @@ class StartingFromTest {
     @Test
     void containsExpectedData() {
         assertEquals(TEST_POSITION, testSubject.position());
-        assertEquals(Collections.emptySet(), testSubject.criteria());
+        assertEquals(EventCriteria.anyEvent(), testSubject.criteria());
     }
 
     @Test
     void withCriteriaReplaceNoCriteriaForGivenCriteria() {
-        assertEquals(Collections.emptySet(), testSubject.criteria());
+        assertEquals(EventCriteria.anyEvent(), testSubject.criteria());
 
         StreamingCondition result = testSubject.or(TEST_CRITERIA);
 
-        assertEquals(Set.of(TEST_CRITERIA), result.criteria());
+        assertEquals(TEST_CRITERIA, result.criteria());
     }
 
     @Test
