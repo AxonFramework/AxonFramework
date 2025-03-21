@@ -173,7 +173,7 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
             String itemPath
     ) {
         var descriptor = new FilesystemComponentDescriptor(componentPaths, itemPath);
-        var type = component.getClass().getName();
+        var type = component.getClass().getSimpleName();
         descriptor.describeProperty("_id", System.identityHashCode(component));
         descriptor.describeProperty("_type", type);
         component.describeTo(descriptor);

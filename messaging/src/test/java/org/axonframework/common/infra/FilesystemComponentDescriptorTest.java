@@ -67,10 +67,11 @@ class FilesystemComponentDescriptorTest {
         var expected = """
                 /
                 └── component/
+                    ├── _id: %s
                     ├── _type: SimpleComponent
                     ├── name: TestComponent
                     └── value: 100
-                """;
+                """.formatted(identityOf(component));
         assertEquals(normalizeLineEndings(expected), normalizeLineEndings(result));
     }
 
@@ -91,14 +92,16 @@ class FilesystemComponentDescriptorTest {
                 /
                 └── components/
                     ├── [0]/
+                    │   ├── _id: %s
                     │   ├── _type: SimpleComponent
                     │   ├── name: Component1
                     │   └── value: 101
                     └── [1]/
+                        ├── _id: %s
                         ├── _type: SimpleComponent
                         ├── name: Component2
                         └── value: 102
-                """;
+                """.formatted(identityOf(components.get(0)), identityOf(components.get(1)));
         assertEquals(normalizeLineEndings(expected), normalizeLineEndings(result));
     }
 
@@ -153,14 +156,16 @@ class FilesystemComponentDescriptorTest {
         var expected = """
                 /
                 └── circularRef/
+                    ├── _id: %s
                     ├── _type: CircularComponent
                     ├── name: Component1
                     └── reference/
+                        ├── _id: %s
                         ├── _type: CircularComponent
                         ├── name: Component2
                         └── reference -> /circularRef
                 
-                """;
+                """.formatted(identityOf(component1), identityOf(component2));
         assertEquals(normalizeLineEndings(expected), normalizeLineEndings(result));
     }
 
@@ -185,12 +190,15 @@ class FilesystemComponentDescriptorTest {
         var expected = """
                 /
                 └── container/
+                    ├── _id: %s
                     ├── _type: ContainerComponent
                     ├── name: Container
                     ├── mainComponent/
+                    │   ├── _id: %s
                     │   ├── _type: CircularComponent
                     │   ├── name: Component1
                     │   └── reference/
+                    │       ├── _id: %s
                     │       ├── _type: CircularComponent
                     │       ├── name: Component2
                     │       └── reference -> /container/mainComponent
@@ -200,7 +208,7 @@ class FilesystemComponentDescriptorTest {
                     └── componentMap/
                         ├── key1 -> /container/mainComponent
                         └── key2 -> /container/mainComponent/reference
-                """;
+                """.formatted(identityOf(container), identityOf(component1), identityOf(component2));
         assertEquals(normalizeLineEndings(expected), normalizeLineEndings(result));
     }
 
@@ -219,15 +227,20 @@ class FilesystemComponentDescriptorTest {
         var expected = """
                 /
                 └── selfRef/
+                    ├── _id: %s
                     ├── _type: CircularComponent
                     ├── name: SelfRef
                     └── reference -> /selfRef
-                """;
+                """.formatted(identityOf(component));
         assertEquals(normalizeLineEndings(expected), normalizeLineEndings(result));
     }
 
     private String normalizeLineEndings(String input) {
         return input.replaceAll("\\r\\n", "\n").trim();
+    }
+
+    private static int identityOf(Object component) {
+        return System.identityHashCode(component);
     }
 
     private record SimpleComponent(String name, int value) implements DescribableComponent {
