@@ -23,6 +23,16 @@ import java.util.Map;
 
 /**
  * Contract towards describing the properties an (infrastructure) component might have.
+ * <p>
+ * The {@link ComponentDescriptor} implementation passed to a component by
+ * {@link DescribableComponent#describeTo(ComponentDescriptor)} determines both the structure and
+ * format of the output. This means the same component can be rendered in different formats (like JSON, XML, or a
+ * filesystem-like tree) depending on which {@link ComponentDescriptor} implementation is used. The component only needs
+ * to provide its properties and structure to the descriptor, which then handles the formatting details.
+ * <p>
+ * <strong>Handling Circular References:</strong> Component hierarchies may contain circular references where a
+ * {@link DescribableComponent} refers to another component that eventually references back to the original.
+ * {@link ComponentDescriptor} implementations must handle these circular dependencies to prevent infinite recursion.
  *
  * @author Allard Buijze
  * @author Mitchel Herrijgers
