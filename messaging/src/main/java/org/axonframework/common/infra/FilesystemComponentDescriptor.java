@@ -17,8 +17,6 @@
 package org.axonframework.common.infra;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.Component;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -35,9 +33,11 @@ import java.util.*;
  * <pre>
  * /
  * ├── systemComponent/
+ * │   ├── _id: 123512
  * │   ├── _type: EventProcessor
  * │   ├── name: my-processor
  * │   └── configuration/
+ * │       ├── _id: 123513
  * │       ├── _type: ProcessorConfiguration
  * │       ├── batchSize: 100
  * │       └── processor -> /systemComponent
@@ -210,9 +210,6 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
         }
     }
 
-    /**
-     * Responsible for rendering the component hierarchy as a tree.
-     */
     private static class TreeRenderer {
 
         private static final String CORNER = "└── ";
