@@ -46,7 +46,7 @@ import java.util.*;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class FilesystemComponentDescriptor implements ComponentDescriptor {
+public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
 
     private static final String ROOT_PATH = "/";
     private static final String PATH_SEPARATOR = "/";
@@ -58,7 +58,7 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
     /**
      * Constructs a new {@code FilesystemComponentDescriptor} as the root of the hierarchy.
      */
-    public FilesystemComponentDescriptor() {
+    public FilesystemStyleComponentDescriptor() {
         this(new IdentityHashMap<>(), ROOT_PATH);
     }
 
@@ -68,7 +68,7 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
      * @param componentPaths Map containing paths to already processed components.
      * @param currentPath    The current path in the virtual filesystem.
      */
-    private FilesystemComponentDescriptor(Map<Object, String> componentPaths, String currentPath) {
+    private FilesystemStyleComponentDescriptor(Map<Object, String> componentPaths, String currentPath) {
         this.componentPaths = componentPaths;
         this.currentPath = currentPath;
         this.properties = new LinkedHashMap<>();
@@ -172,7 +172,7 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
             DescribableComponent component,
             String itemPath
     ) {
-        var descriptor = new FilesystemComponentDescriptor(componentPaths, itemPath);
+        var descriptor = new FilesystemStyleComponentDescriptor(componentPaths, itemPath);
         var type = component.getClass().getSimpleName();
         descriptor.describeProperty("_id", System.identityHashCode(component));
         descriptor.describeProperty("_type", type);
@@ -256,10 +256,10 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
                 boolean isLastInCollection
         ) {
             switch (value) {
-                case FilesystemComponentDescriptor descriptor -> renderComponentDirectory(name,
-                                                                                          descriptor,
-                                                                                          context,
-                                                                                          isLastInCollection);
+                case FilesystemStyleComponentDescriptor descriptor -> renderComponentDirectory(name,
+                                                                                               descriptor,
+                                                                                               context,
+                                                                                               isLastInCollection);
                 case List<?> list -> renderList(name, list, context, isLastInCollection);
                 case Map<?, ?> map -> renderMap(name, map, context, isLastInCollection);
                 case SymbolicLink link -> renderSymlink(name, link, connector, context);
@@ -270,7 +270,7 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
 
         private void renderComponentDirectory(
                 String name,
-                FilesystemComponentDescriptor descriptor,
+                FilesystemStyleComponentDescriptor descriptor,
                 RenderContext context,
                 boolean isLastInCollection
         ) {
@@ -305,7 +305,7 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
         ) {
             result.append(listContext.indent).append(isLastInCollection ? CORNER : TEE).append(key);
 
-            if (item instanceof FilesystemComponentDescriptor itemDescriptor) {
+            if (item instanceof FilesystemStyleComponentDescriptor itemDescriptor) {
                 result.append("/\n");
                 var itemContext = listContext.indented(key, isLastInCollection);
                 render(itemDescriptor.properties, itemContext);
