@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -60,6 +61,9 @@ record FilteredEventCriteria(@Nonnull Set<String> types,
 
     @Override
     public Set<EventCriterion> flatten() {
+        if (types.isEmpty() && tags.isEmpty()) {
+            return Collections.emptySet();
+        }
         return Set.of(this);
     }
 
@@ -101,5 +105,10 @@ record FilteredEventCriteria(@Nonnull Set<String> types,
         }
 
         return new OrEventCriteria(Set.of(this, criteria));
+    }
+
+    @Override
+    public boolean hasCriteria() {
+        return !tags.isEmpty() || !types.isEmpty();
     }
 }

@@ -60,4 +60,9 @@ record OrEventCriteria(Set<EventCriteria> criteria) implements EventCriteria {
         }
         return new OrEventCriteria(newCriteria);
     }
+
+    @Override
+    public boolean hasCriteria() {
+        return criteria.stream().anyMatch(EventCriteria::hasCriteria);
+    }
 }

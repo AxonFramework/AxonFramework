@@ -63,7 +63,7 @@ public class AggregateBasedConsistencyMarker extends AbstractConsistencyMarker<A
         if (appendCondition.consistencyMarker() instanceof AggregateBasedConsistencyMarker abcm) {
             return abcm;
         }
-        if (!appendCondition.criteria().flatten().isEmpty() && appendCondition.consistencyMarker() == INFINITY) {
+        if (!appendCondition.criteria().hasCriteria() && appendCondition.consistencyMarker() == INFINITY) {
             throw new IllegalArgumentException("Consistency marker must not be infinity when criteria are provided");
         } else if (appendCondition.consistencyMarker() == ORIGIN || appendCondition.consistencyMarker() == INFINITY) {
             return new AggregateBasedConsistencyMarker(Map.of());
