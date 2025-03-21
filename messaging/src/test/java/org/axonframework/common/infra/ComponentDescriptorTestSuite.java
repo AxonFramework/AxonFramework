@@ -37,6 +37,100 @@ abstract class ComponentDescriptorTestSuite {
     }
 
     @Nested
+    class NullTests {
+
+        @Test
+        void describeNullString() {
+            // given
+            String nullString = null;
+            testSubject.describeProperty("nullString", nullString);
+
+            // when
+            var result = testSubject.describe();
+
+            // then
+            assertDescribeNullString(result);
+        }
+
+        @Test
+        void describeNullLong() {
+            // given
+            Long nullLong = null;
+            testSubject.describeProperty("nullLong", nullLong);
+
+            // when
+            var result = testSubject.describe();
+
+            // then
+            assertDescribeNullLong(result);
+        }
+
+        @Test
+        void describeNullBoolean() {
+            // given
+            Boolean nullBoolean = null;
+            testSubject.describeProperty("nullBoolean", nullBoolean);
+
+            // when
+            var result = testSubject.describe();
+
+            // then
+            assertDescribeNullBoolean(result);
+        }
+
+        @Test
+        void describeNullObject() {
+            // given
+            Object nullObject = null;
+            testSubject.describeProperty("nullObject", nullObject);
+
+            // when
+            var result = testSubject.describe();
+
+            // then
+            assertDescribeNullObject(result);
+        }
+
+        @Test
+        void describeNullList() {
+            // given
+            List<?> nullList = null;
+            testSubject.describeProperty("nullList", nullList);
+
+            // when
+            var result = testSubject.describe();
+
+            // then
+            assertDescribeNullList(result);
+        }
+
+        @Test
+        void describeNullMap() {
+            // given
+            Map<?, ?> nullMap = null;
+            testSubject.describeProperty("nullMap", nullMap);
+
+            // when
+            var result = testSubject.describe();
+
+            // then
+            assertDescribeNullMap(result);
+        }
+    }
+
+    protected abstract void assertDescribeNullString(String result);
+
+    protected abstract void assertDescribeNullLong(String result);
+
+    protected abstract void assertDescribeNullBoolean(String result);
+
+    protected abstract void assertDescribeNullObject(String result);
+
+    protected abstract void assertDescribeNullMap(String result);
+
+    protected abstract void assertDescribeNullList(String result);
+
+    @Nested
     class PrimitivesTests {
 
         @Test

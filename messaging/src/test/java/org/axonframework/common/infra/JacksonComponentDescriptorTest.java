@@ -36,6 +36,60 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
         testSubject = new JacksonComponentDescriptor();
     }
 
+    @Override
+    protected void assertDescribeNullString(String result) {
+        assertJsonMatches(result, """
+                {
+                  "nullString" : null
+                }
+                """);
+    }
+
+    @Override
+    protected void assertDescribeNullLong(String result) {
+        assertJsonMatches(result, """
+                {
+                  "nullLong" : null
+                }
+                """);
+    }
+
+    @Override
+    protected void assertDescribeNullBoolean(String result) {
+        assertJsonMatches(result, """
+                {
+                  "nullBoolean" : null
+                }
+                """);
+    }
+
+    @Override
+    protected void assertDescribeNullObject(String result) {
+        assertJsonMatches(result, """
+                {
+                  "nullObject" : null
+                }
+                """);
+    }
+
+    @Override
+    protected void assertDescribeNullMap(String result) {
+        assertJsonMatches(result, """
+                {
+                  "nullMap" : null
+                }
+                """);
+    }
+
+    @Override
+    protected void assertDescribeNullList(String result) {
+        assertJsonMatches(result, """
+                {
+                  "nullList" : null
+                }
+                """);
+    }
+
     @Test
     void describeComplexStructureShouldIncludeTypeAndId() {
         // given

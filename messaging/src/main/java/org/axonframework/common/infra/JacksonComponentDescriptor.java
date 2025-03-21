@@ -142,7 +142,11 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, @Nonnull Collection<?> collection) {
+    public void describeProperty(@Nonnull String name, Collection<?> collection) {
+        if (collection == null) {
+            rootNode.set(name, null);
+            return;
+        }
         var arrayNode = objectMapper.createArrayNode();
         for (var item : collection) {
             var json = describeObject(item);
@@ -152,7 +156,11 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, @Nonnull Map<?, ?> map) {
+    public void describeProperty(@Nonnull String name, Map<?, ?> map) {
+        if (map == null) {
+            rootNode.set(name, null);
+            return;
+        }
         ObjectNode mapNode = objectMapper.createObjectNode();
 
         for (var entry : map.entrySet()) {
@@ -166,17 +174,17 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, @Nonnull String value) {
+    public void describeProperty(@Nonnull String name, String value) {
         rootNode.put(name, value);
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, long value) {
+    public void describeProperty(@Nonnull String name, Long value) {
         rootNode.put(name, value);
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, boolean value) {
+    public void describeProperty(@Nonnull String name, Boolean value) {
         rootNode.put(name, value);
     }
 
