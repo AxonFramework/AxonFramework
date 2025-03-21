@@ -72,4 +72,9 @@ final class AnyEvent implements EventCriteria {
         // The AnyEvent is always matches, so the other criteria has no effect.
         return this;
     }
+
+    @Override
+    public boolean hasCriteria() {
+        return false;
+    }
 }

@@ -142,27 +142,6 @@ class EventCriteriaTest {
     }
 
     @Test
-    void combiningSameCriteriaInOrLeadsToSingularCriteriaDuringFlatten() {
-        EventCriteria testSubject1 = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1");
-        EventCriteria testSubject2 = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1");
-        EventCriteria combined = testSubject1.or(testSubject2);
-
-        assertEquals(1, combined.flatten().size());
-    }
-
-    @Test
-    void flatteningTwoConditionsInOrLeadsToTwoCriteria() {
-        EventCriteria testSubject1 = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1");
-        EventCriteria testSubject2 = EventCriteria.match().eventsOfTypes("OneType").withTags("key2", "value2");
-        EventCriteria combined = testSubject1.or(testSubject2);
-
-        Set<EventCriterion> flattened = combined.flatten();
-        assertEquals(2, flattened.size());
-        assertTrue(flattened.contains(testSubject1));
-        assertTrue(flattened.contains(testSubject2));
-    }
-
-    @Test
     void whenNestingIsDifferentSameCriteriaStillLeadToEquals() {
         EventCriteria testSubject1 = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1")
                                                   .or().eventsOfTypes("OtherType").withTags("key2", "value2")
@@ -181,20 +160,101 @@ class EventCriteriaTest {
         assertTrue(testSubject.flatten().isEmpty());
     }
 
-    @Test
-    void makingOrOfOrCriteriaWillMergeCriteria() {
-        EventCriteria testSubject1 = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1");
-        EventCriteria testSubject2 = EventCriteria.match().eventsOfTypes("OneType").withTags("key2", "value2");
-        EventCriteria testSubject3 = EventCriteria.match().eventsOfTypes("OneType").withTags("key3", "value3");
-        EventCriteria combined1 = testSubject1.or(testSubject2);
-        EventCriteria combined2 = testSubject1.or(testSubject3);
-        EventCriteria combined = combined1.or(combined2);
 
-        Set<EventCriterion> flattened = combined.flatten();
-        assertEquals(3, flattened.size());
-        assertTrue(flattened.contains(testSubject1));
-        assertTrue(flattened.contains(testSubject2));
-        assertTrue(flattened.contains(testSubject3));
 
+    @Nested
+    class FlattenTest {
+
+
+        @Test
+        void flatteningTwoConditionsInOrLeadsToTwoCriteria() {
+            EventCriteria testSubject1 = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1");
+            EventCriteria testSubject2 = EventCriteria.match().eventsOfTypes("OneType").withTags("key2", "value2");
+            EventCriteria combined = testSubject1.or(testSubject2);
+
+            Set<EventCriterion> flattened = combined.flatten();
+            assertEquals(2, flattened.size());
+            assertTrue(flattened.contains(testSubject1));
+            assertTrue(flattened.contains(testSubject2));
+        }
+
+        @Test
+        void makingOrOfOrCriteriaWillMergeCriteria() {
+            EventCriteria testSubject1 = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1");
+            EventCriteria testSubject2 = EventCriteria.match().eventsOfTypes("OneType").withTags("key2", "value2");
+            EventCriteria testSubject3 = EventCriteria.match().eventsOfTypes("OneType").withTags("key3", "value3");
+            EventCriteria combined1 = testSubject1.or(testSubject2);
+            EventCriteria combined2 = testSubject1.or(testSubject3);
+            EventCriteria combined = combined1.or(combined2);
+
+            Set<EventCriterion> flattened = combined.flatten();
+            assertEquals(3, flattened.size());
+            assertTrue(flattened.contains(testSubject1));
+            assertTrue(flattened.contains(testSubject2));
+            assertTrue(flattened.contains(testSubject3));
+        }
+
+        @Test
+        void combiningSameCriteriaInOrLeadsToSingularCriteriaDuringFlatten() {
+            EventCriteria testSubject1 = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1");
+            EventCriteria testSubject2 = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1");
+            EventCriteria combined = testSubject1.or(testSubject2);
+
+            assertEquals(1, combined.flatten().size());
+        }
+
+        @Test
+        void flatteningFilteredCriteriaWithNoTagsOrTypesLeadsToEmptySet() {
+            EventCriteria testSubject = EventCriteria.match().eventsOfAnyType().withAnyTags();
+
+            assertTrue(testSubject.flatten().isEmpty());
+        }
+    }
+
+    @Nested
+    class HasCriteriaTest {
+
+        @Test
+        void anyEventDoesNotHaveCriteria() {
+            EventCriteria testSubject = EventCriteria.anyEvent();
+
+            assertFalse(testSubject.hasCriteria());
+        }
+
+        @Test
+        void criteriaWithEventTypesAndTagsWillHaveCriteria() {
+            EventCriteria testSubject = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1");
+
+            assertTrue(testSubject.hasCriteria());
+        }
+
+        @Test
+        void criteriaWithEventTypesAndWithoutTagsWillHaveCriteria() {
+            EventCriteria testSubject = EventCriteria.match().eventsOfTypes("OneType").withAnyTags();
+
+            assertTrue(testSubject.hasCriteria());
+        }
+        @Test
+        void criteriaWithoutEventTypesAndWithoutTagsWillNotHaveCriteria() {
+            EventCriteria testSubject = EventCriteria.match().eventsOfAnyType().withAnyTags();
+
+            assertFalse(testSubject.hasCriteria());
+        }
+
+        @Test
+        void orConditionWithCriteriaWillHaveCriteria() {
+            EventCriteria testSubject = EventCriteria.match().eventsOfTypes("OneType").withTags("key1", "value1")
+                                                     .or().eventsOfTypes("OtherType").withTags("key2", "value2");
+
+            assertTrue(testSubject.hasCriteria());
+        }
+
+        @Test
+        void orConditionWithAnyEventWillNotHaveCriteria() {
+            EventCriteria testSubject = EventCriteria.match().eventsOfAnyType().withAnyTags()
+                                                     .or().eventsOfAnyType().withAnyTags();
+
+            assertFalse(testSubject.hasCriteria());
+        }
     }
 }
