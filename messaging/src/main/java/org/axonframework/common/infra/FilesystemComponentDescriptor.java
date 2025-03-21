@@ -197,7 +197,14 @@ public class FilesystemComponentDescriptor implements ComponentDescriptor {
 
     @Override
     public String describe() {
-        return new TreeRenderer().render(properties);
+        try {
+            return new TreeRenderer().render(properties);
+        } catch (Exception e) {
+            throw new ComponentDescriptorException(
+                    "Error generating Filesystem style description",
+                    e
+            );
+        }
     }
 
     private record SymbolicLink(String targetPath) {
