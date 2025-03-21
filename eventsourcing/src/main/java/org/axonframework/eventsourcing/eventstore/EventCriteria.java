@@ -191,4 +191,12 @@ public sealed interface EventCriteria permits OrEventCriteria, FilteredEventCrit
      * @return The flattened set of {@code EventCriteria}.
      */
     Set<EventCriterion> flatten();
+
+    /**
+     * Indicates whether this {@code EventCriteria} instance has any criteria defined.
+     * @return {@code true} if this {@code EventCriteria} instance has criteria defined, otherwise {@code false}.
+     */
+    default boolean hasCriteria() {
+        return !flatten().isEmpty();
+    }
 }
