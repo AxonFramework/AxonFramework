@@ -168,5 +168,10 @@ public class Component<C> implements DescribableComponent {
                     () -> new IllegalArgumentException("The given name is unsupported because it is empty.")
             );
         }
+
+        @Override
+        public String toString() {
+            return type.getSimpleName() + ":" + name;
+        }
     }
 }
