@@ -35,7 +35,7 @@ import java.util.Map;
  * {@link ComponentDescriptor} implementations must handle these circular dependencies to prevent infinite recursion.
  *
  * @author Allard Buijze
- * @author Mitchel Herrijgers
+ * @author Mitchell Herrijgers
  * @author Steven van Beelen
  * @since 5.0.0
  */
