@@ -75,7 +75,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, @Nonnull Object object) {
+    public void describeProperty(@Nonnull String name, Object object) {
         if (object instanceof DescribableComponent component) {
             describeComponent(name, component);
         } else {
@@ -104,7 +104,11 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, @Nonnull Collection<?> collection) {
+    public void describeProperty(@Nonnull String name, Collection<?> collection) {
+        if (collection == null) {
+            properties.put(name, null);
+            return;
+        }
         var items = new ArrayList<>();
 
         int index = 0;
@@ -138,7 +142,11 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, @Nonnull Map<?, ?> map) {
+    public void describeProperty(@Nonnull String name, Map<?, ?> map) {
+        if (map == null) {
+            properties.put(name, null);
+            return;
+        }
         var mappedItems = new LinkedHashMap<>();
         for (var entry : map.entrySet()) {
             var key = entry.getKey().toString();
@@ -181,17 +189,17 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, @Nonnull String value) {
+    public void describeProperty(@Nonnull String name, String value) {
         properties.put(name, value);
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, long value) {
+    public void describeProperty(@Nonnull String name, Long value) {
         properties.put(name, value);
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, boolean value) {
+    public void describeProperty(@Nonnull String name, Boolean value) {
         properties.put(name, value);
     }
 

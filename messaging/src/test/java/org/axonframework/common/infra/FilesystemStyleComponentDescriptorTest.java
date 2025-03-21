@@ -31,6 +31,60 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
         return new FilesystemStyleComponentDescriptor();
     }
 
+    @Override
+    protected void assertDescribeNullString(String result) {
+        var expected = """
+                /
+                └── nullString: null
+                """;
+        assertFilesystemStyleOutput(expected, result);
+    }
+
+    @Override
+    protected void assertDescribeNullLong(String result) {
+        var expected = """
+                /
+                └── nullLong: null
+                """;
+        assertFilesystemStyleOutput(expected, result);
+    }
+
+    @Override
+    protected void assertDescribeNullBoolean(String result) {
+        var expected = """
+                /
+                └── nullBoolean: null
+                """;
+        assertFilesystemStyleOutput(expected, result);
+    }
+
+    @Override
+    protected void assertDescribeNullObject(String result) {
+        var expected = """
+                /
+                └── nullObject: null
+                """;
+        assertFilesystemStyleOutput(expected, result);
+    }
+
+    @Override
+    protected void assertDescribeNullMap(String result) {
+        var expected = """
+                /
+                └── nullMap: null
+                """;
+        assertFilesystemStyleOutput(expected, result);
+    }
+
+    @Override
+    protected void assertDescribeNullList(String result) {
+        var expected = """
+                /
+                └── nullList: null
+                """;
+        assertFilesystemStyleOutput(expected, result);
+    }
+
     @Test
     void describeNestedComponentWithCircularReferences() {
         // given
