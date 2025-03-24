@@ -45,37 +45,29 @@ import java.util.concurrent.CompletableFuture;
 public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<EventMessage<?>> {
 
     private final AsyncEventStorageEngine eventStorageEngine;
-    private final String context;
     private final TagResolver tagResolver;
     private final ResourceKey<EventStoreTransaction> eventStoreTransactionKey;
 
     /**
      * Constructs a {@link SimpleEventStore} using the given {@code eventStorageEngine} to start
-     * {@link #transaction(ProcessingContext, String) transactions} and
-     * {@link #open(String, StreamingCondition) open event streams} with.
-     * <p>
-     * Invocations of this event store are validated against the given {@code context}.
+     * {@link #transaction(ProcessingContext) transactions} and
+     * {@link #open(StreamingCondition) open event streams} with.
      *
      * @param eventStorageEngine The {@link AsyncEventStorageEngine} used to start
-     *                           {@link #transaction(ProcessingContext, String) transactions} and
-     *                           {@link #open(String, StreamingCondition) open event streams} with.
-     * @param context            The (bounded) {@code context} this event store operates in.
+     *                           {@link #transaction(ProcessingContext) transactions} and
+     *                           {@link #open(StreamingCondition) open event streams} with.
      * @param tagResolver        The {@link TagResolver} used to resolve tags during appending events in the
      *                           {@link EventStoreTransaction}.
      */
     public SimpleEventStore(@Nonnull AsyncEventStorageEngine eventStorageEngine,
-                            @Nonnull String context,
                             @Nonnull TagResolver tagResolver) {
         this.eventStorageEngine = eventStorageEngine;
-        this.context = context;
         this.tagResolver = tagResolver;
         this.eventStoreTransactionKey = ResourceKey.withLabel("eventStoreTransaction");
     }
 
     @Override
-    public EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext,
-                                             @Nonnull String context) {
-        validate(context);
+    public EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext) {
         return processingContext.computeResourceIfAbsent(
                 eventStoreTransactionKey,
                 () -> new DefaultEventStoreTransaction(eventStorageEngine, processingContext, tagResolver)
@@ -84,18 +76,15 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
 
     @Override
     public void publish(@Nonnull ProcessingContext processingContext,
-                        @Nonnull String context,
                         @Nonnull List<EventMessage<?>> events) {
-        validate(context);
-        EventStoreTransaction transaction = transaction(processingContext, context);
+        EventStoreTransaction transaction = transaction(processingContext);
         for (EventMessage<?> event : events) {
             transaction.appendEvent(event);
         }
     }
 
     @Override
-    public CompletableFuture<Void> publish(@Nonnull String context,
-                                           @Nonnull List<EventMessage<?>> events) {
+    public CompletableFuture<Void> publish(@Nonnull List<EventMessage<?>> events) {
         throw new UnsupportedOperationException(
                 """
                         Publishing events with the SimpleEventStore requires a ProcessingContext at all times.
@@ -105,42 +94,27 @@ public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<
     }
 
     @Override
-    public MessageStream<EventMessage<?>> open(@Nonnull String context,
-                                               @Nonnull StreamingCondition condition) {
-        validate(context);
+    public MessageStream<EventMessage<?>> open(@Nonnull StreamingCondition condition) {
         return eventStorageEngine.stream(condition);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> headToken(@Nonnull String context) {
-        validate(context);
+    public CompletableFuture<TrackingToken> headToken() {
         return eventStorageEngine.headToken();
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tailToken(@Nonnull String context) {
-        validate(context);
+    public CompletableFuture<TrackingToken> tailToken() {
         return eventStorageEngine.tailToken();
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull String context,
-                                                    @Nonnull Instant at) {
-        validate(context);
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
         return eventStorageEngine.tokenAt(at);
     }
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("eventStorageEngine", eventStorageEngine);
-        descriptor.describeProperty("context", context);
-    }
-
-    private void validate(String context) {
-        if (this.context.equals(context)) {
-            return;
-        }
-        // TODO - Discuss: Do we want a dedicated exception here?
-        throw new IllegalArgumentException("Context '" + context + "' does not match context '" + this.context + "'");
     }
 }
