@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.Component;
 
 import java.util.Collection;
 import java.util.IdentityHashMap;
@@ -138,7 +139,10 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
     }
 
     private static void describeType(DescribableComponent component, ObjectNode objectNode) {
-        objectNode.put("_type", component.getClass().getName());
+        var type = component instanceof Component<?>
+                ? ((Component<?>) component).identifier().type().getName()
+                : component.getClass().getName();
+        objectNode.put("_type", type);
     }
 
     @Override
