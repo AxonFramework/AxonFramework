@@ -33,11 +33,11 @@ import java.util.*;
  * <pre>
  * /
  * ├── systemComponent/
- * │   ├── _id: 123512
+ * │   ├── _ref: 123512
  * │   ├── _type: EventProcessor
  * │   ├── name: my-processor
  * │   └── configuration/
- * │       ├── _id: 123513
+ * │       ├── _ref: 123513
  * │       ├── _type: ProcessorConfiguration
  * │       ├── batchSize: 100
  * │       └── processor -> /systemComponent
@@ -181,8 +181,8 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
             String itemPath
     ) {
         var descriptor = new FilesystemStyleComponentDescriptor(componentPaths, itemPath);
-        var type = component.getClass().getSimpleName();
-        descriptor.describeProperty("_id", System.identityHashCode(component));
+        var type = component.getClass().getName();
+        descriptor.describeProperty("_ref", System.identityHashCode(component));
         descriptor.describeProperty("_type", type);
         component.describeTo(descriptor);
         return descriptor;

@@ -106,16 +106,16 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
         var expected = """
                 /
                 └── container/
-                    ├── _id: %s
-                    ├── _type: ContainerComponent
+                    ├── _ref: %s
+                    ├── _type: org.axonframework.common.infra.FilesystemStyleComponentDescriptorTest$ContainerComponent
                     ├── name: Container
                     ├── mainComponent/
-                    │   ├── _id: %s
-                    │   ├── _type: CircularComponent
+                    │   ├── _ref: %s
+                    │   ├── _type: org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent
                     │   ├── name: Component1
                     │   └── dependency/
-                    │       ├── _id: %s
-                    │       ├── _type: CircularComponent
+                    │       ├── _ref: %s
+                    │       ├── _type: org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent
                     │       ├── name: Component2
                     │       └── dependency -> /container/mainComponent
                     ├── componentList/
@@ -198,13 +198,13 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
                 /
                 └── components/
                     ├── [0]/
-                    │   ├── _id: %s
-                    │   ├── _type: SimpleTestComponent
+                    │   ├── _ref: %s
+                    │   ├── _type: org.axonframework.common.infra.ComponentDescriptorTestSuite$SimpleTestComponent
                     │   ├── name: component1
                     │   └── value: 101
                     └── [1]/
-                        ├── _id: %s
-                        ├── _type: SimpleTestComponent
+                        ├── _ref: %s
+                        ├── _type: org.axonframework.common.infra.ComponentDescriptorTestSuite$SimpleTestComponent
                         ├── name: component2
                         └── value: 102
                 """.formatted(identityOf(component1), identityOf(component2));
@@ -239,8 +239,8 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
                 /
                 └── componentMap/
                     └── component1/
-                        ├── _id: %s
-                        ├── _type: SimpleTestComponent
+                        ├── _ref: %s
+                        ├── _type: org.axonframework.common.infra.ComponentDescriptorTestSuite$SimpleTestComponent
                         ├── name: value1
                         └── value: 201
                 """.formatted(identityOf(component1));
@@ -272,8 +272,8 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
         var expected = """
                 /
                 └── component/
-                    ├── _id: %s
-                    ├── _type: SimpleTestComponent
+                    ├── _ref: %s
+                    ├── _type: org.axonframework.common.infra.ComponentDescriptorTestSuite$SimpleTestComponent
                     ├── name: componentValue
                     └── value: 100
                 """.formatted(identityOf(component));
@@ -290,12 +290,12 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
                 /
                 └── circularRefCollection/
                     ├── [0]/
-                    │   ├── _id: %s
-                    │   ├── _type: CircularComponent
+                    │   ├── _ref: %s
+                    │   ├── _type: org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent
                     │   ├── name: Component1
                     │   └── dependency/
-                    │       ├── _id: %s
-                    │       ├── _type: CircularComponent
+                    │       ├── _ref: %s
+                    │       ├── _type: org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent
                     │       ├── name: Component2
                     │       └── dependency -> /circularRefCollection[0]
                     └── [1] -> /circularRefCollection[0]/dependency
@@ -308,8 +308,8 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
         var expected = """
                 /
                 └── selfRef/
-                    ├── _id: %s
-                    ├── _type: CircularComponent
+                    ├── _ref: %s
+                    ├── _type: org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent
                     ├── name: SelfReferencing
                     └── dependency -> /selfRef
                 """.formatted(identityOf(component));
@@ -325,12 +325,12 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
         var expected = """
                 /
                 └── circularRef/
-                    ├── _id: %s
-                    ├── _type: CircularComponent
+                    ├── _ref: %s
+                    ├── _type: org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent
                     ├── name: Component1
                     └── dependency/
-                        ├── _id: %s
-                        ├── _type: CircularComponent
+                        ├── _ref: %s
+                        ├── _type: org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent
                         ├── name: Component2
                         └── dependency -> /circularRef
                 """.formatted(identityOf(component1), identityOf(component2));

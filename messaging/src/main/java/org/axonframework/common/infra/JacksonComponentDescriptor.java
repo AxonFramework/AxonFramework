@@ -32,7 +32,7 @@ import java.util.Map;
  * <p>
  * This implementation supports circular references between components by using a reference mechanism. When a
  * {@link DescribableComponent} is encountered for the first time, it is fully serialized including its unique
- * identifier ({@code _id}). Any subsequent occurrences of the same component instance are replaced with a reference
+ * identifier ({@code _ref}). Any subsequent occurrences of the same component instance are replaced with a reference
  * object containing a {@code $ref} field pointing to the original component's identifier and a {@code _type} field
  * indicating the component's type. This prevents infinite recursion and {@link StackOverflowError} when describing
  * components with circular dependencies.
@@ -41,11 +41,11 @@ import java.util.Map;
  * <pre>
  * {
  *   "component": {
- *     "_id": "12345",
+ *     "_ref": "12345",
  *     "_type": "MyComponent",
  *     "name": "First Component",
  *     "reference": {
- *       "_id": "67890",
+ *       "_ref": "67890",
  *       "_type": "MyComponent",
  *       "name": "Second Component",
  *       "backReference": {
@@ -133,12 +133,12 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
             DescribableComponent component,
             JacksonComponentDescriptor componentDescriptor
     ) {
-        componentDescriptor.rootNode.put("_id", System.identityHashCode(component) + "");
+        componentDescriptor.rootNode.put("_ref", System.identityHashCode(component) + "");
         describeType(component, componentDescriptor.rootNode);
     }
 
     private static void describeType(DescribableComponent component, ObjectNode objectNode) {
-        objectNode.put("_type", component.getClass().getSimpleName());
+        objectNode.put("_type", component.getClass().getName());
     }
 
     @Override

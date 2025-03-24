@@ -139,28 +139,28 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
                 """
                         {
                             "complexStructure":{
-                                "_id":"*",
-                                "_type":"ComplexTestComponent",
+                                "_ref":"*",
+                                "_type":"org.axonframework.common.infra.JacksonComponentDescriptorTest$1ComplexTestComponent",
                                 "stringValue":"test",
                                 "numberValue":42,
                                 "booleanValue":true,
                                 "component":{
-                                    "_id":"*",
-                                    "_type":"SimpleTestComponent",
+                                    "_ref":"*",
+                                    "_type":"org.axonframework.common.infra.ComponentDescriptorTestSuite$SimpleTestComponent",
                                     "name":"nestedComponent",
                                     "value":300
                                 },
                                 "simpleList":["listItem1","listItem2"],
                                 "componentList":[
                                     {
-                                        "_id":"*",
-                                        "_type":"SimpleTestComponent",
+                                        "_ref":"*",
+                                        "_type":"org.axonframework.common.infra.ComponentDescriptorTestSuite$SimpleTestComponent",
                                         "name":"listComponent1",
                                         "value":301
                                     },
                                     {
-                                        "_id":"*",
-                                        "_type":"SimpleTestComponent",
+                                        "_ref":"*",
+                                        "_type":"org.axonframework.common.infra.ComponentDescriptorTestSuite$SimpleTestComponent",
                                         "name":"listComponent2",
                                         "value":302
                                     }
@@ -210,13 +210,13 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
         assertJsonMatches(result, """
                 {
                   "components" : [ {
-                    "_id" : "%s",
-                    "_type" : "SimpleTestComponent",
+                    "_ref" : "%s",
+                    "_type" : "org.axonframework.common.infra.ComponentDescriptorTestSuite$SimpleTestComponent",
                     "name" : "component1",
                     "value" : 101
                   }, {
-                    "_id" : "%s",
-                    "_type" : "SimpleTestComponent",
+                    "_ref" : "%s",
+                    "_type" : "org.axonframework.common.infra.ComponentDescriptorTestSuite$SimpleTestComponent",
                     "name" : "component2",
                     "value" : 102
                   } ]
@@ -254,8 +254,8 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
                     {
                       "componentMap": {
                         "component1":{
-                            "_id":"%s",
-                            "_type":"SimpleTestComponent",
+                            "_ref":"%s",
+                            "_type":"org.axonframework.common.infra.ComponentDescriptorTestSuite$SimpleTestComponent",
                             "name":"value1",
                             "value":201
                         }
@@ -309,8 +309,8 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
         assertJsonMatches(result, """
                 {
                   "component" : {
-                    "_id" : "%s",
-                    "_type" : "SimpleTestComponent",
+                    "_ref" : "%s",
+                    "_type" : "org.axonframework.common.infra.ComponentDescriptorTestSuite$SimpleTestComponent",
                     "name" : "componentValue",
                     "value" : 100
                   }
@@ -328,22 +328,22 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
                 {
                   "circularRefCollection": [
                     {
-                      "_id": "%s",
-                      "_type": "CircularComponent",
+                      "_ref": "%s",
+                      "_type": "org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent",
                       "name": "Component1",
                       "dependency": {
-                        "_id": "%s",
-                        "_type": "CircularComponent",
+                        "_ref": "%s",
+                        "_type": "org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent",
                         "name": "Component2",
                         "dependency": {
                           "$ref": "%s",
-                          "_type": "CircularComponent"
+                          "_type": "org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent"
                         }
                       }
                     },
                     {
                       "$ref": "%s",
-                      "_type": "CircularComponent"
+                      "_type": "org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent"
                     }
                   ]
                 }
@@ -360,12 +360,12 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
         assertJsonMatches(result, """
                 {
                   "selfRef": {
-                    "_id": "%s",
-                    "_type": "CircularComponent",
+                    "_ref": "%s",
+                    "_type": "org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent",
                     "name": "SelfReferencing",
                     "dependency": {
                       "$ref": "%s",
-                      "_type": "CircularComponent"
+                      "_type": "org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent"
                     }
                   }
                 }
@@ -382,16 +382,16 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
         assertJsonMatches(result, """
                 {
                   "circularRef": {
-                    "_id": "%s",
-                    "_type": "CircularComponent",
+                    "_ref": "%s",
+                    "_type": "org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent",
                     "name": "Component1",
                     "dependency": {
-                      "_id": "%s",
-                      "_type": "CircularComponent",
+                      "_ref": "%s",
+                      "_type": "org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent",
                       "name": "Component2",
                       "dependency": {
                         "$ref": "%s",
-                        "_type": "CircularComponent" 
+                        "_type": "org.axonframework.common.infra.ComponentDescriptorTestSuite$CircularReferencesTests$CircularComponent" 
                       }
                     }
                   }
@@ -406,7 +406,7 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
 
     private void assertJsonMatchesPattern(String actual, String expectedPattern) {
         String normalizedActual = normalizeJson(actual)
-                .replaceAll("\"_id\":\"\\d+\"", "\"_id\":\"*\"");
+                .replaceAll("\"_ref\":\"\\d+\"", "\"_ref\":\"*\"");
 
         String normalizedExpected = normalizeJson(expectedPattern);
 
