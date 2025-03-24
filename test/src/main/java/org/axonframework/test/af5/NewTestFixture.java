@@ -29,13 +29,13 @@ public class NewTestFixture {
 
     private final NewConfiguration configuration;
 
-    private NewTestFixture(Function<ApplicationConfigurer<?>, ApplicationConfigurer<?>> configurerFn) {
+    public NewTestFixture(Function<ApplicationConfigurer<?>, ApplicationConfigurer<?>> configurerFn) {
         var configurer = MessagingConfigurer.create();
         ApplicationConfigurer<?> c = AxonApplication.create().build();
         this.configuration = configurerFn.apply(c).build();
     }
 
-    private NewTestFixture(ApplicationConfigurer<?> configurer) {
+    public NewTestFixture(ApplicationConfigurer<?> configurer) {
         this.configuration = configurer.build();
     }
 
