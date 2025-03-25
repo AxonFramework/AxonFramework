@@ -52,22 +52,23 @@ class CommandModelTestFixtureTest {
     @Test
     void givenNoPriorActivityWhenCommandThenExpectEvents() {
         var configurer = MessagingConfigurer.create();
-        configurer.registerCommandBus(c -> new SimpleCommandBus()
-                .subscribe(new QualifiedName(ChangeStudentNameCommand.class), (command, context) -> {
-                    ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
-                    var eventSink = c.getComponent(EventSink.class);
-                    eventSink.publish(context,
-                                      TEST_CONTEXT,
-                                      studentNameChangedEventMessage(payload.id(), payload.name(), 1));
-                    return MessageStream.empty().cast();
-                })
-        );
+        configurer.registerCommandBus(c -> new SimpleCommandBus().subscribe(new QualifiedName(ChangeStudentNameCommand.class),
+                                                                            (command, context) -> {
+                                                                                ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
+                                                                                var eventSink = c.getComponent(EventSink.class);
+                                                                                eventSink.publish(context,
+                                                                                                  TEST_CONTEXT,
+                                                                                                  studentNameChangedEventMessage(
+                                                                                                          payload.id(),
+                                                                                                          payload.name(),
+                                                                                                          1));
+                                                                                return MessageStream.empty().cast();
+                                                                            }));
 
         var fixture = CommandModelTestFixture.with(configurer);
 
-        fixture.givenNoPriorActivity()
-               .when(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-               .expectEvents(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+        fixture.givenNoPriorActivity().when(new ChangeStudentNameCommand("my-studentId-1", "name-1")).expectEvents(
+                studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
     }
 
     @Test
@@ -78,36 +79,33 @@ class CommandModelTestFixtureTest {
             studentEvents.addAll(events);
             return CompletableFuture.completedFuture(null);
         });
-        configurer.registerCommandBus(c -> new SimpleCommandBus()
-                .subscribe(new QualifiedName(ChangeStudentNameCommand.class), (command, context) -> {
-                    ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
-                    var eventSink = c.getComponent(EventSink.class);
-                    eventSink.publish(context,
-                                      TEST_CONTEXT,
-                                      studentNameChangedEventMessage(payload.id(),
-                                                                     payload.name(),
-                                                                     studentEvents.size() + 1));
-                    return MessageStream.empty().cast();
-                })
-        );
+        configurer.registerCommandBus(c -> new SimpleCommandBus().subscribe(new QualifiedName(ChangeStudentNameCommand.class),
+                                                                            (command, context) -> {
+                                                                                ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
+                                                                                var eventSink = c.getComponent(EventSink.class);
+                                                                                eventSink.publish(context,
+                                                                                                  TEST_CONTEXT,
+                                                                                                  studentNameChangedEventMessage(
+                                                                                                          payload.id(),
+                                                                                                          payload.name(),
+                                                                                                          studentEvents.size()
+                                                                                                                  + 1));
+                                                                                return MessageStream.empty().cast();
+                                                                            }));
 
         var fixture = CommandModelTestFixture.with(configurer);
 
         fixture.givenEvents(studentNameChangedEventMessage("my-studentId-1", "name-1", 1))
-               .when(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-               .expectEvents(studentNameChangedEventMessage("my-studentId-1", "name-1", 2));
+               .when(new ChangeStudentNameCommand("my-studentId-1", "name-1")).expectEvents(
+                       studentNameChangedEventMessage("my-studentId-1", "name-1", 2));
     }
 
-    @Disabled
     @Test
     void giveNoPriorActivityWhenCommandThenExpectException() {
         var configurer = MessagingConfigurer.create();
-        configurer.registerCommandBus(c -> new SimpleCommandBus()
-                .subscribe(
-                        new QualifiedName(ChangeStudentNameCommand.class),
-                        (command, context) -> MessageStream.failed(new RuntimeException("Test"))
-                )
-        );
+        configurer.registerCommandBus(c -> new SimpleCommandBus().subscribe(new QualifiedName(ChangeStudentNameCommand.class),
+                                                                            (command, context) -> MessageStream.failed(
+                                                                                    new RuntimeException("Test"))));
 
         var fixture = CommandModelTestFixture.with(configurer);
 
@@ -116,35 +114,35 @@ class CommandModelTestFixtureTest {
                .expectException(RuntimeException.class);
     }
 
-    @Nested
-    class StatefulCommandHandler {
+    @Nested class StatefulCommandHandler {
 
         @Test
         void statefulTest() {
             var configurer = MessagingConfigurer.create();
-            configurer.registerComponent(StateManager.class, c -> SimpleStateManager
-                    .builder("testfixture")
-                    .register(new AsyncEventSourcingRepository<>(
-                            String.class,
-                            Student.class,
-                            c.getComponent(AsyncEventStore.class),
-                            id -> EventCriteria.match().eventsOfAnyType().withTags("Student", id),
-                            new AnnotationBasedEventStateApplier<>(Student.class),
-                            Student::new,
-                            TEST_CONTEXT
-                    ))
-                    .build());
+            configurer.registerComponent(StateManager.class,
+                                         c -> SimpleStateManager.builder("testfixture")
+                                                                .register(new AsyncEventSourcingRepository<>(String.class,
+                                                                                                             Student.class,
+                                                                                                             c.getComponent(
+                                                                                                                     AsyncEventStore.class),
+                                                                                                             id -> EventCriteria.match()
+                                                                                                                                .eventsOfAnyType()
+                                                                                                                                .withTags(
+                                                                                                                                        "Student",
+                                                                                                                                        id),
+                                                                                                             new AnnotationBasedEventStateApplier<>(
+                                                                                                                     Student.class),
+                                                                                                             Student::new,
+                                                                                                             TEST_CONTEXT))
+                                                                .build());
 
-            configurer.registerComponent(AsyncEventStore.class, c -> {
-                          return new SimpleEventStore(
-                                  new AsyncInMemoryEventStorageEngine(),
-                                  TEST_CONTEXT,
-                                  new AnnotationBasedTagResolver()
-                          );
-                      })
-                      .registerComponent(EventSink.class, c -> {
-                          return c.getComponent(AsyncEventStore.class);
-                      });
+            configurer.registerComponent(
+                              AsyncEventStore.class,
+                              c -> new SimpleEventStore(new AsyncInMemoryEventStorageEngine(),
+                                                        TEST_CONTEXT,
+                                                        new AnnotationBasedTagResolver()))
+                      .registerComponent(EventSink.class,
+                                         c -> c.getComponent(AsyncEventStore.class));
 
             configurer.registerDecorator(CommandBus.class, 50, (c, name, delegate) -> {
                 var stateManager = c.getComponent(StateManager.class);
@@ -175,27 +173,19 @@ class CommandModelTestFixtureTest {
 
             var fixture = CommandModelTestFixture.with(configurer);
             fixture.givenNoPriorActivity()
-                   .when(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-                   .expectEvents(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+                   .when(new ChangeStudentNameCommand("my-studentId-1", "name-1")).expectEvents(
+                           studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
 
 
             var fixture2 = CommandModelTestFixture.with(configurer);
-            fixture2.givenEvents(
-                            studentNameChangedEventMessage("my-studentId-1", "name-1", 1)
-                    )
-                    .when(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-                    .expectNoEvents();
+            fixture2.givenEvents(studentNameChangedEventMessage("my-studentId-1", "name-1", 1))
+                    .when(new ChangeStudentNameCommand("my-studentId-1", "name-1")).expectNoEvents();
         }
     }
 
-    private static GenericEventMessage<StudentNameChangedEvent> studentNameChangedEventMessage(
-            String id,
-            String name,
-            int change
-    ) {
-        return new GenericEventMessage<>(
-                new MessageType(StudentNameChangedEvent.class),
-                new StudentNameChangedEvent(id, name, change)
-        );
+    private static GenericEventMessage<StudentNameChangedEvent> studentNameChangedEventMessage(String id, String name,
+                                                                                               int change) {
+        return new GenericEventMessage<>(new MessageType(StudentNameChangedEvent.class),
+                                         new StudentNameChangedEvent(id, name, change));
     }
 }
