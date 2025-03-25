@@ -126,17 +126,8 @@ public class CommandModelTestFixture implements CommandModelTest.Executor, Comma
         }
         var messageType = messageTypeResolver.resolve(payload);
         var message = new GenericCommandMessage<>(messageType, payload, MetaData.from(metaData));
-        // todo: handle exception!
-        whenUnitOfWork.runOnInvocation(
+        whenUnitOfWork.onInvocation(
                 processingContext -> commandBus.dispatch(message, processingContext)
-                                               .exceptionally(e -> {
-                                                   actualException = e;
-                                                   return null;
-                                               })
-//                                               .exceptionallyCompose(e -> {
-//                                                   actualException = e;
-//                                                   return CompletableFuture.completedFuture(null);
-//                                               })
         );
         return this;
     }
@@ -164,6 +155,9 @@ public class CommandModelTestFixture implements CommandModelTest.Executor, Comma
 
     @Override
     public CommandModelTest.ResultValidator expectException(Matcher<?> matcher) {
+        if (!whenUnitOfWork.isCompleted()) {
+            awaitCompletion(whenUnitOfWork.execute());
+        }
         StringDescription description = new StringDescription();
         matcher.describeTo(description);
         if (actualException == null) {
@@ -224,11 +218,11 @@ public class CommandModelTestFixture implements CommandModelTest.Executor, Comma
         return true;
     }
 
-    private static <R> R awaitCompletion(CompletableFuture<R> completion) {
-        await().atMost(Duration.ofMillis(500))
-               .pollDelay(Duration.ofMillis(25))
-               .untilAsserted(() -> assertFalse(completion.isCompletedExceptionally(),
-                                                () -> completion.exceptionNow().toString()));
-        return completion.join();
+    private void awaitCompletion(CompletableFuture<?> completion) {
+        try {
+            completion.join();
+        } catch (Exception e) {
+            actualException = e;
+        }
     }
 }
