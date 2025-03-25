@@ -26,8 +26,7 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.SourceId;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -149,6 +148,11 @@ class AnnotationBasedEventStateApplierTest {
             // then
             assertEquals("null-" + timestamp, state.handledTimestamps);
         }
+
+        @AfterEach
+        void afterEach() {
+            GenericEventMessage.clock = Clock.systemUTC();
+        }
     }
 
     @Nested
@@ -184,7 +188,7 @@ class AnnotationBasedEventStateApplierTest {
         }
     }
 
-    // feel free to drop the support in case of some changed in EventHandling logic (like Empty stream always returned from event handling component)
+    @Disabled("TODO #3313 - Event Sourcing Handler support for evolved state return")
     @Nested
     class RecordSupport {
 

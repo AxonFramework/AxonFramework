@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ import org.axonframework.common.AxonTransientException;
  * @since 0.3
  */
 public class ConcurrencyException extends AxonTransientException {
-
-    private static final long serialVersionUID = -739879545165860129L;
 
     /**
      * Initialize a ConcurrencyException with the given {@code message}.

@@ -22,7 +22,6 @@ import org.axonframework.messaging.MessageDecorator;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 
-import java.io.Serial;
 import java.util.Map;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
@@ -36,9 +35,6 @@ import javax.annotation.Nonnull;
  * @since 2.0.0
  */
 public class GenericCommandMessage<P> extends MessageDecorator<P> implements CommandMessage<P> {
-
-    @Serial
-    private static final long serialVersionUID = 3282528436414939876L;
 
     private final String commandName;
 

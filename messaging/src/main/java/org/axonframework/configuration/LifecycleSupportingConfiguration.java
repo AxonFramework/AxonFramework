@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.commandhandling;
-
-import java.io.Serializable;
+package org.axonframework.configuration;
 
 /**
+ * An interface providing both {@link NewConfiguration} and {@link LifecycleOperations} support.
+ * <p>
+ * Ensures correct encapsulation when configuration instances get constructed.
+ *
  * @author Allard Buijze
+ * @author Steven van Beelen
+ * @since 5.0.0
  */
-public class StubDomainEvent implements Serializable {
-
+public interface LifecycleSupportingConfiguration extends NewConfiguration, LifecycleOperations {
 
 }

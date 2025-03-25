@@ -28,8 +28,6 @@ package org.axonframework.common.lock;
  */
 public class DeadlockException extends LockAcquisitionFailedException {
 
-    private static final long serialVersionUID = -5552006099153686607L;
-
     /**
      * Initializes the exception with given {@code message}.
      *

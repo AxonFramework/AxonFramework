@@ -24,7 +24,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 
-import java.io.Serial;
 import java.util.Map;
 
 /**
@@ -39,9 +38,6 @@ import java.util.Map;
 public class GenericSubscriptionQueryUpdateMessage<U>
         extends GenericResultMessage<U>
         implements SubscriptionQueryUpdateMessage<U> {
-
-    @Serial
-    private static final long serialVersionUID = 5872479410321475147L;
 
     /**
      * Constructs a {@code GenericSubscriptionQueryUpdateMessage} for the given {@code type} and {@code payload}.

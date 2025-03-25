@@ -24,7 +24,6 @@ import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedObjectHolder;
 import org.axonframework.serialization.Serializer;
 
-import java.io.Serial;
 import java.util.Map;
 
 /**
@@ -40,9 +39,6 @@ import java.util.Map;
  * @since 2.0
  */
 public class GenericMessage<P> extends AbstractMessage<P> {
-
-    @Serial
-    private static final long serialVersionUID = 7937214711724527316L;
 
     private final P payload;
     private final MetaData metaData;

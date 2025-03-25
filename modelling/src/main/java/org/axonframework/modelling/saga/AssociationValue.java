@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.axonframework.modelling.saga;
 
 import org.axonframework.common.Assert;
 
-import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -32,9 +31,7 @@ import java.util.Objects;
  * @author Allard Buijze
  * @since 0.7
  */
-public class AssociationValue implements Serializable {
-
-    private static final long serialVersionUID = 3573690125021875389L;
+public class AssociationValue {
 
     private final String propertyKey;
     private final String propertyValue;

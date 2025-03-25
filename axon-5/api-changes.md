@@ -6,7 +6,8 @@ Version and Dependency Compatibility
 * Spring Framework 5 is no longer supported. You should upgrade to Spring Framework 6 or higher.
 * Javax Persistence is completely replaced for Jakarta Persistence. This means the majority of `javax` reference no
   longer apply.
-* EhCache 2 (from group identifier `net.sf.ehcache`) has been faced out entirely in favor of EhCache 3 (from group identifier `org.ehcache`).
+* EhCache 2 (from group identifier `net.sf.ehcache`) has been faced out entirely in favor of EhCache 3 (from group
+  identifier `org.ehcache`).
 
 Major API Changes
 =================
@@ -29,6 +30,12 @@ Major API Changes
 * We no longer support message handler annotated constructors. For example, the constructor of an aggregate can no
   longer contain the `@CommandHandler` annotation. Instead, the `@CreationPolicy` should be used.
 * All annotation logic is moved to the annotation module.
+* The Configuration of Axon Framework has been flipped around. Instead of having a `axon-configuration` module that
+  depends on all of Axon's modules to provide a global configuration, the core module (`axon-messaging`) of Axon now
+  contains a `Configurer` with a base set of operations. This `Configurer` can either take `Components` or `Modules`.
+  The former typically represents an infrastructure component (e.g. the `CommandBus`) whereas modules are themselves
+  configurers for a specific module of an application. For an exhaustive list of all the operations that have been
+  removed, moved, or altered, see the [Configurer and Configuration](#configurer-and-configuration) section.
 
 ## Unit of Work
 
@@ -138,7 +145,195 @@ TODO - provide description once the `MessageStream` generics discussion has been
 
 TODO - Start filling adjusted operation once the `MessageStream` generics discussion has been finalized.
 
-*
+## Configurer and Configuration
+
+The configuration API of Axon Framework has seen a big adjustment. You can essentially say it has been turned upside
+down. We have done so, because the `axon-configuration` module enforced a dependency on all other modules of Axon
+Framework. Due to this, it was, for example, not possible to make an Axon Framework application that only support
+command messaging and use the configuration API; the module just pulled in everything.
+
+As an act to clean this up, we have broken down the `Configurer` and `Configuration` into manageable chunks.
+As such, the `Configurer` interface now only provides basic operations
+to [register components](#registering-components-with-the-componentbuilder-interface), [decorate components](#decorating-components-with-the-componentdecorator-interface), [register enhancers](#registering-enhancers-with-the-configurerenhancer-interface),
+and [register modules](#registering-modules-with-the-modulebuilder-interface), besides the basic start-and-shutdown
+handler registration from the `LifecycleOperations` interface. The `Configuration` in turn now only has the means to
+retrieve components, and it's modules' components.
+
+So, how do you start Axon's configuration? That depends on what you are going to use from Axon Framework. If you, for
+example, only want to use the basic messaging concepts, you can start with the `MessagingConfigurer`. You can construct
+one through the static `MessagingConfigurer#create` method. This `MessagingConfigurer` will provide you a
+couple of defaults, like the `CommandBus` and `QueryBus`. Furthermore, on this configurer, you are able to provide new
+or replace existing components, decorate these components, and register the aforementioned module-specific `Modules`.
+
+In this fashion, we intend to ensure the following points:
+
+1. We clean up the `Configurer` and `Configuration` API substantially by splitting it into manageable chunks. This
+   should simplify configuration of Axon applications, as well as ease the introduction of specific `Configurer`
+   instances like the `MessagingConfigurer`.
+2. We reverse the dependency order. In doing so, each Axon Framework module can provide its own `Configurer`. This
+   allows users to pick and choose the Axon modules they need.
+
+For more details on how to use the new configuration API, be sure to read the following subsections.
+
+### Registering components with the ComponentBuilder interface
+
+The configuration API boosts a new interface, called the `ComponentBuilder`. The `ComponentBuilder` can generate any
+type of component you would need to register with Axon, based on a given `Configuration` instance. By providing the
+`Configuration` instance, you are able to pull other (Axon) components out of it that you might require to construct
+your component. The `Configurer#registerComponent` method is adjusted to expect such a `ComponentBuilder` upon
+registration.
+
+Here's an example of how to register a `DefaultCommandGateway` in Java:
+
+```java
+public static void main(String[] args) {
+    MessagingConfigurer.create()
+                       .registerComponent(CommandGateway.class, config -> new DefaultCommandGateway(
+                               config.getComponent(CommandBus.class),
+                               config.getComponent(MessageTypeResolver.class)
+                       ));
+    // Further configuration...
+}
+```
+
+### Decorating components with the ComponentDecorator interface
+
+New functionality to the configuration API, is the ability to provide decorators
+for [registered components](#registering-components-with-the-componentbuilder-interface). The decorator pattern is what
+Axon Framework uses to construct its infrastructure components, like the `CommandBus`, as of version 5.
+
+In the command bus' example, concepts like intercepting, tracing, being distributed, and retrying, are now decorators
+around a `SimpleCommandBus`. We register those through the `Configurer#registerDecorator` method, which expect
+provisioning of a `ComponentDecorator` instance. The `ComponentDecorator` provides a `Configuration` and _delegate_
+component when invoked, and expects a new instance of the `ComponentDecorator's` generic type to be returned.
+
+Here's an example of how we can decorate the `SimpleCommandBus` in with a `ComponentDecorator`, in Java:
+
+```java
+public static void main(String[] args) {
+    MessagingConfigurer.create()
+                       .registerComponent(CommandBus.class, config -> new SimpleCommandBus())
+                       .registerDecorator(
+                               CommandBus.class,
+                               0,
+                               (config, delegate) -> new TracingCommandBus(
+                                       delegate,
+                                       config.getComponent(CommandBusSpanFactory.class)
+                               )
+                       );
+    // Further configuration...
+}
+```
+
+By providing this functionality on the base `Configurer` interface, you are able to decorate any of Axon's components
+with your own custom logic. Since ordering of these decorates can be of importance, you are required to provide an
+order upon registration of a `ComponentDecorator`.
+
+### Registering enhancers with the ConfigurerEnhancer interface
+
+The `ConfigurerEnhancer` replaces the old `ConfigurerModule`, with one major difference: A `ConfigurerEnhancer` acts on
+the `Configurer` during `Configurer#build` instead of immediately.
+
+This adjustment allows enhancers to enact on its `Configurer` in a pre-definable order. They are thus staged to enhance
+when the configuration is ready for it. The order is either the registration order with the `Configurer` or it is based
+on the `ConfigurerEnhancer#order` value.
+
+Furthermore, a `ConfigurerEnhancer` can conditionally make adjustments as it sees fit through the
+`Configurer#hasComponent` operation. Through this approach, the implementers of an enhancer can choose to
+replace a component or decorate a component only when it (or another) is present.
+
+See the example below where decorating a `CommandBus` with tracing logic is only done when a `CommandBus` component is
+present:
+
+```java
+public static void main(String[] args) {
+    MessagingConfigurer.create()
+                       .registerEnhancer(configurer -> {
+                           if (configurer.hasComponent(CommandBus.class)) {
+                               configurer.registerDecorator(
+                                       CommandBus.class, 0,
+                                       (config, delegate) -> new TracingCommandBus(
+                                               delegate,
+                                               config.getComponent(CommandBusSpanFactory.class)
+                                       )
+                               );
+                           }
+                       });
+    // Further configuration...
+}
+```
+
+In the above enhancer, we first validate if there is a `CommandBus` present. Only when that is the case do we choose to
+decorate it as a `TracingCommandBus` by retrieving the `CommandBusSpanFactory` from the `Configuration` given to the
+`ComponentDecorator`. Note that this sample does expect that somewhere else during the configuration a
+`CommandBusSpanFactory` has been added.
+
+### Registering modules with the ModuleBuilder interface
+
+To support clear encapsulation, each `Configurer` provides the means to register a `ModuleBuilder` that constructs a
+`Module` based on a `LifecycleSupportingConfiguration`. A `LifecycleSupportingConfiguration` instance is given, so that
+the `Module` under construction is able to retrieve components as well as register start and shutdown handlers. The
+latter allow the `Module` to take part in the lifecycle of Axon Framework, ensuring that, for example, handler
+registration phases happen at the right point in time.
+
+To emphasize it more, the `Module` **is** able to retrieve components from its parent configuration, but this
+configuration **is not** able to retrieve components from the `Module`. This allows users to break down their
+configuration into separate `Modules` with their own local components. Reusable components would, instead, reside in the
+parent configuration.
+
+Imagine you define an integration module in your project that should use a different `CommandBus` from the rest of your
+application. By making a `Module` and registering this specific `CommandBus` on this `Module`, you ensure only **it** is
+able to retrieve this `CommandBus`. But, if this `Module` requires common components from its parent, it can still
+retrieve those. Down below is an example usage of the `SimpleModule` to achieve just that:
+
+```java
+public static void main(String[] args) {
+    MessagingConfigurer.create()
+                       .registerModule(config -> new SimpleModule(config)
+                               .registerComponent(CommandBus.class, c -> new SimpleCommandBus())
+                       );
+    // Further configuration...
+}
+```
+
+### Accessing other Configurer methods from specific Configurer implementations
+
+Although the API of a `Configurer` is greatly simplified, we still believe it valuable to have specific registration
+methods guiding the user.
+For example, the `Configurer` no longer has a `subscribeCommandBus` operation, as that method does not belong on this
+low level API.
+However, the specific `MessagingConfigurer` still has this operation, as registering your `CommandBus` on the messaging
+layer is intuitive.
+
+To not overencumber users of the `MessagingConfigurer`, we did not give it lifecycle specific configuration operations
+like the `AxonApplication#registerLifecyclePhaseTimeout` operation. The same will apply for modelling and event sourcing
+configurers: these will not override the registration operations of their delegates.
+
+To be able to access a delegate `Configurer`, you can use the `Configurer#delegate` operation:
+
+```java
+public static void main(String[] args) {
+    MessagingConfigurer.create()
+                       .delegate(
+                               AxonApplication.class,
+                               axonApp -> axonApp.registerLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS)
+                       )
+                       .build();
+    // Further configuration...
+}
+```
+
+As specifying the `Configurer` type can become verbose, the `MessagingConfigurer` has a `axon` operation to allow for
+the exact same operation:
+
+```java
+public static void main(String[] args) {
+    MessagingConfigurer.create()
+                       .axon(axon -> axon.registerLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS))
+                       .build();
+    // Further configuration...
+}
+```
 
 Other API changes
 =================
@@ -177,19 +372,32 @@ Stored format changes
 4. The dbscheduler `org.axonframework.deadline.dbscheduler.DbSchedulerHumanReadableDeadlineDetails` expects the
    `QualifiedName` to be present under the field `type`.
 
-Moved / Remove Classes
+Changed Classes
 ======================
+
+This section contains two tables:
+
+1. A table of all the moved and renamed classes.
+2. A table of all the removed classes.
 
 ### Moved / Renamed
 
-| Axon 4                                                       | Axon 5                                                       |
-|--------------------------------------------------------------|--------------------------------------------------------------|
-| org.axonframework.common.caching.EhCache3Adapter             | org.axonframework.common.caching.EhCacheAdapter              |
-| org.axonframework.eventsourcing.MultiStreamableMessageSource | org.axonframework.eventhandling.MultiStreamableMessageSource |
-| org.axonframework.eventhandling.EventBus                     | org.axonframework.eventhandling.EventSink                    |
-| org.axonframework.commandhandling.CommandHandler             | org.axonframework.commandhandling.annotation.CommandHandler  |
-| org.axonframework.eventhandling.EventHandler                 | org.axonframework.eventhandling.annotation.EventHandler      |
-| org.axonframework.queryhandling.QueryHandler                 | org.axonframework.queryhandling.annotation.QueryHandler      |
+| Axon 4                                                       | Axon 5                                                       | Module change?                 |
+|--------------------------------------------------------------|--------------------------------------------------------------|--------------------------------|
+| org.axonframework.common.caching.EhCache3Adapter             | org.axonframework.common.caching.EhCacheAdapter              | No                             |
+| org.axonframework.eventsourcing.MultiStreamableMessageSource | org.axonframework.eventhandling.MultiStreamableMessageSource | No                             |
+| org.axonframework.eventhandling.EventBus                     | org.axonframework.eventhandling.EventSink                    | No                             |
+| org.axonframework.commandhandling.CommandHandler             | org.axonframework.commandhandling.annotation.CommandHandler  | No                             |
+| org.axonframework.eventhandling.EventHandler                 | org.axonframework.eventhandling.annotation.EventHandler      | No                             |
+| org.axonframework.queryhandling.QueryHandler                 | org.axonframework.queryhandling.annotation.QueryHandler      | No                             |
+| org.axonframework.config.Configurer                          | org.axonframework.configuration.Configurer                   | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.Configuration                       | org.axonframework.configuration.Configuration                | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.Component                           | org.axonframework.configuration.Component                    | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.ConfigurerModule                    | org.axonframework.configuration.ConfigurationEnhancer        | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.ModuleConfiguration                 | org.axonframework.configuration.Module                       | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleHandler                    | org.axonframework.configuration.LifecycleHandler             | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleHandlerInspector           | org.axonframework.configuration.LifecycleHandlerInspector    | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleOperations                 | org.axonframework.configuration.LifecycleOperations          | Yes. Moved to `axon-messaging` |
 
 ### Removed
 
@@ -201,12 +409,20 @@ Moved / Remove Classes
 | org.axonframework.messaging.unitofwork.DefaultUnitOfWork        | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
 | org.axonframework.messaging.unitofwork.ExecutionResult          | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
 | org.axonframework.messaging.unitofwork.MessageProcessingContext | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
-| org.axonframework.eventsourcing.eventstore.AbstractEventStore   | Made obsolete through the rewrite of the `EventStore`                                     |
+| org.axonframework.eventsourcing.eventstore.AbstractEventStore   | Made obsolete through the rewrite of the `EventStore`.                                    |
 
-Method Signature Changes
+Method signature changes
 ========================
 
-### Constructors
+This section contains three subsections, called:
+
+1. [Parameter adjustments](#parameter-adjustments)
+2. [Moved methods and constructors](#moved-methods-and-constructors)
+3. [Removed methods and constructors](#removed-methods-and-constructors)
+
+### Parameter adjustments
+
+#### Constructors
 
 | Constructor                                                                                | What                           | Why                                          | 
 |--------------------------------------------------------------------------------------------|--------------------------------|----------------------------------------------|
@@ -224,3 +440,32 @@ Method Signature Changes
 | All none-copy org.axonframework.commandhandling.GenericCommandResultMessage constructors   | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
 | All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
 | All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+
+#### Methods
+
+| Method                         | What                                                                   | Why                                     |
+|--------------------------------|------------------------------------------------------------------------|-----------------------------------------|
+| `Configurer#registerComponent` | Replaced `Function<Configuration, ? extends C>` for `ComponentBuilder` | Added functional interface for clarity. |
+| `Configurer#registerModule`    | Replaced `ModuleConfiguration` for `ModuleBuilder`                     | Added functional interface for clarity. |
+
+### Moved/renamed methods and constructors
+
+| Constructor / Method                              | To where                                         |
+|---------------------------------------------------|--------------------------------------------------|
+| `Configurer#configureCommandBus`                  | `MessagingConfigurer#registerCommandBus`         | 
+| `Configurer#configureEventBus`                    | `MessagingConfigurer#registerEventSink`          | 
+| `Configurer#configureQueryBus`                    | `MessagingConfigurer#registerQueryBus`           | 
+| `Configurer#configureQueryUpdateEmitter`          | `MessagingConfigurer#registerQueryUpdateEmitter` | 
+| `ConfigurerModule#configureModule`                | `ConfigurerEnhancer#enhance`                     | 
+| `ConfigurerModule#configureLifecyclePhaseTimeout` | `RootConfigurer#registerLifecyclePhaseTimeout`   | 
+
+### Removed methods and constructors
+
+| Constructor / Method                                                            | Why                                                                             | 
+|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`        | Initialize is now replace fully by start and shutdown handlers.                 |
+| `org.axonframework.config.ModuleConfiguration#unwrap()`                         | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant. |
+| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                 | Only use by `unwrap()` that's also removed.                                     |
+| `org.axonframework.config.Configuration#lifecycleRegistry()`                    | A round about way to support life cycle handler registration.                   |
+| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`     | Fully replaced by start and shutdown handler registration.                      |
+| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)` | Each Configurer now has get optional operation replacing this functionality.    |

@@ -29,8 +29,6 @@ import org.axonframework.common.AxonConfigurationException;
  */
 public class PropertyAccessException extends AxonConfigurationException {
 
-    private static final long serialVersionUID = -1360531453606316133L;
-
     /**
      * Initializes the PropertyAccessException with given {@code message} and {@code cause}.
      *

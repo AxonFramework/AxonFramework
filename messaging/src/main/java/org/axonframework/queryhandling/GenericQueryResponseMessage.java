@@ -24,7 +24,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 
-import java.io.Serial;
 import java.util.Map;
 
 /**
@@ -36,9 +35,6 @@ import java.util.Map;
  * @since 3.2.0
  */
 public class GenericQueryResponseMessage<R> extends GenericResultMessage<R> implements QueryResponseMessage<R> {
-
-    @Serial
-    private static final long serialVersionUID = -735698768536456937L;
 
     /**
      * Constructs a {@link GenericQueryResponseMessage} for the given {@code type} and {@code payload}.

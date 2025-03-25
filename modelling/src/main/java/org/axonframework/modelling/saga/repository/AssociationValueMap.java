@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.axonframework.modelling.saga.repository;
 
 import org.axonframework.modelling.saga.AssociationValue;
 
-import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
@@ -152,9 +151,7 @@ public class AssociationValueMap {
         }
     }
 
-    private static class AssociationValueComparator implements Comparator<SagaAssociationValue>, Serializable {
-
-        private static final long serialVersionUID = -8733800489211327001L;
+    private static class AssociationValueComparator implements Comparator<SagaAssociationValue> {
 
         @SuppressWarnings({"unchecked"})
         @Override

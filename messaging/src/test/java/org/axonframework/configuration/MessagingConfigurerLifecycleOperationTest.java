@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,22 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.loopbacktest;
-
-import java.io.Serializable;
+package org.axonframework.configuration;
 
 /**
- * @author Allard Buijze
+ * Test suite implementation validating the lifecycle operation registration of the {@link MessagingConfigurer}.
+ *
+ * @author Steven van Beelen
  */
-public class StubDomainEvent implements Serializable {
-
-    private static final long serialVersionUID = 834667054977749990L;
+class MessagingConfigurerLifecycleOperationTest extends ConfigurerLifecycleOperationTestSuite<MessagingConfigurer> {
 
     @Override
-    public String toString() {
-        return "StubDomainEvent";
+    public MessagingConfigurer createConfigurer() {
+        return MessagingConfigurer.create();
+    }
+
+    @Override
+    public AxonConfiguration start(MessagingConfigurer configurer) {
+        return configurer.start();
     }
 }
