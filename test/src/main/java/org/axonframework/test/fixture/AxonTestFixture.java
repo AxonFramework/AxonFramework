@@ -46,7 +46,7 @@ import java.util.stream.Stream;
 import static org.axonframework.test.matchers.Matchers.deepEquals;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
-public class CommandModelTestFixture implements CommandModelTest.Executor, CommandModelTest.ResultValidator {
+public class AxonTestFixture implements CommandModelTest.Executor, CommandModelTest.ResultValidator {
 
     public static final String TEST_CONTEXT = "TEST_CONTEXT";
 
@@ -68,18 +68,18 @@ public class CommandModelTestFixture implements CommandModelTest.Executor, Comma
     private final Reporter reporter = new Reporter();
     private Throwable actualException;
 
-    public static CommandModelTestFixture with(ApplicationConfigurer<?> configurer) {
+    public static AxonTestFixture with(ApplicationConfigurer<?> configurer) {
         var testConfigurer = new TestApplicationConfigurer(configurer);
         var configuration = testConfigurer.build();
-        return new CommandModelTestFixture(configuration);
+        return new AxonTestFixture(configuration);
     }
 
-    public static CommandModelTestFixture with(TestApplicationConfigurer configurer) {
+    public static AxonTestFixture with(TestApplicationConfigurer configurer) {
         var configuration = configurer.build();
-        return new CommandModelTestFixture(configuration);
+        return new AxonTestFixture(configuration);
     }
 
-    public CommandModelTestFixture(NewConfiguration configuration) {
+    public AxonTestFixture(NewConfiguration configuration) {
         this.configuration = configuration;
         this.commandBus = (RecordingCommandBus) configuration.getComponent(CommandBus.class);
         this.eventSink = (RecordingEventSink) configuration.getComponent(EventSink.class);

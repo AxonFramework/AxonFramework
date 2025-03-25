@@ -44,7 +44,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 
-class CommandModelTestFixtureTest {
+class AxonTestFixtureTest {
 
     private static final String TEST_CONTEXT = "TEST_CONTEXT";
 
@@ -64,7 +64,7 @@ class CommandModelTestFixtureTest {
                                                                                 return MessageStream.empty().cast();
                                                                             }));
 
-        var fixture = CommandModelTestFixture.with(configurer);
+        var fixture = AxonTestFixture.with(configurer);
 
         fixture.givenNoPriorActivity()
                .when(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
@@ -94,7 +94,7 @@ class CommandModelTestFixtureTest {
                                                                                 return MessageStream.empty().cast();
                                                                             }));
 
-        var fixture = CommandModelTestFixture.with(configurer);
+        var fixture = AxonTestFixture.with(configurer);
 
         fixture.givenEvents(studentNameChangedEventMessage("my-studentId-1", "name-1", 1))
                .when(new ChangeStudentNameCommand("my-studentId-1", "name-1")).expectEvents(
@@ -111,7 +111,7 @@ class CommandModelTestFixtureTest {
                                                                             })
         );
 
-        var fixture = CommandModelTestFixture.with(configurer);
+        var fixture = AxonTestFixture.with(configurer);
 
         fixture.givenNoPriorActivity()
                .when(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
@@ -175,13 +175,13 @@ class CommandModelTestFixtureTest {
             });
 
 
-            var fixture = CommandModelTestFixture.with(configurer);
+            var fixture = AxonTestFixture.with(configurer);
             fixture.givenNoPriorActivity()
                    .when(new ChangeStudentNameCommand("my-studentId-1", "name-1")).expectEvents(
                            studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
 
 
-            var fixture2 = CommandModelTestFixture.with(configurer);
+            var fixture2 = AxonTestFixture.with(configurer);
             fixture2.givenEvents(studentNameChangedEventMessage("my-studentId-1", "name-1", 1))
                     .when(new ChangeStudentNameCommand("my-studentId-1", "name-1")).expectNoEvents();
         }
