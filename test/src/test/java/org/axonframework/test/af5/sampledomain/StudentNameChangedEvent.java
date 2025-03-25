@@ -21,7 +21,8 @@ import org.axonframework.eventsourcing.annotations.EventTag;
 public record StudentNameChangedEvent(
         @EventTag(key = "Student")
         String id,
-        String name
+        String name,
+        Integer change
 ) {
 
 }

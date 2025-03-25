@@ -28,15 +28,16 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.test.aggregate.Reporter;
+import org.axonframework.test.aggregate.ResultValidator;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.MapEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.hamcrest.Matcher;
+import org.hamcrest.StringDescription;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -112,12 +113,9 @@ public class CommandModelTestFixture implements CommandModelTest.Executor, Comma
     }
 
     public CommandModelTest.Executor givenEvents(EventMessage<?>... events) {
-        unitOfWork.runOnPrepareCommit(
-                processingContext -> {
-                    eventSink.publish(processingContext, TEST_CONTEXT, events);
-                    eventSink.reset();
-                }
-        );
+        unitOfWork
+                .runOnPreInvocation(processingContext -> eventSink.publish(processingContext, TEST_CONTEXT, events))
+                .runOnPrepareCommit(processingContext -> eventSink.reset());
         return this;
     }
 
@@ -126,7 +124,13 @@ public class CommandModelTestFixture implements CommandModelTest.Executor, Comma
         var messageType = messageTypeResolver.resolve(payload);
         var message = new GenericCommandMessage<>(messageType, payload, MetaData.from(metaData));
         // todo: handle exception!
-        unitOfWork.runOnCommit(processingContext -> commandBus.dispatch(message, processingContext));
+        unitOfWork.runOnCommit(
+                processingContext -> commandBus.dispatch(message, processingContext)
+                                               .exceptionallyCompose(e -> {
+                                                   actualException = e;
+                                                   return CompletableFuture.completedFuture(null);
+                                               })
+        );
         return this;
     }
 
@@ -147,6 +151,20 @@ public class CommandModelTestFixture implements CommandModelTest.Executor, Comma
             if (!verifyPayloadEquality(expectedEvent, actualEvent.getPayload())) {
                 reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
+        }
+        return this;
+    }
+
+    @Override
+    public CommandModelTest.ResultValidator expectException(Matcher<?> matcher) {
+        StringDescription description = new StringDescription();
+        matcher.describeTo(description);
+        if (actualException == null) {
+            // todo: implement!
+//            reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
+        }
+        if (!matcher.matches(actualException)) {
+            reporter.reportWrongException(actualException, description);
         }
         return this;
     }
