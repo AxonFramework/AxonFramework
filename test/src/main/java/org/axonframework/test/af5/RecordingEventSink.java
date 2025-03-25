@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+
 class RecordingEventSink implements EventSink {
 
     private final EventSink delegate;
@@ -32,6 +34,13 @@ class RecordingEventSink implements EventSink {
     RecordingEventSink(EventSink delegate) {
         this.delegate = delegate;
         this.recorded = new ArrayList<>();
+    }
+
+    @Override
+    public void publish(ProcessingContext processingContext, @NotNull String context,
+                        @NotNull List<EventMessage<?>> events) {
+        recorded.addAll(events);
+        delegate.publish(processingContext, context, events);
     }
 
     @Override
