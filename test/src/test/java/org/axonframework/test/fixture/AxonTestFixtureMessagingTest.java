@@ -56,9 +56,11 @@ class AxonTestFixtureMessagingTest {
 
         var fixture = AxonTestFixture.with(configurer);
 
-        fixture.givenNoPriorActivity()
-               .when(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-               .expectEvents(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+        fixture.given()
+               .when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+               .then()
+               .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
     }
 
     @Test
@@ -86,9 +88,12 @@ class AxonTestFixtureMessagingTest {
 
         var fixture = AxonTestFixture.with(configurer);
 
-        fixture.givenEvents(studentNameChangedEventMessage("my-studentId-1", "name-1", 1))
-               .when(new ChangeStudentNameCommand("my-studentId-1", "name-1")).expectEvents(
-                       studentNameChangedEventMessage("my-studentId-1", "name-1", 2));
+        fixture.given()
+               .event(studentNameChangedEventMessage("my-studentId-1", "name-1", 1))
+               .when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+               .then()
+               .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 2));
     }
 
     @Test
@@ -105,9 +110,11 @@ class AxonTestFixtureMessagingTest {
 
         var fixture = AxonTestFixture.with(configurer);
 
-        fixture.givenNoPriorActivity()
-               .when(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-               .expectException(RuntimeException.class);
+        fixture.given()
+               .when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+               .then()
+               .exception(RuntimeException.class);
     }
 
     private static GenericEventMessage<StudentNameChangedEvent> studentNameChangedEventMessage(

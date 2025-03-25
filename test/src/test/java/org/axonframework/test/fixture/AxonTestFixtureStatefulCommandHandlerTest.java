@@ -81,7 +81,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
 
         var fixture = AxonTestFixture.with(configurer);
 
-        fixture.givenNoPriorActivity()
+        fixture.noPriorActivity()
                .when(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .expectEvents(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
     }
