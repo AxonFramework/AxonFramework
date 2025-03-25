@@ -46,7 +46,7 @@ import java.util.stream.Stream;
 import static org.axonframework.test.matchers.Matchers.deepEquals;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
-public class AxonTestFixture implements CommandModelTest.Executor, CommandModelTest.ResultValidator {
+public class AxonTestFixture implements AxonTestPhase.Executing, AxonTestPhase.Validation {
 
     public static final String TEST_CONTEXT = "TEST_CONTEXT";
 
@@ -88,19 +88,19 @@ public class AxonTestFixture implements CommandModelTest.Executor, CommandModelT
         this.whenUnitOfWork = new AsyncUnitOfWork();
     }
 
-    public CommandModelTest.Executor givenNoPriorActivity() {
+    public AxonTestPhase.Executing givenNoPriorActivity() {
         return this;
     }
 
-    public CommandModelTest.Executor givenEvent(Object payload) {
+    public AxonTestPhase.Executing givenEvent(Object payload) {
         return givenEvent(payload, MetaData.emptyInstance());
     }
 
-    public CommandModelTest.Executor givenEvent(Object payload, Map<String, ?> metaData) {
+    public AxonTestPhase.Executing givenEvent(Object payload, Map<String, ?> metaData) {
         return givenEvent(payload, MetaData.from(metaData));
     }
 
-    public CommandModelTest.Executor givenEvent(Object payload, MetaData metaData) {
+    public AxonTestPhase.Executing givenEvent(Object payload, MetaData metaData) {
         var messageType = messageTypeResolver.resolve(payload);
         var eventMessage = new GenericEventMessage<>(
                 messageType,
@@ -110,7 +110,7 @@ public class AxonTestFixture implements CommandModelTest.Executor, CommandModelT
         return givenEvents(eventMessage);
     }
 
-    public CommandModelTest.Executor givenEvents(EventMessage<?>... events) {
+    public AxonTestPhase.Executing givenEvents(EventMessage<?>... events) {
         givenUnitOfWork
                 .runOnInvocation(processingContext -> eventSink.publish(processingContext, TEST_CONTEXT, events))
                 .runOnAfterCommit(processingContext -> eventSink.reset());
@@ -118,7 +118,7 @@ public class AxonTestFixture implements CommandModelTest.Executor, CommandModelT
     }
 
     @Override
-    public CommandModelTest.ResultValidator when(Object payload, Map<String, ?> metaData) {
+    public AxonTestPhase.Validation when(Object payload, Map<String, ?> metaData) {
         if (!givenUnitOfWork.isCompleted()) {
             awaitCompletion(givenUnitOfWork.execute());
         }
@@ -131,7 +131,7 @@ public class AxonTestFixture implements CommandModelTest.Executor, CommandModelT
     }
 
     @Override
-    public CommandModelTest.ResultValidator expectEvents(Object... expectedEvents) {
+    public AxonTestPhase.Validation expectEvents(Object... expectedEvents) {
         if (!whenUnitOfWork.isCompleted()) {
             awaitCompletion(whenUnitOfWork.execute());
         }
@@ -152,7 +152,7 @@ public class AxonTestFixture implements CommandModelTest.Executor, CommandModelT
     }
 
     @Override
-    public CommandModelTest.ResultValidator expectException(Matcher<?> matcher) {
+    public AxonTestPhase.Validation expectException(Matcher<?> matcher) {
         if (!whenUnitOfWork.isCompleted()) {
             awaitCompletion(whenUnitOfWork.execute());
         }
@@ -169,7 +169,7 @@ public class AxonTestFixture implements CommandModelTest.Executor, CommandModelT
     }
 
     @Override
-    public CommandModelTest.ResultValidator expectEvents(EventMessage<?>... expectedEvents) {
+    public AxonTestPhase.Validation expectEvents(EventMessage<?>... expectedEvents) {
         this.expectEvents(Stream.of(expectedEvents).map(Message::getPayload).toArray());
 
         var publishedEvents = eventSink.recorded();

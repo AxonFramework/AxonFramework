@@ -24,31 +24,31 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 
-public interface CommandModelTest {
+public interface AxonTestPhase {
 
-    interface Executor {
+    interface Executing {
 
-        ResultValidator when(Object payload, Map<String, ?> metaData);
+        Validation when(Object payload, Map<String, ?> metaData);
 
-        default ResultValidator when(Object payload) {
+        default Validation when(Object payload) {
             return when(payload, new HashMap<>());
         }
     }
 
-    interface ResultValidator {
+    interface Validation {
 
-        ResultValidator expectEvents(EventMessage<?>... expectedEvents);
+        Validation expectEvents(EventMessage<?>... expectedEvents);
 
-        ResultValidator expectEvents(Object... expectedEvents);
+        Validation expectEvents(Object... expectedEvents);
 
-        default ResultValidator expectNoEvents() {
+        default Validation expectNoEvents() {
             return expectEvents();
         }
 
-        default ResultValidator expectException(Class<? extends Throwable> expectedException) {
+        default Validation expectException(Class<? extends Throwable> expectedException) {
             return expectException(instanceOf(expectedException));
         }
 
-        public ResultValidator expectException(Matcher<?> matcher);
+        public Validation expectException(Matcher<?> matcher);
     }
 }
