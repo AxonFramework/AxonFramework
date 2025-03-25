@@ -29,42 +29,46 @@ public interface AxonTestPhase {
 
     interface Given {
 
-        When givenNoPriorActivity();
+        Given noPriorActivity();
 
-        default When givenEvent(Object payload) {
-            return givenEvent(payload, MetaData.emptyInstance());
+        default Given event(Object payload) {
+            return event(payload, MetaData.emptyInstance());
         }
 
-        default When givenEvent(Object payload, Map<String, ?> metaData) {
-            return givenEvent(payload, MetaData.from(metaData));
+        default Given event(Object payload, Map<String, ?> metaData) {
+            return event(payload, MetaData.from(metaData));
         }
 
-        When givenEvent(Object payload, MetaData metaData);
+        Given event(Object payload, MetaData metaData);
+
+        When when();
     }
 
     interface When {
 
-        Then when(Object payload, Map<String, ?> metaData);
+        When command(Object payload, Map<String, ?> metaData);
 
-        default Then when(Object payload) {
-            return when(payload, new HashMap<>());
+        default When command(Object payload) {
+            return command(payload, new HashMap<>());
         }
+
+        Then then();
     }
 
     interface Then {
 
-        Then expectEvents(EventMessage<?>... expectedEvents);
+        Then events(EventMessage<?>... expectedEvents);
 
-        Then expectEvents(Object... expectedEvents);
+        Then events(Object... expectedEvents);
 
-        default Then expectNoEvents() {
-            return expectEvents();
+        default Then noEvents() {
+            return events();
         }
 
-        default Then expectException(Class<? extends Throwable> expectedException) {
-            return expectException(instanceOf(expectedException));
+        default Then exception(Class<? extends Throwable> expectedException) {
+            return exception(instanceOf(expectedException));
         }
 
-        Then expectException(Matcher<?> matcher);
+        Then exception(Matcher<?> matcher);
     }
 }

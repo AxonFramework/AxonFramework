@@ -98,13 +98,17 @@ public class AxonTestFixture implements AxonTestPhase.Given, AxonTestPhase.When,
         this.whenUnitOfWork = new AsyncUnitOfWork();
     }
 
-    @Override
-    public AxonTestPhase.When givenNoPriorActivity() {
+    public AxonTestPhase.Given given() {
         return this;
     }
 
     @Override
-    public AxonTestPhase.When givenEvent(Object payload, MetaData metaData) {
+    public AxonTestPhase.Given noPriorActivity() {
+        return this;
+    }
+
+    @Override
+    public AxonTestPhase.Given event(Object payload, MetaData metaData) {
         var messageType = messageTypeResolver.resolve(payload);
         var eventMessage = new GenericEventMessage<>(
                 messageType,
@@ -114,7 +118,12 @@ public class AxonTestFixture implements AxonTestPhase.Given, AxonTestPhase.When,
         return givenEvents(eventMessage);
     }
 
-    public AxonTestPhase.When givenEvents(EventMessage<?>... events) {
+    @Override
+    public AxonTestPhase.When when() {
+        return this;
+    }
+
+    public AxonTestPhase.Given givenEvents(EventMessage<?>... events) {
         givenUnitOfWork
                 .runOnInvocation(processingContext -> eventSink.publish(processingContext, TEST_CONTEXT, events))
                 .runOnAfterCommit(processingContext -> eventSink.reset());
@@ -122,7 +131,7 @@ public class AxonTestFixture implements AxonTestPhase.Given, AxonTestPhase.When,
     }
 
     @Override
-    public AxonTestPhase.Then when(Object payload, Map<String, ?> metaData) {
+    public AxonTestPhase.When command(Object payload, Map<String, ?> metaData) {
         if (!givenUnitOfWork.isCompleted()) {
             awaitCompletion(givenUnitOfWork.execute());
         }
@@ -142,7 +151,12 @@ public class AxonTestFixture implements AxonTestPhase.Given, AxonTestPhase.When,
     }
 
     @Override
-    public AxonTestPhase.Then expectEvents(Object... expectedEvents) {
+    public AxonTestPhase.Then then() {
+        return this;
+    }
+
+    @Override
+    public AxonTestPhase.Then events(Object... expectedEvents) {
         if (!whenUnitOfWork.isCompleted()) {
             awaitCompletion(whenUnitOfWork.execute());
         }
@@ -163,7 +177,7 @@ public class AxonTestFixture implements AxonTestPhase.Given, AxonTestPhase.When,
     }
 
     @Override
-    public AxonTestPhase.Then expectException(Matcher<?> matcher) {
+    public AxonTestPhase.Then exception(Matcher<?> matcher) {
         if (!whenUnitOfWork.isCompleted()) {
             awaitCompletion(whenUnitOfWork.execute());
         }
@@ -179,8 +193,8 @@ public class AxonTestFixture implements AxonTestPhase.Given, AxonTestPhase.When,
     }
 
     @Override
-    public AxonTestPhase.Then expectEvents(EventMessage<?>... expectedEvents) {
-        this.expectEvents(Stream.of(expectedEvents).map(Message::getPayload).toArray());
+    public AxonTestPhase.Then events(EventMessage<?>... expectedEvents) {
+        this.events(Stream.of(expectedEvents).map(Message::getPayload).toArray());
 
         var publishedEvents = eventSink.recorded();
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
