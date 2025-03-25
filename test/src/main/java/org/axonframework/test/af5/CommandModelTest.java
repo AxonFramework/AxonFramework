@@ -17,9 +17,14 @@
 package org.axonframework.test.af5;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.test.aggregate.ResultValidator;
+import org.hamcrest.Matcher;
+import org.hamcrest.StringDescription;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
 
 public interface CommandModelTest {
 
@@ -41,5 +46,11 @@ public interface CommandModelTest {
         default ResultValidator expectNoEvents() {
             return expectEvents();
         }
+
+        default ResultValidator expectException(Class<? extends Throwable> expectedException) {
+            return expectException(instanceOf(expectedException));
+        }
+
+        public ResultValidator expectException(Matcher<?> matcher);
     }
 }
