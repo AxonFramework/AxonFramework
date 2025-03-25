@@ -17,89 +17,193 @@
 package org.axonframework.test.af5;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
-import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.test.aggregate.ResultValidator;
-import org.axonframework.test.aggregate.ResultValidatorImpl;
+import org.axonframework.test.aggregate.Reporter;
 import org.axonframework.test.matchers.FieldFilter;
+import org.axonframework.test.matchers.MapEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
+import org.hamcrest.Matcher;
 
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
-public class CommandModelTestFixture implements CommandModelTest.Executor {
+import static org.axonframework.test.matchers.Matchers.deepEquals;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
+public class CommandModelTestFixture implements CommandModelTest.Executor, CommandModelTest.ResultValidator {
+
+    public static final String TEST_CONTEXT = "TEST_CONTEXT";
+
+    // configuration
     private final NewConfiguration configuration;
-    private final CommandBus commandBus;
-    private final AsyncEventStore eventStore;
-    private final AsyncUnitOfWork unitOfWork;
+    private final RecordingCommandBus commandBus;
+    private final RecordingEventSink eventSink;
     private final MessageTypeResolver messageTypeResolver;
-
     private List<FieldFilter> fieldFilters = new ArrayList<>();
 
-    private Deque<EventMessage<?>> givenEvents;
+    // execution
+    private final AsyncUnitOfWork unitOfWork;
 
-    public CommandModelTestFixture(ApplicationConfigurer<?> configurer) {
-        this.configuration = configurer.build();
-        this.commandBus = configuration.getComponent(CommandBus.class);
-        this.eventStore = configuration.getComponent(AsyncEventStore.class);
+    // given
+
+    // when
+
+    // then
+    private final Reporter reporter = new Reporter();
+    private Throwable actualException;
+
+    public static CommandModelTestFixture with(ApplicationConfigurer<?> configurer) {
+        var testConfigurer = new TestApplicationConfigurer(configurer);
+        var configuration = testConfigurer.build();
+        return new CommandModelTestFixture(configuration);
+    }
+
+    public static CommandModelTestFixture with(TestApplicationConfigurer configurer) {
+        var configuration = configurer.build();
+        return new CommandModelTestFixture(configuration);
+    }
+
+    public CommandModelTestFixture(NewConfiguration configuration) {
+        this.configuration = configuration;
+        this.commandBus = (RecordingCommandBus) configuration.getComponent(CommandBus.class);
+        this.eventSink = (RecordingEventSink) configuration.getComponent(EventSink.class);
         this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
         this.unitOfWork = new AsyncUnitOfWork();
     }
 
-    CommandModelTest.Executor givenEvent(Object payload) {
+    public CommandModelTest.Executor givenNoPriorActivity() {
+        return this;
+    }
+
+    public CommandModelTest.Executor givenEvent(Object payload) {
         return givenEvent(payload, MetaData.emptyInstance());
     }
 
-    CommandModelTest.Executor givenEvent(Object payload, Map<String, ?> metaData) {
+    public CommandModelTest.Executor givenEvent(Object payload, Map<String, ?> metaData) {
         return givenEvent(payload, MetaData.from(metaData));
     }
 
-    CommandModelTest.Executor givenEvent(Object payload, MetaData metaData) {
+    public CommandModelTest.Executor givenEvent(Object payload, MetaData metaData) {
+        var messageType = messageTypeResolver.resolve(payload);
         var eventMessage = new GenericEventMessage<>(
-                messageTypeResolver.resolve(payload.getClass()),
+                messageType,
                 payload,
                 metaData
         );
         return givenEvents(eventMessage);
     }
 
-    CommandModelTest.Executor givenEvents(EventMessage<?>... events) {
-        Collections.addAll(givenEvents, events);
+    public CommandModelTest.Executor givenEvents(EventMessage<?>... events) {
+        unitOfWork.runOnPrepareCommit(
+                processingContext -> {
+                    eventSink.publish(processingContext, TEST_CONTEXT, events);
+                    eventSink.reset();
+                }
+        );
         return this;
     }
 
+    @Override
+    public CommandModelTest.ResultValidator when(Object payload, Map<String, ?> metaData) {
+        var messageType = messageTypeResolver.resolve(payload);
+        var message = new GenericCommandMessage<>(messageType, payload, MetaData.from(metaData));
+        // todo: handle exception!
+        unitOfWork.runOnCommit(processingContext -> commandBus.dispatch(message, processingContext));
+        return this;
+    }
 
     @Override
-    public ResultValidator<?> when(Object command, Map<String, ?> metaData) {
-        return null;
-    }
-
-    private void executeAtSimulatedTime(Runnable runnable) {
-        Clock previousClock = GenericEventMessage.clock;
-        try {
-            GenericEventMessage.clock = Clock.fixed(currentTime(), ZoneOffset.UTC);
-            runnable.run();
-        } finally {
-            GenericEventMessage.clock = previousClock;
+    public CommandModelTest.ResultValidator expectEvents(Object... expectedEvents) {
+        if (!unitOfWork.isCompleted()) {
+            awaitCompletion(unitOfWork.execute());
         }
+        var publishedEvents = eventSink.recorded();
+
+        if (expectedEvents.length != publishedEvents.size()) {
+            reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
+        }
+
+        Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
+        for (Object expectedEvent : expectedEvents) {
+            EventMessage<?> actualEvent = iterator.next();
+            if (!verifyPayloadEquality(expectedEvent, actualEvent.getPayload())) {
+                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
+            }
+        }
+        return this;
     }
 
-    private Instant currentTime() {
-        return Instant.now();
+    @Override
+    public CommandModelTest.ResultValidator expectEvents(EventMessage<?>... expectedEvents) {
+        this.expectEvents(Stream.of(expectedEvents).map(Message::getPayload).toArray());
+
+        var publishedEvents = eventSink.recorded();
+        Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
+        for (EventMessage<?> expectedEvent : expectedEvents) {
+            EventMessage<?> actualEvent = iterator.next();
+            if (!verifyMetaDataEquality(expectedEvent.getPayloadType(),
+                                        expectedEvent.getMetaData(),
+                                        actualEvent.getMetaData())) {
+                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
+            }
+        }
+        return this;
+    }
+
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private boolean verifyPayloadEquality(Object expectedPayload, Object actualPayload) {
+        if (Objects.equals(expectedPayload, actualPayload)) {
+            return true;
+        }
+        if (expectedPayload != null && actualPayload == null) {
+            return false;
+        }
+        if (expectedPayload == null) {
+            return false;
+        }
+        if (!expectedPayload.getClass().equals(actualPayload.getClass())) {
+            return false;
+        }
+        Matcher<Object> matcher = deepEquals(expectedPayload, new MatchAllFieldFilter(fieldFilters));
+        if (!matcher.matches(actualPayload)) {
+            reporter.reportDifferentPayloads(expectedPayload.getClass(), actualPayload, expectedPayload);
+        }
+        return true;
+    }
+
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private boolean verifyMetaDataEquality(Class<?> eventType, Map<String, Object> expectedMetaData,
+                                           Map<String, Object> actualMetaData) {
+        MapEntryMatcher matcher = new MapEntryMatcher(expectedMetaData);
+        if (!matcher.matches(actualMetaData)) {
+            reporter.reportDifferentMetaData(eventType, matcher.getMissingEntries(), matcher.getAdditionalEntries());
+        }
+        return true;
+    }
+
+    private static <R> R awaitCompletion(CompletableFuture<R> completion) {
+        await().atMost(Duration.ofMillis(500))
+               .pollDelay(Duration.ofMillis(25))
+               .untilAsserted(() -> assertFalse(completion.isCompletedExceptionally(),
+                                                () -> completion.exceptionNow().toString()));
+        return completion.join();
     }
 }

@@ -20,16 +20,18 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 class RecordingEventSink implements EventSink {
 
     private final EventSink delegate;
-    private List<EventMessage<?>> recorded;
+    private final List<EventMessage<?>> recorded;
 
     RecordingEventSink(EventSink delegate) {
         this.delegate = delegate;
+        this.recorded = new ArrayList<>();
     }
 
     @Override
@@ -40,5 +42,10 @@ class RecordingEventSink implements EventSink {
 
     public List<EventMessage<?>> recorded() {
         return List.copyOf(recorded);
+    }
+
+    public RecordingEventSink reset() {
+        this.recorded.clear();
+        return this;
     }
 }
