@@ -49,9 +49,9 @@ public class DelegatingConfigurer<S extends ApplicationConfigurer<S>> implements
     }
 
     @Override
-    public <C> S registerComponent(@Nonnull Class<C> type,
+    public <C> S registerComponent(@Nonnull Class<? extends C> type,
                                    @Nonnull String name,
-                                   @Nonnull ComponentFactory<C> factory) {
+                                   @Nonnull ComponentFactory<? extends C> factory) {
         delegate.registerComponent(type, name, factory);
         //noinspection unchecked
         return (S) this;

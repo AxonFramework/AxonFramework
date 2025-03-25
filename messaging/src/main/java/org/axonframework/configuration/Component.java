@@ -47,9 +47,9 @@ public class Component<C> implements DescribableComponent {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final Identifier<C> identifier;
+    private final Identifier<? extends C> identifier;
     private final Supplier<LifecycleSupportingConfiguration> configSupplier;
-    private final ComponentFactory<C> factory;
+    private final ComponentFactory<? extends C> factory;
 
     private C instance;
 
@@ -64,9 +64,9 @@ public class Component<C> implements DescribableComponent {
      * @param config     The {@code NewConfiguration} the component is part of.
      * @param factory    The factory building the component.
      */
-    public Component(@Nonnull Identifier<C> identifier,
+    public Component(@Nonnull Identifier<? extends C> identifier,
                      @Nonnull LifecycleSupportingConfiguration config,
-                     @Nonnull ComponentFactory<C> factory) {
+                     @Nonnull ComponentFactory<? extends C> factory) {
         this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
         requireNonNull(config, "The configuration supplier cannot be null.");
         this.configSupplier = () -> config;
@@ -81,9 +81,9 @@ public class Component<C> implements DescribableComponent {
      * @param configSupplier The supplier function of the {@code NewConfiguration}.
      * @param factory        The factory building the component.
      */
-    public Component(@Nonnull Identifier<C> identifier,
+    public Component(@Nonnull Identifier<? extends C> identifier,
                      @Nonnull Supplier<LifecycleSupportingConfiguration> configSupplier,
-                     @Nonnull ComponentFactory<C> factory) {
+                     @Nonnull ComponentFactory<? extends C> factory) {
         this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
         this.configSupplier = requireNonNull(configSupplier, "The configuration supplier cannot be null.");
         this.factory = requireNonNull(factory, "A Component factory cannot be null.");
@@ -155,7 +155,7 @@ public class Component<C> implements DescribableComponent {
      * @param name The name of the component this object identifiers.
      * @param <C>  The type of the component this object identifiers, typically an interface.
      */
-    public record Identifier<C>(@Nonnull Class<C> type, @Nonnull String name) {
+    public record Identifier<C>(@Nonnull Class<? extends C> type, @Nonnull String name) {
 
         /**
          * Compact constructor asserting whether the {@code type} and {@code name} are non-null and not empty.
