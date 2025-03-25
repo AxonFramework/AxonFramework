@@ -72,7 +72,10 @@ public class MessagingConfigurer
     }
 
     /**
-     * Constructs a {@code MessagingConfigurer} based on the given {@code delegate}.
+     * Construct a {@code ModellingConfigurer} using the given {@code delegate} to delegate all registry-specific
+     * operations to.
+     * <p>
+     * It is recommended to use the {@link #create()} method in most cases instead of this constructor.
      *
      * @param delegate The delegate {@code AxonApplication} the {@code MessagingConfigurer} is based on.
      */
