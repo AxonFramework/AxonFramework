@@ -160,7 +160,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
                 throw new IllegalArgumentException("Course already has 3 students");
             }
 
-            eventSink.publish(context, DEFAULT_CONTEXT, new GenericEventMessage<>(
+            eventSink.publish(context, new GenericEventMessage<>(
                     new MessageType(StudentEnrolledEvent.class),
                     new StudentEnrolledEvent(command.studentId(), command.courseId())
             ));
@@ -184,7 +184,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
                 throw new IllegalArgumentException("Mentee already has a mentor");
             }
 
-            eventSink.publish(context, DEFAULT_CONTEXT, new GenericEventMessage<>(
+            eventSink.publish(context, new GenericEventMessage<>(
                     new MessageType(MentorAssignedToStudentEvent.class),
                     new MentorAssignedToStudentEvent(mentor.getId(), mentee.entity().getId())
             ));

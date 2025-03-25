@@ -63,7 +63,6 @@ public abstract class AbstractStudentTestSuite {
 
     protected SimpleEventStore eventStore = new SimpleEventStore(
             new AsyncInMemoryEventStorageEngine(),
-            DEFAULT_CONTEXT,
             getTagResolver()
     );
 
@@ -76,8 +75,7 @@ public abstract class AbstractStudentTestSuite {
             eventStore,
             getStudentCriteriaResolver(),
             studentEventStateApplier,
-            Student::new,
-            DEFAULT_CONTEXT
+            Student::new
     );
 
     protected AsyncEventSourcingRepository<String, Course> courseRepository = new AsyncEventSourcingRepository<>(
@@ -86,8 +84,7 @@ public abstract class AbstractStudentTestSuite {
             eventStore,
             getCourseCriteriaResolver(),
             courseEventStateApplier,
-            Course::new,
-            DEFAULT_CONTEXT
+            Course::new
     );
 
 
@@ -189,7 +186,7 @@ public abstract class AbstractStudentTestSuite {
     }
 
     protected void appendEvent(ProcessingContext context, Object event) {
-        eventStore.transaction(context, DEFAULT_CONTEXT)
+        eventStore.transaction(context)
                   .appendEvent(new GenericEventMessage<>(
                           new MessageType(event.getClass()),
                           event));

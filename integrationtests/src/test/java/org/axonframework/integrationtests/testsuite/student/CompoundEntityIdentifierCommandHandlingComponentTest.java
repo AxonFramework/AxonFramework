@@ -66,8 +66,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                                          .withTags(new Tag("Student", id.mentorId()))
                     ),
             studentMentorModelApplier,
-            StudentMentorAssignment::new,
-            DEFAULT_CONTEXT
+            StudentMentorAssignment::new
     );
 
     @Override
@@ -161,7 +160,6 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
             }
 
             eventSink.publish(context,
-                              DEFAULT_CONTEXT,
                               new GenericEventMessage<>(
                                       new MessageType(MentorAssignedToStudentEvent.class),
                                       new MentorAssignedToStudentEvent(command.mentorId(), command.menteeId())
