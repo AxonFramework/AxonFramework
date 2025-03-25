@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.test.af5;
+package org.axonframework.test.fixture;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.configuration.ApplicationConfigurer;

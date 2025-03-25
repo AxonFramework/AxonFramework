@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.test.af5.sampledomain;
+package org.axonframework.test.fixture.sampledomain;
 
 import org.axonframework.modelling.command.annotation.TargetEntityId;
 

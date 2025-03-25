@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.test.af5;
+package org.axonframework.test.fixture;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
@@ -34,7 +34,6 @@ import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -45,7 +44,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import static org.axonframework.test.matchers.Matchers.deepEquals;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 public class CommandModelTestFixture implements CommandModelTest.Executor, CommandModelTest.ResultValidator {

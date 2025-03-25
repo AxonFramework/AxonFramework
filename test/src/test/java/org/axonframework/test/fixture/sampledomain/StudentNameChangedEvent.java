@@ -14,36 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.test.af5.sampledomain;
+package org.axonframework.test.fixture.sampledomain;
 
-import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotations.EventTag;
 
-/**
- * Event-sourced Student model
- */
-public class Student {
+public record StudentNameChangedEvent(
+        @EventTag(key = "Student")
+        String id,
+        String name,
+        Integer change
+) {
 
-    private String id;
-    private String name;
-
-    public Student(String id) {
-        this.id = id;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    @EventSourcingHandler
-    public void on(StudentNameChangedEvent event) {
-        this.name = event.name();
-    }
 }
