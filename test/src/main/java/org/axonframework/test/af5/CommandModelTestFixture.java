@@ -28,7 +28,6 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.test.aggregate.Reporter;
-import org.axonframework.test.aggregate.ResultValidator;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.MapEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
@@ -60,14 +59,14 @@ public class CommandModelTestFixture implements CommandModelTest.Executor, Comma
     private final MessageTypeResolver messageTypeResolver;
     private List<FieldFilter> fieldFilters = new ArrayList<>();
 
-    // execution
-    private final AsyncUnitOfWork unitOfWork;
-
     // given
+    private final AsyncUnitOfWork givenUnitOfWork;
 
     // when
+    private final AsyncUnitOfWork whenUnitOfWork;
 
     // then
+
     private final Reporter reporter = new Reporter();
     private Throwable actualException;
 
@@ -87,7 +86,8 @@ public class CommandModelTestFixture implements CommandModelTest.Executor, Comma
         this.commandBus = (RecordingCommandBus) configuration.getComponent(CommandBus.class);
         this.eventSink = (RecordingEventSink) configuration.getComponent(EventSink.class);
         this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
-        this.unitOfWork = new AsyncUnitOfWork();
+        this.givenUnitOfWork = new AsyncUnitOfWork();
+        this.whenUnitOfWork = new AsyncUnitOfWork();
     }
 
     public CommandModelTest.Executor givenNoPriorActivity() {
@@ -113,31 +113,38 @@ public class CommandModelTestFixture implements CommandModelTest.Executor, Comma
     }
 
     public CommandModelTest.Executor givenEvents(EventMessage<?>... events) {
-        unitOfWork
-                .runOnPreInvocation(processingContext -> eventSink.publish(processingContext, TEST_CONTEXT, events))
-                .runOnPrepareCommit(processingContext -> eventSink.reset());
+        givenUnitOfWork
+                .runOnInvocation(processingContext -> eventSink.publish(processingContext, TEST_CONTEXT, events))
+                .runOnAfterCommit(processingContext -> eventSink.reset());
         return this;
     }
 
     @Override
     public CommandModelTest.ResultValidator when(Object payload, Map<String, ?> metaData) {
+        if (!givenUnitOfWork.isCompleted()) {
+            awaitCompletion(givenUnitOfWork.execute());
+        }
         var messageType = messageTypeResolver.resolve(payload);
         var message = new GenericCommandMessage<>(messageType, payload, MetaData.from(metaData));
         // todo: handle exception!
-        unitOfWork.runOnCommit(
+        whenUnitOfWork.runOnInvocation(
                 processingContext -> commandBus.dispatch(message, processingContext)
-                                               .exceptionallyCompose(e -> {
+                                               .exceptionally(e -> {
                                                    actualException = e;
-                                                   return CompletableFuture.completedFuture(null);
+                                                   return null;
                                                })
+//                                               .exceptionallyCompose(e -> {
+//                                                   actualException = e;
+//                                                   return CompletableFuture.completedFuture(null);
+//                                               })
         );
         return this;
     }
 
     @Override
     public CommandModelTest.ResultValidator expectEvents(Object... expectedEvents) {
-        if (!unitOfWork.isCompleted()) {
-            awaitCompletion(unitOfWork.execute());
+        if (!whenUnitOfWork.isCompleted()) {
+            awaitCompletion(whenUnitOfWork.execute());
         }
         var publishedEvents = eventSink.recorded();
 
