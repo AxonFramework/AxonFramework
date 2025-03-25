@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.test.af5;
+package org.axonframework.test.fixture;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
@@ -26,7 +26,6 @@ import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
-import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageStream;
@@ -35,9 +34,9 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
-import org.axonframework.test.af5.sampledomain.ChangeStudentNameCommand;
-import org.axonframework.test.af5.sampledomain.Student;
-import org.axonframework.test.af5.sampledomain.StudentNameChangedEvent;
+import org.axonframework.test.fixture.sampledomain.ChangeStudentNameCommand;
+import org.axonframework.test.fixture.sampledomain.Student;
+import org.axonframework.test.fixture.sampledomain.StudentNameChangedEvent;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;

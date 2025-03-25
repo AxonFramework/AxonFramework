@@ -79,6 +79,15 @@ class SimpleCommandBusTest {
     }
 
     @Test
+    void dispatchCommandHandlerSubscribedAndReturnEmpty() throws Exception {
+        testSubject.subscribe(COMMAND_NAME, (m, c) -> MessageStream.empty().cast());
+
+        CompletableFuture<? extends Message<?>> actual = testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
+
+        assertNull(actual.get());
+    }
+
+    @Test
     void dispatchCommandImplicitUnitOfWorkIsCommittedOnReturnValue() {
         final AtomicReference<ProcessingContext> unitOfWork = new AtomicReference<>();
         testSubject.subscribe(COMMAND_NAME,
