@@ -26,7 +26,6 @@ public class TestApplicationConfigurer
         extends DelegatingConfigurer<TestApplicationConfigurer>
         implements ApplicationConfigurer<TestApplicationConfigurer> {
 
-
     /**
      * Construct a {@code DelegatingConfigurer} using the given {@code delegate} to delegate all operations to.
      *

@@ -115,7 +115,9 @@ class AxonTestFixtureMessagingTest {
             String name,
             int change
     ) {
-        return new GenericEventMessage<>(new MessageType(StudentNameChangedEvent.class),
-                                         new StudentNameChangedEvent(id, name, change));
+        return new GenericEventMessage<>(
+                new MessageType(StudentNameChangedEvent.class),
+                new StudentNameChangedEvent(id, name, change)
+        );
     }
 }
