@@ -67,7 +67,9 @@ class CommandModelTestFixtureTest {
 
         var fixture = CommandModelTestFixture.with(configurer);
 
-        fixture.givenNoPriorActivity().when(new ChangeStudentNameCommand("my-studentId-1", "name-1")).expectEvents(
+        fixture.givenNoPriorActivity()
+               .when(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+               .expectEvents(
                 studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
     }
 
@@ -104,8 +106,11 @@ class CommandModelTestFixtureTest {
     void giveNoPriorActivityWhenCommandThenExpectException() {
         var configurer = MessagingConfigurer.create();
         configurer.registerCommandBus(c -> new SimpleCommandBus().subscribe(new QualifiedName(ChangeStudentNameCommand.class),
-                                                                            (command, context) -> MessageStream.failed(
-                                                                                    new RuntimeException("Test"))));
+                                                                            (command, context) -> {
+                                                                                return MessageStream.failed(
+                                                                                        new RuntimeException("Test"));
+                                                                            })
+        );
 
         var fixture = CommandModelTestFixture.with(configurer);
 
