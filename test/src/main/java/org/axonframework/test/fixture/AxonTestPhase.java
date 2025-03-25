@@ -27,44 +27,44 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 
 public interface AxonTestPhase {
 
-    interface Preparing {
+    interface Given {
 
-        Executing givenNoPriorActivity();
+        When givenNoPriorActivity();
 
-        default AxonTestPhase.Executing givenEvent(Object payload) {
+        default When givenEvent(Object payload) {
             return givenEvent(payload, MetaData.emptyInstance());
         }
 
-        default AxonTestPhase.Executing givenEvent(Object payload, Map<String, ?> metaData) {
+        default When givenEvent(Object payload, Map<String, ?> metaData) {
             return givenEvent(payload, MetaData.from(metaData));
         }
 
-        AxonTestPhase.Executing givenEvent(Object payload, MetaData metaData);
+        When givenEvent(Object payload, MetaData metaData);
     }
 
-    interface Executing {
+    interface When {
 
-        Validation when(Object payload, Map<String, ?> metaData);
+        Then when(Object payload, Map<String, ?> metaData);
 
-        default Validation when(Object payload) {
+        default Then when(Object payload) {
             return when(payload, new HashMap<>());
         }
     }
 
-    interface Validation {
+    interface Then {
 
-        Validation expectEvents(EventMessage<?>... expectedEvents);
+        Then expectEvents(EventMessage<?>... expectedEvents);
 
-        Validation expectEvents(Object... expectedEvents);
+        Then expectEvents(Object... expectedEvents);
 
-        default Validation expectNoEvents() {
+        default Then expectNoEvents() {
             return expectEvents();
         }
 
-        default Validation expectException(Class<? extends Throwable> expectedException) {
+        default Then expectException(Class<? extends Throwable> expectedException) {
             return expectException(instanceOf(expectedException));
         }
 
-        Validation expectException(Matcher<?> matcher);
+        Then expectException(Matcher<?> matcher);
     }
 }

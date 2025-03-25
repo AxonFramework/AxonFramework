@@ -56,7 +56,7 @@ import static org.axonframework.test.matchers.Matchers.deepEquals;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class AxonTestFixture implements AxonTestPhase.Preparing, AxonTestPhase.Executing, AxonTestPhase.Validation {
+public class AxonTestFixture implements AxonTestPhase.Given, AxonTestPhase.When, AxonTestPhase.Then {
 
     public static final String TEST_CONTEXT = "TEST_CONTEXT";
 
@@ -99,12 +99,12 @@ public class AxonTestFixture implements AxonTestPhase.Preparing, AxonTestPhase.E
     }
 
     @Override
-    public AxonTestPhase.Executing givenNoPriorActivity() {
+    public AxonTestPhase.When givenNoPriorActivity() {
         return this;
     }
 
     @Override
-    public AxonTestPhase.Executing givenEvent(Object payload, MetaData metaData) {
+    public AxonTestPhase.When givenEvent(Object payload, MetaData metaData) {
         var messageType = messageTypeResolver.resolve(payload);
         var eventMessage = new GenericEventMessage<>(
                 messageType,
@@ -114,7 +114,7 @@ public class AxonTestFixture implements AxonTestPhase.Preparing, AxonTestPhase.E
         return givenEvents(eventMessage);
     }
 
-    public AxonTestPhase.Executing givenEvents(EventMessage<?>... events) {
+    public AxonTestPhase.When givenEvents(EventMessage<?>... events) {
         givenUnitOfWork
                 .runOnInvocation(processingContext -> eventSink.publish(processingContext, TEST_CONTEXT, events))
                 .runOnAfterCommit(processingContext -> eventSink.reset());
@@ -122,7 +122,7 @@ public class AxonTestFixture implements AxonTestPhase.Preparing, AxonTestPhase.E
     }
 
     @Override
-    public AxonTestPhase.Validation when(Object payload, Map<String, ?> metaData) {
+    public AxonTestPhase.Then when(Object payload, Map<String, ?> metaData) {
         if (!givenUnitOfWork.isCompleted()) {
             awaitCompletion(givenUnitOfWork.execute());
         }
@@ -142,7 +142,7 @@ public class AxonTestFixture implements AxonTestPhase.Preparing, AxonTestPhase.E
     }
 
     @Override
-    public AxonTestPhase.Validation expectEvents(Object... expectedEvents) {
+    public AxonTestPhase.Then expectEvents(Object... expectedEvents) {
         if (!whenUnitOfWork.isCompleted()) {
             awaitCompletion(whenUnitOfWork.execute());
         }
@@ -163,7 +163,7 @@ public class AxonTestFixture implements AxonTestPhase.Preparing, AxonTestPhase.E
     }
 
     @Override
-    public AxonTestPhase.Validation expectException(Matcher<?> matcher) {
+    public AxonTestPhase.Then expectException(Matcher<?> matcher) {
         if (!whenUnitOfWork.isCompleted()) {
             awaitCompletion(whenUnitOfWork.execute());
         }
@@ -179,7 +179,7 @@ public class AxonTestFixture implements AxonTestPhase.Preparing, AxonTestPhase.E
     }
 
     @Override
-    public AxonTestPhase.Validation expectEvents(EventMessage<?>... expectedEvents) {
+    public AxonTestPhase.Then expectEvents(EventMessage<?>... expectedEvents) {
         this.expectEvents(Stream.of(expectedEvents).map(Message::getPayload).toArray());
 
         var publishedEvents = eventSink.recorded();
