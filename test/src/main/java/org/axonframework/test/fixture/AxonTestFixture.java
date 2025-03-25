@@ -65,7 +65,6 @@ public class AxonTestFixture implements AxonTestPhase.Executing, AxonTestPhase.V
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
     private final MessageTypeResolver messageTypeResolver;
-    private List<FieldFilter> fieldFilters = new ArrayList<>();
 
     // given
     private final AsyncUnitOfWork givenUnitOfWork;
@@ -74,9 +73,10 @@ public class AxonTestFixture implements AxonTestPhase.Executing, AxonTestPhase.V
     private final AsyncUnitOfWork whenUnitOfWork;
 
     // then
-
     private final Reporter reporter = new Reporter();
+    private List<FieldFilter> fieldFilters = new ArrayList<>();
     private Throwable actualException;
+    private Message<?> actualReturnValue;
 
     public static AxonTestFixture with(ApplicationConfigurer<?> configurer) {
         var testConfigurer = new TestApplicationConfigurer(configurer);
@@ -136,6 +136,13 @@ public class AxonTestFixture implements AxonTestPhase.Executing, AxonTestPhase.V
         var message = new GenericCommandMessage<>(messageType, payload, MetaData.from(metaData));
         whenUnitOfWork.onInvocation(
                 processingContext -> commandBus.dispatch(message, processingContext)
+                                               .whenComplete((r, e) -> {
+                                                   if (e == null) {
+                                                       actualReturnValue = r;
+                                                   } else {
+                                                       actualException = e.getCause();
+                                                   }
+                                               })
         );
         return this;
     }
@@ -169,8 +176,7 @@ public class AxonTestFixture implements AxonTestPhase.Executing, AxonTestPhase.V
         StringDescription description = new StringDescription();
         matcher.describeTo(description);
         if (actualException == null) {
-            // todo: implement!
-//            reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
+            reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
         }
         if (!matcher.matches(actualException)) {
             reporter.reportWrongException(actualException, description);

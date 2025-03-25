@@ -27,10 +27,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-class RecordingAsyncEventStore implements AsyncEventStore {
+public class RecordingAsyncEventStore implements AsyncEventStore {
 
-    private AsyncEventStore delegate;
-    private List<EventMessage<?>> recorded;
+    private final AsyncEventStore delegate;
+    private final List<EventMessage<?>> recorded;
 
     public RecordingAsyncEventStore(AsyncEventStore delegate) {
         this.delegate = delegate;
