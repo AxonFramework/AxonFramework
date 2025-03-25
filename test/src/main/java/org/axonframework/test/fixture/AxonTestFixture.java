@@ -44,8 +44,18 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 import static org.axonframework.test.matchers.Matchers.deepEquals;
-import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
+/**
+ * Fixture for testing Axon Framework application. The fixture can be configured to use your whole application
+ * configuration or just a portion of that (single module or component). The fixture allows the execution of
+ * given-when-then style.
+ *
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ * @author Mitchell Herrijgers
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
 public class AxonTestFixture implements AxonTestPhase.Executing, AxonTestPhase.Validation {
 
     public static final String TEST_CONTEXT = "TEST_CONTEXT";

@@ -25,6 +25,7 @@ public class Student {
 
     private String id;
     private String name;
+    private Integer changes = 0;
 
     public Student(String id) {
         this.id = id;
@@ -42,8 +43,13 @@ public class Student {
         return name;
     }
 
+    public Integer getChanges() {
+        return changes;
+    }
+
     @EventSourcingHandler
     public void on(StudentNameChangedEvent event) {
         this.name = event.name();
+        this.changes = event.change();
     }
 }
