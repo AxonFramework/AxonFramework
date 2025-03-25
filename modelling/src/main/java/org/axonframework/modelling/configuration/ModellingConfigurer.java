@@ -67,6 +67,19 @@ public class ModellingConfigurer
     }
 
     /**
+     * Registers the given stateful command handling {@code module} to use in this configuration.
+     * <p>
+     * As a {@link Module} implementation, any components registered with the given {@code module} will not be
+     * accessible from other {@code Modules} to enforce encapsulation.
+     *
+     * @param module The stateful command handling module to register with {@code this ModellingConfigurer}.
+     * @return A {@code ModellingConfigurer} instance for further configuring.
+     */
+    public ModellingConfigurer registerStatefulCommandHandlingModule(StatefulCommandHandlingModule module) {
+        return registerModule(module);
+    }
+
+    /**
      * Delegates the given {@code configureTask} to the {@link MessagingConfigurer} this {@code ModellingConfigurer}
      * delegates to.
      * <p>
