@@ -17,6 +17,7 @@
 package org.axonframework.test.fixture;
 
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.MetaData;
 import org.hamcrest.Matcher;
 
 import java.util.HashMap;
@@ -25,6 +26,21 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.instanceOf;
 
 public interface AxonTestPhase {
+
+    interface Preparing {
+
+        Executing givenNoPriorActivity();
+
+        default AxonTestPhase.Executing givenEvent(Object payload) {
+            return givenEvent(payload, MetaData.emptyInstance());
+        }
+
+        default AxonTestPhase.Executing givenEvent(Object payload, Map<String, ?> metaData) {
+            return givenEvent(payload, MetaData.from(metaData));
+        }
+
+        AxonTestPhase.Executing givenEvent(Object payload, MetaData metaData);
+    }
 
     interface Executing {
 
@@ -49,6 +65,6 @@ public interface AxonTestPhase {
             return expectException(instanceOf(expectedException));
         }
 
-        public Validation expectException(Matcher<?> matcher);
+        Validation expectException(Matcher<?> matcher);
     }
 }

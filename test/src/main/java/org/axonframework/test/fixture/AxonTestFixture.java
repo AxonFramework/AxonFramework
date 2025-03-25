@@ -56,7 +56,7 @@ import static org.axonframework.test.matchers.Matchers.deepEquals;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class AxonTestFixture implements AxonTestPhase.Executing, AxonTestPhase.Validation {
+public class AxonTestFixture implements AxonTestPhase.Preparing, AxonTestPhase.Executing, AxonTestPhase.Validation {
 
     public static final String TEST_CONTEXT = "TEST_CONTEXT";
 
@@ -98,18 +98,12 @@ public class AxonTestFixture implements AxonTestPhase.Executing, AxonTestPhase.V
         this.whenUnitOfWork = new AsyncUnitOfWork();
     }
 
+    @Override
     public AxonTestPhase.Executing givenNoPriorActivity() {
         return this;
     }
 
-    public AxonTestPhase.Executing givenEvent(Object payload) {
-        return givenEvent(payload, MetaData.emptyInstance());
-    }
-
-    public AxonTestPhase.Executing givenEvent(Object payload, Map<String, ?> metaData) {
-        return givenEvent(payload, MetaData.from(metaData));
-    }
-
+    @Override
     public AxonTestPhase.Executing givenEvent(Object payload, MetaData metaData) {
         var messageType = messageTypeResolver.resolve(payload);
         var eventMessage = new GenericEventMessage<>(
