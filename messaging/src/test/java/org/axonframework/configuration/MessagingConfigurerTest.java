@@ -116,7 +116,7 @@ class MessagingConfigurerTest extends ConfigurerTestSuite<MessagingConfigurer> {
 
     @Test
     void registerEventSinkOverridesDefault() {
-        EventSink expected = (context, events) -> null;
+        EventSink expected = (events) -> null;
 
         NewConfiguration result = testSubject.registerEventSink(c -> expected)
                                              .build();
