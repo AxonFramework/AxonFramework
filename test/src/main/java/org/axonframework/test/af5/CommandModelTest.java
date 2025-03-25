@@ -16,14 +16,30 @@
 
 package org.axonframework.test.af5;
 
-import org.axonframework.test.aggregate.ResultValidator;
+import org.axonframework.eventhandling.EventMessage;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public interface CommandModelTest {
 
     interface Executor {
 
-        ResultValidator<?> when(Object command, Map<String, ?> metaData);
+        ResultValidator when(Object payload, Map<String, ?> metaData);
+
+        default ResultValidator when(Object payload) {
+            return when(payload, new HashMap<>());
+        }
+    }
+
+    interface ResultValidator {
+
+        ResultValidator expectEvents(EventMessage<?>... expectedEvents);
+
+        ResultValidator expectEvents(Object... expectedEvents);
+
+        default ResultValidator expectNoEvents() {
+            return expectEvents();
+        }
     }
 }
