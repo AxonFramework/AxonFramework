@@ -38,8 +38,6 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 class RecordingAsyncEventStoreTest {
 
-    private static final String TEST_CONTEXT = "test-context";
-
     private AsyncInMemoryEventStorageEngine storageEngine;
     private SimpleEventStore delegateEventStore;
     private RecordingAsyncEventStore testSubject;
@@ -50,7 +48,7 @@ class RecordingAsyncEventStoreTest {
         // given
         storageEngine = new AsyncInMemoryEventStorageEngine();
         mockTagResolver = mock(TagResolver.class);
-        delegateEventStore = new SimpleEventStore(storageEngine, TEST_CONTEXT, mockTagResolver);
+        delegateEventStore = new SimpleEventStore(storageEngine, mockTagResolver);
         testSubject = new RecordingAsyncEventStore(delegateEventStore);
     }
 
@@ -67,7 +65,7 @@ class RecordingAsyncEventStoreTest {
             // when
             var uow = new AsyncUnitOfWork();
             uow.runOnPreInvocation(context ->
-                                           testSubject.publish(context, TEST_CONTEXT, events));
+                                           testSubject.publish(context, events));
 
             awaitCompletion(uow.execute());
 
@@ -86,7 +84,7 @@ class RecordingAsyncEventStoreTest {
             // when
             var uow = new AsyncUnitOfWork();
             uow.runOnInvocation(context -> {
-                var transaction = testSubject.transaction(context, TEST_CONTEXT);
+                var transaction = testSubject.transaction(context);
                 transaction.appendEvent(testEvent);
             });
 
@@ -111,7 +109,7 @@ class RecordingAsyncEventStoreTest {
             // when
             var uow = new AsyncUnitOfWork();
             uow.runOnInvocation(context -> {
-                var transaction = testSubject.transaction(context, TEST_CONTEXT);
+                var transaction = testSubject.transaction(context);
                 transaction.appendEvent(newEvent);
             });
 
@@ -136,7 +134,7 @@ class RecordingAsyncEventStoreTest {
             // when
             var uow = new AsyncUnitOfWork();
             uow.runOnInvocation(context -> {
-                var transaction = testSubject.transaction(context, TEST_CONTEXT);
+                var transaction = testSubject.transaction(context);
                 transaction.appendEvent(testEvent);
             }).runOnPrepareCommit(context -> {
                 throw new RuntimeException("Simulated failure during prepare commit");
@@ -167,7 +165,7 @@ class RecordingAsyncEventStoreTest {
             AtomicReference<Object> firstTransactionRef = new AtomicReference<>();
 
             firstUow.runOnInvocation(context -> {
-                var transaction = testSubject.transaction(context, TEST_CONTEXT);
+                var transaction = testSubject.transaction(context);
                 firstTransactionRef.set(transaction);
                 transaction.appendEvent(firstEvent);
             });
@@ -177,7 +175,7 @@ class RecordingAsyncEventStoreTest {
             // Second transaction
             var secondUow = new AsyncUnitOfWork();
             secondUow.runOnInvocation(context -> {
-                var transaction = testSubject.transaction(context, TEST_CONTEXT);
+                var transaction = testSubject.transaction(context);
                 transaction.appendEvent(secondEvent);
                 transaction.appendEvent(thirdEvent);
             });
