@@ -121,6 +121,9 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
     }
 
+    /**
+     * Every given method invocation spawn new unit of work.
+     */
     static class Given implements AxonTestPhase.Given {
 
         private final Customization customization;
@@ -192,9 +195,11 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
         @Override
         public AxonTestPhase.Given commands(CommandMessage<?>... messages) {
-            for (var message : messages) {
-                inUnitOfWorkRunOnInvocation(processingContext -> commandBus.dispatch(message, processingContext));
-            }
+            inUnitOfWorkRunOnInvocation(processingContext -> {
+                for (var message : messages) {
+                    commandBus.dispatch(message, processingContext);
+                }
+            });
             return this;
         }
 
