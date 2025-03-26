@@ -17,6 +17,7 @@
 package org.axonframework.test.fixture;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.NewConfiguration;
@@ -125,10 +126,34 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
 
         @Override
-        public AxonTestPhase.Given events(EventMessage<?>... events) {
+        public AxonTestPhase.Given events(EventMessage<?>... messages) {
             givenUnitOfWork
-                    .runOnInvocation(processingContext -> eventSink.publish(processingContext, TEST_CONTEXT, events))
+                    .runOnInvocation(processingContext -> eventSink.publish(processingContext, TEST_CONTEXT, messages))
                     .runOnAfterCommit(processingContext -> eventSink.reset());
+            return this;
+        }
+
+        @Override
+        public AxonTestPhase.Given command(Object payload, MetaData metaData) {
+            var messageType = messageTypeResolver.resolve(payload);
+            var commandMessage = new GenericCommandMessage<>(
+                    messageType,
+                    payload,
+                    metaData
+            );
+            return commands(commandMessage);
+        }
+
+        @Override
+        public AxonTestPhase.Given commands(CommandMessage<?>... messages) {
+            givenUnitOfWork
+                    .onInvocation(processingContext -> {
+                        var dispatchCommands = Arrays.stream(messages)
+                                                     .map(c -> commandBus.dispatch(c, processingContext))
+                                                     .toArray(CompletableFuture[]::new);
+                        return CompletableFuture.allOf(dispatchCommands);
+                    })
+                    .runOnAfterCommit(processingContext -> commandBus.reset());
             return this;
         }
 
