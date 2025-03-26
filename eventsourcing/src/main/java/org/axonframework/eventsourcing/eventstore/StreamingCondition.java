@@ -20,8 +20,6 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.eventhandling.TrackingToken;
 
-import java.util.Set;
-
 
 /**
  * Interface describing the condition to {@link StreamableEventSource#open(String, StreamingCondition) stream} events
@@ -57,8 +55,8 @@ public sealed interface StreamingCondition extends EventsCondition permits Defau
      */
     TrackingToken position();
 
-    default Set<EventCriteria> criteria() {
-        return Set.of();
+    default EventCriteria criteria() {
+        return EventCriteria.anyEvent();
     }
 
     /**

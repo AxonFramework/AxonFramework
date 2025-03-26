@@ -19,9 +19,6 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * Interface describing the consistency boundary condition for
  * {@link org.axonframework.eventhandling.EventMessage EventMessages} when
@@ -50,22 +47,12 @@ public sealed interface AppendCondition extends EventsCondition permits NoAppend
     }
 
     /**
-     * Creates an AppendCondition to append events only if no events matching given {@code criteria} are.available
-     *
-     * @param criteria The criteria for the AppendCondition.
-     * @return a condition that matches against given criteria.
-     */
-    static AppendCondition withCriteria(@Nonnull EventCriteria... criteria) {
-        return withCriteria(Set.of(criteria));
-    }
-
-    /**
      * Creates an AppendCondition to append events only if no events matching given {@code criteria} are available.
      *
      * @param criteria The criteria for the AppendCondition.
      * @return A condition that matches against given criteria.
      */
-    static AppendCondition withCriteria(@Nonnull Set<EventCriteria> criteria) {
+    static AppendCondition withCriteria(@Nonnull EventCriteria criteria) {
         return new DefaultAppendCondition(ConsistencyMarker.ORIGIN, criteria);
     }
 
@@ -76,28 +63,8 @@ public sealed interface AppendCondition extends EventsCondition permits NoAppend
      * @param criteria The additional criteria the condition may match against.
      * @return an AppendCondition that combined this condition's criteria and the given, using 'OR' semantics.
      */
-    default AppendCondition orCriteria(@Nonnull EventCriteria... criteria) {
-        var newCriteria = new HashSet<>(criteria());
-        if (newCriteria.addAll(Set.of(criteria))) {
-            return new DefaultAppendCondition(this.consistencyMarker(), newCriteria);
-        } else {
-            return this;
-        }
-    }
-
-    /**
-     * Returns an AppendCondition with a condition that represents this AppendCondition's criteria or the given
-     * {@code criteria}
-     *
-     * @param criteria The additional criteria the condition may match against
-     * @return an AppendCondition that combined this condition's criteria and the given, using 'OR' semantics
-     */
-    default AppendCondition orCriteria(@Nonnull Set<EventCriteria> criteria) {
-        HashSet<EventCriteria> newCriteria = new HashSet<>(criteria());
-        if (newCriteria.addAll(criteria)) {
-            return new DefaultAppendCondition(this.consistencyMarker(), newCriteria);
-        }
-        return this;
+    default AppendCondition orCriteria(@Nonnull EventCriteria criteria) {
+        return new DefaultAppendCondition(this.consistencyMarker(), this.criteria().or(criteria));
     }
 
     /**

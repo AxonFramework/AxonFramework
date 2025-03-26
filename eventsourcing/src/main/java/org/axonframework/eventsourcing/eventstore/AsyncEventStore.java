@@ -28,11 +28,11 @@ import java.util.List;
 /**
  * Infrastructure component providing the means to start an {@link EventStoreTransaction} to
  * {@link EventStoreTransaction#appendEvent(EventMessage) append events} and
- * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) event source} models from the underlying
+ * {@link EventStoreTransaction#source(SourcingCondition) event source} models from the underlying
  * storage solution.
  * <p>
  * As an implementation of the {@link EventSink}, this {@code EventStore} will initiate a
- * {@link #transaction(ProcessingContext, String)} when {@link #publish(ProcessingContext, String, List)} is triggered
+ * {@link #transaction(ProcessingContext)} when {@link #publish(ProcessingContext, List)} is triggered
  * to append events.
  *
  * @author Allard Buijze
@@ -44,16 +44,14 @@ public interface AsyncEventStore extends EventSink, DescribableComponent {
 
     @Override
     default void publish(@Nonnull ProcessingContext processingContext,
-                         @Nonnull String context,
                          EventMessage<?>... events) {
-        this.publish(processingContext, context, Arrays.asList(events));
+        this.publish(processingContext, Arrays.asList(events));
     }
 
     @Override
     default void publish(@Nonnull ProcessingContext processingContext,
-                         @Nonnull String context,
                          @Nonnull List<EventMessage<?>> events) {
-        EventStoreTransaction transaction = transaction(processingContext, context);
+        EventStoreTransaction transaction = transaction(processingContext);
         for (EventMessage<?> event : events) {
             transaction.appendEvent(event);
         }
@@ -62,16 +60,9 @@ public interface AsyncEventStore extends EventSink, DescribableComponent {
     /**
      * Retrieves the {@link EventStoreTransaction transaction for appending events} for the given
      * {@code processingContext}. If no transaction is available, a new, empty transaction is created.
-     * <p>
-     * The given {@code context} ensure the returned {@code EventStoreTransaction}
-     * {@link EventStoreTransaction#source(SourcingCondition, ProcessingContext) sources} and
-     * {@link EventStoreTransaction#appendEvent(EventMessage) appends} from the desired location.
      *
      * @param processingContext The context for which to retrieve the {@link EventStoreTransaction}.
-     * @param context           The (bounded) context for which to retrieve the {@link EventStoreTransaction}.
-     * @return The {@link EventStoreTransaction}, existing or newly created, for the given {@code processingContext} and
-     * {@code context}.
+     * @return The {@link EventStoreTransaction}, existing or newly created, for the given {@code processingContext}.
      */
-    EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext,
-                                      @Nonnull String context);
+    EventStoreTransaction transaction(@Nonnull ProcessingContext processingContext);
 }

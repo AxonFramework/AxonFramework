@@ -55,7 +55,6 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
     private final AsyncEventStore eventStore;
     private final CriteriaResolver<ID> criteriaResolver;
     private final EventStateApplier<M> eventStateApplier;
-    private final String context;
     private final Function<ID, M> newInstanceFactory;
 
     /**
@@ -70,8 +69,6 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
      *                          event stream.
      * @param eventStateApplier The function to apply event state changes to the loaded entities.
      * @param newInstanceFactory A factory method to create new instances of the model based on a provided identifier.
-     * @param context            The (bounded) context this {@code AsyncEventSourcingRepository} provides access to
-     *                           models for.
      */
     public AsyncEventSourcingRepository(
             Class<ID> idType,
@@ -79,15 +76,14 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
             AsyncEventStore eventStore,
             CriteriaResolver<ID> criteriaResolver,
             EventStateApplier<M> eventStateApplier,
-            Function<ID, M> newInstanceFactory,
-            String context) {
+            Function<ID, M> newInstanceFactory
+    ) {
         this.idType = idType;
         this.entityType = entityType;
         this.eventStore = eventStore;
         this.criteriaResolver = criteriaResolver;
         this.eventStateApplier = eventStateApplier;
         this.newInstanceFactory = newInstanceFactory;
-        this.context = context;
     }
 
     @Override
@@ -124,7 +120,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
 
         return managedEntities.computeIfAbsent(
                 identifier,
-                id -> eventStore.transaction(processingContext, context)
+                id -> eventStore.transaction(processingContext)
                                 .source(SourcingCondition.conditionFor(criteriaResolver.resolve(id)))
                                 .reduce(new EventSourcedEntity<>(identifier, newInstanceFactory.apply(identifier)),
                                         (entity, entry) -> {
@@ -175,7 +171,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
      *                          {@link EventStoreTransaction}.
      */
     private void updateActiveModel(EventSourcedEntity<ID, M> entity, ProcessingContext processingContext) {
-        eventStore.transaction(processingContext, context)
+        eventStore.transaction(processingContext)
                   .onAppend(event -> entity.applyStateChange(event, eventStateApplier, processingContext));
     }
 
@@ -186,7 +182,6 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
         descriptor.describeProperty("eventStore", eventStore);
         descriptor.describeProperty("criteriaResolver", criteriaResolver);
         descriptor.describeProperty("eventStateApplier", eventStateApplier);
-        descriptor.describeProperty("context", context);
     }
 
     /**

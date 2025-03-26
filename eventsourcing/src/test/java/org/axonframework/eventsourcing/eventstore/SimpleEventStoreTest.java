@@ -54,10 +54,6 @@ import static org.mockito.Mockito.*;
  * @since 5.0.0
  */
 class SimpleEventStoreTest {
-
-    private static final String MATCHING_CONTEXT = "matching-context";
-    private static final String NOT_MATCHING_CONTEXT = "not-matching-context";
-
     private SimpleEventStore testSubject;
     private AsyncEventStorageEngine mockStorageEngine;
     private StubProcessingContext processingContext;
@@ -66,7 +62,7 @@ class SimpleEventStoreTest {
     void setUp() {
         mockStorageEngine = mock(AsyncEventStorageEngine.class);
         processingContext = new StubProcessingContext();
-        testSubject = new SimpleEventStore(mockStorageEngine, MATCHING_CONTEXT, m -> Collections.emptySet());
+        testSubject = new SimpleEventStore(mockStorageEngine, m -> Collections.emptySet());
     }
 
     private static GlobalSequenceTrackingToken aGlobalSequenceToken() {
@@ -75,84 +71,6 @@ class SimpleEventStoreTest {
 
     private static StreamingCondition aStreamingCondition() {
         return StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(999));
-    }
-
-    @Nested
-    class VerifyingContext {
-
-        @Test
-        void transactionThrowsIfContextDoesNotMatch() {
-            assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.transaction(processingContext, NOT_MATCHING_CONTEXT));
-        }
-
-        @Test
-        void publishThrowsIfContextDoesNotMatch() {
-            assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.publish(processingContext, NOT_MATCHING_CONTEXT, eventMessage(0)));
-        }
-
-        @Test
-        void publishWithoutProcessingContextThrowsUnsupportedOperationException() {
-            assertThrows(UnsupportedOperationException.class,
-                         () -> testSubject.publish(NOT_MATCHING_CONTEXT, eventMessage(0)));
-        }
-
-        @Test
-        void openThrowsIfContextDoesNotMatch() {
-            assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.open(NOT_MATCHING_CONTEXT, aStreamingCondition()));
-        }
-
-        @Test
-        void headTokenThrowsIfContextDoesNotMatch() {
-            assertThrows(IllegalArgumentException.class, () -> testSubject.headToken(NOT_MATCHING_CONTEXT));
-        }
-
-        @Test
-        void tailTokenThrowsIfContextDoesNotMatch() {
-            assertThrows(IllegalArgumentException.class, () -> testSubject.tailToken(NOT_MATCHING_CONTEXT));
-        }
-
-        @Test
-        void tokenAtThrowsIfContextDoesNotMatch() {
-            assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.tokenAt(NOT_MATCHING_CONTEXT, Instant.now()));
-        }
-
-        @Test
-        void transactionDoesNotThrowIfContextMatches() {
-            assertDoesNotThrow(() -> testSubject.transaction(processingContext, MATCHING_CONTEXT));
-        }
-
-        @Test
-        void publishDoesNotThrowIfContextMatches() {
-            ProcessingContext mockProcessingContext = mock(ProcessingContext.class);
-            when(mockProcessingContext.computeResourceIfAbsent(any(),
-                                                               any())).thenReturn(mock(EventStoreTransaction.class));
-
-            assertDoesNotThrow(() -> testSubject.publish(mockProcessingContext, MATCHING_CONTEXT, eventMessage(0)));
-        }
-
-        @Test
-        void openDoesNotThrowIfContextMatches() {
-            assertDoesNotThrow(() -> testSubject.open(MATCHING_CONTEXT, aStreamingCondition()));
-        }
-
-        @Test
-        void headTokenDoesNotThrowIfContextMatches() {
-            assertDoesNotThrow(() -> testSubject.headToken(MATCHING_CONTEXT));
-        }
-
-        @Test
-        void tailTokenDoesNotThrowIfContextMatches() {
-            assertDoesNotThrow(() -> testSubject.tailToken(MATCHING_CONTEXT));
-        }
-
-        @Test
-        void tokenAtDoesNotThrowIfContextMatches() {
-            assertDoesNotThrow(() -> testSubject.tokenAt(MATCHING_CONTEXT, Instant.now()));
-        }
     }
 
     @Nested
@@ -166,7 +84,7 @@ class SimpleEventStoreTest {
             when(mockStorageEngine.stream(condition)).thenReturn(expectedStream);
 
             // when
-            MessageStream<EventMessage<?>> result = testSubject.open(MATCHING_CONTEXT, condition);
+            MessageStream<EventMessage<?>> result = testSubject.open(condition);
 
             // then
             assertSame(expectedStream, result);
@@ -180,7 +98,7 @@ class SimpleEventStoreTest {
             when(mockStorageEngine.headToken()).thenReturn(expectedFuture);
 
             // when
-            CompletableFuture<TrackingToken> result = testSubject.headToken(MATCHING_CONTEXT);
+            CompletableFuture<TrackingToken> result = testSubject.headToken();
 
             // then
             assertSame(expectedFuture, result);
@@ -194,7 +112,7 @@ class SimpleEventStoreTest {
             when(mockStorageEngine.tailToken()).thenReturn(expectedFuture);
 
             // when
-            CompletableFuture<TrackingToken> result = testSubject.tailToken(MATCHING_CONTEXT);
+            CompletableFuture<TrackingToken> result = testSubject.tailToken();
 
             // then
             assertSame(expectedFuture, result);
@@ -209,7 +127,7 @@ class SimpleEventStoreTest {
             when(mockStorageEngine.tokenAt(timestamp)).thenReturn(expectedFuture);
 
             // when
-            CompletableFuture<TrackingToken> result = testSubject.tokenAt(MATCHING_CONTEXT, timestamp);
+            CompletableFuture<TrackingToken> result = testSubject.tokenAt(timestamp);
 
             // then
             assertSame(expectedFuture, result);
@@ -229,7 +147,7 @@ class SimpleEventStoreTest {
             when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
             var result = asyncUnitOfWork.executeWithResult(pc -> {
-                EventStoreTransaction transaction = testSubject.transaction(pc, MATCHING_CONTEXT);
+                EventStoreTransaction transaction = testSubject.transaction(pc);
                 transaction.appendEvent(eventMessage(0));
                 return completedFuture(transaction);
             });
@@ -251,9 +169,8 @@ class SimpleEventStoreTest {
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
 
             var result = asyncUnitOfWork.executeWithResult(pc -> {
-                EventStoreTransaction transaction = testSubject.transaction(pc, MATCHING_CONTEXT);
-                doConsumeAll(transaction.source(SourcingCondition.conditionFor(EventCriteria.forAnyEventType()
-                                                                                            .withAnyTags())));
+                EventStoreTransaction transaction = testSubject.transaction(pc);
+                doConsumeAll(transaction.source(SourcingCondition.conditionFor(EventCriteria.anyEvent())));
                 transaction.appendEvent(eventMessage(0));
                 return completedFuture(transaction);
             });
@@ -288,14 +205,11 @@ class SimpleEventStoreTest {
             when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
             var result = asyncUnitOfWork.executeWithResult(pc -> {
-                EventStoreTransaction transaction = testSubject.transaction(pc, MATCHING_CONTEXT);
-                var firstStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.forAnyEventType()
-                                                                                                 .withAnyTags()));
+                EventStoreTransaction transaction = testSubject.transaction(pc);
+                var firstStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.anyEvent()));
 
-                var secondStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.forAnyEventType()
-                                                                                                  .withAnyTags()));
-                var thirdStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.forAnyEventType()
-                                                                                                 .withAnyTags()));
+                var secondStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.anyEvent()));
+                var thirdStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.anyEvent()));
                 doConsumeAll(firstStream, secondStream, thirdStream);
                 transaction.appendEvent(eventMessage(0));
                 return completedFuture(transaction);
@@ -320,7 +234,6 @@ class SimpleEventStoreTest {
 
         // then
         verify(descriptor).describeProperty("eventStorageEngine", mockStorageEngine);
-        verify(descriptor).describeProperty("context", MATCHING_CONTEXT);
     }
 
     private static @NotNull MessageStream<EventMessage<?>> messageStreamOf(int messageCount) {

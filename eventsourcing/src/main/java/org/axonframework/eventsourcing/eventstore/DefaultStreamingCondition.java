@@ -34,7 +34,7 @@ import static java.util.Objects.requireNonNull;
  */
 record DefaultStreamingCondition(
         @Nonnull TrackingToken position,
-        @Nonnull Set<EventCriteria> criteria
+        @Nonnull EventCriteria criteria
 ) implements StreamingCondition {
 
     DefaultStreamingCondition {
@@ -42,17 +42,8 @@ record DefaultStreamingCondition(
         requireNonNull(criteria, "The EventCriteria cannot be null");
     }
 
-    public DefaultStreamingCondition(@Nonnull TrackingToken position, @Nonnull EventCriteria... criteria) {
-        this(position, Set.of(criteria));
-    }
-
     @Override
     public StreamingCondition or(@Nonnull EventCriteria criteria) {
-        if (this.criteria.contains(criteria)) {
-            return this;
-        }
-        Set<EventCriteria> newCriteria = new HashSet<>(this.criteria);
-        newCriteria.add(criteria);
-        return new DefaultStreamingCondition(this.position, newCriteria);
+        return new DefaultStreamingCondition(this.position, this.criteria.or(criteria));
     }
 }

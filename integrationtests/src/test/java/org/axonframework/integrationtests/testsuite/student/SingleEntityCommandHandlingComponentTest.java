@@ -96,7 +96,7 @@ class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite 
                 ProcessingContext context
         ) {
             // Change name through event
-            eventSink.publish(context, DEFAULT_CONTEXT, new GenericEventMessage<>(
+            eventSink.publish(context, new GenericEventMessage<>(
                     new MessageType(StudentNameChangedEvent.class),
                     new StudentNameChangedEvent(student.getId(), command.name())
             ));
