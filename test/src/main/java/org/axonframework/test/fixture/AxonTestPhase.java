@@ -121,17 +121,10 @@ public interface AxonTestPhase {
         Then exception(Matcher<?> matcher);
 
         // todo: add commands here - in case of event handler which dispatch commands it's useful to check if commands were dispatched
-//        And and(); // or and can return just Given()?
     }
 
-//    interface And {
-//
-//        default When when(Consumer<AxonTestPhase.When> onWhen) {
-//            var when = when();
-//            onWhen.accept(when);
-//            return when;
-//        }
-//
-//        When when();
-//    }
+    interface And {
+
+        Given and(); // Given - can we repeat / or just when()?
+    }
 }
