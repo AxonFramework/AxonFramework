@@ -151,13 +151,18 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
         @Override
         public AxonTestPhase.Given event(Object payload, MetaData metaData) {
+            var eventMessage = toGenericEventMessage(payload, metaData);
+            return events(eventMessage);
+        }
+
+        private GenericEventMessage<Object> toGenericEventMessage(Object payload, MetaData metaData) {
             var messageType = messageTypeResolver.resolve(payload);
             var eventMessage = new GenericEventMessage<>(
                     messageType,
                     payload,
                     metaData
             );
-            return events(eventMessage);
+            return eventMessage;
         }
 
         @Override
@@ -166,6 +171,16 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                                                                                TEST_CONTEXT,
                                                                                messages));
             return this;
+        }
+
+        @Override
+        public AxonTestPhase.Given events(List<?>... events) {
+            var messages = Arrays.stream(events)
+                                 .map(e -> e instanceof EventMessage<?> message
+                                         ? message
+                                         : toGenericEventMessage(e, MetaData.emptyInstance())
+                                 ).toArray(EventMessage<?>[]::new);
+            return events(messages);
         }
 
         private AsyncUnitOfWork inUnitOfWorkRunOnInvocation(Consumer<ProcessingContext> action) {
@@ -195,21 +210,22 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
         @Override
         public AxonTestPhase.Given commands(CommandMessage<?>... messages) {
-            inUnitOfWorkRunOnInvocation(processingContext -> {
+            inUnitOfWorkOnInvocation(processingContext -> {
+                CompletableFuture<? extends Message<?>> dispatchOneByOneFuture = CompletableFuture.completedFuture(null);
                 for (var message : messages) {
-                    commandBus.dispatch(message, processingContext);
+                    var dispatchFuture = commandBus.dispatch(message, processingContext);
+                    dispatchOneByOneFuture = dispatchOneByOneFuture.thenCompose(m -> dispatchFuture);
                 }
+                return dispatchOneByOneFuture;
             });
             return this;
         }
 
         @Override
         public AxonTestPhase.When when() {
-            // todo: prevent double when!
+            // todo: prevent dołuble when!
             for (var givenUnitOfWork : givenUnitsOfWork) {
-                //     if(!givenUnitOfWork.isCompleted()){
                 awaitCompletion(givenUnitOfWork.execute());
-                // }
             }
             return new When(customization, messageTypeResolver, commandBus, eventSink);
         }
