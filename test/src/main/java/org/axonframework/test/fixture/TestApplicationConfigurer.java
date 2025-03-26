@@ -33,9 +33,12 @@ public class TestApplicationConfigurer
      */
     public TestApplicationConfigurer(@NotNull ApplicationConfigurer<?> delegate) {
         super(
-                delegate // what about order here? Should it be the last one?
-                        .registerDecorator(EventSink.class, 0, (c, name, d) -> new RecordingEventSink(d))
-                        .registerDecorator(CommandBus.class, 0, (c, name, d) -> new RecordingCommandBus(d))
+                delegate.registerDecorator(EventSink.class,
+                                           Integer.MAX_VALUE,
+                                           (c, name, d) -> new RecordingEventSink(d))
+                        .registerDecorator(CommandBus.class,
+                                           Integer.MAX_VALUE,
+                                           (c, name, d) -> new RecordingCommandBus(d))
         );
     }
 }

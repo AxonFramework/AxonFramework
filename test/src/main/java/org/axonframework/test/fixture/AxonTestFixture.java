@@ -72,10 +72,16 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
     private final NewConfiguration configuration;
     private final Customization customization;
+    private final MessageTypeResolver messageTypeResolver;
+    private final RecordingCommandBus commandBus;
+    private final RecordingEventSink eventSink;
 
     private AxonTestFixture(NewConfiguration configuration, UnaryOperator<Customization> customization) {
         this.customization = customization.apply(new Customization());
         this.configuration = configuration;
+        this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
+        this.commandBus = (RecordingCommandBus) configuration.getComponent(CommandBus.class);
+        this.eventSink = (RecordingEventSink) configuration.getComponent(EventSink.class);
     }
 
     public static AxonTestPhase.Setup with(ApplicationConfigurer<?> configurer) {
@@ -101,11 +107,14 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         return new AxonTestFixture(configuration, customization);
     }
 
+    @Override
     public AxonTestPhase.Given given() {
-        var commandBus = (RecordingCommandBus) configuration.getComponent(CommandBus.class);
-        var eventSink = (RecordingEventSink) configuration.getComponent(EventSink.class);
-        var messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
-        return new Given(customization, commandBus, eventSink, messageTypeResolver);
+        return new Given(configuration, customization, commandBus, eventSink, messageTypeResolver);
+    }
+
+    @Override
+    public AxonTestPhase.When when() {
+        return new When(configuration, customization, messageTypeResolver, commandBus, eventSink);
     }
 
     public record Customization(List<FieldFilter> fieldFilters) {
@@ -129,6 +138,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      */
     static class Given implements AxonTestPhase.Given {
 
+        private final NewConfiguration configuration;
         private final Customization customization;
         private final RecordingCommandBus commandBus;
         private final RecordingEventSink eventSink;
@@ -136,11 +146,13 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         private final List<AsyncUnitOfWork> givenUnitsOfWork = new ArrayList<>();
 
         Given(
+                NewConfiguration configuration,
                 Customization customization,
                 RecordingCommandBus commandBus,
                 RecordingEventSink eventSink,
                 MessageTypeResolver messageTypeResolver
         ) {
+            this.configuration = configuration;
             this.customization = customization;
             this.commandBus = commandBus;
             this.eventSink = eventSink;
@@ -230,7 +242,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             for (var givenUnitOfWork : givenUnitsOfWork) {
                 awaitCompletion(givenUnitOfWork.execute());
             }
-            return new When(customization, messageTypeResolver, commandBus, eventSink);
+            return new When(configuration, customization, messageTypeResolver, commandBus, eventSink);
         }
 
         private void awaitCompletion(CompletableFuture<?> completion) {
@@ -241,6 +253,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
     static class When implements AxonTestPhase.When {
 
+        private final NewConfiguration configuration;
         private final Customization customization;
         private final MessageTypeResolver messageTypeResolver;
         private final AsyncUnitOfWork whenUnitOfWork;
@@ -250,11 +263,13 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         private Throwable lastCommandException;
 
         public When(
+                NewConfiguration configuration,
                 Customization customization,
                 MessageTypeResolver messageTypeResolver,
                 RecordingCommandBus commandBus,
                 RecordingEventSink eventSink
         ) {
+            this.configuration = configuration;
             this.customization = customization;
             this.messageTypeResolver = messageTypeResolver;
             this.commandBus = commandBus.reset();
@@ -284,7 +299,13 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             if (!whenUnitOfWork.isCompleted()) {
                 awaitCompletion(whenUnitOfWork.execute());
             }
-            return new Then(customization, , commandBus, eventSink, lastCommandResult, lastCommandException);
+            return new Then(
+                    configuration,
+                    customization,
+                    messageTypeResolver,
+                    commandBus,
+                    eventSink,
+                    lastCommandResult, lastCommandException);
         }
 
         private void awaitCompletion(CompletableFuture<?> completion) {
@@ -296,10 +317,11 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
     }
 
-    static class Then implements AxonTestPhase.Then, AxonTestPhase.And {
+    static class Then implements AxonTestPhase.Then {
 
         private final Reporter reporter = new Reporter();
 
+        private final NewConfiguration configuration;
         private final Customization customization;
         private final MessageTypeResolver messageTypeResolver;
         private final RecordingCommandBus commandBus;
@@ -308,6 +330,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         private final Throwable actualException;
 
         public Then(
+                NewConfiguration configuration,
                 Customization customization,
                 MessageTypeResolver messageTypeResolver,
                 RecordingCommandBus commandBus,
@@ -315,6 +338,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                 Message<?> actualReturnValue,
                 Throwable actualException
         ) {
+            this.configuration = configuration;
             this.customization = customization;
             this.messageTypeResolver = messageTypeResolver;
             this.commandBus = commandBus;
@@ -445,8 +469,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
 
         @Override
-        public AxonTestPhase.Given and() {
-            return new Given(customization, commandBus, eventSink, messageTypeResolver);
+        public AxonTestPhase.Setup and() {
+            return AxonTestFixture.with(configuration, c -> customization);
         }
     }
 }
