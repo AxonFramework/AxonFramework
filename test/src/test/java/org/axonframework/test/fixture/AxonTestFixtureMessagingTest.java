@@ -17,6 +17,7 @@
 package org.axonframework.test.fixture;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventSink;
@@ -26,6 +27,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.test.fixture.sampledomain.ChangeStudentNameCommand;
 import org.axonframework.test.fixture.sampledomain.StudentNameChangedEvent;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -37,19 +39,22 @@ class AxonTestFixtureMessagingTest {
     @Test
     void givenNoPriorActivityWhenCommandThenExpectEvents() {
         var configurer = MessagingConfigurer.create();
-        configurer.registerDecorator(
-                CommandBus.class,
-                0,
-                (c, n, d) -> d.subscribe(
-                        new QualifiedName(ChangeStudentNameCommand.class),
-                        (command, context) -> {
-                            ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
-                            var eventSink = c.getComponent(EventSink.class);
-                            eventSink.publish(context,
-                                              studentNameChangedEventMessage(payload.id(), payload.name(), 1));
-                            return MessageStream.empty().cast();
-                        })
-        );
+        registerChangeStudentNameHandlerReturnsEmpty(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        fixture.given()
+               .noPriorActivity()
+               .when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+               .then()
+               .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+    }
+
+    @Test
+    void givenNothingWhenCommandThenExpectEvents() {
+        var configurer = MessagingConfigurer.create();
+        registerChangeStudentNameHandlerReturnsEmpty(configurer);
 
         var fixture = AxonTestFixture.with(configurer);
 
@@ -61,7 +66,83 @@ class AxonTestFixtureMessagingTest {
     }
 
     @Test
-    void givenEventsWhenCommandThenExpectEvents() {
+    void whenCommandThenExpectEvents() {
+        var configurer = MessagingConfigurer.create();
+        registerChangeStudentNameHandlerReturnsEmpty(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        fixture.when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+               .then()
+               .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+    }
+
+    @Test
+    void whenCommandThenSuccess() {
+        var configurer = MessagingConfigurer.create();
+        registerChangeStudentNameHandlerReturnsEmpty(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        fixture.when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+               .then()
+               .success();
+    }
+
+    @Test
+    void whenCommandReturnsEmptyThenSuccessWithNullValue() {
+        var configurer = MessagingConfigurer.create();
+        registerChangeStudentNameHandlerReturnsEmpty(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        fixture.when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+               .then()
+               .success()
+               .resultMessage(Matchers.nullValue());
+    }
+
+    @Test
+    void whenCommandReturnsSingleThenSuccessWithValue() {
+        var configurer = MessagingConfigurer.create();
+        registerChangeStudentNameHandlerReturnsSingle(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        fixture.when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+               .then()
+               .success()
+               .resultMessagePayload(new CommandResult("Result name-1"));
+    }
+
+    @Test
+    void chainingWhenThen() {
+        var configurer = MessagingConfigurer.create();
+        registerChangeStudentNameHandlerReturnsSingle(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        fixture.when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
+               .then()
+               .resultMessagePayload(new CommandResult("Result name-2"))
+               .events(
+                       studentNameChangedEvent("my-studentId-1", "name-1", 1),
+                       studentNameChangedEvent("my-studentId-1", "name-2", 1)
+               ).and()
+               .when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+               .then()
+               .resultMessagePayload(new CommandResult("Result name-3"));
+    }
+
+    @Test
+    void givenEventWhenCommandThenExpectEvents() {
         var configurer = MessagingConfigurer.create();
         var studentEvents = new ArrayList<>();
         configurer.registerEventSink(c -> (events) -> {
@@ -93,7 +174,7 @@ class AxonTestFixtureMessagingTest {
     }
 
     @Test
-    void giveNoPriorActivityWhenCommandThenExpectException() {
+    void givenNoPriorActivityWhenCommandThenExpectException() {
         var configurer = MessagingConfigurer.create();
         configurer.registerDecorator(
                 CommandBus.class,
@@ -107,6 +188,7 @@ class AxonTestFixtureMessagingTest {
         var fixture = AxonTestFixture.with(configurer);
 
         fixture.given()
+               .noPriorActivity()
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .then()
@@ -120,7 +202,49 @@ class AxonTestFixtureMessagingTest {
     ) {
         return new GenericEventMessage<>(
                 new MessageType(StudentNameChangedEvent.class),
-                new StudentNameChangedEvent(id, name, change)
+                studentNameChangedEvent(id, name, change)
+        );
+    }
+
+    private static StudentNameChangedEvent studentNameChangedEvent(String id, String name, int change) {
+        return new StudentNameChangedEvent(id, name, change);
+    }
+
+    record CommandResult(String message) {
+
+    }
+
+    private static void registerChangeStudentNameHandlerReturnsEmpty(MessagingConfigurer configurer) {
+        configurer.registerDecorator(
+                CommandBus.class,
+                0,
+                (c, n, d) -> d.subscribe(
+                        new QualifiedName(ChangeStudentNameCommand.class),
+                        (command, context) -> {
+                            ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
+                            var eventSink = c.getComponent(EventSink.class);
+                            eventSink.publish(context,
+                                              studentNameChangedEventMessage(payload.id(), payload.name(), 1));
+                            return MessageStream.empty().cast();
+                        })
+        );
+    }
+
+    private static void registerChangeStudentNameHandlerReturnsSingle(MessagingConfigurer configurer) {
+        configurer.registerDecorator(
+                CommandBus.class,
+                0,
+                (c, n, d) -> d.subscribe(
+                        new QualifiedName(ChangeStudentNameCommand.class),
+                        (command, context) -> {
+                            ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
+                            var eventSink = c.getComponent(EventSink.class);
+                            eventSink.publish(context,
+                                              studentNameChangedEventMessage(payload.id(), payload.name(), 1));
+                            return MessageStream.just(new GenericCommandResultMessage<>(new MessageType(CommandResult.class),
+                                                                                        new CommandResult("Result "
+                                                                                                                  + payload.name())));
+                        })
         );
     }
 }
