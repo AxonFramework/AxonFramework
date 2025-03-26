@@ -54,7 +54,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
 
         var studentNameChanged = studentNameChangedEventMessage("my-studentId-1", "name-1", 1);
         var changeToTheSameName = new ChangeStudentNameCommand("my-studentId-1", "name-1");
-        fixture.given(given -> given.message(studentNameChanged))
+        fixture.given(given -> given.events(studentNameChanged))
                .when(when -> when.command(changeToTheSameName))
                .then(then -> then.noEvents());
     }
@@ -69,7 +69,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
         var studentNameChanged = studentNameChangedEventMessage("my-studentId-1", "name-1", 1);
         var changeToTheAnotherName = new ChangeStudentNameCommand("my-studentId-1", "name-2");
         fixture.given()
-               .message(studentNameChanged)
+               .events(studentNameChanged)
                .when()
                .command(changeToTheAnotherName)
                .then()
