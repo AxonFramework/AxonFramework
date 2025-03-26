@@ -128,6 +128,10 @@ public interface AxonTestPhase {
 
         Then exception(Matcher<?> matcher);
 
+        Then commands(Object... expectedCommands);
+
+        Then commands(CommandMessage<?>... expectedCommands);
+
         // todo: add commands here - in case of event handler which dispatch commands it's useful to check if commands were dispatched
 
         Setup and(); // Given - can we repeat / or just when()?

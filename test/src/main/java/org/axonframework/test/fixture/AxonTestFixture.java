@@ -366,6 +366,16 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
 
         @Override
+        public AxonTestPhase.Then commands(Object... expectedCommands) {
+            throw new RuntimeException("Not implemented yet");
+        }
+
+        @Override
+        public AxonTestPhase.Then commands(CommandMessage<?>... expectedCommands) {
+            throw new RuntimeException("Not implemented yet");
+        }
+
+        @Override
         public AxonTestPhase.Then events(EventMessage<?>... expectedEvents) {
             this.events(Stream.of(expectedEvents).map(Message::getPayload).toArray());
 
