@@ -25,24 +25,28 @@ import org.axonframework.modelling.SimpleRepositoryEntityPersister;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 import org.axonframework.modelling.repository.AsyncRepository;
 
+import java.util.Objects;
+import java.util.function.Consumer;
+
 /**
  * A {@link Module} implementation providing operation to construct a stateful command handling application module.
  * <p>
  * The {@code StatefulCommandHandlingModule} follows a builder paradigm, wherein several entities and
- * {@link StatefulCommandHandler StatefulCommandHandlers} can be registered in either order.
+ * {@link StatefulCommandHandler StatefulCommandHandlers} can be registered in either order. To initiate entity
+ * registration, you should move into the entity registration phase by invoking {@link SetupPhase#entities()}. To
+ * register command handlers a similar registration phase switch should be made, by invoking
+ * {@link SetupPhase#commandHandlers()}.
  * <p>
- * When {@link Builder#withEntity(Class, Class) registering entities}, the entity's type and identifier type are
+ * When {@link EntityPhase#entity(Class, Class) registering entities}, the entity's type and identifier type are
  * expected first. From there, either a {@link AsyncRepository} or a separate {@link SimpleRepositoryEntityLoader} and
- * {@link SimpleRepositoryEntityPersister} are expected. The {@link EntitiesOrHandlerPhase#andEntity(Class, Class)} can
- * then be used to add another entity. When all entities have been registered, you can switch to
- * {@link EntitiesOrHandlerPhase#withHandler(QualifiedName, StatefulCommandHandler) start registering command
- * handlers}.
+ * {@link SimpleRepositoryEntityPersister} are expected. When all entities have been registered, you can switch to
+ * {@link SetupPhase#commandHandlers()} to start registering command handlers}.
  * <p>
- * To register stateful command handlers, the {@link Builder#withHandler(QualifiedName, StatefulCommandHandler)} is
- * used. If the construction of the {@code StatefulCommandHandler} requires components from the
+ * To register stateful command handlers, the {@link CommandHandlerPhase#handler(QualifiedName, StatefulCommandHandler)}
+ * is used. If the construction of the {@code StatefulCommandHandler} requires components from the
  * {@link org.axonframework.configuration.NewConfiguration}, the
- * {@link Builder#withHandler(QualifiedName, ComponentFactory)} operation should be used instead.
- *
+ * {@link CommandHandlerPhase#handler(QualifiedName, ComponentFactory)} operation should be used instead.
+ * <p>
  * TODO validate/finalize JavaDoc
  *
  * @author Allard Buijze
@@ -59,33 +63,59 @@ public interface StatefulCommandHandlingModule extends Module<StatefulCommandHan
      * @param moduleName The name of the {@code StatefulCommandHandlingModule} under construction.
      * @return A builder for a {@code StatefulCommandHandlingModule}.
      */
-    static Builder module(String moduleName) {
+    static SetupPhase module(String moduleName) {
         return new StatefulCommandHandlingModuleImpl(moduleName);
     }
 
     /**
      *
      */
-    interface Builder {
+    interface SetupPhase {
+
+        CommandHandlerPhase commandHandlers();
+
+        default CommandHandlerPhase commandHandlers(Consumer<CommandHandlerPhase> phaseConsumer) {
+            CommandHandlerPhase commandHandlerPhase = commandHandlers();
+            phaseConsumer.accept(commandHandlerPhase);
+            return commandHandlerPhase;
+        }
+
+        EntityPhase entities();
+
+        default EntityPhase entities(Consumer<EntityPhase> phaseConsumer) {
+            EntityPhase entityPhase = entities();
+            phaseConsumer.accept(entityPhase);
+            return entityPhase;
+        }
+
+        // TODO DISCUSS - Do we want a withStateManager method? This should replace the entity flow entirely I think.
+    }
+
+    interface CommandHandlerPhase extends SetupPhase, BuildPhase {
 
         /**
          * @param commandName
          * @param commandHandler
          * @return
          */
-        // TODO DISCUSS - have an explicit handlers() method to start with handlers?
-        HandlersOrEntityPhase withHandler(@Nonnull QualifiedName commandName,
-                                          @Nonnull StatefulCommandHandler commandHandler);
+        default CommandHandlerPhase handler(@Nonnull QualifiedName commandName,
+                                            @Nonnull StatefulCommandHandler commandHandler) {
+            Objects.requireNonNull(commandHandler, "The stateful command Handler cannot be null.");
+            return handler(commandName, c -> commandHandler);
+        }
 
         /**
          * @param commandName
          * @param commandHandlerBuilder
          * @return
          */
-        HandlersOrEntityPhase withHandler(
+        CommandHandlerPhase handler(
                 @Nonnull QualifiedName commandName,
                 @Nonnull ComponentFactory<StatefulCommandHandler> commandHandlerBuilder
         );
+    }
+
+    interface EntityPhase extends SetupPhase, BuildPhase {
 
         /**
          * @param idType
@@ -94,11 +124,8 @@ public interface StatefulCommandHandlingModule extends Module<StatefulCommandHan
          * @param <T>
          * @return
          */
-        // TODO DISCUSS - have an explicit entities() method to start with entities?
-        <ID, T> RepositoryPhase<ID, T> withEntity(@Nonnull Class<ID> idType,
-                                                  @Nonnull Class<T> entityType);
-
-        // TODO DISCUSS - Do we want a withStateManager method? This should replace the entity flow entirely I think.
+        <ID, T> RepositoryPhase<ID, T> entity(@Nonnull Class<ID> idType,
+                                              @Nonnull Class<T> entityType);
     }
 
     /**
@@ -111,17 +138,13 @@ public interface StatefulCommandHandlingModule extends Module<StatefulCommandHan
          * @param loader
          * @return
          */
-        PersisterPhase<ID, T> withLoader(
-                @Nonnull ComponentFactory<SimpleRepositoryEntityLoader<ID, T>> loader
-        );
+        PersisterPhase<ID, T> loader(@Nonnull ComponentFactory<SimpleRepositoryEntityLoader<ID, T>> loader);
 
         /**
          * @param repository
          * @return
          */
-        EntitiesOrHandlerPhase withRepository(
-                @Nonnull ComponentFactory<AsyncRepository<ID, T>> repository
-        );
+        EntityPhase repository(@Nonnull ComponentFactory<AsyncRepository<ID, T>> repository);
     }
 
     /**
@@ -134,85 +157,13 @@ public interface StatefulCommandHandlingModule extends Module<StatefulCommandHan
          * @param persister
          * @return
          */
-        EntitiesOrHandlerPhase andPersister(
-                @Nonnull ComponentFactory<SimpleRepositoryEntityPersister<ID, T>> persister
-        );
+        EntityPhase persister(@Nonnull ComponentFactory<SimpleRepositoryEntityPersister<ID, T>> persister);
     }
 
     /**
      *
      */
-    interface EntitiesOrHandlerPhase {
-
-        /**
-         * @param idType
-         * @param entityType
-         * @param <ID>
-         * @param <T>
-         * @return
-         */
-        <ID, T> RepositoryPhase<ID, T> andEntity(@Nonnull Class<ID> idType,
-                                                 @Nonnull Class<T> entityType);
-
-        /**
-         * @param commandName
-         * @param commandHandler
-         * @return
-         */
-        // TODO DISCUSS - have an explicit handlers() method to switch?
-        HandlersOrEntityPhase withHandler(@Nonnull QualifiedName commandName,
-                                          @Nonnull StatefulCommandHandler commandHandler);
-
-        /**
-         * @param commandName
-         * @param commandHandlerBuilder
-         * @return
-         */
-        HandlersOrEntityPhase withHandler(
-                @Nonnull QualifiedName commandName,
-                @Nonnull ComponentFactory<StatefulCommandHandler> commandHandlerBuilder
-        );
-
-        /**
-         * @return
-         */
-        // TODO DISCUSS - how do I register components if I don't explicitly have a build point?
-        StatefulCommandHandlingModule build();
-    }
-
-    /**
-     *
-     */
-    interface HandlersOrEntityPhase {
-
-        /**
-         * @param commandName
-         * @param commandHandler
-         * @return
-         */
-        HandlersOrEntityPhase andHandler(@Nonnull QualifiedName commandName,
-                                         @Nonnull StatefulCommandHandler commandHandler);
-
-        /**
-         * @param commandName
-         * @param commandHandlerBuilder
-         * @return
-         */
-        HandlersOrEntityPhase andHandler(
-                @Nonnull QualifiedName commandName,
-                @Nonnull ComponentFactory<StatefulCommandHandler> commandHandlerBuilder
-        );
-
-        /**
-         * @param idType
-         * @param entityType
-         * @param <ID>
-         * @param <T>
-         * @return
-         */
-        // TODO DISCUSS - have an explicit entities() method to proceed with entities?
-        <ID, T> RepositoryPhase<ID, T> withEntity(@Nonnull Class<ID> idType,
-                                                  @Nonnull Class<T> entityType);
+    interface BuildPhase {
 
         /**
          * @return

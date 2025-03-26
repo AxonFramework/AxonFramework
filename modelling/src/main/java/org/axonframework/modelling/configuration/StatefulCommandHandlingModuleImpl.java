@@ -42,8 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static java.util.Objects.requireNonNull;
 
 /**
- * The single implementation of the {@link StatefulCommandHandlingModule} and it's
- * {@link StatefulCommandHandlingModule.Builder builder} flow.
+ * The single implementation of the {@link StatefulCommandHandlingModule} and it's {@link SetupPhase builder} flow.
  *
  * @author Allard Buijze
  * @author Mateusz Nowak
@@ -54,8 +53,10 @@ import static java.util.Objects.requireNonNull;
 class StatefulCommandHandlingModuleImpl
         extends AbstractConfigurer<StatefulCommandHandlingModule>
         implements StatefulCommandHandlingModule,
-        StatefulCommandHandlingModule.Builder,
-        StatefulCommandHandlingModule.HandlersOrEntityPhase {
+        StatefulCommandHandlingModule.SetupPhase,
+        StatefulCommandHandlingModule.CommandHandlerPhase,
+        StatefulCommandHandlingModule.EntityPhase,
+        StatefulCommandHandlingModule.BuildPhase {
 
     private final String moduleName;
     private final String stateManagerName;
@@ -77,38 +78,25 @@ class StatefulCommandHandlingModuleImpl
     }
 
     @Override
-    public HandlersOrEntityPhase withHandler(@Nonnull QualifiedName commandName,
-                                             @Nonnull StatefulCommandHandler commandHandler) {
-        requireNonNull(commandHandler, "The command handler cannot be null");
-        return withHandler(commandName, c -> commandHandler);
+    public CommandHandlerPhase commandHandlers() {
+        return this;
     }
 
     @Override
-    public HandlersOrEntityPhase withHandler(
-            @Nonnull QualifiedName commandName,
-            @Nonnull ComponentFactory<StatefulCommandHandler> commandHandlerBuilder
-    ) {
+    public CommandHandlerPhase handler(@Nonnull QualifiedName commandName,
+                                       @Nonnull ComponentFactory<StatefulCommandHandler> commandHandlerBuilder) {
         this.handlerFactories.put(commandName, commandHandlerBuilder);
         return this;
     }
 
     @Override
-    public HandlersOrEntityPhase andHandler(@Nonnull QualifiedName commandName,
-                                            @Nonnull StatefulCommandHandler commandHandler) {
-        return this.withHandler(commandName, commandHandler);
+    public EntityPhase entities() {
+        return this;
     }
 
     @Override
-    public HandlersOrEntityPhase andHandler(
-            @Nonnull QualifiedName commandName,
-            @Nonnull ComponentFactory<StatefulCommandHandler> commandHandlerBuilder
-    ) {
-        return this.withHandler(commandName, commandHandlerBuilder);
-    }
-
-    @Override
-    public <ID, T> RepositoryPhase<ID, T> withEntity(@Nonnull Class<ID> idType,
-                                                     @Nonnull Class<T> entityType) {
+    public <ID, T> RepositoryPhase<ID, T> entity(@Nonnull Class<ID> idType,
+                                                 @Nonnull Class<T> entityType) {
         EntityConfigurer<ID, T> entityConfigurer = new EntityConfigurer<>(this, idType, entityType);
         entities.put(entityConfigurer.entityName(), entityConfigurer);
         return entityConfigurer;
@@ -174,9 +162,9 @@ class StatefulCommandHandlingModuleImpl
     }
 
     private static class EntityConfigurer<I, E> implements
+            EntityPhase,
             RepositoryPhase<I, E>,
-            PersisterPhase<I, E>,
-            EntitiesOrHandlerPhase {
+            PersisterPhase<I, E> {
 
         // Parent State Configurer for circling back.
         private final StatefulCommandHandlingModuleImpl parent;
@@ -197,47 +185,36 @@ class StatefulCommandHandlingModuleImpl
         }
 
         @Override
-        public PersisterPhase<I, E> withLoader(
-                @Nonnull ComponentFactory<SimpleRepositoryEntityLoader<I, E>> loader
-        ) {
+        public <ID, T> RepositoryPhase<ID, T> entity(@Nonnull Class<ID> idType, @Nonnull Class<T> entityType) {
+            return parent.entity(idType, entityType);
+        }
+
+        @Override
+        public PersisterPhase<I, E> loader(@Nonnull ComponentFactory<SimpleRepositoryEntityLoader<I, E>> loader) {
             this.loaderFactory = requireNonNull(loader, "The repository loader factory cannot be null.");
             return this;
         }
 
         @Override
-        public EntitiesOrHandlerPhase andPersister(
-                @Nonnull ComponentFactory<SimpleRepositoryEntityPersister<I, E>> persister
-        ) {
+        public EntityPhase persister(@Nonnull ComponentFactory<SimpleRepositoryEntityPersister<I, E>> persister) {
             this.persisterFactory = requireNonNull(persister, "The repository persister factory cannot be null.");
             return this;
         }
 
         @Override
-        public EntitiesOrHandlerPhase withRepository(
-                @Nonnull ComponentFactory<AsyncRepository<I, E>> repository
-        ) {
+        public EntityPhase repository(@Nonnull ComponentFactory<AsyncRepository<I, E>> repository) {
             this.repositoryFactory = requireNonNull(repository, "The repository factory cannot be null.");
             return this;
         }
 
         @Override
-        public <ID, T> RepositoryPhase<ID, T> andEntity(@Nonnull Class<ID> idType,
-                                                        @Nonnull Class<T> entityType) {
-            return parent.withEntity(idType, entityType);
+        public CommandHandlerPhase commandHandlers() {
+            return parent.commandHandlers();
         }
 
         @Override
-        public HandlersOrEntityPhase withHandler(@Nonnull QualifiedName commandName,
-                                                 @Nonnull StatefulCommandHandler commandHandler) {
-            return parent.withHandler(commandName, commandHandler);
-        }
-
-        @Override
-        public HandlersOrEntityPhase withHandler(
-                @Nonnull QualifiedName commandName,
-                @Nonnull ComponentFactory<StatefulCommandHandler> commandHandlerBuilder
-        ) {
-            return parent.withHandler(commandName, commandHandlerBuilder);
+        public EntityPhase entities() {
+            return this;
         }
 
         @Override

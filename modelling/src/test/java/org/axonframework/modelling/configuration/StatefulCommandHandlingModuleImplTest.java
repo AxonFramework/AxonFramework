@@ -59,16 +59,18 @@ class StatefulCommandHandlingModuleImplTest {
 
     private StatefulCommandHandlingModule buildModule() {
         return StatefulCommandHandlingModule.module("my-command-module")
-                                            .withEntity(CourseId.class, Course.class)
-                                            .withLoader(c -> (id, context) -> {
+                                            .entities()
+                                            .entity(CourseId.class, Course.class)
+                                            .loader(c -> (id, context) -> {
                                                 courseLoaded.set(true);
                                                 return CompletableFuture.completedFuture(new Course(id));
                                             })
-                                            .andPersister(c -> (id, entity, context) -> {
+                                            .persister(c -> (id, entity, context) -> {
                                                 coursePersisted.set(true);
                                                 return CompletableFuture.completedFuture(null);
                                             })
-                                            .withHandler(
+                                            .commandHandlers()
+                                            .handler(
                                                     new QualifiedName(RenameCourseCommand.class),
                                                     (cmd, stateManager, context) -> {
                                                         Course course = stateManager.loadEntity(
@@ -82,16 +84,18 @@ class StatefulCommandHandlingModuleImplTest {
                                                         ));
                                                     }
                                             )
-                                            .withEntity(StudentId.class, Student.class)
-                                            .withLoader(c -> (id, context) -> {
+                                            .entities()
+                                            .entity(StudentId.class, Student.class)
+                                            .loader(c -> (id, context) -> {
                                                 studentLoaded.set(true);
                                                 return CompletableFuture.completedFuture(new Student(id));
                                             })
-                                            .andPersister(c -> (id, entity, context) -> {
+                                            .persister(c -> (id, entity, context) -> {
                                                 studentPersisted.set(true);
                                                 return CompletableFuture.completedFuture(null);
                                             })
-                                            .withHandler(
+                                            .commandHandlers()
+                                            .handler(
                                                     new QualifiedName(SubscribeStudentToCourse.class),
                                                     (cmd, stateManager, context) -> {
                                                         Course course = stateManager.loadEntity(
