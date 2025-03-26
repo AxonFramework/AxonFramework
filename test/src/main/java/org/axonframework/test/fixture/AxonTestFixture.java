@@ -19,7 +19,6 @@ package org.axonframework.test.fixture;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.EventMessage;
@@ -31,6 +30,7 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.test.aggregate.Reporter;
 import org.axonframework.test.matchers.FieldFilter;
+import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.matchers.MapEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.hamcrest.Matcher;
@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static org.axonframework.test.matchers.Matchers.deepEquals;
@@ -59,29 +59,41 @@ import static org.axonframework.test.matchers.Matchers.deepEquals;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
+// todo: better name? CommandModelTestFixture?
 public class AxonTestFixture implements AxonTestPhase.Setup {
 
     public static final String TEST_CONTEXT = "TEST_CONTEXT";
 
     private final NewConfiguration configuration;
+    private final Customization customization;
 
-    private AxonTestFixture(NewConfiguration configuration) {
+    private AxonTestFixture(NewConfiguration configuration, UnaryOperator<Customization> customization) {
+        this.customization = customization.apply(new Customization());
         this.configuration = configuration;
     }
 
     public static AxonTestPhase.Setup with(ApplicationConfigurer<?> configurer) {
+        var configuration = configurer.build();
+        return with(configuration, c -> c);
+    }
+
+    public static AxonTestPhase.Setup with(ApplicationConfigurer<?> configurer,
+                                           UnaryOperator<Customization> customization) {
         var testConfigurer = new TestApplicationConfigurer(configurer);
         var configuration = testConfigurer.build();
-        return with(configuration);
+        return with(configuration, customization);
     }
 
-    public static AxonTestPhase.Setup with(TestApplicationConfigurer configurer) {
+    // todo: add with(c)
+    public static AxonTestPhase.Setup with(TestApplicationConfigurer configurer,
+                                           UnaryOperator<Customization> customization) {
         var configuration = configurer.build();
-        return with(configuration);
+        return with(configuration, customization);
     }
 
-    public static AxonTestPhase.Setup with(NewConfiguration configuration) {
-        return new AxonTestFixture(configuration);
+    // todo: add with(c)
+    public static AxonTestPhase.Setup with(NewConfiguration configuration, UnaryOperator<Customization> customization) {
+        return new AxonTestFixture(configuration, customization);
     }
 
     public AxonTestPhase.Given given() {
@@ -89,6 +101,22 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         var eventSink = (RecordingEventSink) configuration.getComponent(EventSink.class);
         var messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
         return new Given(commandBus, eventSink, messageTypeResolver);
+    }
+
+    public record Customization(List<FieldFilter> fieldFilters) {
+
+        public Customization() {
+            this(new ArrayList<>());
+        }
+
+        public Customization registerFieldFilter(FieldFilter fieldFilter) {
+            this.fieldFilters.add(fieldFilter);
+            return this;
+        }
+
+        public Customization registerIgnoredField(Class<?> declaringClass, String fieldName) {
+            return registerFieldFilter(new IgnoreField(declaringClass, fieldName));
+        }
     }
 
     static class Given implements AxonTestPhase.Given {
