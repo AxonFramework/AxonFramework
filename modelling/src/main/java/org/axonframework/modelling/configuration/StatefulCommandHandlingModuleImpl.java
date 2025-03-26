@@ -95,9 +95,9 @@ class StatefulCommandHandlingModuleImpl
     }
 
     @Override
-    public <ID, T> RepositoryPhase<ID, T> entity(@Nonnull Class<ID> idType,
-                                                 @Nonnull Class<T> entityType) {
-        EntityConfigurer<ID, T> entityConfigurer = new EntityConfigurer<>(this, idType, entityType);
+    public <I, E> RepositoryPhase<I, E> entity(@Nonnull Class<I> idType,
+                                               @Nonnull Class<E> entityType) {
+        EntityConfigurer<I, E> entityConfigurer = new EntityConfigurer<>(this, idType, entityType);
         entities.put(entityConfigurer.entityName(), entityConfigurer);
         return entityConfigurer;
     }

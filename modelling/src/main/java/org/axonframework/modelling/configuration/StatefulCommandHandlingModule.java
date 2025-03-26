@@ -120,44 +120,44 @@ public interface StatefulCommandHandlingModule extends Module<StatefulCommandHan
         /**
          * @param idType
          * @param entityType
-         * @param <ID>
-         * @param <T>
+         * @param <I>
+         * @param <E>
          * @return
          */
-        <ID, T> RepositoryPhase<ID, T> entity(@Nonnull Class<ID> idType,
-                                              @Nonnull Class<T> entityType);
+        <I, E> RepositoryPhase<I, E> entity(@Nonnull Class<I> idType,
+                                            @Nonnull Class<E> entityType);
     }
 
     /**
-     * @param <ID>
-     * @param <T>
+     * @param <I>
+     * @param <E>
      */
-    interface RepositoryPhase<ID, T> {
+    interface RepositoryPhase<I, E> {
 
         /**
          * @param loader
          * @return
          */
-        PersisterPhase<ID, T> loader(@Nonnull ComponentFactory<SimpleRepositoryEntityLoader<ID, T>> loader);
+        PersisterPhase<I, E> loader(@Nonnull ComponentFactory<SimpleRepositoryEntityLoader<I, E>> loader);
 
         /**
          * @param repository
          * @return
          */
-        EntityPhase repository(@Nonnull ComponentFactory<AsyncRepository<ID, T>> repository);
+        EntityPhase repository(@Nonnull ComponentFactory<AsyncRepository<I, E>> repository);
     }
 
     /**
-     * @param <ID>
-     * @param <T>
+     * @param <I>
+     * @param <E>
      */
-    interface PersisterPhase<ID, T> {
+    interface PersisterPhase<I, E> {
 
         /**
          * @param persister
          * @return
          */
-        EntityPhase persister(@Nonnull ComponentFactory<SimpleRepositoryEntityPersister<ID, T>> persister);
+        EntityPhase persister(@Nonnull ComponentFactory<SimpleRepositoryEntityPersister<I, E>> persister);
     }
 
     /**
