@@ -100,7 +100,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         var commandBus = (RecordingCommandBus) configuration.getComponent(CommandBus.class);
         var eventSink = (RecordingEventSink) configuration.getComponent(EventSink.class);
         var messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
-        return new Given(commandBus, eventSink, messageTypeResolver);
+        return new Given(customization, commandBus, eventSink, messageTypeResolver);
     }
 
     public record Customization(List<FieldFilter> fieldFilters) {
@@ -121,6 +121,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
     static class Given implements AxonTestPhase.Given {
 
+        private final Customization customization;
         private final RecordingCommandBus commandBus;
         private final RecordingEventSink eventSink;
         private final MessageTypeResolver messageTypeResolver;
@@ -128,10 +129,12 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         private final AsyncUnitOfWork givenUnitOfWork;
 
         Given(
+                Customization customization,
                 RecordingCommandBus commandBus,
                 RecordingEventSink eventSink,
                 MessageTypeResolver messageTypeResolver
         ) {
+            this.customization = customization;
             this.commandBus = commandBus;
             this.eventSink = eventSink;
             this.messageTypeResolver = messageTypeResolver;
@@ -191,7 +194,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             if (!givenUnitOfWork.isCompleted()) {
                 awaitCompletion(givenUnitOfWork.execute());
             }
-            return new When(messageTypeResolver, commandBus, eventSink);
+            return new When(customization, messageTypeResolver, commandBus, eventSink);
         }
 
         private void awaitCompletion(CompletableFuture<?> completion) {
@@ -202,6 +205,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
     static class When implements AxonTestPhase.When {
 
+        private final Customization customization;
         private final MessageTypeResolver messageTypeResolver;
         private final AsyncUnitOfWork whenUnitOfWork;
         private final RecordingCommandBus commandBus;
@@ -210,10 +214,12 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         private Message<?> actualReturnValue;
 
         public When(
+                Customization customization,
                 MessageTypeResolver messageTypeResolver,
                 RecordingCommandBus commandBus,
                 RecordingEventSink eventSink
         ) {
+            this.customization = customization;
             this.messageTypeResolver = messageTypeResolver;
             this.commandBus = commandBus;
             this.eventSink = eventSink;
@@ -242,7 +248,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             if (!whenUnitOfWork.isCompleted()) {
                 awaitCompletion(whenUnitOfWork.execute());
             }
-            return new Then(eventSink, actualReturnValue, actualException);
+            return new Then(customization, eventSink, actualReturnValue, actualException);
         }
 
         private void awaitCompletion(CompletableFuture<?> completion) {
@@ -258,18 +264,18 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
         private final Reporter reporter = new Reporter();
 
-        // todo: support field filters
-        private List<FieldFilter> fieldFilters = new ArrayList<>();
-
+        private final Customization customization;
         private final RecordingEventSink eventSink;
         private final Message<?> actualReturnValue;
         private final Throwable actualException;
 
         public Then(
+                Customization customization,
                 RecordingEventSink eventSink,
                 Message<?> actualReturnValue,
                 Throwable actualException
         ) {
+            this.customization = customization;
             this.eventSink = eventSink;
             this.actualException = actualException;
             this.actualReturnValue = actualReturnValue;
@@ -337,7 +343,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             if (!expectedPayload.getClass().equals(actualPayload.getClass())) {
                 return false;
             }
-            Matcher<Object> matcher = deepEquals(expectedPayload, new MatchAllFieldFilter(fieldFilters));
+            Matcher<Object> matcher = deepEquals(expectedPayload, new MatchAllFieldFilter(customization.fieldFilters));
             if (!matcher.matches(actualPayload)) {
                 reporter.reportDifferentPayloads(expectedPayload.getClass(), actualPayload, expectedPayload);
             }
