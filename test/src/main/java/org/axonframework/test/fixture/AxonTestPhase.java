@@ -28,6 +28,17 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 
 public interface AxonTestPhase {
 
+    interface Setup {
+
+        AxonTestPhase.Given given();
+
+        default AxonTestPhase.Given given(Consumer<AxonTestPhase.Given> onGiven) {
+            var given = given();
+            onGiven.accept(given);
+            return given;
+        }
+    }
+
     interface Given {
 
         Given noPriorActivity();
@@ -46,7 +57,11 @@ public interface AxonTestPhase {
 
         When when();
 
-        When when(Consumer<When> onWhen);
+        default When when(Consumer<AxonTestPhase.When> onWhen) {
+            var when = when();
+            onWhen.accept(when);
+            return when;
+        }
     }
 
     interface When {
@@ -59,7 +74,11 @@ public interface AxonTestPhase {
 
         Then then();
 
-        Then then(Consumer<Then> onThen);
+        default Then then(Consumer<AxonTestPhase.Then> onThen) {
+            var then = then();
+            onThen.accept(then);
+            return then;
+        }
     }
 
     interface Then {
