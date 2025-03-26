@@ -18,6 +18,7 @@ package org.axonframework.common.infra;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Component;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -251,16 +252,13 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
                 var value = entry.getValue();
 
                 var isLast = (i == entries.size() - 1);
-                var connector = isLast ? CORNER : TEE;
-
-                renderProperty(name, value, connector, context, isLast);
+                renderProperty(name, value, context, isLast);
             }
         }
 
         private void renderProperty(
                 String name,
                 Object value,
-                String connector,
                 RenderContext context,
                 boolean isLastInCollection
         ) {
@@ -271,11 +269,10 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
                                                                                                isLastInCollection);
                 case List<?> list -> renderList(name, list, context, isLastInCollection);
                 case Map<?, ?> map -> renderMap(name, map, context, isLastInCollection);
-                case SymbolicLink link -> renderSymlink(name, link, connector, context);
-                case null, default -> renderSimpleValue(name, value, connector, context);
+                case SymbolicLink link -> renderSymlink(name, link, context, isLastInCollection);
+                case null, default -> renderSimpleValue(name, value, context, isLastInCollection);
             }
         }
-
 
         private void renderComponentDirectory(
                 String name,
@@ -283,7 +280,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
                 RenderContext context,
                 boolean isLastInCollection
         ) {
-            result.append(context.indent).append(isLastInCollection ? CORNER : TEE).append(name).append("/\n");
+            result.append(context.indent).append(connectorForProperty(isLastInCollection)).append(name).append("/\n");
             var childContext = context.indented(name, isLastInCollection);
             render(descriptor.processedComponents, childContext);
         }
@@ -295,7 +292,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
                 boolean isLastInCollection
         ) {
             // Render the list name as a directory
-            result.append(context.indent).append(isLastInCollection ? CORNER : TEE).append(name).append("/\n");
+            result.append(context.indent).append(connectorForProperty(isLastInCollection)).append(name).append("/\n");
 
             var listContext = context.indented(name, isLastInCollection);
             for (int j = 0; j < list.size(); j++) {
@@ -306,13 +303,17 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
             }
         }
 
+        private String connectorForProperty(boolean isLastInCollection) {
+            return isLastInCollection ? CORNER : TEE;
+        }
+
         private void renderMapOrListEntry(
                 String key,
                 Object item,
                 RenderContext listContext,
                 boolean isLastInCollection
         ) {
-            result.append(listContext.indent).append(isLastInCollection ? CORNER : TEE).append(key);
+            result.append(listContext.indent).append(connectorForProperty(isLastInCollection)).append(key);
 
             if (item instanceof FilesystemStyleComponentDescriptor itemDescriptor) {
                 result.append("/\n");
@@ -332,7 +333,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
                 boolean isLastInCollection
         ) {
             // Render the map name as a directory
-            result.append(context.indent).append(isLastInCollection ? CORNER : TEE).append(name).append("/\n");
+            result.append(context.indent).append(connectorForProperty(isLastInCollection)).append(name).append("/\n");
 
             // Create a new context for map entries
             var mapContext = context.indented(name, isLastInCollection);
@@ -349,13 +350,13 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
             }
         }
 
-        private void renderSymlink(String name, SymbolicLink link, String connector, RenderContext context) {
-            result.append(context.indent).append(connector).append(name)
+        private void renderSymlink(String name, SymbolicLink link, RenderContext context, boolean isLastInCollection) {
+            result.append(context.indent).append(connectorForProperty(isLastInCollection)).append(name)
                   .append(link).append("\n");
         }
 
-        private void renderSimpleValue(String name, Object value, String connector, RenderContext context) {
-            result.append(context.indent).append(connector).append(name)
+        private void renderSimpleValue(String name, Object value, RenderContext context, boolean isLastInCollection) {
+            result.append(context.indent).append(connectorForProperty(isLastInCollection)).append(name)
                   .append(": ").append(valueOrNull(value)).append("\n");
         }
 
