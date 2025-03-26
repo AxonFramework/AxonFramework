@@ -23,7 +23,6 @@ import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
@@ -34,7 +33,6 @@ import org.axonframework.test.matchers.MapEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
-import org.junit.jupiter.params.shadow.com.univocity.parsers.common.record.Record;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,88 +57,107 @@ import static org.axonframework.test.matchers.Matchers.deepEquals;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class AxonTestFixture implements AxonTestPhase.Given {
+public class AxonTestFixture {
 
     public static final String TEST_CONTEXT = "TEST_CONTEXT";
 
-    // configuration
     private final NewConfiguration configuration;
-    private final RecordingCommandBus commandBus;
-    private final RecordingEventSink eventSink;
-    private final MessageTypeResolver messageTypeResolver;
 
-    private final AsyncUnitOfWork givenUnitOfWork;
+    private AxonTestFixture(NewConfiguration configuration) {
+        this.configuration = configuration;
+    }
 
     public static AxonTestFixture with(ApplicationConfigurer<?> configurer) {
         var testConfigurer = new TestApplicationConfigurer(configurer);
         var configuration = testConfigurer.build();
-        return new AxonTestFixture(configuration);
+        return with(configuration);
     }
 
     public static AxonTestFixture with(TestApplicationConfigurer configurer) {
         var configuration = configurer.build();
+        return with(configuration);
+    }
+
+    public static AxonTestFixture with(NewConfiguration configuration) {
         return new AxonTestFixture(configuration);
     }
 
-    public AxonTestFixture(NewConfiguration configuration) {
-        this.configuration = configuration;
-        this.commandBus = (RecordingCommandBus) configuration.getComponent(CommandBus.class);
-        this.eventSink = (RecordingEventSink) configuration.getComponent(EventSink.class);
-        this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
-        this.givenUnitOfWork = new AsyncUnitOfWork();
-    }
-
-    public AxonTestPhase.Given given(Consumer<AxonTestPhase.Given> givenConsumer) {
-        givenConsumer.accept(this);
-        return this;
-    }
-
     public AxonTestPhase.Given given() {
-        return this;
+        var commandBus = (RecordingCommandBus) configuration.getComponent(CommandBus.class);
+        var eventSink = (RecordingEventSink) configuration.getComponent(EventSink.class);
+        var messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
+        return new Given(commandBus, eventSink, messageTypeResolver);
     }
 
-    @Override
-    public AxonTestPhase.Given noPriorActivity() {
-        return this;
+    public AxonTestPhase.Given given(Consumer<AxonTestPhase.Given> onGiven) {
+        var given = given();
+        onGiven.accept(given);
+        return given;
     }
 
-    @Override
-    public AxonTestPhase.Given event(Object payload, MetaData metaData) {
-        var messageType = messageTypeResolver.resolve(payload);
-        var eventMessage = new GenericEventMessage<>(
-                messageType,
-                payload,
-                metaData
-        );
-        return message(eventMessage);
-    }
+    static class Given implements AxonTestPhase.Given {
 
-    @Override
-    public AxonTestPhase.Given message(EventMessage<?>... events) {
-        givenUnitOfWork
-                .runOnInvocation(processingContext -> eventSink.publish(processingContext, TEST_CONTEXT, events))
-                .runOnAfterCommit(processingContext -> eventSink.reset());
-        return this;
-    }
+        private final RecordingCommandBus commandBus;
+        private final RecordingEventSink eventSink;
+        private final MessageTypeResolver messageTypeResolver;
 
-    @Override
-    public AxonTestPhase.When when() {
-        if (!givenUnitOfWork.isCompleted()) {
-            awaitCompletion(givenUnitOfWork.execute());
+        private final AsyncUnitOfWork givenUnitOfWork;
+
+        Given(
+                RecordingCommandBus commandBus,
+                RecordingEventSink eventSink,
+                MessageTypeResolver messageTypeResolver
+        ) {
+            this.commandBus = commandBus;
+            this.eventSink = eventSink;
+            this.messageTypeResolver = messageTypeResolver;
+            this.givenUnitOfWork = new AsyncUnitOfWork();
         }
-        return new When(messageTypeResolver, commandBus, eventSink);
+
+        @Override
+        public AxonTestPhase.Given noPriorActivity() {
+            return this;
+        }
+
+        @Override
+        public AxonTestPhase.Given event(Object payload, MetaData metaData) {
+            var messageType = messageTypeResolver.resolve(payload);
+            var eventMessage = new GenericEventMessage<>(
+                    messageType,
+                    payload,
+                    metaData
+            );
+            return events(eventMessage);
+        }
+
+        @Override
+        public AxonTestPhase.Given events(EventMessage<?>... events) {
+            givenUnitOfWork
+                    .runOnInvocation(processingContext -> eventSink.publish(processingContext, TEST_CONTEXT, events))
+                    .runOnAfterCommit(processingContext -> eventSink.reset());
+            return this;
+        }
+
+        @Override
+        public AxonTestPhase.When when() {
+            if (!givenUnitOfWork.isCompleted()) {
+                awaitCompletion(givenUnitOfWork.execute());
+            }
+            return new When(messageTypeResolver, commandBus, eventSink);
+        }
+
+        @Override
+        public AxonTestPhase.When when(Consumer<AxonTestPhase.When> onWhen) {
+            var when = when();
+            onWhen.accept(when);
+            return when;
+        }
+
+        private void awaitCompletion(CompletableFuture<?> completion) {
+            completion.join();
+        }
     }
 
-    @Override
-    public AxonTestPhase.When when(Consumer<AxonTestPhase.When> whenConsumer) {
-        var when = when();
-        whenConsumer.accept(when);
-        return when;
-    }
-
-    private void awaitCompletion(CompletableFuture<?> completion) {
-        completion.join();
-    }
 
     static class When implements AxonTestPhase.When {
 
@@ -151,8 +168,11 @@ public class AxonTestFixture implements AxonTestPhase.Given {
         private Throwable actualException;
         private Message<?> actualReturnValue;
 
-        public When(MessageTypeResolver messageTypeResolver, RecordingCommandBus commandBus,
-                    RecordingEventSink eventSink) {
+        public When(
+                MessageTypeResolver messageTypeResolver,
+                RecordingCommandBus commandBus,
+                RecordingEventSink eventSink
+        ) {
             this.messageTypeResolver = messageTypeResolver;
             this.commandBus = commandBus;
             this.eventSink = eventSink;
@@ -177,9 +197,9 @@ public class AxonTestFixture implements AxonTestPhase.Given {
         }
 
         @Override
-        public AxonTestPhase.Then then(Consumer<AxonTestPhase.Then> thenConsumer) {
+        public AxonTestPhase.Then then(Consumer<AxonTestPhase.Then> onThen) {
             var then = then();
-            thenConsumer.accept(then);
+            onThen.accept(then);
             return then;
         }
 

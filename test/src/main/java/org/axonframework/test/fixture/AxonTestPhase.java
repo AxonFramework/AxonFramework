@@ -42,11 +42,11 @@ public interface AxonTestPhase {
 
         Given event(Object payload, MetaData metaData);
 
-        Given message(EventMessage<?>... events);
+        Given events(EventMessage<?>... events);
 
         When when();
 
-        When when(Consumer<When> whenConsumer);
+        When when(Consumer<When> onWhen);
     }
 
     interface When {
@@ -59,7 +59,7 @@ public interface AxonTestPhase {
 
         Then then();
 
-        Then then(Consumer<Then> thenConsumer);
+        Then then(Consumer<Then> onThen);
     }
 
     interface Then {
