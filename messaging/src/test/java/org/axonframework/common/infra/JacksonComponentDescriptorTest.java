@@ -37,7 +37,7 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
     }
 
     @Override
-    protected void assertDescribeNullString(String result) {
+    void assertDescribeNullString(String result) {
         assertJsonMatches(result, """
                 {
                   "nullString" : null
@@ -46,7 +46,7 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
     }
 
     @Override
-    protected void assertDescribeNullLong(String result) {
+    void assertDescribeNullLong(String result) {
         assertJsonMatches(result, """
                 {
                   "nullLong" : null
@@ -55,7 +55,7 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
     }
 
     @Override
-    protected void assertDescribeNullBoolean(String result) {
+    void assertDescribeNullBoolean(String result) {
         assertJsonMatches(result, """
                 {
                   "nullBoolean" : null
@@ -64,7 +64,7 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
     }
 
     @Override
-    protected void assertDescribeNullObject(String result) {
+    void assertDescribeNullObject(String result) {
         assertJsonMatches(result, """
                 {
                   "nullObject" : null
@@ -73,7 +73,7 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
     }
 
     @Override
-    protected void assertDescribeNullMap(String result) {
+    void assertDescribeNullMap(String result) {
         assertJsonMatches(result, """
                 {
                   "nullMap" : null
@@ -82,7 +82,7 @@ class JacksonComponentDescriptorTest extends ComponentDescriptorTestSuite {
     }
 
     @Override
-    protected void assertDescribeNullList(String result) {
+    void assertDescribeNullList(String result) {
         assertJsonMatches(result, """
                 {
                   "nullList" : null

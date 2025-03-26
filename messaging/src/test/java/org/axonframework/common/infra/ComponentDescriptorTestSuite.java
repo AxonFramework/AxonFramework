@@ -25,7 +25,14 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-abstract class ComponentDescriptorTestSuite {
+/**
+ * Test suite validating the common behavior of the {@link ComponentDescriptor}. While adding a new implementation you
+ * should implement assertions with expected output for all the test cases.
+ *
+ * @author Mateusz Nowak
+ * @since 5.0.0
+ */
+public abstract class ComponentDescriptorTestSuite {
 
     protected ComponentDescriptor testSubject;
 
@@ -118,17 +125,17 @@ abstract class ComponentDescriptorTestSuite {
         }
     }
 
-    protected abstract void assertDescribeNullString(String result);
+    abstract void assertDescribeNullString(String result);
 
-    protected abstract void assertDescribeNullLong(String result);
+    abstract void assertDescribeNullLong(String result);
 
-    protected abstract void assertDescribeNullBoolean(String result);
+    abstract void assertDescribeNullBoolean(String result);
 
-    protected abstract void assertDescribeNullObject(String result);
+    abstract void assertDescribeNullObject(String result);
 
-    protected abstract void assertDescribeNullMap(String result);
+    abstract void assertDescribeNullMap(String result);
 
-    protected abstract void assertDescribeNullList(String result);
+    abstract void assertDescribeNullList(String result);
 
     @Nested
     class PrimitivesTests {

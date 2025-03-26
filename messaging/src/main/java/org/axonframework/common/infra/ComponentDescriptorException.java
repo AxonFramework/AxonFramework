@@ -30,7 +30,7 @@ public class ComponentDescriptorException extends AxonNonTransientException {
     /**
      * Initializes the exception using the given {@code message}.
      *
-     * @param message The message describing the exception
+     * @param message The message describing the exception.
      */
     public ComponentDescriptorException(String message) {
         super(message);
@@ -39,8 +39,8 @@ public class ComponentDescriptorException extends AxonNonTransientException {
     /**
      * Initializes the exception using the given {@code message} and {@code cause}.
      *
-     * @param message The message describing the exception
-     * @param cause   The underlying cause of the exception
+     * @param message The message describing the exception.
+     * @param cause   The underlying cause of the exception.
      */
     public ComponentDescriptorException(String message, Throwable cause) {
         super(message, cause);

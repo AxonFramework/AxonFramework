@@ -97,7 +97,7 @@ public class JacksonComponentDescriptor implements ComponentDescriptor {
     }
 
     @Override
-    public void describeProperty(@Nonnull String name, @Nonnull Object object) {
+    public void describeProperty(@Nonnull String name, Object object) {
         var json = describeObject(object);
         rootNode.set(name, json);
     }

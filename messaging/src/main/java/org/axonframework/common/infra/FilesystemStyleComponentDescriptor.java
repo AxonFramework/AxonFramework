@@ -53,7 +53,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     private static final String PATH_SEPARATOR = "/";
 
     private final Map<Object, String> componentPaths;
-    private final Map<String, Object> properties;
+    private final Map<String, Object> processedComponents;
     private final String currentPath;
 
     /**
@@ -72,7 +72,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     private FilesystemStyleComponentDescriptor(Map<Object, String> componentPaths, String currentPath) {
         this.componentPaths = componentPaths;
         this.currentPath = currentPath;
-        this.properties = new LinkedHashMap<>();
+        this.processedComponents = new LinkedHashMap<>();
     }
 
     @Override
@@ -80,22 +80,21 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
         if (object instanceof DescribableComponent component) {
             describeComponent(name, component);
         } else {
-            properties.put(name, object);
+            processedComponents.put(name, object);
         }
     }
 
     private void describeComponent(String name, DescribableComponent component) {
-        var componentPath = currentPathChild(name);
-
         boolean componentSeenAlready = componentPaths.containsKey(component);
         if (componentSeenAlready) {
             var existingPath = componentPaths.get(component);
-            properties.put(name, new SymbolicLink(existingPath));
+            processedComponents.put(name, new SymbolicLink(existingPath));
             return;
         }
 
+        var componentPath = currentPathChild(name);
         componentPaths.put(component, componentPath);
-        properties.put(name, componentDescriptor(component, componentPath));
+        processedComponents.put(name, componentDescriptor(component, componentPath));
     }
 
     private String currentPathChild(String name) {
@@ -107,7 +106,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     @Override
     public void describeProperty(@Nonnull String name, Collection<?> collection) {
         if (collection == null) {
-            properties.put(name, null);
+            processedComponents.put(name, null);
             return;
         }
         var items = new ArrayList<>();
@@ -121,7 +120,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
             index++;
         }
 
-        properties.put(name, items);
+        processedComponents.put(name, items);
     }
 
     private Object describeComponentInCollection(
@@ -129,14 +128,13 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
             int index,
             DescribableComponent component
     ) {
-        var itemName = name + "[" + index + "]";
-        var itemPath = currentPathChild(itemName);
-
         boolean componentSeenAlready = componentPaths.containsKey(component);
         if (componentSeenAlready) {
             var existingPath = componentPaths.get(component);
             return new SymbolicLink(existingPath);
         } else {
+            var itemName = name + "[" + index + "]";
+            var itemPath = currentPathChild(itemName);
             componentPaths.put(component, itemPath);
             return componentDescriptor(component, itemPath);
         }
@@ -145,7 +143,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
     @Override
     public void describeProperty(@Nonnull String name, Map<?, ?> map) {
         if (map == null) {
-            properties.put(name, null);
+            processedComponents.put(name, null);
             return;
         }
         var mappedItems = new LinkedHashMap<>();
@@ -157,7 +155,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
                     : value;
             mappedItems.put(key, property);
         }
-        properties.put(name, mappedItems);
+        processedComponents.put(name, mappedItems);
     }
 
     private Object describeComponentInMap(
@@ -193,23 +191,23 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
 
     @Override
     public void describeProperty(@Nonnull String name, String value) {
-        properties.put(name, value);
+        processedComponents.put(name, value);
     }
 
     @Override
     public void describeProperty(@Nonnull String name, Long value) {
-        properties.put(name, value);
+        processedComponents.put(name, value);
     }
 
     @Override
     public void describeProperty(@Nonnull String name, Boolean value) {
-        properties.put(name, value);
+        processedComponents.put(name, value);
     }
 
     @Override
     public String describe() {
         try {
-            return new TreeRenderer().render(properties);
+            return new TreeRenderer().render(processedComponents);
         } catch (Exception e) {
             throw new ComponentDescriptorException(
                     "Error generating Filesystem style description",
@@ -287,7 +285,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
         ) {
             result.append(context.indent).append(isLastInCollection ? CORNER : TEE).append(name).append("/\n");
             var childContext = context.indented(name, isLastInCollection);
-            render(descriptor.properties, childContext);
+            render(descriptor.processedComponents, childContext);
         }
 
         private void renderList(
@@ -319,7 +317,7 @@ public class FilesystemStyleComponentDescriptor implements ComponentDescriptor {
             if (item instanceof FilesystemStyleComponentDescriptor itemDescriptor) {
                 result.append("/\n");
                 var itemContext = listContext.indented(key, isLastInCollection);
-                render(itemDescriptor.properties, itemContext);
+                render(itemDescriptor.processedComponents, itemContext);
             } else if (item instanceof SymbolicLink link) {
                 result.append(link).append("\n");
             } else {

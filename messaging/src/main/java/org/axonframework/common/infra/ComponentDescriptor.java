@@ -37,6 +37,7 @@ import java.util.Map;
  * @author Allard Buijze
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
+ * @author Mateusz Nowak
  * @since 5.0.0
  */
 public interface ComponentDescriptor {

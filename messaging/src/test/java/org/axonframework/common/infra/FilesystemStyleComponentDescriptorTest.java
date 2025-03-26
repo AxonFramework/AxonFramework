@@ -32,7 +32,7 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
     }
 
     @Override
-    protected void assertDescribeNullString(String result) {
+    void assertDescribeNullString(String result) {
         var expected = """
                 /
                 └── nullString: null
@@ -41,7 +41,7 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
     }
 
     @Override
-    protected void assertDescribeNullLong(String result) {
+    void assertDescribeNullLong(String result) {
         var expected = """
                 /
                 └── nullLong: null
@@ -50,7 +50,7 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
     }
 
     @Override
-    protected void assertDescribeNullBoolean(String result) {
+    void assertDescribeNullBoolean(String result) {
         var expected = """
                 /
                 └── nullBoolean: null
@@ -59,7 +59,7 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
     }
 
     @Override
-    protected void assertDescribeNullObject(String result) {
+    void assertDescribeNullObject(String result) {
         var expected = """
                 /
                 └── nullObject: null
@@ -68,7 +68,7 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
     }
 
     @Override
-    protected void assertDescribeNullMap(String result) {
+    void assertDescribeNullMap(String result) {
         var expected = """
                 /
                 └── nullMap: null
@@ -77,7 +77,7 @@ class FilesystemStyleComponentDescriptorTest extends ComponentDescriptorTestSuit
     }
 
     @Override
-    protected void assertDescribeNullList(String result) {
+    void assertDescribeNullList(String result) {
         var expected = """
                 /
                 └── nullList: null
