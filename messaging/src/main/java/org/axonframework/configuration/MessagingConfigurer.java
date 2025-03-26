@@ -29,7 +29,7 @@ import java.util.function.Consumer;
  * The messaging {@link NewConfigurer} of Axon Framework's configuration API.
  * <p>
  * Provides register operations for {@link #registerCommandBus(ComponentFactory) command},
- * {@link #registerEventSink(ComponentFactory) evnet}, and {@link #registerQueryBus(ComponentFactory) query}
+ * {@link #registerEventSink(ComponentFactory) event}, and {@link #registerQueryBus(ComponentFactory) query}
  * infrastructure components.
  * <p>
  * This configurer registers the following defaults:

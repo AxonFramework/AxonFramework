@@ -46,7 +46,9 @@ public class ModellingConfigurer
      * <p>
      * Besides the specific operations, the {@code ModellingConfigurer} allows for configuring generic
      * {@link Component components}, {@link ComponentDecorator component decorators},
-     * {@link ConfigurationEnhancer enhancers}, and {@link Module modules} for a message-driven application.
+     * {@link ConfigurationEnhancer enhancers}, and {@link Module modules} for an application using entity modelling.
+     * <p>
+     * Note that this configurer uses a {@link MessagingConfigurer} to support all this in a message-driven style.
      *
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
