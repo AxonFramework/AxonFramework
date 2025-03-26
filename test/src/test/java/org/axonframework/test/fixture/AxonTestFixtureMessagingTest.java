@@ -34,8 +34,6 @@ import java.util.concurrent.CompletableFuture;
 
 class AxonTestFixtureMessagingTest {
 
-    private static final String TEST_CONTEXT = "TEST_CONTEXT";
-
     @Test
     void givenNoPriorActivityWhenCommandThenExpectEvents() {
         var configurer = MessagingConfigurer.create();
@@ -48,7 +46,6 @@ class AxonTestFixtureMessagingTest {
                             ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
                             var eventSink = c.getComponent(EventSink.class);
                             eventSink.publish(context,
-                                              TEST_CONTEXT,
                                               studentNameChangedEventMessage(payload.id(), payload.name(), 1));
                             return MessageStream.empty().cast();
                         })
@@ -67,7 +64,7 @@ class AxonTestFixtureMessagingTest {
     void givenEventsWhenCommandThenExpectEvents() {
         var configurer = MessagingConfigurer.create();
         var studentEvents = new ArrayList<>();
-        configurer.registerEventSink(c -> (context, events) -> {
+        configurer.registerEventSink(c -> (events) -> {
             studentEvents.addAll(events);
             return CompletableFuture.completedFuture(null);
         });
@@ -80,7 +77,6 @@ class AxonTestFixtureMessagingTest {
                                     var eventSink = c.getComponent(EventSink.class);
                                     var changeNo = studentEvents.size() + 1;
                                     eventSink.publish(context,
-                                                      TEST_CONTEXT,
                                                       studentNameChangedEventMessage(payload.id(), payload.name(),
                                                                                      changeNo));
                                     return MessageStream.empty().cast();

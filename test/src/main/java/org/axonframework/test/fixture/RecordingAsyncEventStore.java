@@ -43,8 +43,8 @@ public class RecordingAsyncEventStore implements AsyncEventStore {
     }
 
     @Override
-    public EventStoreTransaction transaction(@NotNull ProcessingContext processingContext, @NotNull String context) {
-        var tx = delegate.transaction(processingContext, context);
+    public EventStoreTransaction transaction(@NotNull ProcessingContext processingContext) {
+        var tx = delegate.transaction(processingContext);
         tx.onAppend(recorded::add);
         return tx;
     }
@@ -55,8 +55,8 @@ public class RecordingAsyncEventStore implements AsyncEventStore {
     }
 
     @Override
-    public CompletableFuture<Void> publish(@NotNull String context, @NotNull List<EventMessage<?>> events) {
-        return delegate.publish(context, events);
+    public CompletableFuture<Void> publish(@NotNull List<EventMessage<?>> events) {
+        return delegate.publish(events);
     }
 
     public List<EventMessage<?>> recorded() {

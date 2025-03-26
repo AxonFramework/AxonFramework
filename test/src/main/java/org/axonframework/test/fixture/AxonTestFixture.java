@@ -183,7 +183,6 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         @Override
         public AxonTestPhase.Given events(EventMessage<?>... messages) {
             inUnitOfWorkRunOnInvocation(processingContext -> eventSink.publish(processingContext,
-                                                                               TEST_CONTEXT,
                                                                                messages));
             return this;
         }

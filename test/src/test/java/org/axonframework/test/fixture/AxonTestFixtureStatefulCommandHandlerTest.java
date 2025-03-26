@@ -122,8 +122,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                                                .eventsOfAnyType()
                                                .withTags("Student", id),
                             new AnnotationBasedEventStateApplier<>(Student.class),
-                            Student::new,
-                            TEST_CONTEXT
+                            Student::new
                     );
                     return SimpleStateManager.builder("testfixture")
                                              .register(repository)
@@ -132,7 +131,6 @@ class AxonTestFixtureStatefulCommandHandlerTest {
 
         configurer.registerComponent(AsyncEventStore.class,
                                      c -> new SimpleEventStore(new AsyncInMemoryEventStorageEngine(),
-                                                               TEST_CONTEXT,
                                                                new AnnotationBasedTagResolver()))
                   .registerComponent(EventSink.class, c -> c.getComponent(AsyncEventStore.class));
 
@@ -149,7 +147,6 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                                     var eventSink = c.getComponent(EventSink.class);
                                     eventSink.publish(
                                             ctx,
-                                            TEST_CONTEXT,
                                             studentNameChangedEventMessage(payload.id(),
                                                                            payload.name(),
                                                                            student.getChanges() + 1)

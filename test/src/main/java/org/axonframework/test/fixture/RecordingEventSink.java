@@ -39,16 +39,15 @@ public class RecordingEventSink implements EventSink {
     @Override
     public void publish(
             @NotNull ProcessingContext processingContext,
-            @NotNull String context,
             @NotNull List<EventMessage<?>> events
     ) {
         recorded.addAll(events);
-        delegate.publish(processingContext, context, events);
+        delegate.publish(processingContext, events);
     }
 
     @Override
-    public CompletableFuture<Void> publish(@NotNull String context, @NotNull List<EventMessage<?>> events) {
-        return delegate.publish(context, events)
+    public CompletableFuture<Void> publish(@NotNull List<EventMessage<?>> events) {
+        return delegate.publish(events)
                        .thenRun(() -> recorded.addAll(events));
     }
 
