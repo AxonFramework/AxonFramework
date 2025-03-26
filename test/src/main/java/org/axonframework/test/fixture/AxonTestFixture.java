@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static org.axonframework.test.matchers.Matchers.deepEquals;
@@ -98,6 +99,11 @@ public class AxonTestFixture implements AxonTestPhase.Given, AxonTestPhase.When,
         this.whenUnitOfWork = new AsyncUnitOfWork();
     }
 
+    public AxonTestPhase.Given given(Consumer<AxonTestPhase.Given> givenConsumer) {
+        givenConsumer.accept(this);
+        return this;
+    }
+
     public AxonTestPhase.Given given() {
         return this;
     }
@@ -115,15 +121,11 @@ public class AxonTestFixture implements AxonTestPhase.Given, AxonTestPhase.When,
                 payload,
                 metaData
         );
-        return givenEvents(eventMessage);
+        return message(eventMessage);
     }
 
     @Override
-    public AxonTestPhase.When when() {
-        return this;
-    }
-
-    public AxonTestPhase.Given givenEvents(EventMessage<?>... events) {
+    public AxonTestPhase.Given message(EventMessage<?>... events) {
         givenUnitOfWork
                 .runOnInvocation(processingContext -> eventSink.publish(processingContext, TEST_CONTEXT, events))
                 .runOnAfterCommit(processingContext -> eventSink.reset());
@@ -131,10 +133,21 @@ public class AxonTestFixture implements AxonTestPhase.Given, AxonTestPhase.When,
     }
 
     @Override
-    public AxonTestPhase.When command(Object payload, Map<String, ?> metaData) {
+    public AxonTestPhase.When when() {
         if (!givenUnitOfWork.isCompleted()) {
             awaitCompletion(givenUnitOfWork.execute());
         }
+        return this;
+    }
+
+    @Override
+    public AxonTestPhase.When when(Consumer<AxonTestPhase.When> whenConsumer) {
+        whenConsumer.accept(this);
+        return when();
+    }
+
+    @Override
+    public AxonTestPhase.When command(Object payload, Map<String, ?> metaData) {
         var messageType = messageTypeResolver.resolve(payload);
         var message = new GenericCommandMessage<>(messageType, payload, MetaData.from(metaData));
         whenUnitOfWork.onInvocation(
@@ -152,6 +165,12 @@ public class AxonTestFixture implements AxonTestPhase.Given, AxonTestPhase.When,
 
     @Override
     public AxonTestPhase.Then then() {
+        return this;
+    }
+
+    @Override
+    public AxonTestPhase.Then then(Consumer<AxonTestPhase.Then> thenConsumer) {
+        thenConsumer.accept(this);
         return this;
     }
 

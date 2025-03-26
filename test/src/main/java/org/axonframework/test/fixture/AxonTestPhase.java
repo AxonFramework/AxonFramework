@@ -22,6 +22,7 @@ import org.hamcrest.Matcher;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 
@@ -41,7 +42,11 @@ public interface AxonTestPhase {
 
         Given event(Object payload, MetaData metaData);
 
+        Given message(EventMessage<?>... events);
+
         When when();
+
+        When when(Consumer<When> whenConsumer);
     }
 
     interface When {
@@ -53,6 +58,8 @@ public interface AxonTestPhase {
         }
 
         Then then();
+
+        Then then(Consumer<Then> thenConsumer);
     }
 
     interface Then {
