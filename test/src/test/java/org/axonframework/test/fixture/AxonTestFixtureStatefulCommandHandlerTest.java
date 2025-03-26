@@ -50,6 +50,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
         var configurer = MessagingConfigurer.create();
         registerSampleStatefulCommandHandler(configurer);
 
+        // todo: add customization!
         var fixture = AxonTestFixture.with(configurer);
 
         var studentNameChanged = studentNameChangedEventMessage("my-studentId-1", "name-1", 1);
