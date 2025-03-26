@@ -22,6 +22,7 @@ import org.axonframework.messaging.MetaData;
 import org.hamcrest.Matcher;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -55,6 +56,8 @@ public interface AxonTestPhase {
         Given event(Object payload, MetaData metaData);
 
         Given events(EventMessage<?>... messages);
+
+        Given events(List<?>... events);
 
         default Given command(Object payload) {
             return command(payload, MetaData.emptyInstance());
@@ -109,5 +112,18 @@ public interface AxonTestPhase {
         }
 
         Then exception(Matcher<?> matcher);
+
+//        And and(); // or and can return just Given()?
     }
+
+//    interface And {
+//
+//        default When when(Consumer<AxonTestPhase.When> onWhen) {
+//            var when = when();
+//            onWhen.accept(when);
+//            return when;
+//        }
+//
+//        When when();
+//    }
 }
