@@ -28,7 +28,7 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 
 import static java.util.Objects.requireNonNull;
-import static org.axonframework.common.ReflectionUtils.ensureAccessible;
+import static org.axonframework.common.ReflectionUtils.constructWithOptionalArguments;
 
 /**
  * {@link ParameterResolverFactory} implementation that provides {@link ParameterResolver ParameterResolvers} for
@@ -97,16 +97,6 @@ public class InjectEntityParameterResolverFactory implements ParameterResolverFa
         if (annotation.idProperty() != null && !annotation.idProperty().isEmpty()) {
             return new PropertyBasedEntityIdResolver(annotation.idProperty());
         }
-        return constructEntityIdResolver(annotation);
-    }
-
-    private static EntityIdResolver<?> constructEntityIdResolver(InjectEntity annotation) {
-        try {
-            var constructor = annotation.idResolver().getDeclaredConstructor();
-            ensureAccessible(constructor);
-            return constructor.newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return constructWithOptionalArguments(annotation.idResolver());
     }
 }
