@@ -82,11 +82,15 @@ public interface AxonTestPhase {
 
     interface When {
 
-        When command(Object payload, Map<String, ?> metaData);
-
         default When command(Object payload) {
             return command(payload, new HashMap<>());
         }
+
+        default When command(Object payload, Map<String, ?> metaData) {
+            return command(payload, MetaData.from(metaData));
+        }
+
+        When command(Object payload, MetaData metaData);
 
         Then then();
 
@@ -99,9 +103,9 @@ public interface AxonTestPhase {
 
     interface Then {
 
-        Then events(EventMessage<?>... expectedEvents);
-
         Then events(Object... expectedEvents);
+
+        Then events(EventMessage<?>... expectedEvents);
 
         default Then noEvents() {
             return events();

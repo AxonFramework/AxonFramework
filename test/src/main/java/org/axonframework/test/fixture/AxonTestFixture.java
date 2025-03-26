@@ -260,9 +260,9 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
 
         @Override
-        public AxonTestPhase.When command(Object payload, Map<String, ?> metaData) {
+        public AxonTestPhase.When command(Object payload, MetaData metaData) {
             var messageType = messageTypeResolver.resolve(payload);
-            var message = new GenericCommandMessage<>(messageType, payload, MetaData.from(metaData));
+            var message = new GenericCommandMessage<>(messageType, payload, metaData);
             whenUnitOfWork.onInvocation(
                     processingContext -> commandBus.dispatch(message, processingContext)
                                                    .whenComplete((r, e) -> {
@@ -333,19 +333,6 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
 
         @Override
-        public AxonTestPhase.Then exception(Matcher<?> matcher) {
-            StringDescription description = new StringDescription();
-            matcher.describeTo(description);
-            if (actualException == null) {
-                reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
-            }
-            if (!matcher.matches(actualException)) {
-                reporter.reportWrongException(actualException, description);
-            }
-            return this;
-        }
-
-        @Override
         public AxonTestPhase.Then events(EventMessage<?>... expectedEvents) {
             this.events(Stream.of(expectedEvents).map(Message::getPayload).toArray());
 
@@ -358,6 +345,19 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                                             actualEvent.getMetaData())) {
                     reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
                 }
+            }
+            return this;
+        }
+
+        @Override
+        public AxonTestPhase.Then exception(Matcher<?> matcher) {
+            StringDescription description = new StringDescription();
+            matcher.describeTo(description);
+            if (actualException == null) {
+                reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
+            }
+            if (!matcher.matches(actualException)) {
+                reporter.reportWrongException(actualException, description);
             }
             return this;
         }
