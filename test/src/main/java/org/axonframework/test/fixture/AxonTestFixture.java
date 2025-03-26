@@ -18,6 +18,7 @@ package org.axonframework.test.fixture;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.NewConfiguration;
@@ -34,6 +35,7 @@ import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.matchers.MapEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
+import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
@@ -50,6 +52,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static org.axonframework.test.matchers.Matchers.deepEquals;
+import static org.hamcrest.CoreMatchers.*;
 
 /**
  * Fixture for testing Axon Framework application. The fixture can be configured to use your whole application
@@ -243,8 +246,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         private final AsyncUnitOfWork whenUnitOfWork;
         private final RecordingCommandBus commandBus;
         private final RecordingEventSink eventSink;
-        private Throwable actualException;
-        private Message<?> actualReturnValue;
+        private Message<?> lastCommandResult;
+        private Throwable lastCommandException;
 
         public When(
                 Customization customization,
@@ -267,9 +270,9 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                     processingContext -> commandBus.dispatch(message, processingContext)
                                                    .whenComplete((r, e) -> {
                                                        if (e == null) {
-                                                           actualReturnValue = r;
+                                                           lastCommandResult = r;
                                                        } else {
-                                                           actualException = e.getCause();
+                                                           lastCommandException = e.getCause();
                                                        }
                                                    })
             );
@@ -281,14 +284,14 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             if (!whenUnitOfWork.isCompleted()) {
                 awaitCompletion(whenUnitOfWork.execute());
             }
-            return new Then(customization, eventSink, actualReturnValue, actualException);
+            return new Then(customization, eventSink, lastCommandResult, lastCommandException);
         }
 
         private void awaitCompletion(CompletableFuture<?> completion) {
             try {
                 completion.join();
             } catch (Exception e) {
-                actualException = e;
+                lastCommandException = e;
             }
         }
     }
@@ -347,6 +350,46 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                 }
             }
             return this;
+        }
+
+        @Override
+        public AxonTestPhase.Then events(Matcher<? extends List<? super EventMessage<?>>> matcher) {
+            var publishedEvents = eventSink.recorded();
+            if (!matcher.matches(publishedEvents)) {
+                final Description expectation = new StringDescription();
+                matcher.describeTo(expectation);
+
+                final Description mismatch = new StringDescription();
+                matcher.describeMismatch(publishedEvents, mismatch);
+
+                reporter.reportWrongEvent(publishedEvents, expectation, mismatch, actualException);
+            }
+            return this;
+        }
+
+        @Override
+        public AxonTestPhase.Then success() {
+            return resultMessage(anything());
+        }
+
+        @Override
+        public AxonTestPhase.Then resultMessage(Matcher<? super CommandResultMessage<?>> matcher) {
+            if (matcher == null) {
+                return resultMessage(nullValue());
+            }
+            StringDescription expectedDescription = new StringDescription();
+            matcher.describeTo(expectedDescription);
+            if (actualException != null) {
+                reporter.reportUnexpectedException(actualException, expectedDescription);
+            } else if (!matcher.matches(actualReturnValue)) {
+                reporter.reportWrongResult(actualReturnValue, expectedDescription);
+            }
+            return this;
+        }
+
+        @Override
+        public AxonTestPhase.Then exception(Class<? extends Throwable> expectedException) {
+            return exception(instanceOf(expectedException));
         }
 
         @Override
