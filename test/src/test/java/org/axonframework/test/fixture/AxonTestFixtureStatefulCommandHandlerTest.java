@@ -54,9 +54,9 @@ class AxonTestFixtureStatefulCommandHandlerTest {
 
         var studentNameChanged = studentNameChangedEventMessage("my-studentId-1", "name-1", 1);
         var changeToTheSameName = new ChangeStudentNameCommand("my-studentId-1", "name-1");
-        fixture.givenEvents(studentNameChanged)
-               .when(changeToTheSameName)
-               .expectNoEvents();
+        fixture.given(given -> given.message(studentNameChanged))
+               .when(when -> when.command(changeToTheSameName))
+               .then(then -> then.noEvents());
     }
 
     @Test
@@ -68,9 +68,12 @@ class AxonTestFixtureStatefulCommandHandlerTest {
 
         var studentNameChanged = studentNameChangedEventMessage("my-studentId-1", "name-1", 1);
         var changeToTheAnotherName = new ChangeStudentNameCommand("my-studentId-1", "name-2");
-        fixture.givenEvents(studentNameChanged)
-               .when(changeToTheAnotherName)
-               .expectEvents(studentNameChangedEventMessage("my-studentId-1", "name-2", 2));
+        fixture.given()
+               .message(studentNameChanged)
+               .when()
+               .command(changeToTheAnotherName)
+               .then()
+               .events(studentNameChangedEventMessage("my-studentId-1", "name-2", 2));
     }
 
 
@@ -81,9 +84,12 @@ class AxonTestFixtureStatefulCommandHandlerTest {
 
         var fixture = AxonTestFixture.with(configurer);
 
-        fixture.noPriorActivity()
-               .when(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-               .expectEvents(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+        fixture.given()
+               .noPriorActivity()
+               .when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+               .then()
+               .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
     }
 
     private static void registerSampleStatefulCommandHandler(MessagingConfigurer configurer) {
