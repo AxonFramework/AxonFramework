@@ -16,6 +16,7 @@
 
 package org.axonframework.test.fixture;
 
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MetaData;
 import org.hamcrest.Matcher;
@@ -53,7 +54,19 @@ public interface AxonTestPhase {
 
         Given event(Object payload, MetaData metaData);
 
-        Given events(EventMessage<?>... events);
+        Given events(EventMessage<?>... messages);
+
+        default Given command(Object payload) {
+            return command(payload, MetaData.emptyInstance());
+        }
+
+        default Given command(Object payload, Map<String, ?> metaData) {
+            return command(payload, MetaData.from(metaData));
+        }
+
+        Given command(Object payload, MetaData metaData);
+
+        Given commands(CommandMessage<?>... messages);
 
         When when();
 
