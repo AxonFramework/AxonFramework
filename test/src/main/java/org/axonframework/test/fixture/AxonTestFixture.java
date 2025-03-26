@@ -35,6 +35,8 @@ import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.matchers.MapEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
+import org.axonframework.test.matchers.PayloadMatcher;
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
@@ -68,8 +70,6 @@ import static org.hamcrest.CoreMatchers.*;
 // todo: better name? CommandModelTestFixture?
 public class AxonTestFixture implements AxonTestPhase.Setup {
 
-    public static final String TEST_CONTEXT = "TEST_CONTEXT";
-
     private final NewConfiguration configuration;
     private final Customization customization;
     private final MessageTypeResolver messageTypeResolver;
@@ -95,14 +95,21 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         return with(configuration, customization);
     }
 
-    // todo: add with(c)
+    public static AxonTestPhase.Setup with(TestApplicationConfigurer configurer) {
+        var configuration = configurer.build();
+        return with(configuration, c -> c);
+    }
+
     public static AxonTestPhase.Setup with(TestApplicationConfigurer configurer,
                                            UnaryOperator<Customization> customization) {
         var configuration = configurer.build();
         return with(configuration, customization);
     }
 
-    // todo: add with(c)
+    public static AxonTestPhase.Setup with(NewConfiguration configuration) {
+        return new AxonTestFixture(configuration, c -> c);
+    }
+
     public static AxonTestPhase.Setup with(NewConfiguration configuration, UnaryOperator<Customization> customization) {
         return new AxonTestFixture(configuration, customization);
     }
@@ -422,6 +429,39 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                 reporter.reportUnexpectedException(actualException, expectedDescription);
             } else if (!matcher.matches(actualReturnValue)) {
                 reporter.reportWrongResult(actualReturnValue, expectedDescription);
+            }
+            return this;
+        }
+
+        @Override
+        public AxonTestPhase.Then resultMessagePayload(Object expectedPayload) {
+            StringDescription expectedDescription = new StringDescription();
+            StringDescription actualDescription = new StringDescription();
+            PayloadMatcher<CommandResultMessage<?>> expectedMatcher =
+                    new PayloadMatcher<>(CoreMatchers.equalTo(expectedPayload));
+            expectedMatcher.describeTo(expectedDescription);
+            if (actualException != null) {
+                reporter.reportUnexpectedException(actualException, expectedDescription);
+            } else if (!verifyPayloadEquality(expectedPayload, actualReturnValue.getPayload())) {
+                PayloadMatcher<CommandResultMessage<?>> actualMatcher =
+                        new PayloadMatcher<>(CoreMatchers.equalTo(actualReturnValue.getPayload()));
+                actualMatcher.describeTo(actualDescription);
+                reporter.reportWrongResult(actualDescription, expectedDescription);
+            }
+            return this;
+        }
+
+        @Override
+        public AxonTestPhase.Then resultMessagePayloadMatching(Matcher<?> matcher) {
+            if (matcher == null) {
+                return resultMessagePayloadMatching(nullValue());
+            }
+            StringDescription expectedDescription = new StringDescription();
+            matcher.describeTo(expectedDescription);
+            if (actualException != null) {
+                reporter.reportUnexpectedException(actualException, expectedDescription);
+            } else if (!matcher.matches(actualReturnValue.getPayload())) {
+                reporter.reportWrongResult(actualReturnValue.getPayload(), expectedDescription);
             }
             return this;
         }

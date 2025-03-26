@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.test.aggregate.ResultValidator;
 import org.hamcrest.Matcher;
 
 import java.util.HashMap;
@@ -124,6 +125,23 @@ public interface AxonTestPhase {
 
         Then resultMessage(Matcher<? super CommandResultMessage<?>> matcher);
 
+        /**
+         * Expect the command handler to return the given {@code expectedPayload} after execution. The actual and
+         * expected values are compared using their equals methods.
+         *
+         * @param expectedPayload The expected result message payload of the command execution
+         * @return the current Then, for fluent interfacing
+         */
+        Then resultMessagePayload(Object expectedPayload);
+
+        /**
+         * Expect the command handler to return a payload that matches the given {@code matcher} after execution.
+         *
+         * @param matcher The matcher to verify the actual return value against
+         * @return the current Then, for fluent interfacing
+         */
+        Then resultMessagePayloadMatching(Matcher<?> matcher);
+
         Then exception(Class<? extends Throwable> expectedException);
 
         Then exception(Matcher<?> matcher);
@@ -134,5 +152,4 @@ public interface AxonTestPhase {
 
         Setup and(); // Given - can we repeat / or just when()?
     }
-
 }
