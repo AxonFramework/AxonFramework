@@ -284,7 +284,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             if (!whenUnitOfWork.isCompleted()) {
                 awaitCompletion(whenUnitOfWork.execute());
             }
-            return new Then(customization, eventSink, lastCommandResult, lastCommandException);
+            return new Then(customization, , commandBus, eventSink, lastCommandResult, lastCommandException);
         }
 
         private void awaitCompletion(CompletableFuture<?> completion) {
@@ -296,22 +296,28 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
     }
 
-    static class Then implements AxonTestPhase.Then {
+    static class Then implements AxonTestPhase.Then, AxonTestPhase.And {
 
         private final Reporter reporter = new Reporter();
 
         private final Customization customization;
+        private final MessageTypeResolver messageTypeResolver;
+        private final RecordingCommandBus commandBus;
         private final RecordingEventSink eventSink;
         private final Message<?> actualReturnValue;
         private final Throwable actualException;
 
         public Then(
                 Customization customization,
+                MessageTypeResolver messageTypeResolver,
+                RecordingCommandBus commandBus,
                 RecordingEventSink eventSink,
                 Message<?> actualReturnValue,
                 Throwable actualException
         ) {
             this.customization = customization;
+            this.messageTypeResolver = messageTypeResolver;
+            this.commandBus = commandBus;
             this.eventSink = eventSink;
             this.actualException = actualException;
             this.actualReturnValue = actualReturnValue;
@@ -436,6 +442,11 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                                                  matcher.getAdditionalEntries());
             }
             return true;
+        }
+
+        @Override
+        public AxonTestPhase.Given and() {
+            return new Given(customization, commandBus, eventSink, messageTypeResolver);
         }
     }
 }
