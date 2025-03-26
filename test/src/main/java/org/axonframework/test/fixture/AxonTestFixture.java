@@ -23,6 +23,7 @@ import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
@@ -33,6 +34,7 @@ import org.axonframework.test.matchers.MapEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
+import org.junit.jupiter.params.shadow.com.univocity.parsers.common.record.Record;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,7 +59,7 @@ import static org.axonframework.test.matchers.Matchers.deepEquals;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class AxonTestFixture implements AxonTestPhase.Given, AxonTestPhase.When, AxonTestPhase.Then {
+public class AxonTestFixture implements AxonTestPhase.Given {
 
     public static final String TEST_CONTEXT = "TEST_CONTEXT";
 
@@ -67,17 +69,7 @@ public class AxonTestFixture implements AxonTestPhase.Given, AxonTestPhase.When,
     private final RecordingEventSink eventSink;
     private final MessageTypeResolver messageTypeResolver;
 
-    // given
     private final AsyncUnitOfWork givenUnitOfWork;
-
-    // when
-    private final AsyncUnitOfWork whenUnitOfWork;
-
-    // then
-    private final Reporter reporter = new Reporter();
-    private List<FieldFilter> fieldFilters = new ArrayList<>();
-    private Throwable actualException;
-    private Message<?> actualReturnValue;
 
     public static AxonTestFixture with(ApplicationConfigurer<?> configurer) {
         var testConfigurer = new TestApplicationConfigurer(configurer);
@@ -96,7 +88,6 @@ public class AxonTestFixture implements AxonTestPhase.Given, AxonTestPhase.When,
         this.eventSink = (RecordingEventSink) configuration.getComponent(EventSink.class);
         this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
         this.givenUnitOfWork = new AsyncUnitOfWork();
-        this.whenUnitOfWork = new AsyncUnitOfWork();
     }
 
     public AxonTestPhase.Given given(Consumer<AxonTestPhase.Given> givenConsumer) {
@@ -137,133 +128,178 @@ public class AxonTestFixture implements AxonTestPhase.Given, AxonTestPhase.When,
         if (!givenUnitOfWork.isCompleted()) {
             awaitCompletion(givenUnitOfWork.execute());
         }
-        return this;
+        return new When(messageTypeResolver, commandBus, eventSink);
     }
 
     @Override
     public AxonTestPhase.When when(Consumer<AxonTestPhase.When> whenConsumer) {
-        whenConsumer.accept(this);
-        return when();
-    }
-
-    @Override
-    public AxonTestPhase.When command(Object payload, Map<String, ?> metaData) {
-        var messageType = messageTypeResolver.resolve(payload);
-        var message = new GenericCommandMessage<>(messageType, payload, MetaData.from(metaData));
-        whenUnitOfWork.onInvocation(
-                processingContext -> commandBus.dispatch(message, processingContext)
-                                               .whenComplete((r, e) -> {
-                                                   if (e == null) {
-                                                       actualReturnValue = r;
-                                                   } else {
-                                                       actualException = e.getCause();
-                                                   }
-                                               })
-        );
-        return this;
-    }
-
-    @Override
-    public AxonTestPhase.Then then() {
-        return this;
-    }
-
-    @Override
-    public AxonTestPhase.Then then(Consumer<AxonTestPhase.Then> thenConsumer) {
-        thenConsumer.accept(this);
-        return this;
-    }
-
-    @Override
-    public AxonTestPhase.Then events(Object... expectedEvents) {
-        if (!whenUnitOfWork.isCompleted()) {
-            awaitCompletion(whenUnitOfWork.execute());
-        }
-        var publishedEvents = eventSink.recorded();
-
-        if (expectedEvents.length != publishedEvents.size()) {
-            reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
-        }
-
-        Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
-        for (Object expectedEvent : expectedEvents) {
-            EventMessage<?> actualEvent = iterator.next();
-            if (!verifyPayloadEquality(expectedEvent, actualEvent.getPayload())) {
-                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
-            }
-        }
-        return this;
-    }
-
-    @Override
-    public AxonTestPhase.Then exception(Matcher<?> matcher) {
-        if (!whenUnitOfWork.isCompleted()) {
-            awaitCompletion(whenUnitOfWork.execute());
-        }
-        StringDescription description = new StringDescription();
-        matcher.describeTo(description);
-        if (actualException == null) {
-            reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
-        }
-        if (!matcher.matches(actualException)) {
-            reporter.reportWrongException(actualException, description);
-        }
-        return this;
-    }
-
-    @Override
-    public AxonTestPhase.Then events(EventMessage<?>... expectedEvents) {
-        this.events(Stream.of(expectedEvents).map(Message::getPayload).toArray());
-
-        var publishedEvents = eventSink.recorded();
-        Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
-        for (EventMessage<?> expectedEvent : expectedEvents) {
-            EventMessage<?> actualEvent = iterator.next();
-            if (!verifyMetaDataEquality(expectedEvent.getPayloadType(),
-                                        expectedEvent.getMetaData(),
-                                        actualEvent.getMetaData())) {
-                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
-            }
-        }
-        return this;
-    }
-
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean verifyPayloadEquality(Object expectedPayload, Object actualPayload) {
-        if (Objects.equals(expectedPayload, actualPayload)) {
-            return true;
-        }
-        if (expectedPayload != null && actualPayload == null) {
-            return false;
-        }
-        if (expectedPayload == null) {
-            return false;
-        }
-        if (!expectedPayload.getClass().equals(actualPayload.getClass())) {
-            return false;
-        }
-        Matcher<Object> matcher = deepEquals(expectedPayload, new MatchAllFieldFilter(fieldFilters));
-        if (!matcher.matches(actualPayload)) {
-            reporter.reportDifferentPayloads(expectedPayload.getClass(), actualPayload, expectedPayload);
-        }
-        return true;
-    }
-
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean verifyMetaDataEquality(Class<?> eventType, Map<String, Object> expectedMetaData,
-                                           Map<String, Object> actualMetaData) {
-        MapEntryMatcher matcher = new MapEntryMatcher(expectedMetaData);
-        if (!matcher.matches(actualMetaData)) {
-            reporter.reportDifferentMetaData(eventType, matcher.getMissingEntries(), matcher.getAdditionalEntries());
-        }
-        return true;
+        var when = when();
+        whenConsumer.accept(when);
+        return when;
     }
 
     private void awaitCompletion(CompletableFuture<?> completion) {
-        try {
-            completion.join();
-        } catch (Exception e) {
-            actualException = e;
+        completion.join();
+    }
+
+    static class When implements AxonTestPhase.When {
+
+        private final MessageTypeResolver messageTypeResolver;
+        private final AsyncUnitOfWork whenUnitOfWork;
+        private final RecordingCommandBus commandBus;
+        private final RecordingEventSink eventSink;
+        private Throwable actualException;
+        private Message<?> actualReturnValue;
+
+        public When(MessageTypeResolver messageTypeResolver, RecordingCommandBus commandBus,
+                    RecordingEventSink eventSink) {
+            this.messageTypeResolver = messageTypeResolver;
+            this.commandBus = commandBus;
+            this.eventSink = eventSink;
+            this.whenUnitOfWork = new AsyncUnitOfWork();
+        }
+
+        @Override
+        public AxonTestPhase.When command(Object payload, Map<String, ?> metaData) {
+            var messageType = messageTypeResolver.resolve(payload);
+            var message = new GenericCommandMessage<>(messageType, payload, MetaData.from(metaData));
+            whenUnitOfWork.onInvocation(
+                    processingContext -> commandBus.dispatch(message, processingContext)
+                                                   .whenComplete((r, e) -> {
+                                                       if (e == null) {
+                                                           actualReturnValue = r;
+                                                       } else {
+                                                           actualException = e.getCause();
+                                                       }
+                                                   })
+            );
+            return this;
+        }
+
+        @Override
+        public AxonTestPhase.Then then(Consumer<AxonTestPhase.Then> thenConsumer) {
+            var then = then();
+            thenConsumer.accept(then);
+            return then;
+        }
+
+        @Override
+        public AxonTestPhase.Then then() {
+            if (!whenUnitOfWork.isCompleted()) {
+                awaitCompletion(whenUnitOfWork.execute());
+            }
+            return new Then(eventSink, actualReturnValue, actualException);
+        }
+
+        private void awaitCompletion(CompletableFuture<?> completion) {
+            try {
+                completion.join();
+            } catch (Exception e) {
+                actualException = e;
+            }
+        }
+    }
+
+    static class Then implements AxonTestPhase.Then {
+
+        private final Reporter reporter = new Reporter();
+
+        // todo: support field filters
+        private List<FieldFilter> fieldFilters = new ArrayList<>();
+
+        private final RecordingEventSink eventSink;
+        private final Message<?> actualReturnValue;
+        private final Throwable actualException;
+
+        public Then(
+                RecordingEventSink eventSink,
+                Message<?> actualReturnValue,
+                Throwable actualException
+        ) {
+            this.eventSink = eventSink;
+            this.actualException = actualException;
+            this.actualReturnValue = actualReturnValue;
+        }
+
+        @Override
+        public AxonTestPhase.Then events(Object... expectedEvents) {
+            var publishedEvents = eventSink.recorded();
+
+            if (expectedEvents.length != publishedEvents.size()) {
+                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
+            }
+
+            Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
+            for (Object expectedEvent : expectedEvents) {
+                EventMessage<?> actualEvent = iterator.next();
+                if (!verifyPayloadEquality(expectedEvent, actualEvent.getPayload())) {
+                    reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
+                }
+            }
+            return this;
+        }
+
+        @Override
+        public AxonTestPhase.Then exception(Matcher<?> matcher) {
+            StringDescription description = new StringDescription();
+            matcher.describeTo(description);
+            if (actualException == null) {
+                reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
+            }
+            if (!matcher.matches(actualException)) {
+                reporter.reportWrongException(actualException, description);
+            }
+            return this;
+        }
+
+        @Override
+        public AxonTestPhase.Then events(EventMessage<?>... expectedEvents) {
+            this.events(Stream.of(expectedEvents).map(Message::getPayload).toArray());
+
+            var publishedEvents = eventSink.recorded();
+            Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
+            for (EventMessage<?> expectedEvent : expectedEvents) {
+                EventMessage<?> actualEvent = iterator.next();
+                if (!verifyMetaDataEquality(expectedEvent.getPayloadType(),
+                                            expectedEvent.getMetaData(),
+                                            actualEvent.getMetaData())) {
+                    reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
+                }
+            }
+            return this;
+        }
+
+        @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+        private boolean verifyPayloadEquality(Object expectedPayload, Object actualPayload) {
+            if (Objects.equals(expectedPayload, actualPayload)) {
+                return true;
+            }
+            if (expectedPayload != null && actualPayload == null) {
+                return false;
+            }
+            if (expectedPayload == null) {
+                return false;
+            }
+            if (!expectedPayload.getClass().equals(actualPayload.getClass())) {
+                return false;
+            }
+            Matcher<Object> matcher = deepEquals(expectedPayload, new MatchAllFieldFilter(fieldFilters));
+            if (!matcher.matches(actualPayload)) {
+                reporter.reportDifferentPayloads(expectedPayload.getClass(), actualPayload, expectedPayload);
+            }
+            return true;
+        }
+
+        @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+        private boolean verifyMetaDataEquality(Class<?> eventType, Map<String, Object> expectedMetaData,
+                                               Map<String, Object> actualMetaData) {
+            MapEntryMatcher matcher = new MapEntryMatcher(expectedMetaData);
+            if (!matcher.matches(actualMetaData)) {
+                reporter.reportDifferentMetaData(eventType,
+                                                 matcher.getMissingEntries(),
+                                                 matcher.getAdditionalEntries());
+            }
+            return true;
         }
     }
 }
