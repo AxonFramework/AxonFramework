@@ -28,6 +28,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.test.aggregate.Reporter;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
@@ -43,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
@@ -73,8 +76,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
     }
 
     public static AxonTestPhase.Setup with(ApplicationConfigurer<?> configurer) {
-        var configuration = configurer.build();
-        return with(configuration, c -> c);
+        return with(configurer, c -> c);
     }
 
     public static AxonTestPhase.Setup with(ApplicationConfigurer<?> configurer,
@@ -125,8 +127,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         private final RecordingCommandBus commandBus;
         private final RecordingEventSink eventSink;
         private final MessageTypeResolver messageTypeResolver;
-
-        private final AsyncUnitOfWork givenUnitOfWork;
+        private final List<AsyncUnitOfWork> givenUnitsOfWork = new ArrayList<>();
 
         Given(
                 Customization customization,
@@ -138,7 +139,6 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             this.commandBus = commandBus;
             this.eventSink = eventSink;
             this.messageTypeResolver = messageTypeResolver;
-            this.givenUnitOfWork = new AsyncUnitOfWork();
         }
 
         @Override
@@ -159,10 +159,24 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
         @Override
         public AxonTestPhase.Given events(EventMessage<?>... messages) {
-            givenUnitOfWork
-                    .runOnInvocation(processingContext -> eventSink.publish(processingContext, TEST_CONTEXT, messages))
-                    .runOnAfterCommit(processingContext -> eventSink.reset());
+            inUnitOfWorkRunOnInvocation(processingContext -> eventSink.publish(processingContext,
+                                                                               TEST_CONTEXT,
+                                                                               messages));
             return this;
+        }
+
+        private AsyncUnitOfWork inUnitOfWorkRunOnInvocation(Consumer<ProcessingContext> action) {
+            var unitOfWork = new AsyncUnitOfWork();
+            unitOfWork.runOnInvocation(action);
+            givenUnitsOfWork.add(unitOfWork);
+            return unitOfWork;
+        }
+
+        private AsyncUnitOfWork inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+            var unitOfWork = new AsyncUnitOfWork();
+            unitOfWork.onInvocation(action);
+            givenUnitsOfWork.add(unitOfWork);
+            return unitOfWork;
         }
 
         @Override
@@ -178,21 +192,19 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
         @Override
         public AxonTestPhase.Given commands(CommandMessage<?>... messages) {
-            givenUnitOfWork
-                    .onInvocation(processingContext -> {
-                        var dispatchCommands = Arrays.stream(messages)
-                                                     .map(c -> commandBus.dispatch(c, processingContext))
-                                                     .toArray(CompletableFuture[]::new);
-                        return CompletableFuture.allOf(dispatchCommands);
-                    })
-                    .runOnAfterCommit(processingContext -> commandBus.reset());
+            for (var message : messages) {
+                inUnitOfWorkRunOnInvocation(processingContext -> commandBus.dispatch(message, processingContext));
+            }
             return this;
         }
 
         @Override
         public AxonTestPhase.When when() {
-            if (!givenUnitOfWork.isCompleted()) {
+            // todo: prevent double when!
+            for (var givenUnitOfWork : givenUnitsOfWork) {
+                //     if(!givenUnitOfWork.isCompleted()){
                 awaitCompletion(givenUnitOfWork.execute());
+                // }
             }
             return new When(customization, messageTypeResolver, commandBus, eventSink);
         }
@@ -221,8 +233,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         ) {
             this.customization = customization;
             this.messageTypeResolver = messageTypeResolver;
-            this.commandBus = commandBus;
-            this.eventSink = eventSink;
+            this.commandBus = commandBus.reset();
+            this.eventSink = eventSink.reset();
             this.whenUnitOfWork = new AsyncUnitOfWork();
         }
 
