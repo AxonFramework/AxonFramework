@@ -17,6 +17,7 @@
 package org.axonframework.test.fixture;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MetaData;
 import org.hamcrest.Matcher;
@@ -25,8 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-
-import static org.hamcrest.CoreMatchers.instanceOf;
 
 public interface AxonTestPhase {
 
@@ -107,16 +106,21 @@ public interface AxonTestPhase {
 
         Then events(EventMessage<?>... expectedEvents);
 
+        Then events(Matcher<? extends List<? super EventMessage<?>>> matcher);
+
         default Then noEvents() {
             return events();
         }
 
-        default Then exception(Class<? extends Throwable> expectedException) {
-            return exception(instanceOf(expectedException));
-        }
+        Then success();
+
+        Then resultMessage(Matcher<? super CommandResultMessage<?>> matcher);
+
+        Then exception(Class<? extends Throwable> expectedException);
 
         Then exception(Matcher<?> matcher);
 
+        // todo: add commands here - in case of event handler which dispatch commands it's useful to check if commands were dispatched
 //        And and(); // or and can return just Given()?
     }
 
