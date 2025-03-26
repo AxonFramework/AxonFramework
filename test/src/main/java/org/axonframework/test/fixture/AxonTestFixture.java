@@ -57,7 +57,7 @@ import static org.axonframework.test.matchers.Matchers.deepEquals;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class AxonTestFixture {
+public class AxonTestFixture implements AxonTestPhase.Setup {
 
     public static final String TEST_CONTEXT = "TEST_CONTEXT";
 
@@ -67,18 +67,18 @@ public class AxonTestFixture {
         this.configuration = configuration;
     }
 
-    public static AxonTestFixture with(ApplicationConfigurer<?> configurer) {
+    public static AxonTestPhase.Setup with(ApplicationConfigurer<?> configurer) {
         var testConfigurer = new TestApplicationConfigurer(configurer);
         var configuration = testConfigurer.build();
         return with(configuration);
     }
 
-    public static AxonTestFixture with(TestApplicationConfigurer configurer) {
+    public static AxonTestPhase.Setup with(TestApplicationConfigurer configurer) {
         var configuration = configurer.build();
         return with(configuration);
     }
 
-    public static AxonTestFixture with(NewConfiguration configuration) {
+    public static AxonTestPhase.Setup with(NewConfiguration configuration) {
         return new AxonTestFixture(configuration);
     }
 
@@ -87,12 +87,6 @@ public class AxonTestFixture {
         var eventSink = (RecordingEventSink) configuration.getComponent(EventSink.class);
         var messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
         return new Given(commandBus, eventSink, messageTypeResolver);
-    }
-
-    public AxonTestPhase.Given given(Consumer<AxonTestPhase.Given> onGiven) {
-        var given = given();
-        onGiven.accept(given);
-        return given;
     }
 
     static class Given implements AxonTestPhase.Given {
@@ -146,13 +140,6 @@ public class AxonTestFixture {
             return new When(messageTypeResolver, commandBus, eventSink);
         }
 
-        @Override
-        public AxonTestPhase.When when(Consumer<AxonTestPhase.When> onWhen) {
-            var when = when();
-            onWhen.accept(when);
-            return when;
-        }
-
         private void awaitCompletion(CompletableFuture<?> completion) {
             completion.join();
         }
@@ -194,13 +181,6 @@ public class AxonTestFixture {
                                                    })
             );
             return this;
-        }
-
-        @Override
-        public AxonTestPhase.Then then(Consumer<AxonTestPhase.Then> onThen) {
-            var then = then();
-            onThen.accept(then);
-            return then;
         }
 
         @Override
