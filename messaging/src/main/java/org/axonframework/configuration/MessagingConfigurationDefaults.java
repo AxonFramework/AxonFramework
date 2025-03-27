@@ -69,7 +69,7 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     @Override
-    public void enhance(@Nonnull NewConfigurer<?> configurer) {
+    public void enhance(@Nonnull ComponentRegistry configurer) {
         Objects.requireNonNull(configurer, "Cannot enhance a null Configurer.");
 
         registerWhenNotPresent(configurer, MessageTypeResolver.class,
@@ -92,7 +92,7 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                                MessagingConfigurationDefaults::defaultQueryUpdateEmitter);
     }
 
-    private <C> void registerWhenNotPresent(NewConfigurer<?> configurer,
+    private <C> void registerWhenNotPresent(ComponentRegistry configurer,
                                             Class<C> type,
                                             ComponentFactory<C> factory) {
         if (!configurer.hasComponent(type)) {

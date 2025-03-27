@@ -16,7 +16,6 @@
 
 package org.axonframework.configuration;
 
-import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -45,24 +44,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
-class MessagingConfigurerTest extends ConfigurerTestSuite<MessagingConfigurer> {
-
-    @Override
-    public MessagingConfigurer testSubject() {
-        return testSubject == null ? MessagingConfigurer.create() : testSubject;
-    }
-
-    @Override
-    public NewConfiguration build() {
-        return testSubject().build();
-    }
-
-    @SuppressWarnings("unchecked")
-    @Nullable
-    @Override
-    public Class<AxonApplication> delegateType() {
-        return AxonApplication.class;
-    }
+class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingConfigurer> {
 
     @Test
     void defaultComponents() {
@@ -146,11 +128,21 @@ class MessagingConfigurerTest extends ConfigurerTestSuite<MessagingConfigurer> {
 
     @Test
     void axonDelegatesTasks() {
+        TestComponent tc = new TestComponent();
         TestComponent result =
-                testSubject.axon(axon -> axon.registerComponent(TestComponent.class, c -> TEST_COMPONENT))
+                testSubject.componentRegistry(axon -> axon.registerComponent(TestComponent.class, c -> tc))
                            .build()
                            .getComponent(TestComponent.class);
 
-        assertEquals(TEST_COMPONENT, result);
+        assertEquals(tc, result);
+    }
+
+    @Override
+    public MessagingConfigurer createConfigurer() {
+        return MessagingConfigurer.create();
+    }
+
+    private static class TestComponent {
+
     }
 }

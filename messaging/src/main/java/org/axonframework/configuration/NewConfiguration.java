@@ -16,11 +16,11 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-
-import jakarta.annotation.Nonnull;
 
 /**
  * Interface providing access to all configured {@link Component components} in an Axon Framework application.
@@ -54,7 +54,7 @@ public interface NewConfiguration {
      * @param name The name of the component to retrieve.
      * @param <C>  The type of component.
      * @return The component registered for the given {@code type} and {@code name}.
-     * @throws NullPointerException Whenever there is no component present for the given {@code type} and {@code name}.
+     * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type} and {@code name}.
      */
     @Nonnull
     default <C> C getComponent(@Nonnull Class<C> type,
@@ -125,10 +125,22 @@ public interface NewConfiguration {
 
     /**
      * Returns all {@code Configurations} from the {@link Module Modules} that have been
-     * {@link NewConfigurer#registerModule(Module) registered} with this {@code Configuration}.
+     * {@link ComponentRegistry#registerModule(Module) registered} with this {@code Configuration}.
      *
      * @return The resulting {@code Configuration} from each
-     * {@link NewConfigurer#registerModule(Module) registered module} with this {@code Configuration}.
+     * {@link ComponentRegistry#registerModule(Module) registered module} with this {@code Configuration}.
      */
     List<NewConfiguration> getModuleConfigurations();
+
+    /**
+     * Returns the {@code Configuration} from the {@link Module Module} with the given {@code name}.
+     * <p>
+     * The module must have been {@link ComponentRegistry#registerModule(Module) registered} with this
+     * {@code Configuration} directly.
+     *
+     * @param name The name of the module to get the configuration for
+     * @return An Optional with the {@code Configuration} for given module or an empty optional if no module exists with
+     * that name {@link ComponentRegistry#registerModule(Module) registered module} with this {@code Configuration}.
+     */
+    Optional<NewConfiguration> getModuleConfiguration(String name);
 }

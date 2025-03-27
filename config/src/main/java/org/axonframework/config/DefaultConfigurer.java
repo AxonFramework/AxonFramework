@@ -31,7 +31,6 @@ import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.configuration.AxonApplication;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.DefaultDeadlineManagerSpanFactory;
@@ -149,7 +148,7 @@ import static org.axonframework.util.HandlerTypeResolver.*;
  *
  * @author Allard Buijze
  * @since 3.0
- * @deprecated In favor of using the {@link AxonApplication} with additional modules.
+ * @deprecated In favor of using the {@link org.axonframework.configuration.ApplicationConfigurer} with additional modules.
  */
 @Deprecated
 public class DefaultConfigurer implements Configurer {

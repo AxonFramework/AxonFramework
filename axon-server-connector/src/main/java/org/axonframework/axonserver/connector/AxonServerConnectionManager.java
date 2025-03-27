@@ -95,7 +95,7 @@ public class AxonServerConnectionManager implements Lifecycle, ConnectionManager
     }
 
     @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry<?> lifecycle) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
         lifecycle.onStart(Phase.INSTRUCTION_COMPONENTS, this::start);
         lifecycle.onShutdown(Phase.EXTERNAL_CONNECTIONS, this::shutdown);
     }

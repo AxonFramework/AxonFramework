@@ -38,5 +38,5 @@ public interface Lifecycle {
      * @see LifecycleRegistry#onStart(int, Runnable)
      * @see LifecycleRegistry#onStart(int, LifecycleHandler)
      */
-    void registerLifecycleHandlers(@Nonnull LifecycleRegistry<?> lifecycle);
+    void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle);
 }

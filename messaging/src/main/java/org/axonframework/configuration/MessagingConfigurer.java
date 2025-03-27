@@ -22,11 +22,10 @@ import org.axonframework.eventhandling.EventSink;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 /**
- * The messaging {@link NewConfigurer} of Axon Framework's configuration API.
+ * The messaging {@link ComponentRegistry} of Axon Framework's configuration API.
  * <p>
  * Provides register operations for {@link #registerCommandBus(ComponentFactory) command},
  * {@link #registerEventSink(ComponentFactory) evnet}, and {@link #registerQueryBus(ComponentFactory) query}
@@ -45,16 +44,39 @@ import java.util.function.Consumer;
  *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryUpdateEmitter} as the {@link QueryUpdateEmitter}</li>
  * </ul>
  * To replace or decorate any of these defaults, use their respective interfaces as the identifier. For example, to
- * adjust the {@code CommandBus}, invoke {@link #registerComponent(Class, ComponentFactory)} with
- * {@code CommandBus.class} to replace it.
+ * adjust the {@code CommandBus}, invoke {@link #componentRegistry(Consumer)} and
+ * {@link ComponentRegistry#registerComponent(Class, ComponentFactory)} with {@code CommandBus.class} to replace it.
+ * <p>
+ * <pre><code>
+ *     MessagingConfigurer.create()
+ *                        .componentRegistry(cr -> cr.registerEnhancer(CommandBus.class, (config, component) -> ...));
+ * </code></pre>
  *
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public class MessagingConfigurer
-        extends DelegatingConfigurer<MessagingConfigurer>
-        implements ApplicationConfigurer<MessagingConfigurer> {
+public class MessagingConfigurer implements ApplicationConfigurer {
+
+    private final ApplicationConfigurer axonApplication;
+
+    /**
+     * Constructs a {@code MessagingConfigurer} based on the given {@code delegate}.
+     *
+     * @param axonApplication The delegate {@code AxonApplication} the {@code MessagingConfigurer} is based on.
+     */
+    private MessagingConfigurer(@Nonnull ApplicationConfigurer axonApplication) {
+        this.axonApplication = axonApplication;
+    }
+
+    /**
+     * @param axonApplication the ApplicationConfigurer to enhance with configuration of Messaging components
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    public static MessagingConfigurer enhance(@Nonnull ApplicationConfigurer axonApplication) {
+        return new MessagingConfigurer(axonApplication)
+                .componentRegistry(cr -> cr.registerEnhancer(new MessagingConfigurationDefaults()));
+    }
 
     /**
      * Build a default {@code MessagingConfigurer} instance with several messaging defaults, as well as methods to
@@ -67,17 +89,7 @@ public class MessagingConfigurer
      * @return A {@code MessagingConfigurer} instance for further configuring.
      */
     public static MessagingConfigurer create() {
-        return new MessagingConfigurer(AxonApplication.create())
-                .registerEnhancer(new MessagingConfigurationDefaults());
-    }
-
-    /**
-     * Constructs a {@code MessagingConfigurer} based on the given {@code delegate}.
-     *
-     * @param delegate The delegate {@code AxonApplication} the {@code MessagingConfigurer} is based on.
-     */
-    public MessagingConfigurer(@Nonnull AxonApplication delegate) {
-        super(delegate);
+        return enhance(new DefaultAxonApplication());
     }
 
     /**
@@ -90,7 +102,8 @@ public class MessagingConfigurer
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public MessagingConfigurer registerCommandBus(@Nonnull ComponentFactory<CommandBus> commandBusFactory) {
-        return registerComponent(CommandBus.class, commandBusFactory);
+        axonApplication.componentRegistry(cr -> cr.registerComponent(CommandBus.class, commandBusFactory));
+        return this;
     }
 
     /**
@@ -103,7 +116,8 @@ public class MessagingConfigurer
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public MessagingConfigurer registerEventSink(@Nonnull ComponentFactory<EventSink> eventSinkFactory) {
-        return registerComponent(EventSink.class, eventSinkFactory);
+        axonApplication.componentRegistry(cr -> cr.registerComponent(EventSink.class, eventSinkFactory));
+        return this;
     }
 
     /**
@@ -116,7 +130,8 @@ public class MessagingConfigurer
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public MessagingConfigurer registerQueryBus(@Nonnull ComponentFactory<QueryBus> queryBusFactory) {
-        return registerComponent(QueryBus.class, queryBusFactory);
+        axonApplication.componentRegistry(cr -> cr.registerComponent(QueryBus.class, queryBusFactory));
+        return this;
     }
 
     /**
@@ -131,34 +146,23 @@ public class MessagingConfigurer
     public MessagingConfigurer registerQueryUpdateEmitter(
             @Nonnull ComponentFactory<QueryUpdateEmitter> queryUpdateEmitterFactory
     ) {
-        return registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterFactory);
+        return componentRegistry(cr -> cr.registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterFactory));
     }
 
-    /**
-     * Delegates the given {@code configureTask} to the {@link AxonApplication} this {@code MessagingConfigurer}
-     * delegates to.
-     * <p>
-     * Use this operation to invoke registration methods that only exist on the {@code AxonApplication}.
-     *
-     * @param configureTask Lambda consuming the delegate {@link AxonApplication}.
-     * @return The current instance of the {@code Configurer} for a fluent API.
-     */
-    public MessagingConfigurer axon(@Nonnull Consumer<AxonApplication> configureTask) {
-        return delegate(AxonApplication.class, configureTask);
-    }
-
-    /**
-     * {@link #build() Builds the configuration} and starts it immediately.
-     * <p>
-     * It is not recommended to change any configuration on {@code this StartableConfigurer} once this method is
-     * called.
-     *
-     * @return The fully initialized and started {@link AxonConfiguration}.
-     */
     @Override
-    public AxonConfiguration start() {
-        AtomicReference<AxonApplication> axonReference = new AtomicReference<>();
-        axon(axonReference::set);
-        return axonReference.get().start();
+    public MessagingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> configureTask) {
+        axonApplication.componentRegistry(configureTask);
+        return this;
+    }
+
+    @Override
+    public MessagingConfigurer lifecycleRegistry(Consumer<LifecycleRegistry> lifecycleRegistrar) {
+        axonApplication.lifecycleRegistry(lifecycleRegistrar);
+        return this;
+    }
+
+    @Override
+    public AxonConfiguration build() {
+        return axonApplication.build();
     }
 }

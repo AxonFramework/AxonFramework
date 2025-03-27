@@ -20,6 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
@@ -58,7 +59,7 @@ import javax.annotation.Nonnull;
  * @author Allard Buijze
  * @see DefaultConfigurer
  * @since 3.0
- * @deprecated In favor of the {@link org.axonframework.configuration.NewConfigurer}.
+ * @deprecated In favor of the {@link ComponentRegistry}.
  */
 @Deprecated
 public interface Configurer extends LifecycleOperations {

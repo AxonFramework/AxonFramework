@@ -17,9 +17,13 @@
 package org.axonframework.configuration;
 
 import org.axonframework.configuration.Component.Identifier;
+import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -56,7 +60,7 @@ class ComponentsTest {
     void getReturnsPutComponent() {
         Component<String> testComponent = new Component<>(IDENTIFIER, c -> "some-state");
 
-        testSubject.put(IDENTIFIER, testComponent);
+        testSubject.put(testComponent);
 
         Optional<Component<String>> result = testSubject.get(IDENTIFIER);
         assertTrue(result.isPresent());
@@ -68,7 +72,7 @@ class ComponentsTest {
         Component<String> testComponent = new Component<>(IDENTIFIER, c -> "some-state");
         AtomicBoolean invoked = new AtomicBoolean(false);
 
-        testSubject.put(IDENTIFIER, testComponent);
+        testSubject.put(testComponent);
         testSubject.computeIfAbsent(IDENTIFIER, id -> {
             invoked.set(true);
             return mock(Component.class);
@@ -98,11 +102,75 @@ class ComponentsTest {
     }
 
     @Test
+    void replacingAComponentRemovesThePreviousOne() {
+        Component<String> original = new Component<>(IDENTIFIER, c -> "some-state");
+        Component<String> replacement = new Component<>(IDENTIFIER, c -> "other-state");
+
+        testSubject.put(original);
+        testSubject.replace(IDENTIFIER, c -> replacement);
+
+        assertTrue(testSubject.contains(IDENTIFIER));
+        assertTrue(testSubject.get(IDENTIFIER).isPresent());
+        assertSame(replacement, testSubject.get(IDENTIFIER).get());
+    }
+
+    @Test
+    void replacingNonExistentComponentDoesntRegisterIt() {
+        List<Component<?>> components = new ArrayList<>();
+        testSubject.replace(IDENTIFIER, c -> {
+            components.add(c);
+            return c;
+        });
+
+        assertTrue(components.isEmpty());
+    }
+
+    @Test
     void containsReturnsAsExpected() {
         Identifier<Integer> unknownIdentifier = new Identifier<>(Integer.class, "some-unknown-id");
-        testSubject.put(IDENTIFIER, new Component<>(IDENTIFIER, c -> "some-state"));
+        testSubject.put(new Component<>(IDENTIFIER, c -> "some-state"));
 
         assertTrue(testSubject.contains(IDENTIFIER));
         assertFalse(testSubject.contains(unknownIdentifier));
+    }
+
+    @Test
+    void listReturnsReadOnlyViewOfComponents() {
+        Identifier<Object> identifier2 = new Identifier<>(Object.class, "test2");
+        Set<Identifier<?>> identifiersBeforePut = testSubject.listComponents();
+
+        testSubject.put(new Component<>(IDENTIFIER, c -> "some-state"));
+        testSubject.put(new Component<>(identifier2, c -> "some-state"));
+
+        Set<Identifier<?>> identifiersAfterPut = testSubject.listComponents();
+        assertFalse(identifiersBeforePut.contains(IDENTIFIER));
+        assertTrue(identifiersAfterPut.contains(IDENTIFIER));
+        assertTrue(identifiersAfterPut.contains(identifier2));
+
+        assertThrows(UnsupportedOperationException.class, () -> identifiersAfterPut.add(identifier2));
+    }
+
+    @Test
+    void postProcessComponentsProvidesAllAvailableComponents() {
+        Identifier<Object> identifier2 = new Identifier<>(Object.class, "test2");
+
+        testSubject.put(new Component<>(IDENTIFIER, c -> "some-state"));
+        testSubject.put(new Component<>(identifier2, c -> "some-state"));
+
+        List<Component<?>> visited = new ArrayList<>();
+        testSubject.postProcessComponents(visited::add);
+        assertEquals(2, visited.size());
+    }
+
+    @Test
+    void postProcessComponentsRethrowsExceptions() {
+        Identifier<Object> identifier2 = new Identifier<>(Object.class, "test2");
+
+        testSubject.put(new Component<>(IDENTIFIER, c -> "some-state"));
+        testSubject.put(new Component<>(identifier2, c -> "some-state"));
+
+        assertThrows(MockException.class, () -> testSubject.postProcessComponents(c -> {
+            throw new MockException();
+        }));
     }
 }

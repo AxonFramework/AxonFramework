@@ -19,13 +19,13 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 
 /**
- * Interface describing an enhancement of the {@link NewConfiguration} from the Axon Framework configuration API, taking
- * effect during {@link NewConfigurer#build() build} of the configurer.
+ * Interface describing an enhancement of the {@link ComponentRegistry} from the Axon Framework configuration API,
+ * taking effect during {@link ApplicationConfigurer#build() build} of the configurer.
  * <p>
- * Through implementing the {@link #enhance(NewConfigurer)} operation a {@code ConfigurationEnhancer} is able to
- * {@link NewConfigurer#registerComponent(Class, ComponentFactory) register} components and
- * {@link NewConfigurer#registerDecorator(Class, int, ComponentDecorator) register} decorators. The registration of
- * components and/or decorators can be made conditional by using the {@link NewConfigurer#hasComponent(Class)}
+ * Through implementing the {@link #enhance(ComponentRegistry)} operation a {@code ConfigurationEnhancer} is able to
+ * {@link ComponentRegistry#registerComponent(Class, ComponentFactory) register} components and
+ * {@link ComponentRegistry#registerDecorator(Class, int, ComponentDecorator) register} decorators. The registration of
+ * components and/or decorators can be made conditional by using the {@link ComponentRegistry#hasComponent(Class)}
  * operation.
  * <p>
  * Note that enhancers have an {@link #order()} in which they enhance the {@code Configurer}. When not otherwise
@@ -33,7 +33,7 @@ import jakarta.annotation.Nonnull;
  * the order.
  *
  * @author Steven van Beelen
- * @since 3.2.0
+ * @since 5.0.0
  */
 @FunctionalInterface
 public interface ConfigurationEnhancer {
@@ -41,12 +41,10 @@ public interface ConfigurationEnhancer {
     /**
      * Enhances the given {@code configurer} with, for example, additional {@link Component components} and
      * {@link ComponentDecorator decorators}.
-     * <p>
-     * This method is invoked during {@link NewConfigurer#build()}.
      *
      * @param configurer The configurer instance to enhance.
      */
-    void enhance(@Nonnull NewConfigurer<?> configurer);
+    void enhance(@Nonnull ComponentRegistry configurer);
 
     /**
      * Returns the relative order this enhancer should be invoked in, compared to other instances.

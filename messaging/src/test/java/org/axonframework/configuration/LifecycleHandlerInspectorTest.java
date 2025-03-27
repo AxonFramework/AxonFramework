@@ -46,8 +46,9 @@ class LifecycleHandlerInspectorTest {
     private static final int TEST_PHASE = 1;
 
     @Test
-    void nothingIsRegisteredForNullComponent(@Mock LifecycleRegistry operator) {
-        LifecycleHandlerInspector.registerLifecycleHandlers(operator, null);
+    void nullComponentIsRejected(@Mock LifecycleRegistry operator) {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> LifecycleHandlerInspector.registerLifecycleHandlers(operator, null));
 
         verifyNoInteractions(operator);
     }
@@ -76,7 +77,7 @@ class LifecycleHandlerInspectorTest {
 
         verify(operator).onShutdown(eq(TEST_PHASE), lifecycleHandlerCaptor.capture());
 
-        CompletableFuture<?> resultFuture = lifecycleHandlerCaptor.getValue().run();
+        CompletableFuture<?> resultFuture = lifecycleHandlerCaptor.getValue().run(mock());
         assertEquals(asyncShutdownResult, resultFuture.get());
     }
 
@@ -90,8 +91,8 @@ class LifecycleHandlerInspectorTest {
                     });
                 }));
 
-        verify(operator).onStart(eq(42), any(LifecycleHandler.class));
-        verify(operator).onShutdown(eq(24), any(LifecycleHandler.class));
+        verify(operator).onStart(eq(42), any(Runnable.class));
+        verify(operator).onShutdown(eq(24), any(Runnable.class));
     }
 
     @Test
@@ -104,7 +105,7 @@ class LifecycleHandlerInspectorTest {
 
         verify(operator).onStart(eq(TEST_PHASE), lifecycleHandlerCaptor.capture());
 
-        lifecycleHandlerCaptor.getValue().run();
+        lifecycleHandlerCaptor.getValue().run(mock());
         assertTrue(started.get());
     }
 
@@ -119,7 +120,7 @@ class LifecycleHandlerInspectorTest {
 
         verify(operator).onShutdown(eq(TEST_PHASE), lifecycleHandlerCaptor.capture());
 
-        CompletableFuture<?> result = lifecycleHandlerCaptor.getValue().run();
+        CompletableFuture<?> result = lifecycleHandlerCaptor.getValue().run(mock());
         assertTrue(result.isCompletedExceptionally());
 
         try {

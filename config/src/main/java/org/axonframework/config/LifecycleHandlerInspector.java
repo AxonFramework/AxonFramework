@@ -16,6 +16,7 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.ReflectionUtils;
@@ -32,6 +33,7 @@ import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.invokeAndGetMethodValue;
@@ -79,20 +81,25 @@ public abstract class LifecycleHandlerInspector {
         if (component instanceof Lifecycle) {
             ((Lifecycle) component).registerLifecycleHandlers(new LifecycleRegistry() {
                 @Override
-                public LifecycleRegistry<?> onStart(
-                        int phase,
-                        @jakarta.annotation.Nonnull org.axonframework.configuration.LifecycleHandler startHandler
-                ) {
-                    configuration.onStart(phase, startHandler::run);
+                public LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit) {
                     return this;
                 }
 
                 @Override
-                public LifecycleRegistry<?> onShutdown(
+                public LifecycleRegistry onStart(
+                        int phase,
+                        @jakarta.annotation.Nonnull org.axonframework.configuration.LifecycleHandler startHandler
+                ) {
+                    configuration.onStart(phase, () -> startHandler.run(null));
+                    return this;
+                }
+
+                @Override
+                public LifecycleRegistry onShutdown(
                         int phase,
                         @jakarta.annotation.Nonnull org.axonframework.configuration.LifecycleHandler shutdownHandler
                 ) {
-                    configuration.onShutdown(phase, shutdownHandler::run);
+                    configuration.onShutdown(phase, () -> shutdownHandler.run(null));
                     return this;
                 }
             });

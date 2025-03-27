@@ -16,20 +16,39 @@
 
 package org.axonframework.configuration;
 
+import java.util.function.Consumer;
+
 /**
- * A specification of the {@link NewConfigurer} providing a means to {@link #build()} it and as such is intended as the
- * base configurer to use when starting an Axon Framework application.
+ * An ApplicationConfigurer combines the component registry with the notion of lifecycle. When started, lifecycle handlers
+ * are invoked in the order specified during registration.
  * <p>
  * Building it exposes the {@link AxonConfiguration}, which can be {@link AxonConfiguration#start() started} and
  * {@link AxonConfiguration#shutdown() stopped}. Furthermore, there's a convenience {@link #start()} operation on this
  * interface, which invokes {@code build()} and {@code AxonConfiguration#start()} in one go.
  *
- * @param <S> The type of configurer this implementation returns. This generic allows us to support fluent interfacing.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface ApplicationConfigurer<S extends ApplicationConfigurer<S>> extends NewConfigurer<S> {
+public interface ApplicationConfigurer {
+
+    /**
+     * Executes the given {@code componentRegistrar} on the component registry associated with this
+     * ApplicationConfigurer.
+     *
+     * @param componentRegistrar the actions to take on the component registry
+     * @return this ApplicationConfigurer for a fluent API
+     */
+    ApplicationConfigurer componentRegistry(Consumer<ComponentRegistry> componentRegistrar);
+
+    /**
+     * Executes the given {@code lifecycleRegistrar} on the lifecycle registry associated with this
+     * ApplicationConfigurer.
+     *
+     * @param lifecycleRegistrar the actions to take on the lifecycle registry
+     * @return this ApplicationConfigurer for a fluent API
+     */
+    ApplicationConfigurer lifecycleRegistry(Consumer<LifecycleRegistry> lifecycleRegistrar);
 
     /**
      * Returns the completely initialized {@link NewConfiguration} instance of type {@code C} built using this
@@ -38,10 +57,9 @@ public interface ApplicationConfigurer<S extends ApplicationConfigurer<S>> exten
      * It is not recommended to change any configuration on {@code this AxonApplicationConfigurer} once this method is
      * called.
      *
-     * @param <C> The {@link NewConfiguration} implementation of type {@code C} returned by this method.
      * @return The fully initialized {@link NewConfiguration} instance of type {@code C}.
      */
-    <C extends NewConfiguration> C build();
+    AxonConfiguration build();
 
     /**
      * {@link #build() Builds the configuration} and starts it immediately, by invoking

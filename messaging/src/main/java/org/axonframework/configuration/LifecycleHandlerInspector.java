@@ -99,7 +99,7 @@ public abstract class LifecycleHandlerInspector {
                                    ));
                                }
                                int phase = (int) lifecycleAnnotationAttributes.get(LIFECYCLE_PHASE_ATTRIBUTE_NAME);
-                               LifecycleHandler lifecycleHandler = () -> invokeAndReturn(
+                               LifecycleHandler lifecycleHandler = configuration -> invokeAndReturn(
                                        component, method, lifecycleAnnotation.getSimpleName(), phase
                                );
                                registrationMethod.registerLifecycleHandler(config, phase, lifecycleHandler);

@@ -19,7 +19,11 @@ package org.axonframework.configuration;
 import org.axonframework.configuration.Component.Identifier;
 import org.junit.jupiter.api.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -37,7 +41,7 @@ class ComponentTest {
     private ComponentFactory<String> factory;
 
     private NewConfiguration configuration;
-    private LifecycleRegistry<?> lifecycleRegistry;
+    private LifecycleRegistry lifecycleRegistry;
 
     @BeforeEach
     void setUp() {
@@ -60,25 +64,31 @@ class ComponentTest {
         assertThrows(NullPointerException.class, () -> new Component<>(identifier, null));
     }
 
-
     @Test
-    void initThrowsNullPointerExceptionForNullConfiguration() {
+    void resolveThrowsNullPointerExceptionForNullConfiguration() {
         Component<String> testSubject = new Component<>(identifier, factory);
 
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.init(null, lifecycleRegistry));
+        assertThrows(NullPointerException.class, () -> testSubject.resolve(null));
     }
 
     @Test
-    void initThrowsNullPointerExceptionForNullLifecycleRegistry() {
+    void resolveThrowsNullPointerExceptionForNullLifecycleRegistry() {
         Component<String> testSubject = new Component<>(identifier, factory);
 
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.init(configuration, null));
+        assertThrows(NullPointerException.class, () -> testSubject.initLifecycle(configuration, null));
     }
 
     @Test
-    void initInvokesComponentBuilderMethodOnlyOnce() {
+    void componentReturnsItsIdentifier() {
+        Component<String> testSubject = new Component<>(identifier, factory);
+
+        assertSame(identifier, testSubject.identifier());
+    }
+
+    @Test
+    void resolveInvokesComponentBuilderMethodOnlyOnce() {
         AtomicInteger counter = new AtomicInteger();
 
         Component<String> testSubject = new Component<>(identifier, c -> {
@@ -87,23 +97,22 @@ class ComponentTest {
         });
 
         assertEquals(0, counter.get());
-        testSubject.init(configuration, lifecycleRegistry);
+        testSubject.resolve(configuration);
         assertEquals(1, counter.get());
-        testSubject.init(configuration, lifecycleRegistry);
+        testSubject.resolve(configuration);
         assertEquals(1, counter.get());
     }
 
     @Test
     void decorateInvokesDecoratorsAtGivenOrder() {
-
         Component<String> testSubject = new Component<>(identifier, factory);
         Component<String> result1 = testSubject.decorate((c, name, delegate) -> delegate + "a");
         Component<String> result2 = result1.decorate((c, name, delegate) -> delegate + "b");
         Component<String> result3 = result2.decorate((c, name, delegate) -> delegate + "c");
 
-        assertEquals("Hello World!a", result1.get());
-        assertEquals("Hello World!ab", result2.get());
-        assertEquals("Hello World!abc", result3.init(configuration, lifecycleRegistry));
+        assertEquals("Hello World!a", result1.resolve(configuration));
+        assertEquals("Hello World!ab", result2.resolve(configuration));
+        assertEquals("Hello World!abc", result3.resolve(configuration));
     }
 
     @Test
@@ -111,15 +120,26 @@ class ComponentTest {
         //noinspection unchecked
         ComponentFactory<String> mock = mock();
         when(mock.build(any())).thenReturn(TEST_COMPONENT);
-        Component<String> testSubject = new Component<>(identifier, config, mock);
+        Component<String> testSubject = new Component<>(identifier, mock);
 
         Component<String> decorated = testSubject.decorate((c, name, delegate) -> delegate + "a");
 
-        assertEquals(TEST_COMPONENT, testSubject.init(configuration, lifecycleRegistry));
+        assertEquals(TEST_COMPONENT, testSubject.resolve(configuration));
         verify(mock, times(1)).build(any());
 
-        assertEquals(TEST_COMPONENT + "a", decorated.init(configuration, lifecycleRegistry));
+        assertEquals(TEST_COMPONENT + "a", decorated.resolve(configuration));
         verify(mock, times(1)).build(any());
+    }
+
+    @Test
+    void isResolvedReturnsAsExpected() {
+        Component<String> testSubject = new Component<>(identifier, factory,
+                                                        (lifecycleRegistry1, stringSupplier) -> {
+                                                        });
+
+        assertFalse(testSubject.isResolved());
+        testSubject.resolve(configuration);
+        assertTrue(testSubject.isResolved());
     }
 
     @Test
@@ -127,7 +147,7 @@ class ComponentTest {
         Component<String> testSubject = new Component<>(identifier, factory);
 
         assertFalse(testSubject.isInitialized());
-        testSubject.init(configuration, lifecycleRegistry);
+        testSubject.initLifecycle(configuration, lifecycleRegistry);
         assertTrue(testSubject.isInitialized());
     }
 
@@ -147,4 +167,32 @@ class ComponentTest {
     void identifierConstructorThrowsIllegalArgumentExceptionForEmptyName() {
         assertThrows(IllegalArgumentException.class, () -> new Identifier<>(String.class, ""));
     }
+
+    @Test
+    void initializationRegistersLifecycleHandlersOfDecoratedComponents() {
+        List<String> decoratorCalls = new ArrayList<>();
+        Component<CharSequence> testComponent = new Component<>(new Identifier<>(CharSequence.class, "id"), factory,
+                                                                (lcr, component) -> decoratorCalls.add(component.get()));
+
+        Component<CharSequence> result = testComponent.decorate((config, name, component) -> component + "test",
+                                                                (lcr, component) -> decoratorCalls.add(component.get()));
+
+        result.initLifecycle(configuration, lifecycleRegistry);
+
+        assertEquals(List.of("Hello World!", "Hello World!test"), decoratorCalls);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void initializationDoesNothingWhenAlreadyInitialized() {
+        BiConsumer<LifecycleRegistry, Supplier<String>> mock = mock();
+        Component<CharSequence> testComponent = new Component<>(new Identifier<>(CharSequence.class, "id"), factory, mock);
+
+        testComponent.initLifecycle(configuration, lifecycleRegistry);
+        reset(mock);
+
+        testComponent.initLifecycle(configuration, lifecycleRegistry);
+        verifyNoInteractions(mock);
+    }
+
 }

@@ -26,15 +26,17 @@ import jakarta.annotation.Nonnull;
  * support decorators. The latter form is suitable when customizing the configuration instance of an infrastructure
  * component.
  *
- * @param <C> The component to be decorated.
+ * @param <C> The type of component to be decorated.
+ * @param <D> The type of decorated component
  * @author Steven van Beelen
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface ComponentDecorator<C> {
+public interface ComponentDecorator<C, D extends C> {
 
     /**
-     * Decorates the given {@code delegate} into a mutated or replaced instance of type {@code C}.
+     * Decorates the given {@code delegate} into a mutated or replaced instance of type {@code D}, which must be the
+     * same or a subclass of {@code C}.
      * <p>
      * Decorating can roughly take two angles. One, it may choose to wrap the {@code delegate} into a new instance of
      * type {@code C}. Second, it could mutate the state of the {@code delegate}.
@@ -48,10 +50,11 @@ public interface ComponentDecorator<C> {
      * @param config   The configuration of this Axon application. Provided to support retrieval of other
      *                 {@link NewConfiguration#getComponent(Class) components} for construction or mutation of the given
      *                 {@code delegate}.
+     * @param name The name of the component being decorated
      * @param delegate The delegate of type {@code C} to be decorated.
      * @return A decorated component of type {@code C}, typically based on the given {@code delegate}.
      */
-    C decorate(@Nonnull NewConfiguration config,
+    D decorate(@Nonnull NewConfiguration config,
                @Nonnull String name,
                @Nonnull C delegate);
 }

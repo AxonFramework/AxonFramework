@@ -185,7 +185,7 @@ public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle 
     }
 
     @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry<?> handle) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
         handle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS - 10, this::shutDown);
     }
 

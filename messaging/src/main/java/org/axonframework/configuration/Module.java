@@ -21,18 +21,17 @@ import jakarta.annotation.Nonnull;
 /**
  * Interface describing a module of Axon Framework's configuration API.
  * <p>
- * Modules are relatively independent. They can be {@link NewConfigurer#registerModule(Module) registered} on a parent
- * {@link NewConfigurer} or registered in a nested style on another {@link Module} through the dedicated register module
+ * Modules are relatively independent. They can be {@link ComponentRegistry#registerModule(Module) registered} on a parent
+ * {@link ComponentRegistry} or registered in a nested style on another {@link Module} through the dedicated register module
  * operation. Furthermore, a module is able to access the registered {@link Component Components} from the parent
  * {@code Configurer} it is registered too. However, the parent is <b>not</b> able to retrieve components from these
  * {@code Modules}, ensuring encapsulation.
  *
- * @param <M> The type of module this implementation returns. This generic allows us to support fluent interfacing.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public interface Module<M extends Module<M>> extends NewConfigurer<M> {
+public interface Module {
 
     /**
      * The identifying name of {@code this Module}.
@@ -42,17 +41,15 @@ public interface Module<M extends Module<M>> extends NewConfigurer<M> {
     String name();
 
     /**
-     * Builds {@code this Module}, resulting in the {@link NewConfiguration} containing all registered
-     * {@link #registerComponent(Class, ComponentFactory) components},
-     * {@link #registerDecorator(Class, int, ComponentDecorator) decorators},
-     * {@link #registerEnhancer(ConfigurationEnhancer) enhancers}, and {@link #registerModule(Module) modules}.
+     * Builds {@code this Module}, resulting in the {@link NewConfiguration} containing all registered components..
      * <p>
      * The given {@code parent} allows access to components that have been registered with it. Note that this operation
      * is typically invoked through {@link ApplicationConfigurer#build()} and as such should not be invoked directly.
      *
      * @param parent The parent {@code Configuration} {@code this Module} belongs in, giving it access to the parent's
      *               components.
+     * @param lifecycleRegistry The registry where lifecycle handlers can be registered by this module
      * @return The fully initialized {@link NewConfiguration} instance from {@code this Module} specifically.
      */
-    NewConfiguration build(@Nonnull LifecycleSupportingConfiguration parent);
+    NewConfiguration build(@Nonnull NewConfiguration parent, @Nonnull LifecycleRegistry lifecycleRegistry);
 }

@@ -45,6 +45,7 @@ import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
 import org.axonframework.tracing.SpanFactory;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -78,23 +79,29 @@ public interface Configuration extends LifecycleOperations {
      *
      * @return the lifecycle registry for this configuration
      */
-    default LifecycleRegistry<?> lifecycleRegistry() {
+    default LifecycleRegistry lifecycleRegistry() {
         return new LifecycleRegistry() {
             @Override
-            public LifecycleRegistry<?> onStart(
+            public LifecycleRegistry registerLifecyclePhaseTimeout(long timeout,
+                                                                   @jakarta.annotation.Nonnull TimeUnit timeUnit) {
+                throw new UnsupportedOperationException("Legacy Configuration doesn't support configurable timeouts");
+            }
+
+            @Override
+            public LifecycleRegistry onStart(
                     int phase,
                     @jakarta.annotation.Nonnull org.axonframework.configuration.LifecycleHandler startHandler
             ) {
-                Configuration.this.onStart(phase, startHandler::run);
+                Configuration.this.onStart(phase, () -> startHandler.run(null));
                 return this;
             }
 
             @Override
-            public LifecycleRegistry<?> onShutdown(
+            public LifecycleRegistry onShutdown(
                     int phase,
                     @jakarta.annotation.Nonnull org.axonframework.configuration.LifecycleHandler shutdownHandler
             ) {
-                Configuration.this.onShutdown(phase, shutdownHandler::run);
+                Configuration.this.onShutdown(phase, () -> shutdownHandler.run(null));
                 return this;
             }
         };

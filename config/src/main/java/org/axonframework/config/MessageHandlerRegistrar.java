@@ -74,7 +74,7 @@ public class MessageHandlerRegistrar implements Lifecycle {
     }
 
     @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry<?> handle) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
         handle.onStart(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, this::start);
         handle.onShutdown(Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS, this::shutdown);
     }

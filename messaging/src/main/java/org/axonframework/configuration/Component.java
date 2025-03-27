@@ -18,14 +18,14 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.StringUtils;
-import org.axonframework.lifecycle.Lifecycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.assertThat;
@@ -36,11 +36,9 @@ import static org.axonframework.common.Assert.assertThat;
  * A component describes an object that needs to be created, possibly based on other components in the
  * {@link NewConfiguration}.
  * <p>
- * Components are lazily initialized when they are {@link #init(NewConfiguration, LifecycleRegistry) accessed}. During
- * the initialization, they may trigger initialization of the components they depend on. Furthermore, if the constructed
- * component is a {@link Lifecycle} implementation, it will be registered with a {@link LifecycleRegistry} during the
- * initialization. If this step registered start handlers in a phase that the {@link RootConfiguration#start()} already
- * surpassed, they will be invoked immediately.
+ * Components are eagerly constructed when they are {@link #initLifecycle(NewConfiguration, LifecycleRegistry)
+ * initialized} or lazily when {@link #resolve(NewConfiguration) resolved}. During
+ * the initialization, they may trigger initialization of the components they depend on.
  *
  * @param <C> The type of component contained.
  * @author Allard Buijze
@@ -52,20 +50,70 @@ public class Component<C> {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Identifier<C> identifier;
-    private final ComponentFactory<C> factory;
-
+    private final ComponentFactory<? extends C> factory;
+    private final BiConsumer<LifecycleRegistry, Supplier<? extends C>> lifecycleInitializer;
+    private final Component<C> dependent;
+    private final AtomicBoolean lifecycleInitialized = new AtomicBoolean(false);
     private C instance;
 
     /**
-     * Creates a {@code Component} for the given {@code identifier} created by the given {@code factory}.
+     * Creates a {@code Component} for the given {@code identifier} created by the given {@code factory}. No lifecycle
+     * handlers will be registered for this component.
+     * <p>
+     * If this component has a lifecycle, consider using {@link #Component(Identifier, ComponentFactory, BiConsumer)}
+     * to register lifecycle handlers.
      *
      * @param identifier The identifier of the component.
      * @param factory    The factory building the component.
      */
-    public Component(@Nonnull Identifier<C> identifier,
-                     @Nonnull ComponentFactory<C> factory) {
+    public Component(@Nonnull Identifier<C> identifier, @Nonnull ComponentFactory<? extends C> factory) {
         this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
         this.factory = requireNonNull(factory, "A Component factory cannot be null.");
+        this.lifecycleInitializer = noop();
+        this.dependent = null;
+    }
+
+    /**
+     * Creates a {@code Component} for the given {@code identifier} created by the given {@code factory}. The given
+     * {@code lifecycleInitializer} is invoked when the component it initialized, allowing registration of lifecycle
+     * handlers.
+     *
+     * @param identifier           The identifier of the component.
+     * @param factory              The factory building the component.
+     * @param lifecycleInitializer The function to execute when the component is initialized
+     * @param <D>                  The type of component the decorator returns
+     */
+    public <D extends C> Component(@Nonnull Identifier<C> identifier, @Nonnull ComponentFactory<D> factory,
+                                   @Nonnull BiConsumer<LifecycleRegistry, Supplier<D>> lifecycleInitializer) {
+        this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
+        this.factory = requireNonNull(factory, "A Component factory cannot be null.");
+        requireNonNull(lifecycleInitializer, "A lifecycle initializer cannot be null.");
+        //noinspection unchecked
+        this.lifecycleInitializer = (lifecycleRegistry, supplier) -> lifecycleInitializer.accept(lifecycleRegistry,
+                                                                                                 () -> (D) supplier.get());
+        this.dependent = null;
+    }
+
+    private Component(@Nonnull Component<C> dependent, @Nonnull ComponentFactory<C> factory,
+                      @Nonnull BiConsumer<LifecycleRegistry, Supplier<? extends C>> lifecycleInitializer) {
+        this.dependent = dependent;
+        this.identifier = dependent.identifier;
+        this.factory = requireNonNull(factory, "A Component factory cannot be null.");
+        this.lifecycleInitializer = lifecycleInitializer;
+    }
+
+    private static <C> BiConsumer<LifecycleRegistry, Supplier<? extends C>> noop() {
+        return (lifecycleRegistry, supplier) -> {
+        };
+    }
+
+    /**
+     * Returns the identifier of this component
+     *
+     * @return the identifier of this component
+     */
+    public Identifier<C> identifier() {
+        return identifier;
     }
 
     /**
@@ -80,38 +128,59 @@ public class Component<C> {
      *
      * @param configuration     The configuration to retrieve other components from that
      *                          {@code this Component's ComponentFactory} may require during initialization.
-     * @param lifecycleRegistry The lifecycle registry to register the constructed component at if it implements
-     *                          {@link Lifecycle}.
      * @return The initialized component contained in this instance.
      */
-    public synchronized C init(@Nonnull NewConfiguration configuration,
-                  @Nonnull LifecycleRegistry<?> lifecycleRegistry) {
+    public synchronized C resolve(@Nonnull NewConfiguration configuration) {
         if (instance != null) {
             return instance;
         }
         requireNonNull(configuration, "The configuration cannot be null.");
-        requireNonNull(lifecycleRegistry, "The lifecycle registry cannot be null.");
 
-        LifecycleSupportingConfiguration config = configSupplier.get();
-        instance = factory.build(config);
+        instance = factory.build(configuration);
         logger.debug("Instantiated component [{}]: {}", identifier, instance);
-
-
-        if (instance instanceof Lifecycle lifecycleAwareInstance) {
-            lifecycleAwareInstance.registerLifecycleHandlers(lifecycleRegistry);
-        }
 
         return instance;
     }
 
     /**
-     * Checks if this {@code Component} is already initialized.
+     * Initialize this component by registering its lifecycle handlers with the given {@code lifecycleRegistry}. If the
+     * component needs to be constructed, it can retrieve its dependencies (which may not have been initialized) from
+     * given {@code configuration}.
      * <p>
-     * This operation is {@code synchronized}, allowing the configuration to be thread-safe.
+     * This method does nothing if the component has already been initialized
+     *
+     * @param configuration     The configuration to retrieve dependencies from
+     * @param lifecycleRegistry The registry in which to register handlers
+     */
+    public synchronized void initLifecycle(@Nonnull NewConfiguration configuration,
+                                           @Nonnull LifecycleRegistry lifecycleRegistry) {
+        Objects.requireNonNull(configuration, "The configuration cannot be null.");
+        Objects.requireNonNull(lifecycleRegistry, "The lifecycle registry cannot be null.");
+
+        if (!lifecycleInitialized.getAndSet(true)) {
+            if (dependent != null) {
+                dependent.initLifecycle(configuration, lifecycleRegistry);
+            }
+            lifecycleInitializer.accept(lifecycleRegistry, () -> resolve(configuration));
+        }
+    }
+
+    /**
+     * Checks if this {@code Component} is already initialized.
      *
      * @return {@code true} if this {@code Component} is initialized, {@code false} otherwise.
      */
     public synchronized boolean isInitialized() {
+        return lifecycleInitialized.get();
+    }
+
+    /**
+     * Indicated whether the instance for this component has already been resolved. If not, calling
+     * {@link #resolve(NewConfiguration)} will do so.
+     *
+     * @return {@code true} if the instance for this component has already been resolved. Otherwise {@code false}.
+     */
+    public synchronized boolean isResolved() {
         return instance != null;
     }
 
@@ -121,9 +190,30 @@ public class Component<C> {
      *
      * @param decorator the function that decorates the instance contained in this component
      * @return a new component that represents the decorated instance
+     * @param <D> The type of component the decorator returns
      */
-    public Component<C> decorate(ComponentDecorator<C> decorator) {
-        return new Component<>(identifier, configSupplier, c -> decorator.decorate(c, identifier.name(), get()));
+    public <D extends C> Component<C> decorate(ComponentDecorator<C, D> decorator) {
+        return new Component<>(this, c -> decorator.decorate(c, identifier.name(), resolve(c)), noop());
+    }
+
+    /**
+     * Returns a Component that decorates this component, calling given {@code decorator} to wrap (or replace) the
+     * instance created by this Component.
+     *
+     * @param decorator            the function that decorates the instance contained in this component
+     * @param lifecycleInitializer The function to execute when the component is initialized
+     * @param <D>                  The type of component the decorator returns
+     * @return a new component that represents the decorated instance
+     */
+    public <D extends C> Component<C> decorate(ComponentDecorator<C, D> decorator,
+                                               BiConsumer<LifecycleRegistry, Supplier<D>> lifecycleInitializer) {
+        //noinspection unchecked
+        return new Component<>(this,
+                               cf -> decorator.decorate(cf, identifier.name(), resolve(cf)),
+                               (lifecycleRegistry, supplier) -> lifecycleInitializer.accept(lifecycleRegistry,
+                                                                                            () -> (D) supplier.get())
+
+        );
     }
 
     /**
@@ -137,6 +227,8 @@ public class Component<C> {
 
         /**
          * Compact constructor asserting whether the {@code type} and {@code name} are non-null and not empty.
+         * @param type The type of the component
+         * @param name The name of the component
          */
         public Identifier {
             requireNonNull(type, "The given type is unsupported because it is null.");

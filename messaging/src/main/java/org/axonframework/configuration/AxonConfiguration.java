@@ -30,17 +30,11 @@ public interface AxonConfiguration extends NewConfiguration {
 
     /**
      * All components defined in this {@code AxonConfiguration} will be started.
-     * <p>
-     * Starting a {@code AxonConfiguration} typically results in the invocation of all
-     * {@link LifecycleRegistry#onStart(int, LifecycleHandler) registered start handlers}.
      */
     void start();
 
     /**
      * Shuts down the components defined in this {@code AxonConfiguration}.
-     * <p>
-     * Shutting down a {@code AxonConfiguration} typically results in the invocation of all
-     * {@link LifecycleRegistry#onShutdown(int, LifecycleHandler) registered shutdown handlers}.
      */
     void shutdown();
 }

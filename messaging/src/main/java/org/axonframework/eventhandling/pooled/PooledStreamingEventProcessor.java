@@ -194,7 +194,7 @@ public class PooledStreamingEventProcessor extends AbstractEventProcessor
     }
 
     @Override
-    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry<?> handle) {
+    public void registerLifecycleHandlers(@Nonnull LifecycleRegistry handle) {
         handle.onStart(Phase.INBOUND_EVENT_CONNECTORS, this::start);
         handle.onShutdown(Phase.INBOUND_EVENT_CONNECTORS, this::shutdownAsync);
     }

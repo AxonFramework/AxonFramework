@@ -19,7 +19,7 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 
 /**
- * A {@link RuntimeException} thrown whenever a {@link Component} has been overridden in a {@link NewConfigurer}.
+ * A {@link RuntimeException} thrown whenever a {@link Component} has been overridden in a {@link ComponentRegistry}.
  * <p>
  * Is typically only thrown whenever the {@link OverrideBehavior} is set to {@link OverrideBehavior#THROW}.
  *
@@ -30,7 +30,7 @@ public class ComponentOverrideException extends RuntimeException {
 
     /**
      * Constructs a {@code ComponentOverrideException} with the given {@code type} and {@code name} as the unique
-     * identifier of the {@link Component} that has been overridden in a {@link AxonApplication}.
+     * identifier of the {@link Component} that has been overridden in a {@link ApplicationConfigurer}.
      *
      * @param type The type of the component this object identifiers, typically an interface.
      * @param name The name of the component this object identifiers.

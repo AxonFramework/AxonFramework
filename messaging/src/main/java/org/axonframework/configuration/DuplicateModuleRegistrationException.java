@@ -17,19 +17,20 @@
 package org.axonframework.configuration;
 
 /**
- * Test suite implementation validating the lifecycle operation registration of the {@link MessagingConfigurer}.
+ * Exception indicating that a duplicate registration of modules has been detected. This happens when two modules are
+ * registered under the same name.
  *
- * @author Steven van Beelen
+ * @author Allard Buijze
+ * @since 5.0.0
  */
-class MessagingConfigurerLifecycleOperationTest extends ConfigurerLifecycleOperationTestSuite<MessagingConfigurer> {
+public class DuplicateModuleRegistrationException extends RuntimeException {
 
-    @Override
-    public MessagingConfigurer createConfigurer() {
-        return MessagingConfigurer.create();
-    }
-
-    @Override
-    public AxonConfiguration start(MessagingConfigurer configurer) {
-        return configurer.start();
+    /**
+     * Initialize the exception indicating that the given {@code module} failed to register.
+     *
+     * @param module The module that failed to register.
+     */
+    public DuplicateModuleRegistrationException(Module module) {
+        super("A module with given name already exists: " + module.name());
     }
 }

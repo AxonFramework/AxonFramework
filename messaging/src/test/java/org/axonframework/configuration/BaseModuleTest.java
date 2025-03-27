@@ -16,8 +16,9 @@
 
 package org.axonframework.configuration;
 
-import jakarta.annotation.Nullable;
 import org.junit.jupiter.api.*;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,17 +27,21 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
-class SimpleModuleTest extends ModuleTestSuite<SimpleModule> {
+class BaseModuleTest {
 
-    @Override
-    SimpleModule testModule() {
-        return new SimpleModule("simple-module");
+    private SimpleModule testSubject;
+
+    @BeforeEach
+    void setUp() {
+        testSubject = new SimpleModule("simple-module");
     }
 
-    @Nullable
-    @Override
-    public <D extends NewConfigurer<D>> Class<D> delegateType() {
-        return null;
+    @Test
+    void simpleModuleDelegatesToComponentRegistry() {
+        AtomicReference<ComponentRegistry> detected = new AtomicReference<>();
+        testSubject.componentRegistry(detected::set);
+
+        assertNotNull(detected.get());
     }
 
     @Test
@@ -46,7 +51,13 @@ class SimpleModuleTest extends ModuleTestSuite<SimpleModule> {
 
     @Test
     void throwsIllegalArgumentExceptionForNullNameString() {
-        //noinspection DataFlowIssue
         assertThrows(IllegalArgumentException.class, () -> new SimpleModule(null));
+    }
+
+    private static class SimpleModule extends BaseModule<SimpleModule> {
+
+        public SimpleModule(String name) {
+            super(name);
+        }
     }
 }

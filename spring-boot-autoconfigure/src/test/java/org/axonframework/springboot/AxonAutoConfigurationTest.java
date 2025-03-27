@@ -340,7 +340,7 @@ class AxonAutoConfigurationTest {
         private boolean invoked;
 
         @Override
-        public void registerLifecycleHandlers(@Nonnull LifecycleRegistry<?> lifecycle) {
+        public void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycle) {
             this.invoked = true;
         }
 

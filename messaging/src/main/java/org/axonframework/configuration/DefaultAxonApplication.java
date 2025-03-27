@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
@@ -36,8 +37,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.assertStrictPositive;
@@ -49,7 +52,7 @@ import static org.axonframework.common.Assert.assertStrictPositive;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> implements AxonApplication {
+class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -58,28 +61,34 @@ class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> impleme
 
     private final TreeMap<Integer, List<LifecycleHandler>> startHandlers = new TreeMap<>();
     private final TreeMap<Integer, List<LifecycleHandler>> shutdownHandlers = new TreeMap<>(Comparator.reverseOrder());
+    private final DefaultComponentRegistry componentRegistry;
     private long lifecyclePhaseTimeout = 5;
     private TimeUnit lifecyclePhaseTimeunit = TimeUnit.SECONDS;
     private boolean enhancerScanning = true;
 
-    private final AxonConfigurationImpl axonConfig = new AxonConfigurationImpl();
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final AtomicReference<AxonConfiguration> configuration = new AtomicReference<>();
 
-    @Override
-    public RootConfigurer onStart(int phase, @Nonnull LifecycleHandler startHandler) {
-        registerLifecycleHandler(startHandlers, phase, startHandler);
-        return this;
+    public DefaultAxonApplication() {
+        this.componentRegistry = new DefaultComponentRegistry();
     }
 
     @Override
-    public RootConfigurer onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
-        registerLifecycleHandler(shutdownHandlers, phase, shutdownHandler);
-        return this;
+    public DefaultAxonApplication onStart(int phase, @Nonnull LifecycleHandler startHandler) {
+        return registerLifecycleHandler(startHandlers, phase, startHandler);
     }
 
-    private void registerLifecycleHandler(Map<Integer, List<LifecycleHandler>> lifecycleHandlers,
+    @Override
+    public DefaultAxonApplication onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
+        return registerLifecycleHandler(shutdownHandlers, phase, shutdownHandler);
+    }
+
+    private DefaultAxonApplication registerLifecycleHandler(Map<Integer, List<LifecycleHandler>> lifecycleHandlers,
                                           int phase,
                                           @Nonnull LifecycleHandler lifecycleHandler) {
+        if (configuration.get() != null) {
+            throw new IllegalArgumentException(
+                    "Cannot register lifecycle handlers when the configuration is already initialized");
+        }
         lifecycleHandlers.compute(phase, (p, handlers) -> {
             if (handlers == null) {
                 handlers = new CopyOnWriteArrayList<>();
@@ -87,10 +96,11 @@ class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> impleme
             handlers.add(requireNonNull(lifecycleHandler, "Cannot register null lifecycle handlers."));
             return handlers;
         });
+        return this;
     }
 
     @Override
-    public AxonApplication registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit) {
+    public DefaultAxonApplication registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit) {
         assertStrictPositive(timeout, "The lifecycle phase timeout should be strictly positive");
         requireNonNull(timeUnit, "The lifecycle phase time unit should not be null");
         this.lifecyclePhaseTimeout = timeout;
@@ -98,28 +108,21 @@ class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> impleme
         return this;
     }
 
-    @Override
-    public AxonApplication registerOverrideBehavior(OverrideBehavior behavior) {
-        super.setOverrideBehavior(behavior);
-        return this;
-    }
-
-    @Override
-    public AxonApplication disableEnhancerScanning() {
+    // TODO - Move to componentRegistry
+    public DefaultAxonApplication disableEnhancerScanning() {
         this.enhancerScanning = false;
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public AxonConfiguration build() {
-        if (!initialized.getAndSet(true)) {
-            super.enhanceInvocationAndModuleConstruction();
+    public synchronized AxonConfiguration build() {
+        if (configuration.get() == null) {
             if (enhancerScanning) {
                 scanForConfigurationEnhancers();
             }
+            configuration.set(new AxonConfigurationImpl(componentRegistry.build(this)));
         }
-        return axonConfig;
+        return configuration.get();
     }
 
     private void scanForConfigurationEnhancers() {
@@ -127,46 +130,49 @@ class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> impleme
                 ServiceLoader.load(ConfigurationEnhancer.class, getClass().getClassLoader());
         List<ConfigurationEnhancer> enhancers = new ArrayList<>();
         enhancerLoader.forEach(enhancers::add);
-        enhancers.forEach(this::registerEnhancer);
+        enhancers.forEach(componentRegistry::registerEnhancer);
     }
 
     @Override
-    protected NewConfiguration config() {
-        return axonConfig;
+    public ApplicationConfigurer componentRegistry(Consumer<ComponentRegistry> action) {
+        action.accept(componentRegistry);
+        return this;
     }
 
-    private class AxonConfigurationImpl
-            extends AbstractConfigurer<AxonApplication>.LocalConfiguration
-            implements AxonConfiguration {
+    @Override
+    public ApplicationConfigurer lifecycleRegistry(Consumer<LifecycleRegistry> lifecycleRegistrar) {
+        lifecycleRegistrar.accept(this);
+        return this;
+    }
 
-        private final AtomicBoolean isRunning;
-        private Integer currentLifecyclePhase = null;
-        private LifecycleState lifecycleState = LifecycleState.DOWN;
+    private class AxonConfigurationImpl implements AxonConfiguration {
 
-        private AxonConfigurationImpl() {
-            super(null);
-            this.isRunning = new AtomicBoolean(false);
+        private final NewConfiguration config;
+        private final AtomicReference<LifecycleState> lifecycleState = new AtomicReference<>(LifecycleState.DOWN);
+
+        private AxonConfigurationImpl(NewConfiguration config) {
+            this.config = config;
         }
 
         @Override
         public void start() {
-            if (!isRunning.getAndSet(true)) {
+            if (lifecycleState.compareAndSet(LifecycleState.DOWN, LifecycleState.STARTING_UP)) {
+                logger.debug("Initiating start up");
                 verifyIdentifierFactory();
                 invokeStartHandlers();
+                lifecycleState.set(LifecycleState.UP);
+                logger.debug("Finalized start sequence");
             }
         }
 
         private void invokeStartHandlers() {
-            logger.debug("Initiating start up");
-            lifecycleState = LifecycleState.STARTING_UP;
-
             invokeLifecycleHandlers(
                     startHandlers,
-                    e -> {
+                    (phase, e) -> {
                         logger.debug("Start up is being ended prematurely due to an exception");
                         String startFailure = String.format(
                                 "One of the start handlers in phase [%d] failed with the following exception: ",
-                                currentLifecyclePhase
+                                phase
                         );
                         logger.warn(startFailure, e);
 
@@ -174,9 +180,6 @@ class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> impleme
                         throw new LifecycleHandlerInvocationException(startFailure, e);
                     }
             );
-
-            lifecycleState = LifecycleState.UP;
-            logger.debug("Finalized start sequence");
         }
 
         /**
@@ -195,8 +198,12 @@ class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> impleme
 
         @Override
         public void shutdown() {
-            if (isRunning.getAndSet(false)) {
+            if (lifecycleState.compareAndSet(LifecycleState.UP, LifecycleState.SHUTTING_DOWN)) {
+                logger.debug("Initiating shutdown");
                 invokeShutdownHandlers();
+
+                lifecycleState.set(LifecycleState.DOWN);
+                logger.debug("Finalized shutdown sequence");
             }
         }
 
@@ -204,23 +211,18 @@ class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> impleme
          * Invokes all registered shutdown handlers.
          */
         protected void invokeShutdownHandlers() {
-            logger.debug("Initiating shutdown");
-            lifecycleState = LifecycleState.SHUTTING_DOWN;
-
             invokeLifecycleHandlers(
                     shutdownHandlers,
-                    e -> logger.warn(
+                    (phase, e) -> logger.warn(
                             "One of the shutdown handlers in phase [{}] failed with the following exception: ",
-                            currentLifecyclePhase, e
+                            phase, e
                     )
             );
-
-            lifecycleState = LifecycleState.DOWN;
-            logger.debug("Finalized shutdown sequence");
         }
 
         private void invokeLifecycleHandlers(TreeMap<Integer, List<LifecycleHandler>> lifecycleHandlerMap,
-                                             Consumer<Exception> exceptionHandler) {
+                                             BiConsumer<Integer, Exception> exceptionHandler) {
+            Integer currentLifecyclePhase;
             Map.Entry<Integer, List<LifecycleHandler>> phasedHandlers = lifecycleHandlerMap.firstEntry();
             if (phasedHandlers == null) {
                 return;
@@ -229,70 +231,77 @@ class DefaultAxonApplication extends AbstractConfigurer<AxonApplication> impleme
             do {
                 currentLifecyclePhase = phasedHandlers.getKey();
                 logger.debug("Entered {} handler lifecycle phase [{}]",
-                             lifecycleState.description,
+                             lifecycleState.get().description,
                              currentLifecyclePhase);
 
                 List<LifecycleHandler> handlers = phasedHandlers.getValue();
                 try {
                     handlers.stream()
-                            .map(LifecycleHandler::run)
+                            .map(lch -> lch.run(this))
                             .map(c -> c.thenRun(NOTHING))
                             .reduce(CompletableFuture::allOf)
                             .orElse(FutureUtils.emptyCompletedFuture())
                             .get(lifecyclePhaseTimeout, lifecyclePhaseTimeunit);
                 } catch (CompletionException | ExecutionException e) {
-                    exceptionHandler.accept(e);
+                    exceptionHandler.accept(currentLifecyclePhase, e);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     logger.warn(
                             "Completion interrupted during {} phase [{}]. Proceeding to following phase",
-                            lifecycleState.description, currentLifecyclePhase);
+                            lifecycleState.get().description, currentLifecyclePhase);
                 } catch (TimeoutException e) {
-                    final long lifecyclePhaseTimeoutInSeconds = TimeUnit.SECONDS.convert(lifecyclePhaseTimeout,
-                                                                                         lifecyclePhaseTimeunit);
+                    final long lifecyclePhaseTimeoutInMillis = TimeUnit.MILLISECONDS.convert(lifecyclePhaseTimeout,
+                                                                                             lifecyclePhaseTimeunit);
                     logger.warn(
-                            "Timed out during {} phase [{}] after {} second(s). Proceeding to following phase",
-                            lifecycleState.description, currentLifecyclePhase, lifecyclePhaseTimeoutInSeconds);
+                            "Timed out during {} phase [{}] after {}ms. Proceeding to following phase",
+                            lifecycleState.get().description, currentLifecyclePhase, lifecyclePhaseTimeoutInMillis);
                 }
             } while ((phasedHandlers = lifecycleHandlerMap.higherEntry(currentLifecyclePhase)) != null);
-            currentLifecyclePhase = null;
         }
 
-//        @Override
-//        public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
-//            if (isEarlierPhaseDuringStartUp(phase)) {
-//                logger.info(
-//                        "A start handler is being registered for phase [{}] whilst phase [{}] is in progress. "
-//                                + "Will run provided handler immediately instead.",
-//                        phase, currentLifecyclePhase
-//                );
-//                requireNonNull(startHandler, "Cannot run a null start handler.").run().join();
-//            }
-//            registerLifecycleHandler(startHandlers, phase, startHandler);
-//        }
-//
-//        private boolean isEarlierPhaseDuringStartUp(int phase) {
-//            return lifecycleState == LifecycleState.STARTING_UP
-//                    && currentLifecyclePhase != null && phase <= currentLifecyclePhase;
-//        }
-//
-//        @Override
-//        public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
-//            if (isEarlierPhaseDuringShutdown(phase)) {
-//                logger.info(
-//                        "A shutdown handler is being registered for phase [{}] whilst phase [{}] is in progress. "
-//                                + "Will run provided handler immediately instead.",
-//                        phase, currentLifecyclePhase
-//                );
-//                requireNonNull(shutdownHandler, "Cannot run a null shutdown handler.").run().join();
-//            }
-//            registerLifecycleHandler(shutdownHandlers, phase, shutdownHandler);
-//        }
-//
-//        private boolean isEarlierPhaseDuringShutdown(int phase) {
-//            return lifecycleState == LifecycleState.SHUTTING_DOWN
-//                    && currentLifecyclePhase != null && phase >= currentLifecyclePhase;
-//        }
+        @Override
+        public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type, @Nonnull String name) {
+            return config.getOptionalComponent(type, name);
+        }
+
+        @Nonnull
+        @Override
+        public <C> C getComponent(@Nonnull Class<C> type, @Nonnull String name, @Nonnull Supplier<C> defaultImpl) {
+            return config.getComponent(type, name, defaultImpl);
+        }
+
+        @Nonnull
+        @Override
+        public <C> C getComponent(@Nonnull Class<C> type) {
+            return config.getComponent(type);
+        }
+
+        @Nonnull
+        @Override
+        public <C> C getComponent(@Nonnull Class<C> type, @Nonnull Supplier<C> defaultImpl) {
+            return config.getComponent(type, defaultImpl);
+        }
+
+        @Nonnull
+        @Override
+        public <C> C getComponent(@Nonnull Class<C> type, @Nonnull String name) {
+            return config.getComponent(type, name);
+        }
+
+        @Override
+        public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type) {
+            return config.getOptionalComponent(type);
+        }
+
+        @Override
+        public List<NewConfiguration> getModuleConfigurations() {
+            return config.getModuleConfigurations();
+        }
+
+        @Override
+        public Optional<NewConfiguration> getModuleConfiguration(String name) {
+            return config.getModuleConfiguration(name);
+        }
     }
 
     private enum LifecycleState {

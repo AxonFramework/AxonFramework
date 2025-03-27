@@ -26,15 +26,16 @@ import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * Abstract implementation of the {@link NewConfigurer} allowing for reuse of {@link Component},
+ * Abstract implementation of the {@link ComponentRegistry} allowing for reuse of {@link Component},
  * {@link ComponentDecorator}, {@link ConfigurationEnhancer}, and {@link Module} registration for the
  * {@code NewConfigurer} and {@link Module} implementations alike.
  *
@@ -42,77 +43,58 @@ import java.util.function.Supplier;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements NewConfigurer<S> {
+public class DefaultComponentRegistry implements ComponentRegistry {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final Components components = new Components();
     private final List<ConfigurationEnhancer> enhancers = new ArrayList<>();
-    private final List<Module<?>> modules = new ArrayList<>();
+    private final Map<String, Module> modules = new ConcurrentHashMap<>();
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
-    private final List<RegisteredComponentDecorator<?>> componentDecorators = new ArrayList<>();
-    private LifecycleSupportingConfiguration parent;
-    private LifecycleSupportingConfiguration config;
-    private final List<NewConfiguration> moduleConfigurations = new ArrayList<>();
-
-    protected final NewConfiguration config;
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final List<RegisteredComponentDecorator<?, ?>> componentDecorators = new ArrayList<>();
+    private final Map<String, NewConfiguration> moduleConfigurations = new ConcurrentHashMap<>();
+    private NewConfiguration config;
     private OverrideBehavior overrideBehavior = OverrideBehavior.WARN;
 
-    /**
-     * Initialize the {@code AbstractConfigurer} based on the given {@code parent}.
-     *
-     * @param parent The life cycle supporting configuration used as the <b>parent</b> configuration of the
-     *               {@link LocalConfiguration}.
-     */
-    protected AbstractConfigurer(@Nullable NewConfiguration parent) {
-        this.config = new LocalConfiguration(parent);
-    }
-
     @Override
-    public <C> S registerComponent(@Nonnull Class<C> type,
-                                   @Nonnull String name,
-                                   @Nonnull ComponentFactory<C> factory) {
+    public <C> ComponentRegistry registerComponent(@Nonnull Class<C> type,
+                                                   @Nonnull String name,
+                                                   @Nonnull ComponentFactory<C> factory) {
         logger.debug("Registering component [{}] of type [{}].", name, type);
         Identifier<C> identifier = new Identifier<>(type, name);
         if (overrideBehavior == OverrideBehavior.THROW && components.contains(identifier)) {
             throw new ComponentOverrideException(type, name);
         }
 
-        Component<C> previous = components.put(identifier, new Component<>(identifier, this::config, factory));
+        Component<C> previous = components.put(new Component<>(identifier, factory));
         if (previous != null && overrideBehavior == OverrideBehavior.WARN) {
             logger.warn("Replaced a previous Component registered for type [{}] and name [{}].", name, type);
         }
-        return self();
+        return this;
     }
 
     @Override
-    public <C> S registerDecorator(@Nonnull Class<C> type,
-                                   int order,
-                                   @Nonnull ComponentDecorator<C> decorator) {
+    public <C, D extends C> ComponentRegistry registerDecorator(@Nonnull Class<C> type,
+                                                                int order,
+                                                                @Nonnull ComponentDecorator<C, D> decorator) {
         Objects.requireNonNull(type, "type must not be null");
         Objects.requireNonNull(decorator, "decorator must not be null");
         logger.debug("Registering decorator for type [{}] at order #{}.", type, order);
         componentDecorators.add(new RegisteredComponentDecorator<>(i -> i.type().equals(type), order, decorator));
-        return self();
+        return this;
     }
 
     @Override
-    public <C> S registerDecorator(@Nonnull Class<C> type, @Nonnull String name, int order,
-                                   @Nonnull ComponentDecorator<C> decorator) {
+    public <C, D extends C> ComponentRegistry registerDecorator(@Nonnull Class<C> type, @Nonnull String name, int order,
+                                                                @Nonnull ComponentDecorator<C, D> decorator) {
         Objects.requireNonNull(name, "name must not be null");
         logger.debug("Registering decorator for name [{}] and type [{}] at order #{}.", name, type, order);
         componentDecorators.add(new RegisteredComponentDecorator<>(
                 i -> Objects.equals(i.name(), name) && Objects.equals(
                         i.type(),
                         type), order, decorator));
-        return self();
-    }
-
-    private S self() {
-        //noinspection unchecked
-        return (S) this;
+        return this;
     }
 
     @Override
@@ -122,58 +104,57 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
     }
 
     @Override
-    public S registerEnhancer(@Nonnull ConfigurationEnhancer enhancer) {
+    public ComponentRegistry registerEnhancer(@Nonnull ConfigurationEnhancer enhancer) {
         logger.debug("Registering enhancer [{}].", enhancer.getClass().getSimpleName());
         this.enhancers.add(enhancer);
-        return self();
+        return this;
     }
 
     @Override
-    public S registerModule(@Nonnull Module<?> module) {
+    public ComponentRegistry registerModule(@Nonnull Module module) {
         logger.debug("Registering module [{}].", module.name());
-        this.modules.add(module);
-        return self();
-    }
-
-    @Override
-    public <C extends NewConfigurer<C>> S delegate(@Nonnull Class<C> type,
-                                                   @Nonnull Consumer<C> configureTask) {
-        logger.warn("Ignoring configure task on configurer [{}] because there is no delegate configurer of type [{}].",
-                    this.getClass(), type);
-        return self();
-    }
-
-    @Override
-    public void onStart(int phase, @Nonnull LifecycleHandler startHandler) {
-        throw new UnsupportedOperationException("Registering start handlers is not supported on this configurer.");
-    }
-
-    @Override
-    public void onShutdown(int phase, @Nonnull LifecycleHandler shutdownHandler) {
-        throw new UnsupportedOperationException("Registering shutdown handlers is not supported on this configurer.");
+        if (modules.containsKey(module.name())) {
+            throw new DuplicateModuleRegistrationException(module);
+        }
+        this.modules.put(module.name(), module);
+        return this;
     }
 
     /**
-     * Sets the given {@code parent} as the parent configuration of the {@link LocalConfiguration} of this configurer.
+     * Builds the Configuration from this ComponentRegistry as a root configuration. The given {@code lifecycleRegistry}
+     * is used to register Components' lifecycle methods.
      *
-     * @param parent The parent configuration of the {@link LocalConfiguration} of this configurer.
+     * @param lifecycleRegistry The registry where lifecycle handlers are registered
+     * @return a fully initialized Configuration exposing all configured Components
      */
-    protected void setParent(@Nullable LifecycleSupportingConfiguration parent) {
-        this.parent = parent;
+    public NewConfiguration build(@Nonnull LifecycleRegistry lifecycleRegistry) {
+        return doBuild(null, lifecycleRegistry);
     }
 
     /**
-     * Common builder activity for any {@code AbstractConfigurer} implementation.
-     * <p>
-     * Will enhance this configurer will all registered {@link ConfigurationEnhancer ConfigurationEnhancers} and
-     * {@link Module#build(LifecycleSupportingConfiguration) builds} all the {@link Module Modules}.
+     * Builds the Configuration from this ComponentRegistry as a nested configuration under the given {@code parent}.
+     * Components registered in the {@code parent} are available to components registered in this registry, but not vice
+     * versa. The given {@code lifecycleRegistry} is used to register Components' lifecycle methods.
+     *
+     * @param parent            The parent Configuration
+     * @param lifecycleRegistry The registry where lifecycle handlers are registered
+     * @return a fully initialized Configuration exposing all configured Components
      */
-    protected void enhanceInvocationAndModuleConstruction() {
+    public NewConfiguration buildNested(@Nonnull NewConfiguration parent,
+                                        @Nonnull LifecycleRegistry lifecycleRegistry) {
+        return doBuild(Objects.requireNonNull(parent), Objects.requireNonNull(lifecycleRegistry));
+    }
+
+    private NewConfiguration doBuild(@Nullable NewConfiguration optionalParent,
+                                     @Nonnull LifecycleRegistry lifecycleRegistry) {
         if (!initialized.getAndSet(true)) {
+            this.config = new LocalConfiguration(optionalParent);
             invokeEnhancers();
             decorateComponents();
-            buildModules();
+            buildModules(lifecycleRegistry);
+            initializeComponents(lifecycleRegistry);
         }
+        return this.config;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -204,46 +185,36 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
      * Ensure all registered {@link Module Modules} are built too. Store their {@link NewConfiguration} results for
      * exposure on {@link NewConfiguration#getModuleConfigurations()}.
      */
-    private void buildModules() {
-        for (Module<?> module : modules) {
-            moduleConfigurations.add(module.build(config()));
+    private void buildModules(LifecycleRegistry lifecycleRegistry) {
+        for (Module module : modules.values()) {
+            moduleConfigurations.put(module.name(), module.build(config, lifecycleRegistry));
         }
     }
 
-    /**
-     * Returns the {@link NewConfiguration} of this {@link NewConfigurer} implementation.
-     * <p>
-     * Will construct it if it has not been initialized yet.
-     *
-     * @return The {@link NewConfiguration} of this {@link NewConfigurer} implementation.
-     */
-    protected NewConfiguration config() {
-        if (this.config == null) {
-            this.config = new LocalConfiguration(parent);
-        }
-        return this.config;
-    }
-
-    /**
-     * Sets the {@link OverrideBehavior} for this configurer.
-     * <p>
-     * Intended for the {@link DefaultAxonApplication} to invoke on
-     * {@link AxonApplication#registerOverrideBehavior(OverrideBehavior)}.
-     *
-     * @param overrideBehavior The override behavior for this {@code AbstractConfigurer}, intended for the
-     *                         {@link DefaultAxonApplication} to use on
-     *                         {@link AxonApplication#registerOverrideBehavior(OverrideBehavior)} invocations.
-     */
-    protected void setOverrideBehavior(OverrideBehavior overrideBehavior) {
+    @Override
+    public DefaultComponentRegistry setOverrideBehavior(OverrideBehavior overrideBehavior) {
         this.overrideBehavior = overrideBehavior;
+        return this;
     }
 
     /**
-     * A {@link NewConfiguration} implementation acting as the local configuration of this configurer. Can be
-     * implemented by {@link AbstractConfigurer} implementation that need to reuse the access logic for
-     * {@link Component Components} and {@link Module Modules} as provided by this implementation.
+     * Initialize the components defined in this registry, allowing them to register their lifecycle actions with given
+     * {@code lifecycleRegistry}
+     *
+     * @param lifecycleRegistry The registry where components may register their lifecycle actions
      */
-    public class LocalConfiguration implements NewConfiguration {
+    private void initializeComponents(LifecycleRegistry lifecycleRegistry) {
+        NewConfiguration cfg = config;
+        components.postProcessComponents(c -> c.initLifecycle(cfg, lifecycleRegistry));
+    }
+
+    private record RegisteredComponentDecorator<C, D extends C>(Predicate<Identifier<C>> componentMatcher,
+                                                                int order,
+                                                                ComponentDecorator<C, D> decorator) {
+
+    }
+
+    private class LocalConfiguration implements NewConfiguration {
 
         private final NewConfiguration parent;
 
@@ -265,7 +236,7 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nonnull String name) {
             return components.get(new Identifier<>(type, name))
-                             .map(component -> component.init(config(), AbstractConfigurer.this))
+                             .map(c -> c.resolve(config))
                              .or(() -> Optional.ofNullable(fromParent(type, name, () -> null)));
         }
 
@@ -277,12 +248,9 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
             Identifier<C> identifier = new Identifier<>(type, name);
             Object component = components.computeIfAbsent(
                     identifier,
-                    id -> new Component<>(
-                            identifier,
-                            c -> optionalFromParent(type, name, defaultImpl).orElseGet(defaultImpl)
-                    )
-            ).init(config(), AbstractConfigurer.this);
-            return identifier.type().cast(component);
+                    id -> new Component<>(identifier, c -> fromParent(type, name, defaultImpl))
+            ).resolve(this);
+            return type.cast(component);
         }
 
         private <C> C fromParent(Class<C> type, String name, Supplier<C> defaultSupplier) {
@@ -293,13 +261,12 @@ public abstract class AbstractConfigurer<S extends NewConfigurer<S>> implements 
 
         @Override
         public List<NewConfiguration> getModuleConfigurations() {
-            return List.copyOf(moduleConfigurations);
+            return List.copyOf(moduleConfigurations.values());
         }
-    }
 
-    private record RegisteredComponentDecorator<C>(Predicate<Identifier<C>> componentMatcher,
-                                                   int order,
-                                                   ComponentDecorator<C> decorator) {
-
+        @Override
+        public Optional<NewConfiguration> getModuleConfiguration(String name) {
+            return Optional.ofNullable(moduleConfigurations.get(name));
+        }
     }
 }
