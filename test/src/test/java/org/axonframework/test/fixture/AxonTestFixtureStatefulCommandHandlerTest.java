@@ -94,6 +94,26 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .events(new StudentNameChangedEvent("my-studentId-1", "name-3", 3));
     }
 
+    @Test
+    void givenEventAndMultipleCommandsWhenCommandThenEvents() {
+        var configurer = MessagingConfigurer.create();
+        registerSampleStatefulCommandHandler(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        fixture.given()
+               .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
+               .when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-4"))
+               .then()
+               .events(
+                       new StudentNameChangedEvent("my-studentId-1", "name-3", 3),
+                       new StudentNameChangedEvent("my-studentId-1", "name-4", 4)
+               );
+    }
+
 
     @Test
     void givenEventsWhenCommandThenExpectEvents() {
