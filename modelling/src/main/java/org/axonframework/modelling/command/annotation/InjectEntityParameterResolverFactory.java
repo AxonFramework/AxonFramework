@@ -97,6 +97,10 @@ public class InjectEntityParameterResolverFactory implements ParameterResolverFa
         if (annotation.idProperty() != null && !annotation.idProperty().isEmpty()) {
             return new PropertyBasedEntityIdResolver(annotation.idProperty());
         }
-        return getConstructorFunctionWithZeroArguments(annotation.idResolver()).get();
+        try {
+            return getConstructorFunctionWithZeroArguments(annotation.idResolver()).get();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to instantiate id resolver: " + annotation.idResolver().getName(), e);
+        }
     }
 }
