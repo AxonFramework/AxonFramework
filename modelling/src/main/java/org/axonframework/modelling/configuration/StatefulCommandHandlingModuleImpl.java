@@ -25,9 +25,6 @@ import org.axonframework.configuration.LifecycleSupportingConfiguration;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.SimpleRepository;
-import org.axonframework.modelling.SimpleRepositoryEntityLoader;
-import org.axonframework.modelling.SimpleRepositoryEntityPersister;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.StatefulCommandHandler;
@@ -42,7 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static java.util.Objects.requireNonNull;
 
 /**
- * The single implementation of the {@link StatefulCommandHandlingModule} and it's {@link SetupPhase builder} flow.
+ * Basis implementation of the {@link StatefulCommandHandlingModule}.
  *
  * @author Allard Buijze
  * @author Mateusz Nowak
@@ -50,19 +47,18 @@ import static java.util.Objects.requireNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
+// TODO I really, really don't like "Impl." Similarly, I do not like "Default" or "Simple." Suggestions?
 class StatefulCommandHandlingModuleImpl
         extends AbstractConfigurer<StatefulCommandHandlingModule>
         implements StatefulCommandHandlingModule,
         StatefulCommandHandlingModule.SetupPhase,
         StatefulCommandHandlingModule.CommandHandlerPhase,
-        StatefulCommandHandlingModule.EntityPhase,
-        StatefulCommandHandlingModule.BuildPhase {
+        StatefulCommandHandlingModule.EntityPhase {
 
     private final String moduleName;
     private final String stateManagerName;
     private final String statefulCommandHandlingComponentName;
-
-    private final Map<String, EntityConfigurer<?, ?>> entities;
+    private final Map<String, EntityBuilder<?, ?>> entityBuilders;
     private final Map<QualifiedName, ComponentFactory<StatefulCommandHandler>> handlerFactories;
     private final AtomicReference<StatefulCommandHandlingComponent> handlingComponentReference;
 
@@ -71,8 +67,7 @@ class StatefulCommandHandlingModuleImpl
         this.moduleName = moduleName;
         this.stateManagerName = "StateManager[" + moduleName + "]";
         this.statefulCommandHandlingComponentName = "StatefulCommandHandlingComponent[" + moduleName + "]";
-
-        this.entities = new HashMap<>();
+        this.entityBuilders = new HashMap<>();
         this.handlerFactories = new HashMap<>();
         this.handlingComponentReference = new AtomicReference<>();
     }
@@ -83,8 +78,8 @@ class StatefulCommandHandlingModuleImpl
     }
 
     @Override
-    public CommandHandlerPhase handler(@Nonnull QualifiedName commandName,
-                                       @Nonnull ComponentFactory<StatefulCommandHandler> commandHandlerBuilder) {
+    public CommandHandlerPhase commandHandler(@Nonnull QualifiedName commandName,
+                                              @Nonnull ComponentFactory<StatefulCommandHandler> commandHandlerBuilder) {
         this.handlerFactories.put(commandName, commandHandlerBuilder);
         return this;
     }
@@ -95,11 +90,10 @@ class StatefulCommandHandlingModuleImpl
     }
 
     @Override
-    public <I, E> RepositoryPhase<I, E> entity(@Nonnull Class<I> idType,
-                                               @Nonnull Class<E> entityType) {
-        EntityConfigurer<I, E> entityConfigurer = new EntityConfigurer<>(this, idType, entityType);
-        entities.put(entityConfigurer.entityName(), entityConfigurer);
-        return entityConfigurer;
+    public <I, E> EntityPhase entity(@Nonnull EntityBuilder<I, E> entityBuilder) {
+        requireNonNull(entityBuilder, "The entity builder cannot be null.");
+        entityBuilders.put(entityBuilder.entityName(), entityBuilder);
+        return this;
     }
 
     @Override
@@ -111,15 +105,14 @@ class StatefulCommandHandlingModuleImpl
     }
 
     private void registerRepositories() {
-        // TODO DISCUSS - We lose the generics now when retrieving the AsyncRepository. Sad yes/no?
-        entities.forEach((name, entityBuilder) -> registerComponent(AsyncRepository.class,
-                                                                    name,
-                                                                    entityBuilder.repository()));
+        entityBuilders.forEach((name, entityBuilder) -> registerComponent(AsyncRepository.class,
+                                                                          name,
+                                                                          entityBuilder.repository()));
     }
 
     private SimpleStateManager stateManagerFactory(NewConfiguration config) {
         SimpleStateManager.Builder managerBuilder = SimpleStateManager.builder(stateManagerName);
-        for (String repositoryName : entities.keySet()) {
+        for (String repositoryName : entityBuilders.keySet()) {
             //noinspection unchecked
             managerBuilder.register(config.getComponent(AsyncRepository.class, repositoryName));
         }
@@ -133,6 +126,7 @@ class StatefulCommandHandlingModuleImpl
                     c.getComponent(StateManager.class, stateManagerName)
             );
             // TODO DISCUSS - do we want separate command handler registrations?
+            // Not for now - add issue for the future
             handlerFactories.forEach((key, value) -> handlingComponent.subscribe(key, value.build(c)));
             handlingComponentReference.set(handlingComponent);
             return handlingComponent;
@@ -149,7 +143,6 @@ class StatefulCommandHandlingModuleImpl
         super.setParent(Objects.requireNonNull(parent, "The parent Configuration cannot be null."));
         super.enhanceInvocationAndModuleConstruction();
         LifecycleSupportingConfiguration moduleConfig = super.config();
-        // TODO DISCUSS - do we want to subscribe separate command handlers?
         parent.onStart(
                 Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
                 () -> parent.getComponent(CommandBus.class)
@@ -159,80 +152,5 @@ class StatefulCommandHandlingModuleImpl
                             ))
         );
         return moduleConfig;
-    }
-
-    private static class EntityConfigurer<I, E> implements
-            EntityPhase,
-            RepositoryPhase<I, E>,
-            PersisterPhase<I, E> {
-
-        // Parent State Configurer for circling back.
-        private final StatefulCommandHandlingModuleImpl parent;
-        // Entity type information
-        private final Class<I> idType;
-        private final Class<E> entityType;
-        // Repository information
-        private ComponentFactory<SimpleRepositoryEntityLoader<I, E>> loaderFactory;
-        private ComponentFactory<SimpleRepositoryEntityPersister<I, E>> persisterFactory;
-        private ComponentFactory<AsyncRepository<I, E>> repositoryFactory;
-
-        private EntityConfigurer(StatefulCommandHandlingModuleImpl parent,
-                                 Class<I> idType,
-                                 Class<E> entityType) {
-            this.parent = parent;
-            this.idType = requireNonNull(idType, "The identifier type cannot be null.");
-            this.entityType = requireNonNull(entityType, "The entity type cannot be null.");
-        }
-
-        @Override
-        public <ID, T> RepositoryPhase<ID, T> entity(@Nonnull Class<ID> idType, @Nonnull Class<T> entityType) {
-            return parent.entity(idType, entityType);
-        }
-
-        @Override
-        public PersisterPhase<I, E> loader(@Nonnull ComponentFactory<SimpleRepositoryEntityLoader<I, E>> loader) {
-            this.loaderFactory = requireNonNull(loader, "The repository loader factory cannot be null.");
-            return this;
-        }
-
-        @Override
-        public EntityPhase persister(@Nonnull ComponentFactory<SimpleRepositoryEntityPersister<I, E>> persister) {
-            this.persisterFactory = requireNonNull(persister, "The repository persister factory cannot be null.");
-            return this;
-        }
-
-        @Override
-        public EntityPhase repository(@Nonnull ComponentFactory<AsyncRepository<I, E>> repository) {
-            this.repositoryFactory = requireNonNull(repository, "The repository factory cannot be null.");
-            return this;
-        }
-
-        @Override
-        public CommandHandlerPhase commandHandlers() {
-            return parent.commandHandlers();
-        }
-
-        @Override
-        public EntityPhase entities() {
-            return this;
-        }
-
-        @Override
-        public StatefulCommandHandlingModule build() {
-            return parent.build();
-        }
-
-        private String entityName() {
-            return entityType.getSimpleName() + "#" + idType.getSimpleName();
-        }
-
-        private ComponentFactory<AsyncRepository<I, E>> repository() {
-            return repositoryFactory != null
-                    ? repositoryFactory
-                    : c -> new SimpleRepository<>(idType,
-                                                  entityType,
-                                                  loaderFactory.build(c),
-                                                  persisterFactory.build(c));
-        }
     }
 }
