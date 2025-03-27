@@ -16,6 +16,7 @@
 
 package org.axonframework.configuration;
 
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component.Identifier;
 import org.junit.jupiter.api.*;
 
@@ -195,4 +196,66 @@ class ComponentTest {
         verifyNoInteractions(mock);
     }
 
+    @Test
+    void describeToDescribesBuilderWhenUnresolved() {
+        ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+
+        Component<String> testSubject = new Component<>(identifier, factory);
+
+        testSubject.describeTo(testDescriptor);
+
+        verify(testDescriptor).describeProperty("identifier", identifier.toString());
+        verify(testDescriptor).describeProperty("factory", factory);
+        verify(testDescriptor).describeProperty("initialized", false);
+        verify(testDescriptor).describeProperty("resolved", false);
+    }
+
+    @Test
+    void describeToDescribesBuilderWhenUnresolvedButInitialized() {
+        ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+
+        Component<String> testSubject = new Component<>(identifier, factory);
+
+        testSubject.initLifecycle(configuration, lifecycleRegistry);
+
+        testSubject.describeTo(testDescriptor);
+
+        verify(testDescriptor).describeProperty("identifier", identifier.toString());
+        verify(testDescriptor).describeProperty("factory", factory);
+        verify(testDescriptor).describeProperty("initialized", true);
+        verify(testDescriptor).describeProperty("resolved", false);
+    }
+
+    @Test
+    void describeToDescribesInstanceWhenResolved() {
+        ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+
+        Component<String> testSubject = new Component<>(identifier, factory);
+
+        // Initialize the component by getting it.
+        testSubject.resolve(configuration);
+        testSubject.describeTo(testDescriptor);
+
+        verify(testDescriptor).describeProperty("identifier", identifier.toString());
+        verify(testDescriptor).describeProperty("component", (Object) TEST_COMPONENT);
+        verify(testDescriptor).describeProperty("initialized", false);
+        verify(testDescriptor).describeProperty("resolved", true);
+    }
+
+    @Test
+    void describeToDescribesInstanceWhenResolvedAndInitialized() {
+        ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+
+        Component<String> testSubject = new Component<>(identifier, factory);
+
+        // Initialize the component by getting it.
+        testSubject.resolve(configuration);
+        testSubject.initLifecycle(configuration, lifecycleRegistry);
+        testSubject.describeTo(testDescriptor);
+
+        verify(testDescriptor).describeProperty("identifier", identifier.toString());
+        verify(testDescriptor).describeProperty("component", (Object) TEST_COMPONENT);
+        verify(testDescriptor).describeProperty("initialized", true);
+        verify(testDescriptor).describeProperty("resolved", true);
+    }
 }

@@ -18,6 +18,8 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.StringUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +47,7 @@ import static org.axonframework.common.Assert.assertThat;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public class Component<C> {
+public class Component<C> implements DescribableComponent {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -184,9 +186,23 @@ public class Component<C> {
         return instance != null;
     }
 
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("identifier", identifier.toString());
+        if (isResolved()) {
+            descriptor.describeProperty("component", instance);
+            descriptor.describeProperty("initialized", isInitialized());
+            descriptor.describeProperty("resolved", true);
+        } else {
+            descriptor.describeProperty("factory", factory);
+            descriptor.describeProperty("initialized", isInitialized());
+            descriptor.describeProperty("resolved", false);
+        }
+    }
+
     /**
-     * Returns a Component that decorates this component, calling given {@code decorator} to wrap (or replace) the
-     * instance created by this Component.
+     * Returns a {@code Component} that decorates this component, calling given {@code decorator} to wrap (or replace)
+     * the instance created by this {@code Component}.
      *
      * @param decorator the function that decorates the instance contained in this component
      * @return a new component that represents the decorated instance

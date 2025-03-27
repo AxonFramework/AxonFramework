@@ -18,11 +18,9 @@ package org.axonframework.serialization;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.AbstractMessage;
-import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 
-import java.io.Serial;
 import java.util.Map;
 
 /**
@@ -40,9 +38,6 @@ import java.util.Map;
  * @since 3.0.0
  */
 public class SerializedMessage<P> extends AbstractMessage<P> {
-
-    @Serial
-    private static final long serialVersionUID = 8079093289710229594L;
 
     private final LazyDeserializingObject<P> payload;
     private final LazyDeserializingObject<MetaData> metaData;
@@ -170,13 +165,4 @@ public class SerializedMessage<P> extends AbstractMessage<P> {
         return metaData.isDeserialized();
     }
 
-    /**
-     * Java Serialization API Method that provides a replacement to serialize, as the fields contained in this instance
-     * are not serializable themselves.
-     *
-     * @return the GenericMessage to use as a replacement when serializing
-     */
-    protected Object writeReplace() {
-        return new GenericMessage<>(getIdentifier(), type(), getPayload(), getMetaData());
-    }
 }

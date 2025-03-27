@@ -22,6 +22,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.DescribableComponent;
+
 /**
  * Interface providing access to all configured {@link Component components} in an Axon Framework application.
  *
@@ -30,7 +33,7 @@ import java.util.function.Supplier;
  * @since 3.0.0
  */
 // TODO rename to Configuration once the old Configuration is removed
-public interface NewConfiguration {
+public interface NewConfiguration extends DescribableComponent {
 
     /**
      * Returns the component declared under the given {@code type} or throws a {@link NullPointerException} if it does

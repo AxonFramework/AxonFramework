@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.loopbacktest;
+package org.axonframework.integrationtests.testsuite.student.events;
 
-import java.io.Serializable;
+import org.axonframework.eventsourcing.annotations.EventTag;
 
-/**
- * @author Allard Buijze
- */
-public class StubDomainEvent implements Serializable {
+public record MentorAssignedToStudentEvent(
+        @EventTag(key = "Student")
+        String mentorId,
+        @EventTag(key = "Student")
+        String menteeId
+) {
 
-    private static final long serialVersionUID = 834667054977749990L;
-
-    @Override
-    public String toString() {
-        return "StubDomainEvent";
-    }
 }

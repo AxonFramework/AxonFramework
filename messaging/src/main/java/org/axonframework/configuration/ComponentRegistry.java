@@ -17,9 +17,12 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.Assert;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Component.Identifier;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * The starting point when configuring any Axon Framework application.
@@ -33,7 +36,7 @@ import java.util.Objects;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface ComponentRegistry {
+public interface ComponentRegistry extends DescribableComponent {
 
     // TODO DescribableComponent!
 
@@ -79,17 +82,19 @@ public interface ComponentRegistry {
                                             @Nonnull ComponentFactory<C> factory);
 
     /**
-     * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
-     * {@link #registerComponent(Class, ComponentFactory) registered} components of the given {@code type}.
+     * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on <b>all</b>
+     * {@link #registerComponent(Class, ComponentFactory) registered} components of the given {@code type}, regardless
+     * of component name.
      * <p>
      * Decorators are invoked based on the given {@code order}. Decorators with a lower {@code order} will be executed
      * before those with a higher one. If decorators depend on the result of another decorator, their {@code order} must
-     * be strictly higher than the one they depend on. The order in which components are decorated by decorators with
-     * the same {@code order} is undefined.
+     * be strictly higher than the one they depend on.
+     * <p>
+     * The order in which components are decorated by decorators with the same {@code order} is undefined.
      *
      * @param type      The declared type of the component to decorate, typically an interface.
      * @param order     The order of the given {@code decorator} among other decorators.
-     * @param decorator The decoration function of this component.
+     * @param decorator The decoration function for a component of type {@code C}.
      * @param <C>       The type of component the {@code decorator} decorates.
      * @param <D>       The type of component the {@code decorator} returns.
      * @return The current instance of the {@code Configurer} for a fluent API.
@@ -100,8 +105,8 @@ public interface ComponentRegistry {
 
     /**
      * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
-     * {@link #registerComponent(Class, String, ComponentFactory) registered} components of the given {@code type} and
-     * {@code name} combination.
+     * {@link #registerComponent(Class, String, ComponentFactory) registered} components of the given {@code type}
+     * <b>and</b> {@code name} combination.
      * <p>
      * Decorators are invoked based on the given {@code order}. Decorators with a lowe {@code order} will be executed
      * before those with a higher one. If decorators depend on the result of another decorator, their {@code order} must
@@ -112,7 +117,7 @@ public interface ComponentRegistry {
      * @param type      The declared type of the component to decorate, typically an interface.
      * @param name      The name of the component to decorate.
      * @param order     The order of the given {@code decorator} among other decorators.
-     * @param decorator The decoration function of this component.
+     * @param decorator The decoration function for a component of type {@code C}.
      * @param <C>       The type of component the {@code decorator} decorates.
      * @param <D>       The type of component the {@code decorator} returns.
      * @return The current instance of the {@code Configurer} for a fluent API.
@@ -121,11 +126,11 @@ public interface ComponentRegistry {
                                                                  @Nonnull String name,
                                                                  int order,
                                                                  @Nonnull ComponentDecorator<C, D> decorator) {
-        Objects.requireNonNull(name, "name must not be null");
-        return registerDecorator(type,
-                                 order,
-                                 (c, n, delegate) ->
-                                         name.equals(n) ? decorator.decorate(c, n, delegate) : delegate);
+        Assert.nonEmpty(name, "The name must not be empty or null.");
+        return registerDecorator(
+                type, order,
+                (config, n, delegate) -> name.equals(n) ? decorator.decorate(config, n, delegate) : delegate
+        );
     }
 
     /**

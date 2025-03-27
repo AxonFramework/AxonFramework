@@ -41,10 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AsyncEventStoreTest {
 
-    private static final String TEST_CONTEXT = "some-context";
-
     private AtomicReference<ProcessingContext> processingContextReference;
-    private AtomicReference<String> contextReference;
     private AtomicReference<List<EventMessage<?>>> appendedEventsReference;
 
     private AsyncEventStore testSubject;
@@ -52,25 +49,22 @@ class AsyncEventStoreTest {
     @BeforeEach
     void setUp() {
         processingContextReference = new AtomicReference<>();
-        contextReference = new AtomicReference<>();
         appendedEventsReference = new AtomicReference<>();
         appendedEventsReference.set(new ArrayList<>());
 
-        testSubject = new StubEventStore(processingContextReference, contextReference, appendedEventsReference);
+        testSubject = new StubEventStore(processingContextReference, appendedEventsReference);
     }
 
     @Test
-    void publishWithContextInvokesEventStoreTransactionMethod() {
+    void publishInvokesEventStoreTransactionMethod() {
         ProcessingContext testProcessingContext = ProcessingContext.NONE;
         EventMessage<?> testEventZero = eventMessage(0);
         EventMessage<?> testEventOne = eventMessage(1);
         EventMessage<?> testEventTwo = eventMessage(2);
 
-        testSubject.publish(testProcessingContext, TEST_CONTEXT,
-                            testEventZero, testEventOne, testEventTwo);
+        testSubject.publish(testProcessingContext, testEventZero, testEventOne, testEventTwo);
 
         assertEquals(testProcessingContext, processingContextReference.get());
-        assertEquals(TEST_CONTEXT, contextReference.get());
         List<EventMessage<?>> testAppendedEvents = appendedEventsReference.get();
         assertTrue(testAppendedEvents.contains(testEventZero));
         assertTrue(testAppendedEvents.contains(testEventOne));
@@ -80,28 +74,22 @@ class AsyncEventStoreTest {
     static class StubEventStore implements AsyncEventStore {
 
         private final AtomicReference<ProcessingContext> processingContext;
-        private final AtomicReference<String> context;
         private final AtomicReference<List<EventMessage<?>>> appendedEvents;
 
         public StubEventStore(AtomicReference<ProcessingContext> processingContext,
-                              AtomicReference<String> context,
                               AtomicReference<List<EventMessage<?>>> appendedEvents) {
             this.processingContext = processingContext;
-            this.context = context;
             this.appendedEvents = appendedEvents;
         }
 
         @Override
-        public CompletableFuture<Void> publish(@NotNull String context,
-                                               @Nonnull List<EventMessage<?>> events) {
+        public CompletableFuture<Void> publish(@Nonnull List<EventMessage<?>> events) {
             throw new UnsupportedOperationException("We don't need this method to test the defaulted methods.");
         }
 
         @Override
-        public EventStoreTransaction transaction(@NotNull ProcessingContext processingContext,
-                                                 @NotNull String context) {
+        public EventStoreTransaction transaction(@NotNull ProcessingContext processingContext) {
             this.processingContext.set(processingContext);
-            this.context.set(context);
             return new TestEventStoreTransaction(appendedEvents);
         }
 

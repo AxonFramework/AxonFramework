@@ -18,6 +18,8 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Component.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +35,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Abstract implementation of the {@link ComponentRegistry} allowing for reuse of {@link Component},
@@ -52,7 +56,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
-    private final List<RegisteredComponentDecorator<?, ?>> componentDecorators = new ArrayList<>();
+    private final List<DecoratorRegistration<?, ?>> decoratorRegistrations = new ArrayList<>();
     private final Map<String, NewConfiguration> moduleConfigurations = new ConcurrentHashMap<>();
     private NewConfiguration config;
     private OverrideBehavior overrideBehavior = OverrideBehavior.WARN;
@@ -78,10 +82,10 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     public <C, D extends C> ComponentRegistry registerDecorator(@Nonnull Class<C> type,
                                                                 int order,
                                                                 @Nonnull ComponentDecorator<C, D> decorator) {
-        Objects.requireNonNull(type, "type must not be null");
-        Objects.requireNonNull(decorator, "decorator must not be null");
+        Objects.requireNonNull(type, "The type must not be null");
+        Objects.requireNonNull(decorator, "The component decorator must not be null");
         logger.debug("Registering decorator for type [{}] at order #{}.", type, order);
-        componentDecorators.add(new RegisteredComponentDecorator<>(i -> i.type().equals(type), order, decorator));
+        decoratorRegistrations.add(new DecoratorRegistration<>(i -> i.type().equals(type), order, decorator));
         return this;
     }
 
@@ -90,7 +94,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
                                                                 @Nonnull ComponentDecorator<C, D> decorator) {
         Objects.requireNonNull(name, "name must not be null");
         logger.debug("Registering decorator for name [{}] and type [{}] at order #{}.", name, type, order);
-        componentDecorators.add(new RegisteredComponentDecorator<>(
+        decoratorRegistrations.add(new DecoratorRegistration<>(
                 i -> Objects.equals(i.name(), name) && Objects.equals(
                         i.type(),
                         type), order, decorator));
@@ -159,11 +163,11 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void decorateComponents() {
-        componentDecorators.sort(Comparator.comparingInt(RegisteredComponentDecorator::order));
-        for (RegisteredComponentDecorator componentDecorator : componentDecorators) {
-            for (Identifier id : components.listComponents()) {
-                if (componentDecorator.componentMatcher.test(id)) {
-                    components.replace(id, previous -> previous.decorate(componentDecorator.decorator));
+        decoratorRegistrations.sort(Comparator.comparingInt(DecoratorRegistration::order));
+        for (DecoratorRegistration decoratorRegistration : decoratorRegistrations) {
+            for (Identifier id : components.identifiers()) {
+                if (decoratorRegistration.test(id)) {
+                    components.replace(id, previous -> previous.decorate(decoratorRegistration.decorator));
                 }
             }
         }
@@ -197,6 +201,15 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         return this;
     }
 
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("initialized", initialized.get());
+        descriptor.describeProperty("components", components);
+        descriptor.describeProperty("decorators", decoratorRegistrations);
+        descriptor.describeProperty("configurerEnhancers", enhancers);
+        descriptor.describeProperty("modules", modules.values());
+    }
+
     /**
      * Initialize the components defined in this registry, allowing them to register their lifecycle actions with given
      * {@code lifecycleRegistry}
@@ -206,12 +219,6 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private void initializeComponents(LifecycleRegistry lifecycleRegistry) {
         NewConfiguration cfg = config;
         components.postProcessComponents(c -> c.initLifecycle(cfg, lifecycleRegistry));
-    }
-
-    private record RegisteredComponentDecorator<C, D extends C>(Predicate<Identifier<C>> componentMatcher,
-                                                                int order,
-                                                                ComponentDecorator<C, D> decorator) {
-
     }
 
     private class LocalConfiguration implements NewConfiguration {
@@ -265,8 +272,41 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         }
 
         @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            descriptor.describeProperty("components", components);
+            descriptor.describeProperty("modules", moduleConfigurations.values());
+        }
+
+
+        @Override
         public Optional<NewConfiguration> getModuleConfiguration(String name) {
             return Optional.ofNullable(moduleConfigurations.get(name));
+        }
+    }
+
+    /**
+     * Private record representing a {@code decorator} registration. All {@code DecoratorRegistrations} are gathered and
+     * invoked during {@link ApplicationConfigurer#build()} of this configurer.
+     *
+     * @param idMatcher The {@code Predicate} used against a {@link Identifier} to validate if the {@code decorator}
+     *                  should be invoked.
+     * @param order     The order of the given {@code decorator} among other decorators.
+     * @param decorator The decoration function for a component of type {@code C}.
+     * @param <C>       The type of component the {@code decorator} decorates.
+     */
+    private record DecoratorRegistration<C, D extends C>(Predicate<Identifier<C>> idMatcher,
+                                            int order,
+                                            ComponentDecorator<C, D> decorator) implements DescribableComponent, Predicate<Identifier<C>> {
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            descriptor.describeProperty("order", order);
+            descriptor.describeProperty("decorator", decorator);
+        }
+
+        @Override
+        public boolean test(Identifier<C> identifier) {
+            return idMatcher.test(identifier);
         }
     }
 }

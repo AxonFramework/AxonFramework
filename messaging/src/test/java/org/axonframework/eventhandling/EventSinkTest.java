@@ -39,51 +39,42 @@ class EventSinkTest {
 
     private static final String TEST_CONTEXT = "some-context";
 
-    private AtomicReference<String> contextReference;
     private AtomicReference<List<EventMessage<?>>> publishedEventsReference;
 
     private EventSink testSubject;
 
     @BeforeEach
     void setUp() {
-        contextReference = new AtomicReference<>();
         publishedEventsReference = new AtomicReference<>();
 
-        testSubject = new DefaultEventSink(contextReference, publishedEventsReference);
+        testSubject = new DefaultEventSink(publishedEventsReference);
     }
 
     @Test
-    void publishWithContextInvokesPublishWithoutContextInPostInvocationPhase() {
+    void publishWithContextInvokesPublishInPostInvocationPhase() {
         EventMessage<?> testEventZero = eventMessage(0);
         EventMessage<?> testEventOne = eventMessage(1);
 
         AsyncUnitOfWork uow = new AsyncUnitOfWork();
         uow.runOnPreInvocation(processingContext -> testSubject.publish(processingContext,
-                                                                        TEST_CONTEXT,
                                                                         testEventZero, testEventOne))
            .runOnInvocation(processingContext -> assertNull(publishedEventsReference.get()))
            .runOnCommit(processingContext -> assertFalse(publishedEventsReference.get().isEmpty()));
         awaitCompletion(uow.execute());
 
-        assertEquals(TEST_CONTEXT, contextReference.get());
         assertEquals(Arrays.asList(testEventZero, testEventOne), publishedEventsReference.get());
     }
 
     static class DefaultEventSink implements EventSink {
 
-        private final AtomicReference<String> contextReference;
         private final AtomicReference<List<EventMessage<?>>> publishedEventsReference;
 
-        public DefaultEventSink(AtomicReference<String> contextReference,
-                                AtomicReference<List<EventMessage<?>>> publishedEventsReference) {
-            this.contextReference = contextReference;
+        public DefaultEventSink(AtomicReference<List<EventMessage<?>>> publishedEventsReference) {
             this.publishedEventsReference = publishedEventsReference;
         }
 
         @Override
-        public CompletableFuture<Void> publish(@Nonnull String context,
-                                               @Nonnull List<EventMessage<?>> events) {
-            contextReference.set(context);
+        public CompletableFuture<Void> publish(@Nonnull List<EventMessage<?>> events) {
             publishedEventsReference.set(events);
             return CompletableFuture.completedFuture(null);
         }

@@ -40,7 +40,7 @@ import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventsourcing.eventstore.EventCriterion;
 import org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils;
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
@@ -268,8 +268,9 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
         var allCriteriaStream = condition
                 .criteria()
+                .flatten()
                 .stream()
-                .map(criteria -> this.eventsForCriteria(condition, criteria))
+                .map(criteria -> this.eventsForCriterion(condition, criteria))
                 .reduce(MessageStream.empty().cast(), MessageStream::concatWith);
 
         var consistencyMarker = new AtomicReference<ConsistencyMarker>();
@@ -283,8 +284,8 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
         });
     }
 
-    private MessageStream<EventMessage<?>> eventsForCriteria(SourcingCondition condition,
-                                                             EventCriteria criterion) {
+    private MessageStream<EventMessage<?>> eventsForCriterion(SourcingCondition condition,
+                                                              EventCriterion criterion) {
         var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
         var events = batchingOperations.readEventData(
                 aggregateIdentifier,

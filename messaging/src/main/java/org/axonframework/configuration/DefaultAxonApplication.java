@@ -19,6 +19,7 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.IdentifierFactory;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -301,6 +302,12 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
         @Override
         public Optional<NewConfiguration> getModuleConfiguration(String name) {
             return config.getModuleConfiguration(name);
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            descriptor.describeProperty("components", componentRegistry);
+            descriptor.describeProperty("lifecycleState", lifecycleState.get());
         }
     }
 

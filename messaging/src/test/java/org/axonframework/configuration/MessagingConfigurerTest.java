@@ -98,7 +98,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
     @Test
     void registerEventSinkOverridesDefault() {
-        EventSink expected = (context, events) -> null;
+        EventSink expected = (events) -> null;
 
         NewConfiguration result = testSubject.registerEventSink(c -> expected)
                                              .build();
@@ -127,7 +127,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     }
 
     @Test
-    void axonDelegatesTasks() {
+    void applicationDelegatesTasks() {
         TestComponent tc = new TestComponent();
         TestComponent result =
                 testSubject.componentRegistry(axon -> axon.registerComponent(TestComponent.class, c -> tc))

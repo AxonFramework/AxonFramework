@@ -24,8 +24,6 @@ package org.axonframework.common;
  */
 public class ProcessRetriesExhaustedException extends AxonException {
 
-    private static final long serialVersionUID = 6920545831431694106L;
-
     /**
      * Initializes the exception using the given {@code message}.
      *

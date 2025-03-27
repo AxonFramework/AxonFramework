@@ -16,12 +16,14 @@
 
 package org.axonframework.configuration;
 
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component.Identifier;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -135,14 +137,66 @@ class ComponentsTest {
     }
 
     @Test
+    void identifiersReturnsAllRegisteredComponentsTheirIdentifiers() {
+        assertTrue(testSubject.identifiers().isEmpty());
+
+        testSubject.put(new Component<>(IDENTIFIER, c -> "some-state"));
+
+        Set<Identifier<?>> result = testSubject.identifiers();
+        assertFalse(result.isEmpty());
+        assertTrue(result.contains(IDENTIFIER));
+    }
+
+    @Test
+    void replaceDoesNothingIfThereIsNoComponentToReplaceForTheGivenIdentifier() {
+        AtomicBoolean invoked = new AtomicBoolean(false);
+
+        boolean result = testSubject.replace(IDENTIFIER, old -> {
+            invoked.set(true);
+            return new Component<>(IDENTIFIER, c -> "replacement");
+        });
+
+        assertFalse(invoked.get());
+        assertFalse(result);
+    }
+
+    @Test
+    void replaceReplacesComponents() {
+        AtomicBoolean invoked = new AtomicBoolean(false);
+        testSubject.put(new Component<>(IDENTIFIER, c -> "some-state"));
+
+        boolean result = testSubject.replace(IDENTIFIER, old -> {
+            invoked.set(true);
+            return new Component<>(IDENTIFIER, c -> "replacement");
+        });
+
+        assertTrue(invoked.get());
+        assertTrue(result);
+        Optional<String> resultComponent = testSubject.get(IDENTIFIER).map(c -> c.resolve(mock()));
+        assertTrue(resultComponent.isPresent());
+        assertEquals("replacement", resultComponent.get());
+    }
+
+    @Test
+    void describeToDescribesComponents() {
+        ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+        Component<String> testComponent = new Component<>(IDENTIFIER, c -> "some-state");
+        testSubject.put(testComponent);
+
+        testSubject.describeTo(testDescriptor);
+
+        verify(testDescriptor).describeProperty("components", Map.of(IDENTIFIER, testComponent));
+    }
+
+    @Test
     void listReturnsReadOnlyViewOfComponents() {
         Identifier<Object> identifier2 = new Identifier<>(Object.class, "test2");
-        Set<Identifier<?>> identifiersBeforePut = testSubject.listComponents();
+        Set<Identifier<?>> identifiersBeforePut = testSubject.identifiers();
 
         testSubject.put(new Component<>(IDENTIFIER, c -> "some-state"));
         testSubject.put(new Component<>(identifier2, c -> "some-state"));
 
-        Set<Identifier<?>> identifiersAfterPut = testSubject.listComponents();
+        Set<Identifier<?>> identifiersAfterPut = testSubject.identifiers();
         assertFalse(identifiersBeforePut.contains(IDENTIFIER));
         assertTrue(identifiersAfterPut.contains(IDENTIFIER));
         assertTrue(identifiersAfterPut.contains(identifier2));

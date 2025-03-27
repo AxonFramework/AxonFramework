@@ -18,11 +18,9 @@ package org.axonframework.integrationtests.testsuite.student;
 
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
-import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
-import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
-import org.axonframework.integrationtests.testsuite.student.state.Course;
-import org.axonframework.integrationtests.testsuite.student.state.Student;
+import org.axonframework.config.Configuration;
+import org.axonframework.config.ConfigurationParameterResolverFactory;
+import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
@@ -34,11 +32,23 @@ import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventStorageEngine;
+import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
+import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
+import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
+import org.axonframework.integrationtests.testsuite.student.state.Course;
+import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
+import org.axonframework.modelling.command.annotation.InjectEntityParameterResolverFactory;
+import org.junit.jupiter.api.*;
+import org.mockito.*;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -53,7 +63,6 @@ public abstract class AbstractStudentTestSuite {
 
     protected SimpleEventStore eventStore = new SimpleEventStore(
             new AsyncInMemoryEventStorageEngine(),
-            DEFAULT_CONTEXT,
             getTagResolver()
     );
 
@@ -66,8 +75,7 @@ public abstract class AbstractStudentTestSuite {
             eventStore,
             getStudentCriteriaResolver(),
             studentEventStateApplier,
-            Student::new,
-            DEFAULT_CONTEXT
+            Student::new
     );
 
     protected AsyncEventSourcingRepository<String, Course> courseRepository = new AsyncEventSourcingRepository<>(
@@ -76,16 +84,25 @@ public abstract class AbstractStudentTestSuite {
             eventStore,
             getCourseCriteriaResolver(),
             courseEventStateApplier,
-            Course::new,
-            DEFAULT_CONTEXT
+            Course::new
     );
 
 
-    protected StateManager registry = SimpleStateManager
-            .builder("MyModelRegistry")
-            .register(studentRepository)
-            .register(courseRepository)
-            .build();
+    protected StateManager stateManager;
+
+    @BeforeEach
+    void setUp() {
+        SimpleStateManager.Builder builder = SimpleStateManager
+                .builder("MyModelRegistry")
+                .register(studentRepository)
+                .register(courseRepository);
+        registerAdditionalModels(builder);
+        stateManager = builder.build();
+    }
+
+    protected void registerAdditionalModels(SimpleStateManager.Builder builder) {
+        // Test suites can override this method to register additional models
+    }
 
 
     /**
@@ -123,7 +140,7 @@ public abstract class AbstractStudentTestSuite {
      * with the tag "Student" and the given model id.
      */
     protected CriteriaResolver<String> getStudentCriteriaResolver() {
-        return myModelId -> EventCriteria.forAnyEventType().withTags(new Tag("Student", myModelId));
+        return myModelId -> EventCriteria.match().eventsOfAnyType().withTags(new Tag("Student", myModelId));
     }
 
     /**
@@ -131,7 +148,27 @@ public abstract class AbstractStudentTestSuite {
      * with the tag "Course" and the given model id.
      */
     protected CriteriaResolver<String> getCourseCriteriaResolver() {
-        return myModelId -> EventCriteria.forAnyEventType().withTags(new Tag("Course", myModelId));
+        return myModelId -> EventCriteria.match().eventsOfAnyType().withTags(new Tag("Course", myModelId));
+    }
+
+
+    /**
+     * Returns the {@link MultiParameterResolverFactory} to use for the testsuite. Defaults to a factory that can
+     * resolve parameters from the classpath, the configuration, and the {@link StateManager}.
+     */
+    protected MultiParameterResolverFactory getParameterResolverFactory() {
+        var configuration = Mockito.mock(Configuration.class);
+        Mockito.when(configuration.getComponent(StateManager.class)).thenReturn(stateManager);
+        Mockito.when(configuration.getComponent(EventSink.class)).thenReturn(eventStore);
+
+        return MultiParameterResolverFactory.ordered(List.of(
+                ClasspathParameterResolverFactory.forClass(this.getClass()),
+                // To be able to get components
+                new ConfigurationParameterResolverFactory(configuration),
+                // To be able to get the entity, the StateManager needs to be available.
+                // When the new configuration API is there, we should have a way to resolve this
+                new InjectEntityParameterResolverFactory(stateManager)
+        ));
     }
 
 
@@ -149,7 +186,7 @@ public abstract class AbstractStudentTestSuite {
     }
 
     protected void appendEvent(ProcessingContext context, Object event) {
-        eventStore.transaction(context, DEFAULT_CONTEXT)
+        eventStore.transaction(context)
                   .appendEvent(new GenericEventMessage<>(
                           new MessageType(event.getClass()),
                           event));

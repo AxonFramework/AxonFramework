@@ -96,10 +96,6 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     @Override
     public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
                                                              @Nonnull List<TaggedEventMessage<?>> events) {
-        int tagCount = condition.criteria().stream().map(c -> c.tags().size()).reduce(0, Integer::max);
-        if (tagCount > 1) {
-            return CompletableFuture.failedFuture(new IllegalArgumentException("Conditions with more than one tag are not yet supported"));
-        }
         if (containsConflicts(condition)) {
             // early failure, since we know conflicts already exist at insert-time
             return CompletableFuture.failedFuture(conflictingEventsDetected(condition.consistencyMarker()));

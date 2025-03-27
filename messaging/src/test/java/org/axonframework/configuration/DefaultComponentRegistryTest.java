@@ -17,10 +17,14 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -34,10 +38,12 @@ class DefaultComponentRegistryTest {
     private static final TestComponent TEST_COMPONENT = new TestComponent(INIT_STATE);
 
     private DefaultComponentRegistry testSubject;
+    private LifecycleRegistry lifecycleRegistry;
 
     @BeforeEach
     void setUp() {
         testSubject = new DefaultComponentRegistry();
+        lifecycleRegistry = mock(LifecycleRegistry.class);
     }
 
     @Test
@@ -214,6 +220,100 @@ class DefaultComponentRegistryTest {
         testSubject.build(mock());
 
         assertEquals(List.of(enhancer1, enhancer2, enhancer3), invokedEnhancers);
+    }
+
+    @Nested
+    class DescribeTo {
+
+        @Test
+        void configurerDescribeToDescribesBeingUninitializedComponentsEnhancersAndModules() {
+            ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+            ConfigurationEnhancer testEnhancer = configurer -> {
+
+            };
+            TestModule testModule = new TestModule("module");
+
+            // The Component is not yet validated, as I am using a mocked ComponentDescriptor.
+            testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+                       .registerEnhancer(testEnhancer)
+                       .registerModule(testModule)
+                       .describeTo(testDescriptor);
+
+            verify(testDescriptor).describeProperty("initialized", false);
+            verify(testDescriptor).describeProperty(eq("components"), isA(Components.class));
+            verify(testDescriptor).describeProperty(eq("decorators"), isA(List.class));
+            verify(testDescriptor).describeProperty(eq("modules"), eqList(List.of(testModule)));
+            //noinspection unchecked
+            ArgumentCaptor<List<ConfigurationEnhancer>> enhancerCaptor = ArgumentCaptor.forClass(List.class);
+            verify(testDescriptor).describeProperty(eq("configurerEnhancers"), enhancerCaptor.capture());
+            List<ConfigurationEnhancer> enhancers = enhancerCaptor.getValue();
+            assertTrue(enhancers.contains(testEnhancer));
+
+            // Ensure new fields added to the describeTo implementation are validated
+            verifyNoMoreInteractions(testDescriptor);
+        }
+
+        private <T> Collection<T> eqList(T... expected) {
+            return eqList(List.of(expected));
+        }
+
+        private <T> Collection<T> eqList(Collection<T> expected) {
+            return argThat(c -> List.copyOf(expected).equals(List.copyOf(c)));
+        }
+
+        @Test
+        void configurerDescribeToDescribesBeingInitializedComponentsEnhancersAndModules() {
+            ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+            ConfigurationEnhancer testEnhancer = configurer -> {
+
+            };
+            TestModule testModule = new TestModule("module");
+
+            // The Component is not yet validated, as I am using a mocked ComponentDescriptor.
+            testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+                       .registerEnhancer(testEnhancer)
+                       .registerModule(testModule);
+
+            // Build initializes the configurer
+            testSubject.build(lifecycleRegistry);
+
+            testSubject.describeTo(testDescriptor);
+
+            verify(testDescriptor).describeProperty("initialized", true);
+            verify(testDescriptor).describeProperty(eq("components"), isA(Components.class));
+            verify(testDescriptor).describeProperty(eq("decorators"), isA(List.class));
+            verify(testDescriptor).describeProperty(eq("modules"), eqList(testModule));
+            //noinspection unchecked
+            ArgumentCaptor<List<ConfigurationEnhancer>> enhancerCaptor = ArgumentCaptor.forClass(List.class);
+            verify(testDescriptor).describeProperty(eq("configurerEnhancers"), enhancerCaptor.capture());
+            List<ConfigurationEnhancer> enhancers = enhancerCaptor.getValue();
+            assertTrue(enhancers.contains(testEnhancer));
+
+            // Ensure new fields added to the describeTo implementation are validated
+            verifyNoMoreInteractions(testDescriptor);
+        }
+
+        @Test
+        void configurationDescribeToDescribesComponentsAndModules() {
+            ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
+
+            TestModule testModule = new TestModule("module");
+
+            // The Component is not yet validated, as I am using a mocked ComponentDescriptor.
+            testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+                       .registerModule(testModule.componentRegistry(cr -> cr.registerComponent(TestComponent.class,
+                                                                                               c -> TEST_COMPONENT)));
+
+            NewConfiguration result = testSubject.build(mock());
+
+            result.describeTo(testDescriptor);
+
+            verify(testDescriptor).describeProperty(eq("components"), isA(Components.class));
+            verify(testDescriptor).describeProperty(eq("modules"), eqList(result.getModuleConfigurations()));
+
+            // Ensure new fields added to the describeTo implementation are validated
+            verifyNoMoreInteractions(testDescriptor);
+        }
     }
 
     protected record TestComponent(String state) {

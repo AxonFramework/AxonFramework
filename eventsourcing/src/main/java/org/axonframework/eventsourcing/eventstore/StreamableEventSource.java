@@ -28,8 +28,8 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Interface towards a streamable event source.
  * <p>
- * Provides functionality to {@link #open(String, StreamingCondition) open} an {@link MessageStream event stream} for a
- * specific context and to retrieve {@link TrackingToken TrackingTokens} for the head and tail of the stream, and at a
+ * Provides functionality to {@link #open(StreamingCondition) open} an {@link MessageStream event stream}
+ * and to retrieve {@link TrackingToken TrackingTokens} for the head and tail of the stream, and at a
  * given point in time in the stream.
  *
  * @param <E> The type of {@link EventMessage} streamed by this source.
@@ -41,8 +41,8 @@ import java.util.concurrent.CompletableFuture;
 public interface StreamableEventSource<E extends EventMessage<?>> {
 
     /**
-     * Open an {@link MessageStream event stream} containing all {@link EventMessage events} of the given
-     * {@code context} matching the given {@code condition}.
+     * Open an {@link MessageStream event stream} containing all {@link EventMessage events} matching the given
+     * {@code condition}.
      * <p>
      * To retrieve the {@link TrackingToken position} of the returned events, the
      * {@link TrackingToken#fromContext(Context)} operation should be used by providing the entire
@@ -51,54 +51,43 @@ public interface StreamableEventSource<E extends EventMessage<?>> {
      * Note that the returned stream is <em>infinite</em>, so beware of applying terminal operations to the returned
      * stream.
      *
-     * @param context   The context for which to open an {@link MessageStream event stream}.
      * @param condition The {@link StreamingCondition} defining the
      *                  {@link StreamingCondition#position() starting position} of the stream and
      *                  {@link StreamingCondition#criteria() event criteria} to filter the stream with.
-     * @return An {@link MessageStream event stream} of the given {@code context} matching the given {@code condition}.
+     * @return An {@link MessageStream event stream} matching the given {@code condition}.
      */
-    MessageStream<E> open(@Nonnull String context,
-                          @Nonnull StreamingCondition condition);
+    MessageStream<E> open(@Nonnull StreamingCondition condition);
 
     /**
-     * Creates a {@link TrackingToken} pointing at the start of the {@link MessageStream event stream} for the given
-     * {@code context}.
+     * Creates a {@link TrackingToken} pointing at the start of the {@link MessageStream event stream}.
      * <p>
      * The start of an event stream represents the token of the very first event in the stream.
      *
-     * @param context The context pointing towards the event stream for which to retrieve the head token.
      * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the start of the
-     * {@link MessageStream event stream} for the given {@code context}.
+     * {@link MessageStream event stream}.
      */
-    CompletableFuture<TrackingToken> headToken(@Nonnull String context);
+    CompletableFuture<TrackingToken> headToken();
 
     /**
-     * Creates a {@link TrackingToken} pointing at the end of the {@link MessageStream event stream} for the given
-     * {@code context}.
+     * Creates a {@link TrackingToken} pointing at the end of the {@link MessageStream event stream}.
      * <p>
      * The end of an event stream represents the token of the very last event in the stream.
      *
-     * @param context The context pointing towards the {@link MessageStream event stream} for which to retrieve the tail
-     *                token.
      * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the end of the
-     * {@link MessageStream event stream} for the given {@code context}.
+     * {@link MessageStream event stream}.
      */
-    CompletableFuture<TrackingToken> tailToken(@Nonnull String context);
+    CompletableFuture<TrackingToken> tailToken();
 
     /**
      * Creates a {@link TrackingToken} tracking all {@link EventMessage events} after the given {@code at} from an
-     * {@link MessageStream event stream} for the given {@code context}.
+     * {@link MessageStream event stream}.
      * <p>
      * When there is an {@link EventMessage} exactly at the given {@code dateTime}, it will be tracked too.
      *
-     * @param context The context pointing towards the {@link MessageStream event stream} for which to retrieve a token
-     *                pointing at the given {@code at}.
      * @param at      The {@link Instant} determining how the {@link TrackingToken} should be created. The returned
      *                token points at very first event before this {@code Instant}.
      * @return A {@link CompletableFuture} of {@link TrackingToken} pointing at the very first event before the given
-     * {@code at} of the {@link MessageStream event stream} for the given {@code context}.
+     * {@code at} of the {@link MessageStream event stream}.
      */
-    CompletableFuture<TrackingToken> tokenAt(@Nonnull String context,
-                                             @Nonnull Instant at);
-
+    CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at);
 }

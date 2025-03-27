@@ -18,8 +18,6 @@ package org.axonframework.eventsourcing.eventstore;
 
 import org.junit.jupiter.api.*;
 
-import java.util.Set;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -37,7 +35,7 @@ class NoAppendConditionTest {
 
     @Test
     void criteriaFixedToNoCriteria() {
-        assertEquals(Set.of(), AppendCondition.none().criteria());
+        assertEquals(EventCriteria.anyEvent(), AppendCondition.none().criteria());
     }
 
     @Test

@@ -72,29 +72,29 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     public void enhance(@Nonnull ComponentRegistry configurer) {
         Objects.requireNonNull(configurer, "Cannot enhance a null Configurer.");
 
-        registerWhenNotPresent(configurer, MessageTypeResolver.class,
-                               MessagingConfigurationDefaults::defaultMessageTypeResolver);
-        registerWhenNotPresent(configurer, CommandGateway.class,
-                               MessagingConfigurationDefaults::defaultCommandGateway);
-        registerWhenNotPresent(configurer, CommandBus.class,
-                               MessagingConfigurationDefaults::defaultCommandBus);
-        registerWhenNotPresent(configurer, EventGateway.class,
-                               MessagingConfigurationDefaults::defaultEventGateway);
-        registerWhenNotPresent(configurer, EventSink.class,
-                               MessagingConfigurationDefaults::defaultEventSink);
-        registerWhenNotPresent(configurer, EventBus.class,
-                               MessagingConfigurationDefaults::defaultEventBus);
-        registerWhenNotPresent(configurer, QueryGateway.class,
-                               MessagingConfigurationDefaults::defaultQueryGateway);
-        registerWhenNotPresent(configurer, QueryBus.class,
-                               MessagingConfigurationDefaults::defaultQueryBus);
-        registerWhenNotPresent(configurer, QueryUpdateEmitter.class,
-                               MessagingConfigurationDefaults::defaultQueryUpdateEmitter);
+        registerIfNotPresent(configurer, MessageTypeResolver.class,
+                             MessagingConfigurationDefaults::defaultMessageTypeResolver);
+        registerIfNotPresent(configurer, CommandGateway.class,
+                             MessagingConfigurationDefaults::defaultCommandGateway);
+        registerIfNotPresent(configurer, CommandBus.class,
+                             MessagingConfigurationDefaults::defaultCommandBus);
+        registerIfNotPresent(configurer, EventGateway.class,
+                             MessagingConfigurationDefaults::defaultEventGateway);
+        registerIfNotPresent(configurer, EventSink.class,
+                             MessagingConfigurationDefaults::defaultEventSink);
+        registerIfNotPresent(configurer, EventBus.class,
+                             MessagingConfigurationDefaults::defaultEventBus);
+        registerIfNotPresent(configurer, QueryGateway.class,
+                             MessagingConfigurationDefaults::defaultQueryGateway);
+        registerIfNotPresent(configurer, QueryBus.class,
+                             MessagingConfigurationDefaults::defaultQueryBus);
+        registerIfNotPresent(configurer, QueryUpdateEmitter.class,
+                             MessagingConfigurationDefaults::defaultQueryUpdateEmitter);
     }
 
-    private <C> void registerWhenNotPresent(ComponentRegistry configurer,
-                                            Class<C> type,
-                                            ComponentFactory<C> factory) {
+    private <C> void registerIfNotPresent(ComponentRegistry configurer,
+                                          Class<C> type,
+                                          ComponentFactory<C> factory) {
         if (!configurer.hasComponent(type)) {
             configurer.registerComponent(type, factory);
         }
@@ -126,7 +126,7 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
 
     private static EventSink defaultEventSink(NewConfiguration config) {
         EventBus eventBus = config.getComponent(EventBus.class);
-        return (context, events) -> {
+        return (events) -> {
             eventBus.publish(events);
             return FutureUtils.emptyCompletedFuture();
         };
