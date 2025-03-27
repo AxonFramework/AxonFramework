@@ -441,7 +441,8 @@ public interface AxonTestPhase {
 
         /**
          * Expect the last command handler from the When phase to return a result message that matches the given
-         * {@code matcher}.
+         * {@code matcher}. Take into account only commands executed explicitly with the {@link When#command}. Do not
+         * take into accounts commands published as side effects of the message handlers.
          *
          * @param matcher The matcher to verify the actual result message against.
          * @return the current Then instance, for fluent interfacing.
@@ -450,7 +451,9 @@ public interface AxonTestPhase {
 
         /**
          * Expect the last command handler from the When phase to return the given {@code expectedPayload} after
-         * execution. The actual and expected values are compared using their equals methods.
+         * execution. The actual and expected values are compared using their equals methods. Take into account only
+         * commands executed explicitly with the {@link When#command}. Do not take into accounts commands published as
+         * side effects of the message handlers.
          *
          * @param expectedPayload The expected result message payload of the command execution.
          * @return the current Then, for fluent interfacing.
@@ -459,7 +462,8 @@ public interface AxonTestPhase {
 
         /**
          * Expect the last command handler from the When phase to return a payload that matches the given
-         * {@code matcher} after execution.
+         * {@code matcher} after execution. Take into account only commands executed explicitly with the
+         * {@link When#command}. Do not take into accounts commands published as side effects of the message handlers.
          *
          * @param matcher The matcher to verify the actual return value against.
          * @return the current Then instance, for fluent interfacing.
@@ -468,7 +472,9 @@ public interface AxonTestPhase {
 
         /**
          * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
-         * should be exactly of that type, subclasses are not accepted.
+         * should be exactly of that type, subclasses are not accepted. Take into account only commands executed
+         * explicitly with the {@link When#command}. Do not take into accounts commands published as side effects of the
+         * message handlers.
          *
          * @param expectedException The type of exception expected from the When phase execution.
          * @return the current Then instance, for fluent interfacing.
@@ -476,7 +482,9 @@ public interface AxonTestPhase {
         Then exception(Class<? extends Throwable> expectedException);
 
         /**
-         * Expect an exception to occur during the When phase that matches with the given {@code matcher}.
+         * Expect an exception to occur during the When phase that matches with the given {@code matcher}. Take into
+         * account only commands executed explicitly with the {@link When#command}. Do not take into accounts commands
+         * published as side effects of the message handlers.
          *
          * @param matcher The matcher to validate the actual exception.
          * @return the current Then instance, for fluent interfacing.
@@ -507,6 +515,12 @@ public interface AxonTestPhase {
          */
         Then commands(CommandMessage<?>... expectedCommands);
 
+        /**
+         * Expect the given set of command messages to have been dispatched during the "when" phase. Only commands as a
+         * result of the event in the "when" phase of ths fixture are recorded.
+         *
+         * @return the current Then instance, for fluent interfacing.
+         */
         Then noCommands();
 
         /**
