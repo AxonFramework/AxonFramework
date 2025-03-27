@@ -47,10 +47,10 @@ import java.util.stream.Collectors;
  *         will be used.
  *     </li>
  *     <li>
- *         If no matching {@link EventCriteriaBuilder} is found, the {@link EventSourcedEntity#tagName()} will be used as the tag key, and the {@link Object#toString()} of the id will be used as value.
+ *         If no matching {@link EventCriteriaBuilder} is found, the {@link EventSourcedEntity#tagKey()} will be used as the tag key, and the {@link Object#toString()} of the id will be used as value.
  *     </li>
  *     <li>
- *         If the {@link EventSourcedEntity#tagName()} is empty, the {@link Class#getSimpleName()} of the entity will be used as tag key, and the {@link Object#toString()} of the id will be used as value.
+ *         If the {@link EventSourcedEntity#tagKey()} is empty, the {@link Class#getSimpleName()} of the entity will be used as tag key, and the {@link Object#toString()} of the id will be used as value.
  *     </li>
  * </ol>
  *
@@ -61,7 +61,7 @@ import java.util.stream.Collectors;
 public class AnnotationBasedEventCriteriaResolver implements CriteriaResolver<Object>, DescribableComponent {
 
     private final Class<?> entityType;
-    private final String tagName;
+    private final String tagKey;
     private final Map<Class<?>, Method> builderMap;
 
     /**
@@ -82,8 +82,8 @@ public class AnnotationBasedEventCriteriaResolver implements CriteriaResolver<Ob
                 .findAnnotationAttributes(entityType, EventSourcedEntity.class)
                 .orElseThrow(() -> new IllegalArgumentException("The given class it not an @EventSourcedEntity"));
 
-        String annotationTagName = (String) attributes.get("tagName");
-        this.tagName = annotationTagName.isEmpty() ? null : annotationTagName;
+        String annotationTagKey = (String) attributes.get("tagKey");
+        this.tagKey = annotationTagKey.isEmpty() ? null : annotationTagKey;
 
         Set<Method> eventCriteriaBuilders = Arrays.stream(entityType.getMethods())
                                                   .filter(m -> m.isAnnotationPresent(EventCriteriaBuilder.class))
@@ -120,7 +120,7 @@ public class AnnotationBasedEventCriteriaResolver implements CriteriaResolver<Ob
         if (builderResult.isPresent()) {
             return (EventCriteria) builderResult.get();
         }
-        String key = Objects.requireNonNullElseGet(tagName, entityType::getSimpleName);
+        String key = Objects.requireNonNullElseGet(tagKey, entityType::getSimpleName);
         return EventCriteria.match()
                             .eventsOfAnyType()
                             .withTags(Tag.of(key, id.toString()));
@@ -147,7 +147,7 @@ public class AnnotationBasedEventCriteriaResolver implements CriteriaResolver<Ob
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("entityType", entityType.getName());
-        descriptor.describeProperty("tagName", tagName);
+        descriptor.describeProperty("tagKey", tagKey);
         descriptor.describeProperty("criteriaBuilders", builderMap);
     }
 }

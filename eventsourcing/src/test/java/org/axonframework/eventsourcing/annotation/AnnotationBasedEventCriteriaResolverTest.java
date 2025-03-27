@@ -49,14 +49,14 @@ class AnnotationBasedEventCriteriaResolverTest {
     }
 
     @Test
-    void usesTagNamePropertyIfNoEventCriteriaBuilderMatches() {
+    void usesTagKeyPropertyIfNoEventCriteriaBuilderMatches() {
         var resolver = new AnnotationBasedEventCriteriaResolver(FunctionalEventSourcedEntity.class);
 
         var criteria = resolver.resolve(0.0);
-        assertEquals(EventCriteria.match().eventsOfAnyType().withTags("fallbackTagName", "0.0"), criteria);
+        assertEquals(EventCriteria.match().eventsOfAnyType().withTags("fallbackTagKey", "0.0"), criteria);
     }
 
-    @EventSourcedEntity(tagName = "fallbackTagName")
+    @EventSourcedEntity(tagKey = "fallbackTagKey")
     class FunctionalEventSourcedEntity {
 
         @EventCriteriaBuilder
@@ -76,7 +76,7 @@ class AnnotationBasedEventCriteriaResolverTest {
     }
 
     @Test
-    void usesSimpleClassNameAsTagNameIfNoTagNamePropertyIsSet() {
+    void usesSimpleClassNameAsTagNameIfNoTagKeyPropertyIsSet() {
         var resolver = new AnnotationBasedEventCriteriaResolver(DefaultEventSourcedEntity.class);
 
         var criteria = resolver.resolve("id");

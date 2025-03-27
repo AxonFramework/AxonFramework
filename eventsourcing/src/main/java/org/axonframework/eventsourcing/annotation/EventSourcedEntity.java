@@ -44,10 +44,10 @@ import java.lang.annotation.Target;
  *         will be used.
  *     </li>
  *     <li>
- *         If no matching {@link EventCriteriaBuilder} is found, the {@link EventSourcedEntity#tagName()} will be used as the tag key, and the {@link Object#toString()} of the id will be used as value.
+ *         If no matching {@link EventCriteriaBuilder} is found, the {@link EventSourcedEntity#tagKey()} will be used as the tag key, and the {@link Object#toString()} of the id will be used as value.
  *     </li>
  *     <li>
- *         If the {@link EventSourcedEntity#tagName()} is empty, the {@link Class#getSimpleName()} of the entity will be used as tag key, and the {@link Object#toString()} of the id will be used as value.
+ *         If the {@link EventSourcedEntity#tagKey()} is empty, the {@link Class#getSimpleName()} of the entity will be used as tag key, and the {@link Object#toString()} of the id will be used as value.
  *     </li>
  * </ol>
  *
@@ -79,7 +79,7 @@ public @interface EventSourcedEntity {
      *
      * @return The tag name to use when resolving the {@link EventCriteria} for the entity.
      */
-    String tagName() default "";
+    String tagKey() default "";
 
     /**
      * The class to use to resolve the {@link EventCriteria} for the entity. The provided class should implement the

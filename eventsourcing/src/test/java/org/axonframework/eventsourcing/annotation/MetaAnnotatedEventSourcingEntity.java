@@ -23,6 +23,6 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@EventSourcedEntity(tagName = "metaAnnotated")
+@EventSourcedEntity(tagKey = "metaAnnotated")
 public @interface MetaAnnotatedEventSourcingEntity {
 }

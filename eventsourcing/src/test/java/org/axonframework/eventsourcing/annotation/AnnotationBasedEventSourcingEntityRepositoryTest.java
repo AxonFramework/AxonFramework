@@ -61,13 +61,13 @@ class AnnotationBasedEventSourcingEntityRepositoryTest {
     }
 
     @Nested
-    class TagName extends AnnotationBasedEntityMiniTestSuite {
+    class TagKey extends AnnotationBasedEntityMiniTestSuite {
 
-        TagName() {
+        TagKey() {
             super(TagBasedSequenceEntity.class, "mySuperSpecialTag");
         }
 
-        @EventSourcedEntity(tagName = "mySuperSpecialTag")
+        @EventSourcedEntity(tagKey = "mySuperSpecialTag")
         static class TagBasedSequenceEntity extends AbstractSequenceEntity {
 
         }
@@ -164,12 +164,12 @@ class AnnotationBasedEventSourcingEntityRepositoryTest {
         private final StateManager stateManager;
 
         public AnnotationBasedEntityMiniTestSuite(Class<? extends AbstractSequenceEntity> entityClass,
-                                                  String expectedTagName) {
+                                                  String expectedTagKey) {
             this.eventStore = new SimpleEventStore(
                     new AsyncInMemoryEventStorageEngine(),
                     e -> {
                         if (e.getPayload() instanceof MySequenceEvent mySequenceEvent) {
-                            return Set.of(Tag.of(expectedTagName, mySequenceEvent.id()));
+                            return Set.of(Tag.of(expectedTagKey, mySequenceEvent.id()));
                         }
                         throw new IllegalArgumentException("Unsupported event type: " + e.getPayload().getClass());
                     }
