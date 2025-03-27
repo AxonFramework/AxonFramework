@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotation.AnnotatedEventHandlingComponent;
 import org.axonframework.messaging.MessageStream;
@@ -23,9 +24,6 @@ import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-
-import java.util.concurrent.CompletableFuture;
-import javax.annotation.Nonnull;
 
 import static java.util.Objects.requireNonNull;
 
