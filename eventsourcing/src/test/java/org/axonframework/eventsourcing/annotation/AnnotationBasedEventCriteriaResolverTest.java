@@ -156,7 +156,7 @@ class AnnotationBasedEventCriteriaResolverTest {
                     IllegalArgumentException.class,
                     () -> new AnnotationBasedEventCriteriaResolver(NonEventSourcedEntity.class));
             assertEquals(
-                    "The given class it not an @EventSourcedEntity",
+                    "The given class is not an @EventSourcedEntity",
                     exception.getMessage()
             );
         }

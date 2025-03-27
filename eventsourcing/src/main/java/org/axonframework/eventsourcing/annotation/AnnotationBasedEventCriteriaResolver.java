@@ -80,7 +80,7 @@ public class AnnotationBasedEventCriteriaResolver implements CriteriaResolver<Ob
 
         Map<String, Object> attributes = AnnotationUtils
                 .findAnnotationAttributes(entityType, EventSourcedEntity.class)
-                .orElseThrow(() -> new IllegalArgumentException("The given class it not an @EventSourcedEntity"));
+                .orElseThrow(() -> new IllegalArgumentException("The given class is not an @EventSourcedEntity"));
 
         String annotationTagKey = (String) attributes.get("tagKey");
         this.tagKey = annotationTagKey.isEmpty() ? null : annotationTagKey;
