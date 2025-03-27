@@ -379,7 +379,9 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
     }
 
-    static class Then implements AxonTestPhase.Then {
+    static class Then
+            implements AxonTestPhase.Then, AxonTestPhase.Then.PublishedEventsAssertions,
+            AxonTestPhase.Then.DispatchedCommandsAssertions, AxonTestPhase.Then.LastCommandResultAssertions {
 
         private final Reporter reporter = new Reporter();
 
@@ -415,7 +417,21 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
 
         @Override
-        public AxonTestPhase.Then events(Object... expectedEvents) {
+        public PublishedEventsAssertions publishedEvents() {
+            return this;
+        }
+
+        public DispatchedCommandsAssertions dispatchedCommands() {
+            return this;
+        }
+
+        @Override
+        public LastCommandResultAssertions commandResult() {
+            return this;
+        }
+
+        @Override
+        public AxonTestPhase.Then allOf(Object... expectedEvents) {
             var publishedEvents = eventSink.recorded();
 
             if (expectedEvents.length != publishedEvents.size()) {
@@ -433,8 +449,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
 
         @Override
-        public AxonTestPhase.Then events(EventMessage<?>... expectedEvents) {
-            this.events(Stream.of(expectedEvents).map(Message::getPayload).toArray());
+        public AxonTestPhase.Then allOf(EventMessage<?>... expectedEvents) {
+            this.allOf(Stream.of(expectedEvents).map(Message::getPayload).toArray());
 
             var publishedEvents = eventSink.recorded();
             Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
@@ -450,7 +466,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
 
         @Override
-        public AxonTestPhase.Then events(Matcher<? extends List<? super EventMessage<?>>> matcher) {
+        public AxonTestPhase.Then matches(Matcher<? extends List<? super EventMessage<?>>> matcher) {
             var publishedEvents = eventSink.recorded();
             if (!matcher.matches(publishedEvents)) {
                 final Description expectation = new StringDescription();
@@ -465,32 +481,37 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
 
         @Override
-        public AxonTestPhase.Then commands(Object... expectedCommands) {
+        public AxonTestPhase.Then then() {
+            return this;
+        }
+
+        @Override
+        public DispatchedCommandsAssertions commands(Object... expectedCommands) {
             commandValidator.assertDispatchedEqualTo(expectedCommands);
             return this;
         }
 
         @Override
-        public AxonTestPhase.Then commands(CommandMessage<?>... expectedCommands) {
+        public DispatchedCommandsAssertions commands(CommandMessage<?>... expectedCommands) {
             commandValidator.assertDispatchedEqualTo(List.of(expectedCommands));
             return this;
         }
 
         @Override
-        public AxonTestPhase.Then noCommands() {
+        public DispatchedCommandsAssertions noCommands() {
             commandValidator.assertDispatchedEqualTo(Matchers.noCommands());
             return this;
         }
 
         @Override
-        public AxonTestPhase.Then success() {
-            return resultMessage(anything());
+        public LastCommandResultAssertions isSuccess() {
+            return isMessage(anything());
         }
 
         @Override
-        public AxonTestPhase.Then resultMessage(Matcher<? super CommandResultMessage<?>> matcher) {
+        public LastCommandResultAssertions isMessage(Matcher<? super CommandResultMessage<?>> matcher) {
             if (matcher == null) {
-                return resultMessage(nullValue());
+                return isMessage(nullValue());
             }
             StringDescription expectedDescription = new StringDescription();
             matcher.describeTo(expectedDescription);
@@ -503,7 +524,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
 
         @Override
-        public AxonTestPhase.Then resultMessagePayload(Object expectedPayload) {
+        public LastCommandResultAssertions withPayload(Object expectedPayload) {
             StringDescription expectedDescription = new StringDescription();
             StringDescription actualDescription = new StringDescription();
             PayloadMatcher<CommandResultMessage<?>> expectedMatcher =
@@ -521,9 +542,9 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
 
         @Override
-        public AxonTestPhase.Then resultMessagePayloadMatching(Matcher<?> matcher) {
+        public LastCommandResultAssertions withPayload(Matcher<?> matcher) {
             if (matcher == null) {
-                return resultMessagePayloadMatching(nullValue());
+                return withPayload(nullValue());
             }
             StringDescription expectedDescription = new StringDescription();
             matcher.describeTo(expectedDescription);
@@ -536,12 +557,12 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
 
         @Override
-        public AxonTestPhase.Then exception(Class<? extends Throwable> expectedException) {
-            return exception(instanceOf(expectedException));
+        public LastCommandResultAssertions isException(Class<? extends Throwable> expectedException) {
+            return isException(instanceOf(expectedException));
         }
 
         @Override
-        public AxonTestPhase.Then exception(Matcher<?> matcher) {
+        public LastCommandResultAssertions isException(Matcher<?> matcher) {
             StringDescription description = new StringDescription();
             matcher.describeTo(description);
             if (lastCommandException == null) {

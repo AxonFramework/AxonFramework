@@ -57,7 +57,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
         var changeToTheSameName = new ChangeStudentNameCommand("my-studentId-1", "name-1");
         fixture.given(given -> given.events(studentNameChanged))
                .when(when -> when.command(changeToTheSameName))
-               .then(then -> then.noEvents());
+               .then(then -> then.publishedEvents().none());
     }
 
     @Test
@@ -74,7 +74,8 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .when()
                .command(changeToTheAnotherName)
                .then()
-               .events(studentNameChangedEventMessage("my-studentId-1", "name-2", 2));
+               .publishedEvents()
+               .allOf(studentNameChangedEventMessage("my-studentId-1", "name-2", 2));
     }
 
 
@@ -91,7 +92,8 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
                .then()
-               .events(new StudentNameChangedEvent("my-studentId-1", "name-3", 3));
+               .publishedEvents()
+               .allOf(new StudentNameChangedEvent("my-studentId-1", "name-3", 3));
     }
 
     @Test
@@ -108,7 +110,8 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-4"))
                .then()
-               .events(
+               .publishedEvents()
+               .allOf(
                        new StudentNameChangedEvent("my-studentId-1", "name-3", 3),
                        new StudentNameChangedEvent("my-studentId-1", "name-4", 4)
                );
@@ -127,7 +130,8 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .then()
-               .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+               .publishedEvents()
+               .allOf(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
     }
 
     private static void registerSampleStatefulCommandHandler(MessagingConfigurer configurer) {

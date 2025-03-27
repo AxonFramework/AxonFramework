@@ -386,142 +386,159 @@ public interface AxonTestPhase {
      */
     interface Then {
 
-        /**
-         * Expect the given set of events to have been published during the {@link When} phase.
-         * <p>
-         * All events are compared for equality using a shallow equals comparison on all the fields of the events. This
-         * means that all assigned values on the events' fields should have a proper equals implementation.
-         * <p>
-         * Note that the event identifier is ignored in the comparison.
-         *
-         * @param expectedEvents The expected events, in the exact order they are expected to be published.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then events(Object... expectedEvents);
+        interface PublishedEventsAssertions {
 
-        /**
-         * Expect the given set of event messages to have been published during the {@link When} phase.
-         * <p>
-         * All events are compared for equality using a shallow equals comparison on all the fields of the events. This
-         * means that all assigned values on the events' fields should have a proper equals implementation.
-         * Additionally, the metadata will be compared too.
-         * <p>
-         * Note that the event identifier is ignored in the comparison.
-         *
-         * @param expectedEvents The expected event messages, in the exact order they are expected to be published.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then events(EventMessage<?>... expectedEvents);
+            /**
+             * Expect the given set of events to have been published during the {@link When} phase.
+             * <p>
+             * All events are compared for equality using a shallow equals comparison on all the fields of the events.
+             * This means that all assigned values on the events' fields should have a proper equals implementation.
+             * <p>
+             * Note that the event identifier is ignored in the comparison.
+             *
+             * @param expectedEvents The expected events, in the exact order they are expected to be published.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            Then allOf(Object... expectedEvents);
 
-        /**
-         * Expect the published events during the {@link When} phase to match the given {@code matcher}.
-         * <p>
-         * Note: if no events were published, the matcher receives an empty List.
-         *
-         * @param matcher The matcher to match with the actually published events.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then events(Matcher<? extends List<? super EventMessage<?>>> matcher);
+            /**
+             * Expect the given set of event messages to have been published during the {@link When} phase.
+             * <p>
+             * All events are compared for equality using a shallow equals comparison on all the fields of the events.
+             * This means that all assigned values on the events' fields should have a proper equals implementation.
+             * Additionally, the metadata will be compared too.
+             * <p>
+             * Note that the event identifier is ignored in the comparison.
+             *
+             * @param expectedEvents The expected event messages, in the exact order they are expected to be published.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            Then allOf(EventMessage<?>... expectedEvents);
 
-        /**
-         * Expect no events to have been published during the {@link When} phase.
-         *
-         * @return the current Then instance, for fluent interfacing.
-         */
-        default Then noEvents() {
-            return events();
+            /**
+             * Expect the published events during the {@link When} phase to match the given {@code matcher}.
+             * <p>
+             * Note: if no events were published, the matcher receives an empty List.
+             *
+             * @param matcher The matcher to match with the actually published events.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            Then matches(Matcher<? extends List<? super EventMessage<?>>> matcher);
+
+            /**
+             * Expect no events to have been published during the {@link When} phase.
+             *
+             * @return the current Then instance, for fluent interfacing.
+             */
+            default Then none() {
+                return allOf();
+            }
+
+            Then then(); // or also/ andThen
         }
 
-        /**
-         * Expect a successful execution of the When phase, regardless of the actual return value.
-         *
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then success();
+        interface DispatchedCommandsAssertions {
 
-        /**
-         * Expect the last command handler from the When phase to return a result message that matches the given
-         * {@code matcher}. Take into account only commands executed explicitly with the {@link When#command}. Do not
-         * take into accounts commands published as side effects of the message handlers.
-         *
-         * @param matcher The matcher to verify the actual result message against.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then resultMessage(Matcher<? super CommandResultMessage<?>> matcher);
+            /**
+             * Expect the given set of commands to have been dispatched during the "when" phase.
+             * <p>
+             * All commands are compared for equality using a shallow equals comparison on all the fields of the
+             * commands. This means that all assigned values on the commands' fields should have a proper equals
+             * implementation.
+             *
+             * @param expectedCommands The expected commands, in the exact order they are expected to be dispatched.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            DispatchedCommandsAssertions commands(Object... expectedCommands);
 
-        /**
-         * Expect the last command handler from the When phase to return the given {@code expectedPayload} after
-         * execution. The actual and expected values are compared using their equals methods. Take into account only
-         * commands executed explicitly with the {@link When#command}. Do not take into accounts commands published as
-         * side effects of the message handlers.
-         *
-         * @param expectedPayload The expected result message payload of the command execution.
-         * @return the current Then, for fluent interfacing.
-         */
-        Then resultMessagePayload(Object expectedPayload);
+            /**
+             * Expect the given set of command messages to have been dispatched during the "when" phase.
+             * <p>
+             * All commands are compared for equality using a shallow equals comparison on all the fields of the
+             * commands. This means that all assigned values on the commands' fields should have a proper equals
+             * implementation. Additionally, the metadata will be compared too.
+             *
+             * @param expectedCommands The expected command messages, in the exact order they are expected to be
+             *                         dispatched.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            DispatchedCommandsAssertions commands(CommandMessage<?>... expectedCommands);
 
-        /**
-         * Expect the last command handler from the When phase to return a payload that matches the given
-         * {@code matcher} after execution. Take into account only commands executed explicitly with the
-         * {@link When#command}. Do not take into accounts commands published as side effects of the message handlers.
-         *
-         * @param matcher The matcher to verify the actual return value against.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then resultMessagePayloadMatching(Matcher<?> matcher);
+            /**
+             * Expect the given set of command messages to have been dispatched during the "when" phase. Only commands
+             * as a result of the event in the "when" phase of ths fixture are recorded.
+             *
+             * @return the current Then instance, for fluent interfacing.
+             */
+            DispatchedCommandsAssertions noCommands();
 
-        /**
-         * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
-         * should be exactly of that type, subclasses are not accepted. Take into account only commands executed
-         * explicitly with the {@link When#command}. Do not take into accounts commands published as side effects of the
-         * message handlers.
-         *
-         * @param expectedException The type of exception expected from the When phase execution.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then exception(Class<? extends Throwable> expectedException);
+            Then then(); // or also/ andThen
+        }
 
-        /**
-         * Expect an exception to occur during the When phase that matches with the given {@code matcher}. Take into
-         * account only commands executed explicitly with the {@link When#command}. Do not take into accounts commands
-         * published as side effects of the message handlers.
-         *
-         * @param matcher The matcher to validate the actual exception.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then exception(Matcher<?> matcher);
+        interface LastCommandResultAssertions {
 
-        /**
-         * Expect the given set of commands to have been dispatched during the "when" phase.
-         * <p>
-         * All commands are compared for equality using a shallow equals comparison on all the fields of the commands.
-         * This means that all assigned values on the commands' fields should have a proper equals implementation.
-         *
-         * @param expectedCommands The expected commands, in the exact order they are expected to be dispatched.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then commands(Object... expectedCommands);
+            /**
+             * Expect a successful execution of the When phase, regardless of the actual return value.
+             *
+             * @return the current Then instance, for fluent interfacing.
+             */
+            LastCommandResultAssertions isSuccess();
 
-        /**
-         * Expect the given set of command messages to have been dispatched during the "when" phase.
-         * <p>
-         * All commands are compared for equality using a shallow equals comparison on all the fields of the commands.
-         * This means that all assigned values on the commands' fields should have a proper equals implementation.
-         * Additionally, the metadata will be compared too.
-         *
-         * @param expectedCommands The expected command messages, in the exact order they are expected to be
-         *                         dispatched.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then commands(CommandMessage<?>... expectedCommands);
+            /**
+             * Expect the last command handler from the When phase to return a result message that matches the given
+             * {@code matcher}. Take into account only commands executed explicitly with the {@link When#command}. Do
+             * not take into accounts commands published as side effects of the message handlers.
+             *
+             * @param matcher The matcher to verify the actual result message against.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            LastCommandResultAssertions isMessage(Matcher<? super CommandResultMessage<?>> matcher);
 
-        /**
-         * Expect the given set of command messages to have been dispatched during the "when" phase. Only commands as a
-         * result of the event in the "when" phase of ths fixture are recorded.
-         *
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then noCommands();
+            /**
+             * Expect the last command handler from the When phase to return the given {@code expectedPayload} after
+             * execution. The actual and expected values are compared using their equals methods. Take into account only
+             * commands executed explicitly with the {@link When#command}. Do not take into accounts commands published
+             * as side effects of the message handlers.
+             *
+             * @param expectedPayload The expected result message payload of the command execution.
+             * @return the current Then, for fluent interfacing.
+             */
+            LastCommandResultAssertions withPayload(Object expectedPayload);
+
+            /**
+             * Expect the last command handler from the When phase to return a payload that matches the given
+             * {@code matcher} after execution. Take into account only commands executed explicitly with the
+             * {@link When#command}. Do not take into accounts commands published as side effects of the message
+             * handlers.
+             *
+             * @param matcher The matcher to verify the actual return value against.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            LastCommandResultAssertions withPayload(Matcher<?> matcher);
+
+            /**
+             * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
+             * should be exactly of that type, subclasses are not accepted. Take into account only commands executed
+             * explicitly with the {@link When#command}. Do not take into accounts commands published as side effects of
+             * the message handlers.
+             *
+             * @param expectedException The type of exception expected from the When phase execution.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            LastCommandResultAssertions isException(Class<? extends Throwable> expectedException);
+
+            /**
+             * Expect an exception to occur during the When phase that matches with the given {@code matcher}. Take into
+             * account only commands executed explicitly with the {@link When#command}. Do not take into accounts
+             * commands published as side effects of the message handlers.
+             *
+             * @param matcher The matcher to validate the actual exception.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            LastCommandResultAssertions isException(Matcher<?> matcher);
+
+            Then then(); // or also/ andThen
+        }
 
         /**
          * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple test
@@ -550,5 +567,23 @@ public interface AxonTestPhase {
          * @return a {@link Setup} instance that allows configuring a new test scenario.
          */
         Setup and();
+
+        default PublishedEventsAssertions publishedEvents(Consumer<PublishedEventsAssertions> assertions) {
+            var events = publishedEvents();
+            assertions.accept(events);
+            return events;
+        }
+
+        PublishedEventsAssertions publishedEvents();
+
+        default DispatchedCommandsAssertions dispatchedCommands(Consumer<DispatchedCommandsAssertions> assertions) {
+            var commands = dispatchedCommands();
+            assertions.accept(commands);
+            return commands;
+        }
+
+        DispatchedCommandsAssertions dispatchedCommands();
+
+        LastCommandResultAssertions commandResult();
     }
 }
