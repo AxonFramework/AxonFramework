@@ -164,5 +164,31 @@ class AnnotationBasedEventCriteriaResolverTest {
         class NonEventSourcedEntity {
 
         }
+
+        @Test
+        void testEventCriteriaBuilderWithDuplicatedParamterTypeThrowsException() {
+            var exception = Assertions.assertThrows(
+                    IllegalArgumentException.class,
+                    () -> new AnnotationBasedEventCriteriaResolver(EntityWithDuplicatedParamterType.class));
+            assertEquals(
+                    "Multiple @EventCriteriaBuilder methods found with the same parameter type: buildCriteriaTwo(java.lang.String), buildCriteriaOne(java.lang.String)",
+                    exception.getMessage()
+            );
+        }
+
+
+        @EventSourcedEntity
+        class EntityWithDuplicatedParamterType {
+
+            @EventCriteriaBuilder
+            public static EventCriteria buildCriteriaOne(String id) {
+                return EventCriteria.anyEvent();
+            }
+
+            @EventCriteriaBuilder
+            public static EventCriteria buildCriteriaTwo(String id) {
+                return EventCriteria.anyEvent();
+            }
+        }
     }
 }

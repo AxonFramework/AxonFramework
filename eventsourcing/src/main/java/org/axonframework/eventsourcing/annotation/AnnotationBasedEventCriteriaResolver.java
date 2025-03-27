@@ -88,7 +88,24 @@ public class AnnotationBasedEventCriteriaResolver implements CriteriaResolver<Ob
         Set<Method> eventCriteriaBuilders = Arrays.stream(entityType.getMethods())
                                                   .filter(m -> m.isAnnotationPresent(EventCriteriaBuilder.class))
                                                   .collect(Collectors.toSet());
+
+        // Validate each method meets requirements
         eventCriteriaBuilders.forEach(AnnotationBasedEventCriteriaResolver::validateEventCriteriaBuilderMethod);
+
+        // Check for duplicate parameter types
+        eventCriteriaBuilders.stream()
+                             .collect(Collectors.groupingBy(m -> m.getParameterTypes()[0]))
+                             .values()
+                             .stream()
+                             .filter(list -> list.size() > 1)
+                             .findAny()
+                             .ifPresent(list -> {
+                                 throw new IllegalArgumentException(
+                                         "Multiple @EventCriteriaBuilder methods found with the same parameter type: %s".formatted(
+                                                 list.stream()
+                                                     .map(ReflectionUtils::toDiscernibleSignature)
+                                                     .collect(Collectors.joining(", "))));
+                             });
 
         this.builderMap = eventCriteriaBuilders.stream()
                                 .collect(Collectors.toMap(m -> m.getParameterTypes()[0],
