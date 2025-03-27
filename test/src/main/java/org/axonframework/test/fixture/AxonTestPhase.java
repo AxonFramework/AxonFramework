@@ -67,7 +67,6 @@ import java.util.function.Consumer;
  * {@code
  * var fixture = AxonTestFixture.with(configurer);
  *
- * // First scenario: Create account and withdraw money
  * fixture.given()
  *        .event(new AccountCreatedEvent("account-1", 500.00))
  *        .when()
@@ -75,12 +74,9 @@ import java.util.function.Consumer;
  *        .then()
  *        .events(new MoneyWithdrawnEvent("account-1", 100.00))
  *        .success()
- *        .and()  // Chain to a new scenario
- *        // Second scenario: Try to overdraw the account
- *        .given()
- *        .event(new AccountCreatedEvent("account-2", 50.00))
+ *        .and()
  *        .when()
- *        .command(new WithdrawMoneyCommand("account-2", 100.00))
+ *        .command(new WithdrawMoneyCommand("account-1", 500.00))
  *        .then()
  *        .exception(InsufficientBalanceException.class)
  *        .noEvents();
