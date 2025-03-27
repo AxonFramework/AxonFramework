@@ -35,7 +35,9 @@ import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
 import org.axonframework.test.matchers.MapEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
+import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.matchers.PayloadMatcher;
+import org.axonframework.test.saga.CommandValidator;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -67,7 +69,6 @@ import static org.hamcrest.CoreMatchers.*;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-// todo: better name? CommandModelTestFixture?
 public class AxonTestFixture implements AxonTestPhase.Setup {
 
     private final NewConfiguration configuration;
@@ -243,7 +244,6 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
         @Override
         public AxonTestPhase.When when() {
-            // todo: prevent double when!
             for (var unitOfWork : unitsOfWork) {
                 awaitCompletion(unitOfWork.execute());
             }
@@ -291,7 +291,9 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                                                        .whenComplete((r, e) -> {
                                                            if (e == null) {
                                                                lastCommandResult = r;
+                                                               //lastCommandException = null;
                                                            } else {
+                                                               //lastCommandResult = null;
                                                                lastCommandException = e.getCause();
                                                            }
                                                        })
@@ -353,7 +355,6 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
         @Override
         public AxonTestPhase.Then then() {
-            // todo: prevent double then!
             for (var unitOfWork : unitsOfWork) {
                 awaitCompletion(unitOfWork.execute());
             }
@@ -363,14 +364,17 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                     messageTypeResolver,
                     commandBus,
                     eventSink,
-                    lastCommandResult, lastCommandException);
+                    lastCommandResult,
+                    lastCommandException
+            );
         }
 
         private void awaitCompletion(CompletableFuture<?> completion) {
             try {
                 completion.join();
             } catch (Exception e) {
-                lastCommandException = e;
+                this.lastCommandResult = null;
+                this.lastCommandException = e;
             }
         }
     }
@@ -384,8 +388,10 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         private final MessageTypeResolver messageTypeResolver;
         private final RecordingCommandBus commandBus;
         private final RecordingEventSink eventSink;
-        private final Message<?> actualReturnValue;
-        private final Throwable actualException;
+
+        private final CommandValidator commandValidator;
+        private final Message<?> lastCommandResult;
+        private final Throwable lastCommandException;
 
         public Then(
                 NewConfiguration configuration,
@@ -393,16 +399,19 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                 MessageTypeResolver messageTypeResolver,
                 RecordingCommandBus commandBus,
                 RecordingEventSink eventSink,
-                Message<?> actualReturnValue,
-                Throwable actualException
+                Message<?> lastCommandResult,
+                Throwable lastCommandException
         ) {
             this.configuration = configuration;
             this.customization = customization;
             this.messageTypeResolver = messageTypeResolver;
             this.commandBus = commandBus;
             this.eventSink = eventSink;
-            this.actualException = actualException;
-            this.actualReturnValue = actualReturnValue;
+            this.lastCommandException = lastCommandException;
+            this.lastCommandResult = lastCommandResult;
+            this.commandValidator = new CommandValidator(commandBus::recordedCommands,
+                                                         commandBus::reset,
+                                                         new MatchAllFieldFilter(customization.fieldFilters));
         }
 
         @Override
@@ -410,14 +419,14 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             var publishedEvents = eventSink.recorded();
 
             if (expectedEvents.length != publishedEvents.size()) {
-                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
+                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), lastCommandException);
             }
 
             Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
             for (Object expectedEvent : expectedEvents) {
                 EventMessage<?> actualEvent = iterator.next();
                 if (!verifyPayloadEquality(expectedEvent, actualEvent.getPayload())) {
-                    reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
+                    reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), lastCommandException);
                 }
             }
             return this;
@@ -434,7 +443,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                 if (!verifyMetaDataEquality(expectedEvent.getPayloadType(),
                                             expectedEvent.getMetaData(),
                                             actualEvent.getMetaData())) {
-                    reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
+                    reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), lastCommandException);
                 }
             }
             return this;
@@ -450,21 +459,27 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
                 final Description mismatch = new StringDescription();
                 matcher.describeMismatch(publishedEvents, mismatch);
 
-                reporter.reportWrongEvent(publishedEvents, expectation, mismatch, actualException);
+                reporter.reportWrongEvent(publishedEvents, expectation, mismatch, lastCommandException);
             }
             return this;
         }
 
         @Override
         public AxonTestPhase.Then commands(Object... expectedCommands) {
-            var publishedCommands = commandBus.recordedCommands();
-
-            throw new RuntimeException("Not implemented yet");
+            commandValidator.assertDispatchedEqualTo(expectedCommands);
+            return this;
         }
 
         @Override
         public AxonTestPhase.Then commands(CommandMessage<?>... expectedCommands) {
-            throw new RuntimeException("Not implemented yet");
+            commandValidator.assertDispatchedEqualTo(List.of(expectedCommands));
+            return this;
+        }
+
+        @Override
+        public AxonTestPhase.Then noCommands() {
+            commandValidator.assertDispatchedEqualTo(Matchers.noCommands());
+            return this;
         }
 
         @Override
@@ -479,10 +494,10 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             }
             StringDescription expectedDescription = new StringDescription();
             matcher.describeTo(expectedDescription);
-            if (actualException != null) {
-                reporter.reportUnexpectedException(actualException, expectedDescription);
-            } else if (!matcher.matches(actualReturnValue)) {
-                reporter.reportWrongResult(actualReturnValue, expectedDescription);
+            if (lastCommandException != null) {
+                reporter.reportUnexpectedException(lastCommandException, expectedDescription);
+            } else if (!matcher.matches(lastCommandResult)) {
+                reporter.reportWrongResult(lastCommandResult, expectedDescription);
             }
             return this;
         }
@@ -494,11 +509,11 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             PayloadMatcher<CommandResultMessage<?>> expectedMatcher =
                     new PayloadMatcher<>(CoreMatchers.equalTo(expectedPayload));
             expectedMatcher.describeTo(expectedDescription);
-            if (actualException != null) {
-                reporter.reportUnexpectedException(actualException, expectedDescription);
-            } else if (!verifyPayloadEquality(expectedPayload, actualReturnValue.getPayload())) {
+            if (lastCommandException != null) {
+                reporter.reportUnexpectedException(lastCommandException, expectedDescription);
+            } else if (!verifyPayloadEquality(expectedPayload, lastCommandResult.getPayload())) {
                 PayloadMatcher<CommandResultMessage<?>> actualMatcher =
-                        new PayloadMatcher<>(CoreMatchers.equalTo(actualReturnValue.getPayload()));
+                        new PayloadMatcher<>(CoreMatchers.equalTo(lastCommandResult.getPayload()));
                 actualMatcher.describeTo(actualDescription);
                 reporter.reportWrongResult(actualDescription, expectedDescription);
             }
@@ -512,10 +527,10 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             }
             StringDescription expectedDescription = new StringDescription();
             matcher.describeTo(expectedDescription);
-            if (actualException != null) {
-                reporter.reportUnexpectedException(actualException, expectedDescription);
-            } else if (!matcher.matches(actualReturnValue.getPayload())) {
-                reporter.reportWrongResult(actualReturnValue.getPayload(), expectedDescription);
+            if (lastCommandException != null) {
+                reporter.reportUnexpectedException(lastCommandException, expectedDescription);
+            } else if (!matcher.matches(lastCommandResult.getPayload())) {
+                reporter.reportWrongResult(lastCommandResult.getPayload(), expectedDescription);
             }
             return this;
         }
@@ -529,11 +544,11 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         public AxonTestPhase.Then exception(Matcher<?> matcher) {
             StringDescription description = new StringDescription();
             matcher.describeTo(description);
-            if (actualException == null) {
-                reporter.reportUnexpectedReturnValue(actualReturnValue.getPayload(), description);
+            if (lastCommandException == null) {
+                reporter.reportUnexpectedReturnValue(lastCommandResult.getPayload(), description);
             }
-            if (!matcher.matches(actualException)) {
-                reporter.reportWrongException(actualException, description);
+            if (!matcher.matches(lastCommandException)) {
+                reporter.reportWrongException(lastCommandException, description);
             }
             return this;
         }

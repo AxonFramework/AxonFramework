@@ -28,6 +28,7 @@ import org.hamcrest.StringDescription;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static org.axonframework.test.saga.DescriptionUtils.describe;
 
@@ -39,8 +40,9 @@ import static org.axonframework.test.saga.DescriptionUtils.describe;
  */
 public class CommandValidator {
 
-    private final RecordingCommandBus commandBus;
     private final FieldFilter fieldFilter;
+    private final Supplier<List<CommandMessage<?>>> dispatchedCommands;
+    private final Runnable clearRecordedCommands;
 
     /**
      * Creates a validator which monitors the given {@code commandBus}.
@@ -49,7 +51,16 @@ public class CommandValidator {
      * @param fieldFilter the filter describing the Fields to include in a comparison
      */
     public CommandValidator(RecordingCommandBus commandBus, FieldFilter fieldFilter) {
-        this.commandBus = commandBus;
+        this(commandBus::getDispatchedCommands, commandBus::clearCommands, fieldFilter);
+    }
+
+    public CommandValidator(
+            Supplier<List<CommandMessage<?>>> dispatchedCommands,
+            Runnable clearRecordedCommands,
+            FieldFilter fieldFilter
+    ) {
+        this.dispatchedCommands = dispatchedCommands;
+        this.clearRecordedCommands = clearRecordedCommands;
         this.fieldFilter = fieldFilter;
     }
 
@@ -57,7 +68,7 @@ public class CommandValidator {
      * Starts recording commands on the command bus.
      */
     public void startRecording() {
-        commandBus.clearCommands();
+        clearRecordedCommands.run();
     }
 
     /**
@@ -66,7 +77,7 @@ public class CommandValidator {
      * @param expected The commands expected to have been published on the bus
      */
     public void assertDispatchedEqualTo(Object... expected) {
-        List<CommandMessage<?>> actual = commandBus.getDispatchedCommands();
+        List<CommandMessage<?>> actual = dispatchedCommands.get();
         if (actual.size() != expected.length) {
             throw new AxonAssertionError(
                     "Got wrong number of commands dispatched.\n"
@@ -110,11 +121,11 @@ public class CommandValidator {
      * @param matcher The matcher validating the actual commands
      */
     public void assertDispatchedMatching(Matcher<?> matcher) {
-        if (!matcher.matches(commandBus.getDispatchedCommands())) {
+        if (!matcher.matches(dispatchedCommands.get())) {
             Description expectedDescription = new StringDescription();
             Description actualDescription = new StringDescription();
             matcher.describeTo(expectedDescription);
-            describe(commandBus.getDispatchedCommands(), actualDescription);
+            describe(dispatchedCommands.get(), actualDescription);
             throw new AxonAssertionError(
                     "Incorrect dispatched command.\n"
                             + "Expected <" + expectedDescription + ">,\n but got <" + actualDescription + ">."
