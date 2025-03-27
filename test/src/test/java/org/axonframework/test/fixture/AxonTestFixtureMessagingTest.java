@@ -19,6 +19,7 @@ package org.axonframework.test.fixture;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -173,6 +174,24 @@ class AxonTestFixtureMessagingTest {
                .then()
                .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 2));
     }
+
+    @Test
+    void whenEventThenExpectedCommand() {
+        var configurer = MessagingConfigurer.create();
+        configurer.registerEventSink(c -> (events) -> {
+            var commandGateway = c.getComponent(CommandGateway.class);
+            commandGateway.sendAndWait(new ChangeStudentNameCommand("id", "name"));
+            return CompletableFuture.completedFuture(null);
+        });
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        fixture.when()
+               .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
+               .then()
+               .commands(new ChangeStudentNameCommand("id", "name"));
+    }
+
 
     @Test
     void givenNoPriorActivityWhenCommandThenExpectException() {
