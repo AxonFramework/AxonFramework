@@ -25,6 +25,7 @@ import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.DelegatingConfigurer;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
+import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.configuration.NewConfigurer;
 
 import java.util.function.Consumer;
@@ -69,16 +70,19 @@ public class ModellingConfigurer
     }
 
     /**
-     * Registers the given stateful command handling {@code module} to use in this configuration.
+     * Registers the given stateful command handling {@code moduleBuilder} to use in this configuration.
      * <p>
-     * As a {@link Module} implementation, any components registered with the given {@code module} will not be
-     * accessible from other {@code Modules} to enforce encapsulation.
+     * As a {@link Module} implementation, any components registered with the result of the given {@code moduleBuilder}
+     * will not be accessible from other {@code Modules} to enforce encapsulation.
      *
-     * @param module The stateful command handling module to register with {@code this ModellingConfigurer}.
+     * @param moduleBuilder The builder returning a stateful command handling module to register with
+     *                      {@code this ModellingConfigurer}.
      * @return A {@code ModellingConfigurer} instance for further configuring.
      */
-    public ModellingConfigurer registerStatefulCommandHandlingModule(StatefulCommandHandlingModule module) {
-        return registerModule(module);
+    public ModellingConfigurer registerStatefulCommandHandlingModule(
+            ModuleBuilder<StatefulCommandHandlingModule> moduleBuilder
+    ) {
+        return registerModule(moduleBuilder.build());
     }
 
     /**
