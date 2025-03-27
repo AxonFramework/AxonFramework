@@ -16,6 +16,13 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+/**
+ * Functional interface towards creating a new instance of an entity of the given {@code entityType} and the given
+ * {@code id}.
+ *
+ * @param <ID> The type of the identifier of the entity to create.
+ * @param <M>  The type of the entity to create.
+ */
 @FunctionalInterface
 public interface EventSourcedEntityCreator<ID, M> {
 

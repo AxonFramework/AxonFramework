@@ -67,7 +67,7 @@ class AnnotationBasedEventSourcingEntityRepositoryTest {
             super(TagBasedSequenceEntity.class, "mySuperSpecialTag");
         }
 
-        @EventSourcingEntity(tagName = "mySuperSpecialTag")
+        @EventSourcedEntity(tagName = "mySuperSpecialTag")
         static class TagBasedSequenceEntity extends AbstractSequenceEntity {
 
         }
@@ -81,7 +81,7 @@ class AnnotationBasedEventSourcingEntityRepositoryTest {
             super(EventCriteriaBuilderSequenceEntity.class, "myCriteriaBuilderTag");
         }
 
-        @EventSourcingEntity
+        @EventSourcedEntity
         static class EventCriteriaBuilderSequenceEntity extends AbstractSequenceEntity {
 
             @EventCriteriaBuilder
@@ -113,7 +113,7 @@ class AnnotationBasedEventSourcingEntityRepositoryTest {
             super(CustomEventCriteriaResolverSequenceEntity.class, "customCriteriaResolver");
         }
 
-        @EventSourcingEntity(criteriaResolver = CustomCriteriaResolver.class)
+        @EventSourcedEntity(criteriaResolver = CustomCriteriaResolver.class)
         static class CustomEventCriteriaResolverSequenceEntity extends AbstractSequenceEntity {
 
         }
@@ -136,7 +136,7 @@ class AnnotationBasedEventSourcingEntityRepositoryTest {
             super(CustomCreatorSequenceEntity.class, "CustomCreatorSequenceEntity");
         }
 
-        @EventSourcingEntity(entityCreator = CustomEntityCreator.class)
+        @EventSourcedEntity(entityCreator = CustomEntityCreator.class)
         static class CustomCreatorSequenceEntity extends AbstractSequenceEntity {
 
             private CustomCreatorSequenceEntity() {
@@ -250,7 +250,7 @@ class AnnotationBasedEventSourcingEntityRepositoryTest {
 
     }
 
-    @EventSourcingEntity
+    @EventSourcedEntity
     static class MyEntity {
 
         private Integer sequenceNumber = -1;
@@ -264,7 +264,7 @@ class AnnotationBasedEventSourcingEntityRepositoryTest {
             return sequenceNumber;
         }
 
-        @org.axonframework.eventsourcing.annotation.EventCriteriaBuilder
+        @EventCriteriaBuilder
         public static EventCriteria buildCriteriaFor(String myString) {
             return EventCriteria.match()
                                 .eventsOfAnyType()
@@ -286,7 +286,7 @@ class AnnotationBasedEventSourcingEntityRepositoryTest {
         }
     }
 
-    @EventSourcingEntity
+    @EventSourcedEntity
     static class SimpleSequenceEntity extends AbstractSequenceEntity {
 
     }

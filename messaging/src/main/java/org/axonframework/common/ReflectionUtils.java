@@ -35,8 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
@@ -515,49 +515,6 @@ public abstract class ReflectionUtils {
                              executable.getName(),
                              Arrays.stream(executable.getParameterTypes()).map(Class::getName)
                                    .collect(Collectors.joining(",")));
-    }
-
-    /**
-     * Tries to construct the object of given {@code clazz} using a suitable constructor that takes all, some, or none
-     * of the arguments that are provided. The constructor with the highest number of arguments that are provided will
-     * be used. If a Java class is passed, the class must be an exact match, or be a subclass of the class that the
-     * constructor is declared on.
-     * <p>
-     * TODO: Implement some form of caching to avoid the cost of reflection
-     */
-    public static <T> T constructWithOptionalArguments(Class<T> clazz, Object... arguments) {
-        // First, find all matching constructors and order them by matching argument count
-        //noinspection unchecked
-        Stream<Constructor<T>> stream = Arrays.stream((Constructor<T>[]) clazz.getDeclaredConstructors());
-        Optional<Constructor<T>> constructors = stream
-                .filter(constructor ->
-                                Arrays.stream(constructor.getParameterTypes())
-                                      .allMatch(arg -> Arrays.stream(arguments).anyMatch(arg2 -> isMatch(arg, arg2)))
-                )
-                .max(Comparator.comparingInt(Constructor::getParameterCount));
-
-        if (constructors.isEmpty()) {
-            throw new IllegalArgumentException("No suitable constructor found for entity of type " + clazz);
-        }
-        Constructor<T> constructor = constructors.get();
-        try {
-            Object[] builtArguments = Arrays.stream(constructor.getParameterTypes()).map(type -> {
-                for (Object argument : arguments) {
-                    if (type.isInstance(argument)) {
-                        return argument;
-                    }
-                }
-                return null;
-            }).toArray();
-            ReflectionUtils.ensureAccessible(constructor);
-            return constructor.newInstance(builtArguments);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new IllegalArgumentException("Error creating " + clazz, e);
-        }
-    }
-
-    private static boolean isMatch(Class<?> wantedClass, Object arg2) {
-        return wantedClass.isInstance(arg2);
     }
 
     private ReflectionUtils() {

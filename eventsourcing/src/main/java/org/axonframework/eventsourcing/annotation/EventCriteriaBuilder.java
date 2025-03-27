@@ -16,11 +16,33 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.modelling.command.annotation.TargetEntityId;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation to indicate that a method can be used to resolve the {@link TargetEntityId} to {@link EventCriteria}
+ * instance for an {@link EventSourcedEntity}.
+ * <p>
+ * The method should be:
+ * <ul>
+ *     <li>A static method</li>
+ *     <li>Accept a single parameter of the type of the {@link TargetEntityId} of the {@link EventSourcedEntity}</li>
+ *     <li>Return an {@link EventCriteria} instance</li>
+ * </ul>
+ * <p>
+ * In all other cases, an exception will be thrown during initialization of the
+ * {@link AnnotationBasedEventSourcingEntityRepository}.
+ *
+ * @author Mitchell Herrijgers
+ * @see AnnotationBasedEventSourcingEntityRepository
+ * @see EventSourcedEntity
+ * @since 5.0.0
+ */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface EventCriteriaBuilder {

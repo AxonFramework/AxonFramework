@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.annotation;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
@@ -30,52 +31,72 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-public class AnnotationBasedEventCriteriaResolver<ID, T> implements CriteriaResolver<ID>, DescribableComponent {
+/**
+ * Annotation-based {@link CriteriaResolver} implementation which resolves {@link EventCriteria} based on the given
+ * {@code id} for loading the entity. This is the default when using the {@link EventSourcedEntity} annotation.
+ * <p>
+ * There are various ways to define how the {@link EventCriteria} should be resolved. In order of precedence:
+ * <ol>
+ *     <li>
+ *         By defining a static method in the entity class annotated with {@link EventCriteriaBuilder} which returns an
+ *         {@link EventCriteria} and accepts the {@code id} as a parameter. This method should be static and return an
+ *         {@link EventCriteria}. Multiple methods can be defined with different id types, and the first matching method
+ *         will be used.
+ *     </li>
+ *     <li>
+ *         If no matching {@link EventCriteriaBuilder} is found, the {@link EventSourcedEntity#tagName()} will be used as the tag key, and the {@link Object#toString()} of the id will be used as value.
+ *     </li>
+ *     <li>
+ *         If the {@link EventSourcedEntity#tagName()} is empty, the {@link Class#getSimpleName()} of the entity will be used as tag key, and the {@link Object#toString()} of the id will be used as value.
+ *     </li>
+ * </ol>
+ *
+ * @author Mitchell Herrijgers
+ * @see EventSourcedEntity
+ * @since 5.0.0
+ */
+public class AnnotationBasedEventCriteriaResolver implements CriteriaResolver<Object>, DescribableComponent {
 
-    private final Class<T> entityType;
+    private final Class<?> entityType;
     private final String tagName;
     private final Map<Class<?>, Method> builderMap;
 
-    public AnnotationBasedEventCriteriaResolver(Class<T> entityType) {
+    /**
+     * Initialize the resolver for the given {@code entityType}. The entity type should be annotated with
+     * {@link EventSourcedEntity}, or this resolver will throw an {@link IllegalArgumentException}.
+     * <p>
+     * Will check for methods annotated with {@link EventCriteriaBuilder} and store them in a map for later use. If one
+     * of the methods is invalid as defined in the Javadoc of {@link EventCriteriaBuilder}, an
+     * {@link IllegalArgumentException} will be thrown.
+     *
+     * @param entityType The entity type to resolve criteria for
+     */
+    public AnnotationBasedEventCriteriaResolver(Class<?> entityType) {
         this.entityType = entityType;
 
 
-        Map<String, Object> attributes = AnnotationUtils.findAnnotationAttributes(entityType, EventSourcingEntity.class)
-                                                        .orElseThrow(() -> new IllegalArgumentException(
-                                                                "The given class it not an @EventSourcingEntity"));
+        Map<String, Object> attributes = AnnotationUtils
+                .findAnnotationAttributes(entityType, EventSourcedEntity.class)
+                .orElseThrow(() -> new IllegalArgumentException("The given class it not an @EventSourcedEntity"));
 
         String annotationTagName = (String) attributes.get("tagName");
         this.tagName = annotationTagName.isEmpty() ? null : annotationTagName;
-        this.builderMap = Arrays.stream(entityType.getMethods())
-                                .filter(m -> m.isAnnotationPresent(EventCriteriaBuilder.class))
+
+        Set<Method> eventCriteriaBuilders = Arrays.stream(entityType.getMethods())
+                                                  .filter(m -> m.isAnnotationPresent(EventCriteriaBuilder.class))
+                                                  .collect(Collectors.toSet());
+        eventCriteriaBuilders.forEach(AnnotationBasedEventCriteriaResolver::validateEventCriteriaBuilderMethod);
+
+        this.builderMap = eventCriteriaBuilders.stream()
                                 .collect(Collectors.toMap(m -> m.getParameterTypes()[0],
                                                           m -> m));
-
-        // Let's do some checks so we don't fail at runtime.
-        this.builderMap.values().forEach(AnnotationBasedEventCriteriaResolver::validateEventCriteriaBuilderMethod);
-    }
-
-    private static void validateEventCriteriaBuilderMethod(Method m) {
-        if (!EventCriteria.class.isAssignableFrom(m.getReturnType())) {
-            throw new IllegalArgumentException(
-                    "Method annotated with @EventCriteriaBuilder must return an EventCriteria. Violating method: %s".formatted(
-                            m));
-        }
-        if (m.getParameterCount() != 1) {
-            throw new IllegalArgumentException(
-                    "Method annotated with @EventCriteriaBuilder must have exactly one parameter. Violating method: %s".formatted(
-                            m));
-        }
-        if (!Modifier.isStatic(m.getModifiers())) {
-            throw new IllegalArgumentException(
-                    "Method annotated with @EventCriteriaBuilder must be static. Violating method: %s".formatted(m));
-        }
     }
 
     @Override
-    public EventCriteria apply(ID id) {
+    public EventCriteria apply(Object id) {
         Optional<Object> builderResult = builderMap
                 .keySet()
                 .stream()
@@ -83,24 +104,44 @@ public class AnnotationBasedEventCriteriaResolver<ID, T> implements CriteriaReso
                 .findFirst()
                 .map(builderMap::get)
                 .map(m -> {
-                    // TODO: Do we want to use parameter resolvers here?
+                    Object result;
                     try {
-                        return m.invoke(null, id);
+                        result = m.invoke(null, id);
                     } catch (Exception e) {
                         throw new IllegalArgumentException("Error invoking EventCriteriaBuilder method", e);
                     }
+                    if (!(result instanceof EventCriteria)) {
+                        throw new IllegalArgumentException(
+                                "The @EventCriteriaBuilder method returned null. The method must return a non-null EventCriteria. Violating method: %s".formatted(
+                                        ReflectionUtils.toDiscernibleSignature(m)));
+                    }
+                    return result;
                 });
         if (builderResult.isPresent()) {
-            if (!(builderResult.get() instanceof EventCriteria)) {
-                throw new IllegalArgumentException(
-                        "Method annotated with @EventCriteriaBuilder must return an EventCriteria");
-            }
             return (EventCriteria) builderResult.get();
         }
         String key = Objects.requireNonNullElseGet(tagName, entityType::getSimpleName);
         return EventCriteria.match()
                             .eventsOfAnyType()
                             .withTags(Tag.of(key, id.toString()));
+    }
+
+    private static void validateEventCriteriaBuilderMethod(Method m) {
+        if (!EventCriteria.class.isAssignableFrom(m.getReturnType())) {
+            throw new IllegalArgumentException(
+                    "Method annotated with @EventCriteriaBuilder must return an EventCriteria. Violating method: %s".formatted(
+                            ReflectionUtils.toDiscernibleSignature(m)));
+        }
+        if (m.getParameterCount() != 1) {
+            throw new IllegalArgumentException(
+                    "Method annotated with @EventCriteriaBuilder must have exactly one parameter. Violating method: %s".formatted(
+                            ReflectionUtils.toDiscernibleSignature(m)));
+        }
+        if (!Modifier.isStatic(m.getModifiers())) {
+            throw new IllegalArgumentException(
+                    "Method annotated with @EventCriteriaBuilder must be static. Violating method: %s".formatted(
+                            ReflectionUtils.toDiscernibleSignature(m)));
+        }
     }
 
     @Override

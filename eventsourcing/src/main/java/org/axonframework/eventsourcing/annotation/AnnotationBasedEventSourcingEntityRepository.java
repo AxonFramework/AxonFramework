@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.annotation;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.ConstructorUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
@@ -29,9 +29,18 @@ import org.axonframework.modelling.repository.AsyncRepository;
 import org.axonframework.modelling.repository.ManagedEntity;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static org.axonframework.common.ConstructorUtils.factoryForTypeWithOptionalArgumentInstance;
+
+/**
+ * Implementation of a {@link AsyncRepository} that configures an entity based on the configuration provided by the
+ * {@link EventSourcedEntity} annotation. Please refer to the {@link EventSourcedEntity} annotation for more information
+ * on the configuration options.
+ *
+ * @param <ID> The type of the identifier of the entity.
+ * @param <T>  The type of the entity.
+ */
 public class AnnotationBasedEventSourcingEntityRepository<ID, T> implements AsyncRepository.LifecycleManagement<ID, T> {
 
     private final Class<ID> idType;
@@ -41,13 +50,22 @@ public class AnnotationBasedEventSourcingEntityRepository<ID, T> implements Asyn
     private final CriteriaResolver<ID> criteriaResolver;
     private final AnnotationBasedEventStateApplier<T> stateApplier;
 
+    /**
+     * Initialize a repository for the given {@code entityType} and {@code idType} using the provided
+     * {@code eventStore}.
+     *
+     * @param eventStore The event store to store and load events from.
+     * @param idType     The type of the identifier of the entity.
+     * @param entityType The type of the entity.
+     */
     @SuppressWarnings("unchecked")
     public AnnotationBasedEventSourcingEntityRepository(
             AsyncEventStore eventStore,
             Class<ID> idType,
             Class<T> entityType
     ) {
-        Map<String, Object> annotationAttributes = AnnotationUtils.findAnnotationAttributes(entityType, EventSourcingEntity.class)
+        Map<String, Object> annotationAttributes = AnnotationUtils
+                .findAnnotationAttributes(entityType, EventSourcedEntity.class)
                 .orElseThrow(() -> new IllegalArgumentException("The given class is not an @EventSourcingEntity"));
 
         this.idType = idType;
@@ -55,9 +73,8 @@ public class AnnotationBasedEventSourcingEntityRepository<ID, T> implements Asyn
 
         var creatorType = (Class<EventSourcedEntityCreator<ID, T>>) annotationAttributes.get("entityCreator");
         var criteriaResolverType = (Class<CriteriaResolver<ID>>) annotationAttributes.get("criteriaResolver");
-        this.creator = ReflectionUtils.constructWithOptionalArguments(creatorType, entityType);
-        this.criteriaResolver = ReflectionUtils.constructWithOptionalArguments(criteriaResolverType,
-                                                                               entityType);
+        this.creator = ConstructorUtils.factoryForTypeWithOptionalArgumentInstance(creatorType, entityType).get();
+        this.criteriaResolver = factoryForTypeWithOptionalArgumentInstance(criteriaResolverType, entityType).get();
 
         this.stateApplier = new AnnotationBasedEventStateApplier<>(entityType);
         this.repository = new AsyncEventSourcingRepository<>(
