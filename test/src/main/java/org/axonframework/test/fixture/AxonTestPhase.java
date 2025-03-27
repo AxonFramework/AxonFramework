@@ -507,6 +507,8 @@ public interface AxonTestPhase {
          */
         Then commands(CommandMessage<?>... expectedCommands);
 
+        Then noCommands();
+
         /**
          * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple test
          * scenarios within a single test method.

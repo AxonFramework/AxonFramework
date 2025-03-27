@@ -33,6 +33,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 class AxonTestFixtureMessagingTest {
@@ -178,9 +179,13 @@ class AxonTestFixtureMessagingTest {
     @Test
     void whenEventThenExpectedCommand() {
         var configurer = MessagingConfigurer.create();
+        AtomicBoolean eventHandled = new AtomicBoolean(false);
+        registerChangeStudentNameHandlerReturnsSingle(configurer);
         configurer.registerEventSink(c -> (events) -> {
-            var commandGateway = c.getComponent(CommandGateway.class);
-            commandGateway.sendAndWait(new ChangeStudentNameCommand("id", "name"));
+            if (!eventHandled.getAndSet(true)) {
+                var commandGateway = c.getComponent(CommandGateway.class);
+                commandGateway.sendAndWait(new ChangeStudentNameCommand("id", "name"));
+            }
             return CompletableFuture.completedFuture(null);
         });
 
@@ -191,7 +196,6 @@ class AxonTestFixtureMessagingTest {
                .then()
                .commands(new ChangeStudentNameCommand("id", "name"));
     }
-
 
     @Test
     void givenNoPriorActivityWhenCommandThenExpectException() {
