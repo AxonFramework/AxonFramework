@@ -57,7 +57,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
         var changeToTheSameName = new ChangeStudentNameCommand("my-studentId-1", "name-1");
         fixture.given(given -> given.events(studentNameChanged))
                .when(when -> when.command(changeToTheSameName))
-               .then(then -> then.publishedEvents().none());
+               .then(then -> then.events().none());
     }
 
     @Test
@@ -74,7 +74,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .when()
                .command(changeToTheAnotherName)
                .then()
-               .publishedEvents()
+               .events()
                .allOf(studentNameChangedEventMessage("my-studentId-1", "name-2", 2));
     }
 
@@ -92,7 +92,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
                .then()
-               .publishedEvents()
+               .events()
                .allOf(new StudentNameChangedEvent("my-studentId-1", "name-3", 3));
     }
 
@@ -110,7 +110,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-4"))
                .then()
-               .publishedEvents()
+               .events()
                .allOf(
                        new StudentNameChangedEvent("my-studentId-1", "name-3", 3),
                        new StudentNameChangedEvent("my-studentId-1", "name-4", 4)
@@ -130,7 +130,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .then()
-               .publishedEvents()
+               .events()
                .allOf(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
     }
 

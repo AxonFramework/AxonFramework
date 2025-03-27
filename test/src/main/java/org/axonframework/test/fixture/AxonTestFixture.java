@@ -417,16 +417,16 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         }
 
         @Override
-        public PublishedEventsAssertions publishedEvents() {
+        public PublishedEventsAssertions events() {
             return this;
         }
 
-        public DispatchedCommandsAssertions dispatchedCommands() {
+        public DispatchedCommandsAssertions commands() {
             return this;
         }
 
         @Override
-        public LastCommandResultAssertions commandResult() {
+        public LastCommandResultAssertions result() {
             return this;
         }
 

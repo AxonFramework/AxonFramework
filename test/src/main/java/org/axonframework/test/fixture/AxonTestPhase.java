@@ -568,22 +568,25 @@ public interface AxonTestPhase {
          */
         Setup and();
 
-        default PublishedEventsAssertions publishedEvents(Consumer<PublishedEventsAssertions> assertions) {
-            var events = publishedEvents();
+        default PublishedEventsAssertions events(Consumer<PublishedEventsAssertions> assertions) {
+            var events = events();
             assertions.accept(events);
             return events;
         }
 
-        PublishedEventsAssertions publishedEvents();
+        PublishedEventsAssertions events();
 
-        default DispatchedCommandsAssertions dispatchedCommands(Consumer<DispatchedCommandsAssertions> assertions) {
-            var commands = dispatchedCommands();
+        default DispatchedCommandsAssertions commands(Consumer<DispatchedCommandsAssertions> assertions) {
+            var commands = commands();
             assertions.accept(commands);
             return commands;
         }
 
-        DispatchedCommandsAssertions dispatchedCommands();
+        DispatchedCommandsAssertions commands();
 
-        LastCommandResultAssertions commandResult();
+        /**
+         * Assert result of last command from the when phase.
+         */
+        LastCommandResultAssertions result();
     }
 }

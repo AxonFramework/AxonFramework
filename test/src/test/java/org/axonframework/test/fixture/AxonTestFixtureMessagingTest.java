@@ -50,7 +50,7 @@ class AxonTestFixtureMessagingTest {
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .then()
-               .publishedEvents()
+               .events()
                .allOf(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
     }
 
@@ -65,7 +65,7 @@ class AxonTestFixtureMessagingTest {
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .then()
-               .publishedEvents()
+               .events()
                .allOf(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
     }
 
@@ -79,7 +79,7 @@ class AxonTestFixtureMessagingTest {
         fixture.when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .then()
-               .publishedEvents()
+               .events()
                .allOf(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
     }
 
@@ -93,7 +93,7 @@ class AxonTestFixtureMessagingTest {
         fixture.when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .then()
-               .commandResult()
+               .result()
                .isSuccess();
     }
 
@@ -107,7 +107,7 @@ class AxonTestFixtureMessagingTest {
         fixture.when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .then()
-               .commandResult()
+               .result()
                .isMessage(Matchers.nullValue());
     }
 
@@ -121,7 +121,7 @@ class AxonTestFixtureMessagingTest {
         fixture.when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .then()
-               .commandResult()
+               .result()
                .isSuccess()
                .withPayload(new CommandResult("Result name-1"));
     }
@@ -137,10 +137,10 @@ class AxonTestFixtureMessagingTest {
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
                .then()
-               .commandResult()
+               .result()
                .withPayload(new CommandResult("Result name-2"))
                .then()
-               .publishedEvents()
+               .events()
                .allOf(
                        studentNameChangedEvent("my-studentId-1", "name-1", 1),
                        studentNameChangedEvent("my-studentId-1", "name-2", 1)
@@ -148,7 +148,7 @@ class AxonTestFixtureMessagingTest {
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
                .then()
-               .commandResult()
+               .result()
                .isSuccess()
                .withPayload(new CommandResult("Result name-3"));
     }
@@ -182,7 +182,7 @@ class AxonTestFixtureMessagingTest {
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .then()
-               .publishedEvents()
+               .events()
                .allOf(studentNameChangedEventMessage("my-studentId-1", "name-1", 2));
     }
 
@@ -204,7 +204,7 @@ class AxonTestFixtureMessagingTest {
         fixture.when()
                .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
                .then()
-               .dispatchedCommands()
+               .commands()
                .commands(new ChangeStudentNameCommand("id", "name"));
     }
 
@@ -227,7 +227,7 @@ class AxonTestFixtureMessagingTest {
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .then()
-               .commandResult()
+               .result()
                .isException(RuntimeException.class);
     }
 
