@@ -138,6 +138,7 @@ class AxonTestFixtureMessagingTest {
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
                .then()
+               .success()
                .resultMessagePayload(new CommandResult("Result name-3"));
     }
 

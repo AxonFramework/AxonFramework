@@ -150,7 +150,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         private final RecordingCommandBus commandBus;
         private final RecordingEventSink eventSink;
         private final MessageTypeResolver messageTypeResolver;
-        private final List<AsyncUnitOfWork> givenUnitsOfWork = new ArrayList<>();
+        private final List<AsyncUnitOfWork> unitsOfWork = new ArrayList<>();
 
         Given(
                 NewConfiguration configuration,
@@ -179,19 +179,11 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
         private GenericEventMessage<Object> toGenericEventMessage(Object payload, MetaData metaData) {
             var messageType = messageTypeResolver.resolve(payload);
-            var eventMessage = new GenericEventMessage<>(
+            return new GenericEventMessage<>(
                     messageType,
                     payload,
                     metaData
             );
-            return eventMessage;
-        }
-
-        @Override
-        public AxonTestPhase.Given events(EventMessage<?>... messages) {
-            inUnitOfWorkRunOnInvocation(processingContext -> eventSink.publish(processingContext,
-                                                                               messages));
-            return this;
         }
 
         @Override
@@ -204,17 +196,24 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             return events(messages);
         }
 
+        @Override
+        public AxonTestPhase.Given events(EventMessage<?>... messages) {
+            inUnitOfWorkRunOnInvocation(processingContext -> eventSink.publish(processingContext,
+                                                                               messages));
+            return this;
+        }
+
         private AsyncUnitOfWork inUnitOfWorkRunOnInvocation(Consumer<ProcessingContext> action) {
             var unitOfWork = new AsyncUnitOfWork();
             unitOfWork.runOnInvocation(action);
-            givenUnitsOfWork.add(unitOfWork);
+            unitsOfWork.add(unitOfWork);
             return unitOfWork;
         }
 
         private AsyncUnitOfWork inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
             var unitOfWork = new AsyncUnitOfWork();
             unitOfWork.onInvocation(action);
-            givenUnitsOfWork.add(unitOfWork);
+            unitsOfWork.add(unitOfWork);
             return unitOfWork;
         }
 
@@ -244,9 +243,9 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
         @Override
         public AxonTestPhase.When when() {
-            // todo: prevent dołuble when!
-            for (var givenUnitOfWork : givenUnitsOfWork) {
-                awaitCompletion(givenUnitOfWork.execute());
+            // todo: prevent double when!
+            for (var unitOfWork : unitsOfWork) {
+                awaitCompletion(unitOfWork.execute());
             }
             return new When(configuration, customization, messageTypeResolver, commandBus, eventSink);
         }
@@ -262,9 +261,10 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         private final NewConfiguration configuration;
         private final Customization customization;
         private final MessageTypeResolver messageTypeResolver;
-        private final AsyncUnitOfWork whenUnitOfWork;
         private final RecordingCommandBus commandBus;
         private final RecordingEventSink eventSink;
+        private final List<AsyncUnitOfWork> unitsOfWork = new ArrayList<>();
+
         private Message<?> lastCommandResult;
         private Throwable lastCommandException;
 
@@ -280,30 +280,82 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             this.messageTypeResolver = messageTypeResolver;
             this.commandBus = commandBus.reset();
             this.eventSink = eventSink.reset();
-            this.whenUnitOfWork = new AsyncUnitOfWork();
         }
 
         @Override
         public AxonTestPhase.When command(Object payload, MetaData metaData) {
             var messageType = messageTypeResolver.resolve(payload);
             var message = new GenericCommandMessage<>(messageType, payload, metaData);
-            whenUnitOfWork.onInvocation(
-                    processingContext -> commandBus.dispatch(message, processingContext)
-                                                   .whenComplete((r, e) -> {
-                                                       if (e == null) {
-                                                           lastCommandResult = r;
-                                                       } else {
-                                                           lastCommandException = e.getCause();
-                                                       }
-                                                   })
+            inUnitOfWorkOnInvocation(processingContext ->
+                                             commandBus.dispatch(message, processingContext)
+                                                       .whenComplete((r, e) -> {
+                                                           if (e == null) {
+                                                               lastCommandResult = r;
+                                                           } else {
+                                                               lastCommandException = e.getCause();
+                                                           }
+                                                       })
             );
             return this;
         }
 
         @Override
+        public AxonTestPhase.When event(Object payload) {
+            return AxonTestPhase.When.super.event(payload);
+        }
+
+        @Override
+        public AxonTestPhase.When event(Object payload, MetaData metaData) {
+            var eventMessage = toGenericEventMessage(payload, metaData);
+            return events(eventMessage);
+        }
+
+        private GenericEventMessage<Object> toGenericEventMessage(Object payload, MetaData metaData) {
+            var messageType = messageTypeResolver.resolve(payload);
+            return new GenericEventMessage<>(
+                    messageType,
+                    payload,
+                    metaData
+            );
+        }
+
+        @Override
+        public AxonTestPhase.When events(List<?>... events) {
+            var messages = Arrays.stream(events)
+                                 .map(e -> e instanceof EventMessage<?> message
+                                         ? message
+                                         : toGenericEventMessage(e, MetaData.emptyInstance())
+                                 ).toArray(EventMessage<?>[]::new);
+            return events(messages);
+        }
+
+        @Override
+        public AxonTestPhase.When events(EventMessage<?>... messages) {
+            inUnitOfWorkRunOnInvocation(processingContext -> eventSink.publish(processingContext,
+                                                                               messages));
+            return this;
+        }
+
+        private AsyncUnitOfWork inUnitOfWorkRunOnInvocation(Consumer<ProcessingContext> action) {
+            var unitOfWork = new AsyncUnitOfWork();
+            unitOfWork.runOnInvocation(action);
+            unitsOfWork.add(unitOfWork);
+            return unitOfWork;
+        }
+
+        private AsyncUnitOfWork inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+            var unitOfWork = new AsyncUnitOfWork();
+            unitOfWork.onInvocation(action);
+            unitsOfWork.add(unitOfWork);
+            return unitOfWork;
+        }
+
+
+        @Override
         public AxonTestPhase.Then then() {
-            if (!whenUnitOfWork.isCompleted()) {
-                awaitCompletion(whenUnitOfWork.execute());
+            // todo: prevent double then!
+            for (var unitOfWork : unitsOfWork) {
+                awaitCompletion(unitOfWork.execute());
             }
             return new Then(
                     configuration,

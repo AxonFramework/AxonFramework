@@ -145,7 +145,7 @@ public interface AxonTestPhase {
      * Interface describing the operations available in the "given" phase of the test fixture execution. This phase is
      * used to define the initial state of the system before executing the test action.
      * <p>
-     * Each operation in the "given" phase (such as applying an event or executing a command) is executed in its own
+     * Each operation in the "given" phase (such as applying an event or dispatching a command) is executed in its own
      * separate Unit of Work which is committed immediately after execution. This allows for building up the initial
      * state incrementally with each operation being processed independently.
      */
@@ -278,13 +278,15 @@ public interface AxonTestPhase {
      * Interface describing the operations available in the "when" phase of the test fixture execution. This phase is
      * used to execute the actual action being tested, typically a command.
      * <p>
-     * A new Unit of Work is started for the "when" phase and committed after the action is executed.
+     * Each operation in the phase (such as dispatching a command) is executed in its own separate Unit of Work which is
+     * committed immediately after execution. This allows for building up the initial state incrementally with each
+     * operation being processed independently.
      */
     interface When {
 
         /**
          * Dispatches the given {@code payload} command to the appropriate command handler and records all activity for
-         * result validation. The command will be executed with empty metadata.
+         * result validation. The command will be dispatched with empty metadata.
          *
          * @param payload The command to execute.
          * @return the current When instance, for fluent interfacing.
@@ -314,6 +316,45 @@ public interface AxonTestPhase {
          * @return the current When instance, for fluent interfacing.
          */
         When command(Object payload, MetaData metaData);
+
+        /**
+         * Publishes the given {@code payload} event with the provided {@code metaData} to the appropriate event handler
+         * and records all activity for result validation. The event will be published with empty metadata.
+         *
+         * @param payload The command to execute.
+         * @return the current When instance, for fluent interfacing.
+         */
+        default When event(Object payload) {
+            return event(payload, MetaData.emptyInstance());
+        }
+
+        /**
+         * Publishes the given {@code payload} event with the provided {@code metaData} to the appropriate event handler
+         * and records all activity for result validation.
+         *
+         * @param payload  The event to execute.
+         * @param metaData The metadata to attach to the command.
+         * @return the current When instance, for fluent interfacing.
+         */
+        When event(Object payload, MetaData metaData);
+
+        /**
+         * Publishes the given Event Messages to the appropriate event handlers and records all activity for result
+         * validation.
+         *
+         * @param messages The event messages to publish.
+         * @return the current When instance, for fluent interfacing.
+         */
+        When events(EventMessage<?>... messages);
+
+        /**
+         * Publishes the given Event Messages to the appropriate event handlers and records all activity for result
+         * validation.
+         *
+         * @param events The lists of events to publish.
+         * @return the current When instance, for fluent interfacing.
+         */
+        When events(List<?>... events);
 
         /**
          * Transitions to the "then" phase to validate the results of the test. This method completes the "when" phase,
@@ -467,8 +508,8 @@ public interface AxonTestPhase {
         Then commands(CommandMessage<?>... expectedCommands);
 
         /**
-         * Returns to the setup phase to continue with additional test scenarios.
-         * This allows for chaining multiple test scenarios within a single test method.
+         * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple test
+         * scenarios within a single test method.
          * <p>
          * Example usage:
          * <pre>
