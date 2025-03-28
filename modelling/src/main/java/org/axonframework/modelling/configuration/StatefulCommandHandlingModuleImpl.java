@@ -18,6 +18,7 @@ package org.axonframework.modelling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.common.Assert;
 import org.axonframework.configuration.AbstractConfigurer;
 import org.axonframework.configuration.ComponentFactory;
@@ -31,7 +32,9 @@ import org.axonframework.modelling.command.StatefulCommandHandler;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.repository.AsyncRepository;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
@@ -60,6 +63,7 @@ class StatefulCommandHandlingModuleImpl
     private final String statefulCommandHandlingComponentName;
     private final Map<String, EntityBuilder<?, ?>> entityBuilders;
     private final Map<QualifiedName, ComponentFactory<StatefulCommandHandler>> handlerFactories;
+    private final List<ComponentFactory<CommandHandlingComponent>> handlingComponentFactories;
     private final AtomicReference<StatefulCommandHandlingComponent> handlingComponentReference;
 
     StatefulCommandHandlingModuleImpl(@Nonnull String moduleName) {
@@ -69,6 +73,7 @@ class StatefulCommandHandlingModuleImpl
         this.statefulCommandHandlingComponentName = "StatefulCommandHandlingComponent[" + moduleName + "]";
         this.entityBuilders = new HashMap<>();
         this.handlerFactories = new HashMap<>();
+        this.handlingComponentFactories = new ArrayList<>();
         this.handlingComponentReference = new AtomicReference<>();
     }
 
@@ -80,7 +85,15 @@ class StatefulCommandHandlingModuleImpl
     @Override
     public CommandHandlerPhase commandHandler(@Nonnull QualifiedName commandName,
                                               @Nonnull ComponentFactory<StatefulCommandHandler> commandHandlerBuilder) {
-        this.handlerFactories.put(commandName, commandHandlerBuilder);
+        handlerFactories.put(commandName, commandHandlerBuilder);
+        return this;
+    }
+
+    @Override
+    public CommandHandlerPhase commandHandlingComponent(
+            @Nonnull ComponentFactory<CommandHandlingComponent> handlingComponentBuilder
+    ) {
+        handlingComponentFactories.add(handlingComponentBuilder);
         return this;
     }
 
@@ -121,15 +134,18 @@ class StatefulCommandHandlingModuleImpl
 
     private void registerCommandHandlers() {
         registerComponent(StatefulCommandHandlingComponent.class, statefulCommandHandlingComponentName, c -> {
-            StatefulCommandHandlingComponent handlingComponent = StatefulCommandHandlingComponent.create(
+            StatefulCommandHandlingComponent statefulCommandHandler = StatefulCommandHandlingComponent.create(
                     statefulCommandHandlingComponentName,
                     c.getComponent(StateManager.class, stateManagerName)
             );
             // TODO DISCUSS - do we want separate command handler registrations?
             // Not for now - add issue for the future
-            handlerFactories.forEach((key, value) -> handlingComponent.subscribe(key, value.build(c)));
-            handlingComponentReference.set(handlingComponent);
-            return handlingComponent;
+            handlerFactories.forEach((key, value) -> statefulCommandHandler.subscribe(key, value.build(c)));
+            handlingComponentFactories.forEach(
+                    handlingComponent -> statefulCommandHandler.subscribe(handlingComponent.build(c))
+            );
+            handlingComponentReference.set(statefulCommandHandler);
+            return statefulCommandHandler;
         });
     }
 
