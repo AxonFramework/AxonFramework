@@ -18,7 +18,6 @@ package org.axonframework.common.infra;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.Component;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
