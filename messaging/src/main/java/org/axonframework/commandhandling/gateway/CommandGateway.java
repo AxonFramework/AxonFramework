@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,7 +117,11 @@ public interface CommandGateway {
      */
     default Object sendAndWait(@Nonnull Object command) {
         try {
-            return send(command, ProcessingContext.NONE).getResultMessage().thenApply(Message::getPayload).get();
+            return send(command, ProcessingContext.NONE)
+                    .getResultMessage()
+                    // TODO #3077 - Find a more elegant solution for this, if applicable
+                    .thenApply(message -> message != null ? message.getPayload() : null)
+                    .get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new CommandExecutionException("Thread interrupted while waiting for result", e);
