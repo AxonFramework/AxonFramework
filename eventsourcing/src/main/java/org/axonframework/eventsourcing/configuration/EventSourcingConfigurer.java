@@ -26,6 +26,7 @@ import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.DelegatingConfigurer;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
+import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.configuration.NewConfigurer;
 import org.axonframework.eventsourcing.Snapshotter;
@@ -33,6 +34,7 @@ import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
+import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 
 import java.util.function.Consumer;
 
@@ -86,6 +88,24 @@ public class EventSourcingConfigurer
      */
     public EventSourcingConfigurer(@Nonnull ModellingConfigurer delegate) {
         super(delegate);
+    }
+
+    /**
+     * Registers the given stateful command handling {@code moduleBuilder} to use in this configuration.
+     * <p>
+     * As a {@link Module} implementation, any components registered with the result of the given {@code moduleBuilder}
+     * will not be accessible from other {@code Modules} to enforce encapsulation.
+     *
+     * @param moduleBuilder The builder returning a stateful command handling module to register with
+     *                      {@code this ModellingConfigurer}.
+     * @return A {@code ModellingConfigurer} instance for further configuring.
+     */
+    public EventSourcingConfigurer registerStatefulCommandHandlingModule(
+            ModuleBuilder<StatefulCommandHandlingModule> moduleBuilder
+    ) {
+        return modelling(modellingConfigurer -> modellingConfigurer.registerStatefulCommandHandlingModule(
+                moduleBuilder
+        ));
     }
 
     /**

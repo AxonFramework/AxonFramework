@@ -17,19 +17,26 @@
 package org.axonframework.eventsourcing.configuration;
 
 import org.axonframework.configuration.ConfigurerTestSuite;
+import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
+import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.PayloadBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventStorageEngine;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
+import org.axonframework.modelling.configuration.StateBasedEntityBuilder;
+import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.*;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -76,6 +83,30 @@ class EventSourcingConfigurerTest extends ConfigurerTestSuite<EventSourcingConfi
 
         Optional<Snapshotter> snapshotter = result.getOptionalComponent(Snapshotter.class);
         assertTrue(snapshotter.isPresent());
+    }
+
+    @Test
+    void registerStatefulCommandHandlingModuleAddsAModuleConfiguration() {
+        EventSourcedEntityBuilder<String, Object> testEntityBuilder =
+                EventSourcedEntityBuilder.entity(String.class, Object.class)
+                                         .entityFactory(c -> id -> null)
+                                         .criteriaResolver(c -> event -> EventCriteria.anyEvent())
+                                         .eventStateApplier(c -> (model, event, context) -> model);
+        ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule =
+                StatefulCommandHandlingModule.named("test")
+                                             .entities(entityPhase -> entityPhase.entity(testEntityBuilder))
+                                             .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
+                                                     new QualifiedName(String.class),
+                                                     (command, stateManager, context) -> MessageStream.empty().cast()
+                                             ));
+
+        List<NewConfiguration> moduleConfigurations =
+                testSubject.registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
+                           .build()
+                           .getModuleConfigurations();
+
+        assertFalse(moduleConfigurations.isEmpty());
+        assertEquals(1, moduleConfigurations.size());
     }
 
     @Test
