@@ -56,6 +56,10 @@ public interface ComponentDescriptor {
     /**
      * Describe the given {@code collection} with {@code this} descriptor for the given {@code name}.
      * <p>
+     * If any item in the {@code collection} is a {@link DescribableComponent}, it will be processed as if
+     * {@link #describeProperty(String, Object)} was invoked for that item, and
+     * {@link DescribableComponent#describeTo(ComponentDescriptor)} will be called on it.
+     * <p>
      * The formatting of the {@code collection} typically takes a regular array structure.
      *
      * @param name       The name for the {@code collection} to describe.
@@ -65,6 +69,10 @@ public interface ComponentDescriptor {
 
     /**
      * Describe the given {@code map} with {@code this} descriptor for the given {@code name}.
+     * <p>
+     * If any value in the {@code map} is a {@link DescribableComponent}, it will be processed as if
+     * {@link #describeProperty(String, Object)} was invoked for that value, and
+     * {@link DescribableComponent#describeTo(ComponentDescriptor)} will be called on it.
      * <p>
      * The formatting of the {@code map} typically takes a regular key-value structure based on the
      * {@link Map.Entry entries} of the {@code map}.
