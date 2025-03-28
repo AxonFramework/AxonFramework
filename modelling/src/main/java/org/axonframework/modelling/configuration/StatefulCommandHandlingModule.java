@@ -25,8 +25,9 @@ import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 
-import java.util.Objects;
 import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A {@link Module} and {@link ModuleBuilder} implementation providing operation to construct a stateful command
@@ -60,7 +61,7 @@ public interface StatefulCommandHandlingModule extends
      * @param moduleName The name of the {@code StatefulCommandHandlingModule} under construction.
      * @return The setup phase of this module, for a fluent API.
      */
-    static SetupPhase named(String moduleName) {
+    static SetupPhase named(@Nonnull String moduleName) {
         return new StatefulCommandHandlingModuleImpl(moduleName);
     }
 
@@ -90,8 +91,8 @@ public interface StatefulCommandHandlingModule extends
          */
         default CommandHandlerPhase commandHandlers(@Nonnull Consumer<CommandHandlerPhase> configurationLambda) {
             CommandHandlerPhase commandHandlerPhase = commandHandlers();
-            Objects.requireNonNull(configurationLambda, "The command handler configuration lambda cannot be null.")
-                   .accept(commandHandlerPhase);
+            requireNonNull(configurationLambda, "The command handler configuration lambda cannot be null.")
+                    .accept(commandHandlerPhase);
             return commandHandlerPhase;
         }
 
@@ -111,8 +112,8 @@ public interface StatefulCommandHandlingModule extends
          */
         default EntityPhase entities(@Nonnull Consumer<EntityPhase> configurationLambda) {
             EntityPhase entityPhase = entities();
-            Objects.requireNonNull(configurationLambda, "The entity configuration lambda cannot be null.")
-                   .accept(entityPhase);
+            requireNonNull(configurationLambda, "The entity configuration lambda cannot be null.")
+                    .accept(entityPhase);
             return entityPhase;
         }
     }
@@ -150,7 +151,7 @@ public interface StatefulCommandHandlingModule extends
          */
         default CommandHandlerPhase commandHandler(@Nonnull QualifiedName commandName,
                                                    @Nonnull CommandHandler commandHandler) {
-            Objects.requireNonNull(commandHandler, "The stateful command Handler cannot be null.");
+            requireNonNull(commandHandler, "The command handler cannot be null.");
             return commandHandler(commandName, (command, state, context) -> commandHandler.handle(command, context));
         }
 
@@ -170,7 +171,8 @@ public interface StatefulCommandHandlingModule extends
          */
         default CommandHandlerPhase commandHandler(@Nonnull QualifiedName commandName,
                                                    @Nonnull StatefulCommandHandler commandHandler) {
-            Objects.requireNonNull(commandHandler, "The stateful command Handler cannot be null.");
+            requireNonNull(commandName, "The command name cannot be null.");
+            requireNonNull(commandHandler, "The stateful command handler cannot be null.");
             return commandHandler(commandName, c -> commandHandler);
         }
 

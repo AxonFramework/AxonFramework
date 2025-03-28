@@ -16,217 +16,153 @@
 
 package org.axonframework.modelling.configuration;
 
-import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.commandhandling.gateway.CommandResult;
-import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.modelling.StateManager;
+import org.axonframework.modelling.command.StatefulCommandHandler;
+import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
+import org.axonframework.modelling.repository.AsyncRepository;
 import org.junit.jupiter.api.*;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test class validating the {@link StatefulCommandHandlingModule}.
+ *
+ * @author Steven van Beelen
+ */
 class StatefulCommandHandlingModuleTest {
 
-    private AtomicBoolean courseLoaded;
-    private AtomicBoolean coursePersisted;
-    private AtomicBoolean courseHandled;
-    private AtomicBoolean studentLoaded;
-    private AtomicBoolean studentPersisted;
-    private AtomicBoolean studentHandled;
+    private static final QualifiedName COMMAND_NAME = new QualifiedName(String.class);
 
-    private AxonConfiguration config;
-    private CommandGateway commandGateway;
+    private StatefulCommandHandlingModule.SetupPhase setupPhase;
+    private StatefulCommandHandlingModule.CommandHandlerPhase commandHandlerPhase;
+    private StatefulCommandHandlingModule.EntityPhase entityPhase;
 
     @BeforeEach
     void setUp() {
-        courseLoaded = new AtomicBoolean(false);
-        coursePersisted = new AtomicBoolean(false);
-        courseHandled = new AtomicBoolean(false);
-        studentLoaded = new AtomicBoolean(false);
-        studentPersisted = new AtomicBoolean(false);
-        studentHandled = new AtomicBoolean(false);
-
-        config = ModellingConfigurer.create()
-                                    .registerStatefulCommandHandlingModule(buildModule())
-                                    .start();
-        commandGateway = config.getComponent(CommandGateway.class);
-    }
-
-    private ModuleBuilder<StatefulCommandHandlingModule> buildModule() {
-return StatefulCommandHandlingModule.named("my-command-module")
-                                    .entities()
-                                    .entity(StateBasedEntityBuilder.entity(CourseId.class, Course.class)
-                                                                   .loader(c -> (id, context) -> {
-                                                                       courseLoaded.set(true);
-                                                                       return CompletableFuture.completedFuture(
-                                                                               new Course(id)
-                                                                       );
-                                                                   })
-                                                                   .persister(c -> (id, entity, context) -> {
-                                                                       coursePersisted.set(true);
-                                                                       return CompletableFuture.completedFuture(
-                                                                               null
-                                                                       );
-                                                                   }))
-                                    .entity(StateBasedEntityBuilder.entity(StudentId.class, Student.class)
-                                                                   .loader(c -> (id, context) -> {
-                                                                       studentLoaded.set(true);
-                                                                       return CompletableFuture.completedFuture(
-                                                                               new Student(id));
-                                                                   })
-                                                                   .persister(c -> (id, entity, context) -> {
-                                                                       studentPersisted.set(true);
-                                                                       return CompletableFuture.completedFuture(
-                                                                               null
-                                                                       );
-                                                                   }))
-                                    .commandHandlers()
-                                    .commandHandler(
-                                            new QualifiedName(RenameCourseCommand.class),
-                                            (cmd, stateManager, context) -> {
-                                                Course course = stateManager.loadEntity(
-                                                        Course.class,
-                                                        ((RenameCourseCommand) cmd.getPayload()).id(),
-                                                        context
-                                                ).join();
-                                                course.handle(((RenameCourseCommand) cmd.getPayload()));
-                                                return MessageStream.just(new GenericCommandResultMessage<>(
-                                                        new MessageType("singleEntity"), "singleEntity"
-                                                ));
-                                            }
-                                    )
-                                    .commandHandler(
-                                            new QualifiedName(SubscribeStudentToCourse.class),
-                                            (cmd, stateManager, context) -> {
-                                                Course course = stateManager.loadEntity(
-                                                        Course.class,
-                                                        ((SubscribeStudentToCourse) cmd.getPayload()).courseId,
-                                                        context
-                                                ).join();
-                                                course.handle(((SubscribeStudentToCourse) cmd.getPayload()));
-
-                                                Student student = stateManager.loadEntity(
-                                                        Student.class,
-                                                        ((SubscribeStudentToCourse) cmd.getPayload()).studentId,
-                                                        context
-                                                ).join();
-                                                student.handle(((SubscribeStudentToCourse) cmd.getPayload()));
-                                                return MessageStream.just(new GenericCommandResultMessage<>(
-                                                        new MessageType("multiEntity"), "multiEntity"
-                                                ));
-                                            }
-                                    );
-}
-
-    @Test
-    void singleEntitySendAndWaitCommandMessage() {
-        RenameCourseCommand testCommand = new RenameCourseCommand(new CourseId("courseID"));
-
-        String handlerResponse = commandGateway.sendAndWait(testCommand, String.class);
-
-        assertTrue(courseLoaded.get());
-        assertTrue(coursePersisted.get());
-        assertTrue(courseHandled.get());
-        assertEquals("singleEntity", handlerResponse);
+        setupPhase = StatefulCommandHandlingModule.named("test-subject");
+        commandHandlerPhase = setupPhase.commandHandlers();
+        entityPhase = setupPhase.entities();
     }
 
     @Test
-    void singleEntitySendCommandMessage() {
-        RenameCourseCommand command = new RenameCourseCommand(new CourseId("courseID"));
-
-        CommandResult result = commandGateway.send(command, null);
-
-        String handlerResponse = (String) result.getResultMessage().join().getPayload();
-
-        assertTrue(courseLoaded.get());
-        assertTrue(coursePersisted.get());
-        assertTrue(courseHandled.get());
-        assertEquals("singleEntity", handlerResponse);
+    void nameReturnsModuleName() {
+        assertEquals("test-subject", setupPhase.commandHandlers().build().name());
     }
 
     @Test
-    void multiEntitySendAndWaitCommandMessage() {
-        SubscribeStudentToCourse testCommand =
-                new SubscribeStudentToCourse(new StudentId("studentID"), new CourseId("courseID"));
+    void buildRegisteredRepositoryStateManagerAndStatefulCommandHandlingComponent() {
+        StateBasedEntityBuilder<String, String> entityBuilder =
+                StateBasedEntityBuilder.entity(String.class, String.class)
+                                       .loader(c -> (id, context) -> CompletableFuture.completedFuture("instance"))
+                                       .persister(c -> (id, entity, context) -> CompletableFuture.completedFuture(null));
+        String stateManagerName = "StateManager[test-subject]";
+        String statefulCommandHandlingComponentName = "StatefulCommandHandlingComponent[test-subject]";
 
-        String handlerResponse = commandGateway.sendAndWait(testCommand, String.class);
+        NewConfiguration resultConfig = setupPhase.entities()
+                                                  .entity(entityBuilder)
+                                                  .commandHandlers()
+                                                  .build()
+                                                  .build(ModellingConfigurer.create().build());
 
-        assertTrue(courseLoaded.get());
-        assertTrue(coursePersisted.get());
-        assertTrue(courseHandled.get());
-        assertTrue(studentLoaded.get());
-        assertTrue(studentPersisted.get());
-        assertTrue(studentHandled.get());
-        assertEquals("multiEntity", handlerResponse);
+        //noinspection rawtypes
+        Optional<AsyncRepository> optionalRepository =
+                resultConfig.getOptionalComponent(AsyncRepository.class, entityBuilder.entityName());
+        assertTrue(optionalRepository.isPresent());
+
+        Optional<StateManager> optionalStateManager =
+                resultConfig.getOptionalComponent(StateManager.class, stateManagerName);
+        assertTrue(optionalStateManager.isPresent());
+
+        Optional<StatefulCommandHandlingComponent> optionalHandlingComponent = resultConfig.getOptionalComponent(
+                StatefulCommandHandlingComponent.class, statefulCommandHandlingComponentName
+        );
+        assertTrue(optionalHandlingComponent.isPresent());
     }
 
     @Test
-    void multiEntitySendCommandMessage() {
-        SubscribeStudentToCourse testCommand =
-                new SubscribeStudentToCourse(new StudentId("studentID"), new CourseId("courseID"));
-
-        CommandResult result = commandGateway.send(testCommand, null);
-
-        String handlerResponse = (String) result.getResultMessage().join().getPayload();
-
-        assertTrue(courseLoaded.get());
-        assertTrue(coursePersisted.get());
-        assertTrue(courseHandled.get());
-        assertTrue(studentLoaded.get());
-        assertTrue(studentPersisted.get());
-        assertTrue(studentHandled.get());
-        assertEquals("multiEntity", handlerResponse);
+    void namedThrowsIllegalArgumentExceptionForNullModuleName() {
+        //noinspection DataFlowIssue
+        assertThrows(IllegalArgumentException.class, () -> StatefulCommandHandlingModule.named(null));
     }
 
-    record CourseId(String id) {
-
+    @Test
+    void namedThrowsIllegalArgumentExceptionForEmptyModuleName() {
+        assertThrows(IllegalArgumentException.class, () -> StatefulCommandHandlingModule.named(""));
     }
 
-    class Course {
-
-        private final CourseId id;
-
-        Course(CourseId id) {
-            this.id = id;
-        }
-
-        void handle(RenameCourseCommand cmd) {
-            courseHandled.set(true);
-        }
-
-        void handle(SubscribeStudentToCourse cmd) {
-            courseHandled.set(true);
-        }
+    @Test
+    void commandHandlerThrowsNullPointerExceptionForNullCommandName() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class,
+                     () -> commandHandlerPhase.commandHandler(null, (cmd, context) -> MessageStream.just(null)));
     }
 
-    record RenameCourseCommand(CourseId id) {
-
+    @Test
+    void commandHandlerThrowsNullPointerExceptionForNullCommandHandler() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class,
+                     () -> commandHandlerPhase.commandHandler(COMMAND_NAME, (CommandHandler) null));
     }
 
-    record StudentId(String id) {
-
+    @Test
+    void commandHandlerThrowsNullPointerExceptionForNullCommandNameWithStatefulCommandHandler() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class,
+                     () -> commandHandlerPhase.commandHandler(null, (cmd, state, context) -> MessageStream.just(null)));
     }
 
-    class Student {
-
-        private final StudentId id;
-
-        Student(StudentId id) {
-            this.id = id;
-        }
-
-        void handle(SubscribeStudentToCourse cmd) {
-            studentHandled.set(true);
-        }
+    @Test
+    void commandHandlerThrowsNullPointerExceptionForNullStatefulCommandHandler() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class,
+                     () -> commandHandlerPhase.commandHandler(COMMAND_NAME, (StatefulCommandHandler) null));
     }
 
-    record SubscribeStudentToCourse(StudentId studentId, CourseId courseId) {
+    @Test
+    void commandHandlerThrowsNullPointerExceptionForNullCommandNameWithCommandHandlerBuilder() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> commandHandlerPhase.commandHandler(
+                null, c -> (cmd, state, context) -> null
+        ));
+    }
 
+    @Test
+    void commandHandlerThrowsNullPointerExceptionForNullCommandHandlerBuilder() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> commandHandlerPhase.commandHandler(
+                COMMAND_NAME, (ComponentFactory<StatefulCommandHandler>) null
+        ));
+    }
+
+    @Test
+    void commandHandlingComponentThrowsNullPointerExceptionForNullCommandHandlingComponentBuilder() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> commandHandlerPhase.commandHandlingComponent(null));
+    }
+
+    @Test
+    void commandHandlingThrowsNullPointerExceptionForNullCommandHandlerPhaseConsumer() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> commandHandlerPhase.commandHandlers(null));
+    }
+
+    @Test
+    void entityThrowsNullPointerExceptionForNullEntityBuilder() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> entityPhase.entity(null));
+    }
+
+    @Test
+    void entityThrowsNullPointerExceptionForNullEntityPhaseConsumer() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> entityPhase.entities(null));
     }
 }

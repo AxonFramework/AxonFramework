@@ -37,7 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
 
@@ -64,7 +63,6 @@ class StatefulCommandHandlingModuleImpl
     private final Map<String, EntityBuilder<?, ?>> entityBuilders;
     private final Map<QualifiedName, ComponentFactory<StatefulCommandHandler>> handlerFactories;
     private final List<ComponentFactory<CommandHandlingComponent>> handlingComponentFactories;
-    private final AtomicReference<StatefulCommandHandlingComponent> handlingComponentReference;
 
     StatefulCommandHandlingModuleImpl(@Nonnull String moduleName) {
         Assert.nonEmpty(moduleName, "The module name cannot be null");
@@ -74,7 +72,6 @@ class StatefulCommandHandlingModuleImpl
         this.entityBuilders = new HashMap<>();
         this.handlerFactories = new HashMap<>();
         this.handlingComponentFactories = new ArrayList<>();
-        this.handlingComponentReference = new AtomicReference<>();
     }
 
     @Override
@@ -85,7 +82,8 @@ class StatefulCommandHandlingModuleImpl
     @Override
     public CommandHandlerPhase commandHandler(@Nonnull QualifiedName commandName,
                                               @Nonnull ComponentFactory<StatefulCommandHandler> commandHandlerBuilder) {
-        handlerFactories.put(commandName, commandHandlerBuilder);
+        handlerFactories.put(requireNonNull(commandName, "The command name cannot be null."),
+                             requireNonNull(commandHandlerBuilder, "The command handler builder cannot be null."));
         return this;
     }
 
@@ -93,7 +91,9 @@ class StatefulCommandHandlingModuleImpl
     public CommandHandlerPhase commandHandlingComponent(
             @Nonnull ComponentFactory<CommandHandlingComponent> handlingComponentBuilder
     ) {
-        handlingComponentFactories.add(handlingComponentBuilder);
+        handlingComponentFactories.add(
+                requireNonNull(handlingComponentBuilder, "The command handling component builder cannot be null.")
+        );
         return this;
     }
 
@@ -144,7 +144,6 @@ class StatefulCommandHandlingModuleImpl
             handlingComponentFactories.forEach(
                     handlingComponent -> statefulCommandHandler.subscribe(handlingComponent.build(c))
             );
-            handlingComponentReference.set(statefulCommandHandler);
             return statefulCommandHandler;
         });
     }
