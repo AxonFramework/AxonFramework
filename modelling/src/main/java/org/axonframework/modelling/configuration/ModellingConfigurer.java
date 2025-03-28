@@ -36,7 +36,7 @@ import java.util.function.Consumer;
  * TODO DISCUSS - Any other methods we would need here at all?
  *
  * @author Steven van Beelen
- * @since 5.0.o
+ * @since 5.0.0
  */
 public class ModellingConfigurer
         extends DelegatingConfigurer<ModellingConfigurer>
