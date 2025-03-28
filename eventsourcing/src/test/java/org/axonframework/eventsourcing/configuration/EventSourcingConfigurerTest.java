@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.configuration;
 import org.axonframework.configuration.ConfigurerTestSuite;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
@@ -31,7 +32,6 @@ import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventSto
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
-import org.axonframework.modelling.configuration.StateBasedEntityBuilder;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.*;
@@ -80,6 +80,12 @@ class EventSourcingConfigurerTest extends ConfigurerTestSuite<EventSourcingConfi
         Optional<AsyncEventStore> eventStore = result.getOptionalComponent(AsyncEventStore.class);
         assertTrue(eventStore.isPresent());
         assertInstanceOf(SimpleEventStore.class, eventStore.get());
+
+        Optional<EventSink> eventSink = result.getOptionalComponent(EventSink.class);
+        assertTrue(eventSink.isPresent());
+        assertInstanceOf(SimpleEventStore.class, eventSink.get());
+        // By default, the Event Store and the Event Sink should be the same instance.
+        assertEquals(eventStore.get(), eventSink.get());
 
         Optional<Snapshotter> snapshotter = result.getOptionalComponent(Snapshotter.class);
         assertTrue(snapshotter.isPresent());

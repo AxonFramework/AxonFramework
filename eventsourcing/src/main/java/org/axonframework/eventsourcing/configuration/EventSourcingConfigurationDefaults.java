@@ -21,6 +21,7 @@ import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.configuration.NewConfigurer;
+import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
@@ -39,6 +40,7 @@ import java.util.Objects;
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver} for class {@link org.axonframework.eventsourcing.eventstore.TagResolver}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine} for class {@link org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link org.axonframework.eventsourcing.eventstore.AsyncEventStore}</li>
+ *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventSink}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.AggregateSnapshotter} for class {@link org.axonframework.eventsourcing.Snapshotter}</li>
  * </ul>
  *
@@ -49,7 +51,8 @@ class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
 
     @Override
     public int order() {
-        return Integer.MAX_VALUE;
+        // TODO Have to lower the value, as the MessagingConfigurationDefaults currently takes over otherwise.
+        return Integer.MAX_VALUE - 1;
     }
 
     @Override
@@ -62,6 +65,8 @@ class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
                              EventSourcingConfigurationDefaults::defaultEventStorageEngine);
         registerIfNotPresent(configurer, AsyncEventStore.class,
                              EventSourcingConfigurationDefaults::defaultEventStore);
+        registerIfNotPresent(configurer, EventSink.class,
+                             EventSourcingConfigurationDefaults::defaultEventSink);
         registerIfNotPresent(configurer, Snapshotter.class,
                              EventSourcingConfigurationDefaults::defaultSnapshotter);
     }
@@ -85,6 +90,10 @@ class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
     private static AsyncEventStore defaultEventStore(NewConfiguration config) {
         return new SimpleEventStore(config.getComponent(AsyncEventStorageEngine.class),
                                     config.getComponent(TagResolver.class));
+    }
+
+    private static EventSink defaultEventSink(NewConfiguration config) {
+        return config.getComponent(AsyncEventStore.class);
     }
 
     private static Snapshotter defaultSnapshotter(NewConfiguration config) {
