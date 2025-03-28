@@ -171,7 +171,7 @@ class AnnotationBasedEventCriteriaResolverTest {
                     IllegalArgumentException.class,
                     () -> new AnnotationBasedEventCriteriaResolver(EntityWithDuplicatedParameterType.class));
             assertEquals(
-                    "Multiple @EventCriteriaBuilder methods found with the same parameter type: buildCriteriaTwo(java.lang.String), buildCriteriaOne(java.lang.String)",
+                    "Multiple @EventCriteriaBuilder methods found with the same parameter type: buildCriteriaOne(java.lang.String), buildCriteriaTwo(java.lang.String)",
                     exception.getMessage()
             );
         }

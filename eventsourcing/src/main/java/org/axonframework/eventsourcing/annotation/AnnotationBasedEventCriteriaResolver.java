@@ -104,6 +104,7 @@ public class AnnotationBasedEventCriteriaResolver implements CriteriaResolver<Ob
                                          "Multiple @EventCriteriaBuilder methods found with the same parameter type: %s".formatted(
                                                  list.stream()
                                                      .map(ReflectionUtils::toDiscernibleSignature)
+                                                     .sorted()
                                                      .collect(Collectors.joining(", "))));
                              });
 
