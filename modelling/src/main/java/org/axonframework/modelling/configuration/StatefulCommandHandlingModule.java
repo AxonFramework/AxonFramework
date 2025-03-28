@@ -139,7 +139,7 @@ public interface StatefulCommandHandlingModule extends
          * <p>
          * TODO how to deal with duplicate registrations?
          *
-         * @param commandName    The qualified name of the command the given {@code commandHandler} can handler.
+         * @param commandName    The qualified name of the command the given {@code commandHandler} can handle.
          * @param commandHandler The stateful command handler to register with this module.
          * @return The command handler phase of this builder, for a fluent API.
          */
