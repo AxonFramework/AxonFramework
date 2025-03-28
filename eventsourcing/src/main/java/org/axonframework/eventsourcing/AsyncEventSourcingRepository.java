@@ -63,11 +63,11 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
      * the {@link org.axonframework.eventsourcing.eventstore.EventCriteria} of the given identifier type used to source
      * a model.
      *
-     * @param eventStore        The event store to load events from.
-     * @param criteriaResolver  Converts the given identifier to an
-     *                          {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a matching
-     *                          event stream.
-     * @param eventStateApplier The function to apply event state changes to the loaded entities.
+     * @param eventStore         The event store to load events from.
+     * @param criteriaResolver   Converts the given identifier to an
+     *                           {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a
+     *                           matching event stream.
+     * @param eventStateApplier  The function to apply event state changes to the loaded entities.
      * @param newInstanceFactory A factory method to create new instances of the model based on a provided identifier.
      */
     public AsyncEventSourcingRepository(
@@ -124,9 +124,11 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
                                 .source(SourcingCondition.conditionFor(criteriaResolver.resolve(id)))
                                 .reduce(new EventSourcedEntity<>(identifier, newInstanceFactory.apply(identifier)),
                                         (entity, entry) -> {
-                                    entity.applyStateChange(entry.message(), eventStateApplier, processingContext);
-                                    return entity;
-                                })
+                                            entity.applyStateChange(entry.message(),
+                                                                    eventStateApplier,
+                                                                    processingContext);
+                                            return entity;
+                                        })
                                 .whenComplete((entity, exception) -> {
                                     if (exception == null) {
                                         updateActiveModel(entity, processingContext);
