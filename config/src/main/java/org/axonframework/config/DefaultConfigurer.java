@@ -427,9 +427,9 @@ public class DefaultConfigurer implements Configurer {
      */
     protected ParameterResolverFactory defaultParameterResolverFactory(Configuration config) {
         return defaultComponent(ParameterResolverFactory.class, config)
-                .orElseGet(() -> MultiParameterResolverFactory.ordered(ClasspathParameterResolverFactory.forClass(
-                                                                               getClass()),
-                                                                       new ConfigurationParameterResolverFactory(config)));
+                .orElseGet(() -> MultiParameterResolverFactory.ordered(
+                        ClasspathParameterResolverFactory.forClass(getClass())
+                ));
     }
 
     /**
