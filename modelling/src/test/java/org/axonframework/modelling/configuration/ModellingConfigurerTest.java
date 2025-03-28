@@ -19,8 +19,13 @@ package org.axonframework.modelling.configuration;
 import jakarta.annotation.Nullable;
 import org.axonframework.configuration.ConfigurerTestSuite;
 import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -46,6 +51,29 @@ class ModellingConfigurerTest extends ConfigurerTestSuite<ModellingConfigurer> {
     @Override
     public Class<MessagingConfigurer> delegateType() {
         return MessagingConfigurer.class;
+    }
+
+    @Test
+    void registerStatefulCommandHandlingModuleAddsAModuleConfiguration() {
+        StateBasedEntityBuilder<String, Object> testEntityBuilder =
+                StateBasedEntityBuilder.entity(String.class, Object.class)
+                                       .loader(c -> (id, context) -> null)
+                                       .persister(c -> (id, entity, context) -> null);
+        ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule =
+                StatefulCommandHandlingModule.named("test")
+                                             .entities(entityPhase -> entityPhase.entity(testEntityBuilder))
+                                             .commandHandlers(commandHandlerPhase -> commandHandlerPhase.commandHandler(
+                                                     new QualifiedName(String.class),
+                                                     (command, stateManager, context) -> MessageStream.empty().cast()
+                                             ));
+
+        List<NewConfiguration> moduleConfigurations =
+                testSubject.registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
+                           .build()
+                           .getModuleConfigurations();
+
+        assertFalse(moduleConfigurations.isEmpty());
+        assertEquals(1, moduleConfigurations.size());
     }
 
     @Test
