@@ -35,10 +35,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static org.axonframework.test.matchers.Matchers.deepEquals;
-import static org.hamcrest.CoreMatchers.instanceOf;
 
 abstract class AxonTestMessageThen<T extends AxonTestPhase.Then.MessageThen<T>>
         implements AxonTestPhase.Then.MessageThen<T> {
@@ -115,6 +115,13 @@ abstract class AxonTestMessageThen<T extends AxonTestPhase.Then.MessageThen<T>>
 
             reporter.reportWrongEvent(publishedEvents, expectation, mismatch, lastException);
         }
+        return self();
+    }
+
+    @Override
+    public T events(Consumer<List<? super EventMessage<?>>> consumer) {
+        var publishedEvents = eventSink.recorded();
+        consumer.accept(publishedEvents);
         return self();
     }
 

@@ -25,6 +25,7 @@ import org.hamcrest.Matcher;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Interface describing the operations available on a test phase for testing Axon-based applications using a
@@ -452,6 +453,8 @@ public interface AxonTestPhase {
              * @return the current Then instance, for fluent interfacing.
              */
             T events(Matcher<? extends List<? super EventMessage<?>>> matcher);
+
+            T events(Consumer<List<? super EventMessage<?>>> consumer);
 
             /**
              * Expect no events to have been published during the {@link When} phase.

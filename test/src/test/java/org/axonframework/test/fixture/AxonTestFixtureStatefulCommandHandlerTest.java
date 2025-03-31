@@ -40,6 +40,8 @@ import org.junit.jupiter.api.*;
 
 import java.util.Objects;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 
 class AxonTestFixtureStatefulCommandHandlerTest {
 
@@ -58,6 +60,23 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .command(changeToTheSameName)
                .then()
                .noEvents();
+    }
+
+    @Test
+    void givenEventsWhenCommandThenNoEventsConsumer() {
+        var configurer = MessagingConfigurer.create();
+        registerSampleStatefulCommandHandler(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        var studentNameChanged = studentNameChangedEventMessage("my-studentId-1", "name-1", 1);
+        var changeToTheSameName = new ChangeStudentNameCommand("my-studentId-1", "name-1");
+        fixture.given()
+               .events(studentNameChanged)
+               .when()
+               .command(changeToTheSameName)
+               .then()
+               .events(events -> assertTrue(events.isEmpty()));
     }
 
     @Test
