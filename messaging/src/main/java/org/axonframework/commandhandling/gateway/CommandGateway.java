@@ -117,11 +117,7 @@ public interface CommandGateway {
      */
     default Object sendAndWait(@Nonnull Object command) {
         try {
-            return send(command, ProcessingContext.NONE)
-                    .getResultMessage()
-                    // TODO #3077 - Find a more elegant solution for this, if applicable
-                    .thenApply(message -> message != null ? message.getPayload() : null)
-                    .get();
+            return send(command, ProcessingContext.NONE).getResultMessage().thenApply(Message::getPayload).get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new CommandExecutionException("Thread interrupted while waiting for result", e);
