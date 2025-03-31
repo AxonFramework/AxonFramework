@@ -80,7 +80,7 @@
         <hsqldb.version>2.5.2</hsqldb.version><!-- Don't upgrade due to JDK8 -->
         <hsqldb.with11.version>2.7.2</hsqldb.with11.version><!-- Don't upgrade due to JDK8 -->
         <hibernate-core.version>5.6.15.Final</hibernate-core.version>
-        <hibernate-core.6.version>6.6.11.Final</hibernate-core.6.version>
+        <hibernate-core.6.version>6.6.12.Final</hibernate-core.6.version>
         <mysql-connector-java.version>9.2.0</mysql-connector-java.version>
         <postgresql.version>42.7.5</postgresql.version>
         <!-- Jakarta -->
@@ -107,7 +107,7 @@
         <dropwizard.metrics.version>4.2.30</dropwizard.metrics.version>
         <micrometer.version>1.14.5</micrometer.version>
         <!-- Other -->
-        <byte-buddy.version>1.17.3</byte-buddy.version>
+        <byte-buddy.version>1.17.4</byte-buddy.version>
         <commons-io.version>2.18.0</commons-io.version>
         <disruptor.version>3.4.4</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
