@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -136,7 +137,7 @@ class AnnotationBasedEventSourcingEntityRepositoryTest {
             super(CustomCreatorSequenceEntity.class, "CustomCreatorSequenceEntity");
         }
 
-        @EventSourcedEntity(entityCreator = CustomEntityFactory.class)
+        @EventSourcedEntity(entityFactory = CustomEntityFactory.class)
         static class CustomCreatorSequenceEntity extends AbstractSequenceEntity {
 
             private CustomCreatorSequenceEntity() {
@@ -151,7 +152,7 @@ class AnnotationBasedEventSourcingEntityRepositoryTest {
         static class CustomEntityFactory implements EventSourcedEntityFactory<String, CustomCreatorSequenceEntity> {
 
             @Override
-            public CustomCreatorSequenceEntity createEntity(Class<CustomCreatorSequenceEntity> entityType, String id) {
+            public CustomCreatorSequenceEntity createEntity(@Nonnull Class<CustomCreatorSequenceEntity> entityType, @Nonnull String id) {
                 return new CustomCreatorSequenceEntity("one", "two", "three");
             }
         }

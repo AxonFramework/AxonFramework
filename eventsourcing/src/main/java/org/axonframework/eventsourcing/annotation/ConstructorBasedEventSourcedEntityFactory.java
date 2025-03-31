@@ -25,7 +25,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-import static org.axonframework.common.ConstructorUtils.getConstructorFunctionWithOptionalArgumentClass;
+import static org.axonframework.common.ConstructorUtils.factoryForTypeWithOptionalArgument;
 
 /**
  * {@link EventSourcedEntityFactory} implementation which uses a constructor to create a new instance of an entity. The
@@ -50,10 +50,10 @@ public class ConstructorBasedEventSourcedEntityFactory<M>
     }
 
     @Override
-    public M createEntity(Class<M> entityType, Object id) {
+    public M createEntity(@Nonnull Class<M> entityType, @Nonnull Object id) {
         return constructorCache
                 .computeIfAbsent(id.getClass(),
-                                 (i) -> getConstructorFunctionWithOptionalArgumentClass(entityType, i))
+                                 (i) -> factoryForTypeWithOptionalArgument(entityType, i))
                 .apply(id);
     }
 

@@ -69,32 +69,11 @@ public class ConstructorUtils {
      * @return A function that constructs an instance of the given type using the constructor that accepts an argument
      * of the given class, or alternatively using a zero-argument constructor.
      */
-    public static <T, A> Function<A, T> getConstructorFunctionWithOptionalArgumentClass(
+    public static <T, A> Function<A, T> factoryForTypeWithOptionalArgument(
             @Nonnull Class<T> type,
             @Nonnull Class<? extends A> argumentClass) {
         Constructor<T> constructor = getConstructorWithOptionalArgumentOfType(type, argumentClass);
         return arg -> doConstructionWithOptionalArgument(type, arg, constructor);
-    }
-
-    /**
-     * Returns a function that constructs an instance of the given type using the constructor that accepts an argument
-     * of the given instance's class, or alternatively using a zero-argument constructor. If neither is available, an
-     * {@link IllegalArgumentException} is thrown.
-     *
-     * @param type     The type of object to construct. Must have a constructor that accepts an argument of the given
-     *                 instance's class, or a zero-argument constructor.
-     * @param argument The instance to pass to the constructor.
-     * @param <T>      The type of object to construct.
-     * @param <A>      The type of the argument to pass to the constructor.
-     * @return A function that constructs an instance of the given type using the constructor that accepts an argument
-     * of the given instance's class, or alternatively using a zero-argument constructor.
-     */
-    public static <T, A> Supplier<T> factoryForTypeWithOptionalArgumentInstance(
-            @Nonnull Class<T> type,
-            @Nonnull A argument
-    ) {
-        Constructor<T> constructor = getConstructorWithOptionalArgumentOfType(type, argument.getClass());
-        return () -> doConstructionWithOptionalArgument(type, argument, constructor);
     }
 
     @SuppressWarnings("unchecked")

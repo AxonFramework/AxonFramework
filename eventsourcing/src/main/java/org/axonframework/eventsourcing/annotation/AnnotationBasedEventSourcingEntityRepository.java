@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing.annotation;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.ConstructorUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
@@ -31,7 +30,7 @@ import org.axonframework.modelling.repository.ManagedEntity;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static org.axonframework.common.ConstructorUtils.factoryForTypeWithOptionalArgumentInstance;
+import static org.axonframework.common.ConstructorUtils.factoryForTypeWithOptionalArgument;
 
 /**
  * Implementation of a {@link AsyncRepository} that configures an entity based on the configuration provided by the
@@ -71,10 +70,10 @@ public class AnnotationBasedEventSourcingEntityRepository<ID, T> implements Asyn
         this.idType = idType;
         this.entityType = entityType;
 
-        var creatorType = (Class<EventSourcedEntityFactory<ID, T>>) annotationAttributes.get("entityCreator");
+        var creatorType = (Class<EventSourcedEntityFactory<ID, T>>) annotationAttributes.get("entityFactory");
         var criteriaResolverType = (Class<CriteriaResolver<ID>>) annotationAttributes.get("criteriaResolver");
-        this.creator = ConstructorUtils.factoryForTypeWithOptionalArgumentInstance(creatorType, entityType).get();
-        this.criteriaResolver = factoryForTypeWithOptionalArgumentInstance(criteriaResolverType, entityType).get();
+        this.creator = factoryForTypeWithOptionalArgument(creatorType, Class.class).apply(entityType);
+        this.criteriaResolver = factoryForTypeWithOptionalArgument(criteriaResolverType, Class.class).apply(entityType);
 
         this.stateApplier = new AnnotationBasedEventStateApplier<>(entityType);
         this.repository = new AsyncEventSourcingRepository<>(
