@@ -40,7 +40,22 @@ import static java.util.Objects.requireNonNull;
  * {@link SetupPhase#entities()}. To register command handlers a similar registration phase switch should be made, by
  * invoking {@link SetupPhase#commandHandlers()}.
  * <p>
- * TODO Sample configuration here would be nice
+ * Here's an example of how to register two stateful command handler lambdas, one state-based entity with a repository
+ * and another state-based entity using a separate loader and persister:
+ * <pre>
+ * StatefulCommandHandlingModule.named("my-module")
+ *                              .entities()
+ *                              .entity(StateBasedEntityBuilder.entity(CourseId.class, Course.class)
+ *                                                             .repository(config -> ...))
+ *                              .entity(StateBasedEntityBuilder.entity(StudentId.class, Student.class)
+ *                                                             .loader(config -> ...)
+ *                                                             .persister(config -> ...))
+ *                              .commandHandlers()
+ *                              .commandHandler(new QualifiedName(RenameCourseCommand.class),
+ *                                              (cmd, course, context) -> { ...command handling logic... })
+ *                              .commandHandler(new QualifiedName(ChangeCourseClassRoomCommand.class),
+ *                                              (cmd, entity, context) -> { ...command handling logic... });
+ * </pre>
  * <p>
  * Note that users do not have to invoke {@link #build()} themselves when using this interface, as the
  * {@link org.axonframework.configuration.ApplicationConfigurer} takes care of that.
