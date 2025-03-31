@@ -25,7 +25,6 @@ import org.hamcrest.Matcher;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * Interface describing the operations available on a test phase for testing Axon-based applications using a
@@ -108,37 +107,11 @@ public interface AxonTestPhase {
         AxonTestPhase.Given given();
 
         /**
-         * Transition to the "given" phase with a consumer to define the initial state of the system. This method
-         * provides a more concise way to define the "given" phase when using lambda expressions.
-         *
-         * @param onGiven Consumer to configure the "given" phase.
-         * @return a {@link Given} instance, configured according to the provided consumer.
-         */
-        default AxonTestPhase.Given given(Consumer<AxonTestPhase.Given> onGiven) {
-            var given = given();
-            onGiven.accept(given);
-            return given;
-        }
-
-        /**
          * Transition directly to the "when" phase, skipping the "given" phase, which implies no prior state.
          *
          * @return a {@link When} instance that allows executing the test.
          */
         When when();
-
-        /**
-         * Transition directly to the "when" phase with a consumer to define the test execution. This method provides a
-         * more concise way to define the "when" phase when using lambda expressions.
-         *
-         * @param onWhen Consumer to configure the "when" phase.
-         * @return a {@link When} instance, configured according to the provided consumer.
-         */
-        default When when(Consumer<AxonTestPhase.When> onWhen) {
-            var when = when();
-            onWhen.accept(when);
-            return when;
-        }
     }
 
     /**
@@ -259,19 +232,6 @@ public interface AxonTestPhase {
          * @return a {@link When} instance that allows executing the test.
          */
         When when();
-
-        /**
-         * Transitions to the "when" phase with a consumer to define the test execution. This method completes the
-         * "given" phase, committing any Unit of Work that was started during this phase.
-         *
-         * @param onWhen Consumer to configure the "when" phase.
-         * @return a {@link When} instance, configured according to the provided consumer.
-         */
-        default When when(Consumer<AxonTestPhase.When> onWhen) {
-            var when = when();
-            onWhen.accept(when);
-            return when;
-        }
     }
 
     /**
@@ -284,6 +244,28 @@ public interface AxonTestPhase {
      */
     interface When {
 
+        interface CommandWhen {
+
+            /**
+             * Transitions to the "then" phase to validate the results of the test. This method completes the "when"
+             * phase, committing any Unit of Work that was started during this phase.
+             *
+             * @return a {@link Then} instance that allows validating the test results.
+             */
+            Then.CommandThen then();
+        }
+
+        interface EventWhen {
+
+            /**
+             * Transitions to the "then" phase to validate the results of the test. This method completes the "when"
+             * phase, committing any Unit of Work that was started during this phase.
+             *
+             * @return a {@link Then} instance that allows validating the test results.
+             */
+            Then.EventThen then();
+        }
+
         /**
          * Dispatches the given {@code payload} command to the appropriate command handler and records all activity for
          * result validation. The command will be dispatched with empty metadata.
@@ -291,7 +273,7 @@ public interface AxonTestPhase {
          * @param payload The command to execute.
          * @return the current When instance, for fluent interfacing.
          */
-        default When command(Object payload) {
+        default CommandWhen command(Object payload) {
             return command(payload, new HashMap<>());
         }
 
@@ -303,7 +285,7 @@ public interface AxonTestPhase {
          * @param metaData The metadata to attach to the command.
          * @return the current When instance, for fluent interfacing.
          */
-        default When command(Object payload, Map<String, ?> metaData) {
+        default CommandWhen command(Object payload, Map<String, ?> metaData) {
             return command(payload, MetaData.from(metaData));
         }
 
@@ -315,7 +297,7 @@ public interface AxonTestPhase {
          * @param metaData The metadata to attach to the command.
          * @return the current When instance, for fluent interfacing.
          */
-        When command(Object payload, MetaData metaData);
+        CommandWhen command(Object payload, MetaData metaData);
 
         /**
          * Publishes the given {@code payload} event with the provided {@code metaData} to the appropriate event handler
@@ -324,7 +306,7 @@ public interface AxonTestPhase {
          * @param payload The command to execute.
          * @return the current When instance, for fluent interfacing.
          */
-        default When event(Object payload) {
+        default EventWhen event(Object payload) {
             return event(payload, MetaData.emptyInstance());
         }
 
@@ -336,7 +318,7 @@ public interface AxonTestPhase {
          * @param metaData The metadata to attach to the command.
          * @return the current When instance, for fluent interfacing.
          */
-        When event(Object payload, MetaData metaData);
+        EventWhen event(Object payload, MetaData metaData);
 
         /**
          * Publishes the given Event Messages to the appropriate event handlers and records all activity for result
@@ -345,7 +327,7 @@ public interface AxonTestPhase {
          * @param messages The event messages to publish.
          * @return the current When instance, for fluent interfacing.
          */
-        When events(EventMessage<?>... messages);
+        EventWhen events(EventMessage<?>... messages);
 
         /**
          * Publishes the given Event Messages to the appropriate event handlers and records all activity for result
@@ -354,28 +336,7 @@ public interface AxonTestPhase {
          * @param events The lists of events to publish.
          * @return the current When instance, for fluent interfacing.
          */
-        When events(List<?>... events);
-
-        /**
-         * Transitions to the "then" phase to validate the results of the test. This method completes the "when" phase,
-         * committing any Unit of Work that was started during this phase.
-         *
-         * @return a {@link Then} instance that allows validating the test results.
-         */
-        Then then();
-
-        /**
-         * Transitions to the "then" phase with a consumer to define the validation of test results. This method
-         * completes the "when" phase, committing any Unit of Work that was started during this phase.
-         *
-         * @param onThen Consumer to configure the "then" phase.
-         * @return a {@link Then} instance, configured according to the provided consumer.
-         */
-        default Then then(Consumer<AxonTestPhase.Then> onThen) {
-            var then = then();
-            onThen.accept(then);
-            return then;
-        }
+        EventWhen events(List<?>... events);
     }
 
     /**
@@ -386,169 +347,183 @@ public interface AxonTestPhase {
      */
     interface Then {
 
-        /**
-         * Expect the given set of events to have been published during the {@link When} phase.
-         * <p>
-         * All events are compared for equality using a shallow equals comparison on all the fields of the events. This
-         * means that all assigned values on the events' fields should have a proper equals implementation.
-         * <p>
-         * Note that the event identifier is ignored in the comparison.
-         *
-         * @param expectedEvents The expected events, in the exact order they are expected to be published.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then events(Object... expectedEvents);
+        interface CommandThen extends MessageThen<CommandThen> {
 
-        /**
-         * Expect the given set of event messages to have been published during the {@link When} phase.
-         * <p>
-         * All events are compared for equality using a shallow equals comparison on all the fields of the events. This
-         * means that all assigned values on the events' fields should have a proper equals implementation.
-         * Additionally, the metadata will be compared too.
-         * <p>
-         * Note that the event identifier is ignored in the comparison.
-         *
-         * @param expectedEvents The expected event messages, in the exact order they are expected to be published.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then events(EventMessage<?>... expectedEvents);
+            /**
+             * Expect a successful execution of the When phase, regardless of the actual return value.
+             *
+             * @return the current Then instance, for fluent interfacing.
+             */
+            CommandThen success();
 
-        /**
-         * Expect the published events during the {@link When} phase to match the given {@code matcher}.
-         * <p>
-         * Note: if no events were published, the matcher receives an empty List.
-         *
-         * @param matcher The matcher to match with the actually published events.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then events(Matcher<? extends List<? super EventMessage<?>>> matcher);
+            /**
+             * Expect the last command handler from the When phase to return a result message that matches the given
+             * {@code matcher}. Take into account only commands executed explicitly with the {@link When#command}. Do
+             * not take into accounts commands published as side effects of the message handlers.
+             *
+             * @param matcher The matcher to verify the actual result message against.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            CommandThen resultMessage(Matcher<? super CommandResultMessage<?>> matcher);
 
-        /**
-         * Expect no events to have been published during the {@link When} phase.
-         *
-         * @return the current Then instance, for fluent interfacing.
-         */
-        default Then noEvents() {
-            return events();
+            /**
+             * Expect the last command handler from the When phase to return the given {@code expectedPayload} after
+             * execution. The actual and expected values are compared using their equals methods. Take into account only
+             * commands executed explicitly with the {@link When#command}. Do not take into accounts commands published
+             * as side effects of the message handlers.
+             *
+             * @param expectedPayload The expected result message payload of the command execution.
+             * @return the current Then, for fluent interfacing.
+             */
+            CommandThen resultMessagePayload(Object expectedPayload);
+
+            /**
+             * Expect the last command handler from the When phase to return a payload that matches the given
+             * {@code matcher} after execution. Take into account only commands executed explicitly with the
+             * {@link When#command}. Do not take into accounts commands published as side effects of the message
+             * handlers.
+             *
+             * @param matcher The matcher to verify the actual return value against.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            CommandThen resultMessagePayloadMatching(Matcher<?> matcher);
+
+            /**
+             * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
+             * should be exactly of that type, subclasses are not accepted. Take into account only commands executed
+             * explicitly with the {@link When#command}. Do not take into accounts commands published as side effects of
+             * the message handlers.
+             *
+             * @param expectedException The type of exception expected from the When phase execution.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            CommandThen exception(Class<? extends Throwable> expectedException);
+
+            /**
+             * Expect an exception to occur during the When phase that matches with the given {@code matcher}. Take into
+             * account only commands executed explicitly with the {@link When#command}. Do not take into accounts
+             * commands published as side effects of the message handlers.
+             *
+             * @param matcher The matcher to validate the actual exception.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            CommandThen exception(Matcher<?> matcher);
         }
 
-        /**
-         * Expect a successful execution of the When phase, regardless of the actual return value.
-         *
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then success();
+        interface EventThen extends MessageThen<EventThen> {
 
-        /**
-         * Expect the last command handler from the When phase to return a result message that matches the given
-         * {@code matcher}. Take into account only commands executed explicitly with the {@link When#command}. Do not
-         * take into accounts commands published as side effects of the message handlers.
-         *
-         * @param matcher The matcher to verify the actual result message against.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then resultMessage(Matcher<? super CommandResultMessage<?>> matcher);
+        }
 
-        /**
-         * Expect the last command handler from the When phase to return the given {@code expectedPayload} after
-         * execution. The actual and expected values are compared using their equals methods. Take into account only
-         * commands executed explicitly with the {@link When#command}. Do not take into accounts commands published as
-         * side effects of the message handlers.
-         *
-         * @param expectedPayload The expected result message payload of the command execution.
-         * @return the current Then, for fluent interfacing.
-         */
-        Then resultMessagePayload(Object expectedPayload);
+        interface MessageThen<T extends MessageThen<T>> {
 
-        /**
-         * Expect the last command handler from the When phase to return a payload that matches the given
-         * {@code matcher} after execution. Take into account only commands executed explicitly with the
-         * {@link When#command}. Do not take into accounts commands published as side effects of the message handlers.
-         *
-         * @param matcher The matcher to verify the actual return value against.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then resultMessagePayloadMatching(Matcher<?> matcher);
+            /**
+             * Expect the given set of events to have been published during the {@link When} phase.
+             * <p>
+             * All events are compared for equality using a shallow equals comparison on all the fields of the events.
+             * This means that all assigned values on the events' fields should have a proper equals implementation.
+             * <p>
+             * Note that the event identifier is ignored in the comparison.
+             *
+             * @param expectedEvents The expected events, in the exact order they are expected to be published.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            T events(Object... expectedEvents);
 
-        /**
-         * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
-         * should be exactly of that type, subclasses are not accepted. Take into account only commands executed
-         * explicitly with the {@link When#command}. Do not take into accounts commands published as side effects of the
-         * message handlers.
-         *
-         * @param expectedException The type of exception expected from the When phase execution.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then exception(Class<? extends Throwable> expectedException);
+            /**
+             * Expect the given set of event messages to have been published during the {@link When} phase.
+             * <p>
+             * All events are compared for equality using a shallow equals comparison on all the fields of the events.
+             * This means that all assigned values on the events' fields should have a proper equals implementation.
+             * Additionally, the metadata will be compared too.
+             * <p>
+             * Note that the event identifier is ignored in the comparison.
+             *
+             * @param expectedEvents The expected event messages, in the exact order they are expected to be published.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            T events(EventMessage<?>... expectedEvents);
 
-        /**
-         * Expect an exception to occur during the When phase that matches with the given {@code matcher}. Take into
-         * account only commands executed explicitly with the {@link When#command}. Do not take into accounts commands
-         * published as side effects of the message handlers.
-         *
-         * @param matcher The matcher to validate the actual exception.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then exception(Matcher<?> matcher);
+            /**
+             * Expect the published events during the {@link When} phase to match the given {@code matcher}.
+             * <p>
+             * Note: if no events were published, the matcher receives an empty List.
+             *
+             * @param matcher The matcher to match with the actually published events.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            T events(Matcher<? extends List<? super EventMessage<?>>> matcher);
 
-        /**
-         * Expect the given set of commands to have been dispatched during the "when" phase.
-         * <p>
-         * All commands are compared for equality using a shallow equals comparison on all the fields of the commands.
-         * This means that all assigned values on the commands' fields should have a proper equals implementation.
-         *
-         * @param expectedCommands The expected commands, in the exact order they are expected to be dispatched.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then commands(Object... expectedCommands);
+            /**
+             * Expect no events to have been published during the {@link When} phase.
+             *
+             * @return the current Then instance, for fluent interfacing.
+             */
+            default T noEvents() {
+                return events();
+            }
 
-        /**
-         * Expect the given set of command messages to have been dispatched during the "when" phase.
-         * <p>
-         * All commands are compared for equality using a shallow equals comparison on all the fields of the commands.
-         * This means that all assigned values on the commands' fields should have a proper equals implementation.
-         * Additionally, the metadata will be compared too.
-         *
-         * @param expectedCommands The expected command messages, in the exact order they are expected to be
-         *                         dispatched.
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then commands(CommandMessage<?>... expectedCommands);
+            /**
+             * Expect the given set of commands to have been dispatched during the "when" phase.
+             * <p>
+             * All commands are compared for equality using a shallow equals comparison on all the fields of the
+             * commands. This means that all assigned values on the commands' fields should have a proper equals
+             * implementation.
+             *
+             * @param expectedCommands The expected commands, in the exact order they are expected to be dispatched.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            T commands(Object... expectedCommands);
 
-        /**
-         * Expect the given set of command messages to have been dispatched during the "when" phase. Only commands as a
-         * result of the event in the "when" phase of ths fixture are recorded.
-         *
-         * @return the current Then instance, for fluent interfacing.
-         */
-        Then noCommands();
+            /**
+             * Expect the given set of command messages to have been dispatched during the "when" phase.
+             * <p>
+             * All commands are compared for equality using a shallow equals comparison on all the fields of the
+             * commands. This means that all assigned values on the commands' fields should have a proper equals
+             * implementation. Additionally, the metadata will be compared too.
+             *
+             * @param expectedCommands The expected command messages, in the exact order they are expected to be
+             *                         dispatched.
+             * @return the current Then instance, for fluent interfacing.
+             */
+            T commands(CommandMessage<?>... expectedCommands);
 
-        /**
-         * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple test
-         * scenarios within a single test method.
-         * <p>
-         * Example usage:
-         * <pre>
-         * {@code
-         * fixture.given()
-         *        .event(new AccountCreatedEvent("account-1"))
-         *        .when()
-         *        .command(new WithdrawMoneyCommand("account-1", 50.00))
-         *        .then()
-         *        .events(new MoneyWithdrawnEvent("account-1", 50.00))
-         *        .success()
-         *        .and()  // Return to setup phase
-         *        .given() // Start a new scenario
-         *        .event(new AccountCreatedEvent("account-2"))
-         *        .when()
-         *        .command(new WithdrawMoneyCommand("account-2", 30.00))
-         *        .then()
-         *        .events(new MoneyWithdrawnEvent("account-2", 30.00));
-         * }
-         * </pre>
-         *
-         * @return a {@link Setup} instance that allows configuring a new test scenario.
-         */
-        Setup and();
+            /**
+             * Expect the given set of command messages to have been dispatched during the "when" phase. Only commands
+             * as a result of the event in the "when" phase of ths fixture are recorded.
+             *
+             * @return the current Then instance, for fluent interfacing.
+             */
+            T noCommands();
+
+            /**
+             * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple
+             * test scenarios within a single test method.
+             * <p>
+             * Example usage:
+             * <pre>
+             * {@code
+             * fixture.given()
+             *        .event(new AccountCreatedEvent("account-1"))
+             *        .when()
+             *        .command(new WithdrawMoneyCommand("account-1", 50.00))
+             *        .then()
+             *        .events(new MoneyWithdrawnEvent("account-1", 50.00))
+             *        .success()
+             *        .and()  // Return to setup phase
+             *        .given() // Start a new scenario
+             *        .event(new AccountCreatedEvent("account-2"))
+             *        .when()
+             *        .command(new WithdrawMoneyCommand("account-2", 30.00))
+             *        .then()
+             *        .events(new MoneyWithdrawnEvent("account-2", 30.00));
+             * }
+             * </pre>
+             *
+             * @return a {@link Setup} instance that allows configuring a new test scenario.
+             */
+            Setup and();
+
+            T self();
+        }
     }
 }
