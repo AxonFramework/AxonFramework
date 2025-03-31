@@ -137,8 +137,6 @@ class DefaultStatefulCommandHandlingModule
                     statefulCommandHandlingComponentName,
                     c.getComponent(StateManager.class, stateManagerName)
             );
-            // TODO DISCUSS - do we want separate command handler registrations?
-            // Not for now - add issue for the future
             handlerFactories.forEach((key, value) -> statefulCommandHandler.subscribe(key, value.build(c)));
             handlingComponentFactories.forEach(
                     handlingComponent -> statefulCommandHandler.subscribe(handlingComponent.build(c))
