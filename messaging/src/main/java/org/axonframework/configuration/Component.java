@@ -149,6 +149,13 @@ public class Component<C> implements DescribableComponent {
     }
 
     /**
+     * Returns the unique {@link Identifier} of this {@code Component}.
+     */
+    public Identifier<C> identifier() {
+        return identifier;
+    }
+
+    /**
      * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code type} and {@code name}.
      *
      * @param type The type of the component this object identifiers, typically an interface.
@@ -167,6 +174,11 @@ public class Component<C> implements DescribableComponent {
                     StringUtils::nonEmpty,
                     () -> new IllegalArgumentException("The given name is unsupported because it is empty.")
             );
+        }
+
+        @Override
+        public String toString() {
+            return type.getName() + ":" + name;
         }
     }
 }
