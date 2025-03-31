@@ -142,8 +142,6 @@ public interface StatefulCommandHandlingModule extends
          * Once this module is finalized, the command handler will be subscribed with the
          * {@link org.axonframework.commandhandling.CommandBus} of the
          * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
-         * <p>
-         * TODO how to deal with duplicate registrations?
          *
          * @param commandName    The qualified name of the command the given {@code commandHandler} can handle.
          * @param commandHandler The stateful command handler to register with this module.
@@ -162,8 +160,6 @@ public interface StatefulCommandHandlingModule extends
          * Once this module is finalized, the stateful command handler will be subscribed with the
          * {@link org.axonframework.commandhandling.CommandBus} of the
          * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
-         * <p>
-         * TODO how to deal with duplicate registrations?
          *
          * @param commandName    The qualified name of the command the given {@code commandHandler} can handle.
          * @param commandHandler The stateful command handler to register with this module.
@@ -183,8 +179,6 @@ public interface StatefulCommandHandlingModule extends
          * Once this module is finalized, the stateful command handler from the {@code commandHandlerBuilder} will be
          * subscribed with the {@link org.axonframework.commandhandling.CommandBus} of the
          * {@link org.axonframework.configuration.ApplicationConfigurer} the module is registered on.
-         * <p>
-         * TODO how to deal with duplicate registrations?
          *
          * @param commandName           The qualified name of the command the {@link StatefulCommandHandler} created by
          *                              the given {@code commandHandlerBuilder}.
