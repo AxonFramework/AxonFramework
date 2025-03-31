@@ -31,9 +31,11 @@ import org.axonframework.configuration.NewConfigurer;
 import java.util.function.Consumer;
 
 /**
- * The modelling {@link NewConfigurer} of Axon Framework's configuration API.
+ * The modelling {@link NewConfigurer} of Axon Framework's configuration API, providing registration methods to, for
+ * example, register a {@link StatefulCommandHandlingModule}.
  * <p>
- * TODO DISCUSS - Any other methods we would need here at all?
+ * This configurer does not set any defaults other than the defaults granted by the {@link MessagingConfigurer} it
+ * wraps.
  *
  * @author Steven van Beelen
  * @since 5.0.0
