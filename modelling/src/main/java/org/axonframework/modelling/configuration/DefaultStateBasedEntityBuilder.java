@@ -33,8 +33,7 @@ import static java.util.Objects.requireNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-// TODO I really, really don't like "Impl." Similarly, I do not like "Default" or "Simple." Suggestions?
-class StateBasedEntityBuilderImpl<I, E> implements
+class DefaultStateBasedEntityBuilder<I, E> implements
         StateBasedEntityBuilder<I, E>,
         StateBasedEntityBuilder.RepositoryPhase<I, E>,
         StateBasedEntityBuilder.PersisterPhase<I, E> {
@@ -45,8 +44,8 @@ class StateBasedEntityBuilderImpl<I, E> implements
     private ComponentFactory<SimpleRepositoryEntityPersister<I, E>> persisterFactory;
     private ComponentFactory<AsyncRepository<I, E>> repositoryFactory;
 
-    StateBasedEntityBuilderImpl(@Nonnull Class<I> idType,
-                                @Nonnull Class<E> entityType) {
+    DefaultStateBasedEntityBuilder(@Nonnull Class<I> idType,
+                                   @Nonnull Class<E> entityType) {
         this.idType = requireNonNull(idType, "The identifier type cannot be null.");
         this.entityType = requireNonNull(entityType, "The entity type cannot be null.");
     }

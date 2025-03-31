@@ -38,8 +38,7 @@ import static java.util.Objects.requireNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-// TODO I really, really don't like "Impl." Similarly, I do not like "Default" or "Simple." Suggestions?
-class EventSourcedEntityBuilderImpl<I, E> implements
+class DefaultEventSourcedEntityBuilder<I, E> implements
         EventSourcedEntityBuilder<I, E>,
         EventSourcedEntityBuilder.EntityFactoryPhase<I, E>,
         EventSourcedEntityBuilder.CriteriaResolverPhase<I, E>,
@@ -51,7 +50,7 @@ class EventSourcedEntityBuilderImpl<I, E> implements
     private ComponentFactory<CriteriaResolver<I>> criteriaResolver;
     private ComponentFactory<EventStateApplier<E>> eventStateApplier;
 
-    EventSourcedEntityBuilderImpl(@Nonnull Class<I> idType, @Nonnull Class<E> entityType) {
+    DefaultEventSourcedEntityBuilder(@Nonnull Class<I> idType, @Nonnull Class<E> entityType) {
         this.idType = requireNonNull(idType, "The identifier type cannot be null.");
         this.entityType = requireNonNull(entityType, "The entity type cannot be null.");
     }

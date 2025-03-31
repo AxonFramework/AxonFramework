@@ -60,7 +60,7 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
      */
     static <I, E> EntityFactoryPhase<I, E> entity(@Nonnull Class<I> idType,
                                                   @Nonnull Class<E> entityType) {
-        return new EventSourcedEntityBuilderImpl<>(idType, entityType);
+        return new DefaultEventSourcedEntityBuilder<>(idType, entityType);
     }
 
     /**

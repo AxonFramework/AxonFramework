@@ -62,7 +62,7 @@ public interface StatefulCommandHandlingModule extends
      * @return The setup phase of this module, for a fluent API.
      */
     static SetupPhase named(@Nonnull String moduleName) {
-        return new StatefulCommandHandlingModuleImpl(moduleName);
+        return new DefaultStatefulCommandHandlingModule(moduleName);
     }
 
     /**

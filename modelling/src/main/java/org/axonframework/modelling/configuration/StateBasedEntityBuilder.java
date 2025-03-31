@@ -56,7 +56,7 @@ public interface StateBasedEntityBuilder<I, E> extends EntityBuilder<I, E> {
      */
     static <I, E> RepositoryPhase<I, E> entity(@Nonnull Class<I> idType,
                                                @Nonnull Class<E> entityType) {
-        return new StateBasedEntityBuilderImpl<>(idType, entityType);
+        return new DefaultStateBasedEntityBuilder<>(idType, entityType);
     }
 
     /**

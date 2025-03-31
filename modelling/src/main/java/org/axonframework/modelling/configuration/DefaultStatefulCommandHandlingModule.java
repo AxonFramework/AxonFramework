@@ -49,8 +49,7 @@ import static java.util.Objects.requireNonNull;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-// TODO I really, really don't like "Impl." Similarly, I do not like "Default" or "Simple." Suggestions?
-class StatefulCommandHandlingModuleImpl
+class DefaultStatefulCommandHandlingModule
         extends AbstractConfigurer<StatefulCommandHandlingModule>
         implements StatefulCommandHandlingModule,
         StatefulCommandHandlingModule.SetupPhase,
@@ -64,7 +63,7 @@ class StatefulCommandHandlingModuleImpl
     private final Map<QualifiedName, ComponentFactory<StatefulCommandHandler>> handlerFactories;
     private final List<ComponentFactory<CommandHandlingComponent>> handlingComponentFactories;
 
-    StatefulCommandHandlingModuleImpl(@Nonnull String moduleName) {
+    DefaultStatefulCommandHandlingModule(@Nonnull String moduleName) {
         Assert.nonEmpty(moduleName, "The module name cannot be null");
         this.moduleName = moduleName;
         this.stateManagerName = "StateManager[" + moduleName + "]";
