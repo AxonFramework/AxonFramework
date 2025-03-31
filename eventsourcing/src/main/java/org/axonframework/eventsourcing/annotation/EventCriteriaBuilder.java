@@ -25,8 +25,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to indicate that a method can be used to resolve the {@link TargetEntityId} to {@link EventCriteria}
- * instance for an {@link EventSourcedEntity}.
+ * Annotation to indicate that a method can be used to resolve the {@link EventCriteria} based on the
+ * {@link TargetEntityId} when loading an {@link EventSourcedEntity}.
  * <p>
  * The method should be:
  * <ul>
@@ -40,6 +40,7 @@ import java.lang.annotation.Target;
  *
  * @author Mitchell Herrijgers
  * @see AnnotationBasedEventSourcingEntityRepository
+ * @see TargetEntityId
  * @see EventSourcedEntity
  * @since 5.0.0
  */

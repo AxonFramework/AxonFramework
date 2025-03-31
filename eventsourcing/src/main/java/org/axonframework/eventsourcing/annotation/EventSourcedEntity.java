@@ -48,13 +48,14 @@ import java.lang.annotation.Target;
  *     </li>
  *     <li>
  *         If the {@link EventSourcedEntity#tagKey()} is empty, the {@link Class#getSimpleName()} of the entity will be used as tag key, and the {@link Object#toString()} of the id will be used as value.
+ *         Note that the tag format rules are undecided until <a href="https://github.com/AxonFramework/AxonFramework/issues/3326">issue 3326/a> is resolved. This may change in the future.
  *     </li>
  * </ol>
  *
  * <p>
  * The {@link #entityCreator()} is used to create a new instance of the entity. The provided class should implement the
- * {@link EventSourcedEntityCreator} interface, and have a no-arg constructor, or a 1-arg constructor with the {@link Class} of the entity as parameter.
- * By default, the {@link ConstructorBasedEventSourcedEntityCreator} is used, which creates a new instance using the
+ * {@link EventSourcedEntityFactory} interface, and have a no-arg constructor, or a 1-arg constructor with the {@link Class} of the entity as parameter.
+ * By default, the {@link ConstructorBasedEventSourcedEntityFactory} is used, which creates a new instance using the
  * no-arg constructor of the entity class, or a 1-arg constructor with the id as parameter.
  *
  * @author Mitchell Herrijgers
@@ -62,7 +63,7 @@ import java.lang.annotation.Target;
  * @see CriteriaResolver
  * @see AnnotationBasedEventCriteriaResolver
  * @see EventCriteriaBuilder
- * @see EventSourcedEntityCreator
+ * @see EventSourcedEntityFactory
  * @since 5.0.0
  */
 @SuppressWarnings("unused")
@@ -91,9 +92,9 @@ public @interface EventSourcedEntity {
 
     /**
      * The class to use to create a new instance of the entity. The provided class should implement the
-     * {@link EventSourcedEntityCreator} interface, and have a no-arg constructor, or a 1-arg constructor with the
+     * {@link EventSourcedEntityFactory} interface, and have a no-arg constructor, or a 1-arg constructor with the
      * {@link Class} of the entity as parameter.
      * @return The class to use to create a new instance of the entity.
      */
-    Class<? extends EventSourcedEntityCreator> entityCreator() default ConstructorBasedEventSourcedEntityCreator.class;
+    Class<? extends EventSourcedEntityFactory> entityCreator() default ConstructorBasedEventSourcedEntityFactory.class;
 }

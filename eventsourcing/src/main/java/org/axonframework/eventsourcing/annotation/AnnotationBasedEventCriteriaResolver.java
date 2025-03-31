@@ -53,6 +53,11 @@ import java.util.stream.Collectors;
  *         If the {@link EventSourcedEntity#tagKey()} is empty, the {@link Class#getSimpleName()} of the entity will be used as tag key, and the {@link Object#toString()} of the id will be used as value.
  *     </li>
  * </ol>
+ * <p>
+ * Different methods can be combined, as can several {@link EventCriteriaBuilder} methods be defined as long as they
+ * are for different id types. This resolver is the default when using the {@link EventSourcedEntity} annotation,
+ * but specifying a custom {@link CriteriaResolver} will override this behavior.
+ *
  *
  * @author Mitchell Herrijgers
  * @see EventSourcedEntity
@@ -72,10 +77,10 @@ public class AnnotationBasedEventCriteriaResolver implements CriteriaResolver<Ob
      * of the methods is invalid as defined in the Javadoc of {@link EventCriteriaBuilder}, an
      * {@link IllegalArgumentException} will be thrown.
      *
-     * @param entityType The entity type to resolve criteria for
+     * @param entityType The entity type to resolve criteria for.
      */
-    public AnnotationBasedEventCriteriaResolver(Class<?> entityType) {
-        this.entityType = entityType;
+    public AnnotationBasedEventCriteriaResolver(@Nonnull Class<?> entityType) {
+        this.entityType = Objects.requireNonNull(entityType, "The entity type cannot be null.");
 
 
         Map<String, Object> attributes = AnnotationUtils

@@ -23,6 +23,7 @@ import org.axonframework.messaging.Context;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -84,7 +85,17 @@ public record Tag(@Nonnull String key,
         return Optional.ofNullable(context.getResource(RESOURCE_KEY));
     }
 
-    public static Tag of(String key, String value) {
-        return new Tag(key, value);
+    /**
+     * Creates a new {@code Tag} with the given {@code key} and {@code value}.
+     *
+     * @param key   The key of the new {@code Tag}.
+     * @param value The value of the new {@code Tag}.
+     * @return A new {@code Tag} with the given {@code key} and {@code value}.
+     */
+    public static Tag of(@Nonnull String key, @Nonnull String value) {
+        return new Tag(
+                Objects.requireNonNull(key, "The key of a Tag is required."),
+                Objects.requireNonNull(value, "The value of a Tag is required.")
+        );
     }
 }

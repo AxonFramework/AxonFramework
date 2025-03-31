@@ -21,27 +21,32 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import static org.axonframework.common.ConstructorUtils.getConstructorFunctionWithOptionalArgumentClass;
 
 /**
- * {@link EventSourcedEntityCreator} implementation which uses a constructor to create a new instance of an entity. The
+ * {@link EventSourcedEntityFactory} implementation which uses a constructor to create a new instance of an entity. The
  * constructor can either have a single argument of the same type as the identifier, or no arguments at all.
  *
  * @param <M> The type of the entity to create.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ConstructorBasedEventSourcedEntityCreator<M>
-        implements EventSourcedEntityCreator<Object, M>, DescribableComponent {
+public class ConstructorBasedEventSourcedEntityFactory<M>
+        implements EventSourcedEntityFactory<Object, M>, DescribableComponent {
 
     private final Class<M> entityType;
     private final Map<Class<?>, Function<Object, M>> constructorCache = new ConcurrentHashMap<>();
 
-    public ConstructorBasedEventSourcedEntityCreator(Class<M> entityType) {
-        this.entityType = entityType;
+    /**
+     * Create an {@link EventSourcedEntityFactory} for the given {@code entityType} based on its constructors.
+     * @param entityType The type of entity to create.
+     */
+    public ConstructorBasedEventSourcedEntityFactory(@Nonnull Class<M> entityType) {
+        this.entityType = Objects.requireNonNull(entityType, "The entity type cannot be null.");
     }
 
     @Override

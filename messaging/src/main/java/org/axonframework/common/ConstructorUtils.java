@@ -44,7 +44,7 @@ public class ConstructorUtils {
      * @param <T>  The type of object to construct.
      * @return A function that constructs an instance of the given type using the zero-argument constructor.
      */
-    public static <T> Supplier<T> getConstructorFunctionWithZeroArguments(Class<T> type) {
+    public static <T> Supplier<T> getConstructorFunctionWithZeroArguments(@Nonnull Class<T> type) {
         try {
             Constructor<T> constructor = type.getDeclaredConstructor();
             ReflectionUtils.ensureAccessible(constructor);
@@ -111,7 +111,6 @@ public class ConstructorUtils {
 
     private static boolean constructorHasZeroOrExactlyThisArgument(@Nonnull Constructor<?> constructor,
                                                                    @Nonnull Class<?> argument) {
-        // Has no args, cool
         if (constructor.getParameterCount() == 0) {
             return true;
         }

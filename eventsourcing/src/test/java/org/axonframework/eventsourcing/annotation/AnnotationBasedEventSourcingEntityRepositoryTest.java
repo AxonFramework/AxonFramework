@@ -136,7 +136,7 @@ class AnnotationBasedEventSourcingEntityRepositoryTest {
             super(CustomCreatorSequenceEntity.class, "CustomCreatorSequenceEntity");
         }
 
-        @EventSourcedEntity(entityCreator = CustomEntityCreator.class)
+        @EventSourcedEntity(entityCreator = CustomEntityFactory.class)
         static class CustomCreatorSequenceEntity extends AbstractSequenceEntity {
 
             private CustomCreatorSequenceEntity() {
@@ -148,7 +148,7 @@ class AnnotationBasedEventSourcingEntityRepositoryTest {
             }
         }
 
-        static class CustomEntityCreator implements EventSourcedEntityCreator<String, CustomCreatorSequenceEntity> {
+        static class CustomEntityFactory implements EventSourcedEntityFactory<String, CustomCreatorSequenceEntity> {
 
             @Override
             public CustomCreatorSequenceEntity createEntity(Class<CustomCreatorSequenceEntity> entityType, String id) {

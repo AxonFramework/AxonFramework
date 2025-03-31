@@ -46,7 +46,7 @@ public class AnnotationBasedEventSourcingEntityRepository<ID, T> implements Asyn
     private final Class<ID> idType;
     private final Class<T> entityType;
     private final AsyncEventSourcingRepository<ID, T> repository;
-    private final EventSourcedEntityCreator<ID, T> creator;
+    private final EventSourcedEntityFactory<ID, T> creator;
     private final CriteriaResolver<ID> criteriaResolver;
     private final AnnotationBasedEventStateApplier<T> stateApplier;
 
@@ -71,7 +71,7 @@ public class AnnotationBasedEventSourcingEntityRepository<ID, T> implements Asyn
         this.idType = idType;
         this.entityType = entityType;
 
-        var creatorType = (Class<EventSourcedEntityCreator<ID, T>>) annotationAttributes.get("entityCreator");
+        var creatorType = (Class<EventSourcedEntityFactory<ID, T>>) annotationAttributes.get("entityCreator");
         var criteriaResolverType = (Class<CriteriaResolver<ID>>) annotationAttributes.get("criteriaResolver");
         this.creator = ConstructorUtils.factoryForTypeWithOptionalArgumentInstance(creatorType, entityType).get();
         this.criteriaResolver = factoryForTypeWithOptionalArgumentInstance(criteriaResolverType, entityType).get();
