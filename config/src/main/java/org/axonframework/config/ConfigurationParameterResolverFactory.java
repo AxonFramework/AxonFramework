@@ -54,10 +54,8 @@ public class ConfigurationParameterResolverFactory implements ParameterResolverF
 
     @Override
     public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
+        // TODO #3360 - This block is up for improvements per referenced issue number.
         Class<?> componentType = parameters[parameterIndex].getType();
-        // TODO This should also go into the Module Configurations
-        // TODO This should also allow for some form of "named" or "qualifier" annotation, to input the name of the component
-        // TODO getComponent should, ideally, not break with a null pointer when trying to retrieve a component for which the name isn't known.
         return configuration.getOptionalComponent(componentType)
                             .map(FixedValueParameterResolver::new)
                             .orElse(null);
