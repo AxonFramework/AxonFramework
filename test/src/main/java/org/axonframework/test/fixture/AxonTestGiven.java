@@ -137,6 +137,9 @@ class AxonTestGiven implements AxonTestPhase.Given {
 
     @Override
     public AxonTestPhase.When when() {
+        for (var unitOfWork : unitsOfWork) {
+            awaitCompletion(unitOfWork.execute());
+        }
         return new AxonTestWhen(configuration, customization, messageTypeResolver, commandBus, eventSink);
     }
 

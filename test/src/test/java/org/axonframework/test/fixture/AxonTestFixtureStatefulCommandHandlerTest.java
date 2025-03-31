@@ -43,20 +43,17 @@ import java.util.Objects;
 
 class AxonTestFixtureStatefulCommandHandlerTest {
 
-    private static final String TEST_CONTEXT = "TEST_CONTEXT";
-
     @Test
     void givenEventsWhenCommandThenNoEvents() {
         var configurer = MessagingConfigurer.create();
         registerSampleStatefulCommandHandler(configurer);
 
-        // todo: add customization!
         var fixture = AxonTestFixture.with(configurer);
 
         var studentNameChanged = studentNameChangedEventMessage("my-studentId-1", "name-1", 1);
         var changeToTheSameName = new ChangeStudentNameCommand("my-studentId-1", "name-1");
         fixture.given()
-               .event(studentNameChanged)
+               .events(studentNameChanged)
                .when()
                .command(changeToTheSameName)
                .then()
@@ -110,7 +107,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
                .then()
-               .events(new StudentNameChangedEvent("my-studentId-1", "name-4", 4))
+               .events(new StudentNameChangedEvent("my-studentId-1", "name-3", 3))
                .and()
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-4"))
