@@ -21,11 +21,7 @@ import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComp
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
-import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
-import org.axonframework.eventsourcing.EventStateApplier;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
-import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.eventsourcing.annotation.AnnotationBasedEventSourcingEntityRepository;
 import org.axonframework.integrationtests.testsuite.student.commands.AssignMentorCommand;
 import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;
 import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
@@ -48,25 +44,10 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
-    protected EventStateApplier<StudentMentorAssignment> studentMentorModelApplier = new AnnotationBasedEventStateApplier<>(
-            StudentMentorAssignment.class);
-
-
-    protected AsyncEventSourcingRepository<StudentMentorModelIdentifier, StudentMentorAssignment> mentorAssignmentRepository = new AsyncEventSourcingRepository<>(
-            StudentMentorModelIdentifier.class,
-            StudentMentorAssignment.class,
+    protected AnnotationBasedEventSourcingEntityRepository<StudentMentorModelIdentifier, StudentMentorAssignment> mentorAssignmentRepository = new AnnotationBasedEventSourcingEntityRepository<>(
             eventStore,
-            id ->
-                    EventCriteria.either(
-                            EventCriteria.match()
-                                         .eventsOfTypes(MentorAssignedToStudentEvent.class.getName())
-                                         .withTags(new Tag("Student", id.menteeId())),
-                            EventCriteria.match()
-                                         .eventsOfTypes(MentorAssignedToStudentEvent.class.getName())
-                                         .withTags(new Tag("Student", id.mentorId()))
-                    ),
-            studentMentorModelApplier,
-            StudentMentorAssignment::new
+            StudentMentorModelIdentifier.class,
+            StudentMentorAssignment.class
     );
 
     @Override
@@ -135,8 +116,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                             if (assignment.isMenteeHasMentor()) {
                                 throw new IllegalArgumentException("Mentee already has a mentor");
                             }
-                            appendEvent(context,
-                                        new MentorAssignedToStudentEvent(payload.mentorId(), payload.menteeId()));
+                            appendEvent(context, new MentorAssignedToStudentEvent(payload.mentorId(), payload.menteeId()));
                             return MessageStream.empty().cast();
                         });
 
@@ -149,7 +129,6 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
         @CommandHandler
         public void handle(AssignMentorCommand command,
                            @InjectEntity StudentMentorAssignment assignment,
-                           EventSink eventSink,
                            ProcessingContext context
         ) {
             if (assignment.isMentorHasMentee()) {
@@ -159,11 +138,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                 throw new IllegalArgumentException("Mentee already has a mentor");
             }
 
-            eventSink.publish(context,
-                              new GenericEventMessage<>(
-                                      new MessageType(MentorAssignedToStudentEvent.class),
-                                      new MentorAssignedToStudentEvent(command.mentorId(), command.menteeId())
-                              ));
+            appendEvent(context, new MentorAssignedToStudentEvent(command.mentorId(), command.menteeId()));
         }
     }
 }
