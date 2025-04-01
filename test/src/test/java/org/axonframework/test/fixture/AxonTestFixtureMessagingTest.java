@@ -260,6 +260,28 @@ class AxonTestFixtureMessagingTest {
         }
     }
 
+    @Nested
+    class Customized {
+
+        @Test
+        void setupRegisterIgnoredFieldThenShouldPassWithDifferentNameInExpectedEvents() {
+            var configurer = MessagingConfigurer.create();
+            registerChangeStudentNameHandlerReturnsEmpty(configurer);
+
+            var fixture = AxonTestFixture.with(
+                    configurer,
+                    c -> c.registerIgnoredField(StudentNameChangedEvent.class, "name")
+            );
+
+            fixture.given()
+                   .noPriorActivity()
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                   .then()
+                   .events(studentNameChangedEventMessage("my-studentId-1", "another-name", 1));
+        }
+    }
+
     private static GenericEventMessage<StudentNameChangedEvent> studentNameChangedEventMessage(
             String id,
             String name,
