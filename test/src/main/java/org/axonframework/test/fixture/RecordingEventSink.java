@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
 
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-public class RecordingEventSink implements EventSink {
+class RecordingEventSink implements EventSink {
 
     private final EventSink delegate;
     private final List<EventMessage<?>> recorded;

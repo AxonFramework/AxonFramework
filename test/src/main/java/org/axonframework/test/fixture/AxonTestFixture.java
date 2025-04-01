@@ -83,19 +83,9 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
     public static AxonTestPhase.Setup with(ApplicationConfigurer<?> configurer,
                                            UnaryOperator<Customization> customization) {
-        var testConfigurer = new TestApplicationConfigurer(configurer);
-        var configuration = testConfigurer.build();
-        return with(configuration, customization);
-    }
-
-    public static AxonTestPhase.Setup with(TestApplicationConfigurer configurer) {
-        var configuration = configurer.build();
-        return with(configuration, c -> c);
-    }
-
-    public static AxonTestPhase.Setup with(TestApplicationConfigurer configurer,
-                                           UnaryOperator<Customization> customization) {
-        var configuration = configurer.build();
+        var configuration = configurer
+                .registerEnhancer(new MessagesRecordingConfigurationEnhancer())
+                .build();
         return with(configuration, customization);
     }
 

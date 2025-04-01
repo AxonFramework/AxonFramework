@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-public class RecordingCommandBus implements CommandBus {
+class RecordingCommandBus implements CommandBus {
 
     private final CommandBus delegate;
     private final Map<CommandMessage<?>, Message<?>> recorded = new HashMap<>();
