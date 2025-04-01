@@ -35,7 +35,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Every given method invocation spawn new unit of work.
+ * Every given method invocation spawns a new unit of work.
  */
 class AxonTestGiven implements AxonTestPhase.Given {
 

@@ -33,9 +33,6 @@ class AxonTestThenCommand
 
     private final Reporter reporter = new Reporter();
 
-    private final NewConfiguration configuration;
-    private final AxonTestFixture.Customization customization;
-
     private final Message<?> lastCommandResult;
     private final Throwable lastCommandException;
 
@@ -48,8 +45,6 @@ class AxonTestThenCommand
             Throwable lastCommandException
     ) {
         super(configuration, customization, commandBus, eventSink, lastCommandException);
-        this.configuration = configuration;
-        this.customization = customization;
         this.lastCommandException = lastCommandException;
         this.lastCommandResult = lastCommandResult;
     }
@@ -71,7 +66,7 @@ class AxonTestThenCommand
         } else if (!matcher.matches(lastCommandResult)) {
             reporter.reportWrongResult(lastCommandResult, expectedDescription);
         }
-        return self();
+        return this;
     }
 
     @Override
@@ -89,7 +84,7 @@ class AxonTestThenCommand
             actualMatcher.describeTo(actualDescription);
             reporter.reportWrongResult(actualDescription, expectedDescription);
         }
-        return self();
+        return this;
     }
 
     @Override
@@ -104,7 +99,7 @@ class AxonTestThenCommand
         } else if (!matcher.matches(lastCommandResult.getPayload())) {
             reporter.reportWrongResult(lastCommandResult.getPayload(), expectedDescription);
         }
-        return self();
+        return this;
     }
 
     @Override
@@ -122,16 +117,7 @@ class AxonTestThenCommand
         if (!matcher.matches(lastCommandException)) {
             reporter.reportWrongException(lastCommandException, description);
         }
-        return self();
-    }
-
-    @Override
-    public AxonTestPhase.Setup and() {
-        return AxonTestFixture.with(configuration, c -> customization);
-    }
-
-    @Override
-    public AxonTestThenCommand self() {
         return this;
     }
+
 }

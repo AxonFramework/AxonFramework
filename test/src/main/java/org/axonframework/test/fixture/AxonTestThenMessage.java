@@ -194,4 +194,9 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     public AxonTestPhase.Setup and() {
         return AxonTestFixture.with(configuration, c -> customization);
     }
+
+    private T self() {
+        //noinspection unchecked
+        return (T) this;
+    }
 }

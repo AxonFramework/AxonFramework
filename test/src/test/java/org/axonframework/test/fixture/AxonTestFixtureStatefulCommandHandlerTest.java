@@ -114,28 +114,6 @@ class AxonTestFixtureStatefulCommandHandlerTest {
     }
 
     @Test
-    void givenEventAndMultipleCommandsWhenCommandThenEvents() {
-        var configurer = MessagingConfigurer.create();
-        registerSampleStatefulCommandHandler(configurer);
-
-        var fixture = AxonTestFixture.with(configurer);
-
-        fixture.given()
-               .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
-               .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
-               .when()
-               .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
-               .then()
-               .events(new StudentNameChangedEvent("my-studentId-1", "name-3", 3))
-               .and()
-               .when()
-               .command(new ChangeStudentNameCommand("my-studentId-1", "name-4"))
-               .then()
-               .events(new StudentNameChangedEvent("my-studentId-1", "name-4", 4));
-    }
-
-
-    @Test
     void givenEventsWhenCommandThenExpectEvents() {
         var configurer = MessagingConfigurer.create();
         registerSampleStatefulCommandHandler(configurer);
@@ -148,6 +126,61 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                .then()
                .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+    }
+
+    @Nested
+    class AndChaining {
+
+        @Test
+        void givenEventAndMultipleCommandsWhenCommandThenEvents() {
+            var configurer = MessagingConfigurer.create();
+            registerSampleStatefulCommandHandler(configurer);
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            fixture.given()
+                   .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+                   .then()
+                   .events(new StudentNameChangedEvent("my-studentId-1", "name-3", 3))
+                   .and()
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-4"))
+                   .then()
+                   .events(new StudentNameChangedEvent("my-studentId-1", "name-4", 4));
+        }
+
+        @Test
+        void chainSameFixturePhaseTwice() {
+            var configurer = MessagingConfigurer.create();
+            registerSampleStatefulCommandHandler(configurer);
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            var then = fixture.given()
+                              .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
+                              .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
+                              .when()
+                              .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+                              .then()
+                              .events(new StudentNameChangedEvent("my-studentId-1", "name-3", 3));
+
+            then.and()
+                .when()
+                .command(new ChangeStudentNameCommand("my-studentId-1", "name-4"))
+                .then()
+                .events(new StudentNameChangedEvent("my-studentId-1", "name-4", 4));
+
+            then.and()
+                .when()
+                .command(new ChangeStudentNameCommand("my-studentId-1", "name-4"))
+                .then()
+                .noEvents();
+        }
+
+
     }
 
     private static void registerSampleStatefulCommandHandler(MessagingConfigurer configurer) {

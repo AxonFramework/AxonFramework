@@ -38,184 +38,226 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 class AxonTestFixtureMessagingTest {
 
-    @Test
-    void givenNoPriorActivityWhenCommandThenExpectEvents() {
-        var configurer = MessagingConfigurer.create();
-        registerChangeStudentNameHandlerReturnsEmpty(configurer);
+    @Nested
+    class WhenCommand {
 
-        var fixture = AxonTestFixture.with(configurer);
+        @Test
+        void givenNoPriorActivityWhenCommandThenExpectEvents() {
+            var configurer = MessagingConfigurer.create();
+            registerChangeStudentNameHandlerReturnsEmpty(configurer);
 
-        fixture.given()
-               .noPriorActivity()
-               .when()
-               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-               .then()
-               .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+            var fixture = AxonTestFixture.with(configurer);
+
+            fixture.given()
+                   .noPriorActivity()
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                   .then()
+                   .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+        }
+
+        @Test
+        void givenNothingWhenCommandThenExpectEvents() {
+            var configurer = MessagingConfigurer.create();
+            registerChangeStudentNameHandlerReturnsEmpty(configurer);
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            fixture.given()
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                   .then()
+                   .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+        }
+
+        @Test
+        void whenCommandThenExpectEvents() {
+            var configurer = MessagingConfigurer.create();
+            registerChangeStudentNameHandlerReturnsEmpty(configurer);
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            fixture.when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                   .then()
+                   .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+        }
+
+        @Test
+        void whenCommandThenSuccess() {
+            var configurer = MessagingConfigurer.create();
+            registerChangeStudentNameHandlerReturnsEmpty(configurer);
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            fixture.when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                   .then()
+                   .success();
+        }
+
+        @Test
+        void whenCommandReturnsEmptyThenSuccessWithNullValue() {
+            var configurer = MessagingConfigurer.create();
+            registerChangeStudentNameHandlerReturnsEmpty(configurer);
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            fixture.when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                   .then()
+                   .success()
+                   .resultMessage(Matchers.nullValue());
+        }
+
+        @Test
+        void whenCommandReturnsSingleThenSuccessWithValue() {
+            var configurer = MessagingConfigurer.create();
+            registerChangeStudentNameHandlerReturnsSingle(configurer);
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            fixture.when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                   .then()
+                   .success()
+                   .resultMessagePayload(new CommandResult("Result name-1"));
+        }
+
+        @Test
+        void givenEventWhenCommandThenExpectEvents() {
+            var configurer = MessagingConfigurer.create();
+            var studentEvents = new ArrayList<>();
+            configurer.registerEventSink(c -> (events) -> {
+                studentEvents.addAll(events);
+                return CompletableFuture.completedFuture(null);
+            });
+            configurer.registerCommandBus(
+                    c -> new SimpleCommandBus()
+                            .subscribe(
+                                    new QualifiedName(ChangeStudentNameCommand.class),
+                                    (command, context) -> {
+                                        ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
+                                        var eventSink = c.getComponent(EventSink.class);
+                                        var changeNo = studentEvents.size() + 1;
+                                        eventSink.publish(context,
+                                                          studentNameChangedEventMessage(payload.id(), payload.name(),
+                                                                                         changeNo));
+                                        return MessageStream.empty().cast();
+                                    }));
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            fixture.given()
+                   .event(studentNameChangedEventMessage("my-studentId-1", "name-1", 1))
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                   .then()
+                   .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 2));
+        }
+
+        @Test
+        void givenNoPriorActivityWhenCommandThenExpectException() {
+            var configurer = MessagingConfigurer.create();
+            configurer.registerDecorator(
+                    CommandBus.class,
+                    0,
+                    (c, n, d) -> d.subscribe(
+                            new QualifiedName(ChangeStudentNameCommand.class),
+                            (command, context) -> MessageStream.failed(new RuntimeException("Test"))
+                    )
+            );
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            fixture.given()
+                   .noPriorActivity()
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                   .then()
+                   .exception(RuntimeException.class);
+        }
     }
 
-    @Test
-    void givenNothingWhenCommandThenExpectEvents() {
-        var configurer = MessagingConfigurer.create();
-        registerChangeStudentNameHandlerReturnsEmpty(configurer);
+    @Nested
+    class WhenEvent {
 
-        var fixture = AxonTestFixture.with(configurer);
+        @Test
+        void whenEventThenExpectedCommand() {
+            var configurer = MessagingConfigurer.create();
+            AtomicBoolean eventHandled = new AtomicBoolean(false);
+            registerChangeStudentNameHandlerReturnsSingle(configurer);
+            configurer.registerEventSink(c -> (events) -> {
+                if (!eventHandled.getAndSet(true)) {
+                    var commandGateway = c.getComponent(CommandGateway.class);
+                    commandGateway.sendAndWait(new ChangeStudentNameCommand("id", "name"));
+                }
+                return CompletableFuture.completedFuture(null);
+            });
 
-        fixture.given()
-               .when()
-               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-               .then()
-               .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+            var fixture = AxonTestFixture.with(configurer);
+
+            fixture.when()
+                   .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
+                   .then()
+                   .commands(new ChangeStudentNameCommand("id", "name"));
+        }
     }
 
-    @Test
-    void whenCommandThenExpectEvents() {
-        var configurer = MessagingConfigurer.create();
-        registerChangeStudentNameHandlerReturnsEmpty(configurer);
+    @Nested
+    class AndChaining {
 
-        var fixture = AxonTestFixture.with(configurer);
+        @Test
+        void whenThenAndWhenThen() {
+            var configurer = MessagingConfigurer.create();
+            registerChangeStudentNameHandlerReturnsSingle(configurer);
 
-        fixture.when()
-               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-               .then()
-               .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
-    }
+            var fixture = AxonTestFixture.with(configurer);
 
-    @Test
-    void whenCommandThenSuccess() {
-        var configurer = MessagingConfigurer.create();
-        registerChangeStudentNameHandlerReturnsEmpty(configurer);
+            fixture.given()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
+                   .then()
+                   .resultMessagePayload(new AxonTestFixtureMessagingTest.CommandResult("Result name-2"))
+                   .events(studentNameChangedEvent("my-studentId-1", "name-2", 1))
+                   .and()
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+                   .then()
+                   .success()
+                   .resultMessagePayload(new AxonTestFixtureMessagingTest.CommandResult("Result name-3"));
+        }
 
-        var fixture = AxonTestFixture.with(configurer);
+        @Test
+        void chainSameFixturePhaseTwice() {
+            var configurer = MessagingConfigurer.create();
+            registerChangeStudentNameHandlerReturnsSingle(configurer);
 
-        fixture.when()
-               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-               .then()
-               .success();
-    }
+            var fixture = AxonTestFixture.with(configurer);
 
-    @Test
-    void whenCommandReturnsEmptyThenSuccessWithNullValue() {
-        var configurer = MessagingConfigurer.create();
-        registerChangeStudentNameHandlerReturnsEmpty(configurer);
+            var then = fixture.given()
+                              .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                              .when()
+                              .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
+                              .then()
+                              .resultMessagePayload(new AxonTestFixtureMessagingTest.CommandResult("Result name-2"))
+                              .events(studentNameChangedEvent("my-studentId-1", "name-2", 1));
 
-        var fixture = AxonTestFixture.with(configurer);
+            then.and()
+                .when()
+                .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+                .then()
+                .success()
+                .events(studentNameChangedEvent("my-studentId-1", "name-3", 1));
 
-        fixture.when()
-               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-               .then()
-               .success()
-               .resultMessage(Matchers.nullValue());
-    }
-
-    @Test
-    void whenCommandReturnsSingleThenSuccessWithValue() {
-        var configurer = MessagingConfigurer.create();
-        registerChangeStudentNameHandlerReturnsSingle(configurer);
-
-        var fixture = AxonTestFixture.with(configurer);
-
-        fixture.when()
-               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-               .then()
-               .success()
-               .resultMessagePayload(new CommandResult("Result name-1"));
-    }
-
-    @Test
-    void chainingWhenThen() {
-        var configurer = MessagingConfigurer.create();
-        registerChangeStudentNameHandlerReturnsSingle(configurer);
-
-        var fixture = AxonTestFixture.with(configurer);
-
-        fixture.given()
-               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-               .when()
-               .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
-               .then()
-               .resultMessagePayload(new CommandResult("Result name-2"))
-               .events(studentNameChangedEvent("my-studentId-1", "name-2", 1))
-               .and()
-               .when()
-               .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
-               .then()
-               .success()
-               .resultMessagePayload(new CommandResult("Result name-3"));
-    }
-
-    @Test
-    void givenEventWhenCommandThenExpectEvents() {
-        var configurer = MessagingConfigurer.create();
-        var studentEvents = new ArrayList<>();
-        configurer.registerEventSink(c -> (events) -> {
-            studentEvents.addAll(events);
-            return CompletableFuture.completedFuture(null);
-        });
-        configurer.registerCommandBus(
-                c -> new SimpleCommandBus()
-                        .subscribe(
-                                new QualifiedName(ChangeStudentNameCommand.class),
-                                (command, context) -> {
-                                    ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
-                                    var eventSink = c.getComponent(EventSink.class);
-                                    var changeNo = studentEvents.size() + 1;
-                                    eventSink.publish(context,
-                                                      studentNameChangedEventMessage(payload.id(), payload.name(),
-                                                                                     changeNo));
-                                    return MessageStream.empty().cast();
-                                }));
-
-        var fixture = AxonTestFixture.with(configurer);
-
-        fixture.given()
-               .event(studentNameChangedEventMessage("my-studentId-1", "name-1", 1))
-               .when()
-               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-               .then()
-               .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 2));
-    }
-
-    @Test
-    void whenEventThenExpectedCommand() {
-        var configurer = MessagingConfigurer.create();
-        AtomicBoolean eventHandled = new AtomicBoolean(false);
-        registerChangeStudentNameHandlerReturnsSingle(configurer);
-        configurer.registerEventSink(c -> (events) -> {
-            if (!eventHandled.getAndSet(true)) {
-                var commandGateway = c.getComponent(CommandGateway.class);
-                commandGateway.sendAndWait(new ChangeStudentNameCommand("id", "name"));
-            }
-            return CompletableFuture.completedFuture(null);
-        });
-
-        var fixture = AxonTestFixture.with(configurer);
-
-        fixture.when()
-               .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
-               .then()
-               .commands(new ChangeStudentNameCommand("id", "name"));
-    }
-
-    @Test
-    void givenNoPriorActivityWhenCommandThenExpectException() {
-        var configurer = MessagingConfigurer.create();
-        configurer.registerDecorator(
-                CommandBus.class,
-                0,
-                (c, n, d) -> d.subscribe(
-                        new QualifiedName(ChangeStudentNameCommand.class),
-                        (command, context) -> MessageStream.failed(new RuntimeException("Test"))
-                )
-        );
-
-        var fixture = AxonTestFixture.with(configurer);
-
-        fixture.given()
-               .noPriorActivity()
-               .when()
-               .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
-               .then()
-               .exception(RuntimeException.class);
+            then.and()
+                .when()
+                .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+                .then()
+                .success()
+                .events(studentNameChangedEvent("my-studentId-1", "name-3", 1));
+        }
     }
 
     private static GenericEventMessage<StudentNameChangedEvent> studentNameChangedEventMessage(

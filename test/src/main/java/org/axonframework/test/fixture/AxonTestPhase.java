@@ -34,7 +34,7 @@ import java.util.function.Predicate;
  * components.
  *
  * <p>
- * This interface defines the four primary phases of the test:
+ * This interface defines four primary phases of a test:
  * <ul>
  *   <li>{@link Setup} - Initial configuration of the test fixture</li>
  *   <li>{@link Given} - Defining the initial state of the system before testing by events and commands</li>
@@ -42,11 +42,13 @@ import java.util.function.Predicate;
  *   <li>{@link Then} - Validating the results of the test</li>
  * </ul>
  * <p>
- * The test fixture manages Unit of Work instances during test execution, automatically committing
- * as appropriate. During the "given" phase, each operation (like event or command) is executed in its own separate
- * Unit of Work that is committed immediately after execution. In the "when" phase, a single Unit of Work is started
- * and committed after the command is executed. The "then" phase operates outside of a Unit of Work as it only
- * validates the results.
+ * The test fixture manages {@link org.axonframework.messaging.unitofwork.AsyncUnitOfWork} instances during test execution,
+ * automatically committing as appropriate. During the "given" phase, each operation (like {@link Given#event(Object)}},
+ * {@link Given#command(Object)} or even batched like {@link Given#events(EventMessage[])} and {@link Given#commands(CommandMessage[])})
+ * is executed in its own separate {@link org.axonframework.messaging.unitofwork.AsyncUnitOfWork} that is committed immediately after execution. In the "when" phase, a single Unit of Work is started
+ * and committed after the command is executed. The "then" phase only validates the results.
+ * <p>
+ * The test phases operates on components defined in {@link org.axonframework.configuration.NewConfiguration} that you pass to the fixture during its construction.
  * <p>
  * Typical usage example:<br/>
  * <pre>
@@ -85,9 +87,9 @@ import java.util.function.Predicate;
  * </pre>
  *
  * @author Allard Buijze
- * @author Steven van Beelen
- * @author Mitchell Herrijgers
  * @author Mateusz Nowak
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public interface AxonTestPhase {
@@ -104,14 +106,14 @@ public interface AxonTestPhase {
         /**
          * Transition to the "given" phase to define the initial state of the system before testing.
          *
-         * @return a {@link Given} instance that allows defining the initial state.
+         * @return A {@link Given} instance that allows defining the initial state.
          */
         AxonTestPhase.Given given();
 
         /**
          * Transition directly to the "when" phase, skipping the "given" phase, which implies no prior state.
          *
-         * @return a {@link When} instance that allows executing the test.
+         * @return A {@link When} instance that allows executing the test.
          */
         When when();
     }
@@ -130,7 +132,7 @@ public interface AxonTestPhase {
          * Indicates that no relevant activities like commands or events have occurred in the past. This also means that
          * no previous state is present in the system.
          *
-         * @return the current Given instance, for fluent interfacing
+         * @return The current Given instance, for fluent interfacing
          */
         Given noPriorActivity();
 
@@ -139,7 +141,7 @@ public interface AxonTestPhase {
          * published with empty metadata.
          *
          * @param payload The payload of the event to publish.
-         * @return the current Given instance, for fluent interfacing.
+         * @return The current Given instance, for fluent interfacing.
          */
         default Given event(Object payload) {
             return event(payload, MetaData.emptyInstance());
@@ -151,7 +153,7 @@ public interface AxonTestPhase {
          *
          * @param payload  The payload of the event to publish.
          * @param metaData The metadata to attach to the event.
-         * @return the current Given instance, for fluent interfacing.
+         * @return The current Given instance, for fluent interfacing.
          */
         default Given event(Object payload, Map<String, ?> metaData) {
             return event(payload, MetaData.from(metaData));
@@ -163,7 +165,7 @@ public interface AxonTestPhase {
          *
          * @param payload  The payload of the event to publish.
          * @param metaData The metadata to attach to the event.
-         * @return the current Given instance, for fluent interfacing.
+         * @return The current Given instance, for fluent interfacing.
          */
         Given event(Object payload, MetaData metaData);
 
@@ -172,7 +174,7 @@ public interface AxonTestPhase {
          * order they are provided.
          *
          * @param messages The event messages to publish.
-         * @return the current Given instance, for fluent interfacing.
+         * @return The current Given instance, for fluent interfacing.
          */
         Given events(EventMessage<?>... messages);
 
@@ -181,7 +183,7 @@ public interface AxonTestPhase {
          * order they are provided.
          *
          * @param events The lists of events to publish.
-         * @return the current Given instance, for fluent interfacing.
+         * @return The current Given instance, for fluent interfacing.
          */
         Given events(List<?>... events);
 
@@ -190,7 +192,7 @@ public interface AxonTestPhase {
          * dispatched to corresponding command handlers.
          *
          * @param payload The payload of the command to dispatch.
-         * @return the current Given instance, for fluent interfacing.
+         * @return The current Given instance, for fluent interfacing.
          */
         default Given command(Object payload) {
             return command(payload, MetaData.emptyInstance());
@@ -202,7 +204,7 @@ public interface AxonTestPhase {
          *
          * @param payload  The payload of the command to dispatch.
          * @param metaData The metadata to attach to the command.
-         * @return the current Given instance, for fluent interfacing.
+         * @return The current Given instance, for fluent interfacing.
          */
         default Given command(Object payload, Map<String, ?> metaData) {
             return command(payload, MetaData.from(metaData));
@@ -214,7 +216,7 @@ public interface AxonTestPhase {
          *
          * @param payload  The payload of the command to dispatch.
          * @param metaData The metadata to attach to the command.
-         * @return the current Given instance, for fluent interfacing.
+         * @return The current Given instance, for fluent interfacing.
          */
         Given command(Object payload, MetaData metaData);
 
@@ -223,7 +225,7 @@ public interface AxonTestPhase {
          * the order they are provided in the same Unit of Work.
          *
          * @param messages The command messages to dispatch.
-         * @return the current Given instance, for fluent interfacing.
+         * @return The current Given instance, for fluent interfacing.
          */
         Given commands(CommandMessage<?>... messages);
 
@@ -231,7 +233,7 @@ public interface AxonTestPhase {
          * Transitions to the "when" phase to execute the test action. This method completes the "given" phase,
          * committing any Unit of Work that was started during this phase.
          *
-         * @return a {@link When} instance that allows executing the test.
+         * @return A {@link When} instance that allows executing the test.
          */
         When when();
     }
@@ -252,7 +254,7 @@ public interface AxonTestPhase {
              * Transitions to the "then" phase to validate the results of the test. This method completes the "when"
              * phase, committing any Unit of Work that was started during this phase.
              *
-             * @return a {@link Then} instance that allows validating the test results.
+             * @return A {@link Then} instance that allows validating the test results.
              */
             Then.Command then();
         }
@@ -263,7 +265,7 @@ public interface AxonTestPhase {
              * Transitions to the "then" phase to validate the results of the test. This method completes the "when"
              * phase, committing any Unit of Work that was started during this phase.
              *
-             * @return a {@link Then} instance that allows validating the test results.
+             * @return A {@link Then} instance that allows validating the test results.
              */
             Then.Event then();
         }
@@ -273,7 +275,7 @@ public interface AxonTestPhase {
          * result validation. The command will be dispatched with empty metadata.
          *
          * @param payload The command to execute.
-         * @return the current When instance, for fluent interfacing.
+         * @return The current When instance, for fluent interfacing.
          */
         default Command command(Object payload) {
             return command(payload, new HashMap<>());
@@ -285,7 +287,7 @@ public interface AxonTestPhase {
          *
          * @param payload  The command to execute.
          * @param metaData The metadata to attach to the command.
-         * @return the current When instance, for fluent interfacing.
+         * @return The current When instance, for fluent interfacing.
          */
         default Command command(Object payload, Map<String, ?> metaData) {
             return command(payload, MetaData.from(metaData));
@@ -297,7 +299,7 @@ public interface AxonTestPhase {
          *
          * @param payload  The command to execute.
          * @param metaData The metadata to attach to the command.
-         * @return the current When instance, for fluent interfacing.
+         * @return The current When instance, for fluent interfacing.
          */
         Command command(Object payload, MetaData metaData);
 
@@ -306,7 +308,7 @@ public interface AxonTestPhase {
          * and records all activity for result validation. The event will be published with empty metadata.
          *
          * @param payload The command to execute.
-         * @return the current When instance, for fluent interfacing.
+         * @return The current When instance, for fluent interfacing.
          */
         default Event event(Object payload) {
             return event(payload, MetaData.emptyInstance());
@@ -318,7 +320,7 @@ public interface AxonTestPhase {
          *
          * @param payload  The event to execute.
          * @param metaData The metadata to attach to the command.
-         * @return the current When instance, for fluent interfacing.
+         * @return The current When instance, for fluent interfacing.
          */
         Event event(Object payload, MetaData metaData);
 
@@ -327,7 +329,7 @@ public interface AxonTestPhase {
          * validation.
          *
          * @param messages The event messages to publish.
-         * @return the current When instance, for fluent interfacing.
+         * @return The current When instance, for fluent interfacing.
          */
         Event events(EventMessage<?>... messages);
 
@@ -336,7 +338,7 @@ public interface AxonTestPhase {
          * validation.
          *
          * @param events The lists of events to publish.
-         * @return the current When instance, for fluent interfacing.
+         * @return The current When instance, for fluent interfacing.
          */
         Event events(List<?>... events);
     }
@@ -344,8 +346,6 @@ public interface AxonTestPhase {
     /**
      * Interface describing the operations available in the "then" phase of the test fixture execution. This phase is
      * used to validate the results of the test action executed in the "when" phase.
-     * <p>
-     * The "then" phase operates outside of a Unit of Work as it only validates the results.
      */
     interface Then {
 
@@ -354,7 +354,7 @@ public interface AxonTestPhase {
             /**
              * Expect a successful execution of the When phase, regardless of the actual return value.
              *
-             * @return the current Then instance, for fluent interfacing.
+             * @return The current Then instance, for fluent interfacing.
              */
             Command success();
 
@@ -364,7 +364,7 @@ public interface AxonTestPhase {
              * not take into accounts commands published as side effects of the message handlers.
              *
              * @param matcher The matcher to verify the actual result message against.
-             * @return the current Then instance, for fluent interfacing.
+             * @return The current Then instance, for fluent interfacing.
              */
             Command resultMessage(Matcher<? super CommandResultMessage<?>> matcher);
 
@@ -375,7 +375,7 @@ public interface AxonTestPhase {
              * as side effects of the message handlers.
              *
              * @param expectedPayload The expected result message payload of the command execution.
-             * @return the current Then, for fluent interfacing.
+             * @return The current Then, for fluent interfacing.
              */
             Command resultMessagePayload(Object expectedPayload);
 
@@ -386,7 +386,7 @@ public interface AxonTestPhase {
              * handlers.
              *
              * @param matcher The matcher to verify the actual return value against.
-             * @return the current Then instance, for fluent interfacing.
+             * @return The current Then instance, for fluent interfacing.
              */
             Command resultMessagePayloadMatching(Matcher<?> matcher);
 
@@ -397,7 +397,7 @@ public interface AxonTestPhase {
              * the message handlers.
              *
              * @param expectedException The type of exception expected from the When phase execution.
-             * @return the current Then instance, for fluent interfacing.
+             * @return The current Then instance, for fluent interfacing.
              */
             Command exception(Class<? extends Throwable> expectedException);
 
@@ -407,7 +407,7 @@ public interface AxonTestPhase {
              * commands published as side effects of the message handlers.
              *
              * @param matcher The matcher to validate the actual exception.
-             * @return the current Then instance, for fluent interfacing.
+             * @return The current Then instance, for fluent interfacing.
              */
             Command exception(Matcher<?> matcher);
         }
@@ -427,7 +427,7 @@ public interface AxonTestPhase {
              * Note that the event identifier is ignored in the comparison.
              *
              * @param expectedEvents The expected events, in the exact order they are expected to be published.
-             * @return the current Then instance, for fluent interfacing.
+             * @return The current Then instance, for fluent interfacing.
              */
             T events(Object... expectedEvents);
 
@@ -441,7 +441,7 @@ public interface AxonTestPhase {
              * Note that the event identifier is ignored in the comparison.
              *
              * @param expectedEvents The expected event messages, in the exact order they are expected to be published.
-             * @return the current Then instance, for fluent interfacing.
+             * @return The current Then instance, for fluent interfacing.
              */
             T events(EventMessage<?>... expectedEvents);
 
@@ -451,7 +451,7 @@ public interface AxonTestPhase {
              * Note: if no events were published, the matcher receives an empty List.
              *
              * @param matcher The matcher to match with the actually published events.
-             * @return the current Then instance, for fluent interfacing.
+             * @return The current Then instance, for fluent interfacing.
              */
             T events(Matcher<? extends List<? super EventMessage<?>>> matcher);
 
@@ -462,7 +462,7 @@ public interface AxonTestPhase {
             /**
              * Expect no events to have been published during the {@link When} phase.
              *
-             * @return the current Then instance, for fluent interfacing.
+             * @return The current Then instance, for fluent interfacing.
              */
             default T noEvents() {
                 return events();
@@ -476,7 +476,7 @@ public interface AxonTestPhase {
              * implementation.
              *
              * @param expectedCommands The expected commands, in the exact order they are expected to be dispatched.
-             * @return the current Then instance, for fluent interfacing.
+             * @return The current Then instance, for fluent interfacing.
              */
             T commands(Object... expectedCommands);
 
@@ -489,25 +489,38 @@ public interface AxonTestPhase {
              *
              * @param expectedCommands The expected command messages, in the exact order they are expected to be
              *                         dispatched.
-             * @return the current Then instance, for fluent interfacing.
+             * @return The current Then instance, for fluent interfacing.
              */
             T commands(CommandMessage<?>... expectedCommands);
 
+            /**
+             * Allow to consume the set of command messages which have been dispatched during the "when" phase.
+             *
+             * @param consumer Consumes the dispatched commands. You may place your own assertions there,
+             * @return The current Then instance, for fluent interfacing.
+             */
             T commands(Consumer<List<? super CommandMessage<?>>> consumer);
 
+            /**
+             * Allow to check if the set of command messages which have been dispatched during the "when" phase match
+             * given predicate.
+             *
+             * @param predicate The predicate to check the dispatched commands against.
+             * @return The current Then instance, for fluent interfacing.
+             */
             T commandsMatch(Predicate<List<? super CommandMessage<?>>> predicate);
 
             /**
-             * Expect the given set of command messages to have been dispatched during the "when" phase. Only commands
-             * as a result of the event in the "when" phase of ths fixture are recorded.
+             * Expect no command messages to have been dispatched during the "when" phase.
              *
-             * @return the current Then instance, for fluent interfacing.
+             * @return The current Then instance, for fluent interfacing.
              */
             T noCommands();
 
             /**
              * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple
-             * test scenarios within a single test method.
+             * test scenarios within a single test method. The same configuration is reused, so all components are
+             * shared among and invocations.
              * <p>
              * Example usage:
              * <pre>
@@ -532,8 +545,6 @@ public interface AxonTestPhase {
              * @return a {@link Setup} instance that allows configuring a new test scenario.
              */
             Setup and();
-
-            T self();
         }
     }
 }

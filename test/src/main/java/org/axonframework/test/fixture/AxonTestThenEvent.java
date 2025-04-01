@@ -22,9 +22,6 @@ class AxonTestThenEvent
         extends AxonTestThenMessage<AxonTestPhase.Then.Event>
         implements AxonTestPhase.Then.Event {
 
-    private final NewConfiguration configuration;
-    private final AxonTestFixture.Customization customization;
-
     public AxonTestThenEvent(
             NewConfiguration configuration,
             AxonTestFixture.Customization customization,
@@ -33,17 +30,6 @@ class AxonTestThenEvent
             Throwable lastException
     ) {
         super(configuration, customization, commandBus, eventSink, lastException);
-        this.configuration = configuration;
-        this.customization = customization;
     }
 
-    @Override
-    public AxonTestPhase.Setup and() {
-        return AxonTestFixture.with(configuration, c -> customization);
-    }
-
-    @Override
-    public AxonTestThenEvent self() {
-        return this;
-    }
 }
