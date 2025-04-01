@@ -63,7 +63,6 @@ class StatefulCommandHandlingModuleTest {
                 StateBasedEntityBuilder.entity(String.class, String.class)
                                        .loader(c -> (id, context) -> CompletableFuture.completedFuture("instance"))
                                        .persister(c -> (id, entity, context) -> CompletableFuture.completedFuture(null));
-        String stateManagerName = "StateManager[test-subject]";
         String statefulCommandHandlingComponentName = "StatefulCommandHandlingComponent[test-subject]";
 
         NewConfiguration resultConfig = setupPhase.entities()
@@ -78,7 +77,7 @@ class StatefulCommandHandlingModuleTest {
         assertTrue(optionalRepository.isPresent());
 
         Optional<StateManager> optionalStateManager =
-                resultConfig.getOptionalComponent(StateManager.class, stateManagerName);
+                resultConfig.getOptionalComponent(StateManager.class);
         assertTrue(optionalStateManager.isPresent());
 
         Optional<StatefulCommandHandlingComponent> optionalHandlingComponent = resultConfig.getOptionalComponent(

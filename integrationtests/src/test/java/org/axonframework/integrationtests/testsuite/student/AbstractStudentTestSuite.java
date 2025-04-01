@@ -181,16 +181,13 @@ public abstract class AbstractStudentTestSuite {
      * resolve parameters from the classpath, the configuration, and the {@link StateManager}.
      */
     protected MultiParameterResolverFactory parameterResolverFactory(NewConfiguration configuration) {
-        StateManager stateManager =
-                configuration.getComponent(StateManager.class, "StateManager[student-course-module]");
-
         return MultiParameterResolverFactory.ordered(List.of(
                 ClasspathParameterResolverFactory.forClass(this.getClass()),
                 // To be able to get components
                 new ConfigurationParameterResolverFactory(configuration),
                 // To be able to get the entity, the StateManager needs to be available.
                 // When the new configuration API is there, we should have a way to resolve this
-                new InjectEntityParameterResolverFactory(stateManager)
+                new InjectEntityParameterResolverFactory(configuration.getComponent(StateManager.class))
         ));
     }
 

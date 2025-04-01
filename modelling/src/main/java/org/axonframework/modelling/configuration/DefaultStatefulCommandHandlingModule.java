@@ -57,7 +57,6 @@ class DefaultStatefulCommandHandlingModule
         StatefulCommandHandlingModule.EntityPhase {
 
     private final String moduleName;
-    private final String stateManagerName;
     private final String statefulCommandHandlingComponentName;
     private final Map<String, EntityBuilder<?, ?>> entityBuilders;
     private final Map<QualifiedName, ComponentFactory<StatefulCommandHandler>> handlerFactories;
@@ -66,7 +65,6 @@ class DefaultStatefulCommandHandlingModule
     DefaultStatefulCommandHandlingModule(@Nonnull String moduleName) {
         Assert.nonEmpty(moduleName, "The module name cannot be null");
         this.moduleName = moduleName;
-        this.stateManagerName = "StateManager[" + moduleName + "]";
         this.statefulCommandHandlingComponentName = "StatefulCommandHandlingComponent[" + moduleName + "]";
         this.entityBuilders = new HashMap<>();
         this.handlerFactories = new HashMap<>();
@@ -111,7 +109,7 @@ class DefaultStatefulCommandHandlingModule
     @Override
     public StatefulCommandHandlingModule build() {
         registerRepositories();
-        registerComponent(StateManager.class, stateManagerName, this::stateManagerFactory);
+        registerComponent(StateManager.class, this::stateManagerFactory);
         registerCommandHandlers();
         return this;
     }
@@ -123,7 +121,7 @@ class DefaultStatefulCommandHandlingModule
     }
 
     private SimpleStateManager stateManagerFactory(NewConfiguration config) {
-        SimpleStateManager.Builder managerBuilder = SimpleStateManager.builder(stateManagerName);
+        SimpleStateManager.Builder managerBuilder = SimpleStateManager.builder("StateManager[" + moduleName + "]");
         for (String repositoryName : entityBuilders.keySet()) {
             //noinspection unchecked
             managerBuilder.register(config.getComponent(AsyncRepository.class, repositoryName));
@@ -135,7 +133,7 @@ class DefaultStatefulCommandHandlingModule
         registerComponent(StatefulCommandHandlingComponent.class, statefulCommandHandlingComponentName, c -> {
             StatefulCommandHandlingComponent statefulCommandHandler = StatefulCommandHandlingComponent.create(
                     statefulCommandHandlingComponentName,
-                    c.getComponent(StateManager.class, stateManagerName)
+                    c.getComponent(StateManager.class)
             );
             handlerFactories.forEach((key, value) -> statefulCommandHandler.subscribe(key, value.build(c)));
             handlingComponentFactories.forEach(
