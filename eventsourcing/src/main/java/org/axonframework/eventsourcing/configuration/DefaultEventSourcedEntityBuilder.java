@@ -92,7 +92,8 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     @Override
     public ComponentFactory<AsyncRepository<I, E>> repository() {
         return c -> new AsyncEventSourcingRepository<>(
-                idType, entityType,
+                idType, 
+                entityType,
                 c.getComponent(AsyncEventStore.class),
                 criteriaResolver.build(c),
                 eventStateApplier.build(c),
