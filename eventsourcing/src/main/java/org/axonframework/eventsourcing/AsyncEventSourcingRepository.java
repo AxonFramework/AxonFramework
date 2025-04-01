@@ -42,8 +42,8 @@ import static java.util.Objects.requireNonNull;
  * {@link AsyncRepository} implementation that loads entities based on their historic event streams, provided by an
  * {@link AsyncEventStore}.
  *
- * @param <I> The type of identifier used to identify the entity.
- * @param <E> The type of the entity to load.
+ * @param <I> The type of identifier used to identify the event sourced entity.
+ * @param <E> The type of the event sourced entity to load.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 0.1
@@ -64,7 +64,7 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
      * apply state transitions to the entity based on the events received, and given {@code criteriaResolver} to resolve
      * the {@link org.axonframework.eventsourcing.eventstore.EventCriteria} of the given identifier type used to source
-     * a model.
+     * an entity.
      *
      * @param idType            The type of the identifier for the event sourced entity this repository serves.
      * @param entityType        The type of the event sourced entity this repository serves.
@@ -99,7 +99,7 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
                 entity.identifier(),
                 id -> {
                     EventSourcedEntity<I, E> sourcedEntity = EventSourcedEntity.mapToEventSourcedEntity(entity);
-                    updateActiveModel(sourcedEntity, processingContext);
+                    updateActiveEntity(sourcedEntity, processingContext);
                     return CompletableFuture.completedFuture(sourcedEntity);
                 }
         ).resultNow();
@@ -138,7 +138,7 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
                                         })
                                 .whenComplete((entity, exception) -> {
                                     if (exception == null) {
-                                        updateActiveModel(entity, processingContext);
+                                        updateActiveEntity(entity, processingContext);
                                     }
                                 })
         ).thenApply(Function.identity());
@@ -167,21 +167,21 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
 
         return managedEntities.computeIfAbsent(identifier, id -> {
             EventSourcedEntity<I, E> sourcedEntity = new EventSourcedEntity<>(identifier, entity);
-            updateActiveModel(sourcedEntity, processingContext);
+            updateActiveEntity(sourcedEntity, processingContext);
             return CompletableFuture.completedFuture(sourcedEntity);
         }).resultNow();
     }
 
     /**
      * Update the given {@code entity} for any event that is published within its lifecycle, by invoking the
-     * {@link EventStateApplier} in the {@link EventStoreTransaction#onAppend(Consumer)}. onAppend hook is used to
-     * immediately source events that are being published by the model
+     * {@link EventStateApplier} in the {@link EventStoreTransaction#onAppend(Consumer)}. The {@code onAppend} hook is
+     * used to immediately source events that are being published by the entity.
      *
      * @param entity            An {@link ManagedEntity} to make the state change for.
      * @param processingContext The {@link ProcessingContext} for which to retrieve the active
      *                          {@link EventStoreTransaction}.
      */
-    private void updateActiveModel(EventSourcedEntity<I, E> entity, ProcessingContext processingContext) {
+    private void updateActiveEntity(EventSourcedEntity<I, E> entity, ProcessingContext processingContext) {
         eventStore.transaction(processingContext)
                   .onAppend(event -> entity.applyStateChange(event, eventStateApplier, processingContext));
     }
