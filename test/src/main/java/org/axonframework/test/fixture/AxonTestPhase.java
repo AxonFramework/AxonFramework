@@ -364,8 +364,8 @@ public interface AxonTestPhase {
              * Expect the last command handler from the When phase to return a result message that matches the given
              * {@code matcher}.
              * <p>
-             * Take into account only commands dispatched explicitly with the {@link When#command}. Do not take into
-             * accounts commands dispatched as side effects of the message handlers.
+             * Only take commands into account that were dispatched explicitly with the {@link When#command}. Hence, do
+             * not take into accounts commands dispatched as side effects of the message handlers.
              *
              * @param matcher The matcher to verify the actual result message against.
              * @return The current Then instance, for fluent interfacing.
@@ -376,8 +376,8 @@ public interface AxonTestPhase {
              * Expect the last command handler from the When phase to return the given {@code expectedPayload} after
              * execution. The actual and expected values are compared using their equals methods.
              * <p>
-             * Take into account only commands dispatched explicitly with the {@link When#command}. Do not take into
-             * accounts commands dispatched as side effects of the message handlers.
+             * Only take commands into account that were dispatched explicitly with the {@link When#command}. Hence, do
+             * not take into accounts commands dispatched as side effects of the message handlers.
              *
              * @param expectedPayload The expected result message payload of the command execution.
              * @return The current Then, for fluent interfacing.
@@ -388,8 +388,8 @@ public interface AxonTestPhase {
              * Expect the last command handler from the When phase to return a payload that matches the given
              * {@code matcher} after execution.
              * <p>
-             * Take into account only commands dispatched explicitly with the {@link When#command}. Do not take into
-             * accounts commands dispatched as side effects of the message handlers.
+             * Only take commands into account that were dispatched explicitly with the {@link When#command}. Hence, do
+             * not take into accounts commands dispatched as side effects of the message handlers.
              *
              * @param matcher The matcher to verify the actual return value against.
              * @return The current Then instance, for fluent interfacing.
@@ -400,8 +400,8 @@ public interface AxonTestPhase {
              * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
              * should be exactly of that type, subclasses are not accepted.
              * <p>
-             * Take into account only commands dispatched explicitly with the {@link When#command}. Do not take into
-             * accounts commands dispatched as side effects of the message handlers.
+             * Only take commands into account that were dispatched explicitly with the {@link When#command}. Hence, do
+             * not take into accounts commands dispatched as side effects of the message handlers.
              *
              * @param expectedException The type of exception expected from the When phase execution.
              * @return The current Then instance, for fluent interfacing.
@@ -411,8 +411,8 @@ public interface AxonTestPhase {
             /**
              * Expect an exception to occur during the When phase that matches with the given {@code matcher}.
              * <p>
-             * Take into account only commands dispatched explicitly with the {@link When#command}. Do not take into
-             * accounts commands dispatched as side effects of the message handlers.
+             * Only take commands into account that were dispatched explicitly with the {@link When#command}. Hence, do
+             * not take into accounts commands dispatched as side effects of the message handlers.
              *
              * @param matcher The matcher to validate the actual exception.
              * @return The current Then instance, for fluent interfacing.
@@ -421,7 +421,8 @@ public interface AxonTestPhase {
         }
 
         /**
-         * Operations available in the Then phase of the test fixture execution only if event was published during the When phase.
+         * Operations available in the Then phase of the test fixture execution only if event was published during the
+         * When phase.
          */
         interface Event extends Message<Event> {
 
@@ -436,7 +437,7 @@ public interface AxonTestPhase {
              * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
              * should be exactly of that type, subclasses are not accepted.
              * <p>
-             * Take into account only events published explicitly with the {@link When#event} or {@link When#events}. Do
+             * Only take events into account that were published explicitly with the {@link When#event} or {@link When#events}. Hence, do
              * not take into accounts events published as side effects of the message handlers.
              *
              * @param expectedException The type of exception expected from the When phase execution.
@@ -447,7 +448,7 @@ public interface AxonTestPhase {
             /**
              * Expect an exception to occur during the When phase that matches with the given {@code matcher}.
              * <p>
-             * Take into account only events published explicitly with the {@link When#event} or {@link When#events}. Do
+             * Only take events into account that were published explicitly with the {@link When#event} or {@link When#events}. Hence, do
              * not take into accounts events published as side effects of the message handlers.
              *
              * @param matcher The matcher to validate the actual exception.
@@ -457,10 +458,11 @@ public interface AxonTestPhase {
         }
 
         /**
-         * Interface describing the operations available in the "then" phase of the test fixture execution.
-         * It's possible to assert published messages from the When phase.
+         * Interface describing the operations available in the "then" phase of the test fixture execution. It's
+         * possible to assert published messages from the When phase.
          *
-         * @param <T> The type of the current Then instance, for fluent interfacing. The type depends on the operation which was triggered in the When phase.
+         * @param <T> The type of the current Then instance, for fluent interfacing. The type depends on the operation
+         *            which was triggered in the When phase.
          */
         interface Message<T extends Message<T>> {
 
@@ -470,7 +472,7 @@ public interface AxonTestPhase {
              * All events are compared for equality using a shallow equals comparison on all the fields of the events.
              * This means that all assigned values on the events' fields should have a proper equals implementation.
              * <p>
-             * Note that the event identifier is ignored in the comparison.
+             * Note that the {@link EventMessage#getIdentifier()} is ignored in the comparison.
              *
              * @param expectedEvents The expected events, in the exact order they are expected to be published.
              * @return The current Then instance, for fluent interfacing.
@@ -484,7 +486,7 @@ public interface AxonTestPhase {
              * This means that all assigned values on the events' fields should have a proper equals implementation.
              * Additionally, the metadata will be compared too.
              * <p>
-             * Note that the event identifier is ignored in the comparison.
+             * Note that the {@link EventMessage#getIdentifier()} is ignored in the comparison.
              *
              * @param expectedEvents The expected event messages, in the exact order they are expected to be published.
              * @return The current Then instance, for fluent interfacing.

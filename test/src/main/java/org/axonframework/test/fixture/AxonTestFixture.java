@@ -18,38 +18,18 @@ package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.NewConfiguration;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.test.aggregate.Reporter;
+import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.FieldFilter;
 import org.axonframework.test.matchers.IgnoreField;
-import org.axonframework.test.matchers.MapEntryMatcher;
-import org.axonframework.test.matchers.MatchAllFieldFilter;
-import org.axonframework.test.matchers.Matchers;
-import org.axonframework.test.matchers.PayloadMatcher;
-import org.axonframework.test.saga.CommandValidator;
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.StringDescription;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
-import java.util.stream.Stream;
-
-import static org.axonframework.test.matchers.Matchers.deepEquals;
-import static org.hamcrest.CoreMatchers.*;
 
 /**
  * Fixture for testing Axon Framework application. The fixture can be configured to use your whole application
@@ -95,11 +75,13 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      *
      * @param configurer    The fixture will use the configuration build from the given configurer to obtain components
      *                      needed for test execution.
-     * @param customization A function that allows to customize the fixture.
+     * @param customization A function that allows to customize the fixture setup.
      * @return A new fixture instance
      */
     public static AxonTestPhase.Setup with(@Nonnull ApplicationConfigurer<?> configurer,
                                            @Nonnull UnaryOperator<Customization> customization) {
+        Objects.requireNonNull(configurer, "Configurer may not be null");
+        Objects.requireNonNull(customization, "Customization may not be null");
         var configuration = configurer
                 .registerEnhancer(new MessagesRecordingConfigurationEnhancer())
                 .build();
@@ -116,21 +98,53 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         return new AxonTestWhen(configuration, customization, messageTypeResolver, commandBus, eventSink);
     }
 
+    /**
+     * Allow to customize the fixture setup.
+     */
     public record Customization(List<FieldFilter> fieldFilters) {
 
+        /**
+         * Creates a new instance of {@link Customization}.
+         */
         public Customization() {
             this(new ArrayList<>());
         }
 
+        /**
+         * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing
+         * objects. The {@link org.axonframework.test.fixture.AxonTestPhase.Then.Event#events} and
+         * {@link org.axonframework.test.fixture.AxonTestPhase.Then.Command#resultMessage}, for example, use this
+         * filter.
+         * <p/>
+         * When multiple filters are registered, a Field must be accepted by all registered filters in order to be
+         * accepted.
+         * <p/>
+         * By default, all Fields are included in the comparison.
+         *
+         * @param fieldFilter The FieldFilter that defines which fields to include in the comparison.
+         * @return the current Customization, for fluent interfacing.
+         */
         public Customization registerFieldFilter(@Nonnull FieldFilter fieldFilter) {
             this.fieldFilters.add(fieldFilter);
             return this;
         }
 
+        /**
+         * Indicates that a field with given {@code fieldName}, which is declared in given {@code declaringClass} is
+         * ignored when performing deep equality checks.
+         *
+         * @param declaringClass The class declaring the field.
+         * @param fieldName      The name of the field.
+         * @return the current Customization, for fluent interfacing
+         * @throws FixtureExecutionException when no such field is declared
+         */
         public Customization registerIgnoredField(@Nonnull Class<?> declaringClass, @Nonnull String fieldName) {
             return registerFieldFilter(new IgnoreField(declaringClass, fieldName));
         }
 
+        /**
+         * Configured field filters.
+         */
         @Override
         public List<FieldFilter> fieldFilters() {
             return fieldFilters;
