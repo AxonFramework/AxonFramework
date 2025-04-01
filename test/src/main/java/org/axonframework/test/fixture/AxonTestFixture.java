@@ -70,8 +70,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
 
-    private AxonTestFixture(@Nonnull NewConfiguration configuration,
-                            @Nonnull UnaryOperator<Customization> customization) {
+    AxonTestFixture(@Nonnull NewConfiguration configuration,
+                    @Nonnull UnaryOperator<Customization> customization) {
         this.customization = customization.apply(new Customization());
         this.configuration = configuration;
         this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
@@ -79,24 +79,30 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         this.eventSink = (RecordingEventSink) configuration.getComponent(EventSink.class);
     }
 
+    /**
+     * Creates a new fixture.
+     *
+     * @param configurer The fixture will use the configuration build from the given configurer to obtain components
+     *                   needed for test execution.
+     * @return A new fixture instance
+     */
     public static AxonTestPhase.Setup with(@Nonnull ApplicationConfigurer<?> configurer) {
         return with(configurer, c -> c);
     }
 
+    /**
+     * Creates a new fixture.
+     *
+     * @param configurer    The fixture will use the configuration build from the given configurer to obtain components
+     *                      needed for test execution.
+     * @param customization A function that allows to customize the fixture.
+     * @return A new fixture instance
+     */
     public static AxonTestPhase.Setup with(@Nonnull ApplicationConfigurer<?> configurer,
                                            @Nonnull UnaryOperator<Customization> customization) {
         var configuration = configurer
                 .registerEnhancer(new MessagesRecordingConfigurationEnhancer())
                 .build();
-        return with(configuration, customization);
-    }
-
-    public static AxonTestPhase.Setup with(@Nonnull NewConfiguration configuration) {
-        return new AxonTestFixture(configuration, c -> c);
-    }
-
-    public static AxonTestPhase.Setup with(@Nonnull NewConfiguration configuration,
-                                           @Nonnull UnaryOperator<Customization> customization) {
         return new AxonTestFixture(configuration, customization);
     }
 

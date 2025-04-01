@@ -35,9 +35,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-/**
- * Every given method invocation spawns a new unit of work.
- */
 class AxonTestGiven implements AxonTestPhase.Given {
 
     private final NewConfiguration configuration;

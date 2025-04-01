@@ -193,7 +193,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public AxonTestPhase.Setup and() {
-        return AxonTestFixture.with(configuration, c -> customization);
+        return new AxonTestFixture(configuration, c -> customization);
     }
 
     private T self() {
