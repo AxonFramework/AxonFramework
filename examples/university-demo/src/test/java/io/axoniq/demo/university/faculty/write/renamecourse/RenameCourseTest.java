@@ -2,6 +2,7 @@ package io.axoniq.demo.university.faculty.write.renamecourse;
 
 import io.axoniq.demo.university.UniversityAxonApplication;
 import io.axoniq.demo.university.faculty.events.CourseRenamed;
+import io.axoniq.demo.university.faculty.write.CourseId;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.junit.jupiter.api.*;
 
@@ -19,7 +20,7 @@ class RenameCourseTest {
 
     @Test
     void givenNotExistingCourse_WhenRenameCourse_ThenSuccess() {
-        var courseId = UUID.randomUUID().toString();
+        var courseId = CourseId.random();
         var courseName = "Event Sourcing in Practice";
 
         fixture.given()

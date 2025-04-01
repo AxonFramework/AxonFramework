@@ -1,5 +1,7 @@
 package io.axoniq.demo.university.faculty.write.renamecourse;
 
-public record RenameCourse(String courseId, String name) {
+import io.axoniq.demo.university.faculty.write.CourseId;
+
+public record RenameCourse(CourseId courseId, String name) {
 
 }

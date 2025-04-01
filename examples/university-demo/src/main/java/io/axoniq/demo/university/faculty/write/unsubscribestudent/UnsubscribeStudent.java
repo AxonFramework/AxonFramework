@@ -1,5 +1,8 @@
 package io.axoniq.demo.university.faculty.write.unsubscribestudent;
 
-public record UnsubscribeStudent(String studentId, String courseId) {
+import io.axoniq.demo.university.faculty.write.CourseId;
+import io.axoniq.demo.university.faculty.write.StudentId;
+
+public record UnsubscribeStudent(StudentId studentId, CourseId courseId) {
 
 }
