@@ -67,7 +67,8 @@ class AsyncEventSourcingRepositoryTest {
                 String.class,
                 String.class,
                 eventStore,
-                (entityType, id) -> id, identifier -> TEST_MODEL_CRITERIA,
+                (entityType, id) -> id, 
+                identifier -> TEST_MODEL_CRITERIA,
                 (currentState, event, ctx) -> currentState + "-" + event.getPayload()
         );
     }
