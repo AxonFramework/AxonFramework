@@ -80,7 +80,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     public EventSourcedEntityBuilder<I, E> eventStateApplier(
             @Nonnull ComponentFactory<EventStateApplier<E>> eventStateApplier
     ) {
-        this.eventStateApplier = requireNonNull(eventStateApplier, "The event state cannot be null.");
+        this.eventStateApplier = requireNonNull(eventStateApplier, "The event state applier cannot be null.");
         return this;
     }
 
