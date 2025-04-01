@@ -16,6 +16,7 @@
 
 package org.axonframework.test.fixture;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.messaging.Message;
@@ -55,7 +56,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command resultMessage(Matcher<? super CommandResultMessage<?>> matcher) {
+    public AxonTestPhase.Then.Command resultMessage(@Nonnull Matcher<? super CommandResultMessage<?>> matcher) {
         if (matcher == null) {
             return resultMessage(nullValue());
         }
@@ -70,7 +71,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command resultMessagePayload(Object expectedPayload) {
+    public AxonTestPhase.Then.Command resultMessagePayload(@Nonnull Object expectedPayload) {
         StringDescription expectedDescription = new StringDescription();
         StringDescription actualDescription = new StringDescription();
         PayloadMatcher<CommandResultMessage<?>> expectedMatcher =
@@ -88,7 +89,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command resultMessagePayloadMatching(Matcher<?> matcher) {
+    public AxonTestPhase.Then.Command resultMessagePayloadMatching(@Nonnull Matcher<?> matcher) {
         if (matcher == null) {
             return resultMessagePayloadMatching(nullValue());
         }
@@ -103,12 +104,12 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command exception(Class<? extends Throwable> expectedException) {
+    public AxonTestPhase.Then.Command exception(@Nonnull Class<? extends Throwable> expectedException) {
         return exception(instanceOf(expectedException));
     }
 
     @Override
-    public AxonTestPhase.Then.Command exception(Matcher<?> matcher) {
+    public AxonTestPhase.Then.Command exception(@Nonnull Matcher<?> matcher) {
         StringDescription description = new StringDescription();
         matcher.describeTo(description);
         if (lastCommandException == null) {

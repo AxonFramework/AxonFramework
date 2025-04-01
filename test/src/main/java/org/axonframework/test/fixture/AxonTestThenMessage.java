@@ -16,6 +16,7 @@
 
 package org.axonframework.test.fixture;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.EventMessage;
@@ -68,7 +69,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T events(Object... expectedEvents) {
+    public T events(@Nonnull Object... expectedEvents) {
         var publishedEvents = eventSink.recorded();
 
         if (expectedEvents.length != publishedEvents.size()) {
@@ -86,7 +87,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T events(EventMessage<?>... expectedEvents) {
+    public T events(@Nonnull EventMessage<?>... expectedEvents) {
         this.events(Stream.of(expectedEvents).map(org.axonframework.messaging.Message::getPayload).toArray());
 
         var publishedEvents = eventSink.recorded();
@@ -103,7 +104,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T events(Matcher<? extends List<? super EventMessage<?>>> matcher) {
+    public T events(@Nonnull Matcher<? extends List<? super EventMessage<?>>> matcher) {
         var publishedEvents = eventSink.recorded();
         if (!matcher.matches(publishedEvents)) {
             final Description expectation = new StringDescription();
@@ -118,36 +119,36 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T events(Consumer<List<? super EventMessage<?>>> consumer) {
+    public T events(@Nonnull Consumer<List<? super EventMessage<?>>> consumer) {
         var publishedEvents = eventSink.recorded();
         consumer.accept(publishedEvents);
         return self();
     }
 
     @Override
-    public T eventsMatch(Predicate<List<? super EventMessage<?>>> predicate) {
+    public T eventsMatch(@Nonnull Predicate<List<? super EventMessage<?>>> predicate) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
-    public T commands(Object... expectedCommands) {
+    public T commands(@Nonnull Object... expectedCommands) {
         commandValidator.assertDispatchedEqualTo(expectedCommands);
         return self();
     }
 
     @Override
-    public T commands(CommandMessage<?>... expectedCommands) {
+    public T commands(@Nonnull CommandMessage<?>... expectedCommands) {
         commandValidator.assertDispatchedEqualTo(List.of(expectedCommands));
         return self();
     }
 
     @Override
-    public T commands(Consumer<List<? super CommandMessage<?>>> consumer) {
+    public T commands(@Nonnull Consumer<List<? super CommandMessage<?>>> consumer) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
-    public T commandsMatch(Predicate<List<? super CommandMessage<?>>> predicate) {
+    public T commandsMatch(@Nonnull Predicate<List<? super CommandMessage<?>>> predicate) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 

@@ -16,6 +16,7 @@
 
 package org.axonframework.test.fixture;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
@@ -69,7 +70,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
 
-    private AxonTestFixture(NewConfiguration configuration, UnaryOperator<Customization> customization) {
+    private AxonTestFixture(@Nonnull NewConfiguration configuration,
+                            @Nonnull UnaryOperator<Customization> customization) {
         this.customization = customization.apply(new Customization());
         this.configuration = configuration;
         this.messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
@@ -77,23 +79,24 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         this.eventSink = (RecordingEventSink) configuration.getComponent(EventSink.class);
     }
 
-    public static AxonTestPhase.Setup with(ApplicationConfigurer<?> configurer) {
+    public static AxonTestPhase.Setup with(@Nonnull ApplicationConfigurer<?> configurer) {
         return with(configurer, c -> c);
     }
 
-    public static AxonTestPhase.Setup with(ApplicationConfigurer<?> configurer,
-                                           UnaryOperator<Customization> customization) {
+    public static AxonTestPhase.Setup with(@Nonnull ApplicationConfigurer<?> configurer,
+                                           @Nonnull UnaryOperator<Customization> customization) {
         var configuration = configurer
                 .registerEnhancer(new MessagesRecordingConfigurationEnhancer())
                 .build();
         return with(configuration, customization);
     }
 
-    public static AxonTestPhase.Setup with(NewConfiguration configuration) {
+    public static AxonTestPhase.Setup with(@Nonnull NewConfiguration configuration) {
         return new AxonTestFixture(configuration, c -> c);
     }
 
-    public static AxonTestPhase.Setup with(NewConfiguration configuration, UnaryOperator<Customization> customization) {
+    public static AxonTestPhase.Setup with(@Nonnull NewConfiguration configuration,
+                                           @Nonnull UnaryOperator<Customization> customization) {
         return new AxonTestFixture(configuration, customization);
     }
 
@@ -113,12 +116,12 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
             this(new ArrayList<>());
         }
 
-        public Customization registerFieldFilter(FieldFilter fieldFilter) {
+        public Customization registerFieldFilter(@Nonnull FieldFilter fieldFilter) {
             this.fieldFilters.add(fieldFilter);
             return this;
         }
 
-        public Customization registerIgnoredField(Class<?> declaringClass, String fieldName) {
+        public Customization registerIgnoredField(@Nonnull Class<?> declaringClass, @Nonnull String fieldName) {
             return registerFieldFilter(new IgnoreField(declaringClass, fieldName));
         }
 

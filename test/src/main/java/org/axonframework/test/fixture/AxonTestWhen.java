@@ -16,6 +16,7 @@
 
 package org.axonframework.test.fixture;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.EventMessage;
@@ -60,7 +61,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Command command(Object payload, MetaData metaData) {
+    public Command command(@Nonnull Object payload, @Nonnull MetaData metaData) {
         var messageType = messageTypeResolver.resolve(payload);
         var message = new GenericCommandMessage<>(messageType, payload, metaData);
         inUnitOfWorkOnInvocation(processingContext ->
@@ -79,7 +80,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Event event(Object payload, MetaData metaData) {
+    public Event event(@Nonnull Object payload, @Nonnull MetaData metaData) {
         var eventMessage = toGenericEventMessage(payload, metaData);
         return events(eventMessage);
     }
@@ -94,7 +95,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Event events(List<?>... events) {
+    public Event events(@Nonnull List<?>... events) {
         var messages = Arrays.stream(events)
                              .map(e -> e instanceof EventMessage<?> message
                                      ? message
@@ -104,7 +105,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public Event events(EventMessage<?>... messages) {
+    public Event events(@Nonnull EventMessage<?>... messages) {
         inUnitOfWorkRunOnInvocation(processingContext -> eventSink.publish(processingContext,
                                                                            messages));
         return new Event();
