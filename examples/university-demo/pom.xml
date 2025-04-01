@@ -12,6 +12,7 @@
         <assertj.version>3.27.3</assertj.version>
         <axon.version>5.0.0-SNAPSHOT</axon.version>
         <junit.version>5.12.1</junit.version>
+        <log4j.version>2.24.3</log4j.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <java.version>21</java.version>
@@ -41,6 +42,24 @@
             <artifactId>axon-configuration</artifactId>
             <version>${axon.version}</version>
         </dependency>
+
+        <!-- Log4j Dependencies -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+
         <!-- Test Dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
