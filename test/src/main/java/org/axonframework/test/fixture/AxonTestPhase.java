@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * Interface describing the operations available on a test phase for testing Axon-based applications using a
@@ -456,6 +457,8 @@ public interface AxonTestPhase {
 
             T events(Consumer<List<? super EventMessage<?>>> consumer);
 
+            T eventsMatch(Predicate<List<? super EventMessage<?>>> predicate);
+
             /**
              * Expect no events to have been published during the {@link When} phase.
              *
@@ -489,6 +492,10 @@ public interface AxonTestPhase {
              * @return the current Then instance, for fluent interfacing.
              */
             T commands(CommandMessage<?>... expectedCommands);
+
+            T commands(Consumer<List<? super CommandMessage<?>>> consumer);
+
+            T commandsMatch(Predicate<List<? super CommandMessage<?>>> predicate);
 
             /**
              * Expect the given set of command messages to have been dispatched during the "when" phase. Only commands

@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static org.axonframework.test.matchers.Matchers.deepEquals;
@@ -126,6 +127,11 @@ abstract class AxonTestMessageThen<T extends AxonTestPhase.Then.MessageThen<T>>
     }
 
     @Override
+    public T eventsMatch(Predicate<List<? super EventMessage<?>>> predicate) {
+        throw new RuntimeException("Not implemented yet");
+    }
+
+    @Override
     public T commands(Object... expectedCommands) {
         commandValidator.assertDispatchedEqualTo(expectedCommands);
         return self();
@@ -135,6 +141,16 @@ abstract class AxonTestMessageThen<T extends AxonTestPhase.Then.MessageThen<T>>
     public T commands(CommandMessage<?>... expectedCommands) {
         commandValidator.assertDispatchedEqualTo(List.of(expectedCommands));
         return self();
+    }
+
+    @Override
+    public T commands(Consumer<List<? super CommandMessage<?>>> consumer) {
+        throw new RuntimeException("Not implemented yet");
+    }
+
+    @Override
+    public T commandsMatch(Predicate<List<? super CommandMessage<?>>> predicate) {
+        throw new RuntimeException("Not implemented yet");
     }
 
     @Override
