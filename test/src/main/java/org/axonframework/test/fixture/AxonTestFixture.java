@@ -66,7 +66,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      *                   needed for test execution.
      * @return A new fixture instance
      */
-    public static AxonTestPhase.Setup with(@Nonnull ApplicationConfigurer<?> configurer) {
+    public static AxonTestFixture with(@Nonnull ApplicationConfigurer<?> configurer) {
         return with(configurer, c -> c);
     }
 
@@ -78,7 +78,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * @param customization A function that allows to customize the fixture setup.
      * @return A new fixture instance
      */
-    public static AxonTestPhase.Setup with(@Nonnull ApplicationConfigurer<?> configurer,
+    public static AxonTestFixture with(@Nonnull ApplicationConfigurer<?> configurer,
                                            @Nonnull UnaryOperator<Customization> customization) {
         Objects.requireNonNull(configurer, "Configurer may not be null");
         Objects.requireNonNull(customization, "Customization may not be null");
