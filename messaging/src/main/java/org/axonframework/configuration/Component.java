@@ -110,15 +110,6 @@ public class Component<C> implements DescribableComponent {
     }
 
     /**
-     * Returns the identifier of this component
-     *
-     * @return the identifier of this component
-     */
-    public Identifier<C> identifier() {
-        return identifier;
-    }
-
-    /**
      * Retrieves the object contained in this {@code Component}, triggering the {@link ComponentFactory factory} and all
      * attached {@link ComponentDecorator decorators} if the component hasn't been built yet.
      * <p>

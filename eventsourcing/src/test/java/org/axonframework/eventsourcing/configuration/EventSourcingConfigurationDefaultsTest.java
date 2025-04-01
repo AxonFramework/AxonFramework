@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.configuration;
 
 import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.AxonApplication;
+import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
@@ -57,8 +57,8 @@ class EventSourcingConfigurationDefaultsTest {
 
     @Test
     void enhanceSetsExpectedDefaultsInAbsenceOfTheseComponents() {
-        ApplicationConfigurer<?> configurer = AxonApplication.create();
-        testSubject.enhance(configurer);
+        ApplicationConfigurer configurer = MessagingConfigurer.create();
+        configurer.componentRegistry(cr -> cr.registerEnhancer(testSubject));
         NewConfiguration resultConfig = configurer.build();
 
         assertInstanceOf(AnnotationBasedTagResolver.class, resultConfig.getComponent(TagResolver.class));
@@ -77,11 +77,9 @@ class EventSourcingConfigurationDefaultsTest {
     void enhanceOnlySetsDefaultsThatAreNotPresentYet() {
         TestTagResolver testTagResolver = new TestTagResolver();
 
-        ApplicationConfigurer<?> configurer =
-                AxonApplication.create()
-                               .registerComponent(TagResolver.class, c -> testTagResolver);
-
-        testSubject.enhance(configurer);
+        ApplicationConfigurer configurer = MessagingConfigurer.create();
+        configurer.componentRegistry(cr -> cr.registerComponent(TagResolver.class, c -> testTagResolver));
+        configurer.componentRegistry(cr -> cr.registerEnhancer(testSubject));
 
         TagResolver configuredTagResolver = configurer.build()
                                                       .getComponent(TagResolver.class);

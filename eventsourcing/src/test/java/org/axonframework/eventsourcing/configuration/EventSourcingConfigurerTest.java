@@ -16,7 +16,7 @@
 
 package org.axonframework.eventsourcing.configuration;
 
-import org.axonframework.configuration.ConfigurerTestSuite;
+import org.axonframework.configuration.ApplicationConfigurerTestSuite;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.EventSink;
@@ -31,9 +31,7 @@ import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.configuration.ModellingConfigurer;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -46,22 +44,11 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
-class EventSourcingConfigurerTest extends ConfigurerTestSuite<EventSourcingConfigurer> {
+class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSourcingConfigurer> {
 
     @Override
-    public EventSourcingConfigurer testSubject() {
+    public EventSourcingConfigurer createConfigurer() {
         return testSubject == null ? EventSourcingConfigurer.create() : testSubject;
-    }
-
-    @Override
-    public NewConfiguration build() {
-        return testSubject().build();
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public @Nullable Class<ModellingConfigurer> delegateType() {
-        return ModellingConfigurer.class;
     }
 
     @Test
@@ -160,8 +147,8 @@ class EventSourcingConfigurerTest extends ConfigurerTestSuite<EventSourcingConfi
     @Test
     void modellingDelegatesTasks() {
         TestComponent result =
-                testSubject.modelling(
-                                   modelling -> modelling.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+                testSubject.componentRegistry(
+                                   cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
                            )
                            .build()
                            .getComponent(TestComponent.class);
@@ -172,8 +159,8 @@ class EventSourcingConfigurerTest extends ConfigurerTestSuite<EventSourcingConfi
     @Test
     void messagingDelegatesTasks() {
         TestComponent result =
-                testSubject.messaging(
-                                   messaging -> messaging.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+                testSubject.componentRegistry(
+                                   cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
                            )
                            .build()
                            .getComponent(TestComponent.class);
@@ -184,7 +171,7 @@ class EventSourcingConfigurerTest extends ConfigurerTestSuite<EventSourcingConfi
     @Test
     void applicationDelegatesTasks() {
         TestComponent result =
-                testSubject.application(axon -> axon.registerComponent(TestComponent.class, c -> TEST_COMPONENT))
+                testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT))
                            .build()
                            .getComponent(TestComponent.class);
 

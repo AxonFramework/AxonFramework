@@ -18,9 +18,9 @@ package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.NewConfiguration;
-import org.axonframework.configuration.NewConfigurer;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
@@ -56,7 +56,7 @@ class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     @Override
-    public void enhance(@Nonnull NewConfigurer<?> configurer) {
+    public void enhance(@Nonnull ComponentRegistry configurer) {
         Objects.requireNonNull(configurer, "Cannot enhance a null Configurer.");
 
         registerIfNotPresent(configurer, TagResolver.class,
@@ -71,11 +71,11 @@ class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
                              EventSourcingConfigurationDefaults::defaultSnapshotter);
     }
 
-    private <C> void registerIfNotPresent(NewConfigurer<?> configurer,
+    private <C> void registerIfNotPresent(ComponentRegistry registry,
                                           Class<C> type,
                                           ComponentFactory<C> factory) {
-        if (!configurer.hasComponent(type)) {
-            configurer.registerComponent(type, factory);
+        if (!registry.hasComponent(type)) {
+            registry.registerComponent(type, factory);
         }
     }
 

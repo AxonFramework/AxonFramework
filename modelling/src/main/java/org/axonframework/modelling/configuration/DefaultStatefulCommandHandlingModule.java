@@ -19,10 +19,9 @@ package org.axonframework.modelling.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandlingComponent;
-import org.axonframework.common.Assert;
-import org.axonframework.configuration.AbstractConfigurer;
+import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentFactory;
-import org.axonframework.configuration.LifecycleSupportingConfiguration;
+import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.QualifiedName;
@@ -36,7 +35,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
@@ -50,7 +48,7 @@ import static java.util.Objects.requireNonNull;
  * @since 5.0.0
  */
 class DefaultStatefulCommandHandlingModule
-        extends AbstractConfigurer<StatefulCommandHandlingModule>
+        extends BaseModule<DefaultStatefulCommandHandlingModule>
         implements StatefulCommandHandlingModule,
         StatefulCommandHandlingModule.SetupPhase,
         StatefulCommandHandlingModule.CommandHandlerPhase,
@@ -63,8 +61,8 @@ class DefaultStatefulCommandHandlingModule
     private final List<ComponentFactory<CommandHandlingComponent>> handlingComponentFactories;
 
     DefaultStatefulCommandHandlingModule(@Nonnull String moduleName) {
-        Assert.nonEmpty(moduleName, "The module name cannot be null");
-        this.moduleName = moduleName;
+        super(moduleName);
+        this.moduleName = requireNonNull(moduleName, "The module name cannot be null.");
         this.statefulCommandHandlingComponentName = "StatefulCommandHandlingComponent[" + moduleName + "]";
         this.entityBuilders = new HashMap<>();
         this.handlerFactories = new HashMap<>();
@@ -109,15 +107,18 @@ class DefaultStatefulCommandHandlingModule
     @Override
     public StatefulCommandHandlingModule build() {
         registerRepositories();
-        registerComponent(StateManager.class, this::stateManagerFactory);
+        componentRegistry(cr -> cr.registerComponent(StateManager.class, this::stateManagerFactory));
         registerCommandHandlers();
         return this;
     }
 
     private void registerRepositories() {
-        entityBuilders.forEach((name, entityBuilder) -> registerComponent(AsyncRepository.class,
-                                                                          name,
-                                                                          entityBuilder.repository()));
+        entityBuilders.forEach((name, entityBuilder) -> {
+            componentRegistry(cr -> cr.registerComponent(AsyncRepository.class,
+                                                         name,
+                                                         entityBuilder.repository())
+            );
+        });
     }
 
     private SimpleStateManager stateManagerFactory(NewConfiguration config) {
@@ -130,37 +131,34 @@ class DefaultStatefulCommandHandlingModule
     }
 
     private void registerCommandHandlers() {
-        registerComponent(StatefulCommandHandlingComponent.class, statefulCommandHandlingComponentName, c -> {
-            StatefulCommandHandlingComponent statefulCommandHandler = StatefulCommandHandlingComponent.create(
-                    statefulCommandHandlingComponentName,
-                    c.getComponent(StateManager.class)
-            );
-            handlerFactories.forEach((key, value) -> statefulCommandHandler.subscribe(key, value.build(c)));
-            handlingComponentFactories.forEach(
-                    handlingComponent -> statefulCommandHandler.subscribe(handlingComponent.build(c))
-            );
-            return statefulCommandHandler;
+        componentRegistry(cr -> {
+            cr.registerComponent(StatefulCommandHandlingComponent.class, statefulCommandHandlingComponentName, c -> {
+                StatefulCommandHandlingComponent statefulCommandHandler = StatefulCommandHandlingComponent.create(
+                        statefulCommandHandlingComponentName,
+                        c.getComponent(StateManager.class)
+                );
+                handlerFactories.forEach((key, value) -> statefulCommandHandler.subscribe(key, value.build(c)));
+                handlingComponentFactories.forEach(
+                        handlingComponent -> statefulCommandHandler.subscribe(handlingComponent.build(c))
+                );
+                return statefulCommandHandler;
+            });
         });
     }
 
     @Override
-    public String name() {
-        return this.moduleName;
-    }
-
-    @Override
-    public NewConfiguration build(@Nonnull LifecycleSupportingConfiguration parent) {
-        super.setParent(Objects.requireNonNull(parent, "The parent Configuration cannot be null."));
-        super.enhanceInvocationAndModuleConstruction();
-        LifecycleSupportingConfiguration moduleConfig = super.config();
-        parent.onStart(
+    public NewConfiguration build(@Nonnull NewConfiguration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
+        NewConfiguration builtConfiguration = super.build(parent, lifecycleRegistry);
+        lifecycleRegistry.onStart(
                 Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
-                () -> parent.getComponent(CommandBus.class)
-                            .subscribe(moduleConfig.getComponent(
-                                    StatefulCommandHandlingComponent.class,
-                                    statefulCommandHandlingComponentName
-                            ))
+                (c) -> {
+                    builtConfiguration.getComponent(CommandBus.class)
+                                      .subscribe(builtConfiguration.getComponent(
+                                              StatefulCommandHandlingComponent.class,
+                                              statefulCommandHandlingComponentName
+                                      ));
+                }
         );
-        return moduleConfig;
+        return builtConfiguration;
     }
 }

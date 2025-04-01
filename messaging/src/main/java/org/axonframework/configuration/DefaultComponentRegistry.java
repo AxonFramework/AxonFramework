@@ -62,9 +62,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private OverrideBehavior overrideBehavior = OverrideBehavior.WARN;
 
     @Override
-    public <C> ComponentRegistry registerComponent(@Nonnull Class<C> type,
+    public <C> ComponentRegistry registerComponent(@Nonnull Class<? extends C> type,
                                                    @Nonnull String name,
-                                                   @Nonnull ComponentFactory<C> factory) {
+                                                   @Nonnull ComponentFactory<? extends C> factory) {
         logger.debug("Registering component [{}] of type [{}].", name, type);
         Identifier<C> identifier = new Identifier<>(type, name);
         if (overrideBehavior == OverrideBehavior.THROW && components.contains(identifier)) {

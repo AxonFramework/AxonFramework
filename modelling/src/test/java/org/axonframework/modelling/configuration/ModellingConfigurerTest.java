@@ -16,9 +16,7 @@
 
 package org.axonframework.modelling.configuration;
 
-import jakarta.annotation.Nullable;
-import org.axonframework.configuration.ConfigurerTestSuite;
-import org.axonframework.configuration.MessagingConfigurer;
+import org.axonframework.configuration.ApplicationConfigurerTestSuite;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.messaging.MessageStream;
@@ -34,23 +32,11 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * @author Steven van Beelen
  */
-class ModellingConfigurerTest extends ConfigurerTestSuite<ModellingConfigurer> {
+class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingConfigurer> {
 
     @Override
-    public ModellingConfigurer testSubject() {
+    public ModellingConfigurer createConfigurer() {
         return testSubject == null ? ModellingConfigurer.create() : testSubject;
-    }
-
-    @Override
-    public NewConfiguration build() {
-        return testSubject().build();
-    }
-
-    @SuppressWarnings("unchecked")
-    @Nullable
-    @Override
-    public Class<MessagingConfigurer> delegateType() {
-        return MessagingConfigurer.class;
     }
 
     @Test
@@ -79,7 +65,7 @@ class ModellingConfigurerTest extends ConfigurerTestSuite<ModellingConfigurer> {
     @Test
     void messagingDelegatesTasks() {
         TestComponent result =
-                testSubject.messaging(messaging -> messaging.registerComponent(
+                testSubject.componentRegistry(cr -> cr.registerComponent(
                                    TestComponent.class,
                                    c -> TEST_COMPONENT
                            ))
@@ -92,7 +78,7 @@ class ModellingConfigurerTest extends ConfigurerTestSuite<ModellingConfigurer> {
     @Test
     void applicationDelegatesTasks() {
         TestComponent result =
-                testSubject.application(axon -> axon.registerComponent(TestComponent.class, c -> TEST_COMPONENT))
+                testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT))
                            .build()
                            .getComponent(TestComponent.class);
 

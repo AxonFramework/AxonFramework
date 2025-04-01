@@ -49,7 +49,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
     private static final String START_FAILURE_EXCEPTION_MESSAGE = "some start failure";
     private static final String INIT_STATE = "initial-state";
-    private static final TestComponent TEST_COMPONENT = new TestComponent(INIT_STATE);
+    protected static final TestComponent TEST_COMPONENT = new TestComponent(INIT_STATE);
 
     protected C testSubject;
 
