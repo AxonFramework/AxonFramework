@@ -73,7 +73,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     public EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull QualifiedName eventName,
                                                                 @Nonnull EventHandler eventHandler) {
         // TODO #3286 - Providing separate lambdas/methods should result in a lambda-based EventStateApplier.
-        return null;
+      throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
