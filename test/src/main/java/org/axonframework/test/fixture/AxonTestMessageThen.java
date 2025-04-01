@@ -128,7 +128,7 @@ abstract class AxonTestMessageThen<T extends AxonTestPhase.Then.MessageThen<T>>
 
     @Override
     public T eventsMatch(Predicate<List<? super EventMessage<?>>> predicate) {
-        throw new RuntimeException("Not implemented yet");
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
@@ -145,12 +145,12 @@ abstract class AxonTestMessageThen<T extends AxonTestPhase.Then.MessageThen<T>>
 
     @Override
     public T commands(Consumer<List<? super CommandMessage<?>>> consumer) {
-        throw new RuntimeException("Not implemented yet");
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public T commandsMatch(Predicate<List<? super CommandMessage<?>>> predicate) {
-        throw new RuntimeException("Not implemented yet");
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
