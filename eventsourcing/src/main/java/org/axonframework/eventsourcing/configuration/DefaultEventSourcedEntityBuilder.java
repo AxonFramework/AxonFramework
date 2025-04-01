@@ -96,7 +96,8 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
                 idType,
                 entityType,
                 c.getComponent(AsyncEventStore.class),
-                entityFactory.build(c), criteriaResolver.build(c),
+                entityFactory.build(c), 
+                criteriaResolver.build(c),
                 eventStateApplier.build(c)
         );
     }
