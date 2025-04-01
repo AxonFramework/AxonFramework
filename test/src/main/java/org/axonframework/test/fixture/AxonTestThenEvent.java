@@ -17,6 +17,12 @@
 package org.axonframework.test.fixture;
 
 import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.messaging.MessageStream;
+import org.hamcrest.Matcher;
+import org.hamcrest.StringDescription;
+import org.jetbrains.annotations.NotNull;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
 
 class AxonTestThenEvent
         extends AxonTestThenMessage<AxonTestPhase.Then.Event>
@@ -27,9 +33,35 @@ class AxonTestThenEvent
             AxonTestFixture.Customization customization,
             RecordingCommandBus commandBus,
             RecordingEventSink eventSink,
-            Throwable lastException
+            Throwable actualException
     ) {
-        super(configuration, customization, commandBus, eventSink, lastException);
+        super(configuration, customization, commandBus, eventSink, actualException);
     }
 
+    @Override
+    public AxonTestPhase.Then.Event success() {
+        StringDescription expectedDescription = new StringDescription();
+        if (actualException != null) {
+            reporter.reportUnexpectedException(actualException, expectedDescription);
+        }
+        return this;
+    }
+
+    @Override
+    public AxonTestPhase.Then.Event exception(@NotNull Class<? extends Throwable> expectedException) {
+        return exception(instanceOf(expectedException));
+    }
+
+    @Override
+    public AxonTestPhase.Then.Event exception(@NotNull Matcher<?> matcher) {
+        StringDescription description = new StringDescription();
+        matcher.describeTo(description);
+        if (actualException == null) {
+            reporter.reportUnexpectedReturnValue(MessageStream.Empty.class.getSimpleName(), description);
+        }
+        if (!matcher.matches(actualException)) {
+            reporter.reportWrongException(actualException, description);
+        }
+        return this;
+    }
 }

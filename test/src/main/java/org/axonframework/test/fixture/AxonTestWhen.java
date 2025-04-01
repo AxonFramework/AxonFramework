@@ -43,8 +43,8 @@ class AxonTestWhen implements AxonTestPhase.When {
     private final RecordingEventSink eventSink;
     private final List<AsyncUnitOfWork> unitsOfWork = new ArrayList<>();
 
-    private Message<?> lastCommandResult;
-    private Throwable lastCommandException;
+    private Message<?> actualResult;
+    private Throwable actualException;
 
     public AxonTestWhen(
             NewConfiguration configuration,
@@ -68,11 +68,11 @@ class AxonTestWhen implements AxonTestPhase.When {
                                          commandBus.dispatch(message, processingContext)
                                                    .whenComplete((r, e) -> {
                                                        if (e == null) {
-                                                           lastCommandResult = r;
+                                                           actualResult = r;
                                                            //lastCommandException = null;
                                                        } else {
                                                            //lastCommandResult = null;
-                                                           lastCommandException = e.getCause();
+                                                           actualException = e.getCause();
                                                        }
                                                    })
         );
@@ -129,8 +129,8 @@ class AxonTestWhen implements AxonTestPhase.When {
         try {
             completion.join();
         } catch (Exception e) {
-            this.lastCommandResult = null;
-            this.lastCommandException = e;
+            this.actualResult = null;
+            this.actualException = e;
         }
     }
 
@@ -146,8 +146,8 @@ class AxonTestWhen implements AxonTestPhase.When {
                     customization,
                     commandBus,
                     eventSink,
-                    lastCommandResult,
-                    lastCommandException
+                    actualResult,
+                    actualException
             );
         }
     }
@@ -164,7 +164,7 @@ class AxonTestWhen implements AxonTestPhase.When {
                     customization,
                     commandBus,
                     eventSink,
-                    lastCommandException
+                    actualException
             );
         }
     }

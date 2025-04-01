@@ -44,8 +44,8 @@ import java.util.function.Predicate;
  * </ul>
  * <p>
  * The test fixture manages {@link org.axonframework.messaging.unitofwork.AsyncUnitOfWork} instances during test execution,
- * automatically committing as appropriate. During the "given" phase, each operation (like {@link Given#event(Object)}},
- * {@link Given#command(Object)} or even batched like {@link Given#events(EventMessage[])} and {@link Given#commands(CommandMessage[])})
+ * automatically committing as appropriate. During the "given" phase, each operation (like {@link Given#event}},
+ * {@link Given#command} or even batched like {@link Given#events} and {@link Given#commands})
  * is executed in its own separate {@link org.axonframework.messaging.unitofwork.AsyncUnitOfWork} that is committed immediately after execution. In the "when" phase, a single Unit of Work is started
  * and committed after the command is executed. The "then" phase only validates the results.
  * <p>
@@ -361,8 +361,10 @@ public interface AxonTestPhase {
 
             /**
              * Expect the last command handler from the When phase to return a result message that matches the given
-             * {@code matcher}. Take into account only commands executed explicitly with the {@link When#command}. Do
-             * not take into accounts commands published as side effects of the message handlers.
+             * {@code matcher}.
+             * <p>
+             * Take into account only commands dispatched explicitly with the {@link When#command}. Do not take into
+             * accounts commands dispatched as side effects of the message handlers.
              *
              * @param matcher The matcher to verify the actual result message against.
              * @return The current Then instance, for fluent interfacing.
@@ -371,9 +373,10 @@ public interface AxonTestPhase {
 
             /**
              * Expect the last command handler from the When phase to return the given {@code expectedPayload} after
-             * execution. The actual and expected values are compared using their equals methods. Take into account only
-             * commands executed explicitly with the {@link When#command}. Do not take into accounts commands published
-             * as side effects of the message handlers.
+             * execution. The actual and expected values are compared using their equals methods.
+             * <p>
+             * Take into account only commands dispatched explicitly with the {@link When#command}. Do not take into
+             * accounts commands dispatched as side effects of the message handlers.
              *
              * @param expectedPayload The expected result message payload of the command execution.
              * @return The current Then, for fluent interfacing.
@@ -382,9 +385,10 @@ public interface AxonTestPhase {
 
             /**
              * Expect the last command handler from the When phase to return a payload that matches the given
-             * {@code matcher} after execution. Take into account only commands executed explicitly with the
-             * {@link When#command}. Do not take into accounts commands published as side effects of the message
-             * handlers.
+             * {@code matcher} after execution.
+             * <p>
+             * Take into account only commands dispatched explicitly with the {@link When#command}. Do not take into
+             * accounts commands dispatched as side effects of the message handlers.
              *
              * @param matcher The matcher to verify the actual return value against.
              * @return The current Then instance, for fluent interfacing.
@@ -393,9 +397,10 @@ public interface AxonTestPhase {
 
             /**
              * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
-             * should be exactly of that type, subclasses are not accepted. Take into account only commands executed
-             * explicitly with the {@link When#command}. Do not take into accounts commands published as side effects of
-             * the message handlers.
+             * should be exactly of that type, subclasses are not accepted.
+             * <p>
+             * Take into account only commands dispatched explicitly with the {@link When#command}. Do not take into
+             * accounts commands dispatched as side effects of the message handlers.
              *
              * @param expectedException The type of exception expected from the When phase execution.
              * @return The current Then instance, for fluent interfacing.
@@ -403,9 +408,10 @@ public interface AxonTestPhase {
             Command exception(@Nonnull Class<? extends Throwable> expectedException);
 
             /**
-             * Expect an exception to occur during the When phase that matches with the given {@code matcher}. Take into
-             * account only commands executed explicitly with the {@link When#command}. Do not take into accounts
-             * commands published as side effects of the message handlers.
+             * Expect an exception to occur during the When phase that matches with the given {@code matcher}.
+             * <p>
+             * Take into account only commands dispatched explicitly with the {@link When#command}. Do not take into
+             * accounts commands dispatched as side effects of the message handlers.
              *
              * @param matcher The matcher to validate the actual exception.
              * @return The current Then instance, for fluent interfacing.
@@ -415,6 +421,35 @@ public interface AxonTestPhase {
 
         interface Event extends Message<Event> {
 
+            /**
+             * Expect a successful execution of the When phase, no exception raised while handling the event.
+             *
+             * @return The current Then instance, for fluent interfacing.
+             */
+            Event success();
+
+            /**
+             * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
+             * should be exactly of that type, subclasses are not accepted.
+             * <p>
+             * Take into account only events published explicitly with the {@link When#event} or {@link When#events}. Do
+             * not take into accounts events published as side effects of the message handlers.
+             *
+             * @param expectedException The type of exception expected from the When phase execution.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            Event exception(@Nonnull Class<? extends Throwable> expectedException);
+
+            /**
+             * Expect an exception to occur during the When phase that matches with the given {@code matcher}.
+             * <p>
+             * Take into account only events published explicitly with the {@link When#event} or {@link When#events}. Do
+             * not take into accounts events published as side effects of the message handlers.
+             *
+             * @param matcher The matcher to validate the actual exception.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            Event exception(@Nonnull Matcher<?> matcher);
         }
 
         interface Message<T extends Message<T>> {

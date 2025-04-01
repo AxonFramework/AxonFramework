@@ -43,26 +43,26 @@ import static org.axonframework.test.matchers.Matchers.deepEquals;
 abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
         implements AxonTestPhase.Then.Message<T> {
 
-    private final Reporter reporter = new Reporter();
+    protected final Reporter reporter = new Reporter();
 
     private final NewConfiguration configuration;
     private final AxonTestFixture.Customization customization;
     private final RecordingEventSink eventSink;
 
     private final CommandValidator commandValidator;
-    private final Throwable lastException;
+    protected final Throwable actualException;
 
     public AxonTestThenMessage(
             NewConfiguration configuration,
             AxonTestFixture.Customization customization,
             RecordingCommandBus commandBus,
             RecordingEventSink eventSink,
-            Throwable lastException
+            Throwable actualException
     ) {
         this.configuration = configuration;
         this.customization = customization;
         this.eventSink = eventSink;
-        this.lastException = lastException;
+        this.actualException = actualException;
         this.commandValidator = new CommandValidator(commandBus::recordedCommands,
                                                      commandBus::reset,
                                                      new MatchAllFieldFilter(customization.fieldFilters()));
@@ -73,14 +73,14 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
         var publishedEvents = eventSink.recorded();
 
         if (expectedEvents.length != publishedEvents.size()) {
-            reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), lastException);
+            reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
         }
 
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();
         for (Object expectedEvent : expectedEvents) {
             EventMessage<?> actualEvent = iterator.next();
             if (!verifyPayloadEquality(expectedEvent, actualEvent.getPayload())) {
-                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), lastException);
+                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }
         return self();
@@ -97,7 +97,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
             if (!verifyMetaDataEquality(expectedEvent.getPayloadType(),
                                         expectedEvent.getMetaData(),
                                         actualEvent.getMetaData())) {
-                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), lastException);
+                reporter.reportWrongEvent(publishedEvents, Arrays.asList(expectedEvents), actualException);
             }
         }
         return self();
@@ -113,7 +113,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
             final Description mismatch = new StringDescription();
             matcher.describeMismatch(publishedEvents, mismatch);
 
-            reporter.reportWrongEvent(publishedEvents, expectation, mismatch, lastException);
+            reporter.reportWrongEvent(publishedEvents, expectation, mismatch, actualException);
         }
         return self();
     }
@@ -154,7 +154,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public T noCommands() {
-        commandValidator.assertDispatchedEqualTo(Matchers.noCommands());
+        commandValidator.assertDispatchedMatching(Matchers.noCommands());
         return self();
     }
 
