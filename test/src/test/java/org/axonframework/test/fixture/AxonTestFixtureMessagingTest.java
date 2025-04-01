@@ -128,15 +128,14 @@ class AxonTestFixtureMessagingTest {
 
         var fixture = AxonTestFixture.with(configurer);
 
-        fixture.when()
+        fixture.given()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+               .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
                .then()
                .resultMessagePayload(new CommandResult("Result name-2"))
-               .events(
-                       studentNameChangedEvent("my-studentId-1", "name-1", 1),
-                       studentNameChangedEvent("my-studentId-1", "name-2", 1)
-               ).and()
+               .events(studentNameChangedEvent("my-studentId-1", "name-2", 1))
+               .and()
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
                .then()
