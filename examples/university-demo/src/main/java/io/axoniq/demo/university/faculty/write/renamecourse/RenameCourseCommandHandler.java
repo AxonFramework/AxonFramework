@@ -1,6 +1,5 @@
 package io.axoniq.demo.university.faculty.write.renamecourse;
 
-import io.axoniq.demo.university.faculty.BoundedContext;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.events.CourseRenamed;
 import jakarta.annotation.Nonnull;
@@ -28,7 +27,7 @@ class RenameCourseCommandHandler {
             ProcessingContext processingContext
     ) {
         var events = decide(command, state);
-        eventSink.publish(processingContext, BoundedContext.NAME, toMessages(events));
+        eventSink.publish(processingContext, toMessages(events));
     }
 
     private List<CourseRenamed> decide(RenameCourse command, State state) {
