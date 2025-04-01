@@ -1,6 +1,7 @@
 package io.axoniq.demo.university.faculty.write.createcourse;
 
 import io.axoniq.demo.university.faculty.events.CourseCreated;
+import io.axoniq.demo.university.faculty.write.CourseId;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
@@ -33,7 +34,7 @@ class CreateCourseCommandHandler {
         if (state.name.equals(command.name())) {
             return List.of();
         }
-        return List.of(new CourseCreated(command.courseId(), command.name(), command.capacity()));
+        return List.of(new CourseCreated(command.courseId().raw(), command.name(), command.capacity()));
     }
 
     private static List<EventMessage<?>> toMessages(List<CourseCreated> events) {
@@ -64,11 +65,11 @@ class CreateCourseCommandHandler {
         }
     }
 
-    public static class CourseIdResolver implements EntityIdResolver<String> {
+    public static class CourseIdResolver implements EntityIdResolver<CourseId> {
 
         @Nonnull
         @Override
-        public String resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
+        public CourseId resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
             var id = resolveOrNull(message);
             if (id == null) {
                 throw new IllegalArgumentException("Cannot resolve course courseId from the command");
@@ -76,7 +77,7 @@ class CreateCourseCommandHandler {
             return id;
         }
 
-        private static String resolveOrNull(Message<?> message) {
+        private static CourseId resolveOrNull(Message<?> message) {
             var payload = message.getPayload();
             return payload instanceof CreateCourse createCourse
                     ? createCourse.courseId()

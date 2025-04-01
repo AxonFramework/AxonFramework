@@ -1,5 +1,8 @@
 package io.axoniq.demo.university.faculty.write.subscribestudent;
 
-public record SubscribeStudent(String studentId, String courseId) {
+import io.axoniq.demo.university.faculty.write.CourseId;
+import io.axoniq.demo.university.faculty.write.StudentId;
+
+public record SubscribeStudent(StudentId studentId, CourseId courseId) {
 
 }

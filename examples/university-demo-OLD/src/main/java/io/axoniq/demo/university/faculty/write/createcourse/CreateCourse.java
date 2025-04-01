@@ -1,5 +1,7 @@
 package io.axoniq.demo.university.faculty.write.createcourse;
 
-public record CreateCourse(String courseId, String name, int capacity) {
+import io.axoniq.demo.university.faculty.write.CourseId;
+
+public record CreateCourse(CourseId courseId, String name, int capacity) {
 
 }
