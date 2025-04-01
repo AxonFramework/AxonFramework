@@ -39,7 +39,10 @@ import java.util.Map;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Default implementation of the {@link StatefulCommandHandlingModule}.
+ * Default implementation of the {@link StatefulCommandHandlingModule}. Registers the
+ * {@link StateManagerConfigurationDefaults} enhancer to the module so that message handlers get access
+ * to entities via defining parameters, such as entitiy classes with {@link org.axonframework.modelling.command.annotation.InjectEntity}
+ * or the {@link StateManager} itself.
  *
  * @author Allard Buijze
  * @author Mateusz Nowak
@@ -67,6 +70,7 @@ class DefaultStatefulCommandHandlingModule
         this.entityBuilders = new HashMap<>();
         this.handlerFactories = new HashMap<>();
         this.handlingComponentFactories = new ArrayList<>();
+        componentRegistry(cr -> cr.registerEnhancer(new StateManagerConfigurationDefaults()));
     }
 
     @Override

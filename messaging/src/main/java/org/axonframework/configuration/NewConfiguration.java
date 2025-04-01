@@ -17,13 +17,12 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.DescribableComponent;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-
-import jakarta.annotation.Nonnull;
-import org.axonframework.common.infra.DescribableComponent;
 
 /**
  * Interface providing access to all configured {@link Component components} in an Axon Framework application.
@@ -146,4 +145,14 @@ public interface NewConfiguration extends DescribableComponent {
      * that name {@link ComponentRegistry#registerModule(Module) registered module} with this {@code Configuration}.
      */
     Optional<NewConfiguration> getModuleConfiguration(String name);
+
+    /**
+     * Returns the parent configuration of this configuration, if the parent configuration exists. Components can use
+     * this to build hierarchical components, which prefer components from a child configuration over components from a
+     * parent configuration.
+     *
+     * @return The parent configuration of this configuration, or {@code null} if no parent configuration exists.
+     */
+    @Nullable
+    NewConfiguration getParent();
 }

@@ -27,15 +27,17 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.modelling.StateManager;
 
 import java.util.function.Consumer;
 
 /**
- * The modelling {@link ApplicationConfigurer} of Axon Framework's configuration API, providing registration methods to, for
- * example, register a {@link StatefulCommandHandlingModule}.
+ * The modelling {@link ApplicationConfigurer} of Axon Framework's configuration API, providing registration methods to,
+ * for example, register a {@link StatefulCommandHandlingModule}.
  * <p>
- * This configurer does not set any defaults other than the defaults granted by the {@link MessagingConfigurer} it
- * wraps.
+ * This configurer is enhanced by the {@link StateManagerConfigurationDefaults} to provide access to the
+ * {@link StateManager} during the execution of message handlers, and allow users to inject entities using the
+ * {@link org.axonframework.modelling.command.annotation.InjectEntity} annotation.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -69,11 +71,13 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      * @param delegate The delegate {@code MessagingConfigurer} the {@code ModellingConfigurer} is based on.
      */
     public ModellingConfigurer(@Nonnull MessagingConfigurer delegate) {
+        delegate.componentRegistry(cr -> cr.registerEnhancer(new StateManagerConfigurationDefaults()));
         this.delegate = delegate;
     }
 
     /**
-     * Registers the given {@link ModuleBuilder builder} for a {@link StatefulCommandHandlingModule} to use in this configuration.
+     * Registers the given {@link ModuleBuilder builder} for a {@link StatefulCommandHandlingModule} to use in this
+     * configuration.
      * <p>
      * As a {@link Module} implementation, any components registered with the result of the given {@code moduleBuilder}
      * will not be accessible from other {@code Modules} to enforce encapsulation. The sole exception to this, are

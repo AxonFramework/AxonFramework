@@ -238,6 +238,11 @@ public class DefaultComponentRegistry implements ComponentRegistry {
             this.parent = parent;
         }
 
+        @Override
+        public NewConfiguration getParent() {
+            return parent;
+        }
+
         @Nonnull
         @Override
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,

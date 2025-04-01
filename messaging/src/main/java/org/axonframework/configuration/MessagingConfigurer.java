@@ -19,6 +19,9 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactoryConfigurationDefaults;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 
@@ -51,6 +54,9 @@ import java.util.function.Consumer;
  *     MessagingConfigurer.create()
  *                        .componentRegistry(cr -> cr.registerEnhancer(CommandBus.class, (config, component) -> ...));
  * </code></pre>
+ * <p>
+ * In addition, the configurer registers the {@link ParameterResolverFactoryConfigurationDefaults}, allowing configuration components
+ * to be injected into message handlers.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -75,7 +81,10 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      */
     public static MessagingConfigurer enhance(@Nonnull ApplicationConfigurer axonApplication) {
         return new MessagingConfigurer(axonApplication)
-                .componentRegistry(cr -> cr.registerEnhancer(new MessagingConfigurationDefaults()));
+                .componentRegistry(cr -> cr
+                        .registerEnhancer(new MessagingConfigurationDefaults())
+                        .registerEnhancer(new ParameterResolverFactoryConfigurationDefaults())
+                );
     }
 
     /**
@@ -131,6 +140,27 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      */
     public MessagingConfigurer registerQueryBus(@Nonnull ComponentFactory<QueryBus> queryBusFactory) {
         axonApplication.componentRegistry(cr -> cr.registerComponent(QueryBus.class, queryBusFactory));
+        return this;
+    }
+
+    /**
+     * Registers the given {@link ParameterResolverFactory} factory in this {@code Configurer}.
+     * <p>
+     * The {@code parameterResolverFactoryFactory} receives the {@link NewConfiguration} as input and is expected to
+     * return a {@link ParameterResolverFactory} instance.
+     *
+     * @param parameterResolverFactoryFactory The factory building the {@link ParameterResolverFactory}.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    public MessagingConfigurer registerParameterResolverFactory(
+            @Nonnull ComponentFactory<ParameterResolverFactory> parameterResolverFactoryFactory
+    ) {
+        axonApplication.componentRegistry(cr -> cr.registerDecorator(
+                ParameterResolverFactory.class,
+                0,
+                (config, componentName, component) ->
+                        MultiParameterResolverFactory.ordered(parameterResolverFactoryFactory.build(config),
+                                                              component)));
         return this;
     }
 

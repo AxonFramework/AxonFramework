@@ -49,6 +49,7 @@ public class SimpleStateManager implements StateManager, DescribableComponent {
      * Constructs a new simple {@link StateManager} instance with the given {@code name}.
      *
      * @param name The name of the component, used for {@link DescribableComponent describing} the component.
+     * @return A {@link Builder} to construct a simple {@link StateManager}
      */
     public static Builder builder(@Nonnull String name) {
         BuilderUtils.assertNonBlank(name, "Name may not be blank");

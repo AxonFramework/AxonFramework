@@ -30,6 +30,7 @@ import org.axonframework.integrationtests.testsuite.student.events.MentorAssigne
 import org.axonframework.integrationtests.testsuite.student.state.StudentMentorAssignment;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.annotation.InjectEntity;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
@@ -71,7 +72,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandlingComponent(
                 c -> new AnnotatedCommandHandlingComponent<>(
                         new CompoundModelAnnotatedCommandHandler(),
-                        parameterResolverFactory(c)
+                        c.getComponent(ParameterResolverFactory.class)
                 )
         ));
         startApp();

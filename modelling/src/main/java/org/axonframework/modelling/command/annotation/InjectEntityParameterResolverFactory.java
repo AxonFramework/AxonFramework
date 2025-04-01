@@ -17,6 +17,7 @@
 package org.axonframework.modelling.command.annotation;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.StateManager;
@@ -41,15 +42,21 @@ import static org.axonframework.common.ConstructorUtils.getConstructorFunctionWi
  */
 public class InjectEntityParameterResolverFactory implements ParameterResolverFactory {
 
-    private final StateManager stateManager;
+    private final NewConfiguration configuration;
 
     /**
-     * Initialize the factory with the given {@code stateManager} to load entities from.
+     * Initialize the factory with the given {@code configuration}. The {@code configuration} should
+     * contain a {@link org.axonframework.modelling.StateManager} to load entities from.
+     * <p>
+     * This constructor depends on the {@link NewConfiguration} instead of the {@link StateManager} to prevent
+     * circular dependencies during creation of message handlers. For example, if the repository uses an annotation-based
+     * event state applier, it would construct methods, which would then require the {@link StateManager} to be
+     * created during the construction of the parameter resolvers. This would lead to a circular dependency.
      *
-     * @param stateManager The registry to load entities from.
+     * @param configuration The {@link NewConfiguration} to use for loading entities.
      */
-    public InjectEntityParameterResolverFactory(@Nonnull StateManager stateManager) {
-        this.stateManager = requireNonNull(stateManager, "The StateManager is required");
+    public InjectEntityParameterResolverFactory(@Nonnull NewConfiguration configuration) {
+        this.configuration = requireNonNull(configuration, "The NewConfiguration is required");
     }
 
     @Override
@@ -69,28 +76,12 @@ public class InjectEntityParameterResolverFactory implements ParameterResolverFa
             ParameterizedType parameterizedType = (ParameterizedType) parameter.getParameterizedType();
             entityClass = (Class<?>) parameterizedType.getActualTypeArguments()[1];
         }
-        assertStateManagerCanLoadEntityClass(entityClass);
         return new InjectEntityParameterResolver(
-                stateManager,
+                configuration,
                 entityClass,
                 entityIdResolver,
                 isManagedEntity
         );
-    }
-
-
-    /**
-     * Let's do a boot-time check to see if it's actually valid. As the id type is defined runtime, we can only check
-     * for the entity type. Still better than nothing!
-     *
-     * @param entityClass The entity class to check
-     */
-    private void assertStateManagerCanLoadEntityClass(Class<?> entityClass) {
-        if (stateManager.registeredEntities().stream().noneMatch(entityClass::isAssignableFrom)) {
-            throw new IllegalArgumentException(
-                    "The entity class " + entityClass.getName()
-                            + " is not registered with the StateManager. Can not construct a ParameterResolver for the @InjectModel of said class.");
-        }
     }
 
     private static EntityIdResolver<?> getEntityIdResolver(InjectEntity annotation) {

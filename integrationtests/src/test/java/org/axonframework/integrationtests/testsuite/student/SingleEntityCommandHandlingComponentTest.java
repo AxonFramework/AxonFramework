@@ -27,6 +27,7 @@ import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.annotation.InjectEntity;
 import org.junit.jupiter.api.*;
@@ -73,7 +74,7 @@ class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite 
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandlingComponent(
                 c -> new AnnotatedCommandHandlingComponent<>(
                         new SingleModelAnnotatedCommandHandler(),
-                        parameterResolverFactory(c)
+                        c.getComponent(ParameterResolverFactory.class)
                 )
         ));
         startApp();

@@ -23,6 +23,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.ParameterResolver;
+import org.axonframework.messaging.configuration.ConfigurationParameterResolverFactory;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;

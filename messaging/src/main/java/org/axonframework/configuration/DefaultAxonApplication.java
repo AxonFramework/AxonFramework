@@ -271,6 +271,11 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
             return config.getComponent(type, name, defaultImpl);
         }
 
+        @Override
+        public NewConfiguration getParent() {
+            return null;
+        }
+
         @Nonnull
         @Override
         public <C> C getComponent(@Nonnull Class<C> type) {
