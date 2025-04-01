@@ -73,7 +73,7 @@ public class ModellingConfigurer
     }
 
     /**
-     * Registers the given stateful command handling {@code moduleBuilder} to use in this configuration.
+     * Registers the given {@link ModuleBuilder builder} for a {@link StatefulCommandHandlingModule} to use in this configuration.
      * <p>
      * As a {@link Module} implementation, any components registered with the result of the given {@code moduleBuilder}
      * will not be accessible from other {@code Modules} to enforce encapsulation. The sole exception to this, are
