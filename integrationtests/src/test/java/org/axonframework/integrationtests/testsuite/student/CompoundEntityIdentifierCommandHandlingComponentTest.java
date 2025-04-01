@@ -20,8 +20,6 @@ package org.axonframework.integrationtests.testsuite.student;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
@@ -31,7 +29,6 @@ import org.axonframework.integrationtests.testsuite.student.common.StudentMentor
 import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
 import org.axonframework.integrationtests.testsuite.student.state.StudentMentorAssignment;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.annotation.InjectEntity;
@@ -138,7 +135,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
         sendCommand(new AssignMentorCommand("my-studentId-3", "my-studentId-1"));
     }
 
-    static class CompoundModelAnnotatedCommandHandler {
+    class CompoundModelAnnotatedCommandHandler {
 
         @CommandHandler
         public void handle(AssignMentorCommand command,

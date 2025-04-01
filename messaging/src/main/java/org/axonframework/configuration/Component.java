@@ -151,7 +151,7 @@ public class Component<C> implements DescribableComponent {
     /**
      * Returns the unique {@link Identifier} of this {@code Component}.
      */
-    public Identifier<C> identifier() {
+    public Identifier<? extends C> identifier() {
         return identifier;
     }
 
