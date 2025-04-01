@@ -1,7 +1,6 @@
-package io.axoniq.demo.university.faculty.write.renamecourse;
+package io.axoniq.demo.university.faculty.write.createcourse;
 
 import io.axoniq.demo.university.faculty.events.CourseCreated;
-import io.axoniq.demo.university.faculty.events.CourseRenamed;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
@@ -17,11 +16,11 @@ import org.axonframework.modelling.command.annotation.InjectEntity;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class RenameCourseCommandHandler {
+class CreateCourseCommandHandler {
 
     @CommandHandler
     public void handle(
-            RenameCourse command,
+            CreateCourse command,
             @InjectEntity State state,
             EventSink eventSink,
             ProcessingContext processingContext
@@ -30,16 +29,16 @@ class RenameCourseCommandHandler {
         eventSink.publish(processingContext, toMessages(events));
     }
 
-    private List<CourseRenamed> decide(RenameCourse command, State state) {
+    private List<CourseCreated> decide(CreateCourse command, State state) {
         if (state.name.equals(command.name())) {
             return List.of();
         }
-        return List.of(new CourseRenamed(command.courseId(), command.name()));
+        return List.of(new CourseCreated(command.courseId(), command.name(), command.capacity()));
     }
 
-    private static List<EventMessage<?>> toMessages(List<CourseRenamed> events) {
+    private static List<EventMessage<?>> toMessages(List<CourseCreated> events) {
         return events.stream()
-                     .map(RenameCourseCommandHandler::toMessage)
+                     .map(CreateCourseCommandHandler::toMessage)
                      .collect(Collectors.toList());
     }
 
@@ -63,11 +62,6 @@ class RenameCourseCommandHandler {
         public void evolve(CourseCreated event) {
             this.name = event.name();
         }
-
-        @EventSourcingHandler
-        public void evolve(CourseRenamed event) {
-            this.name = event.newName();
-        }
     }
 
     public static class CourseIdResolver implements EntityIdResolver<String> {
@@ -84,8 +78,8 @@ class RenameCourseCommandHandler {
 
         private static String resolveOrNull(Message<?> message) {
             var payload = message.getPayload();
-            return payload instanceof RenameCourse renameCourse
-                    ? renameCourse.courseId()
+            return payload instanceof CreateCourse createCourse
+                    ? createCourse.courseId()
                     : null;
         }
     }
