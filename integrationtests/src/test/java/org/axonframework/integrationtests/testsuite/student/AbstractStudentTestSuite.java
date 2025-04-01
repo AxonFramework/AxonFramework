@@ -96,7 +96,7 @@ public abstract class AbstractStudentTestSuite {
     }
 
     /**
-     * Test suites should invoke this method to register command handlers.
+     * Test suite implementations can invoke this method to register additional command handlers.
      *
      * @param handlerConfigurer The command handler phase of the {@link StatefulCommandHandlingModule}, allowing for
      *                          command handler registration.
