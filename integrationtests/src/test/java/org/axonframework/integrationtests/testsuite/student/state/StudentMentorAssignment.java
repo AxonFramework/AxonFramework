@@ -17,9 +17,14 @@
 package org.axonframework.integrationtests.testsuite.student.state;
 
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.integrationtests.testsuite.student.common.StudentMentorModelIdentifier;
 import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
 
+@EventSourcedEntity
 public class StudentMentorAssignment {
 
     private StudentMentorModelIdentifier identifier;
@@ -46,5 +51,17 @@ public class StudentMentorAssignment {
         } else if (event.menteeId().equals(this.identifier.menteeId())) {
             menteeHasMentor = true;
         }
+    }
+
+    @EventCriteriaBuilder
+    public static EventCriteria resolveCriteria(StudentMentorModelIdentifier id) {
+        return EventCriteria.either(
+                EventCriteria.match()
+                             .eventsOfTypes(MentorAssignedToStudentEvent.class.getName())
+                             .withTags(new Tag("Student", id.menteeId())),
+                EventCriteria.match()
+                             .eventsOfTypes(MentorAssignedToStudentEvent.class.getName())
+                             .withTags(new Tag("Student", id.mentorId()))
+        );
     }
 }

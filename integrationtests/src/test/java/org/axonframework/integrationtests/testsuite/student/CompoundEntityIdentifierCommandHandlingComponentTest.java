@@ -143,8 +143,8 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
         @CommandHandler
         public void handle(AssignMentorCommand command,
                            @InjectEntity StudentMentorAssignment assignment,
-                           EventSink eventSink,
-                           ProcessingContext context) {
+                           ProcessingContext context
+        ) {
             if (assignment.isMentorHasMentee()) {
                 throw new IllegalArgumentException("Mentor already assigned to a mentee");
             }
@@ -152,11 +152,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                 throw new IllegalArgumentException("Mentee already has a mentor");
             }
 
-            eventSink.publish(context,
-                              new GenericEventMessage<>(
-                                      new MessageType(MentorAssignedToStudentEvent.class),
-                                      new MentorAssignedToStudentEvent(command.mentorId(), command.menteeId())
-                              ));
+            appendEvent(context, new MentorAssignedToStudentEvent(command.mentorId(), command.menteeId()));
         }
     }
 }
