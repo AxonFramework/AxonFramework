@@ -437,8 +437,9 @@ public interface AxonTestPhase {
              * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
              * should be exactly of that type, subclasses are not accepted.
              * <p>
-             * Only take events into account that were published explicitly with the {@link When#event} or {@link When#events}. Hence, do
-             * not take into accounts events published as side effects of the message handlers.
+             * Only take events into account that were published explicitly with the {@link When#event} or
+             * {@link When#events}. Hence, do not take into accounts events published as side effects of the message
+             * handlers.
              *
              * @param expectedException The type of exception expected from the When phase execution.
              * @return The current Then instance, for fluent interfacing.
@@ -448,8 +449,9 @@ public interface AxonTestPhase {
             /**
              * Expect an exception to occur during the When phase that matches with the given {@code matcher}.
              * <p>
-             * Only take events into account that were published explicitly with the {@link When#event} or {@link When#events}. Hence, do
-             * not take into accounts events published as side effects of the message handlers.
+             * Only take events into account that were published explicitly with the {@link When#event} or
+             * {@link When#events}. Hence, do not take into accounts events published as side effects of the message
+             * handlers.
              *
              * @param matcher The matcher to validate the actual exception.
              * @return The current Then instance, for fluent interfacing.
@@ -580,8 +582,8 @@ public interface AxonTestPhase {
 
             /**
              * Returns to the setup phase to continue with additional test scenarios. This allows for chaining multiple
-             * test scenarios within a single test method. The same configuration is reused, so all components are
-             * shared among and invocations.
+             * test scenarios within a single test method. The same configuration from the original fixture is reused,
+             * so all components are shared among the invocations.
              * <p>
              * Example usage:
              * <pre>
@@ -593,7 +595,7 @@ public interface AxonTestPhase {
              *        .then()
              *        .events(new MoneyWithdrawnEvent("account-1", 50.00))
              *        .success()
-             *        .and()  // Return to setup phase
+             *        .and()  // Return to setup phase with same configuration
              *        .given() // Start a new scenario
              *        .event(new AccountCreatedEvent("account-2"))
              *        .when()
