@@ -41,7 +41,7 @@ import java.util.Objects;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Basis implementation of the {@link StatefulCommandHandlingModule}.
+ * Default implementation of the {@link StatefulCommandHandlingModule}.
  *
  * @author Allard Buijze
  * @author Mateusz Nowak

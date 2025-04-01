@@ -73,14 +73,14 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     public EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull QualifiedName eventName,
                                                                 @Nonnull EventHandler eventHandler) {
         // TODO #3286 - Providing separate lambdas/methods should result in a lambda-based EventStateApplier.
-        return null;
+      throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public EventSourcedEntityBuilder<I, E> eventStateApplier(
             @Nonnull ComponentFactory<EventStateApplier<E>> eventStateApplier
     ) {
-        this.eventStateApplier = requireNonNull(eventStateApplier, "The event state cannot be null.");
+        this.eventStateApplier = requireNonNull(eventStateApplier, "The event state applier cannot be null.");
         return this;
     }
 
@@ -92,7 +92,8 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     @Override
     public ComponentFactory<AsyncRepository<I, E>> repository() {
         return c -> new AsyncEventSourcingRepository<>(
-                idType, entityType,
+                idType, 
+                entityType,
                 c.getComponent(AsyncEventStore.class),
                 criteriaResolver.build(c),
                 eventStateApplier.build(c),

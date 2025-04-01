@@ -45,7 +45,8 @@ public class ModellingConfigurer
         implements ApplicationConfigurer<ModellingConfigurer> {
 
     /**
-     * Build a default {@code ModellingConfigurer} instance with several modelling defaults.
+     * This configurer does not set any defaults other than the defaults granted by the {@link MessagingConfigurer} it 
+      * wraps.
      * <p>
      * Besides the specific operations, the {@code ModellingConfigurer} allows for configuring generic
      * {@link Component components}, {@link ComponentDecorator component decorators},

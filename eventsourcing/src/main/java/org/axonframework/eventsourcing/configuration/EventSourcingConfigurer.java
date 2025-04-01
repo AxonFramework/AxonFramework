@@ -81,7 +81,7 @@ public class EventSourcingConfigurer
     }
 
     /**
-     * Construct a {@code ModellingConfigurer} using the given {@code delegate} to delegate all registry-specific
+     * Construct a {@code EventSourcingConfigurer} using the given {@code delegate} to delegate all registry-specific
      * operations to.
      * <p>
      * It is recommended to use the {@link #create()} method in most cases instead of this constructor.
