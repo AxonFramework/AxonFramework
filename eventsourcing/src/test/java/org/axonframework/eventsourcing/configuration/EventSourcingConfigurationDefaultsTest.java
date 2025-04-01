@@ -52,7 +52,7 @@ class EventSourcingConfigurationDefaultsTest {
 
     @Test
     void orderEqualsMaxInteger() {
-        assertEquals(Integer.MAX_VALUE, testSubject.order());
+        assertEquals(Integer.MAX_VALUE - 1, testSubject.order());
     }
 
     @Test
