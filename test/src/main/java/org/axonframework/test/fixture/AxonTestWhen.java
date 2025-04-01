@@ -41,7 +41,6 @@ class AxonTestWhen implements AxonTestPhase.When {
     private final MessageTypeResolver messageTypeResolver;
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
-    private final List<AsyncUnitOfWork> unitsOfWork = new ArrayList<>();
 
     private Message<?> actualResult;
     private Throwable actualException;
@@ -111,18 +110,16 @@ class AxonTestWhen implements AxonTestPhase.When {
         return new Event();
     }
 
-    private AsyncUnitOfWork inUnitOfWorkRunOnInvocation(Consumer<ProcessingContext> action) {
+    private void inUnitOfWorkRunOnInvocation(Consumer<ProcessingContext> action) {
         var unitOfWork = new AsyncUnitOfWork();
         unitOfWork.runOnInvocation(action);
-        unitsOfWork.add(unitOfWork);
-        return unitOfWork;
+        awaitCompletion(unitOfWork.execute());
     }
 
-    private AsyncUnitOfWork inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+    private void inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
         var unitOfWork = new AsyncUnitOfWork();
         unitOfWork.onInvocation(action);
-        unitsOfWork.add(unitOfWork);
-        return unitOfWork;
+        awaitCompletion(unitOfWork.execute());
     }
 
     private void awaitCompletion(CompletableFuture<?> completion) {
@@ -138,9 +135,6 @@ class AxonTestWhen implements AxonTestPhase.When {
 
         @Override
         public AxonTestPhase.Then.Command then() {
-            for (var unitOfWork : unitsOfWork) {
-                awaitCompletion(unitOfWork.execute());
-            }
             return new AxonTestThenCommand(
                     configuration,
                     customization,
@@ -156,9 +150,6 @@ class AxonTestWhen implements AxonTestPhase.When {
 
         @Override
         public AxonTestPhase.Then.Event then() {
-            for (var unitOfWork : unitsOfWork) {
-                awaitCompletion(unitOfWork.execute());
-            }
             return new AxonTestThenEvent(
                     configuration,
                     customization,

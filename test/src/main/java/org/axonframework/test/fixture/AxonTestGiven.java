@@ -45,7 +45,6 @@ class AxonTestGiven implements AxonTestPhase.Given {
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
     private final MessageTypeResolver messageTypeResolver;
-    private final List<AsyncUnitOfWork> unitsOfWork = new ArrayList<>();
 
     AxonTestGiven(
             NewConfiguration configuration,
@@ -98,18 +97,16 @@ class AxonTestGiven implements AxonTestPhase.Given {
         return this;
     }
 
-    private AsyncUnitOfWork inUnitOfWorkRunOnInvocation(Consumer<ProcessingContext> action) {
+    private void inUnitOfWorkRunOnInvocation(Consumer<ProcessingContext> action) {
         var unitOfWork = new AsyncUnitOfWork();
         unitOfWork.runOnInvocation(action);
-        unitsOfWork.add(unitOfWork);
-        return unitOfWork;
+        awaitCompletion(unitOfWork.execute());
     }
 
-    private AsyncUnitOfWork inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
+    private void inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
         var unitOfWork = new AsyncUnitOfWork();
         unitOfWork.onInvocation(action);
-        unitsOfWork.add(unitOfWork);
-        return unitOfWork;
+        awaitCompletion(unitOfWork.execute());
     }
 
     @Override
@@ -138,9 +135,6 @@ class AxonTestGiven implements AxonTestPhase.Given {
 
     @Override
     public AxonTestPhase.When when() {
-        for (var unitOfWork : unitsOfWork) {
-            awaitCompletion(unitOfWork.execute());
-        }
         return new AxonTestWhen(configuration, customization, messageTypeResolver, commandBus, eventSink);
     }
 

@@ -231,8 +231,7 @@ public interface AxonTestPhase {
         Given commands(@Nonnull CommandMessage<?>... messages);
 
         /**
-         * Transitions to the "when" phase to execute the test action. This method completes the "given" phase,
-         * committing any Unit of Work that was started during this phase.
+         * Transitions to the "when" phase to execute the test action.
          *
          * @return A {@link When} instance that allows executing the test.
          */
@@ -252,8 +251,7 @@ public interface AxonTestPhase {
         interface Command {
 
             /**
-             * Transitions to the "then" phase to validate the results of the test. This method completes the "when"
-             * phase, committing any Unit of Work that was started during this phase.
+             * Transitions to the "then" phase to validate the results of the test.
              *
              * @return A {@link Then} instance that allows validating the test results.
              */
@@ -263,8 +261,7 @@ public interface AxonTestPhase {
         interface Event {
 
             /**
-             * Transitions to the "then" phase to validate the results of the test. This method completes the "when"
-             * phase, committing any Unit of Work that was started during this phase.
+             * Transitions to the "then" phase to validate the results of the test.
              *
              * @return A {@link Then} instance that allows validating the test results.
              */
@@ -350,6 +347,10 @@ public interface AxonTestPhase {
      */
     interface Then {
 
+        /**
+         * Operations available in the Then phase of the test fixture execution only if command was dispatched during
+         * the When phase.
+         */
         interface Command extends Message<Command> {
 
             /**
@@ -419,6 +420,9 @@ public interface AxonTestPhase {
             Command exception(@Nonnull Matcher<?> matcher);
         }
 
+        /**
+         * Operations available in the Then phase of the test fixture execution only if event was published during the When phase.
+         */
         interface Event extends Message<Event> {
 
             /**
@@ -452,6 +456,12 @@ public interface AxonTestPhase {
             Event exception(@Nonnull Matcher<?> matcher);
         }
 
+        /**
+         * Interface describing the operations available in the "then" phase of the test fixture execution.
+         * It's possible to assert published messages from the When phase.
+         *
+         * @param <T> The type of the current Then instance, for fluent interfacing. The type depends on the operation which was triggered in the When phase.
+         */
         interface Message<T extends Message<T>> {
 
             /**
