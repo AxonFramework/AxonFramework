@@ -16,22 +16,20 @@
 
 package org.axonframework.integrationtests.testsuite.student;
 
-import org.axonframework.commandhandling.CommandHandlingComponent;
-import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.config.Configuration;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.ConfigurationParameterResolverFactory;
-import org.axonframework.eventhandling.EventSink;
+import org.axonframework.configuration.AxonConfiguration;
+import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
-import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventStateApplier;
-import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
-import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.Tag;
-import org.axonframework.eventsourcing.eventstore.TagResolver;
-import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventStorageEngine;
 import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
 import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
 import org.axonframework.integrationtests.testsuite.student.events.StudentEnrolledEvent;
@@ -42,74 +40,106 @@ import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.annotation.InjectEntityParameterResolverFactory;
+import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+import org.axonframework.modelling.repository.AsyncRepository;
 import org.junit.jupiter.api.*;
-import org.mockito.*;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Sets up the basics for the testsuite of the Student/Mentor/Course model. Can be customized by overriding the
- * relevant methods. By default uses a mix of different available options to validate the different ways of setting up
- * the event sourcing repository.
+ * Sets up the basics for the testsuite of the Student/Mentor/Course model.
+ * <p>
+ * Can be customized by overriding the relevant methods. By default, uses a mix of different available options to
+ * validate the different ways of setting up the event sourcing repository.
+ * <p>
+ * When using this test suite, be sure to invoke {@link #startApp()} when the test is all set.
+ *
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
  */
 public abstract class AbstractStudentTestSuite {
 
-    protected final String DEFAULT_CONTEXT = "default";
+    protected static final GenericCommandResultMessage<String> SUCCESSFUL_COMMAND_RESULT =
+            new GenericCommandResultMessage<>(new MessageType("empty"), "successful");
 
-    protected SimpleEventStore eventStore = new SimpleEventStore(
-            new AsyncInMemoryEventStorageEngine(),
-            getTagResolver()
-    );
+    private StatefulCommandHandlingModule.CommandHandlerPhase statefulCommandHandlingModule;
+    private EventSourcedEntityBuilder<String, Course> courseEntity;
+    private EventSourcedEntityBuilder<String, Student> studentEntity;
 
-    protected EventStateApplier<Student> studentEventStateApplier = getStudentAnnotationBasedEventStateApplier();
-    protected EventStateApplier<Course> courseEventStateApplier = getCourseEventStateApplier();
-
-    protected AsyncEventSourcingRepository<String, Student> studentRepository = new AsyncEventSourcingRepository<>(
-            String.class,
-            Student.class,
-            eventStore,
-            getStudentCriteriaResolver(),
-            studentEventStateApplier,
-            Student::new
-    );
-
-    protected AsyncEventSourcingRepository<String, Course> courseRepository = new AsyncEventSourcingRepository<>(
-            String.class,
-            Course.class,
-            eventStore,
-            getCourseCriteriaResolver(),
-            courseEventStateApplier,
-            Course::new
-    );
-
-
-    protected StateManager stateManager;
+    protected CommandGateway commandGateway;
+    protected AsyncEventStore eventStore;
+    protected AsyncRepository<String, Student> studentRepository;
+    protected AsyncRepository<String, Course> courseRepository;
 
     @BeforeEach
     void setUp() {
-        SimpleStateManager.Builder builder = SimpleStateManager
-                .builder("MyModelRegistry")
-                .register(studentRepository)
-                .register(courseRepository);
-        registerAdditionalModels(builder);
-        stateManager = builder.build();
+        studentEntity = EventSourcedEntityBuilder.entity(String.class, Student.class)
+                                                 .entityFactory(c -> (type, id) -> new Student(id))
+                                                 .criteriaResolver(c -> studentCriteriaResolver())
+                                                 .eventStateApplier(c -> studentAnnotationBasedEventStateApplier());
+        courseEntity = EventSourcedEntityBuilder.entity(String.class, Course.class)
+                                                .entityFactory(c -> (type, id) -> new Course(id))
+                                                .criteriaResolver(c -> courseCriteriaResolver())
+                                                .eventStateApplier(c -> courseEventStateApplier());
+
+        statefulCommandHandlingModule = StatefulCommandHandlingModule.named("student-course-module")
+                                                                     .entities()
+                                                                     .entity(studentEntity)
+                                                                     .entity(courseEntity)
+                                                                     .entities(this::registerAdditionalEntities)
+                                                                     .commandHandlers();
     }
 
-    protected void registerAdditionalModels(SimpleStateManager.Builder builder) {
-        // Test suites can override this method to register additional models
+    /**
+     * Test suite implementations can invoke this method to register additional command handlers.
+     *
+     * @param handlerConfigurer The command handler phase of the {@link StatefulCommandHandlingModule}, allowing for
+     *                          command handler registration.
+     */
+    protected void registerCommandHandlers(
+            Consumer<StatefulCommandHandlingModule.CommandHandlerPhase> handlerConfigurer
+    ) {
+        statefulCommandHandlingModule.commandHandlers(handlerConfigurer);
     }
 
+    /**
+     * Starts the Axon Framework application.
+     */
+    protected void startApp() {
+        AxonConfiguration configuration =
+                EventSourcingConfigurer.create()
+                                       .registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
+                                       .start();
+        commandGateway = configuration.getComponent(CommandGateway.class);
+        eventStore = configuration.getComponent(AsyncEventStore.class);
+
+        NewConfiguration moduleConfig = configuration.getModuleConfigurations().getFirst();
+        //noinspection unchecked
+        studentRepository = moduleConfig.getComponent(AsyncRepository.class, studentEntity.entityName());
+        //noinspection unchecked
+        courseRepository = moduleConfig.getComponent(AsyncRepository.class, courseEntity.entityName());
+    }
+
+    /**
+     * Test suites can override this method to register additional entities.
+     *
+     * @param entityConfigurer The entity phase of the {@link StatefulCommandHandlingModule}, allowing for additional
+     *                         entities to be registered.
+     */
+    protected void registerAdditionalEntities(StatefulCommandHandlingModule.EntityPhase entityConfigurer) {
+        // Do nothing by default.
+    }
 
     /**
      * Returns the {@link EventStateApplier} for the {@link Course} model. Defaults to manually calling the event
      * sourcing handlers on the model.
      */
-    protected EventStateApplier<Course> getCourseEventStateApplier() {
+    protected EventStateApplier<Course> courseEventStateApplier() {
         return (model, em, ctx) -> {
             if (em.getPayload() instanceof StudentEnrolledEvent e) {
                 model.handle(e);
@@ -119,86 +149,71 @@ public abstract class AbstractStudentTestSuite {
     }
 
     /**
-     * Returns the {@link EventStateApplier} for the {@link Student} model. Defaults to using the
-     * {@link AnnotationBasedEventStateApplier} to use the annotations placed.
+     * Returns the {@link CriteriaResolver} for the {@link Course} model. Defaults to a criteria that matches any event
+     * with the tag "Course" and the given model id.
      */
-    protected EventStateApplier<Student> getStudentAnnotationBasedEventStateApplier() {
-        return new AnnotationBasedEventStateApplier<>(Student.class);
+    protected CriteriaResolver<String> courseCriteriaResolver() {
+        return courseId -> EventCriteria.match()
+                                        .eventsOfAnyType()
+                                        .withTags(new Tag("Course", courseId));
     }
-
-
-    /**
-     * Returns the {@link TagResolver} to use for the event store. Defaults to the {@link AnnotationBasedTagResolver}.
-     */
-    protected TagResolver getTagResolver() {
-        return new AnnotationBasedTagResolver();
-    }
-
 
     /**
      * Returns the {@link CriteriaResolver} for the {@link Student} model. Defaults to a criteria that matches any event
      * with the tag "Student" and the given model id.
      */
-    protected CriteriaResolver<String> getStudentCriteriaResolver() {
-        return myModelId -> EventCriteria.match().eventsOfAnyType().withTags(new Tag("Student", myModelId));
+    protected CriteriaResolver<String> studentCriteriaResolver() {
+        return studentId -> EventCriteria.match()
+                                         .eventsOfAnyType()
+                                         .withTags(new Tag("Student", studentId));
     }
 
     /**
-     * Returns the {@link CriteriaResolver} for the {@link Course} model. Defaults to a criteria that matches any event
-     * with the tag "Course" and the given model id.
+     * Returns the {@link EventStateApplier} for the {@link Student} model. Defaults to using the
+     * {@link AnnotationBasedEventStateApplier} to use the annotations placed.
      */
-    protected CriteriaResolver<String> getCourseCriteriaResolver() {
-        return myModelId -> EventCriteria.match().eventsOfAnyType().withTags(new Tag("Course", myModelId));
+    protected EventStateApplier<Student> studentAnnotationBasedEventStateApplier() {
+        return new AnnotationBasedEventStateApplier<>(Student.class);
     }
-
 
     /**
      * Returns the {@link MultiParameterResolverFactory} to use for the testsuite. Defaults to a factory that can
      * resolve parameters from the classpath, the configuration, and the {@link StateManager}.
      */
-    protected MultiParameterResolverFactory getParameterResolverFactory() {
-        var configuration = Mockito.mock(Configuration.class);
-        Mockito.when(configuration.getComponent(StateManager.class)).thenReturn(stateManager);
-        Mockito.when(configuration.getComponent(EventSink.class)).thenReturn(eventStore);
-
+    protected MultiParameterResolverFactory parameterResolverFactory(NewConfiguration configuration) {
         return MultiParameterResolverFactory.ordered(List.of(
                 ClasspathParameterResolverFactory.forClass(this.getClass()),
                 // To be able to get components
                 new ConfigurationParameterResolverFactory(configuration),
                 // To be able to get the entity, the StateManager needs to be available.
                 // When the new configuration API is there, we should have a way to resolve this
-                new InjectEntityParameterResolverFactory(stateManager)
+                new InjectEntityParameterResolverFactory(configuration.getComponent(StateManager.class))
         ));
     }
 
+    protected void changeStudentName(String studentId, String name) {
+        sendCommand(new ChangeStudentNameCommand(studentId, name));
+    }
 
-    protected <T> void sendCommand(
-            CommandHandlingComponent component,
-            T payload
-    ) {
-        AsyncUnitOfWork uow = new AsyncUnitOfWork();
-        uow.executeWithResult((context) -> {
-            GenericCommandMessage<T> command = new GenericCommandMessage<>(
-                    new MessageType(payload.getClass()),
-                    payload);
-            return component.handle(command, context).first().asCompletableFuture();
-        }).join();
+    protected void enrollStudentToCourse(String studentId, String courseId) {
+        sendCommand(new EnrollStudentToCourseCommand(studentId, courseId));
+    }
+
+    protected <T> void sendCommand(T payload) {
+        commandGateway.sendAndWait(payload);
     }
 
     protected void appendEvent(ProcessingContext context, Object event) {
         eventStore.transaction(context)
-                  .appendEvent(new GenericEventMessage<>(
-                          new MessageType(event.getClass()),
-                          event));
+                  .appendEvent(new GenericEventMessage<>(new MessageType(event.getClass()), event));
     }
 
     protected void verifyStudentName(String id, String name) {
         AsyncUnitOfWork uow = new AsyncUnitOfWork();
-        uow.executeWithResult(context ->
-                                      studentRepository
-                                              .load(id, context)
-                                              .thenAccept(student -> assertEquals(name, student.entity().getName()))
-        ).join();
+        uow.executeWithResult(context -> studentRepository
+                   .load(id, context)
+                   .thenAccept(student -> assertEquals(name, student.entity().getName())))
+           .join();
     }
 
     protected void verifyStudentEnrolledInCourse(String id, String courseId) {
@@ -209,18 +224,5 @@ public abstract class AbstractStudentTestSuite {
                    .thenCompose(v -> courseRepository.load(courseId, context))
                    .thenAccept(course -> assertTrue(course.entity().getStudentsEnrolled().contains(id))))
            .join();
-    }
-
-    protected void changeStudentName(CommandHandlingComponent component, String id, String name) {
-        sendCommand(component, new ChangeStudentNameCommand(id, name));
-    }
-
-
-    protected void enrollStudentToCourse(
-            CommandHandlingComponent component,
-            String studentId,
-            String courseId
-    ) {
-        sendCommand(component, new EnrollStudentToCourseCommand(studentId, courseId));
     }
 }

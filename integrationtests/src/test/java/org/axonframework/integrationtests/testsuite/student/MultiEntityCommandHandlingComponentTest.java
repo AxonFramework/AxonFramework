@@ -18,6 +18,7 @@ package org.axonframework.integrationtests.testsuite.student;
 
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventSink;
@@ -33,129 +34,128 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.EntityIdResolver;
-import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.command.annotation.InjectEntity;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests whether stateful command handling components can handle commands that target multiple entities at the same time.
+ * Tests whether stateful command handling components can process commands that target multiple entities at the same
+ * time.
+ *
+ * @author Mitchell Herrijgers
  */
 class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
-
     @Test
     void canCombineModelsInAnnotatedCommandHandlerViaStateManagerParameter() {
-        MultiModelAnnotatedCommandHandler handler = new MultiModelAnnotatedCommandHandler();
+        registerCommandHandlers(handlerPhase -> handlerPhase.commandHandlingComponent(
+                c -> new AnnotatedCommandHandlingComponent<>(
+                        new MultiModelAnnotatedCommandHandler(),
+                        parameterResolverFactory(c)
+                )
+        ));
+        startApp();
 
-        var component = StatefulCommandHandlingComponent
-                .create("InjectedStateHandler", stateManager)
-                .subscribe(new AnnotatedCommandHandlingComponent<>(
-                        handler,
-                        getParameterResolverFactory()));
+        enrollStudentToCourse("my-studentId-1", "my-courseId-1");
 
-
-        enrollStudentToCourse(component, "my-studentId-1", "my-courseId-1");
         verifyStudentEnrolledInCourse("my-studentId-1", "my-courseId-1");
     }
 
     @Test
     void canCombineStatesInLambdaCommandHandlerViaStateManagerParameter() {
-        var component = StatefulCommandHandlingComponent
-                .create("MyStatefulCommandHandlingComponent", stateManager)
-                .subscribe(
-                        new QualifiedName(EnrollStudentToCourseCommand.class),
-                        (command, state, context) -> {
-                            EnrollStudentToCourseCommand payload = (EnrollStudentToCourseCommand) command.getPayload();
-                            Student student = state.loadEntity(Student.class, payload.studentId(), context).join();
-                            Course course = state.loadEntity(Course.class, payload.courseId(), context).join();
+        registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
+                new QualifiedName(EnrollStudentToCourseCommand.class),
+                (command, state, context) -> {
+                    EnrollStudentToCourseCommand payload = (EnrollStudentToCourseCommand) command.getPayload();
+                    Student student = state.loadEntity(Student.class, payload.studentId(), context).join();
+                    Course course = state.loadEntity(Course.class, payload.courseId(), context).join();
 
-                            if (student.getCoursesEnrolled().size() > 2) {
-                                throw new IllegalArgumentException(
-                                        "Student already enrolled in 3 courses");
-                            }
+                    if (student.getCoursesEnrolled().size() > 2) {
+                        throw new IllegalArgumentException("Student already enrolled in 3 courses");
+                    }
 
-                            if (course.getStudentsEnrolled().size() > 2) {
-                                throw new IllegalArgumentException("Course already has 3 students");
-                            }
-                            appendEvent(context,
-                                        new StudentEnrolledEvent(payload.studentId(), payload.courseId()));
-                            return MessageStream.empty().cast();
-                        });
+                    if (course.getStudentsEnrolled().size() > 2) {
+                        throw new IllegalArgumentException("Course already has 3 students");
+                    }
+                    appendEvent(context, new StudentEnrolledEvent(payload.studentId(), payload.courseId()));
+                    return MessageStream.just(SUCCESSFUL_COMMAND_RESULT).cast();
+                }
+        ));
+        startApp();
 
         // First student
-        enrollStudentToCourse(component, "my-studentId-2", "my-courseId-1");
+        enrollStudentToCourse("my-studentId-2", "my-courseId-1");
         verifyStudentEnrolledInCourse("my-studentId-2", "my-courseId-1");
 
         // Second student
-        enrollStudentToCourse(component, "my-studentId-3", "my-courseId-1");
+        enrollStudentToCourse("my-studentId-3", "my-courseId-1");
         verifyStudentEnrolledInCourse("my-studentId-3", "my-courseId-1");
         verifyStudentEnrolledInCourse("my-studentId-2", "my-courseId-1");
 
         // Third and last possible student
-        enrollStudentToCourse(component, "my-studentId-4", "my-courseId-1");
+        enrollStudentToCourse("my-studentId-4", "my-courseId-1");
         verifyStudentEnrolledInCourse("my-studentId-4", "my-courseId-1");
         verifyStudentEnrolledInCourse("my-studentId-3", "my-courseId-1");
         verifyStudentEnrolledInCourse("my-studentId-2", "my-courseId-1");
 
         // Fourth can still enroll for other course
-        enrollStudentToCourse(component, "my-studentId-4", "my-courseId-2");
+        enrollStudentToCourse("my-studentId-4", "my-courseId-2");
         verifyStudentEnrolledInCourse("my-studentId-4", "my-courseId-2");
 
         // But five can not enroll for the first course
-        var exception = assertThrows(CompletionException.class,
-                                     () -> enrollStudentToCourse(component, "my-studentId-5", "my-courseId-1"
-                                     ));
-        assertInstanceOf(IllegalArgumentException.class, exception.getCause());
-        assertTrue(exception.getCause().getMessage().contains("Course already has 3 students"));
+        var exception = assertThrows(CommandExecutionException.class,
+                                     () -> enrollStudentToCourse("my-studentId-5", "my-courseId-1"));
+        Throwable commandExecutionExceptionCause = exception.getCause();
+        assertInstanceOf(ExecutionException.class, commandExecutionExceptionCause);
+        Throwable executionExceptionCause = commandExecutionExceptionCause.getCause();
+        assertInstanceOf(IllegalArgumentException.class, executionExceptionCause);
+        assertTrue(executionExceptionCause.getMessage().contains("Course already has 3 students"));
     }
 
     @Test
     void canHandleCommandThatTargetsMultipleOfTheSameModelInSameAnnotatedCommandHandler() {
-
-        MultiModelAnnotatedCommandHandler handler = new MultiModelAnnotatedCommandHandler();
-        var component = StatefulCommandHandlingComponent
-                .create("InjectedStateHandler", stateManager)
-                .subscribe(new AnnotatedCommandHandlingComponent<>(
-                        handler,
-                        getParameterResolverFactory()));
+        registerCommandHandlers(handlerPhase -> handlerPhase.commandHandlingComponent(
+                c -> new AnnotatedCommandHandlingComponent<>(
+                        new MultiModelAnnotatedCommandHandler(),
+                        parameterResolverFactory(c)
+                )
+        ));
+        startApp();
 
         // Can assign mentor to mentee
-        sendCommand(component, new AssignMentorCommand("my-studentId-1", "my-studentId-2"));
+        sendCommand(new AssignMentorCommand("my-studentId-1", "my-studentId-2"));
 
         // But not a second time
-        var exception = assertThrows(CompletionException.class,
-                                     () -> sendCommand(component,
-                                                       new AssignMentorCommand("my-studentId-1", "my-studentId-3")
+        var exception = assertThrows(CommandExecutionException.class,
+                                     () -> sendCommand(
+                                             new AssignMentorCommand("my-studentId-1", "my-studentId-3")
                                      ));
-        assertInstanceOf(IllegalArgumentException.class, exception.getCause());
-        assertTrue(exception.getCause().getMessage().contains("Mentor already assigned to a mentee"));
+        Throwable commandExecutionExceptionCause = exception.getCause();
+        assertInstanceOf(ExecutionException.class, commandExecutionExceptionCause);
+        Throwable executionExceptionCause = commandExecutionExceptionCause.getCause();
+        assertInstanceOf(IllegalArgumentException.class, executionExceptionCause);
+        assertTrue(executionExceptionCause.getMessage().contains("Mentor already assigned to a mentee"));
     }
 
+    private static class MultiModelAnnotatedCommandHandler {
 
-    class MultiModelAnnotatedCommandHandler {
-
+        @SuppressWarnings("unused")
         @CommandHandler
         public void handle(EnrollStudentToCourseCommand command,
-                           StateManager stateManager,
+                           @InjectEntity(idProperty = "studentId") Student student,
+                           @InjectEntity(idProperty = "courseId") Course course,
                            EventSink eventSink,
-                           ProcessingContext context
-        ) {
-            Student student = stateManager.loadEntity(Student.class, command.studentId(), context).join();
-
+                           ProcessingContext context) {
             if (student.getCoursesEnrolled().size() > 2) {
                 throw new IllegalArgumentException("Student already enrolled in 3 courses");
             }
 
-            // Lazy-loading, so only load course if the student is able to enroll
-            Course course = stateManager.loadEntity(Course.class, command.courseId(), context).join();
             if (course.getStudentsEnrolled().size() > 2) {
                 throw new IllegalArgumentException("Course already has 3 students");
             }
@@ -169,14 +169,13 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
             assertTrue(course.getStudentsEnrolled().contains(command.studentId()));
         }
 
-
+        @SuppressWarnings("unused")
         @CommandHandler
         public void handle(AssignMentorCommand command,
                            @InjectEntity(idResolver = MentorIdResolver.class) Student mentor,
                            @InjectEntity(idProperty = "menteeId") ManagedEntity<?, Student> mentee,
                            EventSink eventSink,
-                           ProcessingContext context
-        ) {
+                           ProcessingContext context) {
             if (mentor.getMenteeId() != null) {
                 throw new IllegalArgumentException("Mentor already assigned to a mentee");
             }
@@ -195,6 +194,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
             @Override
             @NotNull
             public String resolve(@Nonnull Message<?> command, @Nonnull ProcessingContext context) {
+                //noinspection unused
                 if (command.getPayload() instanceof AssignMentorCommand(String studentId, String mentorId)) {
                     return studentId;
                 }

@@ -169,7 +169,7 @@ public class SimpleCommandBus implements CommandBus {
                 }
             });
         }
-        return result.thenApply(Entry::message);
+        return result.thenApply(e -> e == null ? null : e.message());
     }
 
     @Override

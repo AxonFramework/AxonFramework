@@ -66,7 +66,6 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MultiHandlerDefinition;
 import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.correlation.MessageOriginProvider;
@@ -427,9 +426,7 @@ public class DefaultConfigurer implements Configurer {
      */
     protected ParameterResolverFactory defaultParameterResolverFactory(Configuration config) {
         return defaultComponent(ParameterResolverFactory.class, config)
-                .orElseGet(() -> MultiParameterResolverFactory.ordered(ClasspathParameterResolverFactory.forClass(
-                                                                               getClass()),
-                                                                       new ConfigurationParameterResolverFactory(config)));
+                .orElseGet(() -> ClasspathParameterResolverFactory.forClass(getClass()));
     }
 
     /**

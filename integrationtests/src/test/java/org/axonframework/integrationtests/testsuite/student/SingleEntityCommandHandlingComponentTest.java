@@ -28,73 +28,70 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.command.annotation.InjectEntity;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests whether stateful command handling components can handle singular model commands.
+ * Tests whether stateful command handling components can process commands with a single entity.
+ *
+ * @author Mitchell Herrijgers
  */
 class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
     @Test
     void canHandleCommandThatTargetsOneEntityUsingStateManager() {
-        var component = StatefulCommandHandlingComponent
-                .create("MyStatefulCommandHandlingComponent", stateManager)
-                .subscribe(
-                        new QualifiedName(ChangeStudentNameCommand.class),
-                        (command, state, context) -> {
-                            ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
-                            Student student = state.loadEntity(Student.class, payload.id(), context).join();
-                            appendEvent(context,
-                                        new StudentNameChangedEvent(student.getId(), payload.name()));
-                            return MessageStream.empty().cast();
-                        });
+        registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
+                new QualifiedName(ChangeStudentNameCommand.class),
+                (command, state, context) -> {
+                    ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
+                    Student student = state.loadEntity(Student.class, payload.id(), context).join();
+                    appendEvent(context,
+                                new StudentNameChangedEvent(student.getId(), payload.name()));
+                    return MessageStream.just(SUCCESSFUL_COMMAND_RESULT).cast();
+                }
+        ));
+        startApp();
 
-        changeStudentName(component, "my-studentId-1", "name-1");
+        changeStudentName("my-studentId-1", "name-1");
         verifyStudentName("my-studentId-1", "name-1");
-        changeStudentName(component, "my-studentId-1", "name-2");
+        changeStudentName("my-studentId-1", "name-2");
         verifyStudentName("my-studentId-1", "name-2");
-        changeStudentName(component, "my-studentId-1", "name-3");
+        changeStudentName("my-studentId-1", "name-3");
         verifyStudentName("my-studentId-1", "name-3");
-        changeStudentName(component, "my-studentId-1", "name-4");
+        changeStudentName("my-studentId-1", "name-4");
         verifyStudentName("my-studentId-1", "name-4");
 
-        changeStudentName(component, "my-studentId-2", "name-5");
+        changeStudentName("my-studentId-2", "name-5");
         verifyStudentName("my-studentId-1", "name-4");
         verifyStudentName("my-studentId-2", "name-5");
     }
 
     @Test
     void canHandleCommandThatTargetsOneModelViaStateManagerParameter() {
-        SingleModelAnnotatedCommandHandler handler = new SingleModelAnnotatedCommandHandler();
+        registerCommandHandlers(handlerPhase -> handlerPhase.commandHandlingComponent(
+                c -> new AnnotatedCommandHandlingComponent<>(
+                        new SingleModelAnnotatedCommandHandler(),
+                        parameterResolverFactory(c)
+                )
+        ));
+        startApp();
 
-        var component = StatefulCommandHandlingComponent
-                .create("InjectedStateHandler", stateManager)
-                .subscribe(new AnnotatedCommandHandlingComponent<>(
-                        handler,
-                        getParameterResolverFactory()));
-
-
-        changeStudentName(component, "my-studentId-1", "name-1");
+        changeStudentName("my-studentId-1", "name-1");
         verifyStudentName("my-studentId-1", "name-1");
 
-
-        changeStudentName(component, "my-studentId-1", "name-2");
+        changeStudentName("my-studentId-1", "name-2");
         verifyStudentName("my-studentId-1", "name-2");
     }
 
-    class SingleModelAnnotatedCommandHandler {
+    static class SingleModelAnnotatedCommandHandler {
 
         @CommandHandler
-        public void handle(
-                ChangeStudentNameCommand command,
-                @InjectEntity Student student,
-                EventSink eventSink,
-                ProcessingContext context
-        ) {
+        public void handle(ChangeStudentNameCommand command,
+                           @InjectEntity Student student,
+                           EventSink eventSink,
+                           ProcessingContext context) {
             // Change name through event
             eventSink.publish(context, new GenericEventMessage<>(
                     new MessageType(StudentNameChangedEvent.class),

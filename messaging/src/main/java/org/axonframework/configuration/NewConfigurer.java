@@ -76,9 +76,9 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      * @param <C>     The type of component the {@code factory} builds.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    <C> S registerComponent(@Nonnull Class<C> type,
+    <C> S registerComponent(@Nonnull Class<? extends C> type,
                             @Nonnull String name,
-                            @Nonnull ComponentFactory<C> factory);
+                            @Nonnull ComponentFactory<? extends C> factory);
 
     /**
      * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on <b>all</b>

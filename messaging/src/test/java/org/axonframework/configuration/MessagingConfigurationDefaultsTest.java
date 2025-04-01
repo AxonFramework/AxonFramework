@@ -97,7 +97,7 @@ class MessagingConfigurationDefaultsTest {
         assertEquals(testCommandBus, configuredCommandBus);
     }
 
-    private class TestCommandBus implements CommandBus {
+    private static class TestCommandBus implements CommandBus {
 
         @Override
         public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,

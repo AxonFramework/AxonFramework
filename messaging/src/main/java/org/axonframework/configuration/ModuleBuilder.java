@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing.annotation;
+package org.axonframework.configuration;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+/**
+ * Functional interface describing how to build a {@link Module} of type {@code M}.
+ *
+ * @param <M> The type of module created by this builder.
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ * @since 5.0.0
+ */
+public interface ModuleBuilder<M extends Module<M>> {
 
-@Target({ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@EventSourcedEntity(tagKey = "metaAnnotated")
-public @interface MetaAnnotatedEventSourcingEntity {
+    /**
+     * Builds a {@link Module} of type {@code M}.
+     *
+     * @return A {@link Module} of type {@code M}.
+     */
+    M build();
 }
