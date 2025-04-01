@@ -51,10 +51,10 @@ public class Component<C> implements DescribableComponent {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    private final Identifier<C> identifier;
+    private final Identifier<? extends C> identifier;
     private final ComponentFactory<? extends C> factory;
     private final BiConsumer<LifecycleRegistry, Supplier<? extends C>> lifecycleInitializer;
-    private final Component<C> dependent;
+    private final Component<? extends C> dependent;
     private final AtomicBoolean lifecycleInitialized = new AtomicBoolean(false);
     private C instance;
 
@@ -68,7 +68,7 @@ public class Component<C> implements DescribableComponent {
      * @param identifier The identifier of the component.
      * @param factory    The factory building the component.
      */
-    public Component(@Nonnull Identifier<C> identifier, @Nonnull ComponentFactory<? extends C> factory) {
+    public Component(@Nonnull Identifier<? extends C> identifier, @Nonnull ComponentFactory<? extends C> factory) {
         this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
         this.factory = requireNonNull(factory, "A Component factory cannot be null.");
         this.lifecycleInitializer = noop();
@@ -233,13 +233,20 @@ public class Component<C> implements DescribableComponent {
     }
 
     /**
+     * Returns the unique {@link Identifier} of this {@code Component}.
+     */
+    public Identifier<? extends C> identifier() {
+        return identifier;
+    }
+
+    /**
      * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code type} and {@code name}.
      *
      * @param type The type of the component this object identifiers, typically an interface.
      * @param name The name of the component this object identifiers.
      * @param <C>  The type of the component this object identifiers, typically an interface.
      */
-    public record Identifier<C>(@Nonnull Class<C> type, @Nonnull String name) {
+    public record Identifier<C>(@Nonnull Class<? extends C> type, @Nonnull String name) {
 
         /**
          * Compact constructor asserting whether the {@code type} and {@code name} are non-null and not empty.
@@ -253,6 +260,11 @@ public class Component<C> implements DescribableComponent {
                     StringUtils::nonEmpty,
                     () -> new IllegalArgumentException("The given name is unsupported because it is empty.")
             );
+        }
+
+        @Override
+        public String toString() {
+            return type.getName() + ":" + name;
         }
     }
 }

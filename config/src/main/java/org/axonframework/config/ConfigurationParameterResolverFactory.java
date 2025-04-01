@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,39 +16,48 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Priority;
+import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.messaging.annotation.FixedValueParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
+import java.util.Objects;
 
 import static org.axonframework.common.Priority.LOW;
 
 /**
- * ParameterResolverFactory implementation that resolves parameters from available components in the Configuration
- * instance it was configured with.
+ * A {@code ParameterResolverFactory} implementation that resolves parameters from available components in the
+ * {@link NewConfiguration} instance it was configured with.
  * <p>
- * This implementation is usually auto-configured when using the Configuration API.
+ * This implementation is usually autoconfigured when using the Configuration API.
+ *
+ * @author Allard Buijze
+ * @since 3.0.2
  */
 @Priority(LOW)
 public class ConfigurationParameterResolverFactory implements ParameterResolverFactory {
 
-    private final Configuration configuration;
+    private final NewConfiguration configuration;
 
     /**
-     * Initialize an instance using given {@code configuration} to supply the value to resolve parameters with
+     * Initialize an instance using given {@code configuration} to supply the value to resolve parameters with.
      *
-     * @param configuration The configuration to look for component
+     * @param configuration The configuration to look for component with.
      */
-    public ConfigurationParameterResolverFactory(Configuration configuration) {
-        this.configuration = configuration;
+    public ConfigurationParameterResolverFactory(@Nonnull NewConfiguration configuration) {
+        this.configuration = Objects.requireNonNull(configuration, "The configuration cannot be null.");
     }
 
     @Override
     public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
-        Object component = configuration.getComponent(parameters[parameterIndex].getType());
-        return component == null ? null : new FixedValueParameterResolver<>(component);
+        // TODO #3360 - This block is up for improvements per referenced issue number.
+        Class<?> componentType = parameters[parameterIndex].getType();
+        return configuration.getOptionalComponent(componentType)
+                            .map(FixedValueParameterResolver::new)
+                            .orElse(null);
     }
 }

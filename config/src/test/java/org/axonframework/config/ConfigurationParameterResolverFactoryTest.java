@@ -18,6 +18,7 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
@@ -26,34 +27,41 @@ import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link ConfigurationParameterResolverFactory}.
+ *
+ * @author Allard Buijze
+ */
 class ConfigurationParameterResolverFactoryTest {
 
-    private Configuration configuration;
-    private ConfigurationParameterResolverFactory testSubject;
-    private Parameter[] parameters;
     private Method method;
+    private Parameter[] parameters;
+    private NewConfiguration configuration;
     private CommandBus commandBus;
+
+    private ConfigurationParameterResolverFactory testSubject;
 
     @BeforeEach
     void setUp() throws Exception {
-        configuration = mock(Configuration.class);
-        commandBus = new SimpleCommandBus();
-        when(configuration.getComponent(CommandBus.class)).thenReturn(commandBus);
-        testSubject = new ConfigurationParameterResolverFactory(configuration);
-
         method = getClass().getMethod("donorMethod", String.class, CommandBus.class);
         parameters = method.getParameters();
+        configuration = mock(NewConfiguration.class);
+        commandBus = new SimpleCommandBus();
+        when(configuration.getOptionalComponent(CommandBus.class)).thenReturn(Optional.of(commandBus));
+
+        testSubject = new ConfigurationParameterResolverFactory(configuration);
     }
 
     @Test
     void returnsNullOnUnavailableParameter() {
         assertNull(testSubject.createInstance(method, parameters, 0));
 
-        verify(configuration).getComponent(String.class);
+        verify(configuration).getOptionalComponent(String.class);
     }
 
     @Test
@@ -64,7 +72,7 @@ class ConfigurationParameterResolverFactoryTest {
         assertNotNull(actual);
         assertSame(commandBus, actual.resolveParameterValue(testMessage, null));
 
-        verify(configuration).getComponent(CommandBus.class);
+        verify(configuration).getOptionalComponent(CommandBus.class);
     }
 
     @SuppressWarnings({"unused", "WeakerAccess"})

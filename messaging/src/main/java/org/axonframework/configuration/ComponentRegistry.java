@@ -77,9 +77,9 @@ public interface ComponentRegistry extends DescribableComponent {
      * @param <C>     The type of component the {@code factory} builds.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    <C> ComponentRegistry registerComponent(@Nonnull Class<C> type,
+    <C> ComponentRegistry registerComponent(@Nonnull Class<? extends C> type,
                                             @Nonnull String name,
-                                            @Nonnull ComponentFactory<C> factory);
+                                            @Nonnull ComponentFactory<? extends C> factory);
 
     /**
      * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on <b>all</b>

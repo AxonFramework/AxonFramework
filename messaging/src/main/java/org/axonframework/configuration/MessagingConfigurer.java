@@ -28,7 +28,7 @@ import java.util.function.Consumer;
  * The messaging {@link ComponentRegistry} of Axon Framework's configuration API.
  * <p>
  * Provides register operations for {@link #registerCommandBus(ComponentFactory) command},
- * {@link #registerEventSink(ComponentFactory) evnet}, and {@link #registerQueryBus(ComponentFactory) query}
+ * {@link #registerEventSink(ComponentFactory) event}, and {@link #registerQueryBus(ComponentFactory) query}
  * infrastructure components.
  * <p>
  * This configurer registers the following defaults:
@@ -93,7 +93,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Configures the given Command Bus to use in this configuration.
+     * Registers the given {@link CommandBus} factory in this {@code Configurer}.
      * <p>
      * The {@code commandBusFactory} receives the {@link NewConfiguration} as input and is expected to return a
      * {@link CommandBus} instance.
@@ -107,7 +107,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Configures the given Event Bus to use in this configuration.
+     * Registers the given {@link EventSink} factory in this {@code Configurer}.
      * <p>
      * The {@code eventSinkFactory} receives the {@link NewConfiguration} as input and is expected to return a
      * {@link EventSink} instance.
@@ -121,7 +121,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Configures the given Query Bus to use in this configuration.
+     * Registers the given {@link QueryBus} factory in this {@code Configurer}.
      * <p>
      * The {@code queryBusFactory} receives the {@link NewConfiguration} as input and is expected to return a
      * {@link QueryBus} instance.
@@ -135,7 +135,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Configures the given Query Update Emitter to use in this configuration.
+     * Registers the given {@link QueryUpdateEmitter} factory in this {@code Configurer}.
      * <p>
      * The {@code queryUpdateEmitterFactory} receives the {@link NewConfiguration} as input and is expected to return a
      * {@link QueryUpdateEmitter} instance.
