@@ -45,8 +45,8 @@ public class ModellingConfigurer
         implements ApplicationConfigurer<ModellingConfigurer> {
 
     /**
-     * This configurer does not set any defaults other than the defaults granted by the {@link MessagingConfigurer} it 
-      * wraps.
+     * This configurer does not set any defaults other than the defaults granted by the {@link MessagingConfigurer} it
+     * wraps.
      * <p>
      * Besides the specific operations, the {@code ModellingConfigurer} allows for configuring generic
      * {@link Component components}, {@link ComponentDecorator component decorators},
@@ -76,7 +76,8 @@ public class ModellingConfigurer
      * Registers the given stateful command handling {@code moduleBuilder} to use in this configuration.
      * <p>
      * As a {@link Module} implementation, any components registered with the result of the given {@code moduleBuilder}
-     * will not be accessible from other {@code Modules} to enforce encapsulation.
+     * will not be accessible from other {@code Modules} to enforce encapsulation. The sole exception to this, are
+     * {@code Modules} registered with the resulting {@link StatefulCommandHandlingModule} itself.
      *
      * @param moduleBuilder The builder returning a stateful command handling module to register with
      *                      {@code this ModellingConfigurer}.
