@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
@@ -35,27 +36,29 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * {@link AsyncRepository} implementation that loads entities based on their historic event streams, provided by an
  * {@link AsyncEventStore}.
  *
- * @param <ID> The type of identifier used to identify the entity.
- * @param <M>  The type of the model to load.
+ * @param <I> The type of identifier used to identify the entity.
+ * @param <E> The type of the model to load.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 0.1
  */
-public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.LifecycleManagement<ID, M> {
+public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.LifecycleManagement<I, E> {
 
-    private final ResourceKey<Map<ID, CompletableFuture<EventSourcedEntity<ID, M>>>> managedEntitiesKey =
+    private final ResourceKey<Map<I, CompletableFuture<EventSourcedEntity<I, E>>>> managedEntitiesKey =
             ResourceKey.withLabel("managedEntities");
 
-    private final Class<ID> idType;
-    private final Class<M> entityType;
+    private final Class<I> idType;
+    private final Class<E> entityType;
     private final AsyncEventStore eventStore;
-    private final CriteriaResolver<ID> criteriaResolver;
-    private final EventStateApplier<M> eventStateApplier;
-    private final Function<ID, M> newInstanceFactory;
+    private final CriteriaResolver<I> criteriaResolver;
+    private final EventStateApplier<E> eventStateApplier;
+    private final EventSourcedEntityFactory<I, E> entityFactory;
 
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
@@ -63,38 +66,39 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
      * the {@link org.axonframework.eventsourcing.eventstore.EventCriteria} of the given identifier type used to source
      * a model.
      *
-     * @param eventStore         The event store to load events from.
-     * @param criteriaResolver   Converts the given identifier to an
-     *                           {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a
-     *                           matching event stream.
-     * @param eventStateApplier  The function to apply event state changes to the loaded entities.
-     * @param newInstanceFactory A factory method to create new instances of the model based on a provided identifier.
+     * @param idType            The type of the identifier for the event sourced entity this repository serves.
+     * @param entityType        The type of the event sourced entity this repository serves.
+     * @param eventStore        The event store to load events from.
+     * @param entityFactory     A factory method to create new instances of the entity based on the entity's type and a
+     *                          provided identifier.
+     * @param criteriaResolver  Converts the given identifier to an
+     *                          {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a matching
+     *                          event stream.
+     * @param eventStateApplier The function to apply event state changes to the loaded entities.
      */
-    public AsyncEventSourcingRepository(
-            Class<ID> idType,
-            Class<M> entityType,
-            AsyncEventStore eventStore,
-            CriteriaResolver<ID> criteriaResolver,
-            EventStateApplier<M> eventStateApplier,
-            Function<ID, M> newInstanceFactory
-    ) {
-        this.idType = idType;
-        this.entityType = entityType;
-        this.eventStore = eventStore;
-        this.criteriaResolver = criteriaResolver;
-        this.eventStateApplier = eventStateApplier;
-        this.newInstanceFactory = newInstanceFactory;
+    public AsyncEventSourcingRepository(@Nonnull Class<I> idType,
+                                        @Nonnull Class<E> entityType,
+                                        @Nonnull AsyncEventStore eventStore,
+                                        @Nonnull EventSourcedEntityFactory<I, E> entityFactory,
+                                        @Nonnull CriteriaResolver<I> criteriaResolver,
+                                        @Nonnull EventStateApplier<E> eventStateApplier) {
+        this.idType = requireNonNull(idType, "The id type cannot be null.");
+        this.entityType = requireNonNull(entityType, "The entity type cannot be null.");
+        this.eventStore = requireNonNull(eventStore, "The event store cannot be null.");
+        this.entityFactory = requireNonNull(entityFactory, "The entity factory cannot be null.");
+        this.criteriaResolver = requireNonNull(criteriaResolver, "The criteria resolver cannot be null.");
+        this.eventStateApplier = requireNonNull(eventStateApplier, "The event state applier cannot be null.");
     }
 
     @Override
-    public ManagedEntity<ID, M> attach(@Nonnull ManagedEntity<ID, M> entity,
-                                       @Nonnull ProcessingContext processingContext) {
+    public ManagedEntity<I, E> attach(@Nonnull ManagedEntity<I, E> entity,
+                                      @Nonnull ProcessingContext processingContext) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
                 entity.identifier(),
                 id -> {
-                    EventSourcedEntity<ID, M> sourcedEntity = EventSourcedEntity.mapToEventSourcedEntity(entity);
+                    EventSourcedEntity<I, E> sourcedEntity = EventSourcedEntity.mapToEventSourcedEntity(entity);
                     updateActiveModel(sourcedEntity, processingContext);
                     return CompletableFuture.completedFuture(sourcedEntity);
                 }
@@ -103,26 +107,29 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
 
     @Nonnull
     @Override
-    public Class<M> entityType() {
+    public Class<E> entityType() {
         return entityType;
     }
 
     @Nonnull
     @Override
-    public Class<ID> idType() {
+    public Class<I> idType() {
         return idType;
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, M>> load(@Nonnull ID identifier,
-                                                        @Nonnull ProcessingContext processingContext) {
+    public CompletableFuture<ManagedEntity<I, E>> load(@Nonnull I identifier,
+                                                       @Nonnull ProcessingContext processingContext) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(
                 identifier,
                 id -> eventStore.transaction(processingContext)
                                 .source(SourcingCondition.conditionFor(criteriaResolver.resolve(id)))
-                                .reduce(new EventSourcedEntity<>(identifier, newInstanceFactory.apply(identifier)),
+                                .reduce(new EventSourcedEntity<>(
+                                                identifier,
+                                                entityFactory.createEntity(entityType(), identifier)
+                                        ),
                                         (entity, entry) -> {
                                             entity.applyStateChange(entry.message(),
                                                                     eventStateApplier,
@@ -138,12 +145,14 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
     }
 
     @Override
-    public CompletableFuture<ManagedEntity<ID, M>> loadOrCreate(@Nonnull ID identifier,
-                                                                @Nonnull ProcessingContext processingContext) {
+    public CompletableFuture<ManagedEntity<I, E>> loadOrCreate(@Nonnull I identifier,
+                                                               @Nonnull ProcessingContext processingContext) {
         return load(identifier, processingContext).thenApply(
                 managedEntity -> {
                     managedEntity.applyStateChange(
-                            entity -> entity != null ? entity : newInstanceFactory.apply(identifier)
+                            entity -> entity != null
+                                    ? entity
+                                    : entityFactory.createEntity(entityType(), identifier)
                     );
                     return managedEntity;
                 }
@@ -151,13 +160,13 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
     }
 
     @Override
-    public ManagedEntity<ID, M> persist(@Nonnull ID identifier,
-                                        @Nonnull M entity,
-                                        @Nonnull ProcessingContext processingContext) {
+    public ManagedEntity<I, E> persist(@Nonnull I identifier,
+                                       @Nonnull E entity,
+                                       @Nonnull ProcessingContext processingContext) {
         var managedEntities = processingContext.computeResourceIfAbsent(managedEntitiesKey, ConcurrentHashMap::new);
 
         return managedEntities.computeIfAbsent(identifier, id -> {
-            EventSourcedEntity<ID, M> sourcedEntity = new EventSourcedEntity<>(identifier, entity);
+            EventSourcedEntity<I, E> sourcedEntity = new EventSourcedEntity<>(identifier, entity);
             updateActiveModel(sourcedEntity, processingContext);
             return CompletableFuture.completedFuture(sourcedEntity);
         }).resultNow();
@@ -172,7 +181,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
      * @param processingContext The {@link ProcessingContext} for which to retrieve the active
      *                          {@link EventStoreTransaction}.
      */
-    private void updateActiveModel(EventSourcedEntity<ID, M> entity, ProcessingContext processingContext) {
+    private void updateActiveModel(EventSourcedEntity<I, E> entity, ProcessingContext processingContext) {
         eventStore.transaction(processingContext)
                   .onAppend(event -> entity.applyStateChange(event, eventStateApplier, processingContext));
     }
@@ -182,6 +191,7 @@ public class AsyncEventSourcingRepository<ID, M> implements AsyncRepository.Life
         descriptor.describeProperty("idType", idType);
         descriptor.describeProperty("entityType", entityType);
         descriptor.describeProperty("eventStore", eventStore);
+        descriptor.describeProperty("entityFactory", entityFactory);
         descriptor.describeProperty("criteriaResolver", criteriaResolver);
         descriptor.describeProperty("eventStateApplier", eventStateApplier);
     }

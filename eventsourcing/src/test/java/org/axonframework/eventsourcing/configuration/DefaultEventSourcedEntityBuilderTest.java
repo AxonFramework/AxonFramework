@@ -19,23 +19,23 @@ package org.axonframework.eventsourcing.configuration;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventStateApplier;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link EventSourcedEntityBuilder}.
+ * Test class validating the {@link DefaultEventSourcedEntityBuilder}.
  *
  * @author Steven van Beelen
  */
-class EventSourcedEntityBuilderTest {
+class DefaultEventSourcedEntityBuilderTest {
 
-    private Function<CourseId, Course> testEntityFactory;
+    private EventSourcedEntityFactory<CourseId, Course> testEntityFactory;
     private CriteriaResolver<CourseId> testCriteriaResolver;
     private EventStateApplier<Course> testEventStateApplier;
     private AtomicBoolean constructedEntityFactory;
@@ -46,7 +46,7 @@ class EventSourcedEntityBuilderTest {
 
     @BeforeEach
     void setUp() {
-        testEntityFactory = Course::new;
+        testEntityFactory = (type, id) -> new Course(id);
         testCriteriaResolver = event -> EventCriteria.anyEvent();
         testEventStateApplier = (model, event, processingContext) -> model;
         constructedEntityFactory = new AtomicBoolean(false);

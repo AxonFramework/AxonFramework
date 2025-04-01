@@ -21,11 +21,10 @@ import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventStateApplier;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.configuration.EntityBuilder;
-
-import java.util.function.Function;
 
 /**
  * An expansion on the {@link EntityBuilder}, specifically for event sourced entities.
@@ -64,6 +63,28 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
     }
 
     /**
+     * Starts the builder for an annotated event sourced entity with the given {@code entityType} and {@code idType}.
+     * <p>
+     * The given {@code entityType} is expected to be annotated with
+     * {@link org.axonframework.eventsourcing.annotation.EventSourcedEntity}. This annotation will allow for retrieval
+     * of the {@link org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory} and {@link CriteriaResolver}
+     * to construct the {@link org.axonframework.eventsourcing.AsyncEventSourcingRepository} for the event sourced
+     * entity being built.
+     *
+     * @param idType     The type of identifier used to identify the annotated event sourced entity that's being built.
+     * @param entityType The type of the annotated event sourced entity being built.
+     * @param <I>        The type of identifier used to identify the event sourced entity that's being built.
+     * @param <E>        The type of the event sourced entity being built.
+     * @return The event sourced entity builder, signaling the end of configuring an annotated event sourced entity.
+     * @throws IllegalArgumentException When the given {@code entityType} is not annotated with
+     *                                  {@link org.axonframework.eventsourcing.annotation.EventSourcedEntity}.
+     */
+    static <I, E> EventSourcedEntityBuilder<I, E> annotatedEntity(@Nonnull Class<I> idType,
+                                                                  @Nonnull Class<E> entityType) {
+        return new AnnotatedEventSourcedEntityBuilder<>(idType, entityType);
+    }
+
+    /**
      * The entity factory phase of the event sourced entity builder.
      * <p>
      * Enforce providing the {@link #entityFactory(ComponentFactory)} for the event sourced entity that's being built.
@@ -76,16 +97,18 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
         /**
          * Registers the given {@code entityFactory} as a factory method for the event sourced entity being built.
          * <p>
-         * The resulting lambda from the component factory receives the identifier of type {@code I} and expects an
-         * event sourced entity of type {@code E} as a result. The
-         * {@link org.axonframework.configuration.NewConfiguration} in the component factory allows the entity factory
-         * to use other components that have been registered.
+         * The resulting {@link EventSourcedEntityFactory} from the component factory receives the entity type {@code E}
+         * and the identifier of type {@code I} and expects an event sourced entity instance of type {@code E} as a
+         * result. The {@link org.axonframework.configuration.NewConfiguration} in the component factory allows the
+         * entity factory to use other components that have been registered.
          *
-         * @param entityFactory A factory method constructing the entity of type {@code E} based on an identifier of
-         *                      type {@code I}.
+         * @param entityFactory A factory method constructing the entity of type {@code E} based on the entity's type
+         *                      and an identifier of type {@code I}.
          * @return The {@link CriteriaResolver} phase of this builder, for a fluent API.
          */
-        CriteriaResolverPhase<I, E> entityFactory(@Nonnull ComponentFactory<Function<I, E>> entityFactory);
+        CriteriaResolverPhase<I, E> entityFactory(
+                @Nonnull ComponentFactory<EventSourcedEntityFactory<I, E>> entityFactory
+        );
     }
 
     /**

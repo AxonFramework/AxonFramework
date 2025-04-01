@@ -48,7 +48,9 @@ import static org.mockito.Mockito.*;
 class AsyncEventSourcingRepositoryTest {
 
     private static final Set<Tag> TEST_MODEL_TAGS = Set.of(new Tag("aggregateId", "id"));
-    private static final EventCriteria TEST_MODEL_CRITERIA = EventCriteria.match().eventsOfAnyType().withTags("aggregateId", "id");
+    private static final EventCriteria TEST_MODEL_CRITERIA = EventCriteria.match()
+                                                                          .eventsOfAnyType()
+                                                                          .withTags("aggregateId", "id");
 
     private AsyncEventStore eventStore;
     private EventStoreTransaction eventStoreTransaction;
@@ -65,9 +67,8 @@ class AsyncEventSourcingRepositoryTest {
                 String.class,
                 String.class,
                 eventStore,
-                identifier -> TEST_MODEL_CRITERIA,
-                (currentState, event, ctx) -> currentState + "-" + event.getPayload(),
-                id -> id
+                (entityType, id) -> id, identifier -> TEST_MODEL_CRITERIA,
+                (currentState, event, ctx) -> currentState + "-" + event.getPayload()
         );
     }
 

@@ -22,11 +22,10 @@ import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventStateApplier;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.repository.AsyncRepository;
-
-import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -46,7 +45,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
 
     private final Class<I> idType;
     private final Class<E> entityType;
-    private ComponentFactory<Function<I, E>> entityFactory;
+    private ComponentFactory<EventSourcedEntityFactory<I, E>> entityFactory;
     private ComponentFactory<CriteriaResolver<I>> criteriaResolver;
     private ComponentFactory<EventStateApplier<E>> eventStateApplier;
 
@@ -56,7 +55,9 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     }
 
     @Override
-    public CriteriaResolverPhase<I, E> entityFactory(@Nonnull ComponentFactory<Function<I, E>> entityFactory) {
+    public CriteriaResolverPhase<I, E> entityFactory(
+            @Nonnull ComponentFactory<EventSourcedEntityFactory<I, E>> entityFactory
+    ) {
         this.entityFactory = requireNonNull(entityFactory, "The entity factory cannot be null.");
         return this;
     }
@@ -73,7 +74,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     public EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull QualifiedName eventName,
                                                                 @Nonnull EventHandler eventHandler) {
         // TODO #3286 - Providing separate lambdas/methods should result in a lambda-based EventStateApplier.
-      throw new UnsupportedOperationException("Not implemented yet");
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
@@ -92,12 +93,11 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     @Override
     public ComponentFactory<AsyncRepository<I, E>> repository() {
         return c -> new AsyncEventSourcingRepository<>(
-                idType, 
+                idType,
                 entityType,
                 c.getComponent(AsyncEventStore.class),
-                criteriaResolver.build(c),
-                eventStateApplier.build(c),
-                entityFactory.build(c)
+                entityFactory.build(c), criteriaResolver.build(c),
+                eventStateApplier.build(c)
         );
     }
 }
