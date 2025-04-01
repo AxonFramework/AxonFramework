@@ -43,7 +43,7 @@ import static java.util.Objects.requireNonNull;
  * {@link AsyncEventStore}.
  *
  * @param <I> The type of identifier used to identify the entity.
- * @param <E> The type of the model to load.
+ * @param <E> The type of the entity to load.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 0.1
