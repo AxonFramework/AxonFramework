@@ -246,7 +246,7 @@ public interface AxonTestPhase {
      */
     interface When {
 
-        interface CommandWhen {
+        interface Command {
 
             /**
              * Transitions to the "then" phase to validate the results of the test. This method completes the "when"
@@ -254,10 +254,10 @@ public interface AxonTestPhase {
              *
              * @return a {@link Then} instance that allows validating the test results.
              */
-            Then.CommandThen then();
+            Then.Command then();
         }
 
-        interface EventWhen {
+        interface Event {
 
             /**
              * Transitions to the "then" phase to validate the results of the test. This method completes the "when"
@@ -265,7 +265,7 @@ public interface AxonTestPhase {
              *
              * @return a {@link Then} instance that allows validating the test results.
              */
-            Then.EventThen then();
+            Then.Event then();
         }
 
         /**
@@ -275,7 +275,7 @@ public interface AxonTestPhase {
          * @param payload The command to execute.
          * @return the current When instance, for fluent interfacing.
          */
-        default CommandWhen command(Object payload) {
+        default Command command(Object payload) {
             return command(payload, new HashMap<>());
         }
 
@@ -287,7 +287,7 @@ public interface AxonTestPhase {
          * @param metaData The metadata to attach to the command.
          * @return the current When instance, for fluent interfacing.
          */
-        default CommandWhen command(Object payload, Map<String, ?> metaData) {
+        default Command command(Object payload, Map<String, ?> metaData) {
             return command(payload, MetaData.from(metaData));
         }
 
@@ -299,7 +299,7 @@ public interface AxonTestPhase {
          * @param metaData The metadata to attach to the command.
          * @return the current When instance, for fluent interfacing.
          */
-        CommandWhen command(Object payload, MetaData metaData);
+        Command command(Object payload, MetaData metaData);
 
         /**
          * Publishes the given {@code payload} event with the provided {@code metaData} to the appropriate event handler
@@ -308,7 +308,7 @@ public interface AxonTestPhase {
          * @param payload The command to execute.
          * @return the current When instance, for fluent interfacing.
          */
-        default EventWhen event(Object payload) {
+        default Event event(Object payload) {
             return event(payload, MetaData.emptyInstance());
         }
 
@@ -320,7 +320,7 @@ public interface AxonTestPhase {
          * @param metaData The metadata to attach to the command.
          * @return the current When instance, for fluent interfacing.
          */
-        EventWhen event(Object payload, MetaData metaData);
+        Event event(Object payload, MetaData metaData);
 
         /**
          * Publishes the given Event Messages to the appropriate event handlers and records all activity for result
@@ -329,7 +329,7 @@ public interface AxonTestPhase {
          * @param messages The event messages to publish.
          * @return the current When instance, for fluent interfacing.
          */
-        EventWhen events(EventMessage<?>... messages);
+        Event events(EventMessage<?>... messages);
 
         /**
          * Publishes the given Event Messages to the appropriate event handlers and records all activity for result
@@ -338,7 +338,7 @@ public interface AxonTestPhase {
          * @param events The lists of events to publish.
          * @return the current When instance, for fluent interfacing.
          */
-        EventWhen events(List<?>... events);
+        Event events(List<?>... events);
     }
 
     /**
@@ -349,14 +349,14 @@ public interface AxonTestPhase {
      */
     interface Then {
 
-        interface CommandThen extends MessageThen<CommandThen> {
+        interface Command extends Message<Command> {
 
             /**
              * Expect a successful execution of the When phase, regardless of the actual return value.
              *
              * @return the current Then instance, for fluent interfacing.
              */
-            CommandThen success();
+            Command success();
 
             /**
              * Expect the last command handler from the When phase to return a result message that matches the given
@@ -366,7 +366,7 @@ public interface AxonTestPhase {
              * @param matcher The matcher to verify the actual result message against.
              * @return the current Then instance, for fluent interfacing.
              */
-            CommandThen resultMessage(Matcher<? super CommandResultMessage<?>> matcher);
+            Command resultMessage(Matcher<? super CommandResultMessage<?>> matcher);
 
             /**
              * Expect the last command handler from the When phase to return the given {@code expectedPayload} after
@@ -377,7 +377,7 @@ public interface AxonTestPhase {
              * @param expectedPayload The expected result message payload of the command execution.
              * @return the current Then, for fluent interfacing.
              */
-            CommandThen resultMessagePayload(Object expectedPayload);
+            Command resultMessagePayload(Object expectedPayload);
 
             /**
              * Expect the last command handler from the When phase to return a payload that matches the given
@@ -388,7 +388,7 @@ public interface AxonTestPhase {
              * @param matcher The matcher to verify the actual return value against.
              * @return the current Then instance, for fluent interfacing.
              */
-            CommandThen resultMessagePayloadMatching(Matcher<?> matcher);
+            Command resultMessagePayloadMatching(Matcher<?> matcher);
 
             /**
              * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
@@ -399,7 +399,7 @@ public interface AxonTestPhase {
              * @param expectedException The type of exception expected from the When phase execution.
              * @return the current Then instance, for fluent interfacing.
              */
-            CommandThen exception(Class<? extends Throwable> expectedException);
+            Command exception(Class<? extends Throwable> expectedException);
 
             /**
              * Expect an exception to occur during the When phase that matches with the given {@code matcher}. Take into
@@ -409,14 +409,14 @@ public interface AxonTestPhase {
              * @param matcher The matcher to validate the actual exception.
              * @return the current Then instance, for fluent interfacing.
              */
-            CommandThen exception(Matcher<?> matcher);
+            Command exception(Matcher<?> matcher);
         }
 
-        interface EventThen extends MessageThen<EventThen> {
+        interface Event extends Message<Event> {
 
         }
 
-        interface MessageThen<T extends MessageThen<T>> {
+        interface Message<T extends Message<T>> {
 
             /**
              * Expect the given set of events to have been published during the {@link When} phase.

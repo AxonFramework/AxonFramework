@@ -27,9 +27,9 @@ import org.hamcrest.StringDescription;
 
 import static org.hamcrest.CoreMatchers.*;
 
-class AxonTestCommandThen
-        extends AxonTestMessageThen<AxonTestPhase.Then.CommandThen>
-        implements AxonTestPhase.Then.CommandThen {
+class AxonTestThenCommand
+        extends AxonTestThenMessage<AxonTestPhase.Then.Command>
+        implements AxonTestPhase.Then.Command {
 
     private final Reporter reporter = new Reporter();
 
@@ -39,7 +39,7 @@ class AxonTestCommandThen
     private final Message<?> lastCommandResult;
     private final Throwable lastCommandException;
 
-    public AxonTestCommandThen(
+    public AxonTestThenCommand(
             NewConfiguration configuration,
             AxonTestFixture.Customization customization,
             RecordingCommandBus commandBus,
@@ -55,12 +55,12 @@ class AxonTestCommandThen
     }
 
     @Override
-    public AxonTestPhase.Then.CommandThen success() {
+    public AxonTestPhase.Then.Command success() {
         return resultMessage(anything());
     }
 
     @Override
-    public AxonTestPhase.Then.CommandThen resultMessage(Matcher<? super CommandResultMessage<?>> matcher) {
+    public AxonTestPhase.Then.Command resultMessage(Matcher<? super CommandResultMessage<?>> matcher) {
         if (matcher == null) {
             return resultMessage(nullValue());
         }
@@ -75,7 +75,7 @@ class AxonTestCommandThen
     }
 
     @Override
-    public AxonTestPhase.Then.CommandThen resultMessagePayload(Object expectedPayload) {
+    public AxonTestPhase.Then.Command resultMessagePayload(Object expectedPayload) {
         StringDescription expectedDescription = new StringDescription();
         StringDescription actualDescription = new StringDescription();
         PayloadMatcher<CommandResultMessage<?>> expectedMatcher =
@@ -93,7 +93,7 @@ class AxonTestCommandThen
     }
 
     @Override
-    public AxonTestPhase.Then.CommandThen resultMessagePayloadMatching(Matcher<?> matcher) {
+    public AxonTestPhase.Then.Command resultMessagePayloadMatching(Matcher<?> matcher) {
         if (matcher == null) {
             return resultMessagePayloadMatching(nullValue());
         }
@@ -108,12 +108,12 @@ class AxonTestCommandThen
     }
 
     @Override
-    public AxonTestPhase.Then.CommandThen exception(Class<? extends Throwable> expectedException) {
+    public AxonTestPhase.Then.Command exception(Class<? extends Throwable> expectedException) {
         return exception(instanceOf(expectedException));
     }
 
     @Override
-    public AxonTestPhase.Then.CommandThen exception(Matcher<?> matcher) {
+    public AxonTestPhase.Then.Command exception(Matcher<?> matcher) {
         StringDescription description = new StringDescription();
         matcher.describeTo(description);
         if (lastCommandException == null) {
@@ -131,7 +131,7 @@ class AxonTestCommandThen
     }
 
     @Override
-    public AxonTestCommandThen self() {
+    public AxonTestThenCommand self() {
         return this;
     }
 }

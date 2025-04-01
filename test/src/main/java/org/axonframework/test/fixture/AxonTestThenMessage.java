@@ -19,8 +19,6 @@ package org.axonframework.test.fixture;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.test.aggregate.Reporter;
 import org.axonframework.test.matchers.MapEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
@@ -41,8 +39,8 @@ import java.util.stream.Stream;
 
 import static org.axonframework.test.matchers.Matchers.deepEquals;
 
-abstract class AxonTestMessageThen<T extends AxonTestPhase.Then.MessageThen<T>>
-        implements AxonTestPhase.Then.MessageThen<T> {
+abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
+        implements AxonTestPhase.Then.Message<T> {
 
     private final Reporter reporter = new Reporter();
 
@@ -53,7 +51,7 @@ abstract class AxonTestMessageThen<T extends AxonTestPhase.Then.MessageThen<T>>
     private final CommandValidator commandValidator;
     private final Throwable lastException;
 
-    public AxonTestMessageThen(
+    public AxonTestThenMessage(
             NewConfiguration configuration,
             AxonTestFixture.Customization customization,
             RecordingCommandBus commandBus,
@@ -89,7 +87,7 @@ abstract class AxonTestMessageThen<T extends AxonTestPhase.Then.MessageThen<T>>
 
     @Override
     public T events(EventMessage<?>... expectedEvents) {
-        this.events(Stream.of(expectedEvents).map(Message::getPayload).toArray());
+        this.events(Stream.of(expectedEvents).map(org.axonframework.messaging.Message::getPayload).toArray());
 
         var publishedEvents = eventSink.recorded();
         Iterator<EventMessage<?>> iterator = publishedEvents.iterator();

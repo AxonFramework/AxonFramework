@@ -18,14 +18,14 @@ package org.axonframework.test.fixture;
 
 import org.axonframework.configuration.NewConfiguration;
 
-class AxonTestEventThen
-        extends AxonTestMessageThen<AxonTestPhase.Then.EventThen>
-        implements AxonTestPhase.Then.EventThen {
+class AxonTestThenEvent
+        extends AxonTestThenMessage<AxonTestPhase.Then.Event>
+        implements AxonTestPhase.Then.Event {
 
     private final NewConfiguration configuration;
     private final AxonTestFixture.Customization customization;
 
-    public AxonTestEventThen(
+    public AxonTestThenEvent(
             NewConfiguration configuration,
             AxonTestFixture.Customization customization,
             RecordingCommandBus commandBus,
@@ -43,7 +43,7 @@ class AxonTestEventThen
     }
 
     @Override
-    public AxonTestEventThen self() {
+    public AxonTestThenEvent self() {
         return this;
     }
 }

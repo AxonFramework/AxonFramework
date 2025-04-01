@@ -60,7 +60,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public CommandWhen command(Object payload, MetaData metaData) {
+    public Command command(Object payload, MetaData metaData) {
         var messageType = messageTypeResolver.resolve(payload);
         var message = new GenericCommandMessage<>(messageType, payload, metaData);
         inUnitOfWorkOnInvocation(processingContext ->
@@ -75,11 +75,11 @@ class AxonTestWhen implements AxonTestPhase.When {
                                                        }
                                                    })
         );
-        return new CommandWhen();
+        return new Command();
     }
 
     @Override
-    public EventWhen event(Object payload, MetaData metaData) {
+    public Event event(Object payload, MetaData metaData) {
         var eventMessage = toGenericEventMessage(payload, metaData);
         return events(eventMessage);
     }
@@ -94,7 +94,7 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public EventWhen events(List<?>... events) {
+    public Event events(List<?>... events) {
         var messages = Arrays.stream(events)
                              .map(e -> e instanceof EventMessage<?> message
                                      ? message
@@ -104,10 +104,10 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     @Override
-    public EventWhen events(EventMessage<?>... messages) {
+    public Event events(EventMessage<?>... messages) {
         inUnitOfWorkRunOnInvocation(processingContext -> eventSink.publish(processingContext,
                                                                            messages));
-        return new EventWhen();
+        return new Event();
     }
 
     private AsyncUnitOfWork inUnitOfWorkRunOnInvocation(Consumer<ProcessingContext> action) {
@@ -133,14 +133,14 @@ class AxonTestWhen implements AxonTestPhase.When {
         }
     }
 
-    class CommandWhen implements AxonTestPhase.When.CommandWhen {
+    class Command implements AxonTestPhase.When.Command {
 
         @Override
-        public AxonTestPhase.Then.CommandThen then() {
+        public AxonTestPhase.Then.Command then() {
             for (var unitOfWork : unitsOfWork) {
                 awaitCompletion(unitOfWork.execute());
             }
-            return new AxonTestCommandThen(
+            return new AxonTestThenCommand(
                     configuration,
                     customization,
                     commandBus,
@@ -151,14 +151,14 @@ class AxonTestWhen implements AxonTestPhase.When {
         }
     }
 
-    class EventWhen implements AxonTestPhase.When.EventWhen {
+    class Event implements AxonTestPhase.When.Event {
 
         @Override
-        public AxonTestPhase.Then.EventThen then() {
+        public AxonTestPhase.Then.Event then() {
             for (var unitOfWork : unitsOfWork) {
                 awaitCompletion(unitOfWork.execute());
             }
-            return new AxonTestEventThen(
+            return new AxonTestThenEvent(
                     configuration,
                     customization,
                     commandBus,
