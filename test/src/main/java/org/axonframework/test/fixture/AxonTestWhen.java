@@ -68,9 +68,9 @@ class AxonTestWhen implements AxonTestPhase.When {
                                                    .whenComplete((r, e) -> {
                                                        if (e == null) {
                                                            actualResult = r;
-                                                           //lastCommandException = null;
+                                                           actualException = null;
                                                        } else {
-                                                           //lastCommandResult = null;
+                                                           actualResult = null;
                                                            actualException = e.getCause();
                                                        }
                                                    })

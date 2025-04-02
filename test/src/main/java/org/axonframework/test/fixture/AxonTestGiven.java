@@ -28,7 +28,6 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -97,13 +96,13 @@ class AxonTestGiven implements AxonTestPhase.Given {
     private void inUnitOfWorkRunOnInvocation(Consumer<ProcessingContext> action) {
         var unitOfWork = new AsyncUnitOfWork();
         unitOfWork.runOnInvocation(action);
-        awaitCompletion(unitOfWork.execute());
+        unitOfWork.execute().join();
     }
 
     private void inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
         var unitOfWork = new AsyncUnitOfWork();
         unitOfWork.onInvocation(action);
-        awaitCompletion(unitOfWork.execute());
+        unitOfWork.execute().join();
     }
 
     @Override
@@ -133,9 +132,5 @@ class AxonTestGiven implements AxonTestPhase.Given {
     @Override
     public AxonTestPhase.When when() {
         return new AxonTestWhen(configuration, customization, messageTypeResolver, commandBus, eventSink);
-    }
-
-    private void awaitCompletion(CompletableFuture<?> completion) {
-        completion.join();
     }
 }

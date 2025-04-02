@@ -144,6 +144,8 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
         /**
          * Configured field filters.
+         *
+         * @return The list of field filters.
          */
         @Override
         public List<FieldFilter> fieldFilters() {
