@@ -396,6 +396,24 @@ class AxonTestFixtureMessagingTest {
         }
 
         @Test
+        void whenEventsHandlerDoesNotFailThenSuccess() {
+            var configurer = MessagingConfigurer.create();
+            configurer.registerEventSink(c -> (events) -> CompletableFuture.completedFuture(null));
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            var whenEvents = List.of(
+                    new StudentNameChangedEvent("my-studentId-1", "name-1", 1),
+                    new StudentNameChangedEvent("my-studentId-1", "name-2", 2)
+            );
+            fixture.when()
+                   .events(whenEvents)
+                   .then()
+                   .success()
+                   .noCommands();
+        }
+
+        @Test
         void assertionErrorIfExpectExceptionButSuccess() {
             var configurer = MessagingConfigurer.create();
             configurer.registerEventSink(c -> (events) -> CompletableFuture.completedFuture(null));
