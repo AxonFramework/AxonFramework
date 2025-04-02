@@ -6,8 +6,6 @@ import io.axoniq.demo.university.faculty.write.CourseId;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.junit.jupiter.api.*;
 
-import java.util.UUID;
-
 class RenameCourseTest {
 
     private AxonTestFixture fixture;
@@ -27,6 +25,6 @@ class RenameCourseTest {
                .when()
                .command(new RenameCourse(courseId, courseName))
                .then()
-               .events(new CourseRenamed(courseId, courseName));
+               .events(new CourseRenamed(courseId.raw(), courseName));
     }
 }
