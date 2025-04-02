@@ -27,6 +27,8 @@ import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
+import org.axonframework.modelling.HierarchicalStateManagerConfigurationEnhancer;
+import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.repository.AsyncRepository;
@@ -40,8 +42,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Default implementation of the {@link StatefulCommandHandlingModule}. Registers the
- * {@link StateManagerConfigurationDefaults} enhancer to the module so that message handlers get access
- * to entities via defining parameters, such as entitiy classes with {@link org.axonframework.modelling.command.annotation.InjectEntity}
+ * {@link HierarchicalStateManagerConfigurationEnhancer} enhancer to the module so that message handlers get access
+ * to entities via defining parameters, such as entitiy classes with {@link InjectEntity}
  * or the {@link StateManager} itself.
  *
  * @author Allard Buijze
@@ -70,7 +72,6 @@ class DefaultStatefulCommandHandlingModule
         this.entityBuilders = new HashMap<>();
         this.handlerFactories = new HashMap<>();
         this.handlingComponentFactories = new ArrayList<>();
-        componentRegistry(cr -> cr.registerEnhancer(new StateManagerConfigurationDefaults()));
     }
 
     @Override
@@ -155,13 +156,11 @@ class DefaultStatefulCommandHandlingModule
         NewConfiguration builtConfiguration = super.build(parent, lifecycleRegistry);
         lifecycleRegistry.onStart(
                 Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
-                (c) -> {
-                    builtConfiguration.getComponent(CommandBus.class)
-                                      .subscribe(builtConfiguration.getComponent(
-                                              StatefulCommandHandlingComponent.class,
-                                              statefulCommandHandlingComponentName
-                                      ));
-                }
+                () -> builtConfiguration.getComponent(CommandBus.class)
+                                        .subscribe(builtConfiguration.getComponent(
+                                                StatefulCommandHandlingComponent.class,
+                                                statefulCommandHandlingComponentName
+                                        ))
         );
         return builtConfiguration;
     }

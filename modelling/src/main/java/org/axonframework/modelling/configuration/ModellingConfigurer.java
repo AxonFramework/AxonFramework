@@ -28,6 +28,8 @@ import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.modelling.StateManager;
+import org.axonframework.modelling.HierarchicalStateManagerConfigurationEnhancer;
+import org.axonframework.modelling.annotation.InjectEntity;
 
 import java.util.function.Consumer;
 
@@ -35,9 +37,9 @@ import java.util.function.Consumer;
  * The modelling {@link ApplicationConfigurer} of Axon Framework's configuration API, providing registration methods to,
  * for example, register a {@link StatefulCommandHandlingModule}.
  * <p>
- * This configurer is enhanced by the {@link StateManagerConfigurationDefaults} to provide access to the
+ * This configurer is enhanced by the {@link HierarchicalStateManagerConfigurationEnhancer} to provide access to the
  * {@link StateManager} during the execution of message handlers, and allow users to inject entities using the
- * {@link org.axonframework.modelling.command.annotation.InjectEntity} annotation.
+ * {@link InjectEntity} annotation.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -71,7 +73,6 @@ public class ModellingConfigurer implements ApplicationConfigurer {
      * @param delegate The delegate {@code MessagingConfigurer} the {@code ModellingConfigurer} is based on.
      */
     public ModellingConfigurer(@Nonnull MessagingConfigurer delegate) {
-        delegate.componentRegistry(cr -> cr.registerEnhancer(new StateManagerConfigurationDefaults()));
         this.delegate = delegate;
     }
 

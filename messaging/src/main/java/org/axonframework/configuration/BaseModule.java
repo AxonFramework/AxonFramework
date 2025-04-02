@@ -18,14 +18,12 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
-import org.axonframework.messaging.annotation.ParameterResolverFactoryConfigurationDefaults;
 
 import java.util.function.Consumer;
 
 /**
  * Base implementation for custom modules that contains the ComponentRegistry required to register components, enhancers
- * and (sub)modules. Registers the {@link ParameterResolverFactoryConfigurationDefaults} as a default enhancer,
- * providing access in message handlers to the {@link ComponentRegistry} of the module.
+ * and (sub)modules.
  *
  * @param <S> The type extending this module, to support fluent interfaces
  */
@@ -43,7 +41,6 @@ public abstract class BaseModule<S extends BaseModule<S>> implements Module {
         Assert.nonEmpty(name, "The Module name cannot be null or empty.");
         this.name = name;
         this.componentRegistry = new DefaultComponentRegistry();
-        this.componentRegistry.registerEnhancer(new ParameterResolverFactoryConfigurationDefaults());
     }
 
     @Override

@@ -31,12 +31,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Abstract implementation of the {@link ComponentRegistry} allowing for reuse of {@link Component},
@@ -60,6 +59,8 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private final Map<String, NewConfiguration> moduleConfigurations = new ConcurrentHashMap<>();
     private NewConfiguration config;
     private OverrideBehavior overrideBehavior = OverrideBehavior.WARN;
+    private boolean enhancerScanning = true;
+    private List<Class<? extends ConfigurationEnhancer>> disabledEnhancers = new ArrayList<>();
 
     @Override
     public <C> ComponentRegistry registerComponent(@Nonnull Class<? extends C> type,
@@ -153,6 +154,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
                                      @Nonnull LifecycleRegistry lifecycleRegistry) {
         if (!initialized.getAndSet(true)) {
             this.config = new LocalConfiguration(optionalParent);
+            if (enhancerScanning) {
+                scanForConfigurationEnhancers();
+            }
             invokeEnhancers();
             decorateComponents();
             buildModules(lifecycleRegistry);
@@ -199,6 +203,27 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     public DefaultComponentRegistry setOverrideBehavior(OverrideBehavior overrideBehavior) {
         this.overrideBehavior = overrideBehavior;
         return this;
+    }
+
+    @Override
+    public DefaultComponentRegistry disableEnhancer(Class<? extends ConfigurationEnhancer> enhancerClass) {
+        return null;
+    }
+
+    @Override
+    public DefaultComponentRegistry disableEnhancerScanning() {
+        this.enhancerScanning = false;
+        return this;
+    }
+
+    private void scanForConfigurationEnhancers() {
+        ServiceLoader<ConfigurationEnhancer> enhancerLoader = ServiceLoader.load(
+                ConfigurationEnhancer.class, getClass().getClassLoader()
+        );
+        enhancerLoader.stream()
+                      .map(ServiceLoader.Provider::get)
+                      .filter(enhancer -> !disabledEnhancers.contains(enhancer.getClass()))
+                      .forEach(this::registerEnhancer);
     }
 
     @Override

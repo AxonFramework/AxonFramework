@@ -24,30 +24,19 @@ import org.axonframework.messaging.configuration.ConfigurationParameterResolverF
 import java.util.Optional;
 
 /**
- * {@link ConfigurationEnhancer} that registers the {@link ClasspathParameterResolverFactory} and
- * {@link ConfigurationParameterResolverFactory} as the default {@link ParameterResolverFactory} for the
- * {@link org.axonframework.messaging.annotation.ParameterResolverFactory} component.
- * <p>
- * In addition registers a decorator that, when a parent configuration is present, wraps the
- * {@link ParameterResolverFactory} in a {@link HierarchicalParameterResolverFactory} that delegates to the parent if a
- * parameter cannot be resolved by the current configuration.
+ * {@link ConfigurationEnhancer} that registers a decorator for the {@link ParameterResolverFactory} that, when a parent
+ * configuration is present, wraps both the parent and the current {@link ParameterResolverFactory} in a
+ * {@link HierarchicalParameterResolverFactory} that delegates to the parent if a parameter cannot be resolved by the
+ * current configuration.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
+ * @see HierarchicalParameterResolverFactory
  */
-public class ParameterResolverFactoryConfigurationDefaults implements ConfigurationEnhancer {
+public class HierarchicalParameterResolverFactoryConfigurationEnhancer implements ConfigurationEnhancer {
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
-        if(!componentRegistry.hasComponent(ParameterResolverFactory.class)) {
-            componentRegistry.registerComponent(
-                    ParameterResolverFactory.class,
-                    (c) -> MultiParameterResolverFactory.ordered(
-                            new ConfigurationParameterResolverFactory(c),
-                            ClasspathParameterResolverFactory.forClass(c.getClass())
-                    )
-            );
-        }
         componentRegistry.registerDecorator(
                 ParameterResolverFactory.class,
                 Integer.MAX_VALUE >> 1,
