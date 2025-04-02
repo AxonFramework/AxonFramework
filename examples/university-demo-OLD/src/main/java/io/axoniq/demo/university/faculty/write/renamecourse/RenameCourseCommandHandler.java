@@ -63,20 +63,10 @@ class RenameCourseCommandHandler {
         public void evolve(CourseCreated event) {
             this.name = event.name();
         }
+
+        @EventSourcingHandler
+        public void evolve(CourseRenamed event) {
+            this.name = event.name();
+        }
     }
 }
-
-
-/**
- * class RenameCourseCommandHandler implements StatefulCommandHandler {
- *
- *     @Override
- *     @Nonnull
- *     public MessageStream.Single<? extends CommandResultMessage<?>> handle(
- *             @Nonnull CommandMessage<?> command,
- *             @Nonnull StateManager state,
- *             @Nonnull ProcessingContext context
- *     ) {
- *         return null;
- *     }
- */

@@ -2,36 +2,51 @@ package io.axoniq.demo.university.faculty.write.createcourse;
 
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.write.CourseId;
+import io.axoniq.demo.university.shared.slices.write.CommandResult;
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.messaging.Message;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.EntityIdResolver;
-import org.axonframework.modelling.command.annotation.InjectEntity;
+import org.axonframework.modelling.command.StatefulCommandHandler;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-class CreateCourseCommandHandler {
+class CreateCourseCommandHandler implements StatefulCommandHandler {
 
-    @CommandHandler
-    public void handle(
-            CreateCourse command,
-            @InjectEntity State state,
-            EventSink eventSink,
-            ProcessingContext processingContext
-    ) {
-        var events = decide(command, state);
-        eventSink.publish(processingContext, toMessages(events));
+    private final EventSink eventSink;
+
+    CreateCourseCommandHandler(EventSink eventSink) {
+        this.eventSink = eventSink;
+    }
+
+    @Override
+    public @Nonnull MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                                   @Nonnull StateManager state,
+                                                                                   @Nonnull ProcessingContext context) {
+        var payload = (CreateCourse) command.getPayload();
+        var decideFuture = state
+                .loadEntity(State.class, payload.courseId(), context)
+                .thenApply(entity -> decide(payload, entity))
+                .thenAccept(events -> eventSink.publish(context, toMessages(events)))
+                .thenApply(r -> new GenericCommandResultMessage<>(new MessageType(CommandResult.class),
+                                                                  new CommandResult(payload.courseId().raw())));
+        return MessageStream.fromFuture(decideFuture);
     }
 
     private List<CourseCreated> decide(CreateCourse command, State state) {
-        if (state.name.equals(command.name())) {
+        if (state.courseId == null) {
             return List.of();
         }
         return List.of(new CourseCreated(command.courseId().raw(), command.name(), command.capacity()));
@@ -50,18 +65,17 @@ class CreateCourseCommandHandler {
         );
     }
 
+    @EventSourcedEntity
     public static class State {
 
-        private final String courseId;
-        private String name;
+        private String courseId;
 
-        public State(String courseId) {
-            this.courseId = courseId;
+        public State() {
         }
 
         @EventSourcingHandler
         public void evolve(CourseCreated event) {
-            this.name = event.name();
+            this.courseId = event.courseId();
         }
     }
 
