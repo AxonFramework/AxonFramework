@@ -93,4 +93,20 @@ public class HierarchicalStateManager implements StateManager {
         }
         return parent.repository(entityType, idType);
     }
+
+    /**
+     * Returns the parent {@link StateManager} of this {@link HierarchicalStateManager}.
+     * @return The parent {@link StateManager} of this {@link HierarchicalStateManager}.
+     */
+    public StateManager getParent() {
+        return parent;
+    }
+
+    /**
+     * Returns the child {@link StateManager} of this {@link HierarchicalStateManager}.
+     * @return The child {@link StateManager} of this {@link HierarchicalStateManager}.
+     */
+    public StateManager getChild() {
+        return child;
+    }
 }

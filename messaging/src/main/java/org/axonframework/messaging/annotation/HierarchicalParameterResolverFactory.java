@@ -65,4 +65,20 @@ public class HierarchicalParameterResolverFactory implements ParameterResolverFa
         }
         return parent.createInstance(executable, parameters, parameterIndex);
     }
+
+    /**
+     * Returns the parent {@link ParameterResolverFactory} of this factory.
+     * @return The parent {@link ParameterResolverFactory} of this factory.
+     */
+    public ParameterResolverFactory getParent() {
+        return parent;
+    }
+
+    /**
+     * Returns the child {@link ParameterResolverFactory} of this factory.
+     * @return The child {@link ParameterResolverFactory} of this factory.
+     */
+    public ParameterResolverFactory getChild() {
+        return child;
+    }
 }

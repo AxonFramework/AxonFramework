@@ -19,7 +19,6 @@ package org.axonframework.messaging.annotation;
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.messaging.configuration.ConfigurationParameterResolverFactory;
 
 import java.util.Optional;
 
