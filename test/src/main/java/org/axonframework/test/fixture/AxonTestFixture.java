@@ -84,7 +84,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         Objects.requireNonNull(customization, "Customization may not be null");
         var configuration = configurer
                 .registerEnhancer(new MessagesRecordingConfigurationEnhancer())
-                .build();
+                .start();
         return new AxonTestFixture(configuration, customization);
     }
 
