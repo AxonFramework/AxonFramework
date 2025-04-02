@@ -34,8 +34,7 @@ class AxonTestThenCommand
 
     private final Reporter reporter = new Reporter();
 
-    private final Message<?> lastCommandResult;
-    private final Throwable lastCommandException;
+    private final Message<?> actualResult;
 
     public AxonTestThenCommand(
             NewConfiguration configuration,
@@ -46,8 +45,7 @@ class AxonTestThenCommand
             Throwable lastCommandException
     ) {
         super(configuration, customization, commandBus, eventSink, lastCommandException);
-        this.lastCommandException = lastCommandException;
-        this.lastCommandResult = lastCommandResult;
+        this.actualResult = lastCommandResult;
     }
 
     @Override
@@ -62,10 +60,10 @@ class AxonTestThenCommand
         }
         StringDescription expectedDescription = new StringDescription();
         matcher.describeTo(expectedDescription);
-        if (lastCommandException != null) {
-            reporter.reportUnexpectedException(lastCommandException, expectedDescription);
-        } else if (!matcher.matches(lastCommandResult)) {
-            reporter.reportWrongResult(lastCommandResult, expectedDescription);
+        if (actualException != null) {
+            reporter.reportUnexpectedException(actualException, expectedDescription);
+        } else if (!matcher.matches(actualResult)) {
+            reporter.reportWrongResult(actualResult, expectedDescription);
         }
         return this;
     }
@@ -77,11 +75,11 @@ class AxonTestThenCommand
         PayloadMatcher<CommandResultMessage<?>> expectedMatcher =
                 new PayloadMatcher<>(CoreMatchers.equalTo(expectedPayload));
         expectedMatcher.describeTo(expectedDescription);
-        if (lastCommandException != null) {
-            reporter.reportUnexpectedException(lastCommandException, expectedDescription);
-        } else if (!verifyPayloadEquality(expectedPayload, lastCommandResult.getPayload())) {
+        if (actualException != null) {
+            reporter.reportUnexpectedException(actualException, expectedDescription);
+        } else if (!verifyPayloadEquality(expectedPayload, actualResult.getPayload())) {
             PayloadMatcher<CommandResultMessage<?>> actualMatcher =
-                    new PayloadMatcher<>(CoreMatchers.equalTo(lastCommandResult.getPayload()));
+                    new PayloadMatcher<>(CoreMatchers.equalTo(actualResult.getPayload()));
             actualMatcher.describeTo(actualDescription);
             reporter.reportWrongResult(actualDescription, expectedDescription);
         }
@@ -95,10 +93,10 @@ class AxonTestThenCommand
         }
         StringDescription expectedDescription = new StringDescription();
         matcher.describeTo(expectedDescription);
-        if (lastCommandException != null) {
-            reporter.reportUnexpectedException(lastCommandException, expectedDescription);
-        } else if (!matcher.matches(lastCommandResult.getPayload())) {
-            reporter.reportWrongResult(lastCommandResult.getPayload(), expectedDescription);
+        if (actualException != null) {
+            reporter.reportUnexpectedException(actualException, expectedDescription);
+        } else if (!matcher.matches(actualResult.getPayload())) {
+            reporter.reportWrongResult(actualResult.getPayload(), expectedDescription);
         }
         return this;
     }
@@ -112,13 +110,12 @@ class AxonTestThenCommand
     public AxonTestPhase.Then.Command exception(@Nonnull Matcher<?> matcher) {
         StringDescription description = new StringDescription();
         matcher.describeTo(description);
-        if (lastCommandException == null) {
-            reporter.reportUnexpectedReturnValue(lastCommandResult.getPayload(), description);
+        if (actualException == null) {
+            reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.getPayload(), description);
         }
-        if (!matcher.matches(lastCommandException)) {
-            reporter.reportWrongException(lastCommandException, description);
+        if (!matcher.matches(actualException)) {
+            reporter.reportWrongException(actualException, description);
         }
         return this;
     }
-
 }

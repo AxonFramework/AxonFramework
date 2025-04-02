@@ -27,6 +27,10 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.test.AxonAssertionError;
+import org.axonframework.test.aggregate.DeleteCommand;
+import org.axonframework.test.aggregate.MyAggregateDeletedEvent;
+import org.axonframework.test.aggregate.MyEvent;
 import org.axonframework.test.fixture.sampledomain.ChangeStudentNameCommand;
 import org.axonframework.test.fixture.sampledomain.StudentNameChangedEvent;
 import org.hamcrest.Matchers;
@@ -37,6 +41,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 
 class AxonTestFixtureMessagingTest {
@@ -60,6 +66,24 @@ class AxonTestFixtureMessagingTest {
         }
 
         @Test
+        void assertionErrorIfThenNoEventsButThereAreSomeEvents() {
+            var configurer = MessagingConfigurer.create();
+            registerChangeStudentNameHandlerReturnsEmpty(configurer);
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            var assertionError = assertThrows(AxonAssertionError.class, () ->
+                    fixture.given()
+                           .noPriorActivity()
+                           .when()
+                           .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                           .then()
+                           .noEvents()
+            );
+            assertTrue(assertionError.getMessage().contains("The published events do not match the expected events"));
+        }
+
+        @Test
         void givenNothingWhenCommandThenExpectEvents() {
             var configurer = MessagingConfigurer.create();
             registerChangeStudentNameHandlerReturnsEmpty(configurer);
@@ -71,6 +95,24 @@ class AxonTestFixtureMessagingTest {
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
                    .events(studentNameChangedEventMessage("my-studentId-1", "name-1", 1));
+        }
+
+        @Test
+        void assertionErrorIfThenExpectEventsButWithDifferentPayload() {
+            var configurer = MessagingConfigurer.create();
+            registerChangeStudentNameHandlerReturnsEmpty(configurer);
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            var assertionError = assertThrows(AxonAssertionError.class, () ->
+                    fixture.given()
+                           .when()
+                           .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                           .then()
+                           .events(studentNameChangedEventMessage("my-studentId-1", "name-2", 1))
+            );
+            assertTrue(assertionError.getMessage()
+                                     .contains("One of the messages contained a different payload than expected"));
         }
 
         @Test
@@ -229,6 +271,58 @@ class AxonTestFixtureMessagingTest {
                    .then()
                    .exception(RuntimeException.class);
         }
+
+        @Test
+        void assertionErrorIfExpectExceptionButSuccess() {
+            var configurer = MessagingConfigurer.create();
+            configurer.registerDecorator(
+                    CommandBus.class,
+                    0,
+                    (c, n, d) -> d.subscribe(
+                            new QualifiedName(ChangeStudentNameCommand.class),
+                            (command, context) -> MessageStream.empty().cast()
+                    )
+            );
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            var assertionError = assertThrows(AxonAssertionError.class, () ->
+                    fixture.given()
+                           .noPriorActivity()
+                           .when()
+                           .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                           .then()
+                           .exception(RuntimeException.class)
+            );
+            assertTrue(assertionError.getMessage()
+                                     .contains("The message handler returned normally, but an exception was expected"));
+        }
+
+
+        @Test
+        void assertionErrorIfExpectSuccessButException() {
+            var configurer = MessagingConfigurer.create();
+            configurer.registerDecorator(
+                    CommandBus.class,
+                    0,
+                    (c, n, d) -> d.subscribe(
+                            new QualifiedName(ChangeStudentNameCommand.class),
+                            (command, context) -> MessageStream.failed(new RuntimeException("Test"))
+                    )
+            );
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            var assertionError = assertThrows(AxonAssertionError.class, () ->
+                    fixture.given()
+                           .noPriorActivity()
+                           .when()
+                           .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                           .then()
+                           .success()
+            );
+            assertTrue(assertionError.getMessage().contains("The message handler threw an unexpected exception"));
+        }
     }
 
     @Nested
@@ -271,6 +365,23 @@ class AxonTestFixtureMessagingTest {
         }
 
         @Test
+        void assertionErrorIfExpectSuccessButException() {
+            var configurer = MessagingConfigurer.create();
+            configurer.registerEventSink(c -> (events) -> CompletableFuture.failedFuture(new RuntimeException(
+                    "Simulated failure")));
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            var assertionError = assertThrows(AxonAssertionError.class, () ->
+                    fixture.when()
+                           .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
+                           .then()
+                           .success()
+            );
+            assertTrue(assertionError.getMessage().contains("The message handler threw an unexpected exception"));
+        }
+
+        @Test
         void whenEventHandlerDoesNotFailThenSuccess() {
             var configurer = MessagingConfigurer.create();
             configurer.registerEventSink(c -> (events) -> CompletableFuture.completedFuture(null));
@@ -282,6 +393,23 @@ class AxonTestFixtureMessagingTest {
                    .then()
                    .success()
                    .noCommands();
+        }
+
+        @Test
+        void assertionErrorIfExpectExceptionButSuccess() {
+            var configurer = MessagingConfigurer.create();
+            configurer.registerEventSink(c -> (events) -> CompletableFuture.completedFuture(null));
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            var assertionError = assertThrows(AxonAssertionError.class, () ->
+                    fixture.when()
+                           .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
+                           .then()
+                           .exception(RuntimeException.class)
+            );
+            assertTrue(assertionError.getMessage()
+                                     .contains("The message handler returned normally, but an exception was expected"));
         }
     }
 
@@ -383,7 +511,6 @@ class AxonTestFixtureMessagingTest {
         CommandResult(String message) {
             this(message, null);
         }
-
     }
 
     private static void registerChangeStudentNameHandlerReturnsEmpty(MessagingConfigurer configurer) {
