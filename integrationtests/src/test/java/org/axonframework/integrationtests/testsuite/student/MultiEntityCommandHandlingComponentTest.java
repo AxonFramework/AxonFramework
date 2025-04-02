@@ -36,7 +36,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.EntityIdResolver;
-import org.axonframework.modelling.command.annotation.InjectEntity;
+import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;

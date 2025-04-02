@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.command.annotation;
+package org.axonframework.modelling.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;

@@ -16,8 +16,9 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import org.axonframework.eventsourcing.configuration.AnnotatedEventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
-import org.axonframework.modelling.command.annotation.TargetEntityId;
+import org.axonframework.modelling.annotation.TargetEntityId;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -36,10 +37,10 @@ import java.lang.annotation.Target;
  * </ul>
  * <p>
  * In all other cases, an exception will be thrown during initialization of the
- * {@link AnnotationBasedEventSourcingEntityRepository}.
+ * {@link AnnotatedEventSourcedEntityBuilder}.
  *
  * @author Mitchell Herrijgers
- * @see AnnotationBasedEventSourcingEntityRepository
+ * @see AnnotatedEventSourcedEntityBuilder
  * @see TargetEntityId
  * @see EventSourcedEntity
  * @since 5.0.0

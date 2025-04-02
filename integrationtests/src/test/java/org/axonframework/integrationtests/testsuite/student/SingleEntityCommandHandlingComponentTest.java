@@ -29,7 +29,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.annotation.InjectEntity;
+import org.axonframework.modelling.annotation.InjectEntity;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
