@@ -42,12 +42,6 @@ public class HierarchicalStateManagerConfigurationEnhancer implements Configurat
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
-        if (!componentRegistry.hasComponent(StateManager.class)) {
-            componentRegistry.registerComponent(
-                    StateManager.class,
-                    (c) -> SimpleStateManager.builder("Empty").build()
-            );
-        }
         componentRegistry.registerDecorator(
                 StateManager.class,
                 Integer.MAX_VALUE,

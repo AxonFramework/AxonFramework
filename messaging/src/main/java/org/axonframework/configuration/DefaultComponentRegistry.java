@@ -207,7 +207,8 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     @Override
     public DefaultComponentRegistry disableEnhancer(Class<? extends ConfigurationEnhancer> enhancerClass) {
-        return null;
+        this.disabledEnhancers.add(enhancerClass);
+        return this;
     }
 
     @Override
