@@ -25,11 +25,26 @@ class SubscribeStudentTest {
         var studentId = StudentId.random();
 
         fixture.given()
-               .event(new StudentEnrolledFaculty(studentId.raw(), "Jan", "Kowalski"))
-               .event(new CourseCreated(courseId.raw(), "History", 10))
+               .event(new StudentEnrolledFaculty(studentId.raw(), "Mateusz", "Nowak"))
+               .event(new CourseCreated(courseId.raw(), "Axon Framework 5: Be a PRO", 42))
                .when()
                .command(new SubscribeStudent(studentId, courseId))
                .then()
                .events(new StudentSubscribed(studentId.raw(), courseId.raw()));
+    }
+
+    @Test
+    void studentAlreadySubscribed() {
+        var courseId = CourseId.random();
+        var studentId = StudentId.random();
+
+        fixture.given()
+               .event(new StudentEnrolledFaculty(studentId.raw(), "Allard", "Buijze"))
+               .event(new CourseCreated(courseId.raw(), "Axon Framework 5: Be a PRO", 42))
+               .event(new StudentSubscribed(studentId.raw(), courseId.raw()))
+               .when()
+               .command(new SubscribeStudent(studentId, courseId))
+               .then()
+               .exception(RuntimeException.class);
     }
 }
