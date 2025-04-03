@@ -161,20 +161,20 @@ class SubscribeStudentCommandHandler {
                                  .eventsOfTypes(
                                          CourseCreated.class.getName(),
                                          CourseCapacityChanged.class.getName()
-                                 ).withTags(new Tag(FacultyTags.COURSE_ID, courseId)),
+                                 ).withTags(Tag.of(FacultyTags.COURSE_ID, courseId)),
                     EventCriteria.match()
                                  .eventsOfTypes(StudentEnrolledFaculty.class.getName())
-                                 .withTags(new Tag(FacultyTags.STUDENT_ID, studentId)),
+                                 .withTags(Tag.of(FacultyTags.STUDENT_ID, studentId)),
                     EventCriteria.match()
                                  .eventsOfTypes(
                                          StudentSubscribed.class.getName(),
                                          StudentUnsubscribed.class.getName()
-                                 ).withTags(new Tag(FacultyTags.COURSE_ID, courseId)),
+                                 ).withTags(Tag.of(FacultyTags.COURSE_ID, courseId)),
                     EventCriteria.match()
                                  .eventsOfTypes(
                                          StudentSubscribed.class.getName(),
                                          StudentUnsubscribed.class.getName()
-                                 ).withTags(new Tag(FacultyTags.STUDENT_ID, studentId))
+                                 ).withTags(Tag.of(FacultyTags.STUDENT_ID, studentId))
             );
         }
     }

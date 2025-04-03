@@ -7,7 +7,9 @@ import io.axoniq.demo.university.faculty.write.renamecourse.RenameCourse;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.common.infra.FilesystemStyleComponentDescriptor;
 import org.axonframework.configuration.ApplicationConfigurer;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
@@ -15,8 +17,28 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 public class UniversityAxonApplication {
+
+    private static final Logger logger = Logger.getLogger(UniversityAxonApplication.class.getName());
+
+    public static void main(String[] args) {
+        var configuration = startApplication();
+        printApplicationConfiguration(configuration);
+        executeSampleCommands(configuration);
+    }
+
+    private static AxonConfiguration startApplication() {
+        var configurer = new UniversityAxonApplication().configurer();
+        return configurer.start();
+    }
+
+    private static void printApplicationConfiguration(AxonConfiguration configuration) {
+        var componentDescriptor = new FilesystemStyleComponentDescriptor();
+        componentDescriptor.describeProperty("configuration", configuration);
+        logger.info("Application started with following configuration: \n" + componentDescriptor.describe());
+    }
 
     public ApplicationConfigurer<?> configurer() {
         var configurer = EventSourcingConfigurer.create();
@@ -24,11 +46,7 @@ public class UniversityAxonApplication {
         return configurer;
     }
 
-    public static void main(String[] args) {
-        var configurer = new UniversityAxonApplication()
-                .configurer();
-        var configuration = configurer.start();
-
+    private static void executeSampleCommands(AxonConfiguration configuration) {
         var courseId = CourseId.random();
         var createCourse = new CreateCourse(courseId, "Event Sourcing in Practice", 3);
         var renameCourse = new RenameCourse(courseId, "Advanced Event Sourcing");
@@ -36,17 +54,5 @@ public class UniversityAxonApplication {
         var commandGateway = configuration.getComponent(CommandGateway.class);
         commandGateway.sendAndWait(createCourse);
         commandGateway.sendAndWait(renameCourse);
-
-//        var commandBus = configuration.getComponent(CommandBus.class);
-//        inUnitOfWorkOnInvocation(context -> commandBus.dispatch(new GenericCommandMessage<>(new MessageType(createCourse.getClass()), createCourse), context));
-
-
-    }
-
-
-    private static void inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
-        var unitOfWork = new AsyncUnitOfWork();
-        unitOfWork.onInvocation(action);
-        unitOfWork.execute().join();
     }
 }

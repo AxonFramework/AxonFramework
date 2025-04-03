@@ -1,13 +1,24 @@
 package io.axoniq.demo.university.faculty.write.unsubscribestudent;
 
+import io.axoniq.demo.university.faculty.FacultyTags;
 import io.axoniq.demo.university.faculty.events.StudentSubscribed;
-import io.axoniq.demo.university.faculty.write.subscribestudent.SubscribeStudent;
+import io.axoniq.demo.university.faculty.events.StudentUnsubscribed;
+import io.axoniq.demo.university.faculty.write.CourseId;
+import io.axoniq.demo.university.faculty.write.StudentId;
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.EventSourcingHandler;
+import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
+import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.command.annotation.InjectEntity;
 
 import java.util.List;
@@ -15,13 +26,10 @@ import java.util.stream.Collectors;
 
 class UnsubscribeStudentCommandHandler {
 
-    private static final int MAX_COURSES_PER_STUDENT = 10;
-
     @CommandHandler
     public void handle(
             UnsubscribeStudent command,
-            @InjectEntity(idProperty = "courseId") Course course,
-            @InjectEntity(idProperty = "studentId") Student student,
+            @InjectEntity(idResolver = SubscriptionIdResolver.class) State state,
             EventSink eventSink,
             ProcessingContext processingContext
     ) {
@@ -29,17 +37,13 @@ class UnsubscribeStudentCommandHandler {
         eventSink.publish(processingContext, toMessages(events));
     }
 
-    private List<StudentSubscribed> decide(SubscribeStudent command, Course course, Student student) {
-        assertStudentEnrolledFaculty(state);
-        assertStudentNotSubscribedToTooManyCourses(state);
-        assertEnoughVacantSpotsInCourse(state);
-        assertStudentNotAlreadySubscribed(state);
-        assertCourseExists(state);
-
-        return List.of(new StudentSubscribed(command.studentId().raw(), command.courseId().raw()));
+    private List<StudentUnsubscribed> decide(UnsubscribeStudent command, State state) {
+        return state.subscribed
+                ? List.of(new StudentUnsubscribed(command.studentId().raw(), command.courseId().raw()))
+                : List.of();
     }
 
-    private static List<EventMessage<?>> toMessages(List<StudentSubscribed> events) {
+    private static List<EventMessage<?>> toMessages(List<StudentUnsubscribed> events) {
         return events.stream()
                      .map(UnsubscribeStudentCommandHandler::toMessage)
                      .collect(Collectors.toList());
@@ -52,39 +56,43 @@ class UnsubscribeStudentCommandHandler {
         );
     }
 
-    private void assertStudentEnrolledFaculty(State state) {
-        var studentId = state.studentId;
-        if (studentId == null) {
-            throw new RuntimeException("Student with given id never enrolled the faculty");
+    @EventSourcedEntity
+    public static final class State {
+
+        boolean subscribed = false;
+
+        @EventSourcingHandler
+        public void apply(StudentSubscribed event) {
+            this.subscribed = true;
+        }
+
+        @EventSourcingHandler
+        public void apply(StudentUnsubscribed event) {
+            this.subscribed = false;
+        }
+
+        @EventCriteriaBuilder
+        public static EventCriteria resolveCriteria(SubscriptionId id) {
+            var courseId = id.courseId().raw();
+            var studentId = id.studentId().raw();
+            return EventCriteria.match()
+                                .eventsOfTypes(
+                                        StudentSubscribed.class.getName(),
+                                        StudentUnsubscribed.class.getName()
+                                ).withTags(Tag.of(FacultyTags.COURSE_ID, courseId),
+                                           Tag.of(FacultyTags.STUDENT_ID, studentId));
         }
     }
 
-    public void assertStudentNotSubscribedToTooManyCourses(State state) {
-        var noOfCoursesStudentSubscribed = state.noOfCoursesStudentSubscribed;
-        if (noOfCoursesStudentSubscribed >= MAX_COURSES_PER_STUDENT) {
-            throw new RuntimeException("Student subscribed to too many courses");
-        }
-    }
+    static class SubscriptionIdResolver implements EntityIdResolver<SubscriptionId> {
 
-    public void assertEnoughVacantSpotsInCourse(State state) {
-        var noOfStudentsSubscribedToCourse = state.noOfStudentsSubscribedToCourse;
-        var courseCapacity = state.courseCapacity;
-        if (noOfStudentsSubscribedToCourse >= courseCapacity) {
-            throw new RuntimeException("Course is fully booked");
-        }
-    }
-
-    public void assertStudentNotAlreadySubscribed(State state) {
-        var alreadySubscribed = state.alreadySubscribed;
-        if (alreadySubscribed) {
-            throw new RuntimeException("Student already subscribed to this course");
-        }
-    }
-
-    public void assertCourseExists(State state) {
-        var courseId = state.courseId;
-        if (courseId == null) {
-            throw new RuntimeException("Course with given id does not exist");
+        @Override
+        @Nonnull
+        public SubscriptionId resolve(@Nonnull Message<?> command, @Nonnull ProcessingContext context) {
+            if (command.getPayload() instanceof UnsubscribeStudent(StudentId studentId, CourseId courseId)) {
+                return new SubscriptionId(courseId, studentId);
+            }
+            throw new IllegalArgumentException("Can not resolve SubscriptionId from command");
         }
     }
 }
