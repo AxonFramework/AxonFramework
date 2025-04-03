@@ -24,19 +24,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class ChildConfigurationBuilderTest {
+class HierarchicalConfigurationTest {
 
     @Test
-    void testChildConfigurationBuilder() {
+    void childLifecycleHandlersReceiveModuleConfigurationInsteadOfParent() {
         var parentConfiguration = mock(NewConfiguration.class);
         var childConfiguration = mock(NewConfiguration.class);
         var lifecycleRegistry = new StubLifecycleRegistry();
         var startHandlerCalled = new AtomicBoolean();
         var shutdownHandlerCalled = new AtomicBoolean();
-        NewConfiguration newConfiguration = ChildConfigurationBuilder.buildChildConfiguration(
+        NewConfiguration newConfiguration = HierarchicalConfiguration.build(
                 lifecycleRegistry,
-                parentConfiguration,
-                (childLifecycleRegistry, parent) -> {
+                (childLifecycleRegistry) -> {
                     assertNotSame(lifecycleRegistry, childLifecycleRegistry);
                     childLifecycleRegistry.onStart(42, (c) -> {
                         assertSame(childConfiguration, c);

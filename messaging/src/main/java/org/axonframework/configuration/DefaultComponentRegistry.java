@@ -195,10 +195,10 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      */
     private void buildModules(LifecycleRegistry parent) {
         for (Module module : modules.values()) {
-            var built = ChildConfigurationBuilder.buildChildConfiguration(
-                    parent, config, (childLifecycleRegistry, config) -> module.build(config, childLifecycleRegistry)
+            var builtModule = HierarchicalConfiguration.build(
+                    parent, (childLifecycleRegistry) -> module.build(config, childLifecycleRegistry)
             );
-            moduleConfigurations.put(module.name(), built);
+            moduleConfigurations.put(module.name(), builtModule);
         }
     }
 
