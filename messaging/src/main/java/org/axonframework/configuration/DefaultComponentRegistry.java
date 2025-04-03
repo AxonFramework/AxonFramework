@@ -60,7 +60,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private NewConfiguration config;
     private OverrideBehavior overrideBehavior = OverrideBehavior.WARN;
     private boolean enhancerScanning = true;
-    private List<Class<? extends ConfigurationEnhancer>> disabledEnhancers = new ArrayList<>();
+    private final List<Class<? extends ConfigurationEnhancer>> disabledEnhancers = new ArrayList<>();
 
     @Override
     public <C> ComponentRegistry registerComponent(@Nonnull Class<? extends C> type,
@@ -193,9 +193,12 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * Ensure all registered {@link Module Modules} are built too. Store their {@link NewConfiguration} results for
      * exposure on {@link NewConfiguration#getModuleConfigurations()}.
      */
-    private void buildModules(LifecycleRegistry lifecycleRegistry) {
+    private void buildModules(LifecycleRegistry parent) {
         for (Module module : modules.values()) {
-            moduleConfigurations.put(module.name(), module.build(config, lifecycleRegistry));
+            var built = ChildConfigurationBuilder.buildChildConfiguration(
+                    parent, config, (childLifecycleRegistry, config) -> module.build(config, childLifecycleRegistry)
+            );
+            moduleConfigurations.put(module.name(), built);
         }
     }
 

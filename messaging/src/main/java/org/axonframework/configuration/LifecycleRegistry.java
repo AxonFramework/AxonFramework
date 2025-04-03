@@ -85,7 +85,7 @@ public interface LifecycleRegistry {
      * @see AxonConfiguration#start()
      */
     default LifecycleRegistry onStart(int phase, @Nonnull Runnable startHandler) {
-        return onStart(phase, (Consumer<AxonConfiguration>) configuration -> startHandler.run());
+        return onStart(phase, (Consumer<NewConfiguration>) configuration -> startHandler.run());
     }
 
     /**
@@ -116,7 +116,7 @@ public interface LifecycleRegistry {
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
      * @see AxonConfiguration#start()
      */
-    default LifecycleRegistry onStart(int phase, @Nonnull Consumer<AxonConfiguration> startHandler) {
+    default LifecycleRegistry onStart(int phase, @Nonnull Consumer<NewConfiguration> startHandler) {
         return onStart(phase, configuration -> {
             try {
                 requireNonNull(startHandler, "Cannot run a null start handler.").accept(configuration);
@@ -172,7 +172,7 @@ public interface LifecycleRegistry {
      * @see AxonConfiguration#shutdown()
      */
     default LifecycleRegistry onShutdown(int phase, Runnable shutdownHandler) {
-        return onShutdown(phase, (Consumer<AxonConfiguration>) configuration -> shutdownHandler.run());
+        return onShutdown(phase, (Consumer<NewConfiguration>) configuration -> shutdownHandler.run());
     }
 
     /**
@@ -205,7 +205,7 @@ public interface LifecycleRegistry {
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
      * @see AxonConfiguration#shutdown()
      */
-    default LifecycleRegistry onShutdown(int phase, Consumer<AxonConfiguration> shutdownHandler) {
+    default LifecycleRegistry onShutdown(int phase, Consumer<NewConfiguration> shutdownHandler) {
         return onShutdown(phase, configuration -> {
             try {
                 requireNonNull(shutdownHandler, "Cannot run a null shutdown handler.").accept(configuration);

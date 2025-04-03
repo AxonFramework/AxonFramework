@@ -25,9 +25,9 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.modelling.HierarchicalStateManagerConfigurationEnhancer;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.HierarchicalStateManagerConfigurationEnhancer;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
@@ -153,15 +153,16 @@ class DefaultStatefulCommandHandlingModule
 
     @Override
     public NewConfiguration build(@Nonnull NewConfiguration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
-        NewConfiguration builtConfiguration = super.build(parent, lifecycleRegistry);
         lifecycleRegistry.onStart(
                 Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
-                () -> builtConfiguration.getComponent(CommandBus.class)
-                                        .subscribe(builtConfiguration.getComponent(
-                                                StatefulCommandHandlingComponent.class,
-                                                statefulCommandHandlingComponentName
-                                        ))
+                (c) -> {
+                    c.getComponent(CommandBus.class)
+                     .subscribe(c.getComponent(
+                             StatefulCommandHandlingComponent.class,
+                             statefulCommandHandlingComponentName
+                     ));
+                }
         );
-        return builtConfiguration;
+        return super.build(parent, lifecycleRegistry);
     }
 }
