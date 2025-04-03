@@ -269,7 +269,32 @@ class AxonTestFixtureMessagingTest {
                    .when()
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
-                   .exception(RuntimeException.class);
+                   .exception(RuntimeException.class)
+                   .exception(thrown -> assertEquals("Test", thrown.getMessage()));
+        }
+
+        @Test
+        void givenNoPriorActivityWhenCommandHandlerThrowsThenExpectException() {
+            var configurer = MessagingConfigurer.create();
+            configurer.registerDecorator(
+                    CommandBus.class,
+                    0,
+                    (c, n, d) -> d.subscribe(
+                            new QualifiedName(ChangeStudentNameCommand.class),
+                            (command, context) -> {
+                                throw new RuntimeException("Simulated exception");
+                            })
+            );
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            fixture.given()
+                   .noPriorActivity()
+                   .when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                   .then()
+                   .exception(RuntimeException.class)
+                   .exception(thrown -> assertEquals("Simulated exception", thrown.getMessage()));
         }
 
         @Test
