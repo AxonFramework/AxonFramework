@@ -16,6 +16,7 @@ import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 class CreateCourseCommandHandler implements StatefulCommandHandler {
@@ -34,7 +35,8 @@ class CreateCourseCommandHandler implements StatefulCommandHandler {
         var decideFuture = state
                 .loadEntity(State.class, payload.courseId(), context)
                 .thenApply(entity -> decide(payload, entity))
-                .thenAccept(events -> eventSink.publish(context, toMessages(events))) // todo: how to create stream from CompletableFuture<Void>
+                .thenAccept(events -> eventSink.publish(context,
+                                                        toMessages(events))) // todo: how to create stream from CompletableFuture<Void>
                 .thenApply(r -> new GenericCommandResultMessage<>(new MessageType(CommandResult.class),
                                                                   new CommandResult(payload.courseId().raw())));
         return MessageStream.fromFuture(decideFuture);
@@ -60,14 +62,21 @@ class CreateCourseCommandHandler implements StatefulCommandHandler {
         );
     }
 
-    public record State(boolean created) {
+    public static final class State {
+
+        private boolean created;
+
+        private State(boolean created) {
+            this.created = created;
+        }
 
         public static State initial() {
             return new State(false);
         }
 
         public State apply(CourseCreated event) {
-            return new State(true);
+            this.created = true;
+            return this;
         }
     }
 }

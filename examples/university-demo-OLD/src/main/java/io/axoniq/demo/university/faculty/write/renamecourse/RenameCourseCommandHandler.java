@@ -1,5 +1,6 @@
 package io.axoniq.demo.university.faculty.write.renamecourse;
 
+import io.axoniq.demo.university.faculty.FacultyTags;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.events.CourseRenamed;
 import org.axonframework.commandhandling.annotation.CommandHandler;
@@ -20,7 +21,7 @@ class RenameCourseCommandHandler {
     @CommandHandler
     public void handle(
             RenameCourse command,
-            @InjectEntity(idProperty = "courseId") State state,
+            @InjectEntity(idProperty = FacultyTags.COURSE_ID) State state,
             EventSink eventSink,
             ProcessingContext processingContext
     ) {
@@ -29,6 +30,9 @@ class RenameCourseCommandHandler {
     }
 
     private List<CourseRenamed> decide(RenameCourse command, State state) {
+        if (!state.created) {
+            throw new IllegalStateException("Course with given id does not exist");
+        }
         if (command.name().equals(state.name)) {
             return List.of();
         }
@@ -48,13 +52,15 @@ class RenameCourseCommandHandler {
         );
     }
 
-    @EventSourcedEntity
+    @EventSourcedEntity(tagKey = FacultyTags.COURSE_ID)
     public static class State {
 
+        private boolean created = false;
         private String name;
 
         @EventSourcingHandler
         public void evolve(CourseCreated event) {
+            this.created = true;
             this.name = event.name();
         }
 

@@ -29,4 +29,19 @@ class CreateCourseTest {
                .success()
                .events(new CourseCreated(courseId.raw(), courseName, capacity));
     }
+
+    @Test
+    void givenCourseCreated_WhenCreateCourse_ThenSuccess_NoEvents() {
+        var courseId = CourseId.random();
+        var courseName = "Event Sourcing in Practice";
+        var capacity = 3;
+
+        fixture.given()
+               .event(new CourseCreated(courseId.raw(), courseName, capacity))
+               .when()
+               .command(new CreateCourse(courseId, courseName, capacity))
+               .then()
+               .success()
+               .noEvents();
+    }
 }

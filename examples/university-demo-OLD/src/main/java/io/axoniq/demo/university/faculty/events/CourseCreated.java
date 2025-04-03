@@ -1,6 +1,13 @@
 package io.axoniq.demo.university.faculty.events;
 
-public record CourseCreated(String courseId, String name, int capacity) {
+import io.axoniq.demo.university.faculty.FacultyTags;
+import org.axonframework.eventsourcing.annotations.EventTag;
 
-    public static final String TYPE = "CourseCreated";
+public record CourseCreated(
+        @EventTag(key = FacultyTags.COURSE_ID)
+        String courseId,
+        String name,
+        int capacity
+) {
+
 }
