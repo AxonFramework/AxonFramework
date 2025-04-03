@@ -28,9 +28,12 @@ class CreateCourseCommandHandler implements StatefulCommandHandler {
     }
 
     @Override
-    public @Nonnull MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                                                   @Nonnull StateManager state,
-                                                                                   @Nonnull ProcessingContext context) {
+    @Nonnull
+    public MessageStream.Single<? extends CommandResultMessage<?>> handle(
+            @Nonnull CommandMessage<?> command,
+            @Nonnull StateManager state,
+            @Nonnull ProcessingContext context
+    ) {
         var payload = (CreateCourse) command.getPayload();
         var decideFuture = state
                 .loadEntity(State.class, payload.courseId(), context)

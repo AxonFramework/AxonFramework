@@ -1,5 +1,13 @@
 package io.axoniq.demo.university.faculty.events;
 
-public record StudentSubscribed(String studentId, String courseId) {
+import io.axoniq.demo.university.faculty.FacultyTags;
+import org.axonframework.eventsourcing.annotations.EventTag;
+
+public record StudentSubscribed(
+        @EventTag(key = FacultyTags.STUDENT_ID)
+        String studentId,
+        @EventTag(key = FacultyTags.COURSE_ID)
+        String courseId
+) {
 
 }

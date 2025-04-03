@@ -1,5 +1,12 @@
 package io.axoniq.demo.university.faculty.events;
 
-public record CourseCapacityChanged(String courseId, int capacity) {
+import io.axoniq.demo.university.faculty.FacultyTags;
+import org.axonframework.eventsourcing.annotations.EventTag;
+
+public record CourseCapacityChanged(
+        @EventTag(key = FacultyTags.COURSE_ID)
+        String courseId,
+        int capacity
+) {
 
 }
