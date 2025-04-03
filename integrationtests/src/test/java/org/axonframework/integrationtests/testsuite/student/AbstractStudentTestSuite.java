@@ -170,10 +170,7 @@ public abstract class AbstractStudentTestSuite {
      * {@link AnnotationBasedEventStateApplier} to use the annotations placed.
      */
     protected EventStateApplier<Student> studentAnnotationBasedEventStateApplier(NewConfiguration c) {
-        return new AnnotationBasedEventStateApplier<>(Student.class, AnnotatedHandlerInspector.inspectType(
-                Student.class,
-                c.getComponent(ParameterResolverFactory.class),
-                ClasspathHandlerDefinition.forClass(Student.class)));
+        return new AnnotationBasedEventStateApplier<>(Student.class, c.getComponent(ParameterResolverFactory.class));
     }
 
     protected void changeStudentName(String studentId, String name) {

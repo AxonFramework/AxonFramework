@@ -21,35 +21,50 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.NewConfiguration;
 import org.junit.jupiter.api.*;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class HierarchicalParameterResolverFactoryConfigurationEnhancerTest {
 
     @Test
-    void createsHierarchicalParameterResolverFromParentAndChild() {
+    void createsHierarchicalParameterResolverFromParentAndChild() throws NoSuchMethodException {
+        Method testMethod = this.getClass().getDeclaredMethod("createsHierarchicalParameterResolverFromParentAndChild");
+
         // Set up a parent with a unique ParameterResolverFactory
         DefaultComponentRegistry parent = createCleanComponentRegistry();
         ParameterResolverFactory parentParameterResolverFactory = mock(ParameterResolverFactory.class);
         parent.registerComponent(ParameterResolverFactory.class, c -> parentParameterResolverFactory);
+        ParameterResolver<?> parentParameterResolver = mock(ParameterResolver.class);
+        when(parentParameterResolverFactory.createInstance(eq(testMethod), eq(new Parameter[]{}), eq(0))).thenReturn(parentParameterResolver);
 
-        // And a child
+        // Set up the child with its own ParameterResolverFactory
         DefaultComponentRegistry child = createCleanComponentRegistry();
         ParameterResolverFactory childParameterResolverFactory = mock(ParameterResolverFactory.class);
+        ParameterResolver<?> childParameterResolver = mock(ParameterResolver.class);
         child.registerComponent(ParameterResolverFactory.class, c -> childParameterResolverFactory);
 
-        // Build both in a nested way
+        // Build both in a nested way - this will create a HierarchicalParameterResolverFactory
         NewConfiguration parentConfiguration = parent.build(mock(LifecycleRegistry.class));
         NewConfiguration childConfiguration = child.buildNested(parentConfiguration, mock(LifecycleRegistry.class));
 
-        // And assert that the child configuration has a HierarchicalParameterResolverFactory
+        // So, we can assert the right factories are created
         ParameterResolverFactory parentFactory = parentConfiguration.getComponent(ParameterResolverFactory.class);
         ParameterResolverFactory childFactory = childConfiguration.getComponent(ParameterResolverFactory.class);
+        assertNotSame(parentFactory, childFactory);
+        assertSame(parentFactory, parentParameterResolverFactory);
+        assertInstanceOf(HierarchicalParameterResolverFactory.class, childFactory);
 
-        Assertions.assertNotSame(parentFactory, childFactory);
-        Assertions.assertInstanceOf(HierarchicalParameterResolverFactory.class, childFactory);
-        Assertions.assertEquals(parentFactory, ((HierarchicalParameterResolverFactory) childFactory).getParent());
-        Assertions.assertEquals(childParameterResolverFactory,
-                                ((HierarchicalParameterResolverFactory) childFactory).getChild());
+        // Now, we test the hierarchy. First, with the child returning null
+        when(childParameterResolverFactory.createInstance(eq(testMethod), eq(new Parameter[]{}), eq(0))).thenReturn(null);
+        // The parent should just always return the parent
+        assertSame(parentParameterResolver, childFactory.createInstance(testMethod, new Parameter[]{}, 0));
+
+        // But if the child has a result, it should return that
+        when(childParameterResolverFactory.createInstance(eq(testMethod), eq(new Parameter[]{}), eq(0))).thenReturn(childParameterResolver);
+        assertSame(childParameterResolver, childFactory.createInstance(testMethod, new Parameter[]{}, 0));
     }
 
     private DefaultComponentRegistry createCleanComponentRegistry() {

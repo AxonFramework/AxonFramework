@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging.annotation;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.Priority;
 
 import java.lang.reflect.Executable;
@@ -37,7 +38,8 @@ public class HierarchicalParameterResolverFactory implements ParameterResolverFa
     private final ParameterResolverFactory parent;
     private final ParameterResolverFactory child;
 
-    private HierarchicalParameterResolverFactory(ParameterResolverFactory parent, ParameterResolverFactory child) {
+    private HierarchicalParameterResolverFactory(@Nonnull ParameterResolverFactory parent,
+                                                 @Nonnull ParameterResolverFactory child) {
         this.parent = parent;
         this.child = child;
     }
@@ -52,8 +54,8 @@ public class HierarchicalParameterResolverFactory implements ParameterResolverFa
      * @param child  The child {@link ParameterResolverFactory} to try first.
      * @return A new hierarchical {@link ParameterResolverFactory} that delegates to the given factories.
      */
-    public static HierarchicalParameterResolverFactory create(ParameterResolverFactory parent,
-                                                              ParameterResolverFactory child) {
+    public static HierarchicalParameterResolverFactory create(@Nonnull ParameterResolverFactory parent,
+                                                              @Nonnull ParameterResolverFactory child) {
         return new HierarchicalParameterResolverFactory(parent, child);
     }
 
@@ -64,21 +66,5 @@ public class HierarchicalParameterResolverFactory implements ParameterResolverFa
             return resolver;
         }
         return parent.createInstance(executable, parameters, parameterIndex);
-    }
-
-    /**
-     * Returns the parent {@link ParameterResolverFactory} of this factory.
-     * @return The parent {@link ParameterResolverFactory} of this factory.
-     */
-    public ParameterResolverFactory getParent() {
-        return parent;
-    }
-
-    /**
-     * Returns the child {@link ParameterResolverFactory} of this factory.
-     * @return The child {@link ParameterResolverFactory} of this factory.
-     */
-    public ParameterResolverFactory getChild() {
-        return child;
     }
 }

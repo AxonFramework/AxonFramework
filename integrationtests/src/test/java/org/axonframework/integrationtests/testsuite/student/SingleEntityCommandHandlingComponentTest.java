@@ -17,7 +17,6 @@
 package org.axonframework.integrationtests.testsuite.student;
 
 
-import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -27,7 +26,6 @@ import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.junit.jupiter.api.*;
@@ -71,11 +69,8 @@ class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite 
 
     @Test
     void canHandleCommandThatTargetsOneModelViaStateManagerParameter() {
-        registerCommandHandlers(handlerPhase -> handlerPhase.commandHandlingComponent(
-                c -> new AnnotatedCommandHandlingComponent<>(
-                        new SingleModelAnnotatedCommandHandler(),
-                        c.getComponent(ParameterResolverFactory.class)
-                )
+        registerCommandHandlers(handlerPhase -> handlerPhase.annotatedCommandHandlingComponent(
+                c -> new SingleModelAnnotatedCommandHandler()
         ));
         startApp();
 
