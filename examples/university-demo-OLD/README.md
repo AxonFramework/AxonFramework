@@ -10,15 +10,15 @@ The in-memory Event Store supports the [DCB (Dynamic Consistency Boundary) conce
 
 ## Bounded Context: Faculty
 
-We have students and courses students can subscribe to. 
-Firstly, we must study (no pun intended) the business requirements. Here they are:
+In the context there are students and courses, that students can subscribe to. 
 
 A student can enroll in the faculty. The faculty can decide to create a course with assigned capacity—the number of
 students who can subscribe to a course. The capacity of the course must be maintained. After the course has been
 created, its capacity can be changed. A student can subscribe to a course and unsubscribe.
 
-Let’s do a short modeling session to identify events.
+![FacultyContext_EventModeling.png](docs/images/FacultyContext_EventModeling.png)
 
+After an Event Modeling (which you can see above) session we have identified following events:
 * `StudentEnrolledFaculty` - a fact that a student has enrolled faculty
 * `CourseCreated` - a fact that a course has been created with assigned capacity
 * `CourseCapacityChanged` - a fact that the capacity of the course has changed
@@ -40,6 +40,12 @@ This architecture makes it immediately obvious what the system can do, what rule
 Each module is structured into three distinct types of slices (packages `write`, `read`, `automation`) and there are events (package `events`) between them, which are a system backbone - a contract between all other parts:
 Thanks to Axon Framework 5 support for State (entity) per Command Handler those slices can be totally independent and can be developed in parallel (before they needed to share the Aggregate).
 
+Any slice can be implemented differently. Thanks to the Axon approach what's really matters are messages (Commands, Events and Queries) which shape the API.
+Event within the framework you can use variety of approaches.
+You may see that - you can use annotation based / plain Java configuration and mix of those. 
+You can have one or multiple state entities per Command Handler or even share (if you really want) entities between those handlers!
+
+
 ### Write Slices
 Contains commands that represent user intentions, defines business rules through aggregates, produces domain events, and enforces invariants (e.g., SubscribeStudent command → StudentSubscribed event, with SubscriptionsPerStudentNotExceedMax rule).
 
@@ -59,7 +65,7 @@ Tests are focused on observable behavior, so the domain model can be refactored 
 
 ### Example: write slice
 
-![EventModeling_GWT_TestCase_CreatureRecruitment.png](docs/images/EventModeling_GWT_TestCase_CreatureRecruitment.png)
+![WriteSlice_GWT.png](docs/images/WriteSlice_GWT.png)
 
 ```java
     @BeforeEach
