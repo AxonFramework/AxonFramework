@@ -18,7 +18,7 @@ class RenameCourseTest {
     }
 
     @Test
-    void givenNotExistingCourse_WhenRenameCourse_ThenSuccess() {
+    void givenNotExistingCourse_WhenRenameCourse_ThenException() {
         var courseId = CourseId.random();
 
         fixture.given()
@@ -35,11 +35,38 @@ class RenameCourseTest {
         var courseId = CourseId.random();
 
         fixture.given()
-               .event(new CourseCreated(courseId.raw(), "Event Sourcing in Practice", 10))
+               .event(new CourseCreated(courseId.raw(), "Event Sourcing in Practice", 42))
                .when()
                .command(new RenameCourse(courseId, "Event Sourcing in Theory"))
                .then()
                .success()
                .events(new CourseRenamed(courseId.raw(), "Event Sourcing in Theory"));
+    }
+
+    @Test
+    void givenCourseCreated_WhenRenameCourseToTheSameName_ThenSuccess_NoEvents() {
+        var courseId = CourseId.random();
+
+        fixture.given()
+               .event(new CourseCreated(courseId.raw(), "Event Sourcing in Practice", 42))
+               .when()
+               .command(new RenameCourse(courseId, "Event Sourcing in Practice"))
+               .then()
+               .success()
+               .noEvents();
+    }
+
+    @Test
+    void givenCourseCreatedAndRenamed_WhenRenameCourse_ThenSuccess() {
+        var courseId = CourseId.random();
+
+        fixture.given()
+               .event(new CourseCreated(courseId.raw(), "Event Sourcing in Practice", 42))
+               .event(new CourseRenamed(courseId.raw(), "Event Sourcing in Theory"))
+               .when()
+               .command(new RenameCourse(courseId, "Theoretical Practice of Event Sourcing"))
+               .then()
+               .success()
+               .events(new CourseRenamed(courseId.raw(), "Theoretical Practice of Event Sourcing"));
     }
 }
