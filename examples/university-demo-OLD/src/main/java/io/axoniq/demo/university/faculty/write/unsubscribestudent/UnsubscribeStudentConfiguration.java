@@ -1,9 +1,5 @@
 package io.axoniq.demo.university.faculty.write.unsubscribestudent;
 
-import io.axoniq.demo.university.faculty.write.CourseId;
-import io.axoniq.demo.university.faculty.write.StudentId;
-import io.axoniq.demo.university.faculty.write.subscribestudent.SubscribeStudentCommandHandler;
-import io.axoniq.demo.university.faculty.write.subscribestudent.SubscriptionId;
 import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.config.ConfigurationParameterResolverFactory;
 import org.axonframework.configuration.NewConfiguration;
@@ -20,15 +16,12 @@ import java.util.List;
 public class UnsubscribeStudentConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
-        var courseEntity = EventSourcedEntityBuilder
-                .annotatedEntity(CourseId.class, Course.class);
-        var studentEntity = EventSourcedEntityBuilder
-                .annotatedEntity(StudentId.class, Student.class);
+        var stateEntity = EventSourcedEntityBuilder
+                .annotatedEntity(SubscriptionId.class, UnsubscribeStudentCommandHandler.State.class);
         var commandHandlingModule = StatefulCommandHandlingModule
                 .named("UnsubscribeStudent")
                 .entities()
-                .entity(courseEntity)
-                .entity(studentEntity)
+                .entity(stateEntity)
                 .commandHandlers()
                 .commandHandlingComponent(c -> new AnnotatedCommandHandlingComponent<>(new UnsubscribeStudentCommandHandler(),
                                                                                        parameterResolverFactory(c)));

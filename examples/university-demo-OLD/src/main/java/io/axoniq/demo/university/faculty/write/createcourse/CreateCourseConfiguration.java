@@ -25,7 +25,7 @@ public class CreateCourseConfiguration {
                 .entityFactory(c -> (type, id) -> CreateCourseCommandHandler.State.initial())
                 .criteriaResolver(c -> id -> EventCriteria.match()
                                                           .eventsOfTypes(CourseCreated.class.getName())
-                                                          .withTags(new Tag(FacultyTags.COURSE_ID, id.raw())))
+                                                          .withTags(Tag.of(FacultyTags.COURSE_ID, id.raw())))
                 .eventStateApplier(c -> new CourseEventStateApplier());
 
         var commandHandlingModule = StatefulCommandHandlingModule
@@ -51,26 +51,6 @@ public class CreateCourseConfiguration {
             return payload instanceof CourseCreated courseCreated
                     ? model.apply(courseCreated)
                     : model;
-        }
-    }
-
-    public static class CourseIdResolver implements EntityIdResolver<CourseId> {
-
-        @Nonnull
-        @Override
-        public CourseId resolve(@Nonnull Message<?> message, @Nonnull ProcessingContext context) {
-            var id = resolveOrNull(message);
-            if (id == null) {
-                throw new IllegalArgumentException("Cannot resolve course courseId from the command");
-            }
-            return id;
-        }
-
-        private static CourseId resolveOrNull(Message<?> message) {
-            var payload = message.getPayload();
-            return payload instanceof CreateCourse createCourse
-                    ? createCourse.courseId()
-                    : null;
         }
     }
 }
