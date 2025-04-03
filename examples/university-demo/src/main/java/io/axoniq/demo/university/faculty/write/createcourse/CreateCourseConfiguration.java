@@ -1,5 +1,6 @@
 package io.axoniq.demo.university.faculty.write.createcourse;
 
+import io.axoniq.demo.university.faculty.FacultyTags;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.write.CourseId;
 import jakarta.annotation.Nonnull;
@@ -23,9 +24,10 @@ public class CreateCourseConfiguration {
                 .entity(CourseId.class, CreateCourseCommandHandler.State.class)
                 .entityFactory(c -> (type, id) -> CreateCourseCommandHandler.State.initial())
                 .criteriaResolver(c -> id -> EventCriteria.match()
-                                                          .eventsOfTypes(CourseCreated.TYPE)
-                                                          .withTags(new Tag("Course", id.raw())))
+                                                          .eventsOfTypes(CourseCreated.class.getName())
+                                                          .withTags(new Tag(FacultyTags.COURSE_ID, id.raw())))
                 .eventStateApplier(c -> new CourseEventStateApplier());
+
         var commandHandlingModule = StatefulCommandHandlingModule
                 .named("CreateCourse")
                 .entities()
@@ -33,6 +35,7 @@ public class CreateCourseConfiguration {
                 .commandHandlers()
                 .commandHandler(new QualifiedName(CreateCourse.class),
                                 c -> new CreateCourseCommandHandler(c.getComponent(EventSink.class)));
+
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }
 
