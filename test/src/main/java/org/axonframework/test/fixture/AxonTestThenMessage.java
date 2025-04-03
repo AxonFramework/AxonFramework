@@ -28,6 +28,7 @@ import org.axonframework.test.saga.CommandValidator;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -156,6 +157,17 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     public T noCommands() {
         commandValidator.assertDispatchedMatching(Matchers.noCommands());
         return self();
+    }
+
+    @Override
+    public T exception(@NotNull Consumer<Throwable> consumer) {
+        consumer.accept(actualException);
+        return self();
+    }
+
+    @Override
+    public T exception(@NotNull Class<? extends Throwable> type, @NotNull String message) {
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")

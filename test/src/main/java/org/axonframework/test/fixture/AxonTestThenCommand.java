@@ -102,8 +102,8 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command exception(@Nonnull Class<? extends Throwable> expectedException) {
-        return exception(instanceOf(expectedException));
+    public AxonTestPhase.Then.Command exception(@Nonnull Class<? extends Throwable> type) {
+        return exception(instanceOf(type));
     }
 
     @Override

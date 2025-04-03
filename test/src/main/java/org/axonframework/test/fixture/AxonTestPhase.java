@@ -403,10 +403,10 @@ public interface AxonTestPhase {
              * Only take commands into account that were dispatched explicitly with the {@link When#command}. Hence, do
              * not take into accounts commands dispatched as side effects of the message handlers.
              *
-             * @param expectedException The type of exception expected from the When phase execution.
+             * @param type The type of exception expected from the When phase execution.
              * @return The current Then instance, for fluent interfacing.
              */
-            Command exception(@Nonnull Class<? extends Throwable> expectedException);
+            Command exception(@Nonnull Class<? extends Throwable> type);
 
             /**
              * Expect an exception to occur during the When phase that matches with the given {@code matcher}.
@@ -436,22 +436,14 @@ public interface AxonTestPhase {
             /**
              * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
              * should be exactly of that type, subclasses are not accepted.
-             * <p>
-             * Only take events into account that were published explicitly with the {@link When#event} or
-             * {@link When#events}. Hence, do not take into accounts events published as side effects of the message
-             * handlers.
              *
-             * @param expectedException The type of exception expected from the When phase execution.
+             * @param type The type of exception expected from the When phase execution.
              * @return The current Then instance, for fluent interfacing.
              */
-            Event exception(@Nonnull Class<? extends Throwable> expectedException);
+            Event exception(@Nonnull Class<? extends Throwable> type);
 
             /**
              * Expect an exception to occur during the When phase that matches with the given {@code matcher}.
-             * <p>
-             * Only take events into account that were published explicitly with the {@link When#event} or
-             * {@link When#events}. Hence, do not take into accounts events published as side effects of the message
-             * handlers.
              *
              * @param matcher The matcher to validate the actual exception.
              * @return The current Then instance, for fluent interfacing.
@@ -607,6 +599,25 @@ public interface AxonTestPhase {
              *
              * @return a {@link Setup} instance that allows configuring a new test scenario.
              */
+
+            /**
+             * Expect the exception with given {@code type} and {@code message} to occur during the When phase
+             * execution. The actual exception should be exactly of that type, subclasses are not accepted.
+             *
+             * @param type    The type of exception expected from the When phase execution.
+             * @param message The message of the exception expected from the When phase execution.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            T exception(@Nonnull Class<? extends Throwable> type, @Nonnull String message);
+
+            /**
+             * Allow to consume the exception which have been thrown during the "when" phase.
+             *
+             * @param consumer Consumes the thrown exception. You may place your own assertions here.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            T exception(@Nonnull Consumer<Throwable> consumer);
+
             Setup and();
         }
     }

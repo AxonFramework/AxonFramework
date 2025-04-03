@@ -48,8 +48,8 @@ class AxonTestThenEvent
     }
 
     @Override
-    public AxonTestPhase.Then.Event exception(@NotNull Class<? extends Throwable> expectedException) {
-        return exception(instanceOf(expectedException));
+    public AxonTestPhase.Then.Event exception(@NotNull Class<? extends Throwable> type) {
+        return exception(instanceOf(type));
     }
 
     @Override
