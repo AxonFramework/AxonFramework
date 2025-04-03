@@ -77,7 +77,7 @@ class SubscribeStudentCommandHandler {
     }
 
     public void assertEnoughVacantSpotsInCourse(State state) {
-        var noOfStudentsSubscribedToCourse = state.noOfCoursesStudentSubscribed;
+        var noOfStudentsSubscribedToCourse = state.noOfStudentsSubscribedToCourse;
         var courseCapacity = state.courseCapacity;
         if (noOfStudentsSubscribedToCourse == courseCapacity) {
             throw new RuntimeException("Course is fully booked");
@@ -169,8 +169,12 @@ class SubscribeStudentCommandHandler {
                                  .eventsOfTypes(
                                          StudentSubscribed.class.getName(),
                                          StudentUnsubscribed.class.getName()
-                                 ).withTags(new Tag(FacultyTags.COURSE_ID, courseId),
-                                            new Tag(FacultyTags.STUDENT_ID, studentId))
+                                 ).withTags(new Tag(FacultyTags.COURSE_ID, courseId)),
+                    EventCriteria.match()
+                                 .eventsOfTypes(
+                                         StudentSubscribed.class.getName(),
+                                         StudentUnsubscribed.class.getName()
+                                 ).withTags(new Tag(FacultyTags.STUDENT_ID, studentId))
             );
         }
     }
