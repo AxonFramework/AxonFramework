@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 class SubscribeStudentCommandHandler {
 
-    private static final int MAX_COURSES_PER_STUDENT = 3;
+    private static final int MAX_COURSES_PER_STUDENT = 10;
 
     @CommandHandler
     public void handle(
@@ -71,7 +71,7 @@ class SubscribeStudentCommandHandler {
 
     public void assertStudentNotSubscribedToTooManyCourses(State state) {
         var noOfCoursesStudentSubscribed = state.noOfCoursesStudentSubscribed;
-        if (noOfCoursesStudentSubscribed == MAX_COURSES_PER_STUDENT) {
+        if (noOfCoursesStudentSubscribed >= MAX_COURSES_PER_STUDENT) {
             throw new RuntimeException("Student subscribed to too many courses");
         }
     }
@@ -79,7 +79,7 @@ class SubscribeStudentCommandHandler {
     public void assertEnoughVacantSpotsInCourse(State state) {
         var noOfStudentsSubscribedToCourse = state.noOfStudentsSubscribedToCourse;
         var courseCapacity = state.courseCapacity;
-        if (noOfStudentsSubscribedToCourse == courseCapacity) {
+        if (noOfStudentsSubscribedToCourse >= courseCapacity) {
             throw new RuntimeException("Course is fully booked");
         }
     }

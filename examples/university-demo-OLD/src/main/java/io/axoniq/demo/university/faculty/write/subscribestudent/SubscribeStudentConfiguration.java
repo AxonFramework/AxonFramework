@@ -1,6 +1,5 @@
 package io.axoniq.demo.university.faculty.write.subscribestudent;
 
-import io.axoniq.demo.university.faculty.write.CourseId;
 import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.config.ConfigurationParameterResolverFactory;
 import org.axonframework.configuration.NewConfiguration;
