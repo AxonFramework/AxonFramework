@@ -52,6 +52,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     private final NewConfiguration configuration;
     private final AxonTestFixture.Customization customization;
     private final RecordingEventSink eventSink;
+    private final RecordingCommandBus commandBus;
 
     private final CommandValidator commandValidator;
     protected final Throwable actualException;
@@ -65,6 +66,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     ) {
         this.configuration = configuration;
         this.customization = customization;
+        this.commandBus = commandBus;
         this.eventSink = eventSink;
         this.actualException = actualException;
         this.commandValidator = new CommandValidator(commandBus::recordedCommands,
@@ -125,13 +127,22 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     @Override
     public T events(@Nonnull Consumer<List<? super EventMessage<?>>> consumer) {
         var publishedEvents = eventSink.recorded();
-        consumer.accept(publishedEvents);
+        try {
+            consumer.accept(publishedEvents);
+        } catch (AssertionError e) {
+            throw new AxonAssertionError("Events does not satisfy custom assertions", e);
+        }
         return self();
     }
 
     @Override
     public T eventsMatch(@Nonnull Predicate<List<? super EventMessage<?>>> predicate) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        var publishedEvents = eventSink.recorded();
+        var result = predicate.test(publishedEvents);
+        if (!result) {
+            throw new AxonAssertionError("Events does not satisfy the predicate");
+        }
+        return self();
     }
 
     @Override
@@ -148,12 +159,23 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public T commands(@Nonnull Consumer<List<? super CommandMessage<?>>> consumer) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        var dispatchedCommands = commandBus.recordedCommands();
+        try {
+            consumer.accept(dispatchedCommands);
+        } catch (AssertionError e) {
+            throw new AxonAssertionError("Commands does not satisfy custom assertions", e);
+        }
+        return self();
     }
 
     @Override
     public T commandsMatch(@Nonnull Predicate<List<? super CommandMessage<?>>> predicate) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        var dispatchedCommands = commandBus.recordedCommands();
+        var result = predicate.test(dispatchedCommands);
+        if (!result) {
+            throw new AxonAssertionError("Events does not satisfy the predicate");
+        }
+        return self();
     }
 
     @Override

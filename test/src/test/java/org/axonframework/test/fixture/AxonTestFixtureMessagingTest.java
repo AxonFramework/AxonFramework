@@ -378,6 +378,33 @@ class AxonTestFixtureMessagingTest {
         }
 
         @Test
+        void whenEventThenExpectedCommandCustomAssertion() {
+            var configurer = MessagingConfigurer.create();
+            AtomicBoolean eventHandled = new AtomicBoolean(false);
+            registerChangeStudentNameHandlerReturnsSingle(configurer);
+            configurer.registerEventSink(c -> (events) -> {
+                if (!eventHandled.getAndSet(true)) {
+                    var commandGateway = c.getComponent(CommandGateway.class);
+                    commandGateway.sendAndWait(new ChangeStudentNameCommand("id", "name"));
+                }
+                return CompletableFuture.completedFuture(null);
+            });
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            fixture.when()
+                   .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
+                   .then()
+                   .commands(commands -> {
+                       assertEquals(1, commands.size());
+                       var command = commands.get(0);
+                       assertEquals("id", ((ChangeStudentNameCommand) command.getPayload()).id());
+                       assertEquals("name", ((ChangeStudentNameCommand) command.getPayload()).name());
+                       return true;
+                   });
+        }
+
+        @Test
         void whenEventHandlerFailsThenException() {
             var configurer = MessagingConfigurer.create();
             configurer.registerEventSink(c -> (events) -> CompletableFuture.failedFuture(new RuntimeException(
