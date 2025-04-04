@@ -131,6 +131,24 @@ class AxonTestFixtureMessagingTest {
         }
 
         @Test
+        void whenCommandReturnsSingleThenSuccessWithValueConsumer() {
+            var configurer = MessagingConfigurer.create();
+            registerChangeStudentNameHandlerReturnsSingle(configurer);
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            fixture.when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
+                   .then()
+                   .success()
+                   .resultMessagePayload(result -> {
+                       var payload = (CommandResult) result;
+                       assertEquals("Result name-1", payload.message());
+                       assertNull(payload.metadataSample());
+                   });
+        }
+
+        @Test
         void whenCommandWithMetaDataThenSuccessWithTheMetaData() {
             var configurer = MessagingConfigurer.create();
             registerChangeStudentNameHandlerReturnsSingle(configurer);
