@@ -397,7 +397,7 @@ public interface AxonTestPhase {
              * @param consumer Consumes the command result. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            Command resultMessage(@Nonnull Consumer<? super CommandResultMessage<?>> consumer);
+            Command resultMessageSatisfies(@Nonnull Consumer<? super CommandResultMessage<?>> consumer);
 
             /**
              * Expect the last command handler from the When phase to return the given {@code expectedPayload} after
@@ -418,7 +418,7 @@ public interface AxonTestPhase {
              * @param consumer Consumes the command result payload. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            Command resultMessagePayload(@Nonnull Consumer<Object> consumer);
+            Command resultMessagePayloadSatisfies(@Nonnull Consumer<Object> consumer);
         }
 
         /**
@@ -477,7 +477,7 @@ public interface AxonTestPhase {
              * @param consumer Consumes the published events. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            T events(@Nonnull Consumer<List<EventMessage<?>>> consumer);
+            T eventsSatisfy(@Nonnull Consumer<List<EventMessage<?>>> consumer);
 
             /**
              * Allow to check if the set of event messages which have been published during the "when" phase match given
@@ -528,7 +528,7 @@ public interface AxonTestPhase {
              * @param consumer Consumes the dispatched commands. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            T commands(@Nonnull Consumer<List<CommandMessage<?>>> consumer);
+            T commandsSatisfy(@Nonnull Consumer<List<CommandMessage<?>>> consumer);
 
             /**
              * Allow to check if the set of command messages which have been dispatched during the "when" phase match

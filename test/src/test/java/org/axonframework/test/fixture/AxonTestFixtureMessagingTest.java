@@ -30,7 +30,6 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.fixture.sampledomain.ChangeStudentNameCommand;
 import org.axonframework.test.fixture.sampledomain.StudentNameChangedEvent;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -113,7 +112,7 @@ class AxonTestFixtureMessagingTest {
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
                    .success()
-                   .resultMessage(Assertions::assertNull);
+                   .resultMessageSatisfies(Assertions::assertNull);
         }
 
         @Test
@@ -141,7 +140,7 @@ class AxonTestFixtureMessagingTest {
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
                    .success()
-                   .resultMessagePayload(result -> {
+                   .resultMessagePayloadSatisfies(result -> {
                        var payload = (CommandResult) result;
                        assertEquals("Result name-1", payload.message());
                        assertNull(payload.metadataSample());
@@ -413,7 +412,7 @@ class AxonTestFixtureMessagingTest {
             fixture.when()
                    .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
                    .then()
-                   .commands(commands -> {
+                   .commandsSatisfy(commands -> {
                        assertEquals(1, commands.size());
                        var command = commands.getFirst();
                        assertEquals("id", ((ChangeStudentNameCommand) command.getPayload()).id());

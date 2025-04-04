@@ -105,7 +105,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T events(@Nonnull Consumer<List<EventMessage<?>>> consumer) {
+    public T eventsSatisfy(@Nonnull Consumer<List<EventMessage<?>>> consumer) {
         var publishedEvents = eventSink.recorded();
         try {
             consumer.accept(publishedEvents);
@@ -138,7 +138,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T commands(@Nonnull Consumer<List<CommandMessage<?>>> consumer) {
+    public T commandsSatisfy(@Nonnull Consumer<List<CommandMessage<?>>> consumer) {
         var dispatchedCommands = commandBus.recordedCommands();
         try {
             consumer.accept(dispatchedCommands);

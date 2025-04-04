@@ -50,12 +50,13 @@ class AxonTestThenCommand
 
     @Override
     public AxonTestPhase.Then.Command success() {
-        return resultMessage(c -> {
+        return resultMessageSatisfies(c -> {
         });
     }
 
     @Override
-    public AxonTestPhase.Then.Command resultMessage(@Nonnull Consumer<? super CommandResultMessage<?>> consumer) {
+    public AxonTestPhase.Then.Command resultMessageSatisfies(
+            @Nonnull Consumer<? super CommandResultMessage<?>> consumer) {
         StringDescription expectedDescription = new StringDescription();
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
@@ -87,7 +88,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command resultMessagePayload(@Nonnull Consumer<Object> consumer) {
+    public AxonTestPhase.Then.Command resultMessagePayloadSatisfies(@Nonnull Consumer<Object> consumer) {
         StringDescription expectedDescription = new StringDescription();
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);

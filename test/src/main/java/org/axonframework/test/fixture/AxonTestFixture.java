@@ -113,7 +113,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         /**
          * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing
          * objects. The {@link org.axonframework.test.fixture.AxonTestPhase.Then.Event#events} and
-         * {@link org.axonframework.test.fixture.AxonTestPhase.Then.Command#resultMessage}, for example, use this
+         * {@link org.axonframework.test.fixture.AxonTestPhase.Then.Command#resultMessageSatisfies}, for example, use this
          * filter.
          * <p/>
          * When multiple filters are registered, a Field must be accepted by all registered filters in order to be
