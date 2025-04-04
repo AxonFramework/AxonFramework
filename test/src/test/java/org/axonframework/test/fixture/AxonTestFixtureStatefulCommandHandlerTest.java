@@ -184,7 +184,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
     }
 
     private static void registerSampleStatefulCommandHandler(MessagingConfigurer configurer) {
-        configurer.registerComponent(
+        configurer.componentRegistry(cr -> cr.registerComponent(
                 StateManager.class,
                 c -> {
                     var repository = new AsyncEventSourcingRepository<>(
@@ -200,37 +200,41 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                     return SimpleStateManager.builder("testfixture")
                                              .register(repository)
                                              .build();
-                });
+                })
+                                             .registerComponent(AsyncEventStore.class,
+                                                                c -> new SimpleEventStore(new AsyncInMemoryEventStorageEngine(),
+                                                                                          new AnnotationBasedTagResolver()))
+                                             .registerComponent(EventSink.class,
+                                                                c -> c.getComponent(AsyncEventStore.class))
+                                             .registerDecorator(CommandBus.class, 50, (c, name, delegate) -> {
+                                                 var stateManager = c.getComponent(StateManager.class);
+                                                 var statefulCommandHandler = StatefulCommandHandlingComponent
+                                                         .create("mystatefulCH", stateManager)
+                                                         .subscribe(
+                                                                 new QualifiedName(ChangeStudentNameCommand.class),
+                                                                 (cmd, sm, ctx) -> {
+                                                                     ChangeStudentNameCommand payload = (ChangeStudentNameCommand) cmd.getPayload();
+                                                                     var student = sm.loadEntity(Student.class,
+                                                                                                 payload.id(),
+                                                                                                 ctx).join();
+                                                                     if (!Objects.equals(student.getName(),
+                                                                                         payload.name())) {
+                                                                         var eventSink = c.getComponent(EventSink.class);
+                                                                         eventSink.publish(
+                                                                                 ctx,
+                                                                                 studentNameChangedEventMessage(payload.id(),
+                                                                                                                payload.name(),
+                                                                                                                student.getChanges()
+                                                                                                                        + 1)
+                                                                         );
+                                                                     }
+                                                                     return MessageStream.empty().cast();
+                                                                 });
+                                                 delegate.subscribe(statefulCommandHandler);
 
-        configurer.registerComponent(AsyncEventStore.class,
-                                     c -> new SimpleEventStore(new AsyncInMemoryEventStorageEngine(),
-                                                               new AnnotationBasedTagResolver()))
-                  .registerComponent(EventSink.class, c -> c.getComponent(AsyncEventStore.class));
-
-        configurer.registerDecorator(CommandBus.class, 50, (c, name, delegate) -> {
-            var stateManager = c.getComponent(StateManager.class);
-            var statefulCommandHandler = StatefulCommandHandlingComponent
-                    .create("mystatefulCH", stateManager)
-                    .subscribe(
-                            new QualifiedName(ChangeStudentNameCommand.class),
-                            (cmd, sm, ctx) -> {
-                                ChangeStudentNameCommand payload = (ChangeStudentNameCommand) cmd.getPayload();
-                                var student = sm.loadEntity(Student.class, payload.id(), ctx).join();
-                                if (!Objects.equals(student.getName(), payload.name())) {
-                                    var eventSink = c.getComponent(EventSink.class);
-                                    eventSink.publish(
-                                            ctx,
-                                            studentNameChangedEventMessage(payload.id(),
-                                                                           payload.name(),
-                                                                           student.getChanges() + 1)
-                                    );
-                                }
-                                return MessageStream.empty().cast();
-                            });
-            delegate.subscribe(statefulCommandHandler);
-
-            return delegate;
-        });
+                                                 return delegate;
+                                             })
+        );
     }
 
     private static GenericEventMessage<StudentNameChangedEvent> studentNameChangedEventMessage(

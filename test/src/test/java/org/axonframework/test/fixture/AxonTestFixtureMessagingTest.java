@@ -28,9 +28,6 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.test.AxonAssertionError;
-import org.axonframework.test.aggregate.DeleteCommand;
-import org.axonframework.test.aggregate.MyAggregateDeletedEvent;
-import org.axonframework.test.aggregate.MyEvent;
 import org.axonframework.test.fixture.sampledomain.ChangeStudentNameCommand;
 import org.axonframework.test.fixture.sampledomain.StudentNameChangedEvent;
 import org.hamcrest.Matchers;
@@ -253,14 +250,14 @@ class AxonTestFixtureMessagingTest {
         @Test
         void givenNoPriorActivityWhenCommandThenExpectException() {
             var configurer = MessagingConfigurer.create();
-            configurer.registerDecorator(
+            configurer.componentRegistry(cr -> cr.registerDecorator(
                     CommandBus.class,
                     0,
                     (c, n, d) -> d.subscribe(
                             new QualifiedName(ChangeStudentNameCommand.class),
                             (command, context) -> MessageStream.failed(new RuntimeException("Test"))
                     )
-            );
+            ));
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -275,14 +272,14 @@ class AxonTestFixtureMessagingTest {
         @Test
         void assertionErrorIfExpectExceptionButSuccess() {
             var configurer = MessagingConfigurer.create();
-            configurer.registerDecorator(
+            configurer.componentRegistry(cr -> cr.registerDecorator(
                     CommandBus.class,
                     0,
                     (c, n, d) -> d.subscribe(
                             new QualifiedName(ChangeStudentNameCommand.class),
                             (command, context) -> MessageStream.empty().cast()
                     )
-            );
+            ));
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -302,14 +299,14 @@ class AxonTestFixtureMessagingTest {
         @Test
         void assertionErrorIfExpectSuccessButException() {
             var configurer = MessagingConfigurer.create();
-            configurer.registerDecorator(
+            configurer.componentRegistry(cr -> cr.registerDecorator(
                     CommandBus.class,
                     0,
                     (c, n, d) -> d.subscribe(
                             new QualifiedName(ChangeStudentNameCommand.class),
                             (command, context) -> MessageStream.failed(new RuntimeException("Test"))
                     )
-            );
+            ));
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -532,7 +529,7 @@ class AxonTestFixtureMessagingTest {
     }
 
     private static void registerChangeStudentNameHandlerReturnsEmpty(MessagingConfigurer configurer) {
-        configurer.registerDecorator(
+        configurer.componentRegistry(cr -> cr.registerDecorator(
                 CommandBus.class,
                 0,
                 (c, n, d) -> d.subscribe(
@@ -544,11 +541,11 @@ class AxonTestFixtureMessagingTest {
                                               studentNameChangedEventMessage(payload.id(), payload.name(), 1));
                             return MessageStream.empty().cast();
                         })
-        );
+        ));
     }
 
     private static void registerChangeStudentNameHandlerReturnsSingle(MessagingConfigurer configurer) {
-        configurer.registerDecorator(
+        configurer.componentRegistry(cr -> cr.registerDecorator(
                 CommandBus.class,
                 0,
                 (c, n, d) -> d.subscribe(
@@ -563,6 +560,6 @@ class AxonTestFixtureMessagingTest {
                                     new CommandResult("Result " + payload.name(), metadataSample));
                             return MessageStream.just(resultMessage);
                         })
-        );
+        ));
     }
 }

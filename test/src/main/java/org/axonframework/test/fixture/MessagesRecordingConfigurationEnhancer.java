@@ -17,15 +17,15 @@
 package org.axonframework.test.fixture;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.configuration.NewConfigurer;
 import org.axonframework.eventhandling.EventSink;
 import org.jetbrains.annotations.NotNull;
 
 class MessagesRecordingConfigurationEnhancer implements ConfigurationEnhancer {
 
     @Override
-    public void enhance(@NotNull NewConfigurer<?> configurer) {
+    public void enhance(@NotNull ComponentRegistry configurer) {
         configurer.registerDecorator(EventSink.class,
                                      Integer.MAX_VALUE,
                                      (c, name, d) -> new RecordingEventSink(d))
