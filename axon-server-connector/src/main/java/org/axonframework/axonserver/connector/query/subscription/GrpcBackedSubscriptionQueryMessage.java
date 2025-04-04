@@ -89,12 +89,6 @@ public class GrpcBackedSubscriptionQueryMessage<P, I, U> implements Subscription
 
     @Nonnull
     @Override
-    public String getQueryName() {
-        return grpcBackedQueryMessage.getQueryName();
-    }
-
-    @Nonnull
-    @Override
     public ResponseType<I> getResponseType() {
         return grpcBackedQueryMessage.getResponseType();
     }

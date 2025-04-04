@@ -61,13 +61,12 @@ class QuerySerializerTest {
     @Test
     void serializeRequest() {
         QueryMessage<String, Integer> message = new GenericQueryMessage<>(
-                new MessageType("query"), "MyQueryName", "Test", instanceOf(int.class)
+                new MessageType("MyQueryName"), "Test", instanceOf(int.class)
         );
         QueryRequest queryRequest = testSubject.serializeRequest(message, 5, 10, 1);
         QueryMessage<Object, Object> deserialized = testSubject.deserializeRequest(queryRequest);
 
         assertEquals(message.getIdentifier(), deserialized.getIdentifier());
-        assertEquals(message.getQueryName(), deserialized.getQueryName());
         assertEquals(message.getMetaData(), deserialized.getMetaData());
         assertTrue(message.getResponseType().matches(deserialized.getResponseType().responseMessagePayloadType()));
         assertEquals(message.getPayload(), deserialized.getPayload());

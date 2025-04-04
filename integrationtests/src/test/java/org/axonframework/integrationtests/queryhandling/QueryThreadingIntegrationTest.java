@@ -49,7 +49,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 class QueryThreadingIntegrationTest {
 
-    private static final MessageType QUERY_TYPE = new MessageType("query");
+    private static final MessageType QUERY_TYPE_A = new MessageType("query-a");
+    private static final MessageType QUERY_TYPE_B = new MessageType("query-b");
 
     private static final Logger log = LoggerFactory.getLogger(QueryThreadingIntegrationTest.class);
 
@@ -128,7 +129,7 @@ class QueryThreadingIntegrationTest {
 
     @Test
     void canStillHandleQueryResponsesWhileManyQueriesHandling() {
-        queryBus2.subscribe("query-b", String.class, query -> {
+        queryBus2.subscribe(QUERY_TYPE_B.name(), String.class, query -> {
             while (secondaryQueryBlock.get()) {
                 try {
                     Thread.sleep(10);
@@ -139,10 +140,9 @@ class QueryThreadingIntegrationTest {
             return "b";
         });
 
-        queryBus.subscribe("query-a", String.class, query -> {
+        queryBus.subscribe(QUERY_TYPE_A.name(), String.class, query -> {
             waitingQueries.incrementAndGet();
-            QueryMessage<String, String> testQuery = new GenericQueryMessage<>(QUERY_TYPE,
-                                                                               "query-b",
+            QueryMessage<String, String> testQuery = new GenericQueryMessage<>(QUERY_TYPE_B,
                                                                                "start",
                                                                                ResponseTypes.instanceOf(String.class));
             QueryResponseMessage<String> b = queryBus.query(testQuery).get();
@@ -151,22 +151,22 @@ class QueryThreadingIntegrationTest {
         });
 
         CompletableFuture<QueryResponseMessage<String>> query1 = queryBus.query(
-                new GenericQueryMessage<>(QUERY_TYPE, "query-a", "start", ResponseTypes.instanceOf(String.class))
+                new GenericQueryMessage<>(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
         );
         CompletableFuture<QueryResponseMessage<String>> query2 = queryBus.query(
-                new GenericQueryMessage<>(QUERY_TYPE, "query-a", "start", ResponseTypes.instanceOf(String.class))
+                new GenericQueryMessage<>(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
         );
         CompletableFuture<QueryResponseMessage<String>> query3 = queryBus.query(
-                new GenericQueryMessage<>(QUERY_TYPE, "query-a", "start", ResponseTypes.instanceOf(String.class))
+                new GenericQueryMessage<>(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
         );
         CompletableFuture<QueryResponseMessage<String>> query4 = queryBus.query(
-                new GenericQueryMessage<>(QUERY_TYPE, "query-a", "start", ResponseTypes.instanceOf(String.class))
+                new GenericQueryMessage<>(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
         );
         CompletableFuture<QueryResponseMessage<String>> query5 = queryBus.query(
-                new GenericQueryMessage<>(QUERY_TYPE, "query-a", "start", ResponseTypes.instanceOf(String.class))
+                new GenericQueryMessage<>(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
         );
         CompletableFuture<QueryResponseMessage<String>> query6 = queryBus.query(
-                new GenericQueryMessage<>(QUERY_TYPE, "query-a", "start", ResponseTypes.instanceOf(String.class))
+                new GenericQueryMessage<>(QUERY_TYPE_A, "start", ResponseTypes.instanceOf(String.class))
         );
 
         // Wait until all queries are waiting on the secondary query. Note that query 6 cannot be processed

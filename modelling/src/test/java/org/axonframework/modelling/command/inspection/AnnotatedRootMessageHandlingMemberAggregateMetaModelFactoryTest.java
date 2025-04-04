@@ -96,7 +96,7 @@ import static org.mockito.Mockito.*;
  */
 class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
 
-    private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");
+    private static final MessageType TEST_COMMAND_TYPE = new MessageType(MemberCommand.class.getName());
     private static final AggregateCreatedEvent AGGREGATE_EVENT = new AggregateCreatedEvent("some-id");
     private static final MemberCommand MEMBER_COMMAND = new MemberCommand("some-id");
 

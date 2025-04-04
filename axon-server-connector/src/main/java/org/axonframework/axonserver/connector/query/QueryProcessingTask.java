@@ -199,7 +199,6 @@ class QueryProcessingTask implements Runnable, FlowControl {
         // noinspection unchecked
         StreamingQueryMessage<Q, R> streamingQueryMessage = new GenericStreamingQueryMessage<>(
                 originalQueryMessage,
-                originalQueryMessage.getQueryName(),
                 (Class<R>) originalQueryMessage.getResponseType().getExpectedResponseType());
         Publisher<QueryResponseMessage<R>> resultPublisher = localSegment.streamingQuery(streamingQueryMessage);
         setResult(streamableFluxResult(resultPublisher));

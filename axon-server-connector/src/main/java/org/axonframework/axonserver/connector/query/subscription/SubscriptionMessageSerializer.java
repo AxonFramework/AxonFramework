@@ -102,7 +102,7 @@ public class SubscriptionMessageSerializer {
         return QueryRequest.newBuilder()
                            .setTimestamp(System.currentTimeMillis())
                            .setMessageIdentifier(subscriptionQueryMessage.getIdentifier())
-                           .setQuery(subscriptionQueryMessage.getQueryName())
+                           .setQuery(subscriptionQueryMessage.type().name())
                            .setClientId(configuration.getClientId())
                            .setComponentName(configuration.getComponentName())
                            .setPayload(payloadSerializer.apply(subscriptionQueryMessage))

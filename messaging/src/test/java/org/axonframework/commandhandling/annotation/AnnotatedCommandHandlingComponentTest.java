@@ -102,7 +102,7 @@ class AnnotatedCommandHandlingComponentTest {
     @Test
     void handlerDispatchingWithCustomCommandName() {
         CommandMessage<Long> testCommand =
-                new GenericCommandMessage<>(new GenericMessage<>(new MessageType("almostLong"), 1L), "almostLong");
+                new GenericCommandMessage<>(new GenericMessage<>(new MessageType("almostLong"), 1L));
 
         Object result = testSubject.handle(testCommand, mock(ProcessingContext.class))
                                    .first()

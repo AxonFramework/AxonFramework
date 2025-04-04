@@ -62,7 +62,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Test
     void queryWithMultipleResponses() throws ExecutionException, InterruptedException {
         QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "myQueryWithMultipleResponses", "criteria",
+                new MessageType("myQueryWithMultipleResponses"), "criteria",
                 multipleInstancesOf(String.class)
         );
 
@@ -74,7 +74,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Test
     void queryWithSingleResponse() throws ExecutionException, InterruptedException {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "myQueryWithSingleResponse", "criteria",
+                new MessageType("myQueryWithSingleResponse"), "criteria",
                 instanceOf(String.class)
         );
 
@@ -86,7 +86,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Test
     void scatterGatherQueryWithMultipleResponses() {
         QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "myQueryWithMultipleResponses", "criteria",
+                new MessageType("myQueryWithMultipleResponses"), "criteria",
                 multipleInstancesOf(String.class)
         );
 
@@ -102,7 +102,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Test
     void scatterGatherQueryWithSingleResponse() {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "myQueryWithSingleResponse", "criteria",
+                new MessageType("myQueryWithSingleResponse"), "criteria",
                 instanceOf(String.class)
         );
 
@@ -118,7 +118,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Test
     void subscriptionQueryWithMultipleResponses() {
         SubscriptionQueryMessage<String, List<String>, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                new MessageType("query"), "myQueryWithMultipleResponses", "criteria",
+                new MessageType("myQueryWithMultipleResponses"), "criteria",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 
@@ -134,7 +134,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Test
     void subscriptionQueryWithSingleResponse() {
         SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                new MessageType("query"), "myQueryWithSingleResponse", "criteria",
+                new MessageType("myQueryWithSingleResponse"), "criteria",
                 instanceOf(String.class), instanceOf(String.class)
         );
 
@@ -150,7 +150,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Test
     void futureQueryWithMultipleResponses() throws ExecutionException, InterruptedException {
         QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "myQueryFutureWithMultipleResponses", "criteria",
+                new MessageType("myQueryFutureWithMultipleResponses"), "criteria",
                 multipleInstancesOf(String.class)
         );
 
@@ -164,7 +164,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Test
     void futureScatterGatherQueryWithMultipleResponses() {
         QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "myQueryFutureWithMultipleResponses", "criteria",
+                new MessageType("myQueryFutureWithMultipleResponses"), "criteria",
                 multipleInstancesOf(String.class)
         );
 
@@ -180,7 +180,7 @@ class FutureAsResponseTypeToQueryHandlersTest {
     @Test
     void futureSubscriptionQueryWithMultipleResponses() {
         SubscriptionQueryMessage<String, List<String>, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                new MessageType("query"), "myQueryFutureWithMultipleResponses", "criteria",
+                new MessageType("myQueryFutureWithMultipleResponses"), "criteria",
                 multipleInstancesOf(String.class), instanceOf(String.class)
         );
 

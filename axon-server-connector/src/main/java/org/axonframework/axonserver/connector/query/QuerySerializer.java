@@ -124,7 +124,7 @@ public class QuerySerializer {
         return QueryRequest.newBuilder()
                            .setTimestamp(System.currentTimeMillis())
                            .setMessageIdentifier(queryMessage.getIdentifier())
-                           .setQuery(queryMessage.getQueryName())
+                           .setQuery(queryMessage.type().name())
                            .setClientId(configuration.getClientId())
                            .setComponentName(configuration.getComponentName())
                            .setResponseType(responseTypeSerializer.apply(queryMessage.getResponseType()

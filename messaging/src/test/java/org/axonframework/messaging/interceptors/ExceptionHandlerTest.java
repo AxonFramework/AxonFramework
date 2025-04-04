@@ -53,7 +53,8 @@ class ExceptionHandlerTest {
     private static final String EVENT_HANDLER_INVOKED = "event";
     private static final String QUERY_HANDLER_INVOKED = "query";
 
-    private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");
+    private static final MessageType TEST_COMMAND_TYPE = new MessageType(SomeCommand.class);
+    private static final MessageType TEST_QUERY_TYPE = new MessageType(SomeQuery.class);
 
     private AtomicReference<String> invokedHandler;
     private List<String> invokedExceptionHandlers;
@@ -107,7 +108,7 @@ class ExceptionHandlerTest {
     @Test
     void exceptionHandlerIsInvokedForAnQueryHandlerThrowingAnException() {
         QueryMessage<SomeQuery, SomeQueryResponse> query = new GenericQueryMessage<>(
-                new MessageType("query"),
+                TEST_QUERY_TYPE,
                 new SomeQuery(() -> new RuntimeException("some-exception")),
                 ResponseTypes.instanceOf(SomeQueryResponse.class));
 

@@ -81,7 +81,7 @@ public class AggregateMemberAnnotatedChildEntityCollectionDefinition extends Abs
         Map<String, Property<Object>> commandHandlerRoutingKeys =
                 extractCommandHandlerRoutingKeys(member, childEntityModel);
 
-        Object routingValue = commandHandlerRoutingKeys.get(msg.getCommandName())
+        Object routingValue = commandHandlerRoutingKeys.get(msg.type().name())
                                                        .getValue(msg.getPayload());
         Iterable<?> memberValue = ReflectionUtils.getMemberValue(member, parent);
 

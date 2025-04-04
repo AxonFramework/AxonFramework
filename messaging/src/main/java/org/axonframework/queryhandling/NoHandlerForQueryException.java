@@ -49,7 +49,7 @@ public class NoHandlerForQueryException extends AxonNonTransientException {
                         + "To find a matching handler, note that the query handler's name should match the query's name, "
                         + "the response, and all the parameters on the query handling method should be resolvable. "
                         + "It is thus recommended to validate the name, response type, and parameters.",
-                query.getQueryName(),
+                query.type(),
                 query.getResponseType()
         ));
     }

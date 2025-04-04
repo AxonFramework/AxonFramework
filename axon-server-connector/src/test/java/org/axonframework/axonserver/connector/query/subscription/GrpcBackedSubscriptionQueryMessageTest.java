@@ -82,7 +82,7 @@ class GrpcBackedSubscriptionQueryMessageTest {
         GrpcBackedSubscriptionQueryMessage<TestQuery, String, String> testSubject =
                 new GrpcBackedSubscriptionQueryMessage<>(testSubscriptionQuery, serializer, serializer);
 
-        assertEquals(testSubscriptionQuery.getQueryRequest().getQuery(), testSubject.getQueryName());
+        assertEquals(testSubscriptionQuery.getQueryRequest().getQuery(), testSubject.type().name());
     }
 
     @Test
