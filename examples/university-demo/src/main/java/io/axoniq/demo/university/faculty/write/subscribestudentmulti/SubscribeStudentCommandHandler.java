@@ -1,4 +1,4 @@
-package io.axoniq.demo.university.faculty.write.subscribestudent;
+package io.axoniq.demo.university.faculty.write.subscribestudentmulti;
 
 import io.axoniq.demo.university.faculty.FacultyTags;
 import io.axoniq.demo.university.faculty.events.CourseCapacityChanged;
@@ -8,6 +8,7 @@ import io.axoniq.demo.university.faculty.events.StudentSubscribed;
 import io.axoniq.demo.university.faculty.events.StudentUnsubscribed;
 import io.axoniq.demo.university.faculty.write.CourseId;
 import io.axoniq.demo.university.faculty.write.StudentId;
+import io.axoniq.demo.university.faculty.write.subscribestudent.SubscribeStudent;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
@@ -31,20 +32,21 @@ class SubscribeStudentCommandHandler {
     @CommandHandler
     public void handle(
             SubscribeStudent command,
-            @InjectEntity State state,
+            @InjectEntity Course course,
+            @InjectEntity Student student,
             EventSink eventSink,
             ProcessingContext processingContext
     ) {
-        var events = decide(command, state);
+        var events = decide(command, course, student);
         eventSink.publish(processingContext, toMessages(events));
     }
 
-    private List<StudentSubscribed> decide(SubscribeStudent command, State state) {
-        assertStudentEnrolledFaculty(state);
-        assertStudentNotSubscribedToTooManyCourses(state);
-        assertCourseExists(state);
-        assertEnoughVacantSpotsInCourse(state);
-        assertStudentNotAlreadySubscribed(state);
+    private List<StudentSubscribed> decide(SubscribeStudent command, Course course, Student student) {
+        assertStudentEnrolledFaculty(student);
+        assertStudentNotSubscribedToTooManyCourses(student);
+        assertCourseExists(course);
+        assertEnoughVacantSpotsInCourse(course);
+        assertStudentNotAlreadySubscribed(course);
 
         return List.of(new StudentSubscribed(command.studentId().raw(), command.courseId().raw()));
     }
@@ -62,15 +64,15 @@ class SubscribeStudentCommandHandler {
         );
     }
 
-    private void assertStudentEnrolledFaculty(State state) {
-        var studentId = state.studentId;
+    private void assertStudentEnrolledFaculty(Student student) {
+        var studentId = student.id();
         if (studentId == null) {
             throw new RuntimeException("Student with given id never enrolled the faculty");
         }
     }
 
-    public void assertStudentNotSubscribedToTooManyCourses(State state) {
-        var noOfCoursesStudentSubscribed = state.noOfCoursesStudentSubscribed;
+    public void assertStudentNotSubscribedToTooManyCourses(Student student) {
+        var noOfCoursesStudentSubscribed = student.subscribedCourses().size();
         if (noOfCoursesStudentSubscribed >= MAX_COURSES_PER_STUDENT) {
             throw new RuntimeException("Student subscribed to too many courses");
         }
@@ -153,7 +155,8 @@ class SubscribeStudentCommandHandler {
         }
 
         @EventCriteriaBuilder
-        public static EventCriteria resolveCriteria(SubscriptionId id) {
+        public static EventCriteria resolveCriteria(
+                io.axoniq.demo.university.faculty.write.subscribestudent.SubscriptionId id) {
             var courseId = id.courseId().raw();
             var studentId = id.studentId().raw();
             return EventCriteria.either(
