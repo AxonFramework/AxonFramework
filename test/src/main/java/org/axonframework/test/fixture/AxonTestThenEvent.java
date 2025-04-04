@@ -48,11 +48,6 @@ class AxonTestThenEvent
     }
 
     @Override
-    public AxonTestPhase.Then.Event exception(@NotNull Class<? extends Throwable> type) {
-        return exception(instanceOf(type));
-    }
-
-    @Override
     public AxonTestPhase.Then.Event exception(@NotNull Matcher<?> matcher) {
         StringDescription description = new StringDescription();
         matcher.describeTo(description);

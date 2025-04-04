@@ -395,29 +395,6 @@ public interface AxonTestPhase {
              * @return The current Then instance, for fluent interfacing.
              */
             Command resultMessagePayloadMatching(@Nonnull Matcher<?> matcher);
-
-            /**
-             * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
-             * should be exactly of that type, subclasses are not accepted.
-             * <p>
-             * Only take commands into account that were dispatched explicitly with the {@link When#command}. Hence, do
-             * not take into accounts commands dispatched as side effects of the message handlers.
-             *
-             * @param type The type of exception expected from the When phase execution.
-             * @return The current Then instance, for fluent interfacing.
-             */
-            Command exception(@Nonnull Class<? extends Throwable> type);
-
-            /**
-             * Expect an exception to occur during the When phase that matches with the given {@code matcher}.
-             * <p>
-             * Only take commands into account that were dispatched explicitly with the {@link When#command}. Hence, do
-             * not take into accounts commands dispatched as side effects of the message handlers.
-             *
-             * @param matcher The matcher to validate the actual exception.
-             * @return The current Then instance, for fluent interfacing.
-             */
-            Command exception(@Nonnull Matcher<?> matcher);
         }
 
         /**
@@ -432,23 +409,6 @@ public interface AxonTestPhase {
              * @return The current Then instance, for fluent interfacing.
              */
             Event success();
-
-            /**
-             * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
-             * should be exactly of that type, subclasses are not accepted.
-             *
-             * @param type The type of exception expected from the When phase execution.
-             * @return The current Then instance, for fluent interfacing.
-             */
-            Event exception(@Nonnull Class<? extends Throwable> type);
-
-            /**
-             * Expect an exception to occur during the When phase that matches with the given {@code matcher}.
-             *
-             * @param matcher The matcher to validate the actual exception.
-             * @return The current Then instance, for fluent interfacing.
-             */
-            Event exception(@Nonnull Matcher<?> matcher);
         }
 
         /**
@@ -601,8 +561,37 @@ public interface AxonTestPhase {
              */
 
             /**
+             * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
+             * should be exactly of that type, subclasses are not accepted.
+             * <p>
+             * Only take messages into account that were published explicitly with the {@link When#command} or
+             * {@link When#event}. Hence, do not take into accounts messages published as side effects of other message
+             * handlers present in the configuration.
+             *
+             * @param type The type of exception expected from the When phase execution.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            T exception(@Nonnull Class<? extends Throwable> type);
+
+            /**
+             * Expect an exception to occur during the When phase that matches with the given {@code matcher}.
+             * <p>
+             * Only take messages into account that were published explicitly with the {@link When#command} or
+             * {@link When#event}. Hence, do not take into accounts messages published as side effects of other message
+             * handlers present in the configuration.
+             *
+             * @param matcher The matcher to validate the actual exception.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            T exception(@Nonnull Matcher<?> matcher);
+
+            /**
              * Expect the exception with given {@code type} and {@code message} to occur during the When phase
              * execution. The actual exception should be exactly of that type, subclasses are not accepted.
+             * <p>
+             * Only take messages into account that were published explicitly with the {@link When#command} or
+             * {@link When#event}. Hence, do not take into accounts messages published as side effects of other message
+             * handlers present in the configuration.
              *
              * @param type    The type of exception expected from the When phase execution.
              * @param message The message of the exception expected from the When phase execution.

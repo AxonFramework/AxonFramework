@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.MessageStream;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.aggregate.Reporter;
 import org.axonframework.test.matchers.MapEntryMatcher;
@@ -41,6 +42,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static org.axonframework.test.matchers.Matchers.deepEquals;
+import static org.hamcrest.CoreMatchers.instanceOf;
 
 abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
         implements AxonTestPhase.Then.Message<T> {
@@ -181,6 +183,11 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
                     "Expected " + type + " with message '" + message + "' but got " + actualException);
         }
         return self();
+    }
+
+    @Override
+    public T exception(@NotNull Class<? extends Throwable> type) {
+        return exception(instanceOf(type));
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")

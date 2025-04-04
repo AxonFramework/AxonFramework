@@ -37,9 +37,9 @@ import java.util.function.UnaryOperator;
  * given-when-then style.
  *
  * @author Allard Buijze
- * @author Steven van Beelen
- * @author Mitchell Herrijgers
  * @author Mateusz Nowak
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public class AxonTestFixture implements AxonTestPhase.Setup {
