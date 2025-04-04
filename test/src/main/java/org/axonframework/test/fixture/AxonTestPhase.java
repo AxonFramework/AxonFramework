@@ -360,13 +360,9 @@ public interface AxonTestPhase {
             Command success();
 
             /**
-             * Expect the last command handler from the When phase to return a result message that matches the given
-             * {@code matcher}.
-             * <p>
-             * Only take commands into account that were dispatched explicitly with the {@link When#command}. Hence, do
-             * not take into accounts commands dispatched as side effects of the message handlers.
+             * Allow to consume the result of command message which have been published during the "when" phase.
              *
-             * @param matcher The matcher to verify the actual result message against.
+             * @param consumer Consumes the command result. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
             Command resultMessage(@Nonnull Consumer<? super CommandResultMessage<?>> consumer);
@@ -383,6 +379,13 @@ public interface AxonTestPhase {
              */
             Command resultMessagePayload(@Nonnull Object expectedPayload);
 
+            /**
+             * Allow to consume the result payload of command message which have been published during the "when"
+             * phase.
+             *
+             * @param consumer Consumes the command result payload. You may place your own assertions here.
+             * @return The current Then instance, for fluent interfacing.
+             */
             Command resultMessagePayload(@Nonnull Consumer<Object> consumer);
         }
 

@@ -67,7 +67,7 @@ class AxonTestThenCommand
         try {
             consumer.accept((CommandResultMessage<?>) actualResult);
         } catch (AssertionError e) {
-            reporter.reportWrongResult(actualResult, "Result message to satisfy custom assertions");
+            reporter.reportWrongResult(actualResult, "Result message to satisfy custom assertions: " + e.getMessage());
         }
         return this;
     }
@@ -100,7 +100,8 @@ class AxonTestThenCommand
             var payload = actualResult.getPayload();
             consumer.accept(payload);
         } catch (AssertionError e) {
-            reporter.reportWrongResult(actualResult.getPayload(), "Result message to satisfy custom assertions");
+            reporter.reportWrongResult(actualResult.getPayload(),
+                                       "Result message to satisfy custom assertions: " + e.getMessage());
         }
         return this;
     }
