@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MetaData;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -185,6 +186,17 @@ public interface AxonTestPhase {
          * @param events The lists of events to publish.
          * @return The current Given instance, for fluent interfacing.
          */
+        default Given events(@Nonnull Object... events) {
+            return events(Arrays.stream(events).toList());
+        }
+
+        /**
+         * Configures the given {@code events} as events in the "given" state. These events will be published in the
+         * order they are provided.
+         *
+         * @param events The lists of events to publish.
+         * @return The current Given instance, for fluent interfacing.
+         */
         Given events(@Nonnull List<?> events);
 
         /**
@@ -228,6 +240,17 @@ public interface AxonTestPhase {
          * @return The current Given instance, for fluent interfacing.
          */
         Given commands(@Nonnull CommandMessage<?>... messages);
+
+        /**
+         * Configures the given {@code commands} as commands in the "given" state. These commands will be dispatched in
+         * the order they are provided in the same Unit of Work.
+         *
+         * @param commands The command messages to dispatch.
+         * @return The current Given instance, for fluent interfacing.
+         */
+        default Given commands(@Nonnull Object... commands) {
+            return commands(Arrays.stream(commands).toList());
+        }
 
         /**
          * Configures the given {@code commands} as commands in the "given" state. These commands will be dispatched in
