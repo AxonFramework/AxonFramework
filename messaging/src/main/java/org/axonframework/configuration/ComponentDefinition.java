@@ -53,7 +53,7 @@ import java.util.function.Consumer;
  *                        .withInstance(myPreCreatedInstance)
  * </code></pre>
  *
- * @param <C> The declared type of the component
+ * @param <C> The declared type of the component.
  */
 public sealed interface ComponentDefinition<C> permits ComponentDefinition.ComponentCreator {
 
@@ -66,9 +66,9 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * {@link IncompleteComponentDefinition#withInstance(Object) withInstance(...)} must be called on the result of this
      * invocation to create a valid {@code ComponentDefinition} instance.
      *
-     * @param type The declared type of the component
-     * @param <C>  The declared type of the component
-     * @return a builder to complete the creation of a ComponentDefinition
+     * @param type The declared type of the component.
+     * @param <C>  The declared type of the component.
+     * @return a builder to complete the creation of a ComponentDefinition.
      * @see #ofTypeAndName(Class, String)
      */
     static <C> IncompleteComponentDefinition<C> ofType(Class<C> type) {
@@ -79,10 +79,10 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * Starts defining a component with given declared {@code type} and {@code name}. If only a single instance of a
      * component is expected to be used, consider using {@link #ofType(Class)} instead.
      *
-     * @param type The declared type of this component
-     * @param name The name of this component
-     * @param <C>  The declared type of this component
-     * @return a builder to complete the creation of a ComponentDefinition
+     * @param type The declared type of this component.
+     * @param name The name of this component.
+     * @param <C>  The declared type of this component.
+     * @return a builder to complete the creation of a ComponentDefinition.
      */
     static <C> IncompleteComponentDefinition<C> ofTypeAndName(Class<C> type, String name) {
         return new IncompleteComponentDefinition<>() {
@@ -103,9 +103,9 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * Registers the given {@code handler} to be invoked during the startup lifecycle of the application in the given
      * {@code phase}.
      *
-     * @param phase   The phase in which to invoke this handler
-     * @param handler The action to execute on the component or
-     * @return a ComponentDefinition with the start handler defined
+     * @param phase   The phase in which to invoke this handler.
+     * @param handler The action to execute on the component.
+     * @return a ComponentDefinition with the start handler defined.
      */
     ComponentDefinition<C> onStart(int phase, ComponentLifecycleHandler<C> handler);
 
@@ -113,9 +113,9 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * Registers the given {@code handler} to be invoked during the startup lifecycle of the application in the given
      * {@code phase}.
      *
-     * @param phase   The phase in which to invoke this handler
-     * @param handler The action to execute on the component or
-     * @return a ComponentDefinition with the start handler defined
+     * @param phase   The phase in which to invoke this handler.
+     * @param handler The action to execute on the component.
+     * @return a ComponentDefinition with the start handler defined.
      */
     default ComponentDefinition<C> onStart(int phase, Consumer<C> handler) {
         return onStart(phase, (cfg, cmp) -> {
@@ -128,9 +128,9 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * Registers the given {@code handler} to be invoked during the startup lifecycle of the application in the given
      * {@code phase}.
      *
-     * @param phase   The phase in which to invoke this handler
-     * @param handler The action to execute on the component or
-     * @return a ComponentDefinition with the start handler defined
+     * @param phase   The phase in which to invoke this handle.
+     * @param handler The action to execute on the component.
+     * @return a ComponentDefinition with the start handler defined.
      */
     default ComponentDefinition<C> onStart(int phase, BiConsumer<NewConfiguration, C> handler) {
         return onStart(phase, (cfg, cmp) -> {
@@ -143,9 +143,9 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * Registers the given {@code handler} to be invoked during the shutdown lifecycle of the application in the given
      * {@code phase}.
      *
-     * @param phase   The phase in which to invoke this handler
-     * @param handler The action to execute on the component or
-     * @return a ComponentDefinition with the start handler defined
+     * @param phase   The phase in which to invoke this handler.
+     * @param handler The action to execute on the component.
+     * @return a ComponentDefinition with the start handler defined.
      */
     ComponentDefinition<C> onShutdown(int phase, ComponentLifecycleHandler<C> handler);
 
@@ -153,9 +153,9 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * Registers the given {@code handler} to be invoked during the shutdown lifecycle of the application in the given
      * {@code phase}.
      *
-     * @param phase   The phase in which to invoke this handler
-     * @param handler The action to execute on the component or
-     * @return a ComponentDefinition with the start handler defined
+     * @param phase   The phase in which to invoke this handler.
+     * @param handler The action to execute on the component.
+     * @return a ComponentDefinition with the start handler defined.
      */
     default ComponentDefinition<C> onShutdown(int phase, Consumer<C> handler) {
         return onShutdown(phase, (cfg, cmp) -> {
@@ -168,9 +168,9 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * Registers the given {@code handler} to be invoked during the shutdown lifecycle of the application in the given
      * {@code phase}.
      *
-     * @param phase   The phase in which to invoke this handler
-     * @param handler The action to execute on the component or
-     * @return a ComponentDefinition with the start handler defined
+     * @param phase   The phase in which to invoke this handler.
+     * @param handler The action to execute on the component.
+     * @return a ComponentDefinition with the start handler defined.
      */
     default ComponentDefinition<C> onShutdown(int phase, BiConsumer<NewConfiguration, C> handler) {
         return onShutdown(phase, (cfg, cmp) -> {
@@ -184,7 +184,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * hide these methods from general use of the ComponentDefinition, while enforcing that all ComponentDefinition
      * instances will declare this method.
      *
-     * @param <C> The type of component defined
+     * @param <C> The type of component defined.
      */
     non-sealed interface ComponentCreator<C> extends ComponentDefinition<C> {
 
@@ -192,7 +192,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
          * Create a Component matching the requirements configured on this definition. Multiple invocations of this
          * method should return the same instance.
          *
-         * @return a component based on this definition
+         * @return a component based on this definition.
          */
         Component<C> createComponent();
     }
@@ -202,7 +202,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * either {@link #withInstance(Object) withInstance(...)} or {@link #withFactory(ComponentFactory) withFactory(...)}
      * to create a usable ComponentDefinition.
      *
-     * @param <C> The declared type of the component
+     * @param <C> The declared type of the component.
      */
     interface IncompleteComponentDefinition<C> {
 
@@ -212,8 +212,8 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
          * If you require lazy instantiation of components, consider using {@link #withFactory(ComponentFactory)}
          * instead.
          *
-         * @param instance The instance to declare as the implementation of this component
-         * @return a ComponentDefinition for further configuration
+         * @param instance The instance to declare as the implementation of this component.
+         * @return a ComponentDefinition for further configuration.
          */
         ComponentDefinition<C> withInstance(C instance);
 
@@ -222,8 +222,8 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
          * <p>
          * If you have already instantiated a component, consider using {@link #withInstance(Object)} instead.
          *
-         * @param factory The factory used to create an instance, when required
-         * @return a ComponentDefinition for further configuration
+         * @param factory The factory used to create an instance, when required.
+         * @return a ComponentDefinition for further configuration.
          */
         ComponentDefinition<C> withFactory(ComponentFactory<? extends C> factory);
     }

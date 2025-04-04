@@ -82,12 +82,12 @@ public interface ComponentRegistry extends DescribableComponent {
     /**
      * Registers a component based on given {@code componentDefinition}.
      *
-     * @param componentDefinition The definition of the component to register
-     * @param <C>                 The declared type of the component
+     * @param componentDefinition The definition of the component to register.
+     * @param <C>                 The declared type of the component.
      * @return The current instance of the {@code Configurer} for a fluent API.
      * @throws ComponentOverrideException if the override policy is set to
      *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
-     *                                    with the same type and name is already defined
+     *                                    with the same type and name is already defined.
      */
     <C> ComponentRegistry registerComponent(@Nonnull ComponentDefinition<? extends C> componentDefinition);
 
@@ -146,8 +146,8 @@ public interface ComponentRegistry extends DescribableComponent {
     /**
      * Registers a decorated based on the given {@code decoratorDefinition}.
      *
-     * @param decoratorDefinition The definition of the decorator to apply to components
-     * @param <C>                 The declared type of component
+     * @param decoratorDefinition The definition of the decorator to apply to components.
+     * @param <C>                 The declared type of component.
      * @return The current instance of the {@code Configurer} for a fluent API.
      * @see DecoratorDefinition
      */

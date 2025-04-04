@@ -59,9 +59,9 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
      * If multiple components have been defined for this type, they all are subject to decoration under this definition.
      * To decorate only a specific Component, consider using {@link #forTypeAndName(Class, String)}.
      *
-     * @param type The class of the declared type of the components to decorate
-     * @param <C>  The declared type of the components to decorate
-     * @return a builder for further configuration of this definition
+     * @param type The class of the declared type of the components to decorate.
+     * @param <C>  The declared type of the components to decorate.
+     * @return a builder for further configuration of this definition.
      */
     static <C> PartialDecoratorDefinition<C> forType(Class<C> type) {
         return new PartialDecoratorDefinition<>() {
@@ -82,10 +82,10 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
      * If multiple components for this type have been defined, and all are subject to decoration, consider using
      * {@link #forType(Class)}.
      *
-     * @param type The class of the declared type of the components to decorate
-     * @param name The name of the component to decorate
-     * @param <C>  The declared type of the components to decorate
-     * @return a builder for further configuration of this definition
+     * @param type The class of the declared type of the components to decorate.
+     * @param name The name of the component to decorate.
+     * @param <C>  The declared type of the components to decorate.
+     * @return a builder for further configuration of this definition.
      */
     static <C> PartialDecoratorDefinition<C> forTypeAndName(@Nonnull Class<C> type, @Nonnull String name) {
         Objects.requireNonNull(type, "type must not be null");
@@ -117,8 +117,8 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
      * Registers the given {@code handler} to be registered with the application's Lifecycle during startup. The handler
      * will be invoked in the given startup {@code phase} for each component that has been decorated.
      *
-     * @param phase   The phase in which the handler must be invoked
-     * @param handler The handler to invoke
+     * @param phase   The phase in which the handler must be invoked.
+     * @param handler The handler to invoke.
      * @return this DecoratorDefinition fur fluent API.
      */
     DecoratorDefinition<C, D> onStart(int phase, ComponentLifecycleHandler<D> handler);
@@ -127,8 +127,8 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
      * Registers the given {@code handler} to be registered with the application's Lifecycle during startup. The handler
      * will be invoked in the given startup {@code phase} for each component that has been decorated.
      *
-     * @param phase   The phase in which the handler must be invoked
-     * @param handler The handler to invoke
+     * @param phase   The phase in which the handler must be invoked.
+     * @param handler The handler to invoke.
      * @return this DecoratorDefinition fur fluent API.
      */
     default DecoratorDefinition<C, D> onStart(int phase, Consumer<D> handler) {
@@ -142,8 +142,8 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
      * Registers the given {@code handler} to be registered with the application's Lifecycle during shutdown. The
      * handler will be invoked in the given startup {@code phase} for each component that has been decorated.
      *
-     * @param phase   The phase in which the handler must be invoked
-     * @param handler The handler to invoke
+     * @param phase   The phase in which the handler must be invoked.
+     * @param handler The handler to invoke.
      * @return this DecoratorDefinition fur fluent API.
      */
     DecoratorDefinition<C, D> onShutdown(int phase, ComponentLifecycleHandler<D> handler);
@@ -152,8 +152,8 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
      * Registers the given {@code handler} to be registered with the application's Lifecycle during shutdown. The
      * handler will be invoked in the given startup {@code phase} for each component that has been decorated.
      *
-     * @param phase   The phase in which the handler must be invoked
-     * @param handler The handler to invoke
+     * @param phase   The phase in which the handler must be invoked.
+     * @param handler The handler to invoke.
      * @return this DecoratorDefinition fur fluent API.
      */
     default DecoratorDefinition<C, D> onShutdown(int phase, Consumer<D> handler) {

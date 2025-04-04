@@ -22,11 +22,11 @@ import java.util.concurrent.CompletableFuture;
  * Represents a handler for a component's lifecycle. Unlike the {@link LifecycleHandler}, this handler provides access
  * to the component when it is created.
  * <p>
- * With decorated components, this may not be the same component instance as would
- * be retrieved from the configuration using the component's identifier. The latter would return the decorated component,
- * while the originally declared component is always  passed as a parameter to the handler method.
+ * With decorated components, this may not be the same component instance as would be retrieved from the configuration
+ * using the component's identifier. The latter would return the decorated component, while the originally declared
+ * component is always passed as a parameter to the handler method.
  *
- * @param <C> The type of component
+ * @param <C> The type of component.
  */
 @FunctionalInterface
 public interface ComponentLifecycleHandler<C> {
@@ -40,8 +40,8 @@ public interface ComponentLifecycleHandler<C> {
      * completed when the lifecycle operation has completed. Failures may be propagated by completing the
      * {@link CompletableFuture} exceptionally.
      *
-     * @param configuration The configuration in which the component was defined
-     * @param component     The instance of the component
+     * @param configuration The configuration in which the component was defined.
+     * @param component     The instance of the component.
      * @return a future that completes when the lifecycle operation has terminated.
      */
     CompletableFuture<?> run(NewConfiguration configuration, C component);
