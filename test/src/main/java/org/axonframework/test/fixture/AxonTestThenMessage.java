@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.aggregate.Reporter;
 import org.axonframework.test.matchers.MapEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
@@ -161,13 +162,25 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public T exception(@NotNull Consumer<Throwable> consumer) {
-        consumer.accept(actualException);
+        try {
+            consumer.accept(actualException);
+        } catch (AssertionError e) {
+            throw new AxonAssertionError("Exception does not satisfy custom assertions", e);
+        }
         return self();
     }
 
     @Override
     public T exception(@NotNull Class<? extends Throwable> type, @NotNull String message) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        if (actualException == null) {
+            throw new AxonAssertionError(
+                    "Expected exception of type " + type + " with message '" + message + "' but got none");
+        }
+        if (!type.isInstance(actualException) || !message.equals(actualException.getMessage())) {
+            throw new AxonAssertionError(
+                    "Expected " + type + " with message '" + message + "' but got " + actualException);
+        }
+        return self();
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")

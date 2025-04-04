@@ -40,6 +40,18 @@ public class AxonAssertionError extends AssertionError {
         setStackTrace(cleanStackTrace(original));
     }
 
+    /**
+     * Create a new error instance using the given {@code cause} and {@code detailMessage}.
+     *
+     * @param cause         the cause of the error
+     * @param detailMessage a detailed description of the failed assertion
+     */
+    public AxonAssertionError(String detailMessage, Throwable cause) {
+        super(detailMessage, cause);
+        StackTraceElement[] original = getStackTrace();
+        setStackTrace(cleanStackTrace(original));
+    }
+
     private StackTraceElement[] cleanStackTrace(StackTraceElement[] original) {
         int ignoreCount = 0;
         for (StackTraceElement element : original) {
