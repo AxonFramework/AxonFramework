@@ -27,9 +27,7 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -122,8 +120,8 @@ class AxonTestGiven implements AxonTestPhase.Given {
         return commands(messages);
     }
 
-    private GenericCommandMessage<Object> toGenericCommandMessage(@NotNull Object payload,
-                                                                  @NotNull MetaData metaData
+    private GenericCommandMessage<Object> toGenericCommandMessage(@Nonnull Object payload,
+                                                                  @Nonnull MetaData metaData
     ) {
         var messageType = messageTypeResolver.resolve(payload);
         return new GenericCommandMessage<>(

@@ -16,6 +16,8 @@
 
 package org.axonframework.test;
 
+import jakarta.annotation.Nonnull;
+
 import java.util.Arrays;
 
 /**
@@ -34,7 +36,7 @@ public class AxonAssertionError extends AssertionError {
      *
      * @param detailMessage a detailed description of the failed assertion
      */
-    public AxonAssertionError(String detailMessage) {
+    public AxonAssertionError(@Nonnull String detailMessage) {
         super(detailMessage);
         StackTraceElement[] original = getStackTrace();
         setStackTrace(cleanStackTrace(original));
@@ -46,7 +48,7 @@ public class AxonAssertionError extends AssertionError {
      * @param cause         the cause of the error
      * @param detailMessage a detailed description of the failed assertion
      */
-    public AxonAssertionError(String detailMessage, Throwable cause) {
+    public AxonAssertionError(@Nonnull String detailMessage, @Nonnull Throwable cause) {
         super(detailMessage, cause);
         StackTraceElement[] original = getStackTrace();
         setStackTrace(cleanStackTrace(original));

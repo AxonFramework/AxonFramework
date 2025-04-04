@@ -20,17 +20,13 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.messaging.Message;
-import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.aggregate.Reporter;
 import org.axonframework.test.matchers.PayloadMatcher;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
-
-import static org.hamcrest.CoreMatchers.*;
 
 class AxonTestThenCommand
         extends AxonTestThenMessage<AxonTestPhase.Then.Command>
@@ -59,7 +55,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command resultMessage(@NotNull Consumer<? super CommandResultMessage<?>> consumer) {
+    public AxonTestPhase.Then.Command resultMessage(@Nonnull Consumer<? super CommandResultMessage<?>> consumer) {
         StringDescription expectedDescription = new StringDescription();
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
@@ -91,7 +87,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command resultMessagePayload(@NotNull Consumer<Object> consumer) {
+    public AxonTestPhase.Then.Command resultMessagePayload(@Nonnull Consumer<Object> consumer) {
         StringDescription expectedDescription = new StringDescription();
         if (actualException != null) {
             reporter.reportUnexpectedException(actualException, expectedDescription);
@@ -118,7 +114,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command exception(@NotNull Class<? extends Throwable> type) {
+    public AxonTestPhase.Then.Command exception(@Nonnull Class<? extends Throwable> type) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.getPayload(), description);
@@ -127,7 +123,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command exception(@NotNull Class<? extends Throwable> type, @NotNull String message) {
+    public AxonTestPhase.Then.Command exception(@Nonnull Class<? extends Throwable> type, @Nonnull String message) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.getPayload(), description);
@@ -136,7 +132,7 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command exception(@NotNull Consumer<Throwable> consumer) {
+    public AxonTestPhase.Then.Command exception(@Nonnull Consumer<Throwable> consumer) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.getPayload(), description);

@@ -16,15 +16,12 @@
 
 package org.axonframework.test.fixture;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.messaging.MessageStream;
-import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
-
-import static org.hamcrest.CoreMatchers.instanceOf;
 
 class AxonTestThenEvent
         extends AxonTestThenMessage<AxonTestPhase.Then.Event>
@@ -50,7 +47,7 @@ class AxonTestThenEvent
     }
 
     @Override
-    public AxonTestPhase.Then.Event exception(@NotNull Class<? extends Throwable> type) {
+    public AxonTestPhase.Then.Event exception(@Nonnull Class<? extends Throwable> type) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(MessageStream.Empty.class.getSimpleName(), description);
@@ -59,7 +56,7 @@ class AxonTestThenEvent
     }
 
     @Override
-    public AxonTestPhase.Then.Event exception(@NotNull Class<? extends Throwable> type, @NotNull String message) {
+    public AxonTestPhase.Then.Event exception(@Nonnull Class<? extends Throwable> type, @Nonnull String message) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(MessageStream.Empty.class.getSimpleName(), description);
@@ -68,7 +65,7 @@ class AxonTestThenEvent
     }
 
     @Override
-    public AxonTestPhase.Then.Event exception(@NotNull Consumer<Throwable> consumer) {
+    public AxonTestPhase.Then.Event exception(@Nonnull Consumer<Throwable> consumer) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(MessageStream.Empty.class.getSimpleName(), description);

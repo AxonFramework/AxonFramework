@@ -20,17 +20,13 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MessageStream;
 import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.aggregate.Reporter;
 import org.axonframework.test.matchers.MapEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.saga.CommandValidator;
-import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.hamcrest.StringDescription;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -42,7 +38,6 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static org.axonframework.test.matchers.Matchers.deepEquals;
-import static org.hamcrest.CoreMatchers.instanceOf;
 
 abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
         implements AxonTestPhase.Then.Message<T> {
@@ -170,7 +165,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T exception(@NotNull Consumer<Throwable> consumer) {
+    public T exception(@Nonnull Consumer<Throwable> consumer) {
         try {
             consumer.accept(actualException);
         } catch (AssertionError e) {
@@ -180,7 +175,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T exception(@NotNull Class<? extends Throwable> type, @NotNull String message) {
+    public T exception(@Nonnull Class<? extends Throwable> type, @Nonnull String message) {
         if (actualException == null) {
             throw new AxonAssertionError(
                     "Expected exception of type " + type + " with message '" + message + "' but got none");
@@ -193,7 +188,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T exception(@NotNull Class<? extends Throwable> type) {
+    public T exception(@Nonnull Class<? extends Throwable> type) {
         if (actualException == null) {
             throw new AxonAssertionError(
                     "Expected exception of type " + type + " but got none");
