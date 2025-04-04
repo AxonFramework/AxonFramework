@@ -607,7 +607,7 @@ public interface AxonTestPhase {
              * @param consumer Consumes the thrown exception. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            T exception(@Nonnull Consumer<Throwable> consumer);
+            T exceptionSatisfies(@Nonnull Consumer<Throwable> consumer);
 
             Setup and();
         }

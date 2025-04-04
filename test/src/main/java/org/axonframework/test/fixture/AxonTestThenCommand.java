@@ -23,7 +23,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.test.aggregate.Reporter;
 import org.axonframework.test.matchers.PayloadMatcher;
 import org.hamcrest.CoreMatchers;
-import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 
 import java.util.function.Consumer;
@@ -103,17 +102,6 @@ class AxonTestThenCommand
         return this;
     }
 
-    public AxonTestPhase.Then.Command exception(@Nonnull Matcher<?> matcher) {
-        StringDescription description = new StringDescription();
-        if (actualException == null) {
-            reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.getPayload(), description);
-        }
-        if (!matcher.matches(actualException)) {
-            reporter.reportWrongException(actualException, description);
-        }
-        return this;
-    }
-
     @Override
     public AxonTestPhase.Then.Command exception(@Nonnull Class<? extends Throwable> type) {
         StringDescription description = new StringDescription();
@@ -133,11 +121,11 @@ class AxonTestThenCommand
     }
 
     @Override
-    public AxonTestPhase.Then.Command exception(@Nonnull Consumer<Throwable> consumer) {
+    public AxonTestPhase.Then.Command exceptionSatisfies(@Nonnull Consumer<Throwable> consumer) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(actualResult == null ? null : actualResult.getPayload(), description);
         }
-        return super.exception(consumer);
+        return super.exceptionSatisfies(consumer);
     }
 }

@@ -165,7 +165,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T exception(@Nonnull Consumer<Throwable> consumer) {
+    public T exceptionSatisfies(@Nonnull Consumer<Throwable> consumer) {
         try {
             consumer.accept(actualException);
         } catch (AssertionError e) {

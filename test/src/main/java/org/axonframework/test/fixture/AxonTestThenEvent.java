@@ -65,11 +65,11 @@ class AxonTestThenEvent
     }
 
     @Override
-    public AxonTestPhase.Then.Event exception(@Nonnull Consumer<Throwable> consumer) {
+    public AxonTestPhase.Then.Event exceptionSatisfies(@Nonnull Consumer<Throwable> consumer) {
         StringDescription description = new StringDescription();
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(MessageStream.Empty.class.getSimpleName(), description);
         }
-        return super.exception(consumer);
+        return super.exceptionSatisfies(consumer);
     }
 }

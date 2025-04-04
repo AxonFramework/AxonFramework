@@ -262,7 +262,7 @@ class AxonTestFixtureMessagingTest {
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
                    .exception(RuntimeException.class)
-                   .exception(thrown -> assertEquals("Test", thrown.getMessage()));
+                   .exceptionSatisfies(thrown -> assertEquals("Test", thrown.getMessage()));
         }
 
         @Test
@@ -286,7 +286,7 @@ class AxonTestFixtureMessagingTest {
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
                    .exception(RuntimeException.class)
-                   .exception(thrown -> assertEquals("Simulated exception", thrown.getMessage()));
+                   .exceptionSatisfies(thrown -> assertEquals("Simulated exception", thrown.getMessage()));
         }
 
         @Nested
