@@ -15,7 +15,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 
-public class CreateCourseConfiguration {
+public class CreateCoursePlainConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var stateEntity = EventSourcedEntityBuilder
@@ -27,7 +27,7 @@ public class CreateCourseConfiguration {
                 .eventStateApplier(c -> new CourseEventStateApplier());
 
         var commandHandlingModule = StatefulCommandHandlingModule
-                .named("CreateCourse")
+                .named("CreateCoursePlain")
                 .entities()
                 .entity(stateEntity)
                 .commandHandlers()
