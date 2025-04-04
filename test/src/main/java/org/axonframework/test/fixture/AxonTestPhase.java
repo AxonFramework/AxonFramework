@@ -463,7 +463,7 @@ public interface AxonTestPhase {
              * @param consumer Consumes the published events. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            T events(@Nonnull Consumer<List<? super EventMessage<?>>> consumer);
+            T events(@Nonnull Consumer<List<EventMessage<?>>> consumer);
 
             /**
              * Allow to check if the set of event messages which have been published during the "when" phase match given
@@ -472,7 +472,7 @@ public interface AxonTestPhase {
              * @param predicate The predicate to check the dispatched events against.
              * @return The current Then instance, for fluent interfacing.
              */
-            T eventsMatch(@Nonnull Predicate<List<? super EventMessage<?>>> predicate);
+            T eventsMatch(@Nonnull Predicate<List<EventMessage<?>>> predicate);
 
             /**
              * Expect no events to have been published during the {@link When} phase.
@@ -514,7 +514,7 @@ public interface AxonTestPhase {
              * @param consumer Consumes the dispatched commands. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            T commands(@Nonnull Consumer<List<? super CommandMessage<?>>> consumer);
+            T commands(@Nonnull Consumer<List<CommandMessage<?>>> consumer);
 
             /**
              * Allow to check if the set of command messages which have been dispatched during the "when" phase match
@@ -523,7 +523,7 @@ public interface AxonTestPhase {
              * @param predicate The predicate to check the dispatched commands against.
              * @return The current Then instance, for fluent interfacing.
              */
-            T commandsMatch(@Nonnull Predicate<List<? super CommandMessage<?>>> predicate);
+            T commandsMatch(@Nonnull Predicate<List<CommandMessage<?>>> predicate);
 
             /**
              * Expect no command messages to have been dispatched during the "when" phase.

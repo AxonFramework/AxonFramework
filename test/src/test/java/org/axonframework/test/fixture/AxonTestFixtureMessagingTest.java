@@ -397,10 +397,9 @@ class AxonTestFixtureMessagingTest {
                    .then()
                    .commands(commands -> {
                        assertEquals(1, commands.size());
-                       var command = commands.get(0);
+                       var command = commands.getFirst();
                        assertEquals("id", ((ChangeStudentNameCommand) command.getPayload()).id());
                        assertEquals("name", ((ChangeStudentNameCommand) command.getPayload()).name());
-                       return true;
                    });
         }
 

@@ -125,7 +125,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T events(@Nonnull Consumer<List<? super EventMessage<?>>> consumer) {
+    public T events(@Nonnull Consumer<List<EventMessage<?>>> consumer) {
         var publishedEvents = eventSink.recorded();
         try {
             consumer.accept(publishedEvents);
@@ -136,7 +136,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T eventsMatch(@Nonnull Predicate<List<? super EventMessage<?>>> predicate) {
+    public T eventsMatch(@Nonnull Predicate<List<EventMessage<?>>> predicate) {
         var publishedEvents = eventSink.recorded();
         var result = predicate.test(publishedEvents);
         if (!result) {
@@ -158,7 +158,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T commands(@Nonnull Consumer<List<? super CommandMessage<?>>> consumer) {
+    public T commands(@Nonnull Consumer<List<CommandMessage<?>>> consumer) {
         var dispatchedCommands = commandBus.recordedCommands();
         try {
             consumer.accept(dispatchedCommands);
@@ -169,7 +169,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T commandsMatch(@Nonnull Predicate<List<? super CommandMessage<?>>> predicate) {
+    public T commandsMatch(@Nonnull Predicate<List<CommandMessage<?>>> predicate) {
         var dispatchedCommands = commandBus.recordedCommands();
         var result = predicate.test(dispatchedCommands);
         if (!result) {
