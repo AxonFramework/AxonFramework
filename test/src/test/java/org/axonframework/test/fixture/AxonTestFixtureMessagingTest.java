@@ -139,12 +139,11 @@ class AxonTestFixtureMessagingTest {
             fixture.when()
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
-                   .success()
                    .resultMessagePayloadSatisfies(result -> {
                        var payload = (CommandResult) result;
                        assertEquals("Result name-1", payload.message());
                        assertNull(payload.metadataSample());
-                   });
+                   }).success();
         }
 
         @Test
@@ -174,6 +173,21 @@ class AxonTestFixtureMessagingTest {
                    .then()
                    .success()
                    .resultMessagePayload(new CommandResult("Result name-1", "metaValue"));
+        }
+
+        @Test
+        void whenCommandWithMetaDataMapThenSuccessWithTheMetaDataSatisfies() {
+            var configurer = MessagingConfigurer.create();
+            registerChangeStudentNameHandlerReturnsSingle(configurer);
+
+            var fixture = AxonTestFixture.with(configurer);
+
+            fixture.when()
+                   .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"), Map.of("sample", "metaValue"))
+                   .then()
+                   .success()
+                   .resultMessageSatisfies(c -> assertEquals(c.getPayload(),
+                                                             new CommandResult("Result name-1", "metaValue")));
         }
 
         @Test
@@ -417,7 +431,8 @@ class AxonTestFixtureMessagingTest {
                        var command = commands.getFirst();
                        assertEquals("id", ((ChangeStudentNameCommand) command.getPayload()).id());
                        assertEquals("name", ((ChangeStudentNameCommand) command.getPayload()).name());
-                   });
+                   }).commandsMatch(commands -> !commands.isEmpty())
+                   .success();
         }
 
         @Test
@@ -445,8 +460,8 @@ class AxonTestFixtureMessagingTest {
             fixture.when()
                    .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
                    .then()
-                   .success()
-                   .noCommands();
+                   .noCommands()
+                   .success();
         }
 
         @Test

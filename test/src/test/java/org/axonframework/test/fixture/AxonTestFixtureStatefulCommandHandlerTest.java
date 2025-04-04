@@ -77,7 +77,10 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .when()
                .command(changeToTheSameName)
                .then()
-               .eventsSatisfy(events -> assertTrue(events.isEmpty()));
+               .noEvents()
+               .eventsSatisfy(events -> assertTrue(events.isEmpty()))
+               .eventsMatch(List::isEmpty)
+               .success();
     }
 
     @Test
