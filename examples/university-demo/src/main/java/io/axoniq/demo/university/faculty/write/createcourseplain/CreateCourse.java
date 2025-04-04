@@ -1,4 +1,4 @@
-package io.axoniq.demo.university.faculty.write.createcourse;
+package io.axoniq.demo.university.faculty.write.createcourseplain;
 
 import io.axoniq.demo.university.faculty.write.CourseId;
 
