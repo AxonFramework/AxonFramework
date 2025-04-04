@@ -27,6 +27,7 @@ import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
@@ -77,8 +78,8 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     @Override
-    public AxonTestPhase.Given events(@Nonnull List<?>... events) {
-        var messages = Arrays.stream(events)
+    public AxonTestPhase.Given events(@Nonnull List<?> events) {
+        var messages = events.stream()
                              .map(e -> e instanceof EventMessage<?> message
                                      ? message
                                      : toGenericEventMessage(e, MetaData.emptyInstance())
@@ -107,13 +108,29 @@ class AxonTestGiven implements AxonTestPhase.Given {
 
     @Override
     public AxonTestPhase.Given command(@Nonnull Object payload, @Nonnull MetaData metaData) {
+        var commandMessage = toGenericCommandMessage(payload, metaData);
+        return commands(commandMessage);
+    }
+
+    @Override
+    public AxonTestPhase.Given commands(@Nonnull List<?> commands) {
+        var messages = commands.stream()
+                               .map(c -> c instanceof CommandMessage<?> message
+                                       ? message
+                                       : toGenericCommandMessage(c, MetaData.emptyInstance())
+                               ).toArray(CommandMessage<?>[]::new);
+        return commands(messages);
+    }
+
+    private GenericCommandMessage<Object> toGenericCommandMessage(@NotNull Object payload,
+                                                                  @NotNull MetaData metaData
+    ) {
         var messageType = messageTypeResolver.resolve(payload);
-        var commandMessage = new GenericCommandMessage<>(
+        return new GenericCommandMessage<>(
                 messageType,
                 payload,
                 metaData
         );
-        return commands(commandMessage);
     }
 
     @Override

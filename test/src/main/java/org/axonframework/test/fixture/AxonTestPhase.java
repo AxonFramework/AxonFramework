@@ -185,7 +185,7 @@ public interface AxonTestPhase {
          * @param events The lists of events to publish.
          * @return The current Given instance, for fluent interfacing.
          */
-        Given events(@Nonnull List<?>... events);
+        Given events(@Nonnull List<?> events);
 
         /**
          * Configures a single command with the given {@code payload} as part of the "given" state. This command will be
@@ -228,6 +228,15 @@ public interface AxonTestPhase {
          * @return The current Given instance, for fluent interfacing.
          */
         Given commands(@Nonnull CommandMessage<?>... messages);
+
+        /**
+         * Configures the given {@code commands} as commands in the "given" state. These commands will be dispatched in
+         * the order they are provided in the same Unit of Work.
+         *
+         * @param commands The command messages to dispatch.
+         * @return The current Given instance, for fluent interfacing.
+         */
+        Given commands(@Nonnull List<?> commands);
 
         /**
          * Transitions to the "when" phase to execute the test action.
