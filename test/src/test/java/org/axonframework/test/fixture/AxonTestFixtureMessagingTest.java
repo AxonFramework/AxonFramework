@@ -265,7 +265,7 @@ class AxonTestFixtureMessagingTest {
         class AssertionErrors {
 
             @Test
-            void assertionErrorIfThenNoEventsButThereAreSomeEvents() {
+            void ifThenNoEventsButThereAreSomeEvents() {
                 var configurer = MessagingConfigurer.create();
                 registerChangeStudentNameHandlerReturnsEmpty(configurer);
 
@@ -285,7 +285,7 @@ class AxonTestFixtureMessagingTest {
 
 
             @Test
-            void assertionErrorIfThenExpectEventsButWithDifferentPayload() {
+            void ifThenExpectEventsButWithDifferentPayload() {
                 var configurer = MessagingConfigurer.create();
                 registerChangeStudentNameHandlerReturnsEmpty(configurer);
 
@@ -303,7 +303,7 @@ class AxonTestFixtureMessagingTest {
             }
 
             @Test
-            void assertionErrorIfExpectExceptionButSuccess() {
+            void ifExpectExceptionButSuccess() {
                 var configurer = MessagingConfigurer.create();
                 configurer.registerDecorator(
                         CommandBus.class,
@@ -330,7 +330,7 @@ class AxonTestFixtureMessagingTest {
             }
 
             @Test
-            void assertionErrorIfExpectSuccessButException() {
+            void ifExpectSuccessButException() {
                 var configurer = MessagingConfigurer.create();
                 configurer.registerDecorator(
                         CommandBus.class,
@@ -353,7 +353,6 @@ class AxonTestFixtureMessagingTest {
                 );
                 assertTrue(assertionError.getMessage().contains("The message handler threw an unexpected exception"));
             }
-
         }
     }
 
@@ -432,7 +431,7 @@ class AxonTestFixtureMessagingTest {
         class AssertionErrors {
 
             @Test
-            void assertionErrorIfExpectSuccessButException() {
+            void ifExpectSuccessButException() {
                 var configurer = MessagingConfigurer.create();
                 configurer.registerEventSink(c -> (events) -> CompletableFuture.failedFuture(new RuntimeException(
                         "Simulated failure")));
@@ -449,7 +448,7 @@ class AxonTestFixtureMessagingTest {
             }
 
             @Test
-            void assertionErrorIfExpectExceptionButSuccess() {
+            void ifExpectExceptionButSuccess() {
                 var configurer = MessagingConfigurer.create();
                 configurer.registerEventSink(c -> (events) -> CompletableFuture.completedFuture(null));
 
@@ -466,6 +465,23 @@ class AxonTestFixtureMessagingTest {
                                                  "The message handler returned normally, but an exception was expected"));
             }
 
+            @Test
+            void whenEventHandlerFailsThenException() {
+                var configurer = MessagingConfigurer.create();
+                configurer.registerEventSink(c -> (events) -> CompletableFuture.failedFuture(new IllegalStateException(
+                        "Simulated failure")));
+
+                var fixture = AxonTestFixture.with(configurer);
+
+                var assertionError = assertThrows(AxonAssertionError.class, () ->
+                        fixture.when()
+                               .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
+                               .then()
+                               .exception(IllegalStateException.class, "Simulated exception")
+                );
+                assertTrue(assertionError.getMessage().contains(
+                        "Expected class java.lang.IllegalStateException with message 'Simulated exception' but got java.lang.IllegalStateException: Simulated failure"));
+            }
         }
     }
 
