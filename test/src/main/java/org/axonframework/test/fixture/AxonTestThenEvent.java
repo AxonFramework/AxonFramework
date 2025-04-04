@@ -22,6 +22,8 @@ import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.Consumer;
+
 import static org.hamcrest.CoreMatchers.instanceOf;
 
 class AxonTestThenEvent
@@ -48,15 +50,29 @@ class AxonTestThenEvent
     }
 
     @Override
-    public AxonTestPhase.Then.Event exception(@NotNull Matcher<?> matcher) {
+    public AxonTestPhase.Then.Event exception(@NotNull Class<? extends Throwable> type) {
         StringDescription description = new StringDescription();
-        matcher.describeTo(description);
         if (actualException == null) {
             reporter.reportUnexpectedReturnValue(MessageStream.Empty.class.getSimpleName(), description);
         }
-        if (!matcher.matches(actualException)) {
-            reporter.reportWrongException(actualException, description);
+        return super.exception(type);
+    }
+
+    @Override
+    public AxonTestPhase.Then.Event exception(@NotNull Class<? extends Throwable> type, @NotNull String message) {
+        StringDescription description = new StringDescription();
+        if (actualException == null) {
+            reporter.reportUnexpectedReturnValue(MessageStream.Empty.class.getSimpleName(), description);
         }
-        return this;
+        return super.exception(type, message);
+    }
+
+    @Override
+    public AxonTestPhase.Then.Event exception(@NotNull Consumer<Throwable> consumer) {
+        StringDescription description = new StringDescription();
+        if (actualException == null) {
+            reporter.reportUnexpectedReturnValue(MessageStream.Empty.class.getSimpleName(), description);
+        }
+        return super.exception(consumer);
     }
 }

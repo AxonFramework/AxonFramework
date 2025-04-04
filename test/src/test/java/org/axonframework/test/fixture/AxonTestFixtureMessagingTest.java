@@ -113,7 +113,7 @@ class AxonTestFixtureMessagingTest {
                    .command(new ChangeStudentNameCommand("my-studentId-1", "name-1"))
                    .then()
                    .success()
-                   .resultMessage(Matchers.nullValue());
+                   .resultMessage(Assertions::assertNull);
         }
 
         @Test

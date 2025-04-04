@@ -21,7 +21,6 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MetaData;
-import org.hamcrest.Matcher;
 
 import java.util.HashMap;
 import java.util.List;
@@ -370,7 +369,7 @@ public interface AxonTestPhase {
              * @param matcher The matcher to verify the actual result message against.
              * @return The current Then instance, for fluent interfacing.
              */
-            Command resultMessage(@Nonnull Matcher<? super CommandResultMessage<?>> matcher);
+            Command resultMessage(@Nonnull Consumer<? super CommandResultMessage<?>> consumer);
 
             /**
              * Expect the last command handler from the When phase to return the given {@code expectedPayload} after
@@ -384,17 +383,7 @@ public interface AxonTestPhase {
              */
             Command resultMessagePayload(@Nonnull Object expectedPayload);
 
-            /**
-             * Expect the last command handler from the When phase to return a payload that matches the given
-             * {@code matcher} after execution.
-             * <p>
-             * Only take commands into account that were dispatched explicitly with the {@link When#command}. Hence, do
-             * not take into accounts commands dispatched as side effects of the message handlers.
-             *
-             * @param matcher The matcher to verify the actual return value against.
-             * @return The current Then instance, for fluent interfacing.
-             */
-            Command resultMessagePayloadMatching(@Nonnull Matcher<?> matcher);
+            Command resultMessagePayload(@Nonnull Consumer<Object> consumer);
         }
 
         /**
@@ -446,16 +435,6 @@ public interface AxonTestPhase {
              * @return The current Then instance, for fluent interfacing.
              */
             T events(@Nonnull EventMessage<?>... expectedEvents);
-
-            /**
-             * Expect the published events during the {@link When} phase to match the given {@code matcher}.
-             * <p>
-             * Note: if no events were published, the matcher receives an empty List.
-             *
-             * @param matcher The matcher to match with the actually published events.
-             * @return The current Then instance, for fluent interfacing.
-             */
-            T events(@Nonnull Matcher<? extends List<? super EventMessage<?>>> matcher);
 
             /**
              * Allow to consume the set of event messages which have been published during the "when" phase.
@@ -572,18 +551,6 @@ public interface AxonTestPhase {
              * @return The current Then instance, for fluent interfacing.
              */
             T exception(@Nonnull Class<? extends Throwable> type);
-
-            /**
-             * Expect an exception to occur during the When phase that matches with the given {@code matcher}.
-             * <p>
-             * Only take messages into account that were published explicitly with the {@link When#command} or
-             * {@link When#event}. Hence, do not take into accounts messages published as side effects of other message
-             * handlers present in the configuration.
-             *
-             * @param matcher The matcher to validate the actual exception.
-             * @return The current Then instance, for fluent interfacing.
-             */
-            T exception(@Nonnull Matcher<?> matcher);
 
             /**
              * Expect the exception with given {@code type} and {@code message} to occur during the When phase

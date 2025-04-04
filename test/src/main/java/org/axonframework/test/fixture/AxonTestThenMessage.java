@@ -110,21 +110,6 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T events(@Nonnull Matcher<? extends List<? super EventMessage<?>>> matcher) {
-        var publishedEvents = eventSink.recorded();
-        if (!matcher.matches(publishedEvents)) {
-            final Description expectation = new StringDescription();
-            matcher.describeTo(expectation);
-
-            final Description mismatch = new StringDescription();
-            matcher.describeMismatch(publishedEvents, mismatch);
-
-            reporter.reportWrongEvent(publishedEvents, expectation, mismatch, actualException);
-        }
-        return self();
-    }
-
-    @Override
     public T events(@Nonnull Consumer<List<EventMessage<?>>> consumer) {
         var publishedEvents = eventSink.recorded();
         try {
@@ -209,7 +194,15 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
 
     @Override
     public T exception(@NotNull Class<? extends Throwable> type) {
-        return exception(instanceOf(type));
+        if (actualException == null) {
+            throw new AxonAssertionError(
+                    "Expected exception of type " + type + " but got none");
+        }
+        if (!type.isInstance(actualException)) {
+            throw new AxonAssertionError(
+                    "Expected " + type + " but got " + actualException);
+        }
+        return self();
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
