@@ -84,7 +84,7 @@ public abstract class LifecycleHandlerInspector {
         }
     }
 
-    private static void registerLifecycleHandlers(LifecycleRegistry config,
+    private static void registerLifecycleHandlers(LifecycleRegistry registry,
                                                   Object component,
                                                   Class<? extends Annotation> lifecycleAnnotation,
                                                   LifecycleRegistration registrationMethod) {
@@ -102,7 +102,7 @@ public abstract class LifecycleHandlerInspector {
                                LifecycleHandler lifecycleHandler = configuration -> invokeAndReturn(
                                        component, method, lifecycleAnnotation.getSimpleName(), phase
                                );
-                               registrationMethod.registerLifecycleHandler(config, phase, lifecycleHandler);
+                               registrationMethod.registerLifecycleHandler(registry, phase, lifecycleHandler);
 
                                logger.debug(
                                        "Found and registered a {} with phase [{}] from component [{}]",

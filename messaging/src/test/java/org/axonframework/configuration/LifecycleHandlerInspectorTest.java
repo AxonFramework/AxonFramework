@@ -46,44 +46,44 @@ class LifecycleHandlerInspectorTest {
     private static final int TEST_PHASE = 1;
 
     @Test
-    void nullComponentIsRejected(@Mock LifecycleRegistry operator) {
+    void nullComponentIsRejected(@Mock LifecycleRegistry lifecycleRegistry) {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> LifecycleHandlerInspector.registerLifecycleHandlers(operator, null));
+        assertThrows(NullPointerException.class, () -> LifecycleHandlerInspector.registerLifecycleHandlers(lifecycleRegistry, null));
 
-        verifyNoInteractions(operator);
+        verifyNoInteractions(lifecycleRegistry);
     }
 
     @Test
     void axonConfigurationExceptionIsThrownForLifecycleHandlerMethodWithParameters(
-            @Mock LifecycleRegistry operator
+            @Mock LifecycleRegistry lifecycleRegistry
     ) {
         assertThrows(
                 AxonConfigurationException.class,
                 () -> LifecycleHandlerInspector.registerLifecycleHandlers(
-                        operator, new ComponentWithFaultyLifecycleHandler()
+                        lifecycleRegistry, new ComponentWithFaultyLifecycleHandler()
                 )
         );
     }
 
     @Test
     void lifecycleHandlerWithReturnTypeCompletableFutureIsRegistered(
-            @Mock LifecycleRegistry operator
+            @Mock LifecycleRegistry lifecycleRegistry
     ) throws ExecutionException, InterruptedException {
         String asyncShutdownResult = "some result";
         ComponentWithLifecycleHandlers testComponent = new ComponentWithLifecycleHandlers(asyncShutdownResult);
         ArgumentCaptor<LifecycleHandler> lifecycleHandlerCaptor = ArgumentCaptor.forClass(LifecycleHandler.class);
 
-        LifecycleHandlerInspector.registerLifecycleHandlers(operator, testComponent);
+        LifecycleHandlerInspector.registerLifecycleHandlers(lifecycleRegistry, testComponent);
 
-        verify(operator).onShutdown(eq(TEST_PHASE), lifecycleHandlerCaptor.capture());
+        verify(lifecycleRegistry).onShutdown(eq(TEST_PHASE), lifecycleHandlerCaptor.capture());
 
         CompletableFuture<?> resultFuture = lifecycleHandlerCaptor.getValue().run(mock());
         assertEquals(asyncShutdownResult, resultFuture.get());
     }
 
     @Test
-    void lifecycleAwareComponentsRegisterHandlers(@Mock LifecycleRegistry operator) {
-        LifecycleHandlerInspector.registerLifecycleHandlers(operator, new ComponentWithLifecycle(
+    void lifecycleAwareComponentsRegisterHandlers(@Mock LifecycleRegistry lifecycleRegistry) {
+        LifecycleHandlerInspector.registerLifecycleHandlers(lifecycleRegistry, new ComponentWithLifecycle(
                 r -> {
                     r.onStart(42, () -> {
                     });
@@ -91,19 +91,19 @@ class LifecycleHandlerInspectorTest {
                     });
                 }));
 
-        verify(operator).onStart(eq(42), any(Runnable.class));
-        verify(operator).onShutdown(eq(24), any(Runnable.class));
+        verify(lifecycleRegistry).onStart(eq(42), any(Runnable.class));
+        verify(lifecycleRegistry).onShutdown(eq(24), any(Runnable.class));
     }
 
     @Test
-    void lifecycleHandlerWithoutReturnTypeCompletableFutureIsRegistered(@Mock LifecycleRegistry operator) {
+    void lifecycleHandlerWithoutReturnTypeCompletableFutureIsRegistered(@Mock LifecycleRegistry lifecycleRegistry) {
         AtomicBoolean started = new AtomicBoolean(false);
         ComponentWithLifecycleHandlers testComponent = new ComponentWithLifecycleHandlers(started);
         ArgumentCaptor<LifecycleHandler> lifecycleHandlerCaptor = ArgumentCaptor.forClass(LifecycleHandler.class);
 
-        LifecycleHandlerInspector.registerLifecycleHandlers(operator, testComponent);
+        LifecycleHandlerInspector.registerLifecycleHandlers(lifecycleRegistry, testComponent);
 
-        verify(operator).onStart(eq(TEST_PHASE), lifecycleHandlerCaptor.capture());
+        verify(lifecycleRegistry).onStart(eq(TEST_PHASE), lifecycleHandlerCaptor.capture());
 
         lifecycleHandlerCaptor.getValue().run(mock());
         assertTrue(started.get());
@@ -111,14 +111,14 @@ class LifecycleHandlerInspectorTest {
 
     @Test
     void lifecycleHandlerThrownExceptionIsWrappedInLifecycleHandlerInvocationException(
-            @Mock LifecycleRegistry operator
+            @Mock LifecycleRegistry lifecycleRegistry
     ) throws InterruptedException {
         ComponentWithFailingLifecycleHandler testComponent = new ComponentWithFailingLifecycleHandler();
         ArgumentCaptor<LifecycleHandler> lifecycleHandlerCaptor = ArgumentCaptor.forClass(LifecycleHandler.class);
 
-        LifecycleHandlerInspector.registerLifecycleHandlers(operator, testComponent);
+        LifecycleHandlerInspector.registerLifecycleHandlers(lifecycleRegistry, testComponent);
 
-        verify(operator).onShutdown(eq(TEST_PHASE), lifecycleHandlerCaptor.capture());
+        verify(lifecycleRegistry).onShutdown(eq(TEST_PHASE), lifecycleHandlerCaptor.capture());
 
         CompletableFuture<?> result = lifecycleHandlerCaptor.getValue().run(mock());
         assertTrue(result.isCompletedExceptionally());

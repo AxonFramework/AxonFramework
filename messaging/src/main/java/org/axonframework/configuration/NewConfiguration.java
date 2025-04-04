@@ -17,13 +17,11 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.DescribableComponent;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-
-import jakarta.annotation.Nonnull;
-import org.axonframework.common.infra.DescribableComponent;
 
 /**
  * Interface providing access to all configured {@link Component components} in an Axon Framework application.
@@ -141,9 +139,9 @@ public interface NewConfiguration extends DescribableComponent {
      * The module must have been {@link ComponentRegistry#registerModule(Module) registered} with this
      * {@code Configuration} directly.
      *
-     * @param name The name of the module to get the configuration for
+     * @param name The name of the module to get the configuration for.
      * @return An Optional with the {@code Configuration} for given module or an empty optional if no module exists with
      * that name {@link ComponentRegistry#registerModule(Module) registered module} with this {@code Configuration}.
      */
-    Optional<NewConfiguration> getModuleConfiguration(String name);
+    Optional<NewConfiguration> getModuleConfiguration(@Nonnull String name);
 }

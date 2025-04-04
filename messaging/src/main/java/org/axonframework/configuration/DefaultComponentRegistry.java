@@ -19,7 +19,6 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Component.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,13 +32,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import static java.util.Objects.requireNonNull;
-
 /**
- * Abstract implementation of the {@link ComponentRegistry} allowing for reuse of {@link Component},
+ * Default implementation of the {@link ComponentRegistry} allowing for reuse of {@link Component},
  * {@link ComponentDecorator}, {@link ConfigurationEnhancer}, and {@link Module} registration for the
  * {@code NewConfigurer} and {@link Module} implementations alike.
  *
@@ -56,49 +52,43 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
-    private final List<DecoratorRegistration<?, ?>> decoratorRegistrations = new ArrayList<>();
+    private final List<DecoratorDefinition.CompletedDecoratorDefinition<?, ?>> decoratorDefinitions = new ArrayList<>();
     private final Map<String, NewConfiguration> moduleConfigurations = new ConcurrentHashMap<>();
-    private NewConfiguration config;
-    private OverrideBehavior overrideBehavior = OverrideBehavior.WARN;
+    private OverridePolicy overridePolicy = OverridePolicy.WARN;
 
     @Override
-    public <C> ComponentRegistry registerComponent(@Nonnull Class<? extends C> type,
-                                                   @Nonnull String name,
-                                                   @Nonnull ComponentFactory<? extends C> factory) {
-        logger.debug("Registering component [{}] of type [{}].", name, type);
-        Identifier<C> identifier = new Identifier<>(type, name);
-        if (overrideBehavior == OverrideBehavior.THROW && components.contains(identifier)) {
-            throw new ComponentOverrideException(type, name);
-        }
-
-        Component<C> previous = components.put(new Component<>(identifier, factory));
-        if (previous != null && overrideBehavior == OverrideBehavior.WARN) {
-            logger.warn("Replaced a previous Component registered for type [{}] and name [{}].", name, type);
+    public <C> ComponentRegistry registerComponent(@Nonnull ComponentDefinition<? extends C> definition) {
+        Objects.requireNonNull(definition, "The ComponentDefinition must not be null");
+        if (definition instanceof ComponentDefinition.ComponentCreator<? extends C> creator) {
+            Component<? extends C> component = creator.createComponent();
+            Identifier<? extends C> id = component.identifier();
+            logger.debug("Registering component [{}] of type [{}].", id.name(), id.type());
+            if (overridePolicy == OverridePolicy.REJECT && hasComponent(id.type(), id.name())) {
+                throw new ComponentOverrideException(id.type(), id.name());
+            }
+            Component<? extends C> previous = components.put(component);
+            if (previous != null && overridePolicy == OverridePolicy.WARN) {
+                logger.warn("Replaced a previous Component registered for type [{}] and name [{}].",
+                            id.name(),
+                            id.type());
+            }
+        } else {
+            throw new IllegalArgumentException("Unsupported component definition type: " + definition);
         }
         return this;
     }
 
     @Override
-    public <C, D extends C> ComponentRegistry registerDecorator(@Nonnull Class<C> type,
-                                                                int order,
-                                                                @Nonnull ComponentDecorator<C, D> decorator) {
-        Objects.requireNonNull(type, "The type must not be null");
-        Objects.requireNonNull(decorator, "The component decorator must not be null");
-        logger.debug("Registering decorator for type [{}] at order #{}.", type, order);
-        decoratorRegistrations.add(new DecoratorRegistration<>(i -> i.type().equals(type), order, decorator));
-        return this;
-    }
-
-    @Override
-    public <C, D extends C> ComponentRegistry registerDecorator(@Nonnull Class<C> type, @Nonnull String name, int order,
-                                                                @Nonnull ComponentDecorator<C, D> decorator) {
-        Objects.requireNonNull(name, "name must not be null");
-        logger.debug("Registering decorator for name [{}] and type [{}] at order #{}.", name, type, order);
-        decoratorRegistrations.add(new DecoratorRegistration<>(
-                i -> Objects.equals(i.name(), name) && Objects.equals(
-                        i.type(),
-                        type), order, decorator));
-        return this;
+    public <C> ComponentRegistry registerDecorator(@Nonnull DecoratorDefinition<C, ? extends C> decorator) {
+        Objects.requireNonNull(decorator, "The decorator definition must not be null");
+        if (decorator instanceof DecoratorDefinition.CompletedDecoratorDefinition<C, ? extends C> decReg) {
+            logger.debug("Registering decorator definition: [{}]", decorator);
+            decoratorDefinitions.add(decReg);
+            return this;
+        } else {
+            // the compiler should avoid this from happening
+            throw new IllegalArgumentException("Unsupported decorator definition type: " + decorator);
+        }
     }
 
     @Override
@@ -151,23 +141,26 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     private NewConfiguration doBuild(@Nullable NewConfiguration optionalParent,
                                      @Nonnull LifecycleRegistry lifecycleRegistry) {
-        if (!initialized.getAndSet(true)) {
-            this.config = new LocalConfiguration(optionalParent);
-            invokeEnhancers();
-            decorateComponents();
-            buildModules(lifecycleRegistry);
-            initializeComponents(lifecycleRegistry);
+        if (initialized.getAndSet(true)) {
+            throw new IllegalStateException("Component registry has already been initialized.");
         }
-        return this.config;
+        invokeEnhancers();
+        decorateComponents();
+        NewConfiguration config = new LocalConfiguration(optionalParent);
+        buildModules(config, lifecycleRegistry);
+        initializeComponents(config, lifecycleRegistry);
+
+        return config;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void decorateComponents() {
-        decoratorRegistrations.sort(Comparator.comparingInt(DecoratorRegistration::order));
-        for (DecoratorRegistration decoratorRegistration : decoratorRegistrations) {
+        decoratorDefinitions.sort(Comparator.comparingInt(DecoratorDefinition.CompletedDecoratorDefinition::order));
+        for (DecoratorDefinition.CompletedDecoratorDefinition creator : decoratorDefinitions) {
             for (Identifier id : components.identifiers()) {
-                if (decoratorRegistration.test(id)) {
-                    components.replace(id, previous -> previous.decorate(decoratorRegistration.decorator));
+                if (creator.matches(id)) {
+                    components.replace(id,
+                                       previous -> creator.decorate(previous));
                 }
             }
         }
@@ -189,15 +182,15 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * Ensure all registered {@link Module Modules} are built too. Store their {@link NewConfiguration} results for
      * exposure on {@link NewConfiguration#getModuleConfigurations()}.
      */
-    private void buildModules(LifecycleRegistry lifecycleRegistry) {
+    private void buildModules(NewConfiguration config, LifecycleRegistry lifecycleRegistry) {
         for (Module module : modules.values()) {
             moduleConfigurations.put(module.name(), module.build(config, lifecycleRegistry));
         }
     }
 
     @Override
-    public DefaultComponentRegistry setOverrideBehavior(OverrideBehavior overrideBehavior) {
-        this.overrideBehavior = overrideBehavior;
+    public DefaultComponentRegistry setOverridePolicy(OverridePolicy overridePolicy) {
+        this.overridePolicy = overridePolicy;
         return this;
     }
 
@@ -205,7 +198,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("initialized", initialized.get());
         descriptor.describeProperty("components", components);
-        descriptor.describeProperty("decorators", decoratorRegistrations);
+        descriptor.describeProperty("decorators", decoratorDefinitions);
         descriptor.describeProperty("configurerEnhancers", enhancers);
         descriptor.describeProperty("modules", modules.values());
     }
@@ -216,9 +209,8 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      *
      * @param lifecycleRegistry The registry where components may register their lifecycle actions
      */
-    private void initializeComponents(LifecycleRegistry lifecycleRegistry) {
-        NewConfiguration cfg = config;
-        components.postProcessComponents(c -> c.initLifecycle(cfg, lifecycleRegistry));
+    private void initializeComponents(NewConfiguration config, LifecycleRegistry lifecycleRegistry) {
+        components.postProcessComponents(c -> c.initLifecycle(config, lifecycleRegistry));
     }
 
     private class LocalConfiguration implements NewConfiguration {
@@ -243,7 +235,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         public <C> Optional<C> getOptionalComponent(@Nonnull Class<C> type,
                                                     @Nonnull String name) {
             return components.get(new Identifier<>(type, name))
-                             .map(c -> c.resolve(config))
+                             .map(c -> c.resolve(this))
                              .or(() -> Optional.ofNullable(fromParent(type, name, () -> null)));
         }
 
@@ -255,7 +247,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
             Identifier<C> identifier = new Identifier<>(type, name);
             Object component = components.computeIfAbsent(
                     identifier,
-                    id -> new Component<>(identifier, c -> fromParent(type, name, defaultImpl))
+                    () -> new LazyInitializedComponentDefinition<>(identifier, c -> fromParent(type, name, defaultImpl))
             ).resolve(this);
             return type.cast(component);
         }
@@ -279,34 +271,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
 
         @Override
-        public Optional<NewConfiguration> getModuleConfiguration(String name) {
+        public Optional<NewConfiguration> getModuleConfiguration(@Nonnull String name) {
+            Objects.requireNonNull(name, "name must not be null");
             return Optional.ofNullable(moduleConfigurations.get(name));
-        }
-    }
-
-    /**
-     * Private record representing a {@code decorator} registration. All {@code DecoratorRegistrations} are gathered and
-     * invoked during {@link ApplicationConfigurer#build()} of this configurer.
-     *
-     * @param idMatcher The {@code Predicate} used against a {@link Identifier} to validate if the {@code decorator}
-     *                  should be invoked.
-     * @param order     The order of the given {@code decorator} among other decorators.
-     * @param decorator The decoration function for a component of type {@code C}.
-     * @param <C>       The type of component the {@code decorator} decorates.
-     */
-    private record DecoratorRegistration<C, D extends C>(Predicate<Identifier<C>> idMatcher,
-                                            int order,
-                                            ComponentDecorator<C, D> decorator) implements DescribableComponent, Predicate<Identifier<C>> {
-
-        @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-            descriptor.describeProperty("order", order);
-            descriptor.describeProperty("decorator", decorator);
-        }
-
-        @Override
-        public boolean test(Identifier<C> identifier) {
-            return idMatcher.test(identifier);
         }
     }
 }

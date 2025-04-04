@@ -19,13 +19,16 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
  * Base implementation for custom modules that contains the ComponentRegistry required to register components, enhancers
  * and (sub)modules.
  *
- * @param <S> The type extending this module, to support fluent interfaces
+ * @param <S> The type extending this module, to support fluent interfaces.
+ * @author Allard Buijze
+ * @since 5.0.0
  */
 public abstract class BaseModule<S extends BaseModule<S>> implements Module {
 
@@ -57,9 +60,9 @@ public abstract class BaseModule<S extends BaseModule<S>> implements Module {
      * Method that can be overridden to specify specific actions that need to be taken after the configuration for this
      * module is constructed.
      * <p>
-     * The default implementation returns the configuration unchanged
+     * The default implementation returns the configuration unchanged.
      *
-     * @param moduleConfiguration The configuration for this module
+     * @param moduleConfiguration The configuration for this module.
      */
     @SuppressWarnings("unused")
     protected NewConfiguration postProcessConfiguration(NewConfiguration moduleConfiguration) {
@@ -69,11 +72,12 @@ public abstract class BaseModule<S extends BaseModule<S>> implements Module {
     /**
      * Executes the given {@code registryAction} on the {@link ComponentRegistry} associated with this module.
      *
-     * @param registryAction the action to perform on the component registry
-     * @return this instance for fluent interfacing
+     * @param registryAction The action to perform on the component registry.
+     * @return This instance for fluent interfacing.
      */
-    public S componentRegistry(Consumer<ComponentRegistry> registryAction) {
-        registryAction.accept(this.componentRegistry);
+    public S componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
+        Objects.requireNonNull(registryAction, "The registryAction must be null.")
+               .accept(this.componentRegistry);
         //noinspection unchecked
         return (S) this;
     }

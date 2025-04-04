@@ -18,7 +18,7 @@ package org.axonframework.configuration;
 
 /**
  * Enumeration describing how a {@link ComponentRegistry} should react when a {@link Component} is to be overridden during a
- * {@link ComponentRegistry#registerComponent(Class, ComponentFactory)} invocation.
+ * {@link ComponentRegistry#registerComponent(ComponentDefinition)} invocation.
  *
  * @author Steven van Beelen
  * @author Mitchell Herrijgers
@@ -26,7 +26,7 @@ package org.axonframework.configuration;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public enum OverrideBehavior {
+public enum OverridePolicy {
     /**
      * Overriding is allowed at all times.
      */
@@ -38,5 +38,5 @@ public enum OverrideBehavior {
     /**
      * Trying to override results in a {@link ComponentOverrideException}.
      */
-    THROW
+    REJECT
 }

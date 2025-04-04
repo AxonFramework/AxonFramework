@@ -60,7 +60,7 @@ class ComponentsTest {
 
     @Test
     void getReturnsPutComponent() {
-        Component<String> testComponent = new Component<>(IDENTIFIER, c -> "some-state");
+        Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
 
         testSubject.put(testComponent);
 
@@ -71,12 +71,13 @@ class ComponentsTest {
 
     @Test
     void computeIfAbsentDoesNotComputeIfIdentifierIsAlreadyPresent() {
-        Component<String> testComponent = new Component<>(IDENTIFIER, c -> "some-state");
+        Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
         AtomicBoolean invoked = new AtomicBoolean(false);
 
         testSubject.put(testComponent);
-        testSubject.computeIfAbsent(IDENTIFIER, id -> {
+        testSubject.computeIfAbsent(IDENTIFIER, () -> {
             invoked.set(true);
+            //noinspection unchecked
             return mock(Component.class);
         });
 
@@ -90,9 +91,9 @@ class ComponentsTest {
     @Test
     void computeIfAbsentComputesForAbsentIdentifier() {
         AtomicBoolean invoked = new AtomicBoolean(false);
-        Component<String> testComponent = new Component<>(IDENTIFIER, c -> "some-state");
+        Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
 
-        testSubject.computeIfAbsent(IDENTIFIER, id -> {
+        testSubject.computeIfAbsent(IDENTIFIER, () -> {
             invoked.set(true);
             return testComponent;
         });
@@ -105,8 +106,8 @@ class ComponentsTest {
 
     @Test
     void replacingAComponentRemovesThePreviousOne() {
-        Component<String> original = new Component<>(IDENTIFIER, c -> "some-state");
-        Component<String> replacement = new Component<>(IDENTIFIER, c -> "other-state");
+        Component<String> original = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
+        Component<String> replacement = new InstantiatedComponentDefinition<>(IDENTIFIER, "other-state");
 
         testSubject.put(original);
         testSubject.replace(IDENTIFIER, c -> replacement);
@@ -130,7 +131,7 @@ class ComponentsTest {
     @Test
     void containsReturnsAsExpected() {
         Identifier<Integer> unknownIdentifier = new Identifier<>(Integer.class, "some-unknown-id");
-        testSubject.put(new Component<>(IDENTIFIER, c -> "some-state"));
+        testSubject.put(new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state"));
 
         assertTrue(testSubject.contains(IDENTIFIER));
         assertFalse(testSubject.contains(unknownIdentifier));
@@ -140,7 +141,7 @@ class ComponentsTest {
     void identifiersReturnsAllRegisteredComponentsTheirIdentifiers() {
         assertTrue(testSubject.identifiers().isEmpty());
 
-        testSubject.put(new Component<>(IDENTIFIER, c -> "some-state"));
+        testSubject.put(new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state"));
 
         Set<Identifier<?>> result = testSubject.identifiers();
         assertFalse(result.isEmpty());
@@ -153,7 +154,7 @@ class ComponentsTest {
 
         boolean result = testSubject.replace(IDENTIFIER, old -> {
             invoked.set(true);
-            return new Component<>(IDENTIFIER, c -> "replacement");
+            return new InstantiatedComponentDefinition<>(IDENTIFIER, "replacement");
         });
 
         assertFalse(invoked.get());
@@ -163,11 +164,11 @@ class ComponentsTest {
     @Test
     void replaceReplacesComponents() {
         AtomicBoolean invoked = new AtomicBoolean(false);
-        testSubject.put(new Component<>(IDENTIFIER, c -> "some-state"));
+        testSubject.put(new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state"));
 
         boolean result = testSubject.replace(IDENTIFIER, old -> {
             invoked.set(true);
-            return new Component<>(IDENTIFIER, c -> "replacement");
+            return new InstantiatedComponentDefinition<>(IDENTIFIER, "replacement");
         });
 
         assertTrue(invoked.get());
@@ -180,7 +181,7 @@ class ComponentsTest {
     @Test
     void describeToDescribesComponents() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
-        Component<String> testComponent = new Component<>(IDENTIFIER, c -> "some-state");
+        Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
         testSubject.put(testComponent);
 
         testSubject.describeTo(testDescriptor);
@@ -193,8 +194,8 @@ class ComponentsTest {
         Identifier<Object> identifier2 = new Identifier<>(Object.class, "test2");
         Set<Identifier<?>> identifiersBeforePut = testSubject.identifiers();
 
-        testSubject.put(new Component<>(IDENTIFIER, c -> "some-state"));
-        testSubject.put(new Component<>(identifier2, c -> "some-state"));
+        testSubject.put(new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state"));
+        testSubject.put(new InstantiatedComponentDefinition<>(identifier2, "some-state"));
 
         Set<Identifier<?>> identifiersAfterPut = testSubject.identifiers();
         assertFalse(identifiersBeforePut.contains(IDENTIFIER));
@@ -208,8 +209,8 @@ class ComponentsTest {
     void postProcessComponentsProvidesAllAvailableComponents() {
         Identifier<Object> identifier2 = new Identifier<>(Object.class, "test2");
 
-        testSubject.put(new Component<>(IDENTIFIER, c -> "some-state"));
-        testSubject.put(new Component<>(identifier2, c -> "some-state"));
+        testSubject.put(new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state"));
+        testSubject.put(new InstantiatedComponentDefinition<>(identifier2, "some-state"));
 
         List<Component<?>> visited = new ArrayList<>();
         testSubject.postProcessComponents(visited::add);
@@ -220,8 +221,8 @@ class ComponentsTest {
     void postProcessComponentsRethrowsExceptions() {
         Identifier<Object> identifier2 = new Identifier<>(Object.class, "test2");
 
-        testSubject.put(new Component<>(IDENTIFIER, c -> "some-state"));
-        testSubject.put(new Component<>(identifier2, c -> "some-state"));
+        testSubject.put(new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state"));
+        testSubject.put(new InstantiatedComponentDefinition<>(identifier2, "some-state"));
 
         assertThrows(MockException.class, () -> testSubject.postProcessComponents(c -> {
             throw new MockException();

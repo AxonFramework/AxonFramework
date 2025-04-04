@@ -69,7 +69,7 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
 
     private final AtomicReference<AxonConfiguration> configuration = new AtomicReference<>();
 
-    public DefaultAxonApplication() {
+    DefaultAxonApplication() {
         this.componentRegistry = new DefaultComponentRegistry();
     }
 
@@ -90,13 +90,8 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
             throw new IllegalArgumentException(
                     "Cannot register lifecycle handlers when the configuration is already initialized");
         }
-        lifecycleHandlers.compute(phase, (p, handlers) -> {
-            if (handlers == null) {
-                handlers = new CopyOnWriteArrayList<>();
-            }
-            handlers.add(requireNonNull(lifecycleHandler, "Cannot register null lifecycle handlers."));
-            return handlers;
-        });
+        lifecycleHandlers.computeIfAbsent(phase, p -> new CopyOnWriteArrayList<>())
+                         .add(requireNonNull(lifecycleHandler, "Cannot register null lifecycle handlers."));
         return this;
     }
 
@@ -135,13 +130,13 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
     }
 
     @Override
-    public ApplicationConfigurer componentRegistry(Consumer<ComponentRegistry> action) {
+    public ApplicationConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> action) {
         action.accept(componentRegistry);
         return this;
     }
 
     @Override
-    public ApplicationConfigurer lifecycleRegistry(Consumer<LifecycleRegistry> lifecycleRegistrar) {
+    public ApplicationConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
         lifecycleRegistrar.accept(this);
         return this;
     }
@@ -163,6 +158,8 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
                 invokeStartHandlers();
                 lifecycleState.set(LifecycleState.UP);
                 logger.debug("Finalized start sequence");
+            } else {
+                throw new RuntimeException("XXXXXXXXXXX");
             }
         }
 
@@ -300,7 +297,7 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
         }
 
         @Override
-        public Optional<NewConfiguration> getModuleConfiguration(String name) {
+        public Optional<NewConfiguration> getModuleConfiguration(@Nonnull String name) {
             return config.getModuleConfiguration(name);
         }
 
