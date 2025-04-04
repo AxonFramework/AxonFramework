@@ -1,4 +1,4 @@
-package io.axoniq.demo.university.faculty.write.createcourse;
+package io.axoniq.demo.university.faculty.write.createcourseplain;
 
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.shared.slices.write.CommandResult;
@@ -16,7 +16,6 @@ import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 class CreateCourseCommandHandler implements StatefulCommandHandler {

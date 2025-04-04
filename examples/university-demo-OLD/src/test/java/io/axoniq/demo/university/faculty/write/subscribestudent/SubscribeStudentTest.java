@@ -47,10 +47,7 @@ class SubscribeStudentTest {
                .when()
                .command(new SubscribeStudent(studentId, courseId))
                .then()
-               .exception(thrown -> assertThat(thrown)
-                       .isInstanceOf(RuntimeException.class)
-                       .hasMessage("Student already subscribed to this course")
-               );
+               .exception(RuntimeException.class, "Student already subscribed to this course");
     }
 
     @Test
@@ -70,10 +67,7 @@ class SubscribeStudentTest {
                .when()
                .command(new SubscribeStudent(student3Id, courseId))
                .then()
-               .exception(thrown -> assertThat(thrown)
-                       .isInstanceOf(RuntimeException.class)
-                       .hasMessage("Course is fully booked")
-               );
+               .exception(RuntimeException.class, "Course is fully booked");
     }
 
     @Test
@@ -118,7 +112,7 @@ class SubscribeStudentTest {
                .command(new SubscribeStudent(studentId, targetCourseId))
                .then()
                .noEvents()
-               .exception(thrown -> assertThat(thrown)
+               .exceptionSatisfies(thrown -> assertThat(thrown)
                        .isInstanceOf(RuntimeException.class)
                        .hasMessage("Student subscribed to too many courses")
                );

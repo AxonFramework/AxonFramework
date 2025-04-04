@@ -2,21 +2,14 @@ package io.axoniq.demo.university;
 
 import io.axoniq.demo.university.faculty.FacultyModuleConfiguration;
 import io.axoniq.demo.university.faculty.write.CourseId;
-import io.axoniq.demo.university.faculty.write.createcourse.CreateCourse;
+import io.axoniq.demo.university.faculty.write.createcourseplain.CreateCourse;
 import io.axoniq.demo.university.faculty.write.renamecourse.RenameCourse;
-import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.infra.FilesystemStyleComponentDescriptor;
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import java.util.logging.Logger;
 
 public class UniversityAxonApplication {
