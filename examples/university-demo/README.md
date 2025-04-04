@@ -68,7 +68,7 @@ Tests are focused on observable behavior, so the domain model can be refactored 
 ![WriteSlice_GWT.png](docs/images/WriteSlice_GWT.png)
 
 ```java
-    @BeforeEach
+@BeforeEach
 void beforeEach() {
     var application = new UniversityAxonApplication();
     fixture = AxonTestFixture.with(application.configurer());
@@ -80,8 +80,8 @@ void successfulSubscription() {
     var studentId = StudentId.random();
 
     fixture.given()
+           .event(new CourseCreated(courseId.raw(), "Axon Framework 5: Getting Started", 2))
            .event(new StudentEnrolledFaculty(studentId.raw(), "Mateusz", "Nowak"))
-           .event(new CourseCreated(courseId.raw(), "Axon Framework 5: Be a PRO", 2))
            .when()
            .command(new SubscribeStudent(studentId, courseId))
            .then()
