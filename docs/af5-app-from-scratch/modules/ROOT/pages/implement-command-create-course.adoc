@@ -384,6 +384,8 @@ Axon Framework will use the type of the annotated method argument to link this m
 In this case, we want to inject the `State` entity with the `courseId` property.
 <5> The `if` statement checks if the course was already created.
 If it was, we don't need to do anything, so we just return from the method.
+To just ignore the command (do not publish events) is a choice.
+Alternatively you may throw an exception or publish an event that notify about the failure.
 
 NOTE: The `EventSourcingHandler` will be called right after the event publication by the `CommandHandler`.
 But it also will be invoked in the future, for the same event, when the system receives another command for the same `bikeId` (identified because the command has the same  `@AggregateIdentifier`) and Axon Framework needs to regenerate the current state of the `Bike` instance, by replaying all previous events with the same `bikeId`.
@@ -424,6 +426,8 @@ With this step, we have completed the code to process a Command that represents 
 You may run the tests again and see that all of them should pass!
 
 == First in, first out.
+
+image::EventModeling_CreateCourse_Done.png[]
 
 Do you like green tests?
 Me too!

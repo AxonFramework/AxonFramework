@@ -144,11 +144,14 @@ Please ensure you have the following properties and dependencies in your `pom.xm
 
 == Project structure
 
-We will design our project follows a *Vertical Slice Architecture* which organizes the codebase around features rather than technical layers.
-It plays well with the Event Modeling which we used to design our application.
+We will design our project follows a *Vertical Slice Architecture* approach, which organizes the codebase around features rather than technical layers.
+It plays well with the Event Modeling which we used to design our application and also with th Axon Framework architecture which is designed around messages.
+
+NOTE: Thanks to new features in Axon Framework 5, like the concept of the Dynamic Consistency Boundary, the framework allows you to keep your slices totally independent of each other.
+Before you always needed to share the Aggregate between them, but it's not needed anymore!
 
 The architecture screams the capabilities of the system by making explicit:
-<.> Commands available to users <.> Events that capture what happened <.> Business rules that govern those actions <.> System automations that connect different parts
+* Commands (`createcourse` , `subscribestudent`), which are the actions that can be executed * Events that capture what happened and may notify other parts of the system or the user * Queries that provide information about the state of the system
 
 The project structure includes:
 
@@ -164,7 +167,7 @@ The project structure includes:
  ┃ ┃ ┗ 📂 ...
  ┃ ┣ 📂 read (query slices - FUTURE MILESTONES)
  ┃ ┗ 📂 automation (automation slices - FUTURE MILESTONES)
- ┣ 📂 shared
+ ┣ 📂 shared (common code, like identifiers, exceptions, etc)
  ┗ 📂 ...
 ----
 
@@ -173,7 +176,7 @@ This approach allows different slices to be implemented independently and in par
 You may even use different implementation styles / architectures inside certain slices.
 You will also see that in this tutorial.
 
-Once that we have our project created with basic packages structure, in the next step, we will learn how implement first feature!
+Once that we have our project created with basic packages structure, in the next step, we may move to the framework configuration.
 
 == Axon Configuration
 
