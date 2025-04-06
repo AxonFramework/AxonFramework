@@ -21,7 +21,7 @@ class RenameCourseCommandHandler {
     @CommandHandler
     public void handle(
             RenameCourse command,
-            @InjectEntity(idProperty = FacultyTags.COURSE_ID) State state,
+            @InjectEntity State state,
             EventSink eventSink,
             ProcessingContext processingContext
     ) {
