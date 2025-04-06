@@ -221,6 +221,61 @@ class CreateCourseCommandHandler {
 }
 ----
 
+<.> The `org.axonframework.commandhandling.annotation.CommandHandler` annotation instructs Axon Framework to call this method upon receiving commands.
+<.> The type of the argument indicates to Axon Framework which type of commands should be linked to the invocation of this method.
+<.> The `EventSink` is a component that allows us to publish the Event that notifies the change in the state of our system.
+In this case, to notify that the *course has been created*.
+<.> The `ProcessingContext` is a component that allows us to manage the lifecycle of the message processing.
+Allows us to publish events in the context of the current command so the events will be published after successful command execution.
+<.> The `EventSink` interface require implementation of the `EventMessage` as a second argument so we provide one.
+<.> The invocation of `EventSink#publish` stage event to be published after the current `ProcessingContext` is completed.
+
+Have you already tried to run the test?
+Unfortunately it will fail again.
+What we need to do now, we need to register the `CreateCourseCommandHandler` in the Axon Framework configuration.
+We're going to do it in dedicated class `CreateCourseConfiguration` which will be responsible for spinning up the infrastructure for the whole slice.
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseConfiguration.java
+----
+package io.axoniq.demo.university.faculty.write.createcourse;
+
+public class CreateCourseConfiguration {
+
+    public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
+        var commandHandlingModule = StatefulCommandHandlingModule.named("CreateCourse")
+                .commandHandlers()
+                .annotatedCommandHandlingComponent(c -> new CreateCourseCommandHandler());
+        return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
+    }
+
+}
+----
+
+When the slice configurer is ready we can register it to the main application configurer.
+To do that let's introduce changes in our main `UniversityAxonApplication` class.
+
+[source,java]
+./src/main/java/io/axoniq/demo/university/UniversityAxonApplication.java
+----
+public class UniversityAxonApplication {
+
+    public static ApplicationConfigurer<?> configurer() {
+        var configurer = EventSourcingConfigurer.create();
+        configurer = CreateCourseConfiguration.configure(configurer);
+        return configurer;
+    }
+
+}
+----
+
+Let's check our test again, now everything is green!
+Can we say that the work is done?
+Not yet!
+Because we have some business rules defined in the Given-When-Then specifications.
+The course cannot be created if it already exists.
+So let's add a test case for that.
+
 == First in, first out.
 
 Do you like green tests?
