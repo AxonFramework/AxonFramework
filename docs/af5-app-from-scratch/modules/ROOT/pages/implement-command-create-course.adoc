@@ -284,6 +284,7 @@ Let's check our test again, now everything is green!
 Can we say that the work is done?
 Not yet!
 Because we have some business rules defined in the Given-When-Then specification as follows:
+
 image::EventModeling_CreateCourse_GWT_Spec2.png[]
 
 The course cannot be created if it already exists.

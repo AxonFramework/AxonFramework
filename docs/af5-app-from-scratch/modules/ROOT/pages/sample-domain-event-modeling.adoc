@@ -15,7 +15,10 @@ A student can subscribe to a course and unsubscribe.
 
 == Event Modeling
 
-TODO: Miro board Screen!!!
+Before jumping over the keyboard to start writing code, let's first introduce the small design up-front of our system so that we are prepared to split and scale it out later.
+We conducted an Event Modeling session to identify the messages that will be used in our system.
+
+image::FacultyContext_EventModeling.png[]
 
 After an Event Modeling (which you can see above) session we have identified following events:
 
@@ -25,5 +28,8 @@ After an Event Modeling (which you can see above) session we have identified fol
 * `StudentSubscribed` - a fact that the student has subscribed to the course
 * `StudentUnsubscribed` - a fact that the student has unsubscribed from the course
 
-We will model only commands for Subscribing to/Unsubscribing from a course for the sample's simplicity.
+Events are a backbone of our system and contract between slices.
+
+Now, when we get a little familiar with the domain, let's start shaping the structure of our University application.
+
 
