@@ -151,7 +151,10 @@ NOTE: Thanks to new features in Axon Framework 5, like the concept of the Dynami
 Before you always needed to share the Aggregate between them, but it's not needed anymore!
 
 The architecture screams the capabilities of the system by making explicit:
-* Commands (`createcourse` , `subscribestudent`), which are the actions that can be executed * Events that capture what happened and may notify other parts of the system or the user * Queries that provide information about the state of the system
+
+* Commands (`createcourse` , `subscribestudent`), which are the actions that can be executed
+* Events that capture what happened and may notify other parts of the system or the user
+* Queries that provide information about the state of the system
 
 The project structure includes:
 

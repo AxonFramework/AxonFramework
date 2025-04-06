@@ -22,6 +22,8 @@ Now we're going to translate the sticky notes to the code.
 The orange sticky is an event, and every event needs a cause, which is a command which may trigger the event.
 In this case it's a `CreatCourse` on the blue sticky note.
 
+image::EventModeling_CreateCourse_Stickies.png[]
+
 In Axon Framework 5, we typically define commands and events as simple data structures - using Java `records`.
 You can also use Java classes if you really want, but records fulfill nicely the characteristic of messages, because they are immutable by definition.
 As you remember we follow the Vertical Slice Architecture so please create files with corresponding content:
@@ -134,7 +136,11 @@ In this case, we will test the processing of a `CreateCourse`.
 - *Expect*: We can instruct the fixture on the expectations we have from our system after processing the command.
 In an Event-Sourcing system, we will specify these expectations in the form of what events should have been produced by the command handler as a result of processing the command.
 
-So, let's define a method in our unit test to check that our system can successfully process the request to create a course:
+So, let's define a method in our unit test to check that our system can successfully process the request to create a course.
+For now, we focus on the happy path, when the course is created successfully, because there is no other course with the same identifier.
+In the Event Modeling we've described this as GWT specification:
+
+image::EventModeling_CreateCourse_GWT_Spec1.png[]
 
 [source,java]
 .src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
@@ -277,7 +283,9 @@ public class UniversityAxonApplication {
 Let's check our test again, now everything is green!
 Can we say that the work is done?
 Not yet!
-Because we have some business rules defined in the Given-When-Then specifications.
+Because we have some business rules defined in the Given-When-Then specification as follows:
+image::EventModeling_CreateCourse_GWT_Spec2.png[]
+
 The course cannot be created if it already exists.
 So let's add a test case for that to the `CreateCourseTest` class as below
 
