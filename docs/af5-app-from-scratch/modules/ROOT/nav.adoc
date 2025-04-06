@@ -1,2 +1,3 @@
 * xref:index.adoc[]
 * xref:sample-domain.adoc[]
+* xref:implement-command-create-course.adoc[]
