@@ -1,6 +1,134 @@
 :navtitle: Feature: Create Course
 :reftext: Implementing the create new course feature
 
+= Create course feature
+
+When you implement a new feature the first step is to define the messages which will be the input and output of it.
+In Axon Framework messages are the first-class citizen and everything is designed around them.
+While designing the app and also during execution - you're always in the context of some command.
+
+Let's focus on the first feature for this sample app.
+We need to be able to create a new course.
+Could you imagine a faculty without any courses, which students may subscribe to?
+I can't either!
+
+== Define messages
+
+Messages are the contract between different parts of our system, so you need to pay attention to craft them correctly.
+Event Modeling helps a lot, thanks to it completeness check you can be sure you don't forgot about anything.
+So let's take the first Write Slice on the table.
+We can name it shortly as `CreateCourse`->`CourseCreated`.
+Now we're going to translate the sticky notes to the code.
+The orange sticky is an event, and every event needs a cause, which is a command which may trigger the event.
+In this case it's a `CreatCourse` on the blue sticky note.
+
+In Axon Framework 5, we typically define commands and events as simple data structures - using Java `records`.
+You can also use Java classes if you really want, but records fulfill nicely the characteristic of messages, because they are immutable by definition.
+As you remember we follow the Vertical Slice Architecture so please create files with corresponding content:
+
+* `CreateCourse` in the `io.axoniq.demo.university.faculty.write.createcourse` package (we place command inside the slice package, because the command has only one handler)
+* `CourseCreated` in the `io.axoniq.demo.university.faculty.events` package (events are shared between slices, there may be 0 to many handlers for the same event)
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
+----
+package io.axoniq.demo.university.faculty.write.createcourse;
+
+import io.axoniq.demo.university.faculty.write.CourseId;
+import org.axonframework.modelling.command.annotation.TargetEntityId;
+
+public record CreateCourse(
+    CourseId courseId,
+    String name,
+    int capacity
+) {}
+----
+
+[NOTE]
+====
+You may notice that for the `courseId` field we use `CourseId` value object.
+It's not necessary, but it's a convention.
+This class provides type safety and domain semantics for course identifiers.
+Thanks to that you won't mix CourseId with other identifiers in the system like StudentId.
+The class may be as simple as `public record CourseId(String raw) {}`.
+In the sample we have also some additional helpful methods which you may find in the repository, but for now this is enough.
+====
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/events/CourseCreated.java
+----
+package io.axoniq.demo.university.faculty.events;
+
+import io.axoniq.demo.university.faculty.FacultyTags;
+import org.axonframework.eventsourcing.annotations.EventTag;
+
+public record CourseCreated(
+    @EventTag String courseId, // <1>
+    String name,
+    int capacity
+) {}
+----
+
+<1> The `courseId` is annotated with `@EventTag`, which allows Axon to tag the event as connected with the 'Course' business entity and then use it for efficiently retrieval of the events related to given 'Course'.
+It's a simple String - for events we prefer to avoid Value Objects, because events need to be deserialized regardless of the current rules for Value Objects creations.
+
+== Specification by example
+
+We already have our first slice API defined.
+Now we're going to specify the slice behaviour.
+For that purpose we're going to follow Test-First approach and write test in Given-When-Then convention, perfectly supported by Axon Test Fixture.
+Still, everything is around messages.
+So keep focus on the current command - `CreateCourse` and create corresponding `CreateCourseTest` class in the `io.axoniq.demo.university.faculty.write.createcourse` package.
+
+TIP: You can also use your IDE to create the unit test class.
+Open the `CreateCourse` class and ask your IDE to generate the corresponding unit test.
+Depending on your IDE, the shortcut or menu may vary, but it's a shortcut worth knowing for your IDE.
+
+[source,java]
+.src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
+----
+package io.axoniq.demo.university.faculty.write.createcourse;
+
+class CreateCourseTest {
+
+}
+----
+
+=== Defining the Test Fixture
+
+Axon Framework test fixture allows you to execute certain test cases against provided configuration.
+It may be your module/component or event whole application.
+Do you remember the configurer which we used while bootstrapping the application?
+Now it's time to use it in order to initialize our TestFixture.
+We need to have access to application components in tests to verify their behaviour.
+
+[source,java]
+.src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
+----
+package io.axoniq.demo.university.faculty.write.createcourse;
+
+class CreateCourseTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void beforeEach() {
+        var application = new UniversityAxonApplication();
+        fixture = AxonTestFixture.with(application.configurer());
+    }
+
+}
+----
+
+== First in, first out.
+
+Do you like green tests?
+Me too!
+But what I like even more are green slices on Event Modeling.
+So if you use this approach now you can mark your first slice as implemented!
+Congratulations!
+No let's move to more complex examples or read about alternative approach - how you can do the same without annotations.
+
 = Implement feature: `CreateCourse` -> `CourseCreated`
 
 Axon Framework jest zaprojektowany wokół Messages.
@@ -50,13 +178,14 @@ import io.axoniq.demo.university.faculty.FacultyTags;
 import org.axonframework.eventsourcing.annotations.EventTag;
 
 public record CourseCreated(
-    @EventTag(key = FacultyTags.COURSE_ID) String courseId,
+    @EventTag(key = FacultyTags.COURSE_ID) String courseId, //<1>
     String name,
     int capacity
 ) {}
 ----
 
-The `@EventTag` annotation allows Axon to tag the event as connected with the 'Course' business entity and then use it for efficiently retrieval of the events related to given 'Course'.
+<1> The `@EventTag` annotation allows Axon to tag the event as connected with the 'Course' business entity and then use it for efficiently retrieval of the events related to given 'Course'.
+It's a simple String - or events we prefer to avoid Value Objects, because events need to be deserialized regardless of the current rules for Value Objects creations.
 
 === Define Identifier Type
 
@@ -98,6 +227,8 @@ public record CourseId(String raw) {
         return id.startsWith(ENTITY_TYPE + ":") ? id : ENTITY_TYPE + ":" + id;
     }
 }
+----
+
 ----
 
 // = Implement Create New Course feture
@@ -349,8 +480,6 @@ public record CourseId(String raw) {
 // We can execute our application and see it in action.
 // In our next section, we will go through the steps to run our AxonFramework application together using docker from your development environment.
 //
-
-
 
 
 

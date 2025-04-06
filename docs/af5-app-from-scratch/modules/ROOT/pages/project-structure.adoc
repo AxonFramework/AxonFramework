@@ -50,3 +50,24 @@ You may even use different implementation styles / architectures inside certain 
 You will also see that in this tutorial.
 
 Once that we have our project created with basic packages structure, in the next step, we will learn how implement first feature!
+
+== Axon Configuration
+
+Axon Framework 5 has a new configuration model that allows you to configure your framework application in a more flexible way.
+We will be uncovering this new configuration model in the next steps of this tutorial.
+For now, we just need basic configuration to get started.
+We're going to use full potential of Event-Sourced application, so let's create a `UniversityAxonApplication` class and use `EventSourcing.configurer()`.
+This will setup by default all necessary components to run an Event-Sourced application.
+Components like: `EventStore`, `CommandBus`, `EventSink` etc.
+
+[source,java]
+./src/main/java/io/axoniq/demo/university/UniversityAxonApplication.java
+----
+public class UniversityAxonApplication {
+
+    public static ApplicationConfigurer<?> configurer() {
+        return EventSourcingConfigurer.create();
+    }
+
+}
+----
