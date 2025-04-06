@@ -1,16 +1,17 @@
 :navtitle: Feature: Create Course
 :reftext: Implementing the create new course feature
 
-
 = Implement feature: `CreateCourse` -> `CourseCreated`
+
+Axon Framework jest zaprojektowany wokół Messages.
+To je traktujemy jako first-class citizen i to one są obserwowalnym zachowaniem.
+Nie musisz na początek martwić się o strukturę bazy danych, rysować wielkich diagramów i craftować modeli.
+Większość pracy wykonaliśmy już w czasie Event Modelingu, teraz przełożymy to tylko na działający kod!
 
 Let's start by implementing the "Create Course" feature, which allows faculty staff to create new courses with a specified name and capacity.
 For that you need to create a Java package that fits in the project architecture, for this example we use *Vertical Slice Architecture* approach, but framework is flexible enough to allow you to use any architecture you prefer.
 
-
-== Feature package
-
-=== Define Messages
+== Define Messages
 
 First, let's define the necessary messages that will be used for this feature.
 In Axon Framework 5, we typically define commands and events as simple data structures - using Java `records`.
