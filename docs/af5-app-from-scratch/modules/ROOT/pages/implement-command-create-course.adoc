@@ -125,6 +125,102 @@ Adding the code to create the `AxonTestFixture` here will ensure that we have a 
 
 === Testing the command
 
+Thanks to the help of the `AxonTestFixture` we can now create a test with the following structure:
+
+- *Given*: Set the initial state for our test.
+Since we are designing our system to follow Event-Sourcing patterns, we need to set the list of events that have already happened before receiving the command.
+- *When*: Specify the command whose execution we want to test.
+In this case, we will test the processing of a `CreateCourse`.
+- *Expect*: We can instruct the fixture on the expectations we have from our system after processing the command.
+In an Event-Sourcing system, we will specify these expectations in the form of what events should have been produced by the command handler as a result of processing the command.
+
+So, let's define a method in our unit test to check that our system can successfully process the request to create a course:
+
+[source,java]
+.src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
+----
+package io.axoniq.demo.university.faculty.write.createcourse;
+
+import java.util.UUID;class CreateCourseTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach // <1>
+    void beforeEach() {
+        fixture = AxonTestFixture.with(UniversityAxonApplication.configurer()); // <2>
+    }
+
+    @Test
+    void givenNotExistingCourse_WhenCreateCourse_ThenSuccess() {
+        var courseId = new CourseId(UUID.randomUUID().toString());
+        var courseName = "Event Sourcing in Practice";
+        var capacity = 3;
+
+        fixture.given() // <1>
+               .noPriorActivity()
+               .when()
+               .command(new CreateCourse(courseId, courseName, capacity)) // <2>
+               .then()
+               .events(new CourseCreated(courseId.raw(), courseName, capacity)); // <3>
+    }
+
+}
+----
+
+<.> In our case, when we receive the `CreateCourse` command, we expect that no previous events were received in the system.
+We may even skip the whole `given` section if there is nothing to execute.
+<.> We provide the `CreateCourse` command we want to dispatch against the system (scoped to the given configuration).
+<.> After successfully processing the `CreateCourse`, we expect the publication of a new `CourseCreated` event with the details of the new course.
+
+When we execute the test you will see in the stack trac a following error:
+
+[,console]
+----
+org.axonframework.commandhandling.NoHandlerForCommandException: No handler was subscribed for command [io.axoniq.demo.university.faculty.write.createcourse.CreateCourse#0.0.1].
+----
+
+It means that we need to implement the handler for the `CreateCourse` command.
+And this will be our next step!
+
+=== Implementing the Command Handler
+
+To process a `CreateCourse` command in our application, we must define a method that receives the command as an argument.
+To indicate that the method should be invoked upon receiving a command, we will add the `@CommandHandler` annotation provided by AxonFramework.
+Let's create a new class for that inside the slice package and name it `CreateCourseCommandHandler` and implement the minimum required to make the test pass.
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseCommandHandler.java
+----
+package io.axoniq.demo.university.faculty.write.createcourse;
+
+import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.eventhandling.EventSink;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.command.annotation.InjectEntity;
+
+class CreateCourseCommandHandler {
+
+    @CommandHandler // <1>
+    public void handle(
+            CreateCourse command,  // <2>
+            EventSink eventSink,  // <3>
+            ProcessingContext processingContext  // <4>
+    ) {
+        var event = new CourseCreated(command.courseId().raw(), command.name(), command.capacity());  // <5>
+        var message = toMessage(event); // <6>
+        eventSink.publish(processingContext, message); // <7>
+    }
+
+    private static EventMessage<?> toMessage(Object payload) {
+        return new GenericEventMessage<>(
+                new MessageType(payload.getClass()),
+                payload
+        );
+    }
+
+}
+----
+
 == First in, first out.
 
 Do you like green tests?
