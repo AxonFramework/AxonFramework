@@ -20,7 +20,7 @@ class CreateCourseCommandHandler {
     @CommandHandler
     public void handle(
             CreateCourse command,
-            @InjectEntity State state,
+            @InjectEntity(idProperty = FacultyTags.COURSE_ID) State state,
             EventSink eventSink,
             ProcessingContext processingContext
     ) {
