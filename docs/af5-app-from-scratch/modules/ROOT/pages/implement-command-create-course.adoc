@@ -111,14 +111,19 @@ class CreateCourseTest {
 
     private AxonTestFixture fixture;
 
-    @BeforeEach
+    @BeforeEach // <1>
     void beforeEach() {
-        var application = new UniversityAxonApplication();
-        fixture = AxonTestFixture.with(application.configurer());
+        fixture = AxonTestFixture.with(UniversityAxonApplication.configurer()); // <2>
     }
 
 }
 ----
+
+<.> The `@BeforeEach` marks this method to be called before any test is executed in our test class.
+Adding the code to create the `AxonTestFixture` here will ensure that we have a fresh fixture for each test case, and thus we make our different tests independent.
+<.> This line creates a new `AxonTestFixture` based on our configuration.
+
+=== Testing the command
 
 == First in, first out.
 
