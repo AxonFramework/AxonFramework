@@ -1,7 +1,7 @@
 :navtitle: Feature: Create Course
 :reftext: Implementing the create new course feature
 
-= Create course feature
+= Create Course Feature
 
 When you implement a new feature the first step is to define the messages which will be the input and output of it.
 In Axon Framework messages are the first-class citizen and everything is designed around them.
@@ -10,7 +10,7 @@ While designing the app and also during execution - you're always in the context
 Let's focus on the first feature for this sample app.
 We need to be able to create a new course.
 Could you imagine a faculty without any courses, which students may subscribe to?
-I can't either!
+We can't either!
 
 == Define messages
 
@@ -96,7 +96,7 @@ class CreateCourseTest {
 }
 ----
 
-=== Defining the Test Fixture
+=== Defining the test fixture
 
 Axon Framework test fixture allows you to execute certain test cases against provided configuration.
 It may be your module/component or event whole application.
@@ -188,7 +188,7 @@ org.axonframework.commandhandling.NoHandlerForCommandException: No handler was s
 It means that we need to implement the handler for the `CreateCourse` command.
 And this will be our next step!
 
-=== Implementing the Command Handler
+=== Implementing the command handler
 
 To process a `CreateCourse` command in our application, we must define a method that receives the command as an argument.
 To indicate that the method should be invoked upon receiving a command, we will add the `@CommandHandler` annotation provided by AxonFramework.
@@ -341,8 +341,8 @@ Now we definitiely do that, because the system decision what to do with the comm
 
 The only think we need to know about certain course for the `CreateCourse` command handling if it already exists or not.
 So let's add the `State` class which will be responsible for providing that information.
-I will use the term `State`, because it's not everything what we know about the `Course`, we don't need subscribed students etc. just for this command purposes.
-But you can name it `Course` as well, but keep in mind it's just a part of information needed for the validation of this command.
+We will use the term `State`, because it's not everything what we know about the `Course`, we don't need subscribed students etc. just for this command purposes.
+You can name it `Course` as well, but keep in mind it's just a part of information needed for the validation of this command.
 I'm going to put it as internal class in the handler, because it will be used just there.
 
 [source,java]
@@ -434,21 +434,20 @@ public class CreateCourseConfiguration {
 With this step, we have completed the code to process a Command that represents the request to register a new bike in our system.
 You may run the tests again and see that all of them should pass!
 
-== First in, first out.
+== First in, first out
 
 image::EventModeling_CreateCourse_Done.png[]
 
 Do you like green tests?
-Me too!
-But what I like even more are green slices on Event Modeling.
+But what we like even more are green slices on Event Modeling.
 So if you use this approach now you can mark your first slice as implemented!
 Congratulations!
 
 No let's move to more complex examples.
 
-== Alternative approach without Annotations
+== Alternative approach without annotations
 
 If you prefer not to use annotations in your domain model you can go different way around.
 You can skip annotations like `@EventSourcingHandler` on the state class and snip up everything in the configuration using plain Java code!
-To se how to implement this slice differently you can check the GitHub repository https://github.com/AxonIQ/university-demo/tree/master/src/main/java/io/axoniq/demo/university/faculty/write/createcourseplain[https://github.com/AxonIQ/university-demo/][University Demo (Create Course in plain Java),role=external,window=_blank].
+To se how to implement this slice differently you can check the GitHub repository link:https://github.com/AxonIQ/university-demo/tree/master/src/main/java/io/axoniq/demo/university/faculty/write/createcourseplain[https://github.com/AxonIQ/university-demo/][University Demo (Create Course in plain Java),role=external,window=_blank].
 

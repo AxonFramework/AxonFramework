@@ -1,7 +1,7 @@
 :navtitle: Vertical Slice Architecture
 :reftext: Creating A New Axon Framework Project
 
-= Create new Axon Framework project with Maven
+= Create new Axon Framework project with maven
 
 Let's use Maven and/or your favorite IDE and just create a Maven project.
 You may also use Gradle as well, but this tutorial will be focused on Maven.

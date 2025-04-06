@@ -1,7 +1,7 @@
 :navtitle: Sample Domain & Event Modeling
 :reftext: Sample Domain & Event Modeling
 
-== The sample domain (University - Faculty)
+== The sample domain
 
 In this sample, we are dealing with the University Domain.
 The initial examples will be around the Faculty Bounded Context.
@@ -13,7 +13,7 @@ The capacity of the course must be maintained.
 After the course has been created, its capacity can be changed.
 A student can subscribe to a course and unsubscribe.
 
-== Event Modeling
+== Event modeling
 
 Before jumping over the keyboard to start writing code, let's first introduce the small design up-front of our system so that we are prepared to split and scale it out later.
 We conducted an Event Modeling session to identify the messages that will be used in our system.

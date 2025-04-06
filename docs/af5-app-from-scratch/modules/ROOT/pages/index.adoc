@@ -11,11 +11,11 @@ The result of the guide is a simple application, where you can play around with 
 It's not production ready yet, because the Axon Framework 5 hasn't been released, it's in the milestone phase.
 
 This tutorial will guide you through the creation of a "University Registrations Application" using Axon Framework 5.
-You can follow the steps in the tutorial to complete the project from scratch or check out our https://github.com/AxonIQ/university-demo/[University Demo repository in GitHub,role=external,window=_blank].
+You can follow the steps in the tutorial to complete the project from scratch or check out our link:https://github.com/AxonIQ/university-demo/[University Demo repository in GitHub,role=external,window=_blank].
 
 == Your opinion matters!
 
 Keep in mind it's a milestone version, so it may be a subject to change.
 Because of that your opinion is even more valuable to us, you may shape to future of your favorite Event Sourcing tool together with us!
-After playing around with that please share your feedback here: TODO: FORM LINK.
+After playing around with that please share your feedback here: FORM LINK.
 You can always reach out our team directly on LinkedIn, we will be so happy to talk with you.
