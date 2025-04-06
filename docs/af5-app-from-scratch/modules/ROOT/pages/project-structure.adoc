@@ -3,20 +3,144 @@
 
 = Create new Axon Framework project with Maven
 
-Let's use Maven and/or your favorite IDE and just create a maven project.
+Let's use Maven and/or your favorite IDE and just create a Maven project.
+You may also use Gradle as well, but this tutorial will be focused on Maven.
+Please keep in mind Axon Framework 5 requires Java 21 or higher.
 
 [NOTE]
 ====
 After the creation please make sure to set the following project properties.
 
 [horizontal]
-archetypeGroupId:: org.codehaus.mojo.archetypes
-archetypeArtifactId:: pom-root
-archetypeVersion:: RELEASE
-groupId:: io.axoniq.demo.bikerental
-artifactId:: bike-rental
-version:: 0.0.1-SNAPSHOT
+groupId:: io.axoniq.demo.university
+artifactId:: university-demo
+version:: 1.0.0-SNAPSHOT
 ====
+
+== Axon Framework dependencies
+
+In this step we will configure the dependencies to use Axon Framework 5 in our project.
+To enable the use of Axon Framework, we can configure the required Axon Framework dependencies in our project's `pom.xml` file.
+Nevertheless, depending on the specific features we plan to use later, we may need to add additional dependencies for other libraries or tools later (for example, `micrometer` or `reactor`).
+
+Below you may see the resulting pom.
+Please ensure you have the following properties and dependencies in your `pom.xml` file:
+
+[source,xml]
+./pom.xml
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.axoniq.demo.university</groupId>
+    <artifactId>university-demo</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+
+    <properties>
+        <assertj.version>3.27.3</assertj.version>
+        <axon.version>5.0.0-SNAPSHOT</axon.version>
+        <hamcrest.version>3.0</hamcrest.version>
+        <junit.version>5.12.1</junit.version>
+        <log4j.version>2.24.3</log4j.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+    </properties>
+
+    <dependencies>
+        <!-- Axon Framework Dependencies -->
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-messaging</artifactId>
+            <version>${axon.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-modelling</artifactId>
+            <version>${axon.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-eventsourcing</artifactId>
+            <version>${axon.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-configuration</artifactId>
+            <version>${axon.version}</version>
+        </dependency>
+
+        <!-- Log4j Dependencies -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+
+        <!-- Test Dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
+            <version>${hamcrest.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.axonframework</groupId>
+            <artifactId>axon-test</artifactId>
+            <version>${axon.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+----
 
 == Project structure
 
@@ -71,3 +195,5 @@ public class UniversityAxonApplication {
 
 }
 ----
+
+Now, we are ready to start implementing the first functionality for our University application.

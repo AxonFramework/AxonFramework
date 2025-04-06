@@ -6,7 +6,7 @@ version:
 
 asciidoc:
   attributes:
-    component_description: How to build an Axon Framework 5 application from scratch.
+    component_description: Getting started with designing, building, and deploying Axon Technology based applications.
     type: tutorial
     group: beginner
 
