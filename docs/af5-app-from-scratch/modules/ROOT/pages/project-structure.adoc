@@ -1,5 +1,5 @@
-:navtitle: Project Architecture
-:reftext: Creating A New AxonFramework Project
+:navtitle: Vertical Slice Architecture
+:reftext: Creating A New Axon Framework Project
 
 = Create new Axon Framework project with Maven
 

@@ -443,4 +443,12 @@ Me too!
 But what I like even more are green slices on Event Modeling.
 So if you use this approach now you can mark your first slice as implemented!
 Congratulations!
-No let's move to more complex examples or read about alternative approach - how you can do the same without annotations.
+
+No let's move to more complex examples.
+
+== Alternative approach without Annotations
+
+If you prefer not to use annotations in your domain model you can go different way around.
+You can skip annotations like `@EventSourcingHandler` on the state class and snip up everything in the configuration using plain Java code!
+To se how to implement this slice differently you can check the GitHub repository https://github.com/AxonIQ/university-demo/tree/master/src/main/java/io/axoniq/demo/university/faculty/write/createcourseplain[https://github.com/AxonIQ/university-demo/][University Demo (Create Course in plain Java),role=external,window=_blank].
+
