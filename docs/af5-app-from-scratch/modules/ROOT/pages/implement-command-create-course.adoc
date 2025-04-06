@@ -328,6 +328,88 @@ Expected  |  Actual
 Do you remember that we haven't used any state inside the *Stateful* command handling component?
 Now we definitiely do that, because the system decision what to do with the command will be based on the state derived from the historial events.
 
+=== Validate the Command against the state
+
+The only think we need to know about certain course for the `CreateCourse` command handling if it already exists or not.
+So let's add the `State` class which will be responsible for providing that information.
+I will use the term `State`, because it's not everything what we know about the `Course`, we don't need subscribed students etc. just for this command purposes.
+But you can name it `Course` as well, but keep in mind it's just a part of information needed for the validation of this command.
+I'm going to put it as internal class in the handler, because it will be used just there.
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseCommandHandler.java
+----
+package io.axoniq.demo.university.faculty.write.createcourse;
+
+class CreateCourseCommandHandler {
+
+    @EventSourcedEntity(tagKey = "courseId") // <1>
+    public static class State {
+
+        private boolean created = false; // <2>
+
+        @EventSourcingHandler // <3>
+        public void apply(CourseCreated event) {
+            this.created = true;
+        }
+    }
+
+    @CommandHandler
+    public void handle(
+            CreateCourse command,
+            @InjectEntity(idProperty = "courseId") State state, // <4>
+            EventSink eventSink,
+            ProcessingContext processingContext
+    ) {
+        if(state.created) { // <5>
+            return;
+        }
+        var event = new CourseCreated(command.courseId().raw(), command.name(), command.capacity());
+        eventSink.publish(processingContext, toMessage(event));
+    }
+
+}
+
+----
+
+<1> The `@EventSourcedEntity` annotation indicates that this class state is derived from the events published with the given tag key (`courseId` in this case).
+We've already annotation `courseId` property in the `CourseCreated` event class with `@EventTag`, so the event will be applied while loading the entity.
+<2> The properties needed to guard certain business rules.
+In this case we need to know if the course was already created or not.
+While executing the command we don't care about the name or other properties.
+<3> The `@EventSourcingHandler` annotation indicates to Axon Framework to link this method to the reception of an event.
+It will be called while the entity is being loaded.
+Axon Framework will use the type of the annotated method argument to link this method to the specific type of event.
+<4> The `@InjectEntity` annotation indicates to Axon Framework to inject the entity with the given identifier property which needs to be present in the processed command.
+In this case, we want to inject the `State` entity with the `courseId` property.
+<5> The `if` statement checks if the course was already created.
+If it was, we don't need to do anything, so we just return from the method.
+
+As before, the last step to fulfill the next test case are changes in our configuration.
+Come back to the `CreateCourseConfiguration` class and add the `State` class to the configuration.
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseConfiguration.java
+----
+package io.axoniq.demo.university.faculty.write.createcourse;
+
+public class CreateCourseConfiguration {
+
+    public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
+        var stateEntity = EventSourcedEntityBuilder
+                .annotatedEntity(CourseId.class, CreateCourseCommandHandler.State.class);  // <1>
+
+        var commandHandlingModule = StatefulCommandHandlingModule.named("CreateCourse")
+                .entities()
+                .entity(stateEntity)  // <2>
+                .commandHandlers()
+                .annotatedCommandHandlingComponent(c -> new CreateCourseCommandHandler());
+        return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
+    }
+
+}
+----
+
 == First in, first out.
 
 Do you like green tests?
