@@ -1,0 +1,52 @@
+:navtitle: Project Architecture
+:reftext: Creating A New AxonFramework Project
+
+= Create new Axon Framework project with Maven
+
+Let's use Maven and/or your favorite IDE and just create a maven project.
+
+[NOTE]
+====
+After the creation please make sure to set the following project properties.
+
+[horizontal]
+archetypeGroupId:: org.codehaus.mojo.archetypes
+archetypeArtifactId:: pom-root
+archetypeVersion:: RELEASE
+groupId:: io.axoniq.demo.bikerental
+artifactId:: bike-rental
+version:: 0.0.1-SNAPSHOT
+====
+
+== Project structure
+
+We will design our project follows a *Vertical Slice Architecture* which organizes the codebase around features rather than technical layers.
+It plays well with the Event Modeling which we used to design our application.
+
+The architecture screams the capabilities of the system by making explicit:
+<.> Commands available to users <.> Events that capture what happened <.> Business rules that govern those actions <.> System automations that connect different parts
+
+The project structure includes:
+
+[source]
+----
+📦 io.axoniq.demo.university
+ ┣ 📂 faculty (bounded context)
+ ┃ ┣ 📂 events (events shared across slices)
+ ┃ ┣ 📂 write (command handling slices)
+ ┃ ┃ ┣ 📂 createcourse
+ ┃ ┃ ┣ 📂 changecoursecapacity
+ ┃ ┃ ┣ 📂 subscribestudent
+ ┃ ┃ ┗ 📂 ...
+ ┃ ┣ 📂 read (query slices - FUTURE MILESTONES)
+ ┃ ┗ 📂 automation (automation slices - FUTURE MILESTONES)
+ ┣ 📂 shared
+ ┗ 📂 ...
+----
+
+Each slice contains the full implementation of a feature, from command definition to command handling and event publication.
+This approach allows different slices to be implemented independently and in parallel.
+You may even use different implementation styles / architectures inside certain slices.
+You will also see that in this tutorial.
+
+Once that we have our project created with basic packages structure, in the next step, we will learn how implement first feature!

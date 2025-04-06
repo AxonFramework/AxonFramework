@@ -1,39 +1,12 @@
 :navtitle: Feature: Create Course
 :reftext: Implementing the create new course feature
 
+
 = Implement feature: `CreateCourse` -> `CourseCreated`
 
 Let's start by implementing the "Create Course" feature, which allows faculty staff to create new courses with a specified name and capacity.
 For that you need to create a Java package that fits in the project architecture, for this example we use *Vertical Slice Architecture* approach, but framework is flexible enough to allow you to use any architecture you prefer.
 
-== Project Structure
-
-The university demo follows a *Vertical Slice Architecture* which organizes the codebase around features (slices) rather than technical layers.
-The architecture screams the capabilities of the system by making explicit:
-- Commands available to users - Events that capture what happened - Business rules that govern those actions - System automations that connect different parts
-
-The project structure includes:
-
-[source]
-----
-📦 io.axoniq.demo.university
- ┣ 📂 faculty (bounded context)
- ┃ ┣ 📂 events (events shared across slices)
- ┃ ┣ 📂 write (command handling slices)
- ┃ ┃ ┣ 📂 createcourse
- ┃ ┃ ┣ 📂 changecoursecapacity
- ┃ ┃ ┣ 📂 subscribestudent
- ┃ ┃ ┗ 📂 ...
- ┃ ┣ 📂 read (query slices - FUTURE MILESTONES)
- ┃ ┗ 📂 automation (automation slices - FUTURE MILESTONES)
- ┣ 📂 shared
- ┗ 📂 ...
-----
-
-Each slice contains the full implementation of a feature, from command definition to command handling and event production.
-This approach allows different slices to be implemented independently and in parallel.
-You may even use different implementation styles / architectures inside certain slices.
-You will also see that in this tutorial.
 
 == Feature package
 
