@@ -150,7 +150,6 @@ public interface StatefulCommandHandlingModule extends
      */
     interface CommandHandlerPhase extends SetupPhase, ModuleBuilder<StatefulCommandHandlingModule> {
 
-
         /**
          * Registers the given {@code commandHandler} for the given qualified {@code commandName} within this module.
          * <p>

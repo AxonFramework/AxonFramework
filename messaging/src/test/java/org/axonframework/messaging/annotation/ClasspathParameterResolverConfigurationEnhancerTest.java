@@ -19,6 +19,7 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.configuration.DefaultComponentRegistry;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.messaging.reflection.ClasspathParameterResolverConfigurationEnhancer;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

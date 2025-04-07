@@ -22,6 +22,7 @@ import org.axonframework.modelling.repository.AsyncRepository;
 import org.axonframework.modelling.repository.ManagedEntity;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -38,9 +39,9 @@ public class HierarchicalStateManager implements StateManager {
     private final StateManager parent;
     private final StateManager child;
 
-    private HierarchicalStateManager(StateManager parent, StateManager child) {
-        this.parent = parent;
-        this.child = child;
+    private HierarchicalStateManager(@Nonnull StateManager parent, @Nonnull StateManager child) {
+        this.parent = Objects.requireNonNull(parent, "Parent StateManager may not be null");
+        this.child = Objects.requireNonNull(child, "Child StateManager may not be null");
     }
 
     /**
@@ -52,7 +53,7 @@ public class HierarchicalStateManager implements StateManager {
      * @param child  The child {@link StateManager} to try first.
      * @return A new hierarchical {@link StateManager} that delegates to the given managers.
      */
-    public static HierarchicalStateManager create(StateManager parent, StateManager child) {
+    public static HierarchicalStateManager create(@Nonnull StateManager parent, @Nonnull StateManager child) {
         return new HierarchicalStateManager(parent, child);
     }
 

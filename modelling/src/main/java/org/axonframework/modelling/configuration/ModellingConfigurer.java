@@ -36,10 +36,6 @@ import java.util.function.Consumer;
 /**
  * The modelling {@link ApplicationConfigurer} of Axon Framework's configuration API, providing registration methods to,
  * for example, register a {@link StatefulCommandHandlingModule}.
- * <p>
- * This configurer is enhanced by the {@link HierarchicalStateManagerConfigurationEnhancer} to provide access to the
- * {@link StateManager} during the execution of message handlers, and allow users to inject entities using the
- * {@link InjectEntity} annotation.
  *
  * @author Steven van Beelen
  * @since 5.0.0

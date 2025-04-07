@@ -19,6 +19,7 @@ package org.axonframework.messaging.annotation;
 import org.axonframework.configuration.DefaultComponentRegistry;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.messaging.reflection.HierarchicalParameterResolverFactoryConfigurationEnhancer;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -60,7 +61,7 @@ class HierarchicalParameterResolverFactoryConfigurationEnhancerTest {
         // Now, we test the hierarchy. First, with the child returning null
         when(childParameterResolverFactory.createInstance(eq(testMethod), eq(new Parameter[]{}), eq(0))).thenReturn(null);
         // The parent should just always return the parent
-        assertSame(parentParameterResolver, childFactory.createInstance(testMethod, new Parameter[]{}, 0));
+        assertSame(parentParameterResolver, parentFactory.createInstance(testMethod, new Parameter[]{}, 0));
 
         // But if the child has a result, it should return that
         when(childParameterResolverFactory.createInstance(eq(testMethod), eq(new Parameter[]{}), eq(0))).thenReturn(childParameterResolver);

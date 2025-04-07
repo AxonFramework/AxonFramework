@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.annotation;
+package org.axonframework.messaging.reflection;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
+import org.axonframework.messaging.annotation.HierarchicalParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 import java.util.Optional;
 
@@ -38,6 +40,8 @@ public class HierarchicalParameterResolverFactoryConfigurationEnhancer implement
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
         componentRegistry.registerDecorator(
                 ParameterResolverFactory.class,
+                // We want this to be executed late, but still allow users to be able to add resolvers
+                // after this enhancer. Which would then not be available for child configurations.
                 Integer.MAX_VALUE >> 1,
                 (config, componentName, component) -> {
                     Optional<ParameterResolverFactory> parentComponent = Optional

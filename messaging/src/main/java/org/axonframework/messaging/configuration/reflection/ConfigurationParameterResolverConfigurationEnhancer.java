@@ -14,28 +14,26 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.annotation;
+package org.axonframework.messaging.configuration.reflection;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 
 /**
- * {@link ConfigurationEnhancer} that registers the {@link ClasspathParameterResolverFactory} as the default
- * {@link ParameterResolverFactory}. Disabling this enhancer will disable the {@link ParameterResolverFactory} component
- * registration, and will thus not invoke any decorators registering more. Make sure you provide an alternative
- * when disabling this enhancer.
+ * {@link ConfigurationEnhancer} that registers the {@link ConfigurationParameterResolverFactory} as additional
+ * parameter resolver factory to the {@link ComponentRegistry}.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ClasspathParameterResolverConfigurationEnhancer implements ConfigurationEnhancer {
+public class ConfigurationParameterResolverConfigurationEnhancer implements ConfigurationEnhancer {
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
-        componentRegistry.registerComponent(
-                ParameterResolverFactory.class,
-                (c) -> ClasspathParameterResolverFactory.forClass(c.getClass())
+        ParameterResolverFactoryUtils.registerToComponentRegistry(
+                componentRegistry,
+                ConfigurationParameterResolverFactory::new
         );
     }
 }

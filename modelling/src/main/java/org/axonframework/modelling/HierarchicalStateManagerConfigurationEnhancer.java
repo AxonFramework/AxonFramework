@@ -29,6 +29,9 @@ import java.util.Optional;
  * <p>
  * To prevent modules not defining entities not being able to find the {@link StateManager} component to access the
  * parent configuration, an empty {@link StateManager} is registered when no {@link StateManager} is present.
+ * <p>
+ * This enhancer is registered with the highest order, so it will be executed last. This is to ensure that any
+ * registered {@link StateManager} is decorated with the {@link HierarchicalStateManager}.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -42,6 +45,12 @@ public class HierarchicalStateManagerConfigurationEnhancer implements Configurat
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
+        if (!componentRegistry.hasComponent(StateManager.class)) {
+            componentRegistry.registerComponent(
+                    StateManager.class,
+                    (c) -> SimpleStateManager.builder("Empty").build()
+            );
+        }
         componentRegistry.registerDecorator(
                 StateManager.class,
                 Integer.MAX_VALUE,

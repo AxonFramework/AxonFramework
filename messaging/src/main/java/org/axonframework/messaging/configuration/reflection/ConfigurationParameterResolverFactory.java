@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.configuration;
+package org.axonframework.messaging.configuration.reflection;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Priority;

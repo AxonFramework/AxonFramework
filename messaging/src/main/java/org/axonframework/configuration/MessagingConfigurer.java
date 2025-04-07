@@ -25,7 +25,7 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 
 import java.util.function.Consumer;
 
-import static org.axonframework.messaging.ParameterResolverFactoryUtils.registerToComponentRegistry;
+import static org.axonframework.messaging.configuration.reflection.ParameterResolverFactoryUtils.registerToComponentRegistry;
 
 /**
  * The messaging {@link ComponentRegistry} of Axon Framework's configuration API.

@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging;
+package org.axonframework.messaging.configuration.reflection;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -39,9 +41,10 @@ public class ParameterResolverFactoryUtils {
      * @param factory           The {@link Function} that creates the {@link ParameterResolverFactory} based on the
      *                          {@link NewConfiguration}.
      */
-    public static void registerToComponentRegistry(ComponentRegistry componentRegistry,
-                                                   Function<NewConfiguration, ParameterResolverFactory> factory
+    public static void registerToComponentRegistry(@Nonnull ComponentRegistry componentRegistry,
+                                                   @Nonnull Function<NewConfiguration, ParameterResolverFactory> factory
     ) {
+        Objects.requireNonNull(componentRegistry, "ComponentRegistry cannot be null");
         registerToComponentRegistry(componentRegistry, 0, factory);
     }
 
@@ -54,10 +57,12 @@ public class ParameterResolverFactoryUtils {
      * @param factory           The {@link Function} that creates the {@link ParameterResolverFactory} based on the
      *                          {@link NewConfiguration}.
      */
-    public static void registerToComponentRegistry(ComponentRegistry componentRegistry,
+    public static void registerToComponentRegistry(@Nonnull ComponentRegistry componentRegistry,
                                                    int order,
-                                                   Function<NewConfiguration, ParameterResolverFactory> factory
+                                                   @Nonnull Function<NewConfiguration, ParameterResolverFactory> factory
     ) {
+        Objects.requireNonNull(componentRegistry, "ComponentRegistry cannot be null");
+        Objects.requireNonNull(factory, "Factory cannot be null");
         componentRegistry.registerDecorator(
                 ParameterResolverFactory.class,
                 order,
@@ -66,7 +71,6 @@ public class ParameterResolverFactoryUtils {
                 )
         );
     }
-
 
     private ParameterResolverFactoryUtils() {
         // Utility class

@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 class HierarchicalStateManagerConfigurationEnhancerTest {
     @Test
     void createsHierarchicalParameterResolverFromParentAndChild() {
-        // Set up a parent with a unique ParameterResolverFactory
+        // Set up a parent with a unique StateManager
         DefaultComponentRegistry parent = createCleanComponentRegistry();
         StateManager parentStateManager = mock(StateManager.class);
         parent.registerComponent(StateManager.class, c -> parentStateManager);
@@ -40,7 +40,7 @@ class HierarchicalStateManagerConfigurationEnhancerTest {
         NewConfiguration parentConfiguration = parent.build(mock(LifecycleRegistry.class));
         NewConfiguration childConfiguration = child.buildNested(parentConfiguration, mock(LifecycleRegistry.class));
 
-        // And assert that the child configuration has a HierarchicalParameterResolverFactory
+        // And assert that the child configuration has a HierarchicalStateManager
         StateManager parentManager = parentConfiguration.getComponent(StateManager.class);
         StateManager childManager = childConfiguration.getComponent(StateManager.class);
 

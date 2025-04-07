@@ -14,28 +14,30 @@
  * limitations under the License.
  */
 
-package org.axonframework.messaging.annotation;
+package org.axonframework.messaging.reflection;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.messaging.ParameterResolverFactoryUtils;
-import org.axonframework.messaging.configuration.ConfigurationParameterResolverFactory;
+import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
 /**
- * {@link ConfigurationEnhancer} that registers the {@link ConfigurationParameterResolverFactory} as additional
- * parameter resolver factory to the {@link ComponentRegistry}.
+ * {@link ConfigurationEnhancer} that registers the {@link ClasspathParameterResolverFactory} as the default
+ * {@link ParameterResolverFactory}. Disabling this enhancer will disable the {@link ParameterResolverFactory} component
+ * registration completely. As such, without this enhancer, any other {@link ParameterResolverFactory} that was registered will
+ * not work.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ConfigurationParameterResolverConfigurationEnhancer implements ConfigurationEnhancer {
+public class ClasspathParameterResolverConfigurationEnhancer implements ConfigurationEnhancer {
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
-        ParameterResolverFactoryUtils.registerToComponentRegistry(
-                componentRegistry,
-                ConfigurationParameterResolverFactory::new
+        componentRegistry.registerComponent(
+                ParameterResolverFactory.class,
+                (c) -> ClasspathParameterResolverFactory.forClass(c.getClass())
         );
     }
 }

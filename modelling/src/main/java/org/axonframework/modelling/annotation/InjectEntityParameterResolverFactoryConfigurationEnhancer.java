@@ -19,7 +19,7 @@ package org.axonframework.modelling.annotation;
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.messaging.ParameterResolverFactoryUtils;
+import org.axonframework.messaging.configuration.reflection.ParameterResolverFactoryUtils;
 
 /**
  * {@link ConfigurationEnhancer} that registers the {@link InjectEntityParameterResolverFactory} to the
