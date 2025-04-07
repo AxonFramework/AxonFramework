@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 class CreateCourseCommandHandler {
 
     @CommandHandler
-    public void handle(
+    void handle(
             CreateCourse command,
             @InjectEntity(idProperty = FacultyTags.COURSE_ID) State state,
             EventSink eventSink,
@@ -49,7 +49,7 @@ class CreateCourseCommandHandler {
     }
 
     @EventSourcedEntity(tagKey = FacultyTags.COURSE_ID)
-    public static final class State {
+    static final class State {
 
         private boolean created;
 
@@ -58,7 +58,7 @@ class CreateCourseCommandHandler {
         }
 
         @EventSourcingHandler
-        public State apply(CourseCreated event) {
+        private State apply(CourseCreated event) {
             this.created = true;
             return this;
         }

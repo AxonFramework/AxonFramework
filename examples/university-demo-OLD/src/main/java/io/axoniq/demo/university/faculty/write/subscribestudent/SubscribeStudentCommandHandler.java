@@ -29,7 +29,7 @@ class SubscribeStudentCommandHandler {
     private static final int MAX_COURSES_PER_STUDENT = 10;
 
     @CommandHandler
-    public void handle(
+    void handle(
             SubscribeStudent command,
             @InjectEntity State state,
             EventSink eventSink,
@@ -69,14 +69,14 @@ class SubscribeStudentCommandHandler {
         }
     }
 
-    public void assertStudentNotSubscribedToTooManyCourses(State state) {
+    private void assertStudentNotSubscribedToTooManyCourses(State state) {
         var noOfCoursesStudentSubscribed = state.noOfCoursesStudentSubscribed;
         if (noOfCoursesStudentSubscribed >= MAX_COURSES_PER_STUDENT) {
             throw new RuntimeException("Student subscribed to too many courses");
         }
     }
 
-    public void assertEnoughVacantSpotsInCourse(State state) {
+    private void assertEnoughVacantSpotsInCourse(State state) {
         var noOfStudentsSubscribedToCourse = state.noOfStudentsSubscribedToCourse;
         var courseCapacity = state.courseCapacity;
         if (noOfStudentsSubscribedToCourse >= courseCapacity) {
@@ -84,14 +84,14 @@ class SubscribeStudentCommandHandler {
         }
     }
 
-    public void assertStudentNotAlreadySubscribed(State state) {
+    private void assertStudentNotAlreadySubscribed(State state) {
         var alreadySubscribed = state.alreadySubscribed;
         if (alreadySubscribed) {
             throw new RuntimeException("Student already subscribed to this course");
         }
     }
 
-    public void assertCourseExists(State state) {
+    private void assertCourseExists(State state) {
         var courseId = state.courseId;
         if (courseId == null) {
             throw new RuntimeException("Course with given id does not exist");
@@ -99,7 +99,7 @@ class SubscribeStudentCommandHandler {
     }
 
     @EventSourcedEntity
-    public static class State {
+    static class State {
 
         private StudentId studentId;
         private CourseId courseId;
@@ -111,23 +111,23 @@ class SubscribeStudentCommandHandler {
         private boolean alreadySubscribed = false;
 
         @EventSourcingHandler
-        public void evolve(CourseCreated event) {
+        void evolve(CourseCreated event) {
             this.courseId = new CourseId(event.courseId());
             this.courseCapacity = event.capacity();
         }
 
         @EventSourcingHandler
-        public void evolve(StudentEnrolledFaculty event) {
+        void evolve(StudentEnrolledFaculty event) {
             this.studentId = new StudentId(event.studentId());
         }
 
         @EventSourcingHandler
-        public void evolve(CourseCapacityChanged event) {
+        void evolve(CourseCapacityChanged event) {
             this.courseCapacity = event.capacity();
         }
 
         @EventSourcingHandler
-        public void evolve(StudentSubscribed event) {
+        void evolve(StudentSubscribed event) {
             var enrolledStudentId = new StudentId(event.studentId());
             var enrolledCourseId = new CourseId(event.courseId());
             if (enrolledStudentId.equals(studentId) && enrolledCourseId.equals(courseId)) {
@@ -140,7 +140,7 @@ class SubscribeStudentCommandHandler {
         }
 
         @EventSourcingHandler
-        public void evolve(StudentUnsubscribed event) {
+        void evolve(StudentUnsubscribed event) {
             var enrolledStudentId = new StudentId(event.studentId());
             var enrolledCourseId = new CourseId(event.courseId());
             if (enrolledStudentId.equals(studentId) && enrolledCourseId.equals(courseId)) {
@@ -153,7 +153,7 @@ class SubscribeStudentCommandHandler {
         }
 
         @EventCriteriaBuilder
-        public static EventCriteria resolveCriteria(SubscriptionId id) {
+        private static EventCriteria resolveCriteria(SubscriptionId id) {
             var courseId = id.courseId().raw();
             var studentId = id.studentId().raw();
             return EventCriteria.either(

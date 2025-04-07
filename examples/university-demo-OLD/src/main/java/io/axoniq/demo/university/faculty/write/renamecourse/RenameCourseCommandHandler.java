@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 class RenameCourseCommandHandler {
 
     @CommandHandler
-    public void handle(
+    void handle(
             RenameCourse command,
             @InjectEntity State state,
             EventSink eventSink,
@@ -53,19 +53,19 @@ class RenameCourseCommandHandler {
     }
 
     @EventSourcedEntity(tagKey = FacultyTags.COURSE_ID)
-    public static class State {
+    static class State {
 
         private boolean created = false;
         private String name;
 
         @EventSourcingHandler
-        public void evolve(CourseCreated event) {
+        void evolve(CourseCreated event) {
             this.created = true;
             this.name = event.name();
         }
 
         @EventSourcingHandler
-        public void evolve(CourseRenamed event) {
+        void evolve(CourseRenamed event) {
             this.name = event.name();
         }
     }

@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @EventSourcedEntity(tagKey = FacultyTags.STUDENT_ID)
-public class Student {
+class Student {
 
     private StudentId id;
     private final List<CourseId> subscribedCourses = new ArrayList<>();

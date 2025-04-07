@@ -7,7 +7,7 @@ import org.axonframework.modelling.command.annotation.TargetEntityId;
 public record SubscribeStudent(StudentId studentId, CourseId courseId) {
 
     @TargetEntityId
-    public SubscriptionId subscriptionId() {
+    SubscriptionId subscriptionId() {
         return new SubscriptionId(courseId, studentId);
     }
 }

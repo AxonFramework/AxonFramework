@@ -18,7 +18,7 @@ class SubscribeStudentCommandHandler {
     private static final int MAX_COURSES_PER_STUDENT = 10;
 
     @CommandHandler
-    public void handle(
+    void handle(
             SubscribeStudent command,
             @InjectEntity(idProperty = FacultyTags.COURSE_ID) Course course,
             @InjectEntity(idProperty = FacultyTags.STUDENT_ID) Student student,
@@ -59,14 +59,14 @@ class SubscribeStudentCommandHandler {
         }
     }
 
-    public void assertStudentNotSubscribedToTooManyCourses(Student student) {
+    private void assertStudentNotSubscribedToTooManyCourses(Student student) {
         var noOfCoursesStudentSubscribed = student.subscribedCourses().size();
         if (noOfCoursesStudentSubscribed >= MAX_COURSES_PER_STUDENT) {
             throw new RuntimeException("Student subscribed to too many courses");
         }
     }
 
-    public void assertEnoughVacantSpotsInCourse(Course course) {
+    private void assertEnoughVacantSpotsInCourse(Course course) {
         var noOfStudentsSubscribedToCourse = course.studentsSubscribed().size();
         var courseCapacity = course.capacity();
         if (noOfStudentsSubscribedToCourse >= courseCapacity) {
@@ -74,14 +74,14 @@ class SubscribeStudentCommandHandler {
         }
     }
 
-    public void assertStudentNotAlreadySubscribed(Course course, Student student) {
+    private void assertStudentNotAlreadySubscribed(Course course, Student student) {
         var alreadySubscribed = course.studentsSubscribed().contains(student.id());
         if (alreadySubscribed) {
             throw new RuntimeException("Student already subscribed to this course");
         }
     }
 
-    public void assertCourseExists(Course course) {
+    private void assertCourseExists(Course course) {
         var courseId = course.id();
         if (courseId == null) {
             throw new RuntimeException("Course with given id does not exist");
