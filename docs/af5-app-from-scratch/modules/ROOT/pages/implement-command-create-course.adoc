@@ -61,7 +61,6 @@ In the sample we have also some additional helpful methods which you may find in
 ----
 package io.axoniq.demo.university.faculty.events;
 
-import io.axoniq.demo.university.faculty.FacultyTags;
 import org.axonframework.eventsourcing.annotations.EventTag;
 
 public record CourseCreated(
@@ -73,6 +72,9 @@ public record CourseCreated(
 
 <1> The `courseId` is annotated with `@EventTag`, which allows Axon to tag the event as connected with the 'Course' business entity and then use it for efficiently retrieval of the events related to given 'Course'.
 It's a simple String - for events we prefer to avoid Value Objects, because events need to be deserialized regardless of the current rules for Value Objects creations.
+Always remember about marking which properties are event tags.
+It's needed when you load state based on events.
+If you used Aggregate approach before the Tag identifies the aggregate, but thanks to Dynamic Consistency Boundary you may how one event assigned to many business entities (not just once as before).
 
 == Specification by example
 

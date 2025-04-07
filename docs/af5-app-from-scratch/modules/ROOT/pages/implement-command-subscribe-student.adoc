@@ -1,0 +1,65 @@
+:navtitle: Feature: Subscribe Student
+:reftext: Implementing the subscribe student feature
+
+As you may notice that we haven't implemented other things between `CreateCourse` and the `SubscribeStudent` commands.
+It's a great benefit of the Axon Framework 5 together with Vertical Slices!
+As long as you keep your `State` needed to validate the command private for the given slice you're only shared code between slices are events, which are the backbone of our system - contract between different parts.
+
+== Define messages
+
+As before let's look at Event Modeling.
+Which events do we need for this slice to fulfill the Given-When-Then specifications?
+
+image::EventModeling_GWT_SubscribeStudent.png[]
+
+In previous section we've defined the `CourseCreated` events, so there are two left from the specification.
+Let's define them as Java records, as before.
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/events/StudentSubscribed.java
+----
+package io.axoniq.demo.university.faculty.events;
+
+import org.axonframework.eventsourcing.annotations.EventTag;
+
+public record StudentEnrolledFaculty(
+        @EventTag // <1>
+        String studentId,
+        String firstName,
+        String lastName
+) {
+
+}
+----
+
+<.> Always remember about marking which properties are event tags.
+It's needed when you load state based on events.
+If you used Aggregate approach before the Tag identifies the aggregate, but thanks to Dynamic Consistency Boundary you may how one event assigned to many business entities (not just once as before).
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/events/StudentSubscribed.java
+----
+package io.axoniq.demo.university.faculty.events;
+
+import org.axonframework.eventsourcing.annotations.EventTag;
+
+public record StudentSubscribed(
+        @EventTag // <1>
+        String studentId,
+        @EventTag // <1>
+        String courseId
+) {
+}
+----
+
+<.> Thanks to those annotations the event will be tagged with `studentId` and `courseId`, so everytime when you define your event criteria to retrieve certain state you can TBD...
+It's a good example that StudentSubscribed event is connected to two business entities - Student and the Course.
+When domain experts says that "student subscribed" they know, that because of the event the course free spots decreased and also student subscription limit may be reached.
+
+// TODO: COMMAND!!!
+
+== Specification by example
+
+As you remember from the previous section we do not focus on entities, but on behavior.
+So we're going to describe our feature in Given-When-Then manner based on commands and events.
+
