@@ -47,6 +47,26 @@ class DefaultComponentRegistryTest {
     }
 
     @Test
+    void newComponentRegisterMethod() {
+        testSubject.registerComponent(ComponentDefinition.ofType(CharSequence.class)
+                                                         .withInstance("Hello world")
+                                                         .onStart(10,
+                                                                  System.out::println));
+
+        testSubject.registerDecorator(DecoratorDefinition.forTypeAndName(CharSequence.class, "myName")
+                                                         .with((config, name, delegate) ->
+                                                                       "" + delegate)
+                                                         .order(10)
+        );
+
+        testSubject.registerDecorator(DecoratorDefinition.forTypeAndName(CharSequence.class, "myName")
+                                                         .with((config, name, delegate) -> "" + delegate)
+                                                         .onShutdown(10, System.out::println)
+                                                         .order(10)
+                                                         .onStart(10, System.out::println));
+    }
+
+    @Test
     void registerComponentExposesRegisteredComponentUponBuild() {
         TestComponent testComponent = TEST_COMPONENT;
         testSubject.registerComponent(TestComponent.class, c -> testComponent);
@@ -204,7 +224,7 @@ class DefaultComponentRegistryTest {
         assertEquals("parent", actual.getComponent(String.class, "parent"));
         assertThrows(ComponentNotFoundException.class, () -> actual.getComponent(String.class, "child"));
 
-        assertEquals("parent&child", actual.getModuleConfigurations().get(0).getComponent(String.class, "child"));
+        assertEquals("parent&child", actual.getModuleConfigurations().getFirst().getComponent(String.class, "child"));
     }
 
     @Test
@@ -282,6 +302,7 @@ class DefaultComponentRegistryTest {
             verifyNoMoreInteractions(testDescriptor);
         }
 
+        @SafeVarargs
         private <T> Collection<T> eqList(T... expected) {
             return eqList(List.of(expected));
         }
@@ -352,7 +373,7 @@ class DefaultComponentRegistryTest {
     private static class RegisteringConfigurationEnhancer implements ConfigurationEnhancer {
 
         private final List<ConfigurationEnhancer> invokedEnhancers;
-        private int order;
+        private final int order;
 
         public RegisteringConfigurationEnhancer(List<ConfigurationEnhancer> invokedEnhancers, int order) {
             this.invokedEnhancers = invokedEnhancers;

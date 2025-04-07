@@ -41,14 +41,14 @@ public interface Module {
     String name();
 
     /**
-     * Builds {@code this Module}, resulting in the {@link NewConfiguration} containing all registered components..
+     * Builds {@code this Module}, resulting in the {@link NewConfiguration} containing all registered components.
      * <p>
      * The given {@code parent} allows access to components that have been registered with it. Note that this operation
      * is typically invoked through {@link ApplicationConfigurer#build()} and as such should not be invoked directly.
      *
      * @param parent The parent {@code Configuration} {@code this Module} belongs in, giving it access to the parent's
      *               components.
-     * @param lifecycleRegistry The registry where lifecycle handlers can be registered by this module
+     * @param lifecycleRegistry The registry where lifecycle handlers can be registered by this module.
      * @return The fully initialized {@link NewConfiguration} instance from {@code this Module} specifically.
      */
     NewConfiguration build(@Nonnull NewConfiguration parent, @Nonnull LifecycleRegistry lifecycleRegistry);

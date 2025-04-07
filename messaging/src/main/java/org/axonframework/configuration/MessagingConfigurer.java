@@ -25,6 +25,7 @@ import org.axonframework.queryhandling.QueryUpdateEmitter;
 
 import java.util.function.Consumer;
 
+import static java.util.Objects.requireNonNull;
 import static org.axonframework.messaging.configuration.reflection.ParameterResolverFactoryUtils.registerToComponentRegistry;
 
 /**
@@ -57,24 +58,27 @@ import static org.axonframework.messaging.configuration.reflection.ParameterReso
  *
  * @author Allard Buijze
  * @author Steven van Beelen
- * @since 3.0.0
+ * @since 5.0.0
  */
 public class MessagingConfigurer implements ApplicationConfigurer {
 
-    private final ApplicationConfigurer axonApplication;
+    private final ApplicationConfigurer applicationConfigurer;
 
     /**
      * Constructs a {@code MessagingConfigurer} based on the given {@code delegate}.
      *
-     * @param axonApplication The delegate {@code AxonApplication} the {@code MessagingConfigurer} is based on.
+     * @param applicationConfigurer The delegate {@code ApplicationConfigurer} the {@code MessagingConfigurer} is based on.
      */
-    private MessagingConfigurer(@Nonnull ApplicationConfigurer axonApplication) {
-        this.axonApplication = axonApplication;
+    private MessagingConfigurer(@Nonnull ApplicationConfigurer applicationConfigurer) {
+        this.applicationConfigurer = applicationConfigurer;
     }
 
     /**
+     * Creates a MessagingConfigurer that enhances an existing ApplicationConfigurer. This method is useful when applying
+     * multiple specialized Configurers to configure a single application.
      * @param axonApplication the ApplicationConfigurer to enhance with configuration of Messaging components
      * @return The current instance of the {@code Configurer} for a fluent API.
+     * @see #create()
      */
     public static MessagingConfigurer enhance(@Nonnull ApplicationConfigurer axonApplication) {
         return new MessagingConfigurer(axonApplication)
@@ -92,6 +96,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * {@link ConfigurationEnhancer enhancers}, and {@link Module modules} for a message-driven application.
      *
      * @return A {@code MessagingConfigurer} instance for further configuring.
+     * @see #enhance(ApplicationConfigurer)
      */
     public static MessagingConfigurer create() {
         return enhance(new DefaultAxonApplication());
@@ -107,7 +112,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public MessagingConfigurer registerCommandBus(@Nonnull ComponentFactory<CommandBus> commandBusFactory) {
-        axonApplication.componentRegistry(cr -> cr.registerComponent(CommandBus.class, commandBusFactory));
+        applicationConfigurer.componentRegistry(cr -> cr.registerComponent(CommandBus.class, commandBusFactory));
         return this;
     }
 
@@ -121,7 +126,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public MessagingConfigurer registerEventSink(@Nonnull ComponentFactory<EventSink> eventSinkFactory) {
-        axonApplication.componentRegistry(cr -> cr.registerComponent(EventSink.class, eventSinkFactory));
+        applicationConfigurer.componentRegistry(cr -> cr.registerComponent(EventSink.class, eventSinkFactory));
         return this;
     }
 
@@ -135,7 +140,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public MessagingConfigurer registerQueryBus(@Nonnull ComponentFactory<QueryBus> queryBusFactory) {
-        axonApplication.componentRegistry(cr -> cr.registerComponent(QueryBus.class, queryBusFactory));
+        applicationConfigurer.componentRegistry(cr -> cr.registerComponent(QueryBus.class, queryBusFactory));
         return this;
     }
 
@@ -151,7 +156,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     public MessagingConfigurer registerParameterResolverFactory(
             @Nonnull ComponentFactory<ParameterResolverFactory> parameterResolverFactoryFactory
     ) {
-        axonApplication.componentRegistry(registry -> registerToComponentRegistry(
+        applicationConfigurer.componentRegistry(registry -> registerToComponentRegistry(
                 registry,
                 parameterResolverFactoryFactory::build
         ));
@@ -175,18 +180,19 @@ public class MessagingConfigurer implements ApplicationConfigurer {
 
     @Override
     public MessagingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> configureTask) {
-        axonApplication.componentRegistry(configureTask);
+        applicationConfigurer.componentRegistry(requireNonNull(configureTask, "The configure task must no be null."));
         return this;
     }
 
     @Override
-    public MessagingConfigurer lifecycleRegistry(Consumer<LifecycleRegistry> lifecycleRegistrar) {
-        axonApplication.lifecycleRegistry(lifecycleRegistrar);
+    public MessagingConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
+        applicationConfigurer.lifecycleRegistry(requireNonNull(lifecycleRegistrar,
+                                                               "The lifecycle registrar must not be null."));
         return this;
     }
 
     @Override
     public AxonConfiguration build() {
-        return axonApplication.build();
+        return applicationConfigurer.build();
     }
 }

@@ -27,12 +27,11 @@ import jakarta.annotation.Nonnull;
  * component.
  *
  * @param <C> The type of component to be decorated.
- * @param <D> The type of decorated component
+ * @param <D> The type of decorated component.
  * @author Steven van Beelen
  * @since 5.0.0
  */
-@FunctionalInterface
-public interface ComponentDecorator<C, D extends C> {
+public interface ComponentDecorator<C, D> {
 
     /**
      * Decorates the given {@code delegate} into a mutated or replaced instance of type {@code D}, which must be the
@@ -50,7 +49,7 @@ public interface ComponentDecorator<C, D extends C> {
      * @param config   The configuration of this Axon application. Provided to support retrieval of other
      *                 {@link NewConfiguration#getComponent(Class) components} for construction or mutation of the given
      *                 {@code delegate}.
-     * @param name The name of the component to decorated
+     * @param name The name of the component to decorated.
      * @param delegate The delegate of type {@code C} to be decorated.
      * @return A decorated component of type {@code C}, typically based on the given {@code delegate}.
      */

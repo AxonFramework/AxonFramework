@@ -106,13 +106,13 @@ public class ModellingConfigurer implements ApplicationConfigurer {
     }
 
     @Override
-    public ModellingConfigurer componentRegistry(Consumer<ComponentRegistry> componentRegistrar) {
+    public ModellingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
         delegate.componentRegistry(componentRegistrar);
         return this;
     }
 
     @Override
-    public ModellingConfigurer lifecycleRegistry(Consumer<LifecycleRegistry> lifecycleRegistrar) {
+    public ModellingConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
         delegate.lifecycleRegistry(lifecycleRegistrar);
         return this;
     }

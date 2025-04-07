@@ -19,6 +19,7 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.FutureUtils;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -85,6 +86,7 @@ public interface LifecycleRegistry {
      * @see AxonConfiguration#start()
      */
     default LifecycleRegistry onStart(int phase, @Nonnull Runnable startHandler) {
+        Objects.requireNonNull(startHandler, "startHandler must not be null");
         return onStart(phase, (Consumer<NewConfiguration>) configuration -> startHandler.run());
     }
 
@@ -101,6 +103,7 @@ public interface LifecycleRegistry {
      * @see AxonConfiguration#start()
      */
     default LifecycleRegistry onStart(int phase, @Nonnull Supplier<CompletableFuture<?>> startHandler) {
+        Objects.requireNonNull(startHandler, "startHandler must not be null");
         return onStart(phase, (LifecycleHandler) configuration -> startHandler.get());
     }
 
@@ -117,9 +120,10 @@ public interface LifecycleRegistry {
      * @see AxonConfiguration#start()
      */
     default LifecycleRegistry onStart(int phase, @Nonnull Consumer<NewConfiguration> startHandler) {
+        Objects.requireNonNull(startHandler, "startHandler must not be null");
         return onStart(phase, configuration -> {
             try {
-                requireNonNull(startHandler, "Cannot run a null start handler.").accept(configuration);
+                startHandler.accept(configuration);
                 return FutureUtils.emptyCompletedFuture();
             } catch (Exception e) {
                 CompletableFuture<?> exceptionResult = new CompletableFuture<>();
@@ -133,7 +137,7 @@ public interface LifecycleRegistry {
      * Registers an asynchronous {@code startHandler} to be executed in the given {@code phase} when this Configuration
      * is started.
      * <p>
-     * The behavior for handlers that are registered when the Configuration is already started is undefined.
+     * Handlers cannot be registered when the Configuration has already been created from this registry.
      *
      * @param phase        Defines a {@code phase} in which the start handler will be invoked during
      *                     {@link AxonConfiguration#start()}. When starting the configuration the given handlers are
@@ -148,7 +152,7 @@ public interface LifecycleRegistry {
      * Registers a {@code shutdownHandler} to be executed in the default phase {@code 0} when the Configuration is shut
      * down.
      * <p>
-     * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
+     * Handlers cannot be registered when the Configuration has already been created from this registry.
      *
      * @param shutdownHandler The handler to execute when the Configuration is shut down.
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
@@ -162,7 +166,7 @@ public interface LifecycleRegistry {
      * Registers a {@code shutdownHandler} to be executed in the given {@code phase} when the Configuration is shut
      * down.
      * <p>
-     * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
+     * Handlers cannot be registered when the Configuration has already been created from this registry.
      *
      * @param phase           Defines a phase in which the shutdown handler will be invoked during
      *                        {@link AxonConfiguration#shutdown()}. When shutting down the configuration the given
@@ -171,7 +175,8 @@ public interface LifecycleRegistry {
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
      * @see AxonConfiguration#shutdown()
      */
-    default LifecycleRegistry onShutdown(int phase, Runnable shutdownHandler) {
+    default LifecycleRegistry onShutdown(int phase, @Nonnull Runnable shutdownHandler) {
+        Objects.requireNonNull(shutdownHandler, "shutdownHandler must not be null");
         return onShutdown(phase, (Consumer<NewConfiguration>) configuration -> shutdownHandler.run());
     }
 
@@ -188,7 +193,8 @@ public interface LifecycleRegistry {
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
      * @see AxonConfiguration#shutdown()
      */
-    default LifecycleRegistry onShutdown(int phase, Supplier<CompletableFuture<?>> shutdownHandler) {
+    default LifecycleRegistry onShutdown(int phase, @Nonnull Supplier<CompletableFuture<?>> shutdownHandler) {
+        Objects.requireNonNull(shutdownHandler, "shutdownHandler must not be null");
         return onShutdown(phase, (LifecycleHandler) configuration -> shutdownHandler.get());
     }
 
@@ -205,7 +211,8 @@ public interface LifecycleRegistry {
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
      * @see AxonConfiguration#shutdown()
      */
-    default LifecycleRegistry onShutdown(int phase, Consumer<NewConfiguration> shutdownHandler) {
+    default LifecycleRegistry onShutdown(int phase, @Nonnull Consumer<NewConfiguration> shutdownHandler) {
+        Objects.requireNonNull(shutdownHandler, "shutdownHandler must not be null");
         return onShutdown(phase, configuration -> {
             try {
                 requireNonNull(shutdownHandler, "Cannot run a null shutdown handler.").accept(configuration);

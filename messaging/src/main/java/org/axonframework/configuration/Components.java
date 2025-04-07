@@ -27,8 +27,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Wrapper around a {@link Map} of {@link Component Components} stored per {@link Component.Identifier}.
@@ -85,10 +87,10 @@ public class Components implements DescribableComponent {
     @Nonnull
     public <C> Component<C> computeIfAbsent(
             @Nonnull Identifier<C> identifier,
-            @Nonnull Function<? super Identifier<?>, ? extends Component<?>> compute
+            @Nonnull Supplier<Component<C>> compute
     ) {
         //noinspection unchecked
-        return (Component<C>) components.computeIfAbsent(identifier, compute);
+        return (Component<C>) components.computeIfAbsent(identifier, i -> compute.get());
     }
 
     /**
@@ -138,7 +140,8 @@ public class Components implements DescribableComponent {
      *
      * @param processor The action to invoke for each component
      */
-    public void postProcessComponents(Consumer<Component<?>> processor) {
+    public void postProcessComponents(@Nonnull Consumer<Component<?>> processor) {
+        requireNonNull(processor, "The component post processor must be null.");
         components.values().forEach(processor);
     }
 

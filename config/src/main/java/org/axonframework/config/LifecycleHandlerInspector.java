@@ -78,27 +78,23 @@ public abstract class LifecycleHandlerInspector {
             logger.debug("Ignoring [null] component for inspection as it wont participate in the lifecycle");
             return;
         }
-        if (component instanceof Lifecycle) {
-            ((Lifecycle) component).registerLifecycleHandlers(new LifecycleRegistry() {
+        if (component instanceof Lifecycle componentLifecycle) {
+            componentLifecycle.registerLifecycleHandlers(new LifecycleRegistry() {
                 @Override
                 public LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit) {
                     return this;
                 }
 
                 @Override
-                public LifecycleRegistry onStart(
-                        int phase,
-                        @jakarta.annotation.Nonnull org.axonframework.configuration.LifecycleHandler startHandler
-                ) {
+                public LifecycleRegistry onStart(int phase,
+                                                 @Nonnull org.axonframework.configuration.LifecycleHandler startHandler) {
                     configuration.onStart(phase, () -> startHandler.run(null));
                     return this;
                 }
 
                 @Override
-                public LifecycleRegistry onShutdown(
-                        int phase,
-                        @jakarta.annotation.Nonnull org.axonframework.configuration.LifecycleHandler shutdownHandler
-                ) {
+                public LifecycleRegistry onShutdown(int phase,
+                                                    @Nonnull org.axonframework.configuration.LifecycleHandler shutdownHandler) {
                     configuration.onShutdown(phase, () -> shutdownHandler.run(null));
                     return this;
                 }

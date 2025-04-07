@@ -54,8 +54,12 @@ import java.util.function.Consumer;
  *     <li>Registers a {@link org.axonframework.eventsourcing.AggregateSnapshotter} for class {@link org.axonframework.eventsourcing.Snapshotter}</li>
  * </ul>
  * To replace or decorate any of these defaults, use their respective interfaces as the identifier. For example, to
- * adjust the {@code EventStore}, invoke {@link #registerComponent(Class, ComponentFactory)} with
- * {@code EventStore.class} to replace it.
+ * adjust the {@code EventStore}, do
+ * <pre><code>
+ *     configurer.componentRegistry(cr ->
+ *                  cr.registerComponent(EventStore.class, c -> new CustomEventStore()))
+ * </code></pre>
+ * to replace it.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -199,12 +203,12 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     }
 
     @Override
-    public ApplicationConfigurer componentRegistry(Consumer<ComponentRegistry> componentRegistrar) {
+    public ApplicationConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
         return delegate.componentRegistry(componentRegistrar);
     }
 
     @Override
-    public ApplicationConfigurer lifecycleRegistry(Consumer<LifecycleRegistry> lifecycleRegistrar) {
+    public ApplicationConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
         return delegate.lifecycleRegistry(lifecycleRegistrar);
     }
 

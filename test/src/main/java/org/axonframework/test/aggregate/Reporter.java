@@ -19,7 +19,6 @@ package org.axonframework.test.aggregate;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.test.AxonAssertionError;
 import org.hamcrest.Description;
-import org.hamcrest.StringDescription;
 
 import java.io.ByteArrayOutputStream;
 import java.io.CharArrayWriter;
@@ -102,14 +101,14 @@ public class Reporter {
     }
         
     /**
-     * Reports an error due to an unexpected exception. This means a return value was expected, but an exception was
-     * thrown by the command handler
+     * Reports an error due to an unexpected exception. This means a successful handling was expected, but an exception was
+     * thrown by the message handler
      *
      * @param actualException The actual exception
      * @param expectation     A text describing what was expected
      */
     public void reportUnexpectedException(Throwable actualException, Description expectation) {
-        StringBuilder sb = new StringBuilder("The command handler threw an unexpected exception");
+        StringBuilder sb = new StringBuilder("The message handler threw an unexpected exception");
         sb.append(NEWLINE)
           .append(NEWLINE)
           .append("Expected <")
@@ -155,7 +154,7 @@ public class Reporter {
      * @param description       A description describing the expected value
      */
     public void reportUnexpectedReturnValue(Object actualReturnValue, Description description) {
-        StringBuilder sb = new StringBuilder("The command handler returned normally, but an exception was expected");
+        StringBuilder sb = new StringBuilder("The message handler returned normally, but an exception was expected");
         sb.append(NEWLINE)
           .append(NEWLINE)
           .append("Expected <")
@@ -176,7 +175,7 @@ public class Reporter {
      * @param description     A description describing the expected value
      */
     public void reportWrongException(Throwable actualException, Description description) {
-        StringBuilder sb = new StringBuilder("The command handler threw an exception, but not of the expected type")
+        StringBuilder sb = new StringBuilder("The message handler threw an exception, but not of the expected type")
                 .append(NEWLINE)
                 .append(NEWLINE)
                 .append("Expected <")
@@ -201,7 +200,7 @@ public class Reporter {
      * @param description     A description describing the expected value
      */
     public void reportWrongExceptionMessage(Throwable actualException, Description description) {
-        throw new AxonAssertionError("The command handler threw an exception, but not with expected message"
+        throw new AxonAssertionError("The message handler threw an exception, but not with expected message"
                                              + NEWLINE
                                              + NEWLINE
                                              + "Expected <"
@@ -222,7 +221,7 @@ public class Reporter {
      * @param description A description describing the expected value
      */
     public void reportWrongExceptionDetails(Object details, Description description) {
-        throw new AxonAssertionError("The command handler threw an exception, but not with expected details"
+        throw new AxonAssertionError("The message handler threw an exception, but not with expected details"
                                              + NEWLINE
                                              + NEWLINE
                                              + "Expected <"

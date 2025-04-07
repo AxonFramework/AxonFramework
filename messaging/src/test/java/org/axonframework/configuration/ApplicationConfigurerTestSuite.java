@@ -255,9 +255,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Test
-        void duplicateRegistrationIsRejectedWhenOverrideModeIsFail() {
+        void duplicateRegistrationIsRejectedWhenOverrideModeIsReject() {
             testSubject.componentRegistry(cr -> cr.registerComponent(String.class, c -> "One")
-                                                  .setOverrideBehavior(OverrideBehavior.THROW));
+                                                  .setOverridePolicy(OverridePolicy.REJECT));
 
             assertThrows(ComponentOverrideException.class,
                          () -> testSubject.componentRegistry(cr -> cr.registerComponent(String.class, c -> "Two")));
@@ -823,6 +823,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             // Wait until the start thread is finished prior to validating the order.
             startThread.join();
+
             verify(phaseOneHandler).start();
 
             InOrder lifecycleOrder = inOrder(phaseZeroHandler, slowPhaseZeroHandler, phaseOneHandler);
@@ -1061,7 +1062,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             void registerLifecycleHandler(LifecycleRegistry lifecycleRegistry, int phase, Runnable lifecycleHandler);
         }
 
-        protected static class LifecycleManagedInstance {
+        public static class LifecycleManagedInstance {
 
             private final ReentrantLock lock;
             private final AtomicBoolean invoked;
@@ -1083,11 +1084,13 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                 this.invoked = invoked;
             }
 
-            protected void start() {
+            public void start() {
+                System.out.println("Starting");
                 // No-op
             }
 
             protected CompletableFuture<Void> slowStart() {
+                System.out.println("Slow Starting");
                 return CompletableFuture.runAsync(() -> {
                     try {
                         LoggerFactory.getLogger(ApplicationConfigurerTestSuite.class)

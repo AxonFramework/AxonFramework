@@ -21,7 +21,7 @@ import jakarta.annotation.Nonnull;
 /**
  * A {@link RuntimeException} thrown whenever a {@link Component} has been overridden in a {@link ComponentRegistry}.
  * <p>
- * Is typically only thrown whenever the {@link OverrideBehavior} is set to {@link OverrideBehavior#THROW}.
+ * Is typically only thrown whenever the {@link OverridePolicy} is set to {@link OverridePolicy#REJECT}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
