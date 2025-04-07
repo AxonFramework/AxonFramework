@@ -21,10 +21,10 @@ We can see the effect of this in the following table.
 
 |===
 |Message identifier |Type |`trace-id` |`correlation-id`
-| 1 | Command | - | - |
-| 2 | Event | 8231323 | 1 |
-| 3 | Command | 8231323 | 2 |
-| 4 | Event | 8231323 | 3 |
+| 1 | Command | - | - 
+| 2 | Event | 8231323 | 1 
+| 3 | Command | 8231323 | 2 
+| 4 | Event | 8231323 | 3 
 |===
 
 Check out the xref:messaging-concepts:message-correlation.adoc[message correlation page]
