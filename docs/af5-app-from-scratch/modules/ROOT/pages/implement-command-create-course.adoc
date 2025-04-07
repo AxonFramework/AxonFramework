@@ -207,7 +207,7 @@ import org.axonframework.modelling.command.annotation.InjectEntity;
 class CreateCourseCommandHandler {
 
     @CommandHandler // <1>
-    public void handle(
+     void handle(
             CreateCourse command,  // <2>
             EventSink eventSink,  // <3>
             ProcessingContext processingContext  // <4>
@@ -355,7 +355,7 @@ package io.axoniq.demo.university.faculty.write.createcourse;
 class CreateCourseCommandHandler {
 
     @EventSourcedEntity(tagKey = "courseId") // <1>
-    public static class State {
+    static class State {
 
         private boolean created = false; // <2>
 
@@ -366,11 +366,11 @@ class CreateCourseCommandHandler {
     }
 
     @CommandHandler
-    public void handle(
-            CreateCourse command,
-            @InjectEntity(idProperty = "courseId") State state, // <4>
-            EventSink eventSink,
-            ProcessingContext processingContext
+    void handle(
+        CreateCourse command,
+        @InjectEntity(idProperty = "courseId") State state, // <4>
+        EventSink eventSink,
+        ProcessingContext processingContext
     ) {
         if(state.created) { // <5>
             return;
@@ -385,6 +385,7 @@ class CreateCourseCommandHandler {
 
 <1> The `@EventSourcedEntity` annotation indicates that this class state is derived from the events published with the given tag key (`courseId` in this case).
 We've already annotation `courseId` property in the `CourseCreated` event class with `@EventTag`, so the event will be applied while loading the entity.
+Pay attention that `State` per feature/slice approach gives us a high level of encapsulation, because we may keep it package-private.
 <2> The properties needed to guard certain business rules.
 In this case we need to know if the course was already created or not.
 While executing the command we don't care about the name or other properties.
