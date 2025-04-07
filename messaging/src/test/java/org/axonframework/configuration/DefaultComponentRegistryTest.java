@@ -351,7 +351,7 @@ class DefaultComponentRegistryTest {
         }
 
         @Override
-        public void enhance(@Nonnull ComponentRegistry configurer) {
+        public void enhance(@Nonnull ComponentRegistry registry) {
             invokedEnhancers.add(this);
         }
 

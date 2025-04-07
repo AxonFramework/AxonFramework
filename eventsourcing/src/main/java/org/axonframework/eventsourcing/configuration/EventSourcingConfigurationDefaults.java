@@ -56,18 +56,18 @@ class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     @Override
-    public void enhance(@Nonnull ComponentRegistry configurer) {
-        Objects.requireNonNull(configurer, "Cannot enhance a null Configurer.");
+    public void enhance(@Nonnull ComponentRegistry registry) {
+        Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.");
 
-        registerIfNotPresent(configurer, TagResolver.class,
+        registerIfNotPresent(registry, TagResolver.class,
                              EventSourcingConfigurationDefaults::defaultTagResolver);
-        registerIfNotPresent(configurer, AsyncEventStorageEngine.class,
+        registerIfNotPresent(registry, AsyncEventStorageEngine.class,
                              EventSourcingConfigurationDefaults::defaultEventStorageEngine);
-        registerIfNotPresent(configurer, AsyncEventStore.class,
+        registerIfNotPresent(registry, AsyncEventStore.class,
                              EventSourcingConfigurationDefaults::defaultEventStore);
-        registerIfNotPresent(configurer, EventSink.class,
+        registerIfNotPresent(registry, EventSink.class,
                              EventSourcingConfigurationDefaults::defaultEventSink);
-        registerIfNotPresent(configurer, Snapshotter.class,
+        registerIfNotPresent(registry, Snapshotter.class,
                              EventSourcingConfigurationDefaults::defaultSnapshotter);
     }
 

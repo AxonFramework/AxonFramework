@@ -22,16 +22,19 @@ import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventhandling.EventSink;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 class MessagesRecordingConfigurationEnhancer implements ConfigurationEnhancer {
 
     @Override
-    public void enhance(@NotNull ComponentRegistry configurer) {
-        configurer.registerDecorator(EventSink.class,
-                                     Integer.MAX_VALUE,
-                                     (c, name, d) -> new RecordingEventSink(d))
-                  .registerDecorator(CommandBus.class,
-                                     Integer.MAX_VALUE,
-                                     (c, name, d) -> new RecordingCommandBus(d));
+    public void enhance(@NotNull ComponentRegistry registry) {
+        Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.")
+               .registerDecorator(EventSink.class,
+                                  Integer.MAX_VALUE,
+                                  (c, name, d) -> new RecordingEventSink(d))
+               .registerDecorator(CommandBus.class,
+                                  Integer.MAX_VALUE,
+                                  (c, name, d) -> new RecordingCommandBus(d));
     }
 
     @Override

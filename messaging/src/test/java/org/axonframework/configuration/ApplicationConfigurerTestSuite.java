@@ -391,14 +391,14 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             ConfigurationEnhancer enhancerOne = spy(new ConfigurationEnhancer() {
 
                 @Override
-                public void enhance(@Nonnull ComponentRegistry configurer) {
+                public void enhance(@Nonnull ComponentRegistry registry) {
                     // Not important, so do nothing.
                 }
             });
             //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
             ConfigurationEnhancer enhancerTwo = spy(new ConfigurationEnhancer() {
                 @Override
-                public void enhance(@Nonnull ComponentRegistry configurer) {
+                public void enhance(@Nonnull ComponentRegistry registry) {
                     // Not important, so do nothing.
                 }
             });
@@ -406,7 +406,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             ConfigurationEnhancer enhancerThree = spy(new ConfigurationEnhancer() {
 
                 @Override
-                public void enhance(@Nonnull ComponentRegistry configurer) {
+                public void enhance(@Nonnull ComponentRegistry registry) {
                     // Not important, so do nothing.
                 }
             });
@@ -426,7 +426,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             ConfigurationEnhancer enhancerWithLowOrder = spy(new ConfigurationEnhancer() {
 
                 @Override
-                public void enhance(@Nonnull ComponentRegistry configurer) {
+                public void enhance(@Nonnull ComponentRegistry registry) {
                     // Not important, so do nothing.
                 }
 
@@ -439,7 +439,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             //noinspection Convert2Lambda - Cannot be lambda, as spying doesn't work otherwise.
             ConfigurationEnhancer enhancerWithDefaultOrder = spy(new ConfigurationEnhancer() {
                 @Override
-                public void enhance(@Nonnull ComponentRegistry configurer) {
+                public void enhance(@Nonnull ComponentRegistry registry) {
                     // Not important, so do nothing.
                 }
             });
@@ -447,7 +447,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             ConfigurationEnhancer enhancerWithHighOrder = spy(new ConfigurationEnhancer() {
 
                 @Override
-                public void enhance(@Nonnull ComponentRegistry configurer) {
+                public void enhance(@Nonnull ComponentRegistry registry) {
                     // Not important, so do nothing.
                 }
 
