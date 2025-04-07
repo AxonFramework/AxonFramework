@@ -219,7 +219,7 @@ class CreateCourseCommandHandler {
 
     private static EventMessage<?> toMessage(Object payload) {
         return new GenericEventMessage<>(
-                new MessageType(payload.getClass()),
+                new MessageType(payload.getClass()), // <8>
                 payload
         );
     }
@@ -235,6 +235,8 @@ In this case, to notify that the *course has been created*.
 Allows us to publish events in the context of the current command so the events will be published after successful command execution.
 <.> The `EventSink` interface require implementation of the `EventMessage` as a second argument so we provide one.
 <.> The invocation of `EventSink#publish` stage event to be published after the current `ProcessingContext` is completed.
+<.> While creating the new `EventMessage` instance you need to define the `MessageType` manually (it's good enough to use the payload class for now), because of the `EventSink` it's relatively low-level API.
+In the future it will be done by the framework itself.
 
 Have you already tried to run the test?
 Unfortunately it will fail again.
