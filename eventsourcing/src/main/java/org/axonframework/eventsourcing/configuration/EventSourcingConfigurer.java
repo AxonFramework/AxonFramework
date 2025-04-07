@@ -124,7 +124,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public EventSourcingConfigurer registerTagResolver(@Nonnull ComponentFactory<TagResolver> tagResolverFactory) {
-        componentRegistry(cr -> cr.registerComponent(TagResolver.class, tagResolverFactory));
+        delegate.componentRegistry(cr -> cr.registerComponent(TagResolver.class, tagResolverFactory));
         return this;
     }
 
@@ -140,7 +140,9 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     public EventSourcingConfigurer registerEventStorageEngine(
             @Nonnull ComponentFactory<AsyncEventStorageEngine> eventStorageEngineFactory
     ) {
-        componentRegistry(cr -> cr.registerComponent(AsyncEventStorageEngine.class, eventStorageEngineFactory));
+        delegate.componentRegistry(
+                cr -> cr.registerComponent(AsyncEventStorageEngine.class, eventStorageEngineFactory)
+        );
         return this;
     }
 
@@ -154,7 +156,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public EventSourcingConfigurer registerEventStore(@Nonnull ComponentFactory<AsyncEventStore> eventStoreFactory) {
-        componentRegistry(cr -> cr.registerComponent(AsyncEventStore.class, eventStoreFactory));
+        delegate.componentRegistry(cr -> cr.registerComponent(AsyncEventStore.class, eventStoreFactory));
         return this;
     }
 
@@ -170,7 +172,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     public EventSourcingConfigurer registerSnapshotter(
             @Nonnull ComponentFactory<Snapshotter> snapshotterFactory
     ) {
-        componentRegistry(cr -> cr.registerComponent(Snapshotter.class, snapshotterFactory));
+        delegate.componentRegistry(cr -> cr.registerComponent(Snapshotter.class, snapshotterFactory));
         return this;
     }
 
