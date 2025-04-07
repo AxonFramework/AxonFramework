@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @EventSourcedEntity(tagKey = FacultyTags.COURSE_ID)
-public class Course {
+class Course {
 
     private CourseId id;
     private int capacity = 0;

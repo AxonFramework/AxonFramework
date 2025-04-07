@@ -37,7 +37,7 @@ public class CreateCoursePlainConfiguration {
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }
 
-    public static class CourseEventStateApplier implements EventStateApplier<CreateCourseCommandHandler.State> {
+    private static class CourseEventStateApplier implements EventStateApplier<CreateCourseCommandHandler.State> {
 
 
         @Override

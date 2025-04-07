@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 class UnsubscribeStudentCommandHandler {
 
     @CommandHandler
-    public void handle(
+    void handle(
             UnsubscribeStudent command,
             @InjectEntity(idResolver = SubscriptionIdResolver.class) State state,
             EventSink eventSink,
@@ -57,22 +57,22 @@ class UnsubscribeStudentCommandHandler {
     }
 
     @EventSourcedEntity
-    public static final class State {
+    static final class State {
 
         boolean subscribed = false;
 
         @EventSourcingHandler
-        public void apply(StudentSubscribed event) {
+        void apply(StudentSubscribed event) {
             this.subscribed = true;
         }
 
         @EventSourcingHandler
-        public void apply(StudentUnsubscribed event) {
+        void apply(StudentUnsubscribed event) {
             this.subscribed = false;
         }
 
         @EventCriteriaBuilder
-        public static EventCriteria resolveCriteria(SubscriptionId id) {
+        private static EventCriteria resolveCriteria(SubscriptionId id) {
             var courseId = id.courseId().raw();
             var studentId = id.studentId().raw();
             return EventCriteria.match()
@@ -84,7 +84,7 @@ class UnsubscribeStudentCommandHandler {
         }
     }
 
-    static class SubscriptionIdResolver implements EntityIdResolver<SubscriptionId> {
+    private static class SubscriptionIdResolver implements EntityIdResolver<SubscriptionId> {
 
         @Override
         @Nonnull

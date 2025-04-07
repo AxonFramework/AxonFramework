@@ -64,7 +64,7 @@ class CreateCourseCommandHandler implements StatefulCommandHandler {
         );
     }
 
-    public static final class State {
+    static final class State {
 
         private boolean created;
 
@@ -72,11 +72,11 @@ class CreateCourseCommandHandler implements StatefulCommandHandler {
             this.created = created;
         }
 
-        public static State initial() {
+        static State initial() {
             return new State(false);
         }
 
-        public State apply(CourseCreated event) {
+        State apply(CourseCreated event) {
             this.created = true;
             return this;
         }
