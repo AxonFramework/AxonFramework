@@ -18,14 +18,22 @@ package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentFactory;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventStateApplier;
+import org.axonframework.eventsourcing.MultiEventStateApplier;
+import org.axonframework.eventsourcing.SingleEventEventStateApplier;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.repository.AsyncRepository;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 import static java.util.Objects.requireNonNull;
 
@@ -47,7 +55,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     private final Class<E> entityType;
     private ComponentFactory<EventSourcedEntityFactory<I, E>> entityFactory;
     private ComponentFactory<CriteriaResolver<I>> criteriaResolver;
-    private ComponentFactory<EventStateApplier<E>> eventStateApplier;
+    private final List<ComponentFactory<EventStateApplier<E>>> eventStateApplierFactories = new CopyOnWriteArrayList<>();
 
     DefaultEventSourcedEntityBuilder(@Nonnull Class<I> idType, @Nonnull Class<E> entityType) {
         this.idType = requireNonNull(idType, "The identifier type cannot be null.");
@@ -71,18 +79,55 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     }
 
     @Override
-    public EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull QualifiedName eventName,
-                                                                @Nonnull EventHandler eventHandler) {
-        // TODO #3286 - Providing separate lambdas/methods should result in a lambda-based EventStateApplier.
-        throw new UnsupportedOperationException("Not implemented yet");
+    public EventSourcedEntityBuilder.EventSourcingHandlerPhase<I, E> eventStateApplier(
+            @Nonnull ComponentFactory<EventStateApplier<E>> eventStateApplier
+    ) {
+        this.eventStateApplierFactories.add(requireNonNull(eventStateApplier,
+                                                           "The event state applier cannot be null."));
+        return this;
     }
 
     @Override
-    public EventSourcedEntityBuilder<I, E> eventStateApplier(
-            @Nonnull ComponentFactory<EventStateApplier<E>> eventStateApplier
-    ) {
-        this.eventStateApplier = requireNonNull(eventStateApplier, "The event state applier cannot be null.");
-        return this;
+    public <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull QualifiedName eventName,
+                                                                    @Nonnull Class<P> payloadType,
+                                                                    @Nonnull BiConsumer<E, P> eventSourcingHandler) {
+        return eventStateApplier(c -> new SingleEventEventStateApplier<>(eventName, payloadType, (model, payload) -> {
+            eventSourcingHandler.accept(model, payload);
+            return model;
+        }));
+    }
+
+    @Override
+    public <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull QualifiedName eventName,
+                                                                    @Nonnull Class<P> payloadType,
+                                                                    @Nonnull BiFunction<E, P, E> eventSourcingHandler) {
+        return eventStateApplier(c -> new SingleEventEventStateApplier<>(eventName, payloadType, eventSourcingHandler));
+    }
+
+    @Override
+    public <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull Class<P> payloadType,
+                                                                    @Nonnull BiConsumer<E, P> eventSourcingHandler) {
+        return eventStateApplier(c -> {
+            QualifiedName eventName = resolveQualifiedName(payloadType, c);
+            return new SingleEventEventStateApplier<>(eventName, payloadType, (model, payload) -> {
+                eventSourcingHandler.accept(model, payload);
+                return model;
+            });
+        });
+    }
+
+    @Override
+    public <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull Class<P> payloadType,
+                                                                    @Nonnull BiFunction<E, P, E> eventSourcingHandler) {
+        return eventStateApplier(c -> {
+            QualifiedName eventName = resolveQualifiedName(payloadType, c);
+            return new SingleEventEventStateApplier<>(eventName, payloadType, eventSourcingHandler);
+        });
+    }
+
+    private QualifiedName resolveQualifiedName(Class<?> payloadType, NewConfiguration configuration) {
+        MessageTypeResolver messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
+        return messageTypeResolver.resolve(payloadType).qualifiedName();
     }
 
     @Override
@@ -96,9 +141,20 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
                 idType,
                 entityType,
                 c.getComponent(AsyncEventStore.class),
-                entityFactory.build(c), 
+                entityFactory.build(c),
                 criteriaResolver.build(c),
-                eventStateApplier.build(c)
+                constructEventStateApplier(c)
         );
+    }
+
+    private EventStateApplier<E> constructEventStateApplier(NewConfiguration c) {
+        if (eventStateApplierFactories.size() == 1) {
+            return eventStateApplierFactories.getFirst().build(c);
+        }
+        List<EventStateApplier<E>> eventStateAppliers = eventStateApplierFactories
+                .stream()
+                .map(eventStateApplier -> eventStateApplier.build(c))
+                .toList();
+        return new MultiEventStateApplier<>(eventStateAppliers);
     }
 }

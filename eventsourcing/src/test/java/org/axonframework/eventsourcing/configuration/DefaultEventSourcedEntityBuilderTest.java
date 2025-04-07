@@ -16,14 +16,17 @@
 
 package org.axonframework.eventsourcing.configuration;
 
+import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventStateApplier;
+import org.axonframework.eventsourcing.MultiEventStateApplier;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.junit.jupiter.api.*;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -123,6 +126,37 @@ class DefaultEventSourcedEntityBuilderTest {
         assertTrue(constructedEntityFactory.get());
         assertTrue(constructedCriteriaResolver.get());
         assertTrue(constructedEventStateApplier.get());
+    }
+
+
+    @Test
+    void canCombineEventStateAppliersAndEventSourcingHandlersLimitlessly() {
+        // test subject already has an applier, so we add other ones
+        EventSourcedEntityBuilder.EventSourcingHandlerPhase<CourseId, Course> eshPhase = (EventSourcedEntityBuilder.EventSourcingHandlerPhase<CourseId, Course>) testSubject;
+        eshPhase.eventSourcingHandler(String.class,
+                                      (model, payload) -> model)
+                .eventSourcingHandler(Integer.class,
+                                      (model, payload) -> {
+                                      })
+                .eventSourcingHandler(Boolean.class,
+                                      (model, payload) -> model)
+                .eventSourcingHandler(Long.class,
+                                      (model, payload) -> {
+                                      });
+        AsyncRepository<CourseId, Course> result = testSubject.repository()
+                                                              .build(EventSourcingConfigurer.create().build());
+        MockComponentDescriptor descriptor = new MockComponentDescriptor();
+        result.describeTo(descriptor);
+
+        assertInstanceOf(MultiEventStateApplier.class, descriptor.getProperty("eventStateApplier"));
+        MultiEventStateApplier<?> applier = (MultiEventStateApplier<?>) descriptor.getProperty("eventStateApplier");
+        ;
+
+        MockComponentDescriptor applierDescriptor = new MockComponentDescriptor();
+        applier.describeTo(applierDescriptor);
+        assertInstanceOf(List.class, applierDescriptor.getProperty("delegates"));
+        List<?> delegates = (List<?>) applierDescriptor.getProperty("delegates");
+        assertEquals(5, delegates.size());
     }
 
     record CourseId() {

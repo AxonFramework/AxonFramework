@@ -26,6 +26,9 @@ import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.configuration.EntityBuilder;
 
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+
 /**
  * An expansion on the {@link EntityBuilder}, specifically for event sourced entities.
  * <p>
@@ -172,27 +175,99 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          *
          * @param eventStateApplier A factory method constructing the {@link EventStateApplier} for the event sourced
          *                          entity being built.
-         * @return The parent {@link EventSourcedEntityBuilder}, signaling the end of configuring an event sourced
-         * entity.
+         * @return The event-sourcing handler phase of the builder, valid to be taken in by the configuration. Can also
+         * be used to register more {@link EventStateApplier} instances through this method, or the
+         * {@link #eventSourcingHandler(Class, BiConsumer)} methods.
          */
-        EventSourcedEntityBuilder<I, E> eventStateApplier(
+        EventSourcingHandlerPhase<I, E> eventStateApplier(
                 @Nonnull ComponentFactory<EventStateApplier<E>> eventStateApplier
         );
 
         /**
-         * Registers the given {@code eventHandler} for the given qualified {@code eventName} within this event sourced
-         * entity builder.
+         * Registers the given {@code eventSourcingHandler} for the given qualified {@code eventName} and
+         * {@code payloadType}. Events matching both the given {@code eventName} and {@code payloadType} will be
+         * handled by the given {@code eventSourcingHandler}.
          * <p>
-         * All invocations of this method are combined into a single {@link EventStateApplier} for
-         * {@link org.axonframework.eventsourcing.AsyncEventSourcingRepository} outputted by this event sourced entity
-         * builder.
+         * While this method does not support immutable models as you cannot return a new instance of the model, you can use
+         * the {@link #eventSourcingHandler(QualifiedName, Class, BiFunction)} method to register this.
          *
-         * @param eventName    The qualified name of the event the given {@code eventHandler} can handle.
-         * @param eventHandler The event sourcing handler to register for the entity being built.
+         * @param eventName    The qualified name of the event the given {@code eventSourcingHandler} can handle.
+         * @param payloadType The type of the payload of the event the given {@code eventHandler} can handle.
+         * @param eventSourcingHandler The event sourcing handler to register for the entity being built.
+         * @param <P> The type of the payload of the event the given {@code eventSourcingHandler} can handle.
          * @return This event sourcing handler phase, allowing for a fluent API to register several event sourcing
          * handlers.
          */
-        EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull QualifiedName eventName,
-                                                             @Nonnull EventHandler eventHandler);
+        <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(
+                @Nonnull QualifiedName eventName,
+                @Nonnull Class<P> payloadType,
+                @Nonnull BiConsumer<E, P> eventSourcingHandler
+        );
+
+
+        /**
+         * Registers the given {@code eventSourcingHandler} for the given qualified {@code eventName} and
+         * {@code payloadType}. Events matching both the given {@code eventName} and {@code payloadType} will be handled
+         * by the given {@code eventSourcingHandler}.
+         * <p>
+         * You can return a new instance of the model in the {@code eventSourcingHandler} to support immutable models.
+         *
+         * @param eventName            The qualified name of the event the given {@code eventSourcingHandler} can
+         *                             handle.
+         * @param payloadType          The type of the payload of the event the given {@code eventHandler} can handle.
+         * @param eventSourcingHandler The event sourcing handler to register for the entity being built.
+         * @param <P>                  The type of the payload of the event the given {@code eventSourcingHandler} can
+         *                             handle.
+         * @return This event sourcing handler phase, allowing for a fluent API to register several event sourcing
+         * handlers.
+         */
+        <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(
+                @Nonnull QualifiedName eventName,
+                @Nonnull Class<P> payloadType,
+                @Nonnull BiFunction<E, P, E> eventSourcingHandler
+        );
+
+
+        /**
+         * Registers the given {@code eventSourcingHandler} for the given {@code payloadType}. The
+         * {@link org.axonframework.messaging.MessageType} will automatically resolved by consulting the
+         * {@link org.axonframework.messaging.MessageTypeResolver} of the configuration when building.
+         * <p>
+         * While this method does not support immutable models as you cannot return a new instance of the model, you can
+         * use the {@link #eventSourcingHandler(Class, BiFunction)} method to register this.
+         *
+         * @param payloadType          The type of the payload of the event the given {@code eventSourcingHandler} can
+         *                             handle.
+         * @param eventSourcingHandler The event sourcing handler to register for the entity being built.
+         * @param <P>                  The type of the payload of the event the given {@code eventSourcingHandler} can
+         *                             handle.
+         * @return This event sourcing handler phase, allowing for a fluent API to register several event sourcing
+         * handlers.
+         */
+        <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(
+                @Nonnull Class<P> payloadType,
+                @Nonnull BiConsumer<E, P> eventSourcingHandler
+        );
+
+
+        /**
+         * Registers the given {@code eventSourcingHandler} for the given {@code payloadType}. The
+         * {@link org.axonframework.messaging.MessageType} will automatically resolved by consulting the
+         * {@link org.axonframework.messaging.MessageTypeResolver} of the configuration when building.
+         * <p>
+         * You can return a new instance of the model in the {@code eventSourcingHandler} to support immutable models.
+         *
+         * @param payloadType          The type of the payload of the event the given {@code eventSourcingHandler} can
+         *                             handle.
+         * @param eventSourcingHandler The event sourcing handler to register for the entity being built.
+         * @param <P>                  The type of the payload of the event the given {@code eventSourcingHandler} can
+         *                             handle.
+         * @return This event sourcing handler phase, allowing for a fluent API to register several event sourcing
+         * handlers.
+         */
+        <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(
+                @Nonnull Class<P> payloadType,
+                @Nonnull BiFunction<E, P, E> eventSourcingHandler
+        );
     }
 }

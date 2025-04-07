@@ -59,9 +59,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                                                               .eventsOfTypes(MentorAssignedToStudentEvent.class.getName())
                                                               .withTags(new Tag("Student", id.mentorId()))
                                          ))
-                                         .eventStateApplier(
-                                                 c -> new AnnotationBasedEventStateApplier<>(StudentMentorAssignment.class)
-                                         );
+                                         .eventSourcingHandler(MentorAssignedToStudentEvent.class, StudentMentorAssignment::handle);
 
         entityConfigurer.entity(mentorAssignmentSlice);
     }
