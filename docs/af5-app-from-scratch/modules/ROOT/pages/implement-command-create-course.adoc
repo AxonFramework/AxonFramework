@@ -439,7 +439,7 @@ You may run the tests again and see that all of them should pass!
 image::EventModeling_CreateCourse_Done.png[]
 
 Do you like green tests?
-But what we like even more are green slices on Event Modeling.
+What we like even more are green slices on Event Modeling.
 So if you use this approach now you can mark your first slice as implemented!
 Congratulations!
 
