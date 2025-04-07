@@ -23,12 +23,30 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
 
+/**
+ * EventStateApplier implementation that applies a single type of event to a model of type {@code M} based on the given
+ * {@code eventStateApplier}. Both the event type and the payload type are checked before applying the event to the
+ * model.
+ *
+ * @param <P> The payload type of the event to apply.
+ * @param <M> The model type to apply the event state to.
+ * @author Mitchell Herrijgers
+ * @since 5.0.0
+ */
 public class SingleEventEventStateApplier<P, M> implements EventStateApplier<M> {
 
     private final QualifiedName qualifiedName;
     private final Class<P> payloadType;
     private final BiFunction<M, P, M> eventStateApplier;
 
+    /**
+     * Constructs a single-{@link EventStateApplier} that applies state changes through the given
+     * {@code eventStateApplier}. The event type and payload type are checked before applying the event to the model.
+     *
+     * @param qualifiedName     The event type to check against.
+     * @param payloadType       The payload type to check against.
+     * @param eventStateApplier The function to apply the event to the model.
+     */
     public SingleEventEventStateApplier(QualifiedName qualifiedName, Class<P> payloadType, BiFunction<M, P, M> eventStateApplier) {
         this.qualifiedName = qualifiedName;
         this.payloadType = payloadType;
