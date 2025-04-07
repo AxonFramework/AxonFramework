@@ -61,8 +61,8 @@ public class Components implements DescribableComponent {
     /**
      * Puts the given {@code component}, identified by the given {@code identifier}, in this collection.
      *
-     * @param component  The component to put in this collection.
-     * @param <C>        The type of the component to put.
+     * @param component The component to put in this collection.
+     * @param <C>       The type of the component to put.
      * @return A previous component registered under the given {@code identifier}, if present.
      */
     @Nullable
@@ -81,8 +81,8 @@ public class Components implements DescribableComponent {
      * @param identifier The identifier for which to check if a {@link Component} is already present.
      * @param compute    The lambda computing the {@link Component} to put into this collection when absent.
      * @param <C>        The type of the component to get and compute if absent.
-     * @return The previously {@link #put(Component) put Component} identifier by the given
-     * {@code identifier}. When absent, the outcome of the {@code compute} operation is returned
+     * @return The previously {@link #put(Component) put Component} identifier by the given {@code identifier}. When
+     * absent, the outcome of the {@code compute} operation is returned
      */
     @Nonnull
     public <C> Component<C> computeIfAbsent(
@@ -138,7 +138,7 @@ public class Components implements DescribableComponent {
      * <p>
      * Exceptions thrown by the processor will be rethrown to the caller before all components have been processed.
      *
-     * @param processor The action to invoke for each component
+     * @param processor The action to invoke for each component.
      */
     public void postProcessComponents(@Nonnull Consumer<Component<?>> processor) {
         requireNonNull(processor, "The component post processor must be null.");

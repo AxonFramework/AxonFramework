@@ -30,11 +30,13 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @param <C> The declared type of the component.
  * @param <A> The actual (runtime) type of the component.
+ * @author Allard Buijze
+ * @since 5.0.0
  */
-public class LazyInitializedComponentDefinition<C, A extends C> extends AbstractComponent<C, A> {
+class LazyInitializedComponentDefinition<C, A extends C> extends AbstractComponent<C, A> {
 
     private final ComponentFactory<A> factory;
-    private final AtomicReference<A> instance = new AtomicReference<>();
+    private final AtomicReference<A> instanceReference = new AtomicReference<>();
 
     /**
      * Create the definition for a component with given {@code identifier} and given {@code instance}.
@@ -42,39 +44,39 @@ public class LazyInitializedComponentDefinition<C, A extends C> extends Abstract
      * @param identifier The identifier of the component.
      * @param factory    The function used to create an instance of this component.
      */
-    public LazyInitializedComponentDefinition(@Nonnull Component.Identifier<C> identifier,
-                                              @Nonnull ComponentFactory<A> factory) {
+    LazyInitializedComponentDefinition(@Nonnull Component.Identifier<C> identifier,
+                                       @Nonnull ComponentFactory<A> factory) {
         super(identifier);
-        this.factory = Objects.requireNonNull(factory, "factory must not be null");
+        this.factory = Objects.requireNonNull(factory, "The factory must not be null.");
     }
 
     @Override
     public A doResolve(@Nonnull NewConfiguration configuration) {
-        A resolvedInstance = instance.get();
+        A resolvedInstance = instanceReference.get();
         if (resolvedInstance != null) {
             return resolvedInstance;
         }
 
         synchronized (this) {
-            if (instance.get() == null) {
-                instance.set(factory.build(configuration));
+            if (instanceReference.get() == null) {
+                instanceReference.set(factory.build(configuration));
             }
         }
 
-        return instance.get();
+        return instanceReference.get();
     }
 
     @Override
     public boolean isInstantiated() {
-        return instance.get() != null;
+        return instanceReference.get() != null;
     }
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
-        C resolvedInstance = instance.get();
-        if (resolvedInstance != null) {
-            descriptor.describeProperty("instance", resolvedInstance);
+        C instance = instanceReference.get();
+        if (instance != null) {
+            descriptor.describeProperty("instance", instance);
         } else {
             descriptor.describeProperty("factory", factory);
         }

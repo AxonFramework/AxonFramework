@@ -143,9 +143,9 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     }
 
     @Test
-    void identifierConstructorThrowsNullPointerExceptionForNullName() {
+    void identifierConstructorThrowsIllegalArgumentExceptionForNullName() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new Identifier<>(String.class, null));
+        assertThrows(IllegalArgumentException.class, () -> new Identifier<>(String.class, null));
     }
 
     @Test

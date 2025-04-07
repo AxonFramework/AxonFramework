@@ -84,11 +84,12 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
     }
 
     private DefaultAxonApplication registerLifecycleHandler(Map<Integer, List<LifecycleHandler>> lifecycleHandlers,
-                                          int phase,
-                                          @Nonnull LifecycleHandler lifecycleHandler) {
+                                                            int phase,
+                                                            @Nonnull LifecycleHandler lifecycleHandler) {
         if (configuration.get() != null) {
             throw new IllegalArgumentException(
-                    "Cannot register lifecycle handlers when the configuration is already initialized");
+                    "Cannot register lifecycle handlers when the configuration is already initialized"
+            );
         }
         lifecycleHandlers.computeIfAbsent(phase, p -> new CopyOnWriteArrayList<>())
                          .add(requireNonNull(lifecycleHandler, "Cannot register null lifecycle handlers."));

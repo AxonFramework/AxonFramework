@@ -16,23 +16,28 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Represents a handler for a component's lifecycle. Unlike the {@link LifecycleHandler}, this handler provides access
- * to the component when it is created.
+ * Represents a handler for a component's lifecycle.
+ * <p>
+ * Unlike the {@link LifecycleHandler}, this handler provides access to the component when it is created.
  * <p>
  * With decorated components, this may not be the same component instance as would be retrieved from the configuration
  * using the component's identifier. The latter would return the decorated component, while the originally declared
  * component is always passed as a parameter to the handler method.
  *
  * @param <C> The type of component.
+ * @author Allard Buijze
+ * @since 5.0.0
  */
 @FunctionalInterface
 public interface ComponentLifecycleHandler<C> {
 
     /**
-     * Runs the lifecycle handler for given {@code component} which has been defined within the scope of given
+     * Runs the lifecycle handler for given {@code component} that has been defined within the scope of given
      * {@code configuration}. The configuration may be used to retrieve components that the given component must
      * interact with during its lifecycle.
      * <p>
@@ -42,7 +47,7 @@ public interface ComponentLifecycleHandler<C> {
      *
      * @param configuration The configuration in which the component was defined.
      * @param component     The instance of the component.
-     * @return a future that completes when the lifecycle operation has terminated.
+     * @return A future that completes when the lifecycle operation has terminated.
      */
-    CompletableFuture<?> run(NewConfiguration configuration, C component);
+    CompletableFuture<?> run(@Nonnull NewConfiguration configuration, @Nonnull C component);
 }

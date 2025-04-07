@@ -76,7 +76,7 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
     }
 
     @Test
-    void applicationDelegatesTasks() {
+    void componentRegistryDelegatesTasks() {
         TestComponent result =
                 testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT))
                            .build()

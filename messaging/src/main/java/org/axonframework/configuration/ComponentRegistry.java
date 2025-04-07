@@ -20,8 +20,6 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Component.Identifier;
 
-import java.util.Objects;
-
 /**
  * The starting point when configuring any Axon Framework application.
  * <p>
@@ -43,13 +41,14 @@ public interface ComponentRegistry extends DescribableComponent {
      * The given {@code factory} function gets the {@link NewConfiguration configuration} as input, and is expected to
      * provide the component as output. The component will be registered under an {@link Identifier} based on the given
      * {@code type}.
-     * <p>
-     * Note that registering a component twice for the same {@code type} will remove the previous registration!
      *
      * @param type    The declared type of the component to build, typically an interface.
      * @param factory The factory building the component.
      * @param <C>     The type of component the {@code factory} builds.
      * @return The current instance of the {@code Configurer} for a fluent API.
+     * @throws ComponentOverrideException If the override policy is set to
+     *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
+     *                                    with the same type is already defined.
      */
     default <C> ComponentRegistry registerComponent(@Nonnull Class<C> type,
                                                     @Nonnull ComponentFactory<C> factory) {
@@ -63,15 +62,15 @@ public interface ComponentRegistry extends DescribableComponent {
      * The given {@code factory} function gets the {@link NewConfiguration configuration} as input, and is expected to
      * provide the component as output. The component will be registered under an {@link Identifier} based on the given
      * {@code type} and {@code name} combination.
-     * <p>
-     * Note that registering a component twice for the same {@code type} and {@code name} will remove the previous
-     * registration!
      *
      * @param type    The declared type of the component to build, typically an interface.
      * @param name    The name of the component to build.
      * @param factory The factory building the component.
      * @param <C>     The type of component the {@code factory} builds.
      * @return The current instance of the {@code Configurer} for a fluent API.
+     * @throws ComponentOverrideException If the override policy is set to
+     *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
+     *                                    with the same type and name is already defined.
      */
     default <C> ComponentRegistry registerComponent(@Nonnull Class<C> type,
                                                     @Nonnull String name,
@@ -80,12 +79,12 @@ public interface ComponentRegistry extends DescribableComponent {
     }
 
     /**
-     * Registers a component based on given {@code componentDefinition}.
+     * Registers a component based on the given {@code componentDefinition}.
      *
      * @param componentDefinition The definition of the component to register.
      * @param <C>                 The declared type of the component.
      * @return The current instance of the {@code Configurer} for a fluent API.
-     * @throws ComponentOverrideException if the override policy is set to
+     * @throws ComponentOverrideException If the override policy is set to
      *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
      *                                    with the same type and name is already defined.
      */
@@ -112,9 +111,9 @@ public interface ComponentRegistry extends DescribableComponent {
     default <C, D extends C> ComponentRegistry registerDecorator(@Nonnull Class<C> type,
                                                                  int order,
                                                                  @Nonnull ComponentDecorator<C, D> decorator) {
-        Objects.requireNonNull(type, "The type must not be null");
-        Objects.requireNonNull(decorator, "The component decorator must not be null");
-        return registerDecorator(DecoratorDefinition.forType(type).with(decorator).order(order));
+        return registerDecorator(DecoratorDefinition.forType(type)
+                                                    .with(decorator)
+                                                    .order(order));
     }
 
     /**
@@ -140,7 +139,9 @@ public interface ComponentRegistry extends DescribableComponent {
                                                                  @Nonnull String name,
                                                                  int order,
                                                                  @Nonnull ComponentDecorator<C, D> decorator) {
-        return registerDecorator(DecoratorDefinition.forTypeAndName(type, name).with(decorator).order(order));
+        return registerDecorator(DecoratorDefinition.forTypeAndName(type, name)
+                                                    .with(decorator)
+                                                    .order(order));
     }
 
     /**
@@ -182,12 +183,12 @@ public interface ComponentRegistry extends DescribableComponent {
      * An {@code enhancer} is able to invoke <em>any</em> of the method on this {@code ComponentRegistry}, allowing it
      * to add (sensible) defaults, decorate {@link Component components}, or replace components entirely.
      * <p>
-     * An enhancer's {@link ConfigurationEnhancer#enhance(ComponentRegistry)} method is invoked during the initialization
-     * phase when all components have been defined. This is right before the ComponentRegistry creates its
-     * {@link NewConfiguration}.
+     * An enhancer's {@link ConfigurationEnhancer#enhance(ComponentRegistry)} method is invoked during the
+     * initialization phase when all components have been defined. This is right before the ComponentRegistry creates
+     * its {@link NewConfiguration}.
      * <p>
-     * When multiple enhancers have been provided, their {@link ConfigurationEnhancer#order()}
-     * dictates the enhancement order. For enhancer with the same order, the order of execution is undefined.
+     * When multiple enhancers have been provided, their {@link ConfigurationEnhancer#order()} dictates the enhancement
+     * order. For enhancer with the same order, the order of execution is undefined.
      *
      * @param enhancer The configuration enhancer to enhance ComponentRegistry during
      *                 {@link ApplicationConfigurer#build()}.
@@ -208,11 +209,13 @@ public interface ComponentRegistry extends DescribableComponent {
     ComponentRegistry registerModule(@Nonnull Module module);
 
     /**
-     * Sets the {@link OverridePolicy} for this component registry. This policy dictates what should happen when
-     * components are registered with an identifier for which another component is already present.
+     * Sets the {@link OverridePolicy} for this component registry.
+     * <p>
+     * This policy dictates what should happen when components are registered with an identifier for which another
+     * component is already present.
      *
      * @param overridePolicy The override policy for components defined in this registry.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    ComponentRegistry setOverridePolicy(OverridePolicy overridePolicy);
+    ComponentRegistry setOverridePolicy(@Nonnull OverridePolicy overridePolicy);
 }

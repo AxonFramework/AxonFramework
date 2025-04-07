@@ -36,8 +36,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test suite validating the workings of the lifecycle operations registered and invoked on {@link ApplicationConfigurer}
- * implementations and the resulting {@link AxonConfiguration}.
+ * Test suite validating the workings of the lifecycle operations registered and invoked on
+ * {@link ApplicationConfigurer} implementations and the resulting {@link AxonConfiguration}.
  * <p>
  * As such, operations like the {@link LifecycleRegistry#onStart(int, LifecycleHandler)},
  * {@link LifecycleRegistry#onShutdown(int, LifecycleHandler)}, {@link ApplicationConfigurer#start()},
@@ -231,9 +231,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Test
-        void registerComponentThrowsNullPointerExceptionForNullName() {
+        void registerComponentThrowsIllegalArgumentExceptionForNullName() {
             //noinspection DataFlowIssue
-            assertThrows(NullPointerException.class,
+            assertThrows(IllegalArgumentException.class,
                          () -> testSubject.componentRegistry(cr -> cr.registerComponent(Object.class,
                                                                                         null,
                                                                                         c -> new Object())));
@@ -264,7 +264,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
     }
 
-    @Nested class HasComponent {
+    @Nested
+    class HasComponent {
 
         @Test
         void hasComponentForClass() {
@@ -329,11 +330,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Test
-        void registerDecoratorThrowsNullPointerExceptionForNullName() {
+        void registerDecoratorThrowsIllegalArgumentExceptionForNullName() {
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, config -> TEST_COMPONENT));
 
             //noinspection DataFlowIssue
-            assertThrows(NullPointerException.class,
+            assertThrows(IllegalArgumentException.class,
                          () -> testSubject.componentRegistry(cr -> cr.registerDecorator(Object.class,
                                                                                         null,
                                                                                         42,
@@ -559,7 +560,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             testSubject.componentRegistry(cr -> cr.registerModule(new TestModule("one"))
                                                   .registerModule(new TestModule("two")));
 
-            assertThrows(DuplicateModuleRegistrationException.class, () -> testSubject.componentRegistry(cr -> cr.registerModule(new TestModule("two"))));
+            assertThrows(DuplicateModuleRegistrationException.class,
+                         () -> testSubject.componentRegistry(cr -> cr.registerModule(new TestModule("two"))));
         }
 
         @Test
@@ -1036,12 +1038,12 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             AtomicBoolean handler2Invoked = new AtomicBoolean();
             testSubject.lifecycleRegistry(r -> r
                     .onStart(1, () -> {
-                            handlerStarted.countDown();
-                            try {
-                                Thread.sleep(100);
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
-                            }
+                        handlerStarted.countDown();
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
                     })
                     .onStart(1, () -> handler1Invoked.set(true))
                     .onStart(2, () -> handler2Invoked.set(true))

@@ -105,7 +105,6 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static CommandBus defaultCommandBus(NewConfiguration config) {
-        // TODO #3067 - Discuss to adjust this to registerComponent-and-Decorator invocations
         CommandBusBuilder commandBusBuilder = CommandBusBuilder.forSimpleCommandBus();
         config.getOptionalComponent(TransactionManager.class)
               .ifPresent(commandBusBuilder::withTransactions);

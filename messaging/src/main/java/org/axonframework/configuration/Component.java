@@ -17,63 +17,67 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.StringUtils;
 import org.axonframework.common.infra.DescribableComponent;
 
 import static java.util.Objects.requireNonNull;
-import static org.axonframework.common.Assert.assertThat;
+import static org.axonframework.common.Assert.nonEmpty;
 
 /**
- * Describes a Component defined in a {@link NewConfiguration}, that may depend on other component
- * for its initialization or during it's startup or lifecycle operations.
+ * Describes a component defined in a {@link NewConfiguration}, that may depend on other component for its
+ * initialization or during it's startup or lifecycle operations.
  *
- * @param <C> The type of component
+ * @param <C> The type of component.
+ * @author Allard Buijze
+ * @author Steven van Beelen
+ * @since 3.0.0
  */
 public interface Component<C> extends DescribableComponent {
 
     /**
      * The identifier of this component.
      *
-     * @return the identifier of this component.
+     * @return The identifier of this component.
      */
     Identifier<C> identifier();
 
     /**
-     * Resolves the instance of this component, allowing it to retrieve any of its required dependencies from
-     * the given {@code configuration}.
+     * Resolves the instance of this component, allowing it to retrieve any of its required dependencies from the given
+     * {@code configuration}.
      * <p>
-     * Subsequent calls to this method will result in the same instance, even when different
-     * instances of {@code configuration} are provided.
+     * Subsequent calls to this method will result in the same instance, even when different instances of
+     * {@code configuration} are provided.
      *
-     * @param configuration The configuration that declared this component
-     * @return the instance defined in this component.
+     * @param configuration The configuration that declared this component.
+     * @return The resolved instance defined in this component.
      */
     C resolve(@Nonnull NewConfiguration configuration);
+
+    /**
+     * Indicates whether the component has been {@link #resolve(NewConfiguration) resolved}.
+     * <p>
+     * When true, any subsequent call to {@link #resolve(NewConfiguration)} will return that same instance.
+     *
+     * @return {@code true} if the component has been instantiated, otherwise {@code false}.
+     */
+    boolean isInstantiated();
 
     /**
      * Initializes the lifecycle handlers associated with this component.
      *
      * @param configuration     The configuration in which the component was defined, allowing retrieval of dependencies
-     *                          during the component's lifecycle
-     * @param lifecycleRegistry The registry in which to register the lifecycle handlers
+     *                          during the component's lifecycle.
+     * @param lifecycleRegistry The registry in which to register the lifecycle handlers.
      */
-    void initLifecycle(@Nonnull NewConfiguration configuration, @Nonnull LifecycleRegistry lifecycleRegistry);
+    void initLifecycle(@Nonnull NewConfiguration configuration,
+                       @Nonnull LifecycleRegistry lifecycleRegistry);
 
     /**
-     * Indicates whether the {@link #initLifecycle(NewConfiguration, LifecycleRegistry)} has already been invoked for
-     * this component.
+     * Indicates whether the {@link #initLifecycle(NewConfiguration, LifecycleRegistry)} method has already been invoked
+     * for this component.
      *
      * @return {@code true} if the component's lifecycle has been initialized, otherwise {@code false}.
      */
     boolean isInitialized();
-
-    /**
-     * Indicates whether the component has been {@link #resolve(NewConfiguration) resolved}. When true, any subsequent
-     * call to {@link #resolve(NewConfiguration)} will return that same instance.
-     *
-     * @return {@code true} if the component has been instantiated, otherwise {@code false}.
-     */
-    boolean isInstantiated();
 
     /**
      * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code type} and {@code name}.
@@ -92,11 +96,7 @@ public interface Component<C> extends DescribableComponent {
          */
         public Identifier {
             requireNonNull(type, "The given type is unsupported because it is null.");
-            assertThat(
-                    requireNonNull(name, "The given name is unsupported because it is null."),
-                    StringUtils::nonEmpty,
-                    () -> new IllegalArgumentException("The given name is unsupported because it is empty.")
-            );
+            nonEmpty(name, "The given name is unsupported because it is null or empty.");
         }
 
         @Override

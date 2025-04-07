@@ -65,15 +65,18 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     /**
      * Constructs a {@code MessagingConfigurer} based on the given {@code delegate}.
      *
-     * @param applicationConfigurer The delegate {@code ApplicationConfigurer} the {@code MessagingConfigurer} is based on.
+     * @param applicationConfigurer The delegate {@code ApplicationConfigurer} the {@code MessagingConfigurer} is based
+     *                              on.
      */
     private MessagingConfigurer(@Nonnull ApplicationConfigurer applicationConfigurer) {
-        this.applicationConfigurer = applicationConfigurer;
+        this.applicationConfigurer =
+                requireNonNull(applicationConfigurer, "The Application Configurer cannot be null.");
     }
 
     /**
-     * Creates a MessagingConfigurer that enhances an existing ApplicationConfigurer. This method is useful when applying
-     * multiple specialized Configurers to configure a single application.
+     * Creates a MessagingConfigurer that enhances an existing ApplicationConfigurer. This method is useful when
+     * applying multiple specialized Configurers to configure a single application.
+     *
      * @param axonApplication the ApplicationConfigurer to enhance with configuration of Messaging components
      * @return The current instance of the {@code Configurer} for a fluent API.
      * @see #create()
@@ -152,7 +155,10 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     public MessagingConfigurer registerQueryUpdateEmitter(
             @Nonnull ComponentFactory<QueryUpdateEmitter> queryUpdateEmitterFactory
     ) {
-        return componentRegistry(cr -> cr.registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterFactory));
+        applicationConfigurer.componentRegistry(
+                cr -> cr.registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterFactory)
+        );
+        return this;
     }
 
     @Override
@@ -163,8 +169,9 @@ public class MessagingConfigurer implements ApplicationConfigurer {
 
     @Override
     public MessagingConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
-        applicationConfigurer.lifecycleRegistry(requireNonNull(lifecycleRegistrar,
-                                                               "The lifecycle registrar must not be null."));
+        applicationConfigurer.lifecycleRegistry(
+                requireNonNull(lifecycleRegistrar, "The lifecycle registrar must not be null.")
+        );
         return this;
     }
 

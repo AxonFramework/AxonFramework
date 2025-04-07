@@ -28,6 +28,8 @@ import java.util.Objects;
  * For internal use only. Instead, use static methods on {@link ComponentDefinition} to instantiate definitions.
  *
  * @param <C> The declared type of the component.
+ * @author Allard Buijze
+ * @since 5.0.0
  */
 class InstantiatedComponentDefinition<C> extends AbstractComponent<C, C> {
 
@@ -39,9 +41,10 @@ class InstantiatedComponentDefinition<C> extends AbstractComponent<C, C> {
      * @param identifier The identifier of the component.
      * @param instance   The instance the components resolves to.
      */
-    public InstantiatedComponentDefinition(@Nonnull Component.Identifier<C> identifier, @Nonnull C instance) {
+    InstantiatedComponentDefinition(@Nonnull Component.Identifier<C> identifier,
+                                    @Nonnull C instance) {
         super(identifier, Collections.emptyList(), Collections.emptyList());
-        this.instance = Objects.requireNonNull(instance, "instance must not be null");
+        this.instance = Objects.requireNonNull(instance, "The instance must not be null.");
     }
 
     @Override

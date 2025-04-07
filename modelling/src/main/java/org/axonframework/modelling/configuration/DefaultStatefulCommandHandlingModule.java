@@ -151,12 +151,12 @@ class DefaultStatefulCommandHandlingModule
         NewConfiguration builtConfiguration = super.build(parent, lifecycleRegistry);
         lifecycleRegistry.onStart(
                 Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
-                (c) -> {
-                    builtConfiguration.getComponent(CommandBus.class)
-                                      .subscribe(builtConfiguration.getComponent(
-                                              StatefulCommandHandlingComponent.class,
-                                              statefulCommandHandlingComponentName
-                                      ));
+                config -> {
+                    config.getComponent(CommandBus.class)
+                          .subscribe(builtConfiguration.getComponent(
+                                  StatefulCommandHandlingComponent.class,
+                                  statefulCommandHandlingComponentName
+                          ));
                 }
         );
         return builtConfiguration;

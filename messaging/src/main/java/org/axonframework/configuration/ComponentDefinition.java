@@ -16,9 +16,14 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Defines the structure of a Component that is available in the {@link NewConfiguration} of the application or one of
@@ -26,7 +31,7 @@ import java.util.function.Consumer;
  * <p>
  * Components are identified by a combination of their declared type and a name. The declared type is generally an
  * interface that all implementations are expected to implement. The name can be any non-empty string value that
- * identifies a particular instance of component. If the name is not relevant, for example because only a single
+ * identifies a particular instance of a component. If the name is not relevant, for example because only a single
  * instance is expected to be present, it can be omitted in the definition, in which case it will default to the simple
  * class name of the declared Component type.
  * <p>
@@ -34,17 +39,17 @@ import java.util.function.Consumer;
  * look as follows:
  * <pre><code>
  * ComponentDefinition.ofType(MyComponentInterface.class)
- *                    .withFactory(cfg -> new MyComponentImplementation(cfg.getComponent(MyDependency.class)))
+ *                    .withFactory(config -> new MyComponentImplementation(config.getComponent(MyDependency.class)))
  *                    .onStart(0, MyComponentImplementation::start)
  *                    .onShutdown(0, MyComponentImplementation::shutdown
  * </code></pre>
  * <p>
- * Alternatively, you can use
+ * Alternatively, you can use:
  * <pre><code>
  *     ComponentDefinition.ofTypeAndName(MyComponentInterface.class, "MyName")
- *                        .withFactory(cfg -> ...)
+ *                        .withFactory(config -> ...)
  * </code></pre>
- * in case you need to distinguish between separate instances of the component.
+ * In this case, you need to distinguish between separate instances of the component.
  * <p>
  * If an instance of the component is already constructed, it is more efficient to register it directly, rather than
  * through a factory method. For example:
@@ -54,6 +59,8 @@ import java.util.function.Consumer;
  * </code></pre>
  *
  * @param <C> The declared type of the component.
+ * @author Allard Buijze
+ * @since 5.0.0
  */
 public sealed interface ComponentDefinition<C> permits ComponentDefinition.ComponentCreator {
 
@@ -68,11 +75,11 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      *
      * @param type The declared type of the component.
      * @param <C>  The declared type of the component.
-     * @return a builder to complete the creation of a ComponentDefinition.
+     * @return A builder to complete the creation of a ComponentDefinition.
      * @see #ofTypeAndName(Class, String)
      */
-    static <C> IncompleteComponentDefinition<C> ofType(Class<C> type) {
-        return ofTypeAndName(type, type.getSimpleName());
+    static <C> IncompleteComponentDefinition<C> ofType(@Nonnull Class<C> type) {
+        return ofTypeAndName(type, requireNonNull(type, "The type cannot be null.").getSimpleName());
     }
 
     /**
@@ -82,18 +89,18 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @param type The declared type of this component.
      * @param name The name of this component.
      * @param <C>  The declared type of this component.
-     * @return a builder to complete the creation of a ComponentDefinition.
+     * @return A builder to complete the creation of a ComponentDefinition.
      */
-    static <C> IncompleteComponentDefinition<C> ofTypeAndName(Class<C> type, String name) {
+    static <C> IncompleteComponentDefinition<C> ofTypeAndName(@Nonnull Class<C> type, @Nonnull String name) {
         return new IncompleteComponentDefinition<>() {
 
             @Override
-            public ComponentDefinition<C> withInstance(C instance) {
+            public ComponentDefinition<C> withInstance(@Nonnull C instance) {
                 return new InstantiatedComponentDefinition<>(new Component.Identifier<>(type, name), instance);
             }
 
             @Override
-            public ComponentDefinition<C> withFactory(ComponentFactory<? extends C> factory) {
+            public ComponentDefinition<C> withFactory(@Nonnull ComponentFactory<? extends C> factory) {
                 return new LazyInitializedComponentDefinition<>(new Component.Identifier<>(type, name), factory);
             }
         };
@@ -104,22 +111,23 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * {@code phase}.
      *
      * @param phase   The phase in which to invoke this handler.
-     * @param handler The action to execute on the component.
-     * @return a ComponentDefinition with the start handler defined.
+     * @param handler The start handler to execute on the component.
+     * @return A {@code ComponentDefinition} with the start handler defined.
      */
-    ComponentDefinition<C> onStart(int phase, ComponentLifecycleHandler<C> handler);
+    ComponentDefinition<C> onStart(int phase, @Nonnull ComponentLifecycleHandler<C> handler);
 
     /**
      * Registers the given {@code handler} to be invoked during the startup lifecycle of the application in the given
      * {@code phase}.
      *
      * @param phase   The phase in which to invoke this handler.
-     * @param handler The action to execute on the component.
-     * @return a ComponentDefinition with the start handler defined.
+     * @param handler The start handler to execute on the component.
+     * @return A {@code ComponentDefinition} with the start handler defined.
      */
-    default ComponentDefinition<C> onStart(int phase, Consumer<C> handler) {
-        return onStart(phase, (cfg, cmp) -> {
-            handler.accept(cmp);
+    default ComponentDefinition<C> onStart(int phase, @Nonnull Consumer<C> handler) {
+        return onStart(phase, (config, component) -> {
+            Objects.requireNonNull(handler, "The start handler cannot be null.")
+                   .accept(component);
             return CompletableFuture.completedFuture(null);
         });
     }
@@ -129,12 +137,13 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * {@code phase}.
      *
      * @param phase   The phase in which to invoke this handle.
-     * @param handler The action to execute on the component.
-     * @return a ComponentDefinition with the start handler defined.
+     * @param handler The start handler to execute on the component.
+     * @return A {@code ComponentDefinition} with the start handler defined.
      */
-    default ComponentDefinition<C> onStart(int phase, BiConsumer<NewConfiguration, C> handler) {
-        return onStart(phase, (cfg, cmp) -> {
-            handler.accept(cfg, cmp);
+    default ComponentDefinition<C> onStart(int phase, @Nonnull BiConsumer<NewConfiguration, C> handler) {
+        return onStart(phase, (config, component) -> {
+            Objects.requireNonNull(handler, "The start handler cannot be null.")
+                   .accept(config, component);
             return CompletableFuture.completedFuture(null);
         });
     }
@@ -145,9 +154,9 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      *
      * @param phase   The phase in which to invoke this handler.
      * @param handler The action to execute on the component.
-     * @return a ComponentDefinition with the start handler defined.
+     * @return A {@code ComponentDefinition} with the shutdown handler defined.
      */
-    ComponentDefinition<C> onShutdown(int phase, ComponentLifecycleHandler<C> handler);
+    ComponentDefinition<C> onShutdown(int phase, @Nonnull ComponentLifecycleHandler<C> handler);
 
     /**
      * Registers the given {@code handler} to be invoked during the shutdown lifecycle of the application in the given
@@ -155,11 +164,12 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      *
      * @param phase   The phase in which to invoke this handler.
      * @param handler The action to execute on the component.
-     * @return a ComponentDefinition with the start handler defined.
+     * @return A {@code ComponentDefinition} with the shutdown handler defined.
      */
-    default ComponentDefinition<C> onShutdown(int phase, Consumer<C> handler) {
-        return onShutdown(phase, (cfg, cmp) -> {
-            handler.accept(cmp);
+    default ComponentDefinition<C> onShutdown(int phase, @Nonnull Consumer<C> handler) {
+        return onShutdown(phase, (config, component) -> {
+            Objects.requireNonNull(handler, "The shutdown handler cannot be null.")
+                   .accept(component);
             return CompletableFuture.completedFuture(null);
         });
     }
@@ -170,61 +180,66 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      *
      * @param phase   The phase in which to invoke this handler.
      * @param handler The action to execute on the component.
-     * @return a ComponentDefinition with the start handler defined.
+     * @return A {@code ComponentDefinition} with the shutdown handler defined.
      */
-    default ComponentDefinition<C> onShutdown(int phase, BiConsumer<NewConfiguration, C> handler) {
-        return onShutdown(phase, (cfg, cmp) -> {
-            handler.accept(cfg, cmp);
+    default ComponentDefinition<C> onShutdown(int phase, @Nonnull BiConsumer<NewConfiguration, C> handler) {
+        return onShutdown(phase, (config, component) -> {
+            Objects.requireNonNull(handler, "The shutdown handler cannot be null.")
+                   .accept(config, component);
             return CompletableFuture.completedFuture(null);
         });
     }
 
     /**
-     * Mandatory interface to be implemented by all implementations of {@code ComponentDefinition}. This separation will
-     * hide these methods from general use of the ComponentDefinition, while enforcing that all ComponentDefinition
-     * instances will declare this method.
+     * Mandatory interface to be implemented by all implementations of {@code ComponentDefinition}.
+     * <p>
+     * This separation will hide these methods from general use of the {@code ComponentDefinition}, while enforcing that
+     * all {@code ComponentDefinition} instances will declare this method.
      *
      * @param <C> The type of component defined.
      */
     non-sealed interface ComponentCreator<C> extends ComponentDefinition<C> {
 
         /**
-         * Create a Component matching the requirements configured on this definition. Multiple invocations of this
-         * method should return the same instance.
+         * Create a component matching the requirements configured on this definition.
+         * <p>
+         * Multiple invocations of this method should return the same instance.
          *
-         * @return a component based on this definition.
+         * @return A component based on this definition.
          */
         Component<C> createComponent();
     }
 
     /**
-     * Represents an intermediate step in the creation of a {@link ComponentDefinition}. This step requires the call of
-     * either {@link #withInstance(Object) withInstance(...)} or {@link #withFactory(ComponentFactory) withFactory(...)}
-     * to create a usable ComponentDefinition.
+     * Represents an intermediate step in the creation of a {@link ComponentDefinition}.
+     * <p>
+     * This step requires the call of either {@link #withInstance(Object) withInstance(...)} or
+     * {@link #withFactory(ComponentFactory) withFactory(...)} to create a usable ComponentDefinition.
      *
      * @param <C> The declared type of the component.
      */
     interface IncompleteComponentDefinition<C> {
 
         /**
-         * Creates a ComponentDefinition with the given pre-instantiated {@code instance} of a component.
+         * Creates a {@code ComponentDefinition} with the given pre-instantiated {@code instance} of a component.
          * <p>
          * If you require lazy instantiation of components, consider using {@link #withFactory(ComponentFactory)}
          * instead.
          *
          * @param instance The instance to declare as the implementation of this component.
-         * @return a ComponentDefinition for further configuration.
+         * @return A {@code ComponentDefinition} for further configuration.
          */
-        ComponentDefinition<C> withInstance(C instance);
+        ComponentDefinition<C> withInstance(@Nonnull C instance);
 
         /**
-         * Creates a ComponentDefinition that creates an instance on-demand using the given {@code factory} method.
+         * Creates a {@code ComponentDefinition} that creates an instance on-demand using the given {@code factory}
+         * method.
          * <p>
          * If you have already instantiated a component, consider using {@link #withInstance(Object)} instead.
          *
          * @param factory The factory used to create an instance, when required.
-         * @return a ComponentDefinition for further configuration.
+         * @return A {@code ComponentDefinition} for further configuration.
          */
-        ComponentDefinition<C> withFactory(ComponentFactory<? extends C> factory);
+        ComponentDefinition<C> withFactory(@Nonnull ComponentFactory<? extends C> factory);
     }
 }

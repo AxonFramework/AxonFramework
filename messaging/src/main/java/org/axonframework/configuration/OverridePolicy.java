@@ -17,8 +17,8 @@
 package org.axonframework.configuration;
 
 /**
- * Enumeration describing how a {@link ComponentRegistry} should react when a {@link Component} is to be overridden during a
- * {@link ComponentRegistry#registerComponent(ComponentDefinition)} invocation.
+ * Enumeration describing how a {@link ComponentRegistry} should react when a {@link Component} is to be overridden
+ * during a {@link ComponentRegistry#registerComponent(ComponentDefinition)} invocation.
  *
  * @author Steven van Beelen
  * @author Mitchell Herrijgers

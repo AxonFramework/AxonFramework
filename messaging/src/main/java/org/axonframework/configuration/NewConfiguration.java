@@ -55,7 +55,8 @@ public interface NewConfiguration extends DescribableComponent {
      * @param name The name of the component to retrieve.
      * @param <C>  The type of component.
      * @return The component registered for the given {@code type} and {@code name}.
-     * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type} and {@code name}.
+     * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type} and
+     *                                    {@code name}.
      */
     @Nonnull
     default <C> C getComponent(@Nonnull Class<C> type,
