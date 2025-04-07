@@ -21,8 +21,8 @@ import jakarta.annotation.Nonnull;
 import java.util.function.Consumer;
 
 /**
- * An ApplicationConfigurer combines the component registry with the notion of lifecycle. When started, lifecycle handlers
- * are invoked in the order specified during registration.
+ * An ApplicationConfigurer combines the component registry with the notion of lifecycle. When started, lifecycle
+ * handlers are invoked in the order specified during registration.
  * <p>
  * Building it exposes the {@link AxonConfiguration}, which can be {@link AxonConfiguration#start() started} and
  * {@link AxonConfiguration#shutdown() stopped}. Furthermore, there's a convenience {@link #start()} operation on this
@@ -38,8 +38,8 @@ public interface ApplicationConfigurer {
      * Executes the given {@code componentRegistrar} on the component registry associated with this
      * ApplicationConfigurer.
      *
-     * @param componentRegistrar the actions to take on the component registry
-     * @return this ApplicationConfigurer for a fluent API
+     * @param componentRegistrar The actions to take on the component registry.
+     * @return This ApplicationConfigurer for a fluent API.
      */
     ApplicationConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar);
 
@@ -47,8 +47,8 @@ public interface ApplicationConfigurer {
      * Executes the given {@code lifecycleRegistrar} on the lifecycle registry associated with this
      * ApplicationConfigurer.
      *
-     * @param lifecycleRegistrar the actions to take on the lifecycle registry
-     * @return this ApplicationConfigurer for a fluent API
+     * @param lifecycleRegistrar The actions to take on the lifecycle registry.
+     * @return This ApplicationConfigurer for a fluent API.
      */
     ApplicationConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar);
 
