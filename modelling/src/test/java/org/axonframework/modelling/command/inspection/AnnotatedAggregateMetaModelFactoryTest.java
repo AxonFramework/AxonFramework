@@ -67,7 +67,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AnnotatedAggregateMetaModelFactoryTest {
 
-    private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");
+    private static final MessageType TEST_COMMAND_TYPE = new MessageType("java.lang.String");
 
     @Test
     void detectAllAnnotatedHandlers() throws Exception {
@@ -247,7 +247,7 @@ class AnnotatedAggregateMetaModelFactoryTest {
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(SomeSubclass.class);
 
         CommandMessage<?> message =
-                new GenericCommandMessage<>(TEST_COMMAND_TYPE, BigDecimal.ONE);
+                new GenericCommandMessage<>(new MessageType(BigDecimal.class), BigDecimal.ONE);
         SomeSubclass target = new SomeSubclass();
         MessageHandlingMember<? super SomeSubclass> handler = getHandler(inspector, message);
         assertEquals("1", handler.handleSync(message, target));

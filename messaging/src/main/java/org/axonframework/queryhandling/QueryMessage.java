@@ -37,34 +37,6 @@ import java.util.Map;
 public interface QueryMessage<P, R> extends Message<P> {
 
     /**
-     * Returns the name of the {@link QueryMessage query} to execute.
-     *
-     * @return The name of the {@link QueryMessage query}.
-     */
-    String getQueryName();
-
-    /**
-     * Extracts the {@code queryName} from the given {@code payloadOrMessage}, with three possible outcomes:
-     * <ul>
-     * <li>The {@code payloadOrMessage} is an instance of {@link QueryMessage} - {@link QueryMessage#getQueryName()} is returned.</li>
-     * <li>The {@code payloadOrMessage} is an instance of {@link Message} - the name of {@link Message#getPayloadType()} is returned.</li>
-     * <li>The {@code payloadOrMessage} is the query payload - {@link Class#getName()} is returned.</li>
-     * </ul>
-     *
-     * @param payloadOrMessage The object to base the {@code queryName} on.
-     * @return The {@link QueryMessage#getQueryName()}, the name of {@link Message#getPayloadType()} or the result of
-     * {@link Class#getName()}, depending on the type of the {@code payloadOrMessage}.
-     */
-    static String queryName(@Nonnull Object payloadOrMessage) {
-        if (payloadOrMessage instanceof QueryMessage) {
-            return ((QueryMessage<?, ?>) payloadOrMessage).getQueryName();
-        } else if (payloadOrMessage instanceof Message) {
-            return ((Message<?>) payloadOrMessage).getPayloadType().getName();
-        }
-        return payloadOrMessage.getClass().getName();
-    }
-
-    /**
      * The {@link ResponseType type of response} expected by the sender of the query.
      *
      * @return The {@link ResponseType type of response} expected by the sender of the query.

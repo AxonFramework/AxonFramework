@@ -46,7 +46,7 @@ public enum UnresolvedRoutingKeyPolicy implements RoutingStrategy {
      */
     ERROR(command -> {
         throw new CommandDispatchException(format(
-                "The command [%s] does not contain a routing key.", command.getCommandName()
+                "The command [%s] does not contain a routing key.", command.type()
         ));
     }),
 

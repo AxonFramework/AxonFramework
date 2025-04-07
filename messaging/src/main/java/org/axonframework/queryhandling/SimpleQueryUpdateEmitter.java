@@ -194,7 +194,7 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
         } catch (Exception e) {
             logger.info("An error occurred while trying to emit an update to a query '{}'. " +
                                 "The subscription will be cancelled. Exception summary: {}",
-                        query.getQueryName(), e.toString());
+                        query.type(), e.toString());
             monitorCallback.reportFailure(e);
             updateHandlers.remove(query);
             emitError(query, e, updateHandler);

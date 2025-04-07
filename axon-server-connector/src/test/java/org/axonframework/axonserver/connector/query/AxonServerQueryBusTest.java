@@ -211,11 +211,11 @@ class AxonServerQueryBusTest {
 
         private Registration registration;
         private final QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), TEST_QUERY, "Hello, World", instanceOf(String.class)
+                new MessageType(TEST_QUERY), "Hello, World", instanceOf(String.class)
         );
 
         private final StreamingQueryMessage<String, String> testStreamingQuery = new GenericStreamingQueryMessage<>(
-                new MessageType("query"), TEST_QUERY, "Hello, World", String.class
+                new MessageType(TEST_QUERY), "Hello, World", String.class
         );
 
         @BeforeEach
@@ -614,7 +614,7 @@ class AxonServerQueryBusTest {
                         "<string>Hello world</string>", stubUpdate("Not a valid XML object")
                 ));
         GenericSubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                new MessageType("query"), "test", "Say hi",
+                new MessageType("test"), "Say hi",
                 instanceOf(String.class), instanceOf(String.class)
         );
 
@@ -640,7 +640,7 @@ class AxonServerQueryBusTest {
                         "Not a valid XML object", stubUpdate("<string>Hello world</string>")
                 ));
         GenericSubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                new MessageType("query"), "test", "Say hi",
+                new MessageType("test"), "Say hi",
                 instanceOf(String.class), instanceOf(String.class)
         );
 

@@ -112,7 +112,10 @@ public abstract class MessageDecorator<P> implements Message<P> {
      * @param stringBuilder the builder to append data to
      */
     protected void describeTo(StringBuilder stringBuilder) {
-        stringBuilder.append("payload={")
+        stringBuilder.append("type={")
+                     .append(type())
+                     .append('}')
+                     .append(", payload={")
                      .append(getPayload())
                      .append('}')
                      .append(", metadata={")

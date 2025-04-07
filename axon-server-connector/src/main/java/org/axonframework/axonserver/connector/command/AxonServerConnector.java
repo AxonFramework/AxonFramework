@@ -149,11 +149,11 @@ public class AxonServerConnector implements Connector {
         Object payload = command.getPayload();
         return builder
                 .setMessageIdentifier(command.getIdentifier())
-                .setName(command.getCommandName())
+                .setName(command.type().name())
                 .putAllMetaData(convertMap(command.getMetaData(), this::convertToMetaDataValue))
                 .setPayload(SerializedObject.newBuilder()
                                             .setData(ByteString.copyFrom((byte[]) payload))
-                                            .setType(command.getCommandName())
+                                            .setType(command.type().name())
                                             .build())
                 .build();
     }
@@ -194,8 +194,7 @@ public class AxonServerConnector implements Connector {
                         new MessageType(commandPayload.getType(), commandPayload.getRevision()),
                         commandPayload.getData().toByteArray(),
                         convertMap(command.getMetaDataMap(), this::convertToMetaDataValue)
-                ),
-                command.getName()
+                )
         );
     }
 

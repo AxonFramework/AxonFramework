@@ -50,11 +50,11 @@ public class NoHandlerForCommandException extends AxonTransientException {
      */
     public NoHandlerForCommandException(CommandMessage<?> commandMessage) {
         this(format(
-                "No matching handler available to handle command [%s]. To find a matching handler, "
+                "No matching handler available to handle command of type [%s]. To find a matching handler, "
                         + "note that the command handler's name should match the command's name, "
                         + "and all the parameters on the command handling method should be resolvable. "
                         + "It is thus recommended to validate both the name and the parameters.",
-                commandMessage.getCommandName()
+                commandMessage.type()
         ));
     }
 }

@@ -33,15 +33,6 @@ import java.util.function.Function;
  */
 public interface CommandMessage<P> extends Message<P> {
 
-    /**
-     * Returns the name of the {@link CommandMessage command} to execute.
-     * <p>
-     * This is an indication of what should be done, using the payload as parameter.
-     *
-     * @return The name of the {@link CommandMessage command}.
-     */
-    String getCommandName();
-
     @Override
     CommandMessage<P> withMetaData(@Nonnull Map<String, ?> metaData);
 

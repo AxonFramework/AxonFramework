@@ -99,11 +99,10 @@ class GenericCommandMessageTest {
                 .andMetaData(MetaData.with("key", "value").and("key2", 13))
                 .toString();
 
-        assertTrue(actual.startsWith("GenericCommandMessage{payload={MyPayload}, metadata={"),
+        assertTrue(actual.startsWith("GenericCommandMessage{type={command#0.0.1}, payload={MyPayload}, metadata={"),
                    "Wrong output: " + actual);
         assertTrue(actual.contains("'key'->'value'"), "Wrong output: " + actual);
         assertTrue(actual.contains("'key2'->'13'"), "Wrong output: " + actual);
-        assertTrue(actual.endsWith("', commandName='java.lang.String'}"), "Wrong output: " + actual);
-        assertEquals(173, actual.length(), "Wrong output: " + actual);
+        assertEquals(163, actual.length(), "Wrong output: " + actual);
     }
 }
