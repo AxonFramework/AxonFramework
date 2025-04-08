@@ -29,36 +29,31 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MultiEventStateApplierTest {
     @Test
-    void appliesEventSourcingHandlersInRightPriority() {
+    void appliesEventSourcingHandlersInRegisteredOrder() {
         MultiEventStateApplier<String> applier = new MultiEventStateApplier<>(
-                new LowPriorityEventStateApplier(),
-                new HighPriorityEventStateApplier(),
-                new LowPriorityEventStateApplier()
+                new AdditiveEventStateApplier("one"),
+                new AdditiveEventStateApplier("two"),
+                new AdditiveEventStateApplier("three")
         );
         String result = applier.apply("base",
                                     new GenericEventMessage<>(new MessageType(String.class), "test-event"),
                                     new StubProcessingContext());
-        assertEquals("base:high-priority:low-priority:low-priority", result);
+        assertEquals("base:one:two:three", result);
     }
 
     @Priority(500)
-    static class HighPriorityEventStateApplier implements EventStateApplier<String> {
+    static class AdditiveEventStateApplier implements EventStateApplier<String> {
 
-        @Override
-        public String apply(@NotNull String model, @NotNull EventMessage<?> event,
-                            @NotNull ProcessingContext processingContext) {
-            return model + ":high-priority";
+        private final String stringToAdd;
+
+        AdditiveEventStateApplier(String stringToAdd) {
+            this.stringToAdd = stringToAdd;
         }
-    }
-
-
-    @Priority(-500)
-    static class LowPriorityEventStateApplier implements EventStateApplier<String> {
 
         @Override
         public String apply(@NotNull String model, @NotNull EventMessage<?> event,
                             @NotNull ProcessingContext processingContext) {
-            return model + ":low-priority";
+            return model + ":" + stringToAdd;
         }
     }
 }

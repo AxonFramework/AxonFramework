@@ -30,8 +30,7 @@ import java.util.List;
 /**
  * Implementation of {@link EventStateApplier} that applies state changes through a list of {@link EventStateApplier}
  * instances. Every instance is called during the application of an event, regardless of whether the event was already
- * handled by another. During construction, the list of {@link EventStateApplier} instances is sorted based on the
- * {@link org.axonframework.common.Priority} annotation on the classes of the instances, if present.
+ * handled by another.
  *
  * @param <M> The model type to apply the event state to.
  * @author Mitchell Herrijgers
@@ -43,8 +42,7 @@ public class MultiEventStateApplier<M> implements EventStateApplier<M>, Describa
 
     /**
      * Constructs a multi-{@link EventStateApplier} that applies state changes through the given
-     * {@code eventStateAppliers}. The list of {@link EventStateApplier} instances is sorted based on the
-     * {@link org.axonframework.common.Priority} annotation on the classes of the instances, if present.
+     * {@code eventStateAppliers}.
      *
      * @param eventStateAppliers The list of {@link EventStateApplier} instances to apply state changes through.
      */
@@ -55,8 +53,7 @@ public class MultiEventStateApplier<M> implements EventStateApplier<M>, Describa
 
     /**
      * Constructs a multi-{@link EventStateApplier} that applies state changes through the given
-     * {@code eventStateAppliers}. The list of {@link EventStateApplier} instances is sorted based on the
-     * {@link org.axonframework.common.Priority} annotation on the classes of the instances, if present.
+     * {@code eventStateAppliers}.
      *
      * @param eventStateAppliers The list of {@link EventStateApplier} instances to apply state changes through.
      */
