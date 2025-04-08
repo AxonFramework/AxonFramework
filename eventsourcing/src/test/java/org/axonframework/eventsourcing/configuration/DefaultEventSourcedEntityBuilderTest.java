@@ -150,7 +150,6 @@ class DefaultEventSourcedEntityBuilderTest {
 
         assertInstanceOf(MultiEventStateApplier.class, descriptor.getProperty("eventStateApplier"));
         MultiEventStateApplier<?> applier = (MultiEventStateApplier<?>) descriptor.getProperty("eventStateApplier");
-        ;
 
         MockComponentDescriptor applierDescriptor = new MockComponentDescriptor();
         applier.describeTo(applierDescriptor);

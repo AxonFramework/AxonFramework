@@ -26,6 +26,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Implementation of {@link EventStateApplier} that applies state changes through a list of {@link EventStateApplier}
@@ -46,8 +47,10 @@ public class MultiEventStateApplier<M> implements EventStateApplier<M>, Describa
      *
      * @param eventStateAppliers The list of {@link EventStateApplier} instances to apply state changes through.
      */
-    public MultiEventStateApplier(List<EventStateApplier<M>> eventStateAppliers) {
-        this.eventStateAppliers = new ArrayList<>(eventStateAppliers);
+    public MultiEventStateApplier(@Nonnull List<EventStateApplier<M>> eventStateAppliers) {
+        this.eventStateAppliers = new ArrayList<>(
+                Objects.requireNonNull(eventStateAppliers, "The eventStateAppliers cannot be null.")
+        );
         this.eventStateAppliers.sort(PriorityAnnotationComparator.getInstance());
     }
 
