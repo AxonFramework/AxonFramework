@@ -130,13 +130,12 @@ class SubscribeStudentCommandHandler {
         void evolve(StudentSubscribed event) {
             var enrolledStudentId = new StudentId(event.studentId());
             var enrolledCourseId = new CourseId(event.courseId());
-            if (enrolledStudentId.equals(studentId) && enrolledCourseId.equals(courseId)) {
-                alreadySubscribed = true;
-            }
+            noOfStudentsSubscribedToCourse++;
             if (enrolledStudentId.equals(studentId)) {
                 noOfCoursesStudentSubscribed++;
-            } else {
-                noOfStudentsSubscribedToCourse++;
+            }
+            if (enrolledStudentId.equals(studentId) && enrolledCourseId.equals(courseId)) {
+                alreadySubscribed = true;
             }
         }
 
@@ -144,13 +143,12 @@ class SubscribeStudentCommandHandler {
         void evolve(StudentUnsubscribed event) {
             var enrolledStudentId = new StudentId(event.studentId());
             var enrolledCourseId = new CourseId(event.courseId());
-            if (enrolledStudentId.equals(studentId) && enrolledCourseId.equals(courseId)) {
-                alreadySubscribed = false;
-            }
+            noOfStudentsSubscribedToCourse--;
             if (enrolledStudentId.equals(studentId)) {
                 noOfCoursesStudentSubscribed--;
-            } else {
-                noOfStudentsSubscribedToCourse--;
+            }
+            if (enrolledStudentId.equals(studentId) && enrolledCourseId.equals(courseId)) {
+                alreadySubscribed = false;
             }
         }
 
