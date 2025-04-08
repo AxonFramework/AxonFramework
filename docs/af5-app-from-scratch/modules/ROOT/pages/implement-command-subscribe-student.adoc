@@ -146,5 +146,19 @@ class SubscribeStudentTest {
 ----
 
 To those tests we need to implement the command handler for `SubscribeStudent` command.
+As you've seen for the behaviour which is based on some state (so we have something in Given section of the test) we need to have State for our command handler to validate commands againts it.
+Let's make it right away!
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
+----
+package io.axoniq.demo.university.faculty.write.subscribestudent;
+
+import java.util.UUID;
+
+class SubscribeStudentCommandHandler {
 
 
+
+}
+----
