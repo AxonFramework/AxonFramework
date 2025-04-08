@@ -237,11 +237,16 @@ class SubscribeStudentCommandHandler {
 As you see there are two TODOs left in the code. Now we need to validate business rules, there are a few of them. The student can subscribe to course only if adhere to the domain invariants of this operation.
 I will list them one by one with assertion function, and we will also see what you need in the State object to validate them.
 
-* The student is enrolled in the faculty
+**Rule #1: The student is enrolled in the faculty **
+
 When student is enrolled it has assigned it, so we add it to the State:
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
 ----
+class SubscribeStudentCommandHandler {
+
+    // rest ommitted for brevity
+
     @EventSourcedEntity
     static class State {
 
@@ -252,16 +257,58 @@ When student is enrolled it has assigned it, so we add it to the State:
             this.studentId = new StudentId(event.studentId());
         }
     }
+
+}
 ----
 
-Business rule assertion function:
+Business rule assertion function. We throw an exception if the rule is not satisfied.
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
+----
+class SubscribeStudentCommandHandler {
+
+    // rest ommitted for brevity
+
+    private void assertStudentEnrolledFaculty(State state) {
+        var studentId = state.studentId;
+        if (studentId == null) {
+            throw new RuntimeException("Student with given id never enrolled the faculty");
+        }
+    }
+
+}
+----
+
+**Rule #2: The student is not already subscribed to the course **
+**Rule #3: The student is not subscribed to too many courses **
+
+We're going to implement both rules and once.
+What else do we need in the State object?
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
+----
+class SubscribeStudentCommandHandler {
+
+    // rest ommitted for brevity
+
+    @EventSourcedEntity
+    static class State {
+
+        // rest ommitted for brevity
+
+        private StudentId studentId;
+
+        @EventSourcingHandler
+        void evolve(StudentEnrolledFaculty event) {
+            this.studentId = new StudentId(event.studentId());
+        }
+    }
+
+}
+----
 
 
-- the student is enrolled in the faculty
-- the student is not already subscribed to the course
+
 - the course exists
 - the course is not fully booked (based on course capacity)
-- the student is not subscribed to too many courses (max 3 courses per student).
-
-== Event Criteria
-`StudentEnrolledFaculty` if we didn't specify the tag. We've done it before but it's not enough...
