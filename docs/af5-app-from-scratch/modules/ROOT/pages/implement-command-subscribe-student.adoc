@@ -56,10 +56,95 @@ public record StudentSubscribed(
 It's a good example that StudentSubscribed event is connected to two business entities - Student and the Course.
 When domain experts says that "student subscribed" they know, that because of the event the course free spots decreased and also student subscription limit may be reached.
 
-// TODO: COMMAND!!!
+Last, but not least we define the command.
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
+----
+package io.axoniq.demo.university.faculty.write.createcourse;
+
+import io.axoniq.demo.university.faculty.write.StudentId;
+import io.axoniq.demo.university.faculty.write.CourseId;
+
+public record SubscribeStudent(StudentId studentId, CourseId courseId) {
+}
+----
 
 == Specification by example
 
 As you remember from the previous section we do not focus on entities, but on behavior.
 So we're going to describe our feature in Given-When-Then manner based on commands and events.
+Let's create the first test case using Axon Test Fixture.
+We're going to translate the Event Modeling specification, which you've seen on the top of the page + other test cases for this slice, to the code.
+
+[source,java]
+.src/test/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentTest.java
+----
+package io.axoniq.demo.university.faculty.write.createcourse;
+
+import java.util.UUID;
+
+class SubscribeStudentTest {
+
+    private AxonTestFixture fixture;
+
+    @BeforeEach
+    void beforeEach() {
+        fixture = AxonTestFixture.with(UniversityAxonApplication.configurer());
+    }
+
+    @Test
+    void successfulSubscription() {
+        var courseId = CourseId.random();
+        var studentId = StudentId.random();
+
+        fixture.given()
+               .event(new CourseCreated(courseId.raw(), "Event Sourcing in Practice", 2))
+               .event(new StudentEnrolledFaculty(studentId.raw(), "Mateusz", "Nowak"))
+               .when()
+               .command(new SubscribeStudent(studentId, courseId))
+               .then()
+               .events(new StudentSubscribed(studentId.raw(), courseId.raw()));
+    }
+
+    @Test
+    void studentAlreadySubscribed() {
+        var courseId = CourseId.random();
+        var studentId = StudentId.random();
+
+        fixture.given()
+               .event(new StudentEnrolledFaculty(studentId.raw(), "Allard", "Buijze"))
+               .event(new CourseCreated(courseId.raw(), "Axon Framework 5: Be a PRO", 2))
+               .event(new StudentSubscribed(studentId.raw(), courseId.raw()))
+               .when()
+               .command(new SubscribeStudent(studentId, courseId))
+               .then()
+               .exception(RuntimeException.class, "Student already subscribed to this course");
+    }
+
+    @Test
+    void courseFullyBooked() {
+        var courseId = CourseId.random();
+        var student1Id = StudentId.random();
+        var student2Id = StudentId.random();
+        var student3Id = StudentId.random();
+
+        fixture.given()
+               .event(new StudentEnrolledFaculty(student1Id.raw(), "Mateusz", "Nowak"))
+               .event(new StudentEnrolledFaculty(student2Id.raw(), "Steven", "van Beelen"))
+               .event(new StudentEnrolledFaculty(student3Id.raw(), "Mitchell", "Herrijgers"))
+               .event(new CourseCreated(courseId.raw(), "Event Sourcing Masterclass", 2))
+               .event(new StudentSubscribed(student1Id.raw(), courseId.raw()))
+               .event(new StudentSubscribed(student2Id.raw(), courseId.raw()))
+               .when()
+               .command(new SubscribeStudent(student3Id, courseId))
+               .then()
+               .exception(RuntimeException.class, "Course is fully booked");
+    }
+
+}
+----
+
+To those tests we need to implement the command handler for `SubscribeStudent` command.
+
 

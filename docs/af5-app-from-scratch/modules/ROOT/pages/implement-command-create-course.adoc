@@ -180,7 +180,7 @@ We may even skip the whole `given` section if there is nothing to execute.
 <.> We provide the `CreateCourse` command we want to dispatch against the system (scoped to the given configuration).
 <.> After successfully processing the `CreateCourse`, we expect the publication of a new `CourseCreated` event with the details of the new course.
 
-When we execute the test you will see in the stack trac a following error:
+When we execute the test you will see in the stack trace a following error:
 
 [,console]
 ----
@@ -475,6 +475,8 @@ public class UniversityAxonApplication {
 <.> The `sendAndWait` method sends the command to the command bus and waits for the result.
 
 NOTE: If you're using Spring Boot you can always define `Configuration` as a @Bean and inject it into your controller. The first-class Spring support for Axon Framework 5 is under development.
+
+NOTE: If you're familiar with Hexagonal Architecture (aka Ports & Adapters) you may treat the CommandGateway as a Port to your application and the controllers as Adapter.
 
 == First in, first out
 
