@@ -23,7 +23,7 @@ import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventStateApplier;
 import org.axonframework.eventsourcing.MultiEventStateApplier;
-import org.axonframework.eventsourcing.SingleEventEventStateApplier;
+import org.axonframework.eventsourcing.SingleEventTypeStateApplier;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -91,7 +91,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     public <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull QualifiedName eventName,
                                                                     @Nonnull Class<P> payloadType,
                                                                     @Nonnull BiConsumer<E, P> eventSourcingHandler) {
-        return eventStateApplier(c -> new SingleEventEventStateApplier<>(eventName, payloadType, (model, payload) -> {
+        return eventStateApplier(c -> new SingleEventTypeStateApplier<>(eventName, payloadType, (model, payload) -> {
             eventSourcingHandler.accept(model, payload);
             return model;
         }));
@@ -101,7 +101,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     public <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull QualifiedName eventName,
                                                                     @Nonnull Class<P> payloadType,
                                                                     @Nonnull BiFunction<E, P, E> eventSourcingHandler) {
-        return eventStateApplier(c -> new SingleEventEventStateApplier<>(eventName, payloadType, eventSourcingHandler));
+        return eventStateApplier(c -> new SingleEventTypeStateApplier<>(eventName, payloadType, eventSourcingHandler));
     }
 
     @Override
@@ -109,7 +109,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
                                                                     @Nonnull BiConsumer<E, P> eventSourcingHandler) {
         return eventStateApplier(c -> {
             QualifiedName eventName = resolveQualifiedName(payloadType, c);
-            return new SingleEventEventStateApplier<>(eventName, payloadType, (model, payload) -> {
+            return new SingleEventTypeStateApplier<>(eventName, payloadType, (model, payload) -> {
                 eventSourcingHandler.accept(model, payload);
                 return model;
             });
@@ -121,7 +121,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
                                                                     @Nonnull BiFunction<E, P, E> eventSourcingHandler) {
         return eventStateApplier(c -> {
             QualifiedName eventName = resolveQualifiedName(payloadType, c);
-            return new SingleEventEventStateApplier<>(eventName, payloadType, eventSourcingHandler);
+            return new SingleEventTypeStateApplier<>(eventName, payloadType, eventSourcingHandler);
         });
     }
 

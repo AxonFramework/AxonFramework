@@ -20,42 +20,47 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+import java.util.Objects;
 import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
 
 /**
  * EventStateApplier implementation that applies a single type of event to a model of type {@code M} based on the given
- * {@code eventStateApplier}. Both the event type and the payload type are checked before applying the event to the
- * model.
+ * {@code eventStateApplier}. The {@code qualifiedName} determines whether the event should be applied, converting the
+ * {@link EventMessage#getPayload()} to the requested {@code payloadType}. If the event payload cannot be converted to
+ * the requested {@code payloadType}, a {@link ClassCastException} is thrown.
  *
  * @param <P> The payload type of the event to apply.
  * @param <M> The model type to apply the event state to.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class SingleEventEventStateApplier<P, M> implements EventStateApplier<M> {
+public class SingleEventTypeStateApplier<P, M> implements EventStateApplier<M> {
 
     private final QualifiedName qualifiedName;
     private final Class<P> payloadType;
     private final BiFunction<M, P, M> eventStateApplier;
 
     /**
-     * Constructs a single-{@link EventStateApplier} that applies state changes through the given
-     * {@code eventStateApplier}. The event type and payload type are checked before applying the event to the model.
+     * Constructs an {@link EventStateApplier} for a {@code qualifiedName} that applies state changes through the given
+     * {@code eventStateApplier}. If the {@link EventMessage#getPayload()} cannot be converted to the requested
+     * {@code payloadType}, a {@link ClassCastException} is thrown.
      *
      * @param qualifiedName     The event type to check against.
      * @param payloadType       The payload type to check against.
      * @param eventStateApplier The function to apply the event to the model.
      */
-    public SingleEventEventStateApplier(QualifiedName qualifiedName, Class<P> payloadType, BiFunction<M, P, M> eventStateApplier) {
-        this.qualifiedName = qualifiedName;
-        this.payloadType = payloadType;
-        this.eventStateApplier = eventStateApplier;
+    public SingleEventTypeStateApplier(@Nonnull QualifiedName qualifiedName,
+                                       @Nonnull Class<P> payloadType,
+                                       @Nonnull BiFunction<M, P, M> eventStateApplier) {
+        this.qualifiedName = Objects.requireNonNull(qualifiedName, "The qualifiedName cannot be null.");
+        this.payloadType = Objects.requireNonNull(payloadType, "The payloadType cannot be null.");
+        this.eventStateApplier = Objects.requireNonNull(eventStateApplier, "The eventStateApplier cannot be null.");
     }
 
     @Override
     public M apply(@Nonnull M model, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext processingContext) {
-        if (qualifiedName.equals(event.type().qualifiedName()) && payloadType.isInstance(event.getPayload())) {
+        if (qualifiedName.equals(event.type().qualifiedName())) {
             P payload = payloadType.cast(event.getPayload());
             return eventStateApplier.apply(model, payload);
         }
