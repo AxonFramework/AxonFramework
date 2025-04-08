@@ -51,6 +51,23 @@ class SubscribeStudentTest {
     }
 
     @Test
+    void studentSubscribedIfAnotherOneAlreadySubscribed() {
+        var courseId = CourseId.random();
+        var studentId = StudentId.random();
+        var anotherStudentId = StudentId.random();
+
+        fixture.given()
+                .event(new StudentEnrolledFaculty(studentId.raw(), "Allard", "Buijze"))
+                .event(new StudentEnrolledFaculty(anotherStudentId.raw(), "Marc", "Gathier"))
+                .event(new CourseCreated(courseId.raw(), "Axon Framework 5: Be a PRO", 2))
+                .event(new StudentSubscribed(anotherStudentId.raw(), courseId.raw()))
+                .when()
+                .command(new SubscribeStudent(studentId, courseId))
+                .then()
+                .events(new StudentSubscribed(studentId.raw(), courseId.raw()));
+    }
+
+    @Test
     void courseFullyBooked() {
         var courseId = CourseId.random();
         var student1Id = StudentId.random();
