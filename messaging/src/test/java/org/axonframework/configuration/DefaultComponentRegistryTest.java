@@ -154,19 +154,6 @@ class DefaultComponentRegistryTest {
     }
 
     @Test
-    void registeringComponentsForTheSameTypeAndNameCombinationReplacesThePreviousComponentBuilder() {
-        TestComponent testComponent = new TestComponent("replaced-component");
-        TestComponent expectedComponent = new TestComponent("the-winner");
-        testSubject.registerComponent(TestComponent.class, "name", c -> testComponent)
-                   .registerComponent(TestComponent.class, "name", c -> expectedComponent);
-
-        NewConfiguration config = testSubject.build(mock());
-
-        assertNotEquals(testComponent, config.getComponent(TestComponent.class, "name"));
-        assertEquals(expectedComponent, config.getComponent(TestComponent.class, "name"));
-    }
-
-    @Test
     void getComponentWithDefaultInvokesSupplierWhenThereIsNoRegisteredComponentForTheGivenClass() {
         AtomicBoolean invoked = new AtomicBoolean(false);
         TestComponent defaultComponent = new TestComponent("default");

@@ -254,7 +254,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     void describeToDescribesBuilderWhenInstantiated() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
 
-        Component<String> testSubject = createComponent(identifier, TEST_COMPONENT);
+        Component<String> testSubject = createComponent(identifier, factory);
         testSubject.resolve(configuration);
 
         testSubject.describeTo(testDescriptor);

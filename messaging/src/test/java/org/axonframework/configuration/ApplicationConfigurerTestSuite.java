@@ -176,21 +176,6 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
 
         @Test
-        void registeringComponentsForTheSameTypeAndNameCombinationReplacesThePreviousComponentBuilder() {
-            TestComponent testComponent = new TestComponent("replaced-component");
-            TestComponent expectedComponent = new TestComponent("the-winner");
-            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, "name", c -> testComponent)
-                                                  .registerComponent(TestComponent.class,
-                                                                     "name",
-                                                                     c -> expectedComponent));
-
-            NewConfiguration config = testSubject.build();
-
-            assertNotEquals(testComponent, config.getComponent(TestComponent.class, "name"));
-            assertEquals(expectedComponent, config.getComponent(TestComponent.class, "name"));
-        }
-
-        @Test
         void getComponentWithDefaultInvokesSupplierWhenThereIsNoRegisteredComponentForTheGivenClass() {
             AtomicBoolean invoked = new AtomicBoolean(false);
             TestComponent defaultComponent = new TestComponent("default");

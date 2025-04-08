@@ -111,7 +111,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     @Override
     public ComponentRegistry registerModule(@Nonnull Module module) {
-        logger.debug("Registering module [{}].", module.name());
+        if (logger.isDebugEnabled()) {
+            logger.debug("Registering module [{}].", module.name());
+        }
         if (modules.containsKey(module.name())) {
             throw new DuplicateModuleRegistrationException(module);
         }
@@ -168,7 +170,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         for (DecoratorDefinition.CompletedDecoratorDefinition decorator : decoratorDefinitions) {
             for (Identifier id : components.identifiers()) {
                 if (decorator.matches(id)) {
-                    components.replace(id, previous -> decorator.decorate(previous));
+                    components.replace(id, decorator::decorate);
                 }
             }
         }

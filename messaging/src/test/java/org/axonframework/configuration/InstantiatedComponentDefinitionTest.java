@@ -64,10 +64,8 @@ class InstantiatedComponentDefinitionTest extends ComponentTestSuite<Instantiate
 
     @Test
     void constructorThrowsNullPointerExceptionForNullInstance() {
+        Component.Identifier<String> testId = new Component.Identifier<>(String.class, "value");
         //noinspection DataFlowIssue
-        assertThrows(
-                NullPointerException.class,
-                () -> new InstantiatedComponentDefinition<>(new Component.Identifier<>(String.class, "value"), null)
-        );
+        assertThrows(NullPointerException.class, () -> new InstantiatedComponentDefinition<>(testId, null));
     }
 }

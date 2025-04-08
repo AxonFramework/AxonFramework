@@ -113,10 +113,11 @@ class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponent<Strin
     }
 
     @Test
+    @Override
     void describeToDescribesBuilderWhenInstantiated() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
 
-        Component<String> testSubject = createComponent(identifier, TEST_COMPONENT);
+        Component<String> testSubject = createComponent(identifier, factory);
         testSubject.resolve(configuration);
 
         testSubject.describeTo(testDescriptor);
@@ -157,6 +158,7 @@ class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponent<Strin
     }
 
     @Test
+    @Override
     void describeToDescribesInstanceWhenInstantiated() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
 
@@ -173,6 +175,7 @@ class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponent<Strin
     }
 
     @Test
+    @Override
     void describeToDescribesInstanceWhenInstantiatedAndInitialized() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
 

@@ -126,7 +126,7 @@ public class Components implements DescribableComponent {
      * or has been removed by the replacement function.
      */
     public <C> boolean replace(@Nonnull Identifier<C> identifier,
-                               @Nonnull UnaryOperator<Component<? extends C>> replacement) {
+                               @Nonnull UnaryOperator<Component<C>> replacement) {
         //noinspection unchecked
         Component<?> newValue = components.computeIfPresent(identifier,
                                                             (i, c) -> replacement.apply((Component<C>) c));

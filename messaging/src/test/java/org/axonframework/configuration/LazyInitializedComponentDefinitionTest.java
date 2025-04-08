@@ -65,10 +65,8 @@ class LazyInitializedComponentDefinitionTest
 
     @Test
     void constructorThrowsNullPointerExceptionForNullComponentBuilder() {
+        Component.Identifier<String> testId = new Component.Identifier<>(String.class, "value");
         //noinspection DataFlowIssue
-        assertThrows(
-                NullPointerException.class,
-                () -> new LazyInitializedComponentDefinition<>(new Component.Identifier<>(String.class, "value"), null)
-        );
+        assertThrows(NullPointerException.class, () -> new LazyInitializedComponentDefinition<>(testId, null));
     }
 }

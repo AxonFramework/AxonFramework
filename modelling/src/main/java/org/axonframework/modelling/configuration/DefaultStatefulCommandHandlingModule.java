@@ -19,6 +19,7 @@ package org.axonframework.modelling.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandlingComponent;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.LifecycleRegistry;
@@ -35,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
@@ -113,12 +115,9 @@ class DefaultStatefulCommandHandlingModule
     }
 
     private void registerRepositories() {
-        entityBuilders.forEach((name, entityBuilder) -> {
-            componentRegistry(cr -> cr.registerComponent(AsyncRepository.class,
-                                                         name,
-                                                         entityBuilder.repository())
-            );
-        });
+        entityBuilders.forEach((name, entityBuilder) -> componentRegistry(
+                cr -> cr.registerComponent(AsyncRepository.class, name, entityBuilder.repository())
+        ));
     }
 
     private SimpleStateManager stateManagerFactory(NewConfiguration config) {
@@ -131,19 +130,20 @@ class DefaultStatefulCommandHandlingModule
     }
 
     private void registerCommandHandlers() {
-        componentRegistry(cr -> {
-            cr.registerComponent(StatefulCommandHandlingComponent.class, statefulCommandHandlingComponentName, c -> {
-                StatefulCommandHandlingComponent statefulCommandHandler = StatefulCommandHandlingComponent.create(
-                        statefulCommandHandlingComponentName,
-                        c.getComponent(StateManager.class)
-                );
-                handlerFactories.forEach((key, value) -> statefulCommandHandler.subscribe(key, value.build(c)));
-                handlingComponentFactories.forEach(
-                        handlingComponent -> statefulCommandHandler.subscribe(handlingComponent.build(c))
-                );
-                return statefulCommandHandler;
-            });
-        });
+        componentRegistry(cr -> cr.registerComponent(
+                StatefulCommandHandlingComponent.class, statefulCommandHandlingComponentName,
+                c -> {
+                    StatefulCommandHandlingComponent statefulCommandHandler = StatefulCommandHandlingComponent.create(
+                            statefulCommandHandlingComponentName,
+                            c.getComponent(StateManager.class)
+                    );
+                    handlerFactories.forEach((key, value) -> statefulCommandHandler.subscribe(key, value.build(c)));
+                    handlingComponentFactories.forEach(
+                            handlingComponent -> statefulCommandHandler.subscribe(handlingComponent.build(c))
+                    );
+                    return statefulCommandHandler;
+                }
+        ));
     }
 
     @Override
@@ -151,13 +151,11 @@ class DefaultStatefulCommandHandlingModule
         NewConfiguration builtConfiguration = super.build(parent, lifecycleRegistry);
         lifecycleRegistry.onStart(
                 Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
-                config -> {
-                    builtConfiguration.getComponent(CommandBus.class)
-                                      .subscribe(builtConfiguration.getComponent(
-                                              StatefulCommandHandlingComponent.class,
-                                              statefulCommandHandlingComponentName
-                                      ));
-                }
+                (Consumer<AxonConfiguration>) config -> builtConfiguration.getComponent(CommandBus.class)
+                                                                          .subscribe(builtConfiguration.getComponent(
+                                                                                  StatefulCommandHandlingComponent.class,
+                                                                                  statefulCommandHandlingComponentName
+                                                                          ))
         );
         return builtConfiguration;
     }
