@@ -439,6 +439,43 @@ public class CreateCourseConfiguration {
 With this step, we have completed the code to process a Command that represents the request to register a new bike in our system.
 You may run the tests again and see that all of them should pass!
 
+=== Execute the command
+
+In your production application to execute the command you need to get the `CommandGateway` component from your configuration.
+This component was configured by default for you, because you have used `EventSourcingConfigurer`.
+To be able to get components from the configuration you need to start it from the configurer.
+In the example below we're doing essentially what the Test Fixture does for us under the hood while testing.
+
+[source,java]
+./src/main/java/io/axoniq/demo/university/UniversityAxonApplication.java
+----
+public class UniversityAxonApplication {
+
+    public static ApplicationConfigurer<?> configurer() {
+        var configurer = EventSourcingConfigurer.create();
+        configurer = CreateCourseConfiguration.configure(configurer);
+        return configurer;
+    }
+
+    public static void main(String[] args) {
+        var configuration = configurer().start(); // <1>
+
+        var createCourse = new CreateCourse(CourseId.random(), "Event Sourcing in Practice", 3);
+
+        var commandGateway = configuration.getComponent(CommandGateway.class); // <2>
+
+        commandGateway.sendAndWait(createCourse); // <3>
+    }
+
+
+}
+----
+<.> The `start` method builds and starts the configuration and returns the `NewConfiguration` instance.
+<.> The `getComponent` method allows us to retrieve the `CommandGateway` component from the configuration.
+<.> The `sendAndWait` method sends the command to the command bus and waits for the result.
+
+NOTE: If you're using Spring Boot you can always define `Configuration` as a @Bean and inject it into your controller. The first-class Spring support for Axon Framework 5 is under development.
+
 == First in, first out
 
 image::EventModeling_CreateCourse_Done.png[]
