@@ -482,8 +482,8 @@ class SubscribeStudentCommandHandler {
 <2> Thanks to the `SubscriptionId` which is composed of `courseId` and `studentId` we know the values of those tags we needed.
 <3> As you may see at the highest level those `EventCriteria` are combined with `either` method, but when we define tags in `withTags` it means that the certain type of event requires all of them. So, we split `StudentSubscribed` and `StudentUnsubscribed` events into two separate criteria, because we need to load all events of those type for the given `courseId` and `studentId`.
 
-It gives us better accessibility of our system - thanks to that, as you see there is no `CourseRenamed` event in our criteria, so the Faculty administrator is still able to rename the course.
-In case of Aggregates those operation may clash, or you need to introduce separated entity for such courses.
-Our colleague Milan from AxonIQ (with our ex-colleague Sara) discuss those scenarios in the talk - we really encourage you to watch it.
+It gives us better accessibility of our system - thanks to that, as you see there is no `CourseRenamed` event in our criteria, so the Faculty administrator is still able to rename the course in the same time while processing the `SubscribeStudent` command.
+In case of Aggregates those operation may clash, or you need to introduce separated entity for the name if you want to avoid concurrency access issues.
+Our colleague Milan from AxonIQ (with our ex-colleague Sara) discuss those scenarios in the talk - we really encourage you to watch it
 
-If you do just `EventCriteria.match().eventsOfTypes().withTags(...)` you load all events for the given tag, so there are more chances to clash with other changes, which cause events that do not influce this certain business rules.
+If you do just `EventCriteria.match().eventsOfTypes().withTags(...)` you load all events for the given tag, so there are more chances to clash with other changes, which cause events that do not influence this certain business rules.
