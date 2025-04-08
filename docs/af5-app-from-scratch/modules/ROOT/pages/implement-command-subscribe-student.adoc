@@ -409,7 +409,9 @@ class SubscribeStudentCommandHandler {
 <4> If the `StudentSubscribed` event is related to the course, we increase the number of students subscribed to the course.
 <5> If the `StudentSubscribed` event is related to the student, we increase the number of courses the student is subscribed to.
 <6> If the `StudentSubscribed` event is related to the course and the student, we set the `alreadySubscribed` flag to true.
-<7> This handler for `StudentUnsubscribed` is a exact opposite of the `evolve` method for `StudentSubscribed` event. We decrease the numbers which we increased in the previous one.
+<7> This handler for `StudentUnsubscribed` is an exact opposite of the `evolve` method for `StudentSubscribed` event. We decrease the numbers which we increased in the previous one.
+
+But how do we limit that we won't receive events for every student and every course? It's where the `EventCriteria` comes into play.
 
 == Event Criteria
 
@@ -420,7 +422,7 @@ As well as `StudentUnsubscribed` events.
 Whereas for example `StudentEnrolledFaculty` - we care about just one event for the given `studentId`, other students are not interested while processing this command and there are no business rules between them. With the subscription story is different, because of that we have a limit of students per course and also the limit of courses per student.
 
 Thanks to the Axon Framework `EventCriteria` concept we're able to define the events we'd like to load dynamically.
-It's where the Dynamic Consistency Boundary comes into play.
+It's where the Dynamic Consistency Boundary shines.
 
 [NOTE]
 ====
@@ -447,8 +449,8 @@ class SubscribeStudentCommandHandler {
 
         // rest omitted for brevity
 
-        @EventCriteriaBuilder
-        private static EventCriteria resolveCriteria(SubscriptionId id) {
+        @EventCriteriaBuilder // <1>
+        private static EventCriteria resolveCriteria(SubscriptionId id) { // <2>
             var courseId = id.courseId().raw();
             var studentId = id.studentId().raw();
             return EventCriteria.either(
@@ -456,26 +458,29 @@ class SubscribeStudentCommandHandler {
                                  .eventsOfTypes(
                                          CourseCreated.class.getName(),
                                          CourseCapacityChanged.class.getName()
-                                 ).withTags(Tag.of(FacultyTags.COURSE_ID, courseId)),
+                                 ).withTags(Tag.of("courseId", courseId)),
                     EventCriteria.match()
                                  .eventsOfTypes(StudentEnrolledFaculty.class.getName())
-                                 .withTags(Tag.of(FacultyTags.STUDENT_ID, studentId)),
+                                 .withTags(Tag.of("studentId", studentId)),
                     EventCriteria.match()
                                  .eventsOfTypes(
                                          StudentSubscribed.class.getName(),
                                          StudentUnsubscribed.class.getName()
-                                 ).withTags(Tag.of(FacultyTags.COURSE_ID, courseId)),
+                                 ).withTags(Tag.of("courseId", courseId)), // <3>
                     EventCriteria.match()
                                  .eventsOfTypes(
                                          StudentSubscribed.class.getName(),
                                          StudentUnsubscribed.class.getName()
-                                 ).withTags(Tag.of(FacultyTags.STUDENT_ID, studentId))
+                                 ).withTags(Tag.of("studentId", studentId))
             );
         }
     }
 
 }
 ----
+<1> The `@EventCriteriaBuilder` annotation marks the method as a criteria builder for the given entity. It gives you more flexibility than just using `tagKey` property on the `@EventSourcedEntity` annotation.
+<2> Thanks to the `SubscriptionId` which is composed of `courseId` and `studentId` we know the values of those tags we needed.
+<3> As you may see at the highest level those `EventCriteria` are combined with `either` method, but when we define tags in `withTags` it means that the certain type of event requires all of them. So, we split `StudentSubscribed` and `StudentUnsubscribed` events into two separate criteria, because we need to load all events of those type for the given `courseId` and `studentId`.
 
 It gives us better accessibility of our system - thanks to that, as you see there is no `CourseRenamed` event in our criteria, so the Faculty administrator is still able to rename the course.
 In case of Aggregates those operation may clash, or you need to introduce separated entity for such courses.
