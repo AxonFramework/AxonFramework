@@ -76,6 +76,11 @@ As you remember from the previous section we do not focus on entities, but on be
 So we're going to describe our feature in Given-When-Then manner based on commands and events.
 Let's create the first test case using Axon Test Fixture.
 We're going to translate the Event Modeling specification, which you've seen on the top of the page + other test cases for this slice, to the code.
+We call it Test First, we don't use TDD to design our application, but we do the design on the whiteboard using Event Modeling, which is faster and much heaper than in the code.
+From Event Modeling we can dervie the test cases for specific slice (functionality) and translate them directly to the code.
+The Axon Framework supports the Given-When-Then convention pretty well.
+
+NOTE: Translating Event Modeling specification to tests it's a repeatable tasks so can be even done easily with the help of AI.
 
 [source,java]
 .src/test/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentTest.java
@@ -142,6 +147,33 @@ class SubscribeStudentTest {
                .exception(RuntimeException.class, "Course is fully booked");
     }
 
+    @Test
+    void studentSubscribedToTooManyCourses() {
+        var studentId = StudentId.random();
+        var course1Id = CourseId.random();
+        var course2Id = CourseId.random();
+        var course3Id = CourseId.random();
+        var targetCourseId = CourseId.random();
+
+        fixture.given()
+                .event(new StudentEnrolledFaculty(studentId.raw(), "Milan", "Savic"))
+                .event(new CourseCreated(targetCourseId.raw(), "Programming", 10))
+                .event(new CourseCreated(course1Id.raw(), "Course 1", 10))
+                .event(new CourseCreated(course2Id.raw(), "Course 2", 10))
+                .event(new CourseCreated(course3Id.raw(), "Course 3", 10))
+                .event(new StudentSubscribed(studentId.raw(), course1Id.raw()))
+                .event(new StudentSubscribed(studentId.raw(), course2Id.raw()))
+                .event(new StudentSubscribed(studentId.raw(), course3Id.raw()))
+                .when()
+                .command(new io.axoniq.demo.university.faculty.write.subscribestudentmulti.SubscribeStudent(studentId, targetCourseId))
+                .then()
+                .noEvents()
+                .exceptionSatisfies(thrown -> assertThat(thrown)
+                        .isInstanceOf(RuntimeException.class)
+                        .hasMessage("Student subscribed to too many courses")
+                );
+    }
+
 }
 ----
 
@@ -158,7 +190,78 @@ import java.util.UUID;
 
 class SubscribeStudentCommandHandler {
 
+    private static final int MAX_COURSES_PER_STUDENT = 3; // <1>
 
+    @CommandHandler
+    void handle(
+            SubscribeStudent command,
+            @InjectEntity State state, // <2>
+            EventSink eventSink,
+            ProcessingContext processingContext
+    ) {
+        var events = decide(command, state); // <3>
+        var messages = toMessages(events); // <4>
+        eventSink.publish(processingContext, messages); // <5>
+    }
+
+    private List<StudentSubscribed> decide(SubscribeStudent command, State state) {
+        // todo: check business rules
+        return List.of(new StudentSubscribed(command.studentId().raw(), command.courseId().raw()));
+    }
+
+    private static List<EventMessage<?>> toMessages(List<StudentSubscribed> events) {
+        return events.stream()
+                     .map(SubscribeStudentCommandHandler::toMessage)
+                     .collect(Collectors.toList());
+    }
+
+    private static EventMessage<?> toMessage(Object payload) {
+        return new GenericEventMessage<>(
+                new MessageType(payload.getClass()),
+                payload
+        );
+    }
+
+    @EventSourcedEntity
+    static class State {
+        // todo: define state necessary to accept or reject `SubscribeStudent` command
+    }
 
 }
 ----
+<.> For the example simplicity we hardcoded the maximum number of courses per student. Each student can subscribe up to 3 courses in the same time.
+<.> This is your domain model invocation. You may keep it in the command handler as on the example or make the function unaware of the infrastructure like Axon Framework. This functional resembles the `Decider pattern.
+<.> As before we translate events (which are a result of our domain function) to messages to be able to publish them.
+<.> We use `EventSink` to publish events.
+
+As you see there are two TODOs left in the code. Now we need to validate business rules, there are a few of them. The student can subscribe to course only if adhere to the domain invariants of this operation.
+I will list them one by one with assertion function, and we will also see what you need in the State object to validate them.
+
+* The student is enrolled in the faculty
+When student is enrolled it has assigned it, so we add it to the State:
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
+----
+    @EventSourcedEntity
+    static class State {
+
+        private StudentId studentId;
+
+        @EventSourcingHandler
+        void evolve(StudentEnrolledFaculty event) {
+            this.studentId = new StudentId(event.studentId());
+        }
+    }
+----
+
+Business rule assertion function:
+
+
+- the student is enrolled in the faculty
+- the student is not already subscribed to the course
+- the course exists
+- the course is not fully booked (based on course capacity)
+- the student is not subscribed to too many courses (max 3 courses per student).
+
+== Event Criteria
+`StudentEnrolledFaculty` if we didn't specify the tag. We've done it before but it's not enough...
