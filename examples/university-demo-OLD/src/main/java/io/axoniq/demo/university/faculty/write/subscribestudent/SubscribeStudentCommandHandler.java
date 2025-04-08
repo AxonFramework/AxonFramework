@@ -101,13 +101,12 @@ class SubscribeStudentCommandHandler {
     @EventSourcedEntity
     static class State {
 
-        private StudentId studentId;
         private CourseId courseId;
         private int courseCapacity = 0;
-
-        private int noOfCoursesStudentSubscribed = 0;
         private int noOfStudentsSubscribedToCourse = 0;
 
+        private StudentId studentId;
+        private int noOfCoursesStudentSubscribed = 0;
         private boolean alreadySubscribed = false;
 
         @EventSourcingHandler
@@ -128,26 +127,26 @@ class SubscribeStudentCommandHandler {
 
         @EventSourcingHandler
         void evolve(StudentSubscribed event) {
-            var enrolledStudentId = new StudentId(event.studentId());
-            var enrolledCourseId = new CourseId(event.courseId());
+            var subscribingStudentId = new StudentId(event.studentId());
+            var subscribedCourseId = new CourseId(event.courseId());
             noOfStudentsSubscribedToCourse++;
-            if (enrolledStudentId.equals(studentId)) {
+            if (subscribingStudentId.equals(studentId)) {
                 noOfCoursesStudentSubscribed++;
             }
-            if (enrolledStudentId.equals(studentId) && enrolledCourseId.equals(courseId)) {
+            if (subscribingStudentId.equals(studentId) && subscribedCourseId.equals(courseId)) {
                 alreadySubscribed = true;
             }
         }
 
         @EventSourcingHandler
         void evolve(StudentUnsubscribed event) {
-            var enrolledStudentId = new StudentId(event.studentId());
-            var enrolledCourseId = new CourseId(event.courseId());
+            var subscribingStudentId = new StudentId(event.studentId());
+            var subscribedCourseId = new CourseId(event.courseId());
             noOfStudentsSubscribedToCourse--;
-            if (enrolledStudentId.equals(studentId)) {
+            if (subscribingStudentId.equals(studentId)) {
                 noOfCoursesStudentSubscribed--;
             }
-            if (enrolledStudentId.equals(studentId) && enrolledCourseId.equals(courseId)) {
+            if (subscribingStudentId.equals(studentId) && subscribedCourseId.equals(courseId)) {
                 alreadySubscribed = false;
             }
         }
