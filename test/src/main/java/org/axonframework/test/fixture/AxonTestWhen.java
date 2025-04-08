@@ -127,7 +127,7 @@ class AxonTestWhen implements AxonTestPhase.When {
             completion.join();
         } catch (Exception e) {
             this.actualResult = null;
-            this.actualException = e;
+            this.actualException = e.getCause();
         }
     }
 

@@ -16,18 +16,18 @@
 
 package org.axonframework.test.fixture;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventhandling.EventSink;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
 class MessagesRecordingConfigurationEnhancer implements ConfigurationEnhancer {
 
     @Override
-    public void enhance(@NotNull ComponentRegistry registry) {
+    public void enhance(@Nonnull ComponentRegistry registry) {
         Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.")
                .registerDecorator(EventSink.class,
                                   Integer.MAX_VALUE,

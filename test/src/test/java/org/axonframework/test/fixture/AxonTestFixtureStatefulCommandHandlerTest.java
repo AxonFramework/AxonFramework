@@ -38,6 +38,7 @@ import org.axonframework.test.fixture.sampledomain.Student;
 import org.axonframework.test.fixture.sampledomain.StudentNameChangedEvent;
 import org.junit.jupiter.api.*;
 
+import java.util.List;
 import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -76,7 +77,10 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .when()
                .command(changeToTheSameName)
                .then()
-               .events(events -> assertTrue(events.isEmpty()));
+               .noEvents()
+               .eventsSatisfy(events -> assertTrue(events.isEmpty()))
+               .eventsMatch(List::isEmpty)
+               .success();
     }
 
     @Test
@@ -107,6 +111,58 @@ class AxonTestFixtureStatefulCommandHandlerTest {
         fixture.given()
                .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
+               .when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+               .then()
+               .events(new StudentNameChangedEvent("my-studentId-1", "name-3", 3));
+    }
+
+    @Test
+    void givenMultipleEventsWhenCommandThenEvents() {
+        var configurer = MessagingConfigurer.create();
+        registerSampleStatefulCommandHandler(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        fixture.given()
+               .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
+               .event(new StudentNameChangedEvent("my-studentId-1", "name-2", 2))
+               .when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+               .then()
+               .events(new StudentNameChangedEvent("my-studentId-1", "name-3", 3));
+    }
+
+    @Test
+    void givenEventsListWhenCommandThenEvents() {
+        var configurer = MessagingConfigurer.create();
+        registerSampleStatefulCommandHandler(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        var givenEventsList = List.of(
+                new StudentNameChangedEvent("my-studentId-1", "name-1", 1),
+                new StudentNameChangedEvent("my-studentId-1", "name-2", 2));
+        fixture.given()
+               .events(givenEventsList)
+               .when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+               .then()
+               .events(new StudentNameChangedEvent("my-studentId-1", "name-3", 3));
+    }
+
+    @Test
+    void givenCommandsListWhenCommandThenEvents() {
+        var configurer = MessagingConfigurer.create();
+        registerSampleStatefulCommandHandler(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        var givenCommandsList = List.of(
+                new ChangeStudentNameCommand("my-studentId-1", "name-1"),
+                new ChangeStudentNameCommand("my-studentId-1", "name-2"));
+        fixture.given()
+               .commands(givenCommandsList)
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
                .then()
@@ -179,8 +235,6 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                 .then()
                 .noEvents();
         }
-
-
     }
 
     private static void registerSampleStatefulCommandHandler(MessagingConfigurer configurer) {
