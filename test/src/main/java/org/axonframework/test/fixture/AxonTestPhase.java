@@ -122,10 +122,6 @@ public interface AxonTestPhase {
     /**
      * Interface describing the operations available in the Given phase of the test fixture execution. This phase is
      * used to define the initial state of the system before executing the test action.
-     * <p>
-     * Each operation in the Given phase (such as applying an event or dispatching a command) is executed in its own
-     * separate Unit of Work which is committed immediately after execution. This allows for building up the initial
-     * state incrementally with each operation being processed independently.
      */
     interface Given {
 
@@ -173,6 +169,9 @@ public interface AxonTestPhase {
         /**
          * Configures the given {@code messages} as events in the "given" state. These events will be published in the
          * order they are provided.
+         * <p>
+         * All the {@code messages} will be processed within a single Unit of Work, meaning their processing won't be
+         * affected by changes made by earlier messages passed to this method.
          *
          * @param messages The event messages to publish.
          * @return The current Given instance, for fluent interfacing.
@@ -182,6 +181,9 @@ public interface AxonTestPhase {
         /**
          * Configures the given {@code events} as events in the "given" state. These events will be published in the
          * order they are provided.
+         * <p>
+         * All the {@code messages} will be processed within a single Unit of Work, meaning their processing won't be
+         * affected by changes made by earlier messages passed to this method.
          *
          * @param events The lists of events to publish.
          * @return The current Given instance, for fluent interfacing.
@@ -193,6 +195,9 @@ public interface AxonTestPhase {
         /**
          * Configures the given {@code events} as events in the "given" state. These events will be published in the
          * order they are provided.
+         * <p>
+         * All the {@code messages} will be processed within a single Unit of Work, meaning their processing won't be
+         * affected by changes made by earlier messages passed to this method.
          *
          * @param events The lists of events to publish.
          * @return The current Given instance, for fluent interfacing.
@@ -233,8 +238,11 @@ public interface AxonTestPhase {
         Given command(@Nonnull Object payload, @Nonnull MetaData metaData);
 
         /**
-         * Configures the given {@code messages} as commands in the "given" state. These commands will be dispatched in
-         * the order they are provided in the same Unit of Work.
+         * Configures the given {@code messages} as commands in the "given" state.
+         * <p>
+         * Each message will be processed in a dedicated Unit of Work, meaning that the processing of a message will be
+         * affected by the state changes made by the processing of previous messages. This behavior is in contrast to
+         * the {@link Given#events} method, where all messages are processed within a single Unit of Work.
          *
          * @param messages The command messages to dispatch.
          * @return The current Given instance, for fluent interfacing.
@@ -244,6 +252,10 @@ public interface AxonTestPhase {
         /**
          * Configures the given {@code commands} as commands in the "given" state. These commands will be dispatched in
          * the order they are provided in the same Unit of Work.
+         * <p>
+         * Each message will be processed in a dedicated Unit of Work, meaning that the processing of a message will be
+         * affected by the state changes made by the processing of previous messages. This behavior is in contrast to
+         * the {@link Given#events} method, where all messages are processed within a single Unit of Work.
          *
          * @param commands The command messages to dispatch.
          * @return The current Given instance, for fluent interfacing.
@@ -255,6 +267,10 @@ public interface AxonTestPhase {
         /**
          * Configures the given {@code commands} as commands in the "given" state. These commands will be dispatched in
          * the order they are provided in the same Unit of Work.
+         * <p>
+         * Each message will be processed in a dedicated Unit of Work, meaning that the processing of a message will be
+         * affected by the state changes made by the processing of previous messages. This behavior is in contrast to
+         * the {@link Given#events} method, where all messages are processed within a single Unit of Work.
          *
          * @param commands The command messages to dispatch.
          * @return The current Given instance, for fluent interfacing.

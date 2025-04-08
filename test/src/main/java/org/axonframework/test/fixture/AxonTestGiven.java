@@ -133,14 +133,9 @@ class AxonTestGiven implements AxonTestPhase.Given {
 
     @Override
     public AxonTestPhase.Given commands(@Nonnull CommandMessage<?>... messages) {
-        inUnitOfWorkOnInvocation(processingContext -> {
-            CompletableFuture<? extends Message<?>> dispatchOneByOneFuture = CompletableFuture.completedFuture(null);
-            for (var message : messages) {
-                var dispatchFuture = commandBus.dispatch(message, processingContext);
-                dispatchOneByOneFuture = dispatchOneByOneFuture.thenCompose(m -> dispatchFuture);
-            }
-            return dispatchOneByOneFuture;
-        });
+        for (var message : messages) {
+            inUnitOfWorkOnInvocation(processingContext -> commandBus.dispatch(message, processingContext));
+        }
         return this;
     }
 
