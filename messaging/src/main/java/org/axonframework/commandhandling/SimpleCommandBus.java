@@ -148,7 +148,7 @@ public class SimpleCommandBus implements CommandBus {
      */
     protected CompletableFuture<? extends Message<?>> handle(CommandMessage<?> command, CommandHandler handler) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Handling command [{} ({})]", command.getIdentifier(), command.getCommandName());
+            logger.debug("Handling command [{} ({})]", command.getIdentifier(), command.type());
         }
 
         AsyncUnitOfWork unitOfWork = new AsyncUnitOfWork(command.getIdentifier(), worker);
@@ -160,11 +160,11 @@ public class SimpleCommandBus implements CommandBus {
                 if (e == null) {
                     logger.debug("Command [{} ({})] completed successfully",
                                  command.getIdentifier(),
-                                 command.getCommandName());
+                                 command.type());
                 } else {
                     logger.debug("Command [{} ({})] completed exceptionally",
                                  command.getIdentifier(),
-                                 command.getCommandName(),
+                                 command.type(),
                                  e);
                 }
             });

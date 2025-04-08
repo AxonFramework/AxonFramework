@@ -61,8 +61,8 @@ class AnnotationQueryHandlerAdapterTest {
         when(queryBus.subscribe(any(), any(), any())).thenReturn(() -> true);
         Registration registration = testSubject.subscribe(queryBus);
 
-        verify(queryBus, times(1)).subscribe(eq(String.class.getName()), eq(String.class), any());
-        verify(queryBus, times(1)).subscribe(eq("Hello"), eq(String.class), any());
+        verify(queryBus, times(1)).subscribe(eq("query"), eq(String.class), any());
+        verify(queryBus, times(1)).subscribe(eq("query"), eq(String.class), any());
 
         assertTrue(registration.cancel());
     }
@@ -106,7 +106,7 @@ class AnnotationQueryHandlerAdapterTest {
     @Test
     void handleQueryWithEmptyOptional() throws Exception {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "noEcho", "hello", instanceOf(String.class)
+                new MessageType("noEcho"), "hello", instanceOf(String.class)
         );
 
         assertNull(testSubject.handleSync(testQuery));
@@ -115,7 +115,7 @@ class AnnotationQueryHandlerAdapterTest {
     @Test
     void handleQueryWithProvidedOptional() throws Exception {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "Hello", "hello", instanceOf(String.class)
+                new MessageType("query"), "hello", instanceOf(String.class)
         );
 
         assertEquals("hello", testSubject.handleSync(testQuery));
@@ -152,7 +152,7 @@ class AnnotationQueryHandlerAdapterTest {
         );
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "Hello", "Hi", instanceOf(String.class)
+                new MessageType("query"), "Hi", instanceOf(String.class)
         );
 
         String result = (String) testSubject.handleSync(testQuery);
@@ -200,7 +200,7 @@ class AnnotationQueryHandlerAdapterTest {
     @SuppressWarnings("unused")
     private static class MyQueryHandler {
 
-        @QueryHandler
+        @QueryHandler(queryName = "query")
         public String echo(String echo) {
             return echo;
         }
@@ -210,7 +210,7 @@ class AnnotationQueryHandlerAdapterTest {
             return Optional.ofNullable(echo);
         }
 
-        @QueryHandler
+        @QueryHandler(queryName = "query")
         public Integer echo3(String echo) {
             throw new MockException("Mock");
         }
@@ -220,7 +220,7 @@ class AnnotationQueryHandlerAdapterTest {
             return Optional.empty();
         }
 
-        @QueryHandler
+        @QueryHandler(queryName = "query")
         public List<? extends String> echo4(Integer count) {
             List<String> value = new ArrayList<>();
             for (int i = 0; i < count; i++) {

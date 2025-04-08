@@ -105,7 +105,7 @@ class GenericEventMessageTest {
         String actual = EventTestUtils.asEventMessage("MyPayload").andMetaData(MetaData.with("key", "value")
                                                                                        .and("key2", 13))
                                       .toString();
-        assertTrue(actual.startsWith("GenericEventMessage{payload={MyPayload}, metadata={"), "Wrong output: " + actual);
+        assertTrue(actual.startsWith("GenericEventMessage{type={java.lang.String#0.0.1}, payload={MyPayload}, metadata={"), "Wrong output: " + actual);
         assertTrue(actual.contains("'key'->'value'"), "Wrong output: " + actual);
         assertTrue(actual.contains("'key2'->'13'"), "Wrong output: " + actual);
         assertTrue(actual.contains("', timestamp='"), "Wrong output: " + actual);

@@ -158,7 +158,6 @@ class AxonAutoConfigurationWithGracefulShutdownTest {
                 var dummyQuery = new DummyQuery();
                 try {
                     var resultOpt = queryGateway.query(
-                            "dummy",
                             dummyQuery,
                             ResponseTypes.instanceOf(DummyQueryResponse.class)
                     );

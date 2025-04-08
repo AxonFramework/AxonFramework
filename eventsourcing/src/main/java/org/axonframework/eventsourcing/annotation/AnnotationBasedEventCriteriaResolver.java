@@ -90,7 +90,7 @@ public class AnnotationBasedEventCriteriaResolver implements CriteriaResolver<Ob
         String annotationTagKey = (String) attributes.get("tagKey");
         this.tagKey = annotationTagKey.isEmpty() ? null : annotationTagKey;
 
-        Set<Method> eventCriteriaBuilders = Arrays.stream(entityType.getMethods())
+        Set<Method> eventCriteriaBuilders = Arrays.stream(entityType.getDeclaredMethods())
                                                   .filter(m -> m.isAnnotationPresent(EventCriteriaBuilder.class))
                                                   .collect(Collectors.toSet());
 
@@ -165,6 +165,7 @@ public class AnnotationBasedEventCriteriaResolver implements CriteriaResolver<Ob
                     "Method annotated with @EventCriteriaBuilder must be static. Violating method: %s".formatted(
                             ReflectionUtils.toDiscernibleSignature(m)));
         }
+        ReflectionUtils.ensureAccessible(m);
     }
 
     @Override

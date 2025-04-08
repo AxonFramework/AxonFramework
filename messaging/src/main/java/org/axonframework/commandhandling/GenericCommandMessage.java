@@ -36,8 +36,6 @@ import javax.annotation.Nonnull;
  */
 public class GenericCommandMessage<P> extends MessageDecorator<P> implements CommandMessage<P> {
 
-    private final String commandName;
-
     /**
      * Constructs a {@code GenericCommandMessage} for the given {@code type} and {@code payload}.
      * <p>
@@ -61,11 +59,11 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
     public GenericCommandMessage(@Nonnull MessageType type,
                                  @Nonnull P payload,
                                  @Nonnull Map<String, ?> metaData) {
-        this(new GenericMessage<>(type, payload, metaData), payload.getClass().getName());
+        this(new GenericMessage<>(type, payload, metaData));
     }
 
     /**
-     * Constructs a {@code GenericCommandMessage} with given {@code delegate} and {@code commandName}.
+     * Constructs a {@code GenericCommandMessage} with given {@code delegate}.
      * <p>
      * The {@code delegate} will be used supply the {@link Message#getPayload() payload}, {@link Message#type() type},
      * {@link Message#getMetaData() metadata} and {@link Message#getIdentifier() identifier} of the resulting
@@ -77,27 +75,19 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      * @param delegate    The {@link Message} containing {@link Message#getPayload() payload},
      *                    {@link Message#type() qualifiedName}, {@link Message#getIdentifier() identifier} and
      *                    {@link Message#getMetaData() metadata} for the {@link CommandMessage} to reconstruct.
-     * @param commandName The qualifiedName for this {@link CommandMessage}.
      */
-    public GenericCommandMessage(@Nonnull Message<P> delegate,
-                                 @Nonnull String commandName) {
+    public GenericCommandMessage(@Nonnull Message<P> delegate) {
         super(delegate);
-        this.commandName = commandName;
-    }
-
-    @Override
-    public String getCommandName() {
-        return commandName;
     }
 
     @Override
     public GenericCommandMessage<P> withMetaData(@Nonnull Map<String, ?> metaData) {
-        return new GenericCommandMessage<>(getDelegate().withMetaData(metaData), commandName);
+        return new GenericCommandMessage<>(getDelegate().withMetaData(metaData));
     }
 
     @Override
     public GenericCommandMessage<P> andMetaData(@Nonnull Map<String, ?> metaData) {
-        return new GenericCommandMessage<>(getDelegate().andMetaData(metaData), commandName);
+        return new GenericCommandMessage<>(getDelegate().andMetaData(metaData));
     }
 
     @Override
@@ -108,15 +98,7 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
                                                       delegate.type(),
                                                       conversion.apply(delegate.getPayload()),
                                                       delegate.getMetaData());
-        return new GenericCommandMessage<>(transformed, commandName);
-    }
-
-    @Override
-    protected void describeTo(StringBuilder stringBuilder) {
-        super.describeTo(stringBuilder);
-        stringBuilder.append(", commandName='")
-                     .append(getCommandName())
-                     .append('\'');
+        return new GenericCommandMessage<>(transformed);
     }
 
     @Override

@@ -64,9 +64,7 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getPayload()), messageSerializer),
                 new LazyDeserializingObject<>(new GrpcSerializedObject(queryRequest.getResponseType()), serializer),
                 new GrpcMetaData(queryRequest.getMetaDataMap(), messageSerializer),
-                new MessageType(serializer.classForType(
-                        new GrpcSerializedObject(queryRequest.getResponseType()).getType()
-                ))
+                new MessageType(queryRequest.getQuery())
         );
     }
 
@@ -91,11 +89,6 @@ public class GrpcBackedQueryMessage<P, R> implements QueryMessage<P, R> {
     @Override
     public MessageType type() {
         return this.type;
-    }
-
-    @Override
-    public String getQueryName() {
-        return query.getQuery();
     }
 
     @Override

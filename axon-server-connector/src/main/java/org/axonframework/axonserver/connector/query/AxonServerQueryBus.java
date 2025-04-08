@@ -197,7 +197,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
                     .flatMapMany(activity ->
                             Mono.just(dispatchInterceptors.intercept(queryWithContext))
                                     .flatMapMany(intercepted -> {
-                                                if (shouldRunQueryLocally(intercepted.getQueryName())) {
+                                                if (shouldRunQueryLocally(intercepted.type().name())) {
                                                     return localSegment.streamingQuery(intercepted);
                                                 }
                                                 return Mono.just(serializeStreaming(intercepted, priority))
@@ -286,7 +286,7 @@ public class AxonServerQueryBus implements QueryBus, Distributed<QueryBus>, Life
             ShutdownLatch.ActivityHandle queryInTransit = shutdownLatch.registerActivity();
             CompletableFuture<QueryResponseMessage<R>> queryTransaction = new CompletableFuture<>();
             try {
-                if (shouldRunQueryLocally(interceptedQuery.getQueryName())) {
+                if (shouldRunQueryLocally(interceptedQuery.type().name())) {
                     queryTransaction = localSegment.query(interceptedQuery);
                 } else {
                     int priority = priorityCalculator.determinePriority(interceptedQuery);
