@@ -474,6 +474,16 @@ class DefaultConfigurerTest {
     }
 
     @Test
+    void defaultSnapshotterDefaultsToNoOpWhenNoAggregatesAreKnown() {
+        Snapshotter defaultSnapshotter =
+                DefaultConfigurer.jpaConfiguration(() -> entityManager)
+                                 .configureSerializer(configuration -> TestSerializer.xStreamSerializer())
+                                 .buildConfiguration().snapshotter();
+
+        assertFalse(defaultSnapshotter instanceof AggregateSnapshotter);
+    }
+
+    @Test
     void configureSnapshotterSetsCustomSnapshotter() {
         Snapshotter expectedSnapshotter = mock(Snapshotter.class);
 
