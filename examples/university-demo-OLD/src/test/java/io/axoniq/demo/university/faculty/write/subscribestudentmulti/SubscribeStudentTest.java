@@ -76,13 +76,6 @@ class SubscribeStudentTest {
         var course1Id = CourseId.random();
         var course2Id = CourseId.random();
         var course3Id = CourseId.random();
-        var course4Id = CourseId.random();
-        var course5Id = CourseId.random();
-        var course6Id = CourseId.random();
-        var course7Id = CourseId.random();
-        var course8Id = CourseId.random();
-        var course9Id = CourseId.random();
-        var course10Id = CourseId.random();
         var targetCourseId = CourseId.random();
 
         fixture.given()
@@ -91,23 +84,9 @@ class SubscribeStudentTest {
                .event(new CourseCreated(course1Id.raw(), "Course 1", 10))
                .event(new CourseCreated(course2Id.raw(), "Course 2", 10))
                .event(new CourseCreated(course3Id.raw(), "Course 3", 10))
-               .event(new CourseCreated(course4Id.raw(), "Course 4", 10))
-               .event(new CourseCreated(course5Id.raw(), "Course 5", 10))
-               .event(new CourseCreated(course6Id.raw(), "Course 6", 10))
-               .event(new CourseCreated(course7Id.raw(), "Course 7", 10))
-               .event(new CourseCreated(course8Id.raw(), "Course 8", 10))
-               .event(new CourseCreated(course9Id.raw(), "Course 9", 10))
-               .event(new CourseCreated(course10Id.raw(), "Course 10", 10))
                .event(new StudentSubscribed(studentId.raw(), course1Id.raw()))
                .event(new StudentSubscribed(studentId.raw(), course2Id.raw()))
                .event(new StudentSubscribed(studentId.raw(), course3Id.raw()))
-               .event(new StudentSubscribed(studentId.raw(), course4Id.raw()))
-               .event(new StudentSubscribed(studentId.raw(), course5Id.raw()))
-               .event(new StudentSubscribed(studentId.raw(), course6Id.raw()))
-               .event(new StudentSubscribed(studentId.raw(), course7Id.raw()))
-               .event(new StudentSubscribed(studentId.raw(), course8Id.raw()))
-               .event(new StudentSubscribed(studentId.raw(), course9Id.raw()))
-               .event(new StudentSubscribed(studentId.raw(), course10Id.raw()))
                .when()
                .command(new SubscribeStudent(studentId, targetCourseId))
                .then()
