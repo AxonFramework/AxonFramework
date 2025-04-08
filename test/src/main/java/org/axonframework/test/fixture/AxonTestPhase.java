@@ -21,8 +21,8 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MetaData;
-import org.hamcrest.Matcher;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,10 +44,10 @@ import java.util.function.Predicate;
  * </ul>
  * <p>
  * The test fixture manages {@link org.axonframework.messaging.unitofwork.AsyncUnitOfWork} instances during test execution,
- * automatically committing as appropriate. During the "given" phase, each operation (like {@link Given#event}},
+ * automatically committing as appropriate. During the Given phase, each operation (like {@link Given#event}},
  * {@link Given#command} or even batched like {@link Given#events} and {@link Given#commands})
- * is executed in its own separate {@link org.axonframework.messaging.unitofwork.AsyncUnitOfWork} that is committed immediately after execution. In the "when" phase, a single Unit of Work is started
- * and committed after the command is executed. The "then" phase only validates the results.
+ * is executed in its own separate {@link org.axonframework.messaging.unitofwork.AsyncUnitOfWork} that is committed immediately after execution. In the When phase, a single Unit of Work is started
+ * and committed after the command is executed. The Then phase only validates the results.
  * <p>
  * The test phases operates on components defined in {@link org.axonframework.configuration.NewConfiguration} that you pass to the fixture during its construction.
  * <p>
@@ -99,20 +99,20 @@ public interface AxonTestPhase {
      * Interface describing the initial setup phase of a test fixture. This phase allows configuring the test fixture
      * before starting the test execution.
      * <p>
-     * From this phase, you can transition to either the "given" phase to define initial state, or directly to the
-     * "when" phase if no prior state is needed.
+     * From this phase, you can transition to either the Given phase to define initial state, or directly to the When
+     * phase if no prior state is needed.
      */
     interface Setup {
 
         /**
-         * Transition to the "given" phase to define the initial state of the system before testing.
+         * Transition to the Given phase to define the initial state of the system before testing.
          *
          * @return A {@link Given} instance that allows defining the initial state.
          */
         AxonTestPhase.Given given();
 
         /**
-         * Transition directly to the "when" phase, skipping the "given" phase, which implies no prior state.
+         * Transition directly to the When phase, skipping the Given phase, which implies no prior state.
          *
          * @return A {@link When} instance that allows executing the test.
          */
@@ -120,12 +120,8 @@ public interface AxonTestPhase {
     }
 
     /**
-     * Interface describing the operations available in the "given" phase of the test fixture execution. This phase is
+     * Interface describing the operations available in the Given phase of the test fixture execution. This phase is
      * used to define the initial state of the system before executing the test action.
-     * <p>
-     * Each operation in the "given" phase (such as applying an event or dispatching a command) is executed in its own
-     * separate Unit of Work which is committed immediately after execution. This allows for building up the initial
-     * state incrementally with each operation being processed independently.
      */
     interface Given {
 
@@ -173,6 +169,9 @@ public interface AxonTestPhase {
         /**
          * Configures the given {@code messages} as events in the "given" state. These events will be published in the
          * order they are provided.
+         * <p>
+         * All the {@code messages} will be processed within a single Unit of Work, meaning their processing won't be
+         * affected by changes made by earlier messages passed to this method.
          *
          * @param messages The event messages to publish.
          * @return The current Given instance, for fluent interfacing.
@@ -182,11 +181,28 @@ public interface AxonTestPhase {
         /**
          * Configures the given {@code events} as events in the "given" state. These events will be published in the
          * order they are provided.
+         * <p>
+         * All the {@code messages} will be processed within a single Unit of Work, meaning their processing won't be
+         * affected by changes made by earlier messages passed to this method.
          *
          * @param events The lists of events to publish.
          * @return The current Given instance, for fluent interfacing.
          */
-        Given events(@Nonnull List<?>... events);
+        default Given events(@Nonnull Object... events) {
+            return events(Arrays.stream(events).toList());
+        }
+
+        /**
+         * Configures the given {@code events} as events in the "given" state. These events will be published in the
+         * order they are provided.
+         * <p>
+         * All the {@code messages} will be processed within a single Unit of Work, meaning their processing won't be
+         * affected by changes made by earlier messages passed to this method.
+         *
+         * @param events The lists of events to publish.
+         * @return The current Given instance, for fluent interfacing.
+         */
+        Given events(@Nonnull List<?> events);
 
         /**
          * Configures a single command with the given {@code payload} as part of the "given" state. This command will be
@@ -222,8 +238,11 @@ public interface AxonTestPhase {
         Given command(@Nonnull Object payload, @Nonnull MetaData metaData);
 
         /**
-         * Configures the given {@code messages} as commands in the "given" state. These commands will be dispatched in
-         * the order they are provided in the same Unit of Work.
+         * Configures the given {@code messages} as commands in the "given" state.
+         * <p>
+         * Each message will be processed in a dedicated Unit of Work, meaning that the processing of a message will be
+         * affected by the state changes made by the processing of previous messages. This behavior is in contrast to
+         * the {@link Given#events} method, where all messages are processed within a single Unit of Work.
          *
          * @param messages The command messages to dispatch.
          * @return The current Given instance, for fluent interfacing.
@@ -231,7 +250,35 @@ public interface AxonTestPhase {
         Given commands(@Nonnull CommandMessage<?>... messages);
 
         /**
-         * Transitions to the "when" phase to execute the test action.
+         * Configures the given {@code commands} as commands in the "given" state. These commands will be dispatched in
+         * the order they are provided in the same Unit of Work.
+         * <p>
+         * Each message will be processed in a dedicated Unit of Work, meaning that the processing of a message will be
+         * affected by the state changes made by the processing of previous messages. This behavior is in contrast to
+         * the {@link Given#events} method, where all messages are processed within a single Unit of Work.
+         *
+         * @param commands The command messages to dispatch.
+         * @return The current Given instance, for fluent interfacing.
+         */
+        default Given commands(@Nonnull Object... commands) {
+            return commands(Arrays.stream(commands).toList());
+        }
+
+        /**
+         * Configures the given {@code commands} as commands in the "given" state. These commands will be dispatched in
+         * the order they are provided in the same Unit of Work.
+         * <p>
+         * Each message will be processed in a dedicated Unit of Work, meaning that the processing of a message will be
+         * affected by the state changes made by the processing of previous messages. This behavior is in contrast to
+         * the {@link Given#events} method, where all messages are processed within a single Unit of Work.
+         *
+         * @param commands The command messages to dispatch.
+         * @return The current Given instance, for fluent interfacing.
+         */
+        Given commands(@Nonnull List<?> commands);
+
+        /**
+         * Transitions to the When phase to execute the test action.
          *
          * @return A {@link When} instance that allows executing the test.
          */
@@ -239,8 +286,8 @@ public interface AxonTestPhase {
     }
 
     /**
-     * Interface describing the operations available in the "when" phase of the test fixture execution. This phase is
-     * used to execute the actual action being tested, typically a command.
+     * Interface describing the operations available in the When phase of the test fixture execution. This phase is used
+     * to execute the actual action being tested, typically a command.
      * <p>
      * Each operation in the phase (such as dispatching a command) is executed in its own separate Unit of Work which is
      * committed immediately after execution. This allows for building up the initial state incrementally with each
@@ -251,7 +298,7 @@ public interface AxonTestPhase {
         interface Command {
 
             /**
-             * Transitions to the "then" phase to validate the results of the test.
+             * Transitions to the Then phase to validate the results of the test.
              *
              * @return A {@link Then} instance that allows validating the test results.
              */
@@ -261,7 +308,7 @@ public interface AxonTestPhase {
         interface Event {
 
             /**
-             * Transitions to the "then" phase to validate the results of the test.
+             * Transitions to the Then phase to validate the results of the test.
              *
              * @return A {@link Then} instance that allows validating the test results.
              */
@@ -342,8 +389,8 @@ public interface AxonTestPhase {
     }
 
     /**
-     * Interface describing the operations available in the "then" phase of the test fixture execution. This phase is
-     * used to validate the results of the test action executed in the "when" phase.
+     * Interface describing the operations available in the Then phase of the test fixture execution. This phase is used
+     * to validate the results of the test action executed in the When phase.
      */
     interface Then {
 
@@ -361,16 +408,13 @@ public interface AxonTestPhase {
             Command success();
 
             /**
-             * Expect the last command handler from the When phase to return a result message that matches the given
-             * {@code matcher}.
-             * <p>
-             * Only take commands into account that were dispatched explicitly with the {@link When#command}. Hence, do
-             * not take into accounts commands dispatched as side effects of the message handlers.
+             * Invokes the given {@code consumer} of the command result message that has been returned during the When
+             * phase, allowing for <b>any</b> form of assertion.
              *
-             * @param matcher The matcher to verify the actual result message against.
+             * @param consumer Consumes the command result. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            Command resultMessage(@Nonnull Matcher<? super CommandResultMessage<?>> matcher);
+            Command resultMessageSatisfies(@Nonnull Consumer<? super CommandResultMessage<?>> consumer);
 
             /**
              * Expect the last command handler from the When phase to return the given {@code expectedPayload} after
@@ -385,39 +429,13 @@ public interface AxonTestPhase {
             Command resultMessagePayload(@Nonnull Object expectedPayload);
 
             /**
-             * Expect the last command handler from the When phase to return a payload that matches the given
-             * {@code matcher} after execution.
-             * <p>
-             * Only take commands into account that were dispatched explicitly with the {@link When#command}. Hence, do
-             * not take into accounts commands dispatched as side effects of the message handlers.
+             * Invokes the given {@code consumer} of the command result payload that has been returned during the When
+             * phase, allowing for <b>any</b> form of assertion.
              *
-             * @param matcher The matcher to verify the actual return value against.
+             * @param consumer Consumes the command result payload. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            Command resultMessagePayloadMatching(@Nonnull Matcher<?> matcher);
-
-            /**
-             * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
-             * should be exactly of that type, subclasses are not accepted.
-             * <p>
-             * Only take commands into account that were dispatched explicitly with the {@link When#command}. Hence, do
-             * not take into accounts commands dispatched as side effects of the message handlers.
-             *
-             * @param expectedException The type of exception expected from the When phase execution.
-             * @return The current Then instance, for fluent interfacing.
-             */
-            Command exception(@Nonnull Class<? extends Throwable> expectedException);
-
-            /**
-             * Expect an exception to occur during the When phase that matches with the given {@code matcher}.
-             * <p>
-             * Only take commands into account that were dispatched explicitly with the {@link When#command}. Hence, do
-             * not take into accounts commands dispatched as side effects of the message handlers.
-             *
-             * @param matcher The matcher to validate the actual exception.
-             * @return The current Then instance, for fluent interfacing.
-             */
-            Command exception(@Nonnull Matcher<?> matcher);
+            Command resultMessagePayloadSatisfies(@Nonnull Consumer<Object> consumer);
         }
 
         /**
@@ -432,36 +450,11 @@ public interface AxonTestPhase {
              * @return The current Then instance, for fluent interfacing.
              */
             Event success();
-
-            /**
-             * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
-             * should be exactly of that type, subclasses are not accepted.
-             * <p>
-             * Only take events into account that were published explicitly with the {@link When#event} or
-             * {@link When#events}. Hence, do not take into accounts events published as side effects of the message
-             * handlers.
-             *
-             * @param expectedException The type of exception expected from the When phase execution.
-             * @return The current Then instance, for fluent interfacing.
-             */
-            Event exception(@Nonnull Class<? extends Throwable> expectedException);
-
-            /**
-             * Expect an exception to occur during the When phase that matches with the given {@code matcher}.
-             * <p>
-             * Only take events into account that were published explicitly with the {@link When#event} or
-             * {@link When#events}. Hence, do not take into accounts events published as side effects of the message
-             * handlers.
-             *
-             * @param matcher The matcher to validate the actual exception.
-             * @return The current Then instance, for fluent interfacing.
-             */
-            Event exception(@Nonnull Matcher<?> matcher);
         }
 
         /**
-         * Interface describing the operations available in the "then" phase of the test fixture execution. It's
-         * possible to assert published messages from the When phase.
+         * Interface describing the operations available in the Then phase of the test fixture execution. It's possible
+         * to assert published messages from the When phase.
          *
          * @param <T> The type of the current Then instance, for fluent interfacing. The type depends on the operation
          *            which was triggered in the When phase.
@@ -496,31 +489,22 @@ public interface AxonTestPhase {
             T events(@Nonnull EventMessage<?>... expectedEvents);
 
             /**
-             * Expect the published events during the {@link When} phase to match the given {@code matcher}.
-             * <p>
-             * Note: if no events were published, the matcher receives an empty List.
-             *
-             * @param matcher The matcher to match with the actually published events.
-             * @return The current Then instance, for fluent interfacing.
-             */
-            T events(@Nonnull Matcher<? extends List<? super EventMessage<?>>> matcher);
-
-            /**
-             * Allow to consume the set of event messages which have been published during the "when" phase.
+             * Invokes the given {@code consumer} of the set of event messages that have been published during the When
+             * phase, allowing for <b>any</b> form of assertion.
              *
              * @param consumer Consumes the published events. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            T events(@Nonnull Consumer<List<? super EventMessage<?>>> consumer);
+            T eventsSatisfy(@Nonnull Consumer<List<EventMessage<?>>> consumer);
 
             /**
-             * Allow to check if the set of event messages which have been published during the "when" phase match given
-             * predicate.
+             * Allow to check if the set of event messages which have been published during the When phase match given
+             * {@code predicate}.
              *
              * @param predicate The predicate to check the dispatched events against.
              * @return The current Then instance, for fluent interfacing.
              */
-            T eventsMatch(@Nonnull Predicate<List<? super EventMessage<?>>> predicate);
+            T eventsMatch(@Nonnull Predicate<List<EventMessage<?>>> predicate);
 
             /**
              * Expect no events to have been published during the {@link When} phase.
@@ -532,7 +516,7 @@ public interface AxonTestPhase {
             }
 
             /**
-             * Expect the given set of commands to have been dispatched during the "when" phase.
+             * Expect the given set of commands to have been dispatched during the When phase.
              * <p>
              * All commands are compared for equality using a shallow equals comparison on all the fields of the
              * commands. This means that all assigned values on the commands' fields should have a proper equals
@@ -544,7 +528,7 @@ public interface AxonTestPhase {
             T commands(@Nonnull Object... expectedCommands);
 
             /**
-             * Expect the given set of command messages to have been dispatched during the "when" phase.
+             * Expect the given set of command messages to have been dispatched during the When phase.
              * <p>
              * All commands are compared for equality using a shallow equals comparison on all the fields of the
              * commands. This means that all assigned values on the commands' fields should have a proper equals
@@ -557,24 +541,25 @@ public interface AxonTestPhase {
             T commands(@Nonnull CommandMessage<?>... expectedCommands);
 
             /**
-             * Allow to consume the set of command messages which have been dispatched during the "when" phase.
+             * Invokes the given {@code consumer} of the set of command messages that have been dispatched during the
+             * When phase, allowing for <b>any</b> form of assertion. *
              *
              * @param consumer Consumes the dispatched commands. You may place your own assertions here.
              * @return The current Then instance, for fluent interfacing.
              */
-            T commands(@Nonnull Consumer<List<? super CommandMessage<?>>> consumer);
+            T commandsSatisfy(@Nonnull Consumer<List<CommandMessage<?>>> consumer);
 
             /**
-             * Allow to check if the set of command messages which have been dispatched during the "when" phase match
+             * Allow to check if the set of command messages which have been dispatched during the When phase match
              * given predicate.
              *
              * @param predicate The predicate to check the dispatched commands against.
              * @return The current Then instance, for fluent interfacing.
              */
-            T commandsMatch(@Nonnull Predicate<List<? super CommandMessage<?>>> predicate);
+            T commandsMatch(@Nonnull Predicate<List<CommandMessage<?>>> predicate);
 
             /**
-             * Expect no command messages to have been dispatched during the "when" phase.
+             * Expect no command messages to have been dispatched during the When phase.
              *
              * @return The current Then instance, for fluent interfacing.
              */
@@ -607,6 +592,43 @@ public interface AxonTestPhase {
              *
              * @return a {@link Setup} instance that allows configuring a new test scenario.
              */
+
+            /**
+             * Expect the given {@code expectedException} to occur during the When phase execution. The actual exception
+             * should be exactly of that type, subclasses are not accepted.
+             * <p>
+             * Only take messages into account that were published explicitly with the {@link When#command} or
+             * {@link When#event}. Hence, do not take into accounts messages published as side effects of other message
+             * handlers present in the configuration.
+             *
+             * @param type The type of exception expected from the When phase execution.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            T exception(@Nonnull Class<? extends Throwable> type);
+
+            /**
+             * Expect the exception with given {@code type} and {@code message} to occur during the When phase
+             * execution. The actual exception should be exactly of that type, subclasses are not accepted.
+             * <p>
+             * Only take messages into account that were published explicitly with the {@link When#command} or
+             * {@link When#event}. Hence, do not take into accounts messages published as side effects of other message
+             * handlers present in the configuration.
+             *
+             * @param type    The type of exception expected from the When phase execution.
+             * @param message The message of the exception expected from the When phase execution.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            T exception(@Nonnull Class<? extends Throwable> type, @Nonnull String message);
+
+            /**
+             * Invokes the given {@code consumer} of the exception that has been throw during the When phase, allowing
+             * for <b>any</b> form of assertion.
+             *
+             * @param consumer Consumes the thrown exception. You may place your own assertions here.
+             * @return The current Then instance, for fluent interfacing.
+             */
+            T exceptionSatisfies(@Nonnull Consumer<Throwable> consumer);
+
             Setup and();
         }
     }

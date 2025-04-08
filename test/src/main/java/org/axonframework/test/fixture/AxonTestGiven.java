@@ -28,7 +28,6 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -77,8 +76,8 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     @Override
-    public AxonTestPhase.Given events(@Nonnull List<?>... events) {
-        var messages = Arrays.stream(events)
+    public AxonTestPhase.Given events(@Nonnull List<?> events) {
+        var messages = events.stream()
                              .map(e -> e instanceof EventMessage<?> message
                                      ? message
                                      : toGenericEventMessage(e, MetaData.emptyInstance())
@@ -107,25 +106,36 @@ class AxonTestGiven implements AxonTestPhase.Given {
 
     @Override
     public AxonTestPhase.Given command(@Nonnull Object payload, @Nonnull MetaData metaData) {
-        var messageType = messageTypeResolver.resolve(payload);
-        var commandMessage = new GenericCommandMessage<>(
-                messageType,
-                payload,
-                metaData
-        );
+        var commandMessage = toGenericCommandMessage(payload, metaData);
         return commands(commandMessage);
     }
 
     @Override
+    public AxonTestPhase.Given commands(@Nonnull List<?> commands) {
+        var messages = commands.stream()
+                               .map(c -> c instanceof CommandMessage<?> message
+                                       ? message
+                                       : toGenericCommandMessage(c, MetaData.emptyInstance())
+                               ).toArray(CommandMessage<?>[]::new);
+        return commands(messages);
+    }
+
+    private GenericCommandMessage<Object> toGenericCommandMessage(@Nonnull Object payload,
+                                                                  @Nonnull MetaData metaData
+    ) {
+        var messageType = messageTypeResolver.resolve(payload);
+        return new GenericCommandMessage<>(
+                messageType,
+                payload,
+                metaData
+        );
+    }
+
+    @Override
     public AxonTestPhase.Given commands(@Nonnull CommandMessage<?>... messages) {
-        inUnitOfWorkOnInvocation(processingContext -> {
-            CompletableFuture<? extends Message<?>> dispatchOneByOneFuture = CompletableFuture.completedFuture(null);
-            for (var message : messages) {
-                var dispatchFuture = commandBus.dispatch(message, processingContext);
-                dispatchOneByOneFuture = dispatchOneByOneFuture.thenCompose(m -> dispatchFuture);
-            }
-            return dispatchOneByOneFuture;
-        });
+        for (var message : messages) {
+            inUnitOfWorkOnInvocation(processingContext -> commandBus.dispatch(message, processingContext));
+        }
         return this;
     }
 
