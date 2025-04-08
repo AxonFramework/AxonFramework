@@ -41,18 +41,16 @@ import static java.util.Objects.requireNonNull;
  * ComponentDefinition.ofType(MyComponentInterface.class)
  *                    .withFactory(config -> new MyComponentImplementation(config.getComponent(MyDependency.class)))
  *                    .onStart(0, MyComponentImplementation::start)
- *                    .onShutdown(0, MyComponentImplementation::shutdown
+ *                    .onShutdown(0, MyComponentImplementation::shutdown)
  * </code></pre>
  * <p>
- * Alternatively, you can use:
+ * Alternatively, you can specify a name to make multiple instances of the same component in the same configuration:
  * <pre><code>
  *     ComponentDefinition.ofTypeAndName(MyComponentInterface.class, "MyName")
  *                        .withFactory(config -> ...)
  * </code></pre>
- * In this case, you need to distinguish between separate instances of the component.
  * <p>
- * If an instance of the component is already constructed, it is more efficient to register it directly, rather than
- * through a factory method. For example:
+ * If an instance of the component is already constructed, it is more efficient to register it directly
  * <pre><code>
  *     ComponentDefinition.ofTypeAndName(MyComponentInterface.class, "MyName")
  *                        .withInstance(myPreCreatedInstance)

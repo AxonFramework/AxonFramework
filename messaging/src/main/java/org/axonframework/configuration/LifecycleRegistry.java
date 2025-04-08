@@ -64,7 +64,7 @@ public interface LifecycleRegistry {
      * Registers a {@code startHandler} to be executed in the default phase {@code 0} when the configuration this
      * registry belongs to is started.
      * <p>
-     * The behavior for handlers that are registered when the configuration is already started is undefined.
+     * Handlers cannot be registered when the configuration has already been created from this registry.
      *
      * @param startHandler The handler to execute when the {@link AxonConfiguration} is started.
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
@@ -78,7 +78,7 @@ public interface LifecycleRegistry {
      * Registers a {@code startHandler} to be executed in the given {@code phase} when the configuration this registry
      * belongs to is started.
      * <p>
-     * The behavior for handlers that are registered when the configuration is already started is undefined.
+     * Handlers cannot be registered when the configuration has already been created from this registry.
      *
      * @param phase        Defines a {@code phase} in which the start handler will be invoked during
      *                     {@link AxonConfiguration#start()}. When starting the configuration the given handlers are
@@ -96,7 +96,7 @@ public interface LifecycleRegistry {
      * Registers a {@code startHandler} to be executed in the given {@code phase} when the configuration this registry
      * belongs to is started.
      * <p>
-     * The behavior for handlers that are registered when the configuration is already started is undefined.
+     * Handlers cannot be registered when the configuration has already been created from this registry.
      *
      * @param phase        Defines a {@code phase} in which the start handler will be invoked during
      *                     {@link AxonConfiguration#start()}. When starting the configuration the given handlers are
@@ -114,7 +114,7 @@ public interface LifecycleRegistry {
      * Registers a {@code startHandler} to be executed in the given {@code phase} when the configuration this registry
      * belongs to is started.
      * <p>
-     * The behavior for handlers that are registered when the configuration is already started is undefined.
+     * Handlers cannot be registered when the configuration has already been created from this registry.
      *
      * @param phase        Defines a {@code phase} in which the start handler will be invoked during
      *                     {@link AxonConfiguration#start()}. When starting the configuration the given handlers are

@@ -74,15 +74,16 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Creates a MessagingConfigurer that enhances an existing ApplicationConfigurer. This method is useful when
+     * Creates a MessagingConfigurer that enhances an existing {@code ApplicationConfigurer}. This method is useful when
      * applying multiple specialized Configurers to configure a single application.
      *
-     * @param axonApplication the ApplicationConfigurer to enhance with configuration of Messaging components
+     * @param applicationConfigurer The {@code ApplicationConfigurer} to enhance with configuration of messaging
+     *                              components.
      * @return The current instance of the {@code Configurer} for a fluent API.
      * @see #create()
      */
-    public static MessagingConfigurer enhance(@Nonnull ApplicationConfigurer axonApplication) {
-        return new MessagingConfigurer(axonApplication)
+    public static MessagingConfigurer enhance(@Nonnull ApplicationConfigurer applicationConfigurer) {
+        return new MessagingConfigurer(applicationConfigurer)
                 .componentRegistry(cr -> cr.registerEnhancer(new MessagingConfigurationDefaults()));
     }
 

@@ -26,8 +26,9 @@ import java.util.concurrent.CompletableFuture;
  * Unlike the {@link LifecycleHandler}, this handler provides access to the component when it is created.
  * <p>
  * With decorated components, this may not be the same component instance as would be retrieved from the configuration
- * using the component's identifier. The latter would return the decorated component, while the originally declared
- * component is always passed as a parameter to the handler method.
+ * using the component's identifier. The latter would return the decorated component, while the
+ * {@code ComponentLifecycleHandler} receives the instance on the level it was registered. If this is a decorator, you
+ * get the decorated instance of that registration, not the completed component.
  *
  * @param <C> The type of component.
  * @author Allard Buijze
