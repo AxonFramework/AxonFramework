@@ -116,20 +116,22 @@ class SubscribeStudentCommandHandler {
         }
 
         @EventSourcingHandler
-        void evolve(StudentEnrolledFaculty event) {
-            this.studentId = new StudentId(event.studentId());
+        void evolve(CourseCapacityChanged event) {
+            this.courseCapacity = event.capacity();
         }
 
         @EventSourcingHandler
-        void evolve(CourseCapacityChanged event) {
-            this.courseCapacity = event.capacity();
+        void evolve(StudentEnrolledFaculty event) {
+            this.studentId = new StudentId(event.studentId());
         }
 
         @EventSourcingHandler
         void evolve(StudentSubscribed event) {
             var subscribingStudentId = new StudentId(event.studentId());
             var subscribedCourseId = new CourseId(event.courseId());
-            noOfStudentsSubscribedToCourse++;
+            if(subscribedCourseId.equals(courseId)) {
+                noOfStudentsSubscribedToCourse++;
+            }
             if (subscribingStudentId.equals(studentId)) {
                 noOfCoursesStudentSubscribed++;
             }
@@ -142,7 +144,9 @@ class SubscribeStudentCommandHandler {
         void evolve(StudentUnsubscribed event) {
             var subscribingStudentId = new StudentId(event.studentId());
             var subscribedCourseId = new CourseId(event.courseId());
-            noOfStudentsSubscribedToCourse--;
+            if(subscribedCourseId.equals(courseId)) {
+                noOfStudentsSubscribedToCourse--;
+            }
             if (subscribingStudentId.equals(studentId)) {
                 noOfCoursesStudentSubscribed--;
             }
