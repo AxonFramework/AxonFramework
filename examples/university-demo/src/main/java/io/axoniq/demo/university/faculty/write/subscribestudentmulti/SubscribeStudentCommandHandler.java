@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 class SubscribeStudentCommandHandler {
 
-    private static final int MAX_COURSES_PER_STUDENT = 10;
+    private static final int MAX_COURSES_PER_STUDENT = 3;
 
     @CommandHandler
     void handle(
