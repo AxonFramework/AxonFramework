@@ -222,24 +222,72 @@ class SubscribeStudentCommandHandler {
         );
     }
 
-    @EventSourcedEntity
+    @EventSourcedEntity // <6>
     static class State {
         // todo: define state necessary to accept or reject `SubscribeStudent` command
     }
 
 }
 ----
-<.> For the example simplicity we hardcoded the maximum number of courses per student. Each student can subscribe up to 3 courses in the same time.
-<.> This is your domain model invocation. You may keep it in the command handler as on the example or make the function unaware of the infrastructure like Axon Framework. This functional resembles the `Decider pattern.
-<.> As before we translate events (which are a result of our domain function) to messages to be able to publish them.
-<.> We use `EventSink` to publish events.
 
-As you see there are two TODOs left in the code. Now we need to validate business rules, there are a few of them. The student can subscribe to course only if adhere to the domain invariants of this operation.
+<1> For the example simplicity we hardcoded the maximum number of courses per student.
+Each student can subscribe up to 3 courses in the same time.
+<2> We use `@InjectEntity` to inject the state object.
+<3> This is your domain model invocation.
+You may keep it in the command handler as on the example or make the function unaware of the infrastructure like Axon Framework.
+This functional resembles the `Decider pattern.
+<4> As before we translate events (which are a result of our domain function) to messages to be able to publish them.
+<5> We use `EventSink` to publish events.
+<6> Before we defined `tagKey` in `@EventSourcedEntity` annotation, now we cannot do that, because we require events about subscriptions for student and the course, so we have multiple business concepts related to business process. In a few sections you will see how to do that with the `EventCriteria` API.
+
+We always need one identifier to load the state, because the `@InjectEntity` annotation needs to know how to identify the entity to load.
+In this case it's more difficult, because the `SubscribeStudent` business process is identifier by the command type and also the `courseId` and `studentId`.
+So similar as in databases we need some composite key to identify the entity.
+To do that we're going to use the `SubscriptionId` class and define it as an `TargetEntityId` in the `SubscribeStudent` command.
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscriptionId.java
+----
+package io.axoniq.demo.university.faculty.write.subscribestudent;
+
+import io.axoniq.demo.university.faculty.write.CourseId;
+import io.axoniq.demo.university.faculty.write.StudentId;
+
+record SubscriptionId(CourseId courseId, StudentId studentId) {
+
+}
+
+----
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
+----
+package io.axoniq.demo.university.faculty.write.createcourse;
+
+import io.axoniq.demo.university.faculty.write.StudentId;
+import io.axoniq.demo.university.faculty.write.CourseId;
+
+public record SubscribeStudent(StudentId studentId, CourseId courseId) {
+
+    @TargetEntityId
+    private SubscriptionId subscriptionId() { // <1>
+        return new SubscriptionId(courseId, studentId);
+    }
+
+}
+----
+<1> The `@TargetEntityId` annotated method/property can be even private, because it's just for internal usage for the Axon Framework.
+
+
+As you see there are two TODOs left in the `SubscribeStudentCommandHandler` code.
+Now we need to validate business rules, there are a few of them.
+The student can subscribe to course only if adhere to the domain invariants of this operation.
 I will list them one by one with assertion function, and we will also see what you need in the State object to validate them.
 
 **Rule #1: The student is enrolled in the faculty **
 
 When student is enrolled it has assigned it, so we add it to the State:
+
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
 ----
@@ -261,7 +309,9 @@ class SubscribeStudentCommandHandler {
 }
 ----
 
-Business rule assertion function. We throw an exception if the rule is not satisfied.
+Business rule assertion function.
+We throw an exception if the rule is not satisfied.
+
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
 ----
@@ -308,7 +358,71 @@ class SubscribeStudentCommandHandler {
 }
 ----
 
-
-
 - the course exists
 - the course is not fully booked (based on course capacity)
+
+- the student is not subscribed to too many courses (max 3 courses per student).
+
+== Event Criteria
+
+While implementing previous feature we defined that we want to build our state based on event's that are tagged with `courseId` by using this `@EventSourcedEntity(tagKey = "courseId")`.
+For now it's not enough, because as you want we need to build our state based on `studentId` and `courseId` tags.
+We need all `StudentSubscribed` events for the given `courseId` and also all `StudentSubscribed` events for the given `studentId`.
+As well as `StudentUnsubscribed` events.
+Whereas for example `StudentEnrolledFaculty` - we care about just one event for the given `studentId`, other students are not interested while processing this command.
+
+As you may see here we're able to define the events we'd like to load dynamically.
+It's where the Dynamic Consistency Boundary comes into play.
+Before we had to load all events for the given aggregate, now we can load only those events that are relevant for the given command.
+Here the situation is a bit more complicated, because we need to load events for two different entities - `Student` and `Course`.
+In the system based on Aggregates you may load both and limit your accessibility - the risk of optimistic concurrency is higher, or do complex saga between those two entities - then you also need to duplicate the events.
+But in domain experts language it's just one fact, which influences rules around Student and Course.
+As far as we're in the single bounded context, and we have all events in one storage, we good to go and define our custom Event Criteria!
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
+----
+class SubscribeStudentCommandHandler {
+
+    // rest omitted for brevity
+
+    @EventSourcedEntity
+    static class State {
+
+        // rest omitted for brevity
+
+        @EventCriteriaBuilder
+        private static EventCriteria resolveCriteria(SubscriptionId id) {
+            var courseId = id.courseId().raw();
+            var studentId = id.studentId().raw();
+            return EventCriteria.either(
+                    EventCriteria.match()
+                                 .eventsOfTypes(
+                                         CourseCreated.class.getName(),
+                                         CourseCapacityChanged.class.getName()
+                                 ).withTags(Tag.of(FacultyTags.COURSE_ID, courseId)),
+                    EventCriteria.match()
+                                 .eventsOfTypes(StudentEnrolledFaculty.class.getName())
+                                 .withTags(Tag.of(FacultyTags.STUDENT_ID, studentId)),
+                    EventCriteria.match()
+                                 .eventsOfTypes(
+                                         StudentSubscribed.class.getName(),
+                                         StudentUnsubscribed.class.getName()
+                                 ).withTags(Tag.of(FacultyTags.COURSE_ID, courseId)),
+                    EventCriteria.match()
+                                 .eventsOfTypes(
+                                         StudentSubscribed.class.getName(),
+                                         StudentUnsubscribed.class.getName()
+                                 ).withTags(Tag.of(FacultyTags.STUDENT_ID, studentId))
+            );
+        }
+    }
+
+}
+----
+
+It gives us better accessibility of our system - thanks to that, as you see there is no `CourseRenamed` event in our criteria, so the Faculty administrator is still able to rename the course.
+In case of Aggregates those operation may clash, or you need to introduce separated entity for such courses.
+Our colleague Milan from AxonIQ (with our ex-colleague Sara) discuss those scenarios in the talk - we really encourage you to watch it.
+
+If you do just `EventCriteria.match().eventsOfTypes().withTags(...)` you load all events for the given tag, so there are more chances to clash with other changes, which cause events that do not influce this certain business rules.
