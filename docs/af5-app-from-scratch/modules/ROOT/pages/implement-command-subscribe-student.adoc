@@ -329,11 +329,15 @@ class SubscribeStudentCommandHandler {
 }
 ----
 
-**Rule #2: The student is not already subscribed to the course **
-**Rule #3: The student is not subscribed to too many courses **
+**Rule #2: The course is created **
+**Rule #3: The student is not already subscribed to the course **
+**Rule #4: The student is not subscribed to too many courses **
+**Rule #5: The course is not fully booked (based on course capacity) **
 
-We're going to implement both rules and once.
-What else do we need in the State object?
+We're going to implement all the remaining rules and once.
+What else do we need in the State object? Definitely not the course name, because it has nothing to do with the business rules.
+What we need it's the minimal set of data we needed to be able to accept or reject the command. It's the same rule you use while designing DDD Aggregates.
+So we are going to derive `alreadySubscribed` and `noOfCoursesStudentSubscribed` from `StudentSubscribed` and ``StudentUnsubscribed` events.
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
@@ -345,35 +349,87 @@ class SubscribeStudentCommandHandler {
     @EventSourcedEntity
     static class State {
 
-        // rest omitted for brevity
+        private CourseId courseId;
+        private int courseCapacity = 0;
+        private int noOfStudentsSubscribedToCourse = 0;
 
         private StudentId studentId;
+        private int noOfCoursesStudentSubscribed = 0;
+        private boolean alreadySubscribed = false;
+
+        // other handlers added previously omitted for brevity
 
         @EventSourcingHandler
-        void evolve(StudentEnrolledFaculty event) {
-            this.studentId = new StudentId(event.studentId());
+        void evolve(CourseCreated event) { // <1>
+            this.courseId = new CourseId(event.courseId());
+            this.courseCapacity = event.capacity();
+        }
+
+        @EventSourcingHandler
+        void evolve(CourseCapacityChanged event) { // <2>
+            this.courseCapacity = event.capacity();
+        }
+
+        @EventSourcingHandler
+        void evolve(StudentSubscribed event) { // <3>
+            var subscribingStudentId = new StudentId(event.studentId());
+            var subscribedCourseId = new CourseId(event.courseId());
+            if(subscribedCourseId.equals(courseId)) { // <4>
+                noOfStudentsSubscribedToCourse++;
+            }
+            if (subscribingStudentId.equals(studentId)) { // <5>
+                noOfCoursesStudentSubscribed++;
+            }
+            if (subscribingStudentId.equals(studentId) && subscribedCourseId.equals(courseId)) { // <6>
+                alreadySubscribed = true;
+            }
+        }
+
+        @EventSourcingHandler
+        void evolve(StudentUnsubscribed event) { // <7>
+            var subscribingStudentId = new StudentId(event.studentId());
+            var subscribedCourseId = new CourseId(event.courseId());
+            if(subscribedCourseId.equals(courseId)) {
+                noOfStudentsSubscribedToCourse--;
+            }
+            if (subscribingStudentId.equals(studentId)) {
+                noOfCoursesStudentSubscribed--;
+            }
+            if (subscribingStudentId.equals(studentId) && subscribedCourseId.equals(courseId)) {
+                alreadySubscribed = false;
+            }
         }
     }
 
 }
 ----
-
-- the course exists
-- the course is not fully booked (based on course capacity)
-
-- the student is not subscribed to too many courses (max 3 courses per student).
+<1> Same as with student, we store the `courseId` if was created along with the `capacity` from the same `CourseCreated` event.
+<2> We update the `capacity` on `CourseCapacityChanged` event.
+<3> In this case we're going to evolve the State on every `StudentSubscribed` event related to the course or the student which ids are in the command. How we instruct the store to load those events we will discuss in the next paragraph. For now you need to be aware of you may receive events about different student and different course as well.
+<4> If the `StudentSubscribed` event is related to the course, we increase the number of students subscribed to the course.
+<5> If the `StudentSubscribed` event is related to the student, we increase the number of courses the student is subscribed to.
+<6> If the `StudentSubscribed` event is related to the course and the student, we set the `alreadySubscribed` flag to true.
+<7> This handler for `StudentUnsubscribed` is a exact opposite of the `evolve` method for `StudentSubscribed` event. We decrease the numbers which we increased in the previous one.
 
 == Event Criteria
 
-While implementing previous feature we defined that we want to build our state based on event's that are tagged with `courseId` by using this `@EventSourcedEntity(tagKey = "courseId")`.
-For now it's not enough, because as you want we need to build our state based on `studentId` and `courseId` tags.
+While implementing the `CreateCourse` feature we defined that we want to build our state based on event's that are tagged with `courseId` by using this `@EventSourcedEntity(tagKey = "courseId")`.
+For the `SubscribeStudent` handling, it's not enough, because as you already know we need to build our state based on `studentId` and `courseId` tagged events.
 We need all `StudentSubscribed` events for the given `courseId` and also all `StudentSubscribed` events for the given `studentId`.
 As well as `StudentUnsubscribed` events.
-Whereas for example `StudentEnrolledFaculty` - we care about just one event for the given `studentId`, other students are not interested while processing this command.
+Whereas for example `StudentEnrolledFaculty` - we care about just one event for the given `studentId`, other students are not interested while processing this command and there are no business rules between them. With the subscription story is different, because of that we have a limit of students per course and also the limit of courses per student.
 
-As you may see here we're able to define the events we'd like to load dynamically.
+Thanks to the Axon Framework `EventCriteria` concept we're able to define the events we'd like to load dynamically.
 It's where the Dynamic Consistency Boundary comes into play.
-Before we had to load all events for the given aggregate, now we can load only those events that are relevant for the given command.
+
+[NOTE]
+====
+For Axon Framework 4 users:
+Before we had to load all events for the given aggregate (from the event stream). We were defining the "tag" of events by using the `@TargetAggregateIdentifier` annotation.
+Since Axon Framework 5 we can load events that are relevant for the given command using custom criteria (you choose event types and tags).
+You may think about that before event could have just one tag - the aggregateId, but now we can have multiple tags for the same event.
+====
+
 Here the situation is a bit more complicated, because we need to load events for two different entities - `Student` and `Course`.
 In the system based on Aggregates you may load both and limit your accessibility - the risk of optimistic concurrency is higher, or do complex saga between those two entities - then you also need to duplicate the events.
 But in domain experts language it's just one fact, which influences rules around Student and Course.
