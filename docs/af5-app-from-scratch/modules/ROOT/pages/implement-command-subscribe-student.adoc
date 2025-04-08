@@ -245,7 +245,7 @@ When student is enrolled it has assigned it, so we add it to the State:
 ----
 class SubscribeStudentCommandHandler {
 
-    // rest ommitted for brevity
+    // rest omitted for brevity
 
     @EventSourcedEntity
     static class State {
@@ -267,7 +267,7 @@ Business rule assertion function. We throw an exception if the rule is not satis
 ----
 class SubscribeStudentCommandHandler {
 
-    // rest ommitted for brevity
+    // rest omitted for brevity
 
     private void assertStudentEnrolledFaculty(State state) {
         var studentId = state.studentId;
@@ -290,12 +290,12 @@ What else do we need in the State object?
 ----
 class SubscribeStudentCommandHandler {
 
-    // rest ommitted for brevity
+    // rest omitted for brevity
 
     @EventSourcedEntity
     static class State {
 
-        // rest ommitted for brevity
+        // rest omitted for brevity
 
         private StudentId studentId;
 
