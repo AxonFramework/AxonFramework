@@ -24,7 +24,7 @@ import static org.axonframework.common.Assert.nonEmpty;
 
 /**
  * Describes a component defined in a {@link NewConfiguration}, that may depend on other component for its
- * initialization or during it's startup or lifecycle operations.
+ * initialization or during it's startup/shutdown operations.
  *
  * @param <C> The type of component.
  * @author Allard Buijze
@@ -63,6 +63,9 @@ public interface Component<C> extends DescribableComponent {
 
     /**
      * Initializes the lifecycle handlers associated with this component.
+     * <p>
+     * Subsequent calls to this method will <b>not</b> result in additional invocations of the lifecycle handlers
+     * registered with this component.
      *
      * @param configuration     The configuration in which the component was defined, allowing retrieval of dependencies
      *                          during the component's lifecycle.
@@ -84,9 +87,9 @@ public interface Component<C> extends DescribableComponent {
      *
      * @param type The type of the component this object identifiers, typically an interface.
      * @param name The name of the component this object identifiers.
-     * @param <I>  The type of the component this object identifiers, typically an interface.
+     * @param <C>  The type of the component this object identifiers, typically an interface.
      */
-    record Identifier<I>(@Nonnull Class<I> type, @Nonnull String name) {
+    record Identifier<C>(@Nonnull Class<C> type, @Nonnull String name) {
 
         /**
          * Compact constructor asserting whether the {@code type} and {@code name} are non-null and not empty.

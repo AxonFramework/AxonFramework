@@ -26,17 +26,17 @@ import java.util.function.Consumer;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Defines the structure of a Component that is available in the {@link NewConfiguration} of the application or one of
- * its Modules.
+ * Defines the structure of a {@link Component} that is available in the {@link NewConfiguration} of the application or
+ * one of its {@link Module Modules}.
  * <p>
  * Components are identified by a combination of their declared type and a name. The declared type is generally an
  * interface that all implementations are expected to implement. The name can be any non-empty string value that
  * identifies a particular instance of a component. If the name is not relevant, for example because only a single
  * instance is expected to be present, it can be omitted in the definition, in which case it will default to the simple
- * class name of the declared Component type.
+ * class name of the declared {@code Component} type.
  * <p>
- * To create a component of type {@code MyComponentInterface} with an implementation that has a dependency, it would
- * look as follows:
+ * For example, to create a component of type {@code MyComponentInterface} with an implementation that has a dependency,
+ * it would look as follows:
  * <pre><code>
  * ComponentDefinition.ofType(MyComponentInterface.class)
  *                    .withFactory(config -> new MyComponentImplementation(config.getComponent(MyDependency.class)))
@@ -66,7 +66,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
 
     /**
      * Starts defining a component with given declared {@code type}. The name will default to the simple class name of
-     * that type. To distinguish between different instances of the same type, consider using
+     * that {@code type}. To distinguish between different instances of the same type, consider using
      * {@link #ofTypeAndName(Class, String)} instead.
      * <p>
      * Either {@link IncompleteComponentDefinition#withFactory(ComponentFactory) withFactory(...)} or
@@ -75,7 +75,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      *
      * @param type The declared type of the component.
      * @param <C>  The declared type of the component.
-     * @return A builder to complete the creation of a ComponentDefinition.
+     * @return A builder to complete the creation of a {@code ComponentDefinition}.
      * @see #ofTypeAndName(Class, String)
      */
     static <C> IncompleteComponentDefinition<C> ofType(@Nonnull Class<C> type) {
@@ -89,7 +89,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @param type The declared type of this component.
      * @param name The name of this component.
      * @param <C>  The declared type of this component.
-     * @return A builder to complete the creation of a ComponentDefinition.
+     * @return A builder to complete the creation of a {@code ComponentDefinition}.
      */
     static <C> IncompleteComponentDefinition<C> ofTypeAndName(@Nonnull Class<C> type, @Nonnull String name) {
         return new IncompleteComponentDefinition<>() {
@@ -110,7 +110,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * Registers the given {@code handler} to be invoked during the startup lifecycle of the application in the given
      * {@code phase}.
      *
-     * @param phase   The phase in which to invoke this handler.
+     * @param phase   The phase in which to invoke the given {@code handler}.
      * @param handler The start handler to execute on the component.
      * @return A {@code ComponentDefinition} with the start handler defined.
      */
@@ -120,7 +120,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * Registers the given {@code handler} to be invoked during the startup lifecycle of the application in the given
      * {@code phase}.
      *
-     * @param phase   The phase in which to invoke this handler.
+     * @param phase   The phase in which to invoke the given {@code handler}.
      * @param handler The start handler to execute on the component.
      * @return A {@code ComponentDefinition} with the start handler defined.
      */
@@ -136,7 +136,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * Registers the given {@code handler} to be invoked during the startup lifecycle of the application in the given
      * {@code phase}.
      *
-     * @param phase   The phase in which to invoke this handle.
+     * @param phase   The phase in which to invoke the given {@code handler}.
      * @param handler The start handler to execute on the component.
      * @return A {@code ComponentDefinition} with the start handler defined.
      */
@@ -152,7 +152,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * Registers the given {@code handler} to be invoked during the shutdown lifecycle of the application in the given
      * {@code phase}.
      *
-     * @param phase   The phase in which to invoke this handler.
+     * @param phase   The phase in which to invoke the given {@code handler}.
      * @param handler The action to execute on the component.
      * @return A {@code ComponentDefinition} with the shutdown handler defined.
      */
@@ -162,7 +162,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * Registers the given {@code handler} to be invoked during the shutdown lifecycle of the application in the given
      * {@code phase}.
      *
-     * @param phase   The phase in which to invoke this handler.
+     * @param phase   The phase in which to invoke the given {@code handler}.
      * @param handler The action to execute on the component.
      * @return A {@code ComponentDefinition} with the shutdown handler defined.
      */
@@ -214,7 +214,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * Represents an intermediate step in the creation of a {@link ComponentDefinition}.
      * <p>
      * This step requires the call of either {@link #withInstance(Object) withInstance(...)} or
-     * {@link #withFactory(ComponentFactory) withFactory(...)} to create a usable ComponentDefinition.
+     * {@link #withFactory(ComponentFactory) withFactory(...)} to create a usable {@code ComponentDefinition}.
      *
      * @param <C> The declared type of the component.
      */

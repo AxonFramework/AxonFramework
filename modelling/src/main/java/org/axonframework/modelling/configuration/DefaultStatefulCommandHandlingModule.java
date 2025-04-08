@@ -152,11 +152,11 @@ class DefaultStatefulCommandHandlingModule
         lifecycleRegistry.onStart(
                 Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
                 config -> {
-                    config.getComponent(CommandBus.class)
-                          .subscribe(builtConfiguration.getComponent(
-                                  StatefulCommandHandlingComponent.class,
-                                  statefulCommandHandlingComponentName
-                          ));
+                    builtConfiguration.getComponent(CommandBus.class)
+                                      .subscribe(builtConfiguration.getComponent(
+                                              StatefulCommandHandlingComponent.class,
+                                              statefulCommandHandlingComponentName
+                                      ));
                 }
         );
         return builtConfiguration;

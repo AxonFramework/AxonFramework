@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 import static java.util.Objects.requireNonNull;
 
 /**
- * The messaging {@link ComponentRegistry} of Axon Framework's configuration API.
+ * The messaging {@link ApplicationConfigurer} of Axon Framework's configuration API.
  * <p>
  * Provides register operations for {@link #registerCommandBus(ComponentFactory) command},
  * {@link #registerEventSink(ComponentFactory) event}, and {@link #registerQueryBus(ComponentFactory) query}
@@ -162,8 +162,10 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     @Override
-    public MessagingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> configureTask) {
-        applicationConfigurer.componentRegistry(requireNonNull(configureTask, "The configure task must no be null."));
+    public MessagingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+        applicationConfigurer.componentRegistry(
+                requireNonNull(componentRegistrar, "The configure task must no be null.")
+        );
         return this;
     }
 

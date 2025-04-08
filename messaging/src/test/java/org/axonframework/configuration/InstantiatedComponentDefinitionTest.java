@@ -22,29 +22,36 @@ import java.util.function.BiConsumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class InstantiatedComponentDefinitionTest extends ComponentTestSuite<InstantiatedComponentDefinition<String>> {
+/**
+ * Test validating the {@link InstantiatedComponentDefinition}.
+ *
+ * @author Allard Buijze
+ */
+class InstantiatedComponentDefinitionTest extends ComponentTestSuite<InstantiatedComponentDefinition<String>> {
 
     @Override
-    InstantiatedComponentDefinition<String> createComponent(Component.Identifier<String> componentIdentifier,
+    InstantiatedComponentDefinition<String> createComponent(Component.Identifier<String> id,
                                                             String instance) {
-        return new InstantiatedComponentDefinition<>(componentIdentifier, instance);
+        return new InstantiatedComponentDefinition<>(id, instance);
     }
 
     @Override
-    InstantiatedComponentDefinition<String> createComponent(Component.Identifier<String> componentIdentifier,
+    InstantiatedComponentDefinition<String> createComponent(Component.Identifier<String> id,
                                                             ComponentFactory<String> factory) {
         Assumptions.abort("InstantiatedComponentDefinition doesn't support creation with factory method");
         return null;
     }
 
     @Override
-    void registerStartHandler(InstantiatedComponentDefinition<String> testSubject, int phase,
+    void registerStartHandler(InstantiatedComponentDefinition<String> testSubject,
+                              int phase,
                               BiConsumer<NewConfiguration, String> handler) {
         testSubject.onStart(phase, handler);
     }
 
     @Override
-    void registerShutdownHandler(InstantiatedComponentDefinition<String> testSubject, int phase,
+    void registerShutdownHandler(InstantiatedComponentDefinition<String> testSubject,
+                                 int phase,
                                  BiConsumer<NewConfiguration, String> handler) {
         testSubject.onShutdown(phase, handler);
     }
@@ -58,6 +65,9 @@ public class InstantiatedComponentDefinitionTest extends ComponentTestSuite<Inst
     @Test
     void constructorThrowsNullPointerExceptionForNullInstance() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new InstantiatedComponentDefinition<>(new Component.Identifier<>(String.class, "value"), null));
+        assertThrows(
+                NullPointerException.class,
+                () -> new InstantiatedComponentDefinition<>(new Component.Identifier<>(String.class, "value"), null)
+        );
     }
 }

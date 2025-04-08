@@ -40,9 +40,9 @@ class DefaultDecoratorDefinition<C, D extends C>
     private final Predicate<Component.Identifier<?>> selector;
     private final ComponentDecorator<C, D> decorator;
 
+    private int order;
     private final List<AbstractComponent.HandlerRegistration<D>> startHandlers = new CopyOnWriteArrayList<>();
     private final List<AbstractComponent.HandlerRegistration<D>> shutdownHandlers = new CopyOnWriteArrayList<>();
-    private int order;
 
     /**
      * Initialize the DecoratorDefinition with given {@code selector} to identify the components requiring decoration
@@ -53,7 +53,7 @@ class DefaultDecoratorDefinition<C, D extends C>
      */
     public DefaultDecoratorDefinition(@Nonnull Predicate<Component.Identifier<?>> selector,
                                       @Nonnull ComponentDecorator<C, D> decorator) {
-        this.selector = selector;
+        this.selector = requireNonNull(selector, "The selector must not be null.");
         this.decorator = requireNonNull(decorator, "The decorator must not be null.");
     }
 

@@ -24,6 +24,7 @@ package org.axonframework.configuration;
  * @author Mitchell Herrijgers
  * @author Allard Buijze
  * @author Mateusz Nowak
+ * @see ComponentRegistry#setOverridePolicy(OverridePolicy)
  * @since 5.0.0
  */
 public enum OverridePolicy {

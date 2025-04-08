@@ -18,6 +18,7 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component.Identifier;
 import org.slf4j.Logger;
@@ -119,7 +120,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     /**
-     * Builds the configuration from this {@code ComponentRegistry} as a root configuration.
+     * Builds the {@link NewConfiguration} from this {@code ComponentRegistry} as a root configuration.
      * <p>
      * The given {@code lifecycleRegistry} is used to register components' lifecycle methods.
      *
@@ -131,7 +132,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     /**
-     * Builds the Configuration from this {@code ComponentRegistry} as a nested configuration under the given
+     * Builds the {@link NewConfiguration} from this {@code ComponentRegistry} as a nested configuration under the given
      * {@code parent}.
      * <p>
      * Components registered in the {@code parent} are available to components registered in this registry, but not vice
@@ -164,10 +165,10 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void decorateComponents() {
         decoratorDefinitions.sort(Comparator.comparingInt(DecoratorDefinition.CompletedDecoratorDefinition::order));
-        for (DecoratorDefinition.CompletedDecoratorDefinition creator : decoratorDefinitions) {
+        for (DecoratorDefinition.CompletedDecoratorDefinition decorator : decoratorDefinitions) {
             for (Identifier id : components.identifiers()) {
-                if (creator.matches(id)) {
-                    components.replace(id, previous -> creator.decorate(previous));
+                if (decorator.matches(id)) {
+                    components.replace(id, previous -> decorator.decorate(previous));
                 }
             }
         }
@@ -175,7 +176,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
     /**
      * Invoke all the {@link #registerEnhancer(ConfigurationEnhancer) registered}
-     * {@link ConfigurationEnhancer enhancers} on this {@code Configurer} implementation in their
+     * {@link ConfigurationEnhancer enhancers} on this {@code ComponentRegistry} implementation in their
      * {@link ConfigurationEnhancer#order()}. This will ensure all sensible default components and decorators are in
      * place from these enhancers.
      */
@@ -195,6 +196,16 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         }
     }
 
+    /**
+     * Initialize the components defined in this registry, allowing them to register their lifecycle actions with given
+     * {@code lifecycleRegistry}.
+     *
+     * @param lifecycleRegistry The registry where components may register their lifecycle actions.
+     */
+    private void initializeComponents(NewConfiguration config, LifecycleRegistry lifecycleRegistry) {
+        components.postProcessComponents(c -> c.initLifecycle(config, lifecycleRegistry));
+    }
+
     @Override
     public DefaultComponentRegistry setOverridePolicy(@Nonnull OverridePolicy overridePolicy) {
         this.overridePolicy = requireNonNull(overridePolicy, "The override policy must not be null.");
@@ -208,16 +219,6 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         descriptor.describeProperty("decorators", decoratorDefinitions);
         descriptor.describeProperty("configurerEnhancers", enhancers);
         descriptor.describeProperty("modules", modules.values());
-    }
-
-    /**
-     * Initialize the components defined in this registry, allowing them to register their lifecycle actions with given
-     * {@code lifecycleRegistry}
-     *
-     * @param lifecycleRegistry The registry where components may register their lifecycle actions.
-     */
-    private void initializeComponents(NewConfiguration config, LifecycleRegistry lifecycleRegistry) {
-        components.postProcessComponents(c -> c.initLifecycle(config, lifecycleRegistry));
     }
 
     private class LocalConfiguration implements NewConfiguration {
@@ -253,9 +254,12 @@ public class DefaultComponentRegistry implements ComponentRegistry {
                                   @Nonnull Supplier<C> defaultImpl) {
             Identifier<C> identifier = new Identifier<>(type, name);
             Object component = components.computeIfAbsent(
-                    identifier,
-                    () -> new LazyInitializedComponentDefinition<>(identifier, c -> fromParent(type, name, defaultImpl))
-            ).resolve(this);
+                                                 identifier,
+                                                 () -> new LazyInitializedComponentDefinition<>(
+                                                         identifier, c -> fromParent(type, name, defaultImpl)
+                                                 )
+                                         )
+                                         .resolve(this);
             return type.cast(component);
         }
 
@@ -279,7 +283,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
         @Override
         public Optional<NewConfiguration> getModuleConfiguration(@Nonnull String name) {
-            requireNonNull(name, "The name must not be null.");
+            Assert.nonEmpty(name, "The name must not be null.");
             return Optional.ofNullable(moduleConfigurations.get(name));
         }
     }

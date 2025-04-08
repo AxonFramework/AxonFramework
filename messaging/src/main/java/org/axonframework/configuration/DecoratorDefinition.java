@@ -26,8 +26,8 @@ import java.util.function.Consumer;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Defines the structure of a decorator for components in the {@link NewConfiguration} of the application or one of its
- * Modules.
+ * Defines the structure of a decorator for {@link Component components} in the {@link NewConfiguration} of the
+ * application or one of its {@link Module Modules}.
  * <p>
  * Decorators can wrap or replace the implementation of defined components based on their type and optionally their
  * name. Decorators must return an instance that is an implementation of the declared type. Typically, they wrap another
@@ -39,7 +39,7 @@ import static java.util.Objects.requireNonNull;
  * DecoratorDefinition.forType(MyComponentInterface.class)
  *                    .with((config, name, delegate) -> new MyComponentWrapper(delegate, config.getComponent(MyDependency.class)))
  *                    .onStart(0, MyComponentWrapper::start)
- *                    .onShutdown(0, MyComponentWrapper::shutdown
+ *                    .onShutdown(0, MyComponentWrapper::shutdown)
  * </code></pre>
  * <p>
  * Alternatively, you can use:
@@ -57,8 +57,8 @@ import static java.util.Objects.requireNonNull;
 public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDefinition.CompletedDecoratorDefinition {
 
     /**
-     * Initiates the configuration of a decorator for components with the given {@code type}, which must correspond with
-     * the declared type of these components.
+     * Initiates the configuration of a decorator for {@link Component components} with the given {@code type}, which
+     * must correspond with the declared type of these components.
      * <p>
      * If multiple components have been defined for this type, they all are subject to decoration under this definition.
      * To decorate only a specific component, consider using {@link #forTypeAndName(Class, String)}.
@@ -78,8 +78,8 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
     }
 
     /**
-     * Initiates the configuration of a decorator for a component with the given {@code type} and {@code name}, which
-     * must correspond with the declared type of these components.
+     * Initiates the configuration of a decorator for a {@link Component component} with the given {@code type} and
+     * {@code name}, which must correspond with the declared type of these components.
      * <p>
      * The decorator is only invoked if such component with such name is defined in the component registry where this
      * decorator is registered. If multiple components for this type have been defined, and all are subject to
@@ -117,7 +117,8 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
     DecoratorDefinition<C, D> order(int order);
 
     /**
-     * Registers the given {@code handler} to be registered with the application's lifecycle during startup.
+     * Registers the given {@code handler} to be registered with the application's lifecycle during startup for this
+     * decorator.
      * <p>
      * The handler will be invoked in the given startup {@code phase} for each component that has been decorated.
      *
@@ -128,7 +129,8 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
     DecoratorDefinition<C, D> onStart(int phase, @Nonnull ComponentLifecycleHandler<D> handler);
 
     /**
-     * Registers the given {@code handler} to be registered with the application's lifecycle during startup.
+     * Registers the given {@code handler} to be registered with the application's lifecycle during startup for this
+     * decorator.
      * <p>
      * The handler will be invoked in the given startup {@code phase} for each component that has been decorated.
      *
@@ -145,7 +147,8 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
     }
 
     /**
-     * Registers the given {@code handler} to be registered with the application's lifecycle during shutdown.
+     * Registers the given {@code handler} to be registered with the application's lifecycle during shutdown for this
+     * decorator.
      * <p>
      * The handler will be invoked in the given shutdown {@code phase} for each component that has been decorated.
      *
@@ -156,7 +159,8 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
     DecoratorDefinition<C, D> onShutdown(int phase, @Nonnull ComponentLifecycleHandler<D> handler);
 
     /**
-     * Registers the given {@code handler} to be registered with the application's lifecycle during shutdown.
+     * Registers the given {@code handler} to be registered with the application's lifecycle during shutdown for this
+     * decorator.
      * <p>
      * The handler will be invoked in the given shutdown {@code phase} for each component that has been decorated.
      *

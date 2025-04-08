@@ -47,7 +47,7 @@ class DecoratedComponent<C, D extends C> extends AbstractComponent<C, D> {
      * Initializes a component that decorates the given {@code delegate} using given {@code decorator} function.
      * <p>
      * The given {@code startHandlers} and {@code shutdownHandlers} are registered with the lifecycle registry upon
-     * initialization of the component
+     * initialization of the component.
      *
      * @param delegate         The component to decorate.
      * @param decorator        The decoration function creating an instance of the decorated component.

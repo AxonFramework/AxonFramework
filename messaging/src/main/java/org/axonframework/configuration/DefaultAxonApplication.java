@@ -131,8 +131,8 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
     }
 
     @Override
-    public ApplicationConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> action) {
-        action.accept(componentRegistry);
+    public ApplicationConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+        componentRegistrar.accept(componentRegistry);
         return this;
     }
 

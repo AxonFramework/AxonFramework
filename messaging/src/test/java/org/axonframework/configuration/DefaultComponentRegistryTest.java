@@ -31,6 +31,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class validating the {@link DefaultComponentRegistry}.
+ *
+ * @author Allard Buijze
+ */
 class DefaultComponentRegistryTest {
 
     private static final String INIT_STATE = "initial-state";
@@ -49,16 +54,11 @@ class DefaultComponentRegistryTest {
     void newComponentRegisterMethod() {
         testSubject.registerComponent(ComponentDefinition.ofType(CharSequence.class)
                                                          .withInstance("Hello world")
-                                                         .onStart(10,
-                                                                  System.out::println));
-
-        testSubject.registerDecorator(DecoratorDefinition.forTypeAndName(CharSequence.class, "myName")
-                                                         .with((config, name, delegate) ->
-                                                                       "" + delegate)
-                                                         .order(10)
-        );
-
-        testSubject.registerDecorator(DecoratorDefinition.forTypeAndName(CharSequence.class, "myName")
+                                                         .onStart(10, System.out::println))
+                   .registerDecorator(DecoratorDefinition.forTypeAndName(CharSequence.class, "myName")
+                                                         .with((config, name, delegate) -> "" + delegate)
+                                                         .order(10))
+                   .registerDecorator(DecoratorDefinition.forTypeAndName(CharSequence.class, "myName")
                                                          .with((config, name, delegate) -> "" + delegate)
                                                          .onShutdown(10, System.out::println)
                                                          .order(10)
@@ -82,8 +82,7 @@ class DefaultComponentRegistryTest {
 
         NewConfiguration config = testSubject.build(mock());
 
-        Optional<TestComponent> result = config.getOptionalComponent(
-                TestComponent.class);
+        Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class);
 
         assertTrue(result.isPresent());
         assertEquals(testComponent, result.get());
@@ -102,12 +101,8 @@ class DefaultComponentRegistryTest {
         String testNameTwo = "two";
         TestComponent testComponentOne = new TestComponent(testNameOne);
         TestComponent testComponentTwo = new TestComponent(testNameTwo);
-        testSubject.registerComponent(TestComponent.class,
-                                      testNameOne,
-                                      c -> testComponentOne).registerComponent(
-                TestComponent.class,
-                testNameTwo,
-                c -> testComponentTwo);
+        testSubject.registerComponent(TestComponent.class, testNameOne, c -> testComponentOne)
+                   .registerComponent(TestComponent.class, testNameTwo, c -> testComponentTwo);
 
         NewConfiguration config = testSubject.build(mock());
 
@@ -150,9 +145,7 @@ class DefaultComponentRegistryTest {
         TestComponent testComponent = new TestComponent("replaced-component");
         TestComponent expectedComponent = new TestComponent("the-winner");
         testSubject.registerComponent(TestComponent.class, "name", c -> testComponent)
-                   .registerComponent(TestComponent.class,
-                                      "name",
-                                      c -> expectedComponent);
+                   .registerComponent(TestComponent.class, "name", c -> expectedComponent);
 
         NewConfiguration config = testSubject.build(mock());
 
@@ -165,9 +158,7 @@ class DefaultComponentRegistryTest {
         TestComponent testComponent = new TestComponent("replaced-component");
         TestComponent expectedComponent = new TestComponent("the-winner");
         testSubject.registerComponent(TestComponent.class, "name", c -> testComponent)
-                   .registerComponent(TestComponent.class,
-                                      "name",
-                                      c -> expectedComponent);
+                   .registerComponent(TestComponent.class, "name", c -> expectedComponent);
 
         NewConfiguration config = testSubject.build(mock());
 
@@ -180,9 +171,7 @@ class DefaultComponentRegistryTest {
         AtomicBoolean invoked = new AtomicBoolean(false);
         TestComponent defaultComponent = new TestComponent("default");
         TestComponent registeredComponent = TEST_COMPONENT;
-        testSubject.registerComponent(TestComponent.class,
-                                      "id",
-                                      c -> registeredComponent);
+        testSubject.registerComponent(TestComponent.class, "id", c -> registeredComponent);
 
         NewConfiguration config = testSubject.build(mock());
 
@@ -208,15 +197,14 @@ class DefaultComponentRegistryTest {
 
     @Test
     void nestedConfigurationCanAccessComponentsFromParent() {
-        testSubject.registerModule(new TestModule("test1")
-                                           .componentRegistry(cr ->
-                                                                      cr.registerComponent(String.class,
-                                                                                           "child",
-                                                                                           c -> c.getComponent(
-                                                                                                   String.class,
-                                                                                                   "parent")
-                                                                                                   + "&child")
-                                           ))
+        testSubject.registerModule(
+                           new TestModule("test1").componentRegistry(
+                                   cr -> cr.registerComponent(
+                                           String.class, "child",
+                                           c -> c.getComponent(String.class, "parent") + "&child"
+                                   )
+                           )
+                   )
                    .registerComponent(String.class, "parent", c -> "parent");
         NewConfiguration actual = testSubject.build(mock());
 
@@ -321,8 +309,9 @@ class DefaultComponentRegistryTest {
 
             // The Component is not yet validated, as I am using a mocked ComponentDescriptor.
             testSubject.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
-                       .registerModule(testModule.componentRegistry(cr -> cr.registerComponent(TestComponent.class,
-                                                                                               c -> TEST_COMPONENT)));
+                       .registerModule(testModule.componentRegistry(
+                               cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+                       ));
 
             NewConfiguration result = testSubject.build(mock());
 
@@ -340,24 +329,14 @@ class DefaultComponentRegistryTest {
 
     }
 
-    private static class RegisteringConfigurationEnhancer implements ConfigurationEnhancer {
-
-        private final List<ConfigurationEnhancer> invokedEnhancers;
-        private final int order;
-
-        public RegisteringConfigurationEnhancer(List<ConfigurationEnhancer> invokedEnhancers, int order) {
-            this.invokedEnhancers = invokedEnhancers;
-            this.order = order;
-        }
+    private record RegisteringConfigurationEnhancer(
+            List<ConfigurationEnhancer> invokedEnhancers,
+            int order
+    ) implements ConfigurationEnhancer {
 
         @Override
         public void enhance(@Nonnull ComponentRegistry registry) {
             invokedEnhancers.add(this);
-        }
-
-        @Override
-        public int order() {
-            return order;
         }
     }
 

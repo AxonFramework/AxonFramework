@@ -16,6 +16,11 @@
 
 package org.axonframework.configuration;
 
+/**
+ * Test class validating the {@link DefaultAxonApplication}.
+ *
+ * @author Steven van Beelen
+ */
 class DefaultAxonApplicationTest extends ApplicationConfigurerTestSuite<DefaultAxonApplication> {
 
     @Override

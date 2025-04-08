@@ -78,7 +78,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
     }
 
-    @Nested class ComponentRegistration {
+    @Nested
+    class ComponentRegistration {
 
         @Test
         void registerComponentExposesRegisteredComponentUponBuild() {
@@ -221,7 +222,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
     }
 
-    @Nested class ComponentRegistrationFailures {
+    @Nested
+    class ComponentRegistrationFailures {
 
         @Test
         void registerComponentThrowsNullPointerExceptionForNullType() {
@@ -288,27 +290,24 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
     }
 
-    @Nested class ComponentDecoration {
+    @Nested
+    class ComponentDecoration {
 
         @Test
         void registerDecoratorDecoratesOutcomeOfComponentBuilderInSpecifiedOrder() {
             String expectedState = TEST_COMPONENT.state() + "123";
 
-            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
-                                                  .registerDecorator(TestComponent.class,
-                                                                     2,
-                                                                     (c, name, delegate) -> new TestComponent(
-                                                                             delegate.state + "3")).registerDecorator(
-                            TestComponent.class,
-                            1,
-                            (c, name, delegate) -> new TestComponent(delegate.state + "2")).registerDecorator(
-                            TestComponent.class,
-                            "non-existent",
-                            1,
-                            (c, name, delegate) -> new TestComponent(delegate.state + "999")).registerDecorator(
-                            TestComponent.class,
-                            0,
-                            (c, name, delegate) -> new TestComponent(delegate.state + "1")));
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(TestComponent.class, config -> TEST_COMPONENT)
+                            .registerDecorator(TestComponent.class, 2,
+                                               (c, name, delegate) -> new TestComponent(delegate.state + "3"))
+                            .registerDecorator(TestComponent.class, 1,
+                                               (c, name, delegate) -> new TestComponent(delegate.state + "2"))
+                            .registerDecorator(TestComponent.class, "non-existent", 1,
+                                               (c, name, delegate) -> new TestComponent(delegate.state + "999"))
+                            .registerDecorator(TestComponent.class, 0,
+                                               (c, name, delegate) -> new TestComponent(delegate.state + "1"))
+            );
 
             TestComponent result = testSubject.build().getComponent(TestComponent.class);
 
@@ -324,9 +323,10 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
-                         () -> testSubject.componentRegistry(cr -> cr.registerDecorator(null,
-                                                                                        42,
-                                                                                        (c, name, delegate) -> delegate)));
+                         () -> testSubject.componentRegistry(
+                                 cr -> cr.registerDecorator(null, 42, (c, name, delegate) -> delegate)
+                         )
+            );
         }
 
         @Test
@@ -335,10 +335,10 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
 
             //noinspection DataFlowIssue
             assertThrows(IllegalArgumentException.class,
-                         () -> testSubject.componentRegistry(cr -> cr.registerDecorator(Object.class,
-                                                                                        null,
-                                                                                        42,
-                                                                                        (c, name, delegate) -> delegate)));
+                         () -> testSubject.componentRegistry(
+                                 cr -> cr.registerDecorator(Object.class, null, 42, (c, name, delegate) -> delegate)
+                         )
+            );
         }
 
         @Test
@@ -346,10 +346,10 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, config -> TEST_COMPONENT));
 
             //noinspection DataFlowIssue
-            assertThrows(NullPointerException.class,
-                         () -> testSubject.componentRegistry(cr -> cr.registerDecorator(TestComponent.class,
-                                                                                        42,
-                                                                                        null)));
+            assertThrows(
+                    NullPointerException.class,
+                    () -> testSubject.componentRegistry(cr -> cr.registerDecorator(TestComponent.class, 42, null))
+            );
         }
     }
 
@@ -472,8 +472,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         @Test
         void registeredEnhancersCanAddComponents() {
             testSubject.componentRegistry(cr -> cr.registerEnhancer(configurer -> configurer.registerComponent(
-                    TestComponent.class,
-                    c -> TEST_COMPONENT)));
+                    TestComponent.class, c -> TEST_COMPONENT
+            )));
 
             NewConfiguration config = testSubject.build();
 
@@ -483,11 +483,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         @Test
         void registeredEnhancersCanDecorateComponents() {
             TestComponent expected = new TestComponent(TEST_COMPONENT.state() + "-decorated");
-            ConfigurationEnhancer enhancer = configurer -> configurer.registerDecorator(TestComponent.class,
-                                                                                        0,
-                                                                                        (c, name, delegate) -> new TestComponent(
-                                                                                                delegate.state()
-                                                                                                        + "-decorated"));
+            ConfigurationEnhancer enhancer = configurer -> configurer.registerDecorator(
+                    TestComponent.class, 0, (c, name, delegate) -> new TestComponent(delegate.state() + "-decorated")
+            );
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
                                                   .registerEnhancer(enhancer));
 
@@ -500,10 +498,13 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         void registeredEnhancersCanReplaceComponents() {
             TestComponent expected = new TestComponent("replacement");
 
-            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
-                                                  .registerEnhancer(configurer -> configurer.registerComponent(
-                                                          TestComponent.class,
-                                                          c -> expected)));
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
+                            .registerEnhancer(configurer -> configurer.registerComponent(
+                                    TestComponent.class,
+                                    c -> expected
+                            ))
+            );
 
             NewConfiguration config = testSubject.build();
 
@@ -531,7 +532,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
     }
 
-    @Nested class ModuleRegistration {
+    @Nested
+    class ModuleRegistration {
 
         @Test
         void registerModuleThrowsNullPointerExceptionForNullModuleBuilder() {
@@ -570,28 +572,28 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             TestComponent levelOneModuleComponent = new TestComponent("root-one");
             TestComponent levelTwoModuleComponent = new TestComponent("root-two");
 
-            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class,
-                                                                     "root",
-                                                                     rootConfig -> rootComponent)
-                                                  .registerModule(new TestModule("one").componentRegistry(mcr -> mcr.registerComponent(
-                                                                                                                            TestComponent.class,
-                                                                                                                            "one",
-                                                                                                                            c -> c.getOptionalComponent(TestComponent.class, "root")
-                                                                                                                                  .map(delegate -> new TestComponent(
-                                                                                                                                          delegate.state + "-one")).orElseThrow())
-                                                                                                                    .registerModule(
-                                                                                                                            new TestModule(
-                                                                                                                                    "two").componentRegistry(
-                                                                                                                                    cr2 -> cr2.registerComponent(
-                                                                                                                                            TestComponent.class,
-                                                                                                                                            "two",
-                                                                                                                                            c -> c.getOptionalComponent(
-                                                                                                                                                          TestComponent.class,
-                                                                                                                                                          "root")
-                                                                                                                                                  .map(delegate -> new TestComponent(
-                                                                                                                                                          delegate.state
-                                                                                                                                                                  + "-two"))
-                                                                                                                                                  .orElseThrow()))))));
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(TestComponent.class, "root", rootConfig -> rootComponent)
+                            .registerModule(new TestModule("one").componentRegistry(
+                                    mcr -> mcr.registerComponent(
+                                                      TestComponent.class, "one",
+                                                      c -> c.getOptionalComponent(TestComponent.class, "root")
+                                                            .map(delegate -> new TestComponent(delegate.state + "-one"))
+                                                            .orElseThrow()
+                                              )
+                                              .registerModule(
+                                                      new TestModule("two").componentRegistry(
+                                                              cr2 -> cr2.registerComponent(
+                                                                      TestComponent.class, "two",
+                                                                      c -> c.getOptionalComponent(
+                                                                                    TestComponent.class, "root"
+                                                                            )
+                                                                            .map(delegate -> new TestComponent(
+                                                                                    delegate.state + "-two"
+                                                                            ))
+                                                                            .orElseThrow()))))
+                            )
+            );
 
             // Root configurer outcome only has own components.
             NewConfiguration rootConfig = testSubject.build();
@@ -619,17 +621,16 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             TestComponent rootComponent = new TestComponent("root");
             TestComponent leftModuleComponent = new TestComponent("left");
             TestComponent rightModuleComponent = new TestComponent("right");
-            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class,
-                                                                     "root",
-                                                                     rootConfig -> rootComponent)
-                                                  .registerModule(new TestModule("left").componentRegistry(mcr -> mcr.registerComponent(
-                                                          TestComponent.class,
-                                                          "left",
-                                                          c -> leftModuleComponent)))
-                                                  .registerModule(new TestModule("right").componentRegistry(mcr -> mcr.registerComponent(
-                                                          TestComponent.class,
-                                                          "right",
-                                                          c -> rightModuleComponent))));
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(TestComponent.class, "root", rootConfig -> rootComponent)
+                            .registerModule(new TestModule("left").componentRegistry(
+                                    mcr -> mcr.registerComponent(TestComponent.class, "left", c -> leftModuleComponent)
+                            ))
+                            .registerModule(new TestModule("right").componentRegistry(
+                                    mcr -> mcr.registerComponent(TestComponent.class, "right",
+                                                                 c -> rightModuleComponent)
+                            ))
+            );
 
             // Root configurer outcome only has own components.
             NewConfiguration rootConfig = testSubject.build();
@@ -655,34 +656,46 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             String expectedRootComponentState = "root-decorated-by-root";
             String expectedLevelOneComponentState = "level-one-decorated-by-level-one";
             String expectedLevelTwoComponentState = "level-two-decorated-by-level-two";
-            testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class,
-                                                                     rootConfig -> new TestComponent("root"))
-                                                  .registerDecorator(TestComponent.class,
-                                                                     0,
-                                                                     (rootConfig, name, delegate) -> new TestComponent(
-                                                                             delegate.state() + "-decorated-by-root"))
-                                                  .registerModule(new TestModule("level-one").componentRegistry(mcr -> mcr.registerComponent(
-                                                                                                                                  TestComponent.class,
-                                                                                                                                  c -> new TestComponent("level-one")).registerDecorator(
-                                                                                                                                  TestComponent.class,
-                                                                                                                                  0,
-                                                                                                                                  (config, name, delegate) -> new TestComponent(
-                                                                                                                                          delegate.state() + "-decorated-by-level-one"))
-                                                                                                                          .registerModule(
-                                                                                                                                  new TestModule(
-                                                                                                                                          "level-two").componentRegistry(
-                                                                                                                                          emcr -> emcr.registerComponent(
-                                                                                                                                                              TestComponent.class,
-                                                                                                                                                              config -> new TestComponent(
-                                                                                                                                                                      "level-two"))
-                                                                                                                                                      .registerDecorator(
-                                                                                                                                                              TestComponent.class,
-                                                                                                                                                              0,
-                                                                                                                                                              (config, name, delegate) -> new TestComponent(
-                                                                                                                                                                      delegate.state()
-                                                                                                                                                                              + "-decorated-by-level-two")))
-
-                                                                                                                          ))));
+            testSubject.componentRegistry(
+                    cr -> cr.registerComponent(TestComponent.class,
+                                               rootConfig -> new TestComponent("root"))
+                            .registerDecorator(
+                                    TestComponent.class, 0,
+                                    (rootConfig, name, delegate) -> new TestComponent(
+                                            delegate.state() + "-decorated-by-root"
+                                    )
+                            )
+                            .registerModule(
+                                    new TestModule("level-one").componentRegistry(
+                                            mcr -> mcr.registerComponent(
+                                                              TestComponent.class,
+                                                              c -> new TestComponent("level-one")
+                                                      )
+                                                      .registerDecorator(
+                                                              TestComponent.class, 0,
+                                                              (config, name, delegate) -> new TestComponent(
+                                                                      delegate.state() + "-decorated-by-level-one"
+                                                              )
+                                                      )
+                                                      .registerModule(
+                                                              new TestModule("level-two").componentRegistry(
+                                                                      emcr -> emcr.registerComponent(
+                                                                                          TestComponent.class,
+                                                                                          config -> new TestComponent(
+                                                                                                  "level-two"
+                                                                                          )
+                                                                                  )
+                                                                                  .registerDecorator(
+                                                                                          TestComponent.class, 0,
+                                                                                          (config, name, delegate) -> new TestComponent(
+                                                                                                  delegate.state()
+                                                                                                          + "-decorated-by-level-two")
+                                                                                  )
+                                                              )
+                                                      )
+                                    )
+                            )
+            );
 
             // Check decoration on root level.
             NewConfiguration root = testSubject.build();
@@ -710,11 +723,11 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             AtomicBoolean invoked = new AtomicBoolean(false);
             TestComponent defaultComponent = new TestComponent("default");
             TestComponent registeredComponent = TEST_COMPONENT;
-            testSubject.componentRegistry(cr -> cr.registerModule(new TestModule("test-module")
-                                                                          .componentRegistry(mcr -> mcr.registerComponent(
-                                                                                  TestComponent.class,
-                                                                                  "id",
-                                                                                  c -> registeredComponent))));
+            testSubject.componentRegistry(
+                    cr -> cr.registerModule(new TestModule("test-module").componentRegistry(
+                            mcr -> mcr.registerComponent(TestComponent.class, "id", c -> registeredComponent))
+                    )
+            );
 
             NewConfiguration rootConfig = testSubject.build();
 
@@ -742,7 +755,8 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
         }
     }
 
-    @Nested class Lifecycle {
+    @Nested
+    class Lifecycle {
 
         @Test
         void startLifecycleHandlersAreInvokedInAscendingPhaseOrder() {
@@ -1059,12 +1073,13 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             t.join();
         }
 
-        @FunctionalInterface protected interface LifecycleRegistration {
+        @FunctionalInterface
+        protected interface LifecycleRegistration {
 
             void registerLifecycleHandler(LifecycleRegistry lifecycleRegistry, int phase, Runnable lifecycleHandler);
         }
 
-        public static class LifecycleManagedInstance {
+        static class LifecycleManagedInstance {
 
             private final ReentrantLock lock;
             private final AtomicBoolean invoked;
@@ -1087,12 +1102,10 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             }
 
             public void start() {
-                System.out.println("Starting");
                 // No-op
             }
 
             protected CompletableFuture<Void> slowStart() {
-                System.out.println("Slow Starting");
                 return CompletableFuture.runAsync(() -> {
                     try {
                         LoggerFactory.getLogger(ApplicationConfigurerTestSuite.class)

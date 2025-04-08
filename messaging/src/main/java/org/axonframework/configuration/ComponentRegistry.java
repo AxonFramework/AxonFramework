@@ -52,7 +52,8 @@ public interface ComponentRegistry extends DescribableComponent {
      */
     default <C> ComponentRegistry registerComponent(@Nonnull Class<C> type,
                                                     @Nonnull ComponentFactory<C> factory) {
-        return registerComponent(type, type.getSimpleName(), factory);
+        return registerComponent(ComponentDefinition.ofType(type)
+                                                    .withFactory(factory));
     }
 
     /**
@@ -75,7 +76,8 @@ public interface ComponentRegistry extends DescribableComponent {
     default <C> ComponentRegistry registerComponent(@Nonnull Class<C> type,
                                                     @Nonnull String name,
                                                     @Nonnull ComponentFactory<? extends C> factory) {
-        return registerComponent(ComponentDefinition.ofTypeAndName(type, name).withFactory(factory));
+        return registerComponent(ComponentDefinition.ofTypeAndName(type, name)
+                                                    .withFactory(factory));
     }
 
     /**
@@ -145,10 +147,10 @@ public interface ComponentRegistry extends DescribableComponent {
     }
 
     /**
-     * Registers a decorated based on the given {@code decoratorDefinition}.
+     * Registers a decorator based on the given {@code decoratorDefinition}.
      *
      * @param decoratorDefinition The definition of the decorator to apply to components.
-     * @param <C>                 The declared type of component.
+     * @param <C>                 The declared type of the component(s) to decorate.
      * @return The current instance of the {@code Configurer} for a fluent API.
      * @see DecoratorDefinition
      */
@@ -178,14 +180,14 @@ public interface ComponentRegistry extends DescribableComponent {
                          @Nonnull String name);
 
     /**
-     * Registers an {@link ConfigurationEnhancer} with this ComponentRegistry.
+     * Registers an {@link ConfigurationEnhancer} with this {@code ComponentRegistry}.
      * <p>
-     * An {@code enhancer} is able to invoke <em>any</em> of the method on this {@code ComponentRegistry}, allowing it
+     * An {@code enhancer} is able to invoke <em>any</em> of the methods on this {@code ComponentRegistry}, allowing it
      * to add (sensible) defaults, decorate {@link Component components}, or replace components entirely.
      * <p>
      * An enhancer's {@link ConfigurationEnhancer#enhance(ComponentRegistry)} method is invoked during the
-     * initialization phase when all components have been defined. This is right before the ComponentRegistry creates
-     * its {@link NewConfiguration}.
+     * initialization phase when all components have been defined. This is right before the {@code ComponentRegistry}
+     * creates its {@link NewConfiguration}.
      * <p>
      * When multiple enhancers have been provided, their {@link ConfigurationEnhancer#order()} dictates the enhancement
      * order. For enhancer with the same order, the order of execution is undefined.
@@ -199,17 +201,17 @@ public interface ComponentRegistry extends DescribableComponent {
     /**
      * Registers a {@link Module} with this registry.
      * <p>
-     * Note that a {@code Module} is able to access the components defined in this ComponentRegistry upon construction,
-     * but not vice versa. As such, the {@code Module} maintains encapsulation.
+     * Note that a {@code Module} is able to access the components defined in this {@code ComponentRegistry} upon
+     * construction, but not vice versa. As such, the {@code Module} maintains encapsulation.
      *
      * @param module The module builder function to register.
      * @return The current instance of the {@code ComponentRegistry} for a fluent API.
-     * @throws ComponentOverrideException if a module with the same name already exists.
+     * @throws ComponentOverrideException If a module with the same name already exists.
      */
     ComponentRegistry registerModule(@Nonnull Module module);
 
     /**
-     * Sets the {@link OverridePolicy} for this component registry.
+     * Sets the {@link OverridePolicy} for this {@code ComponentRegistry}.
      * <p>
      * This policy dictates what should happen when components are registered with an identifier for which another
      * component is already present.
