@@ -178,7 +178,7 @@ class SubscribeStudentTest {
 ----
 
 To those tests we need to implement the command handler for `SubscribeStudent` command.
-As you've seen for the behaviour which is based on some state (so we have something in Given section of the test) we need to have State for our command handler to validate commands againts it.
+As you've seen for the behaviour which is based on some state (so we have something in Given section of the test) we need to have State for our command handler to validate commands against it.
 Let's make it right away!
 
 [source,java]
@@ -486,4 +486,77 @@ It gives us better accessibility of our system - thanks to that, as you see ther
 In case of Aggregates those operation may clash, or you need to introduce separated entity for the name if you want to avoid concurrency access issues.
 Our colleague Milan from AxonIQ (with our ex-colleague Sara) discuss those scenarios in the talk - we really encourage you to watch it
 
-If you do just `EventCriteria.match().eventsOfTypes().withTags(...)` you load all events for the given tag, so there are more chances to clash with other changes, which cause events that do not influence this certain business rules.
+[NOTE]
+====
+Keep in mind it's beneficial to define events types in the criteria.
+Technically you can just use `EventCriteria.match().eventsOfTypes(...)` and load all events for the given tag.
+But in this case you load more than needed, and it's more possible to clash with other changes, which cause events that do not influence this certain business rules.
+====
+
+== Summing up
+
+Let's summarize what we have done so far.
+You've implemented the whole `SubscribeStudent` command handler using the DCB concept in practice. It was easier than you expected, right?
+If you're not sure if you followed the tutorial correctly, you can always check the code in the repository. The command handler code is here link:https://github.com/AxonIQ/university-demo/blob/master/src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentCommandHandler.java[SubscribeStudentCommandHandler].
+If you prefer to use different style (with multiple state classes - like `Course` and `Student` instead of just one) you may also compare the solution we have done with the code in the package link:https://github.com/AxonIQ/university-demo/tree/master/src/main/java/io/axoniq/demo/university/faculty/write/subscribestudentmulti[subscribestudentmulti].
+
+== Configuration
+Same as before to make our tests green the last thing to co it to configure the require infrastructure for the command handler.
+To do so let's create a new class `SubscribeStudentConfiguration` with following content.
+
+[source,java]
+.src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseConfiguration.java
+----
+package io.axoniq.demo.university.faculty.write.subscribestudent;
+
+import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
+import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
+import org.axonframework.modelling.StateManager;
+import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
+
+import java.util.List;
+
+public class SubscribeStudentConfiguration {
+
+    public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
+        var stateEntity = EventSourcedEntityBuilder
+                .annotatedEntity(SubscriptionId.class, SubscribeStudentCommandHandler.State.class);
+        var commandHandlingModule = StatefulCommandHandlingModule
+                .named("SubscribeStudent")
+                .entities()
+                .entity(stateEntity)
+                .commandHandlers()
+                .annotatedCommandHandlingComponent(c -> new SubscribeStudentCommandHandler());
+        return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
+    }
+
+}
+----
+
+Now we need to register the configuration in the `UniversityAxonApplication` class as follows.
+
+[source,java]
+./src/main/java/io/axoniq/demo/university/UniversityAxonApplication.java
+----
+public class UniversityAxonApplication {
+
+    public static ApplicationConfigurer<?> configurer() {
+        var configurer = EventSourcingConfigurer.create();
+        configurer = CreateCourseConfiguration.configure(configurer);
+        configurer = SubscribeStudentConfiguration.configure(configurer); // <1>
+        return configurer;
+    }
+
+    // rest omitted for brevity
+
+}
+----
+<1> We register the `StatefulCommandHandlingModule` as a child of the `EventSourcingConfigurer`.
+
+Now what is better to developer that beeing flashed by the green bar in your IDE after running the tests?
+Let's do it! Don't forget to mark the slice as completed in the Event Modeling diagram if you use this approach.
+
+
+
+
