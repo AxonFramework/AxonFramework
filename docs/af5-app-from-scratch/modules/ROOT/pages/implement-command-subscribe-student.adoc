@@ -558,5 +558,9 @@ Now what is better to developer that beeing flashed by the green bar in your IDE
 Let's do it! Don't forget to mark the slice as completed in the Event Modeling diagram if you use this approach.
 
 
-
-
+== Your opinion matters!
+Thank you for reading this tutorial!
+We hope you enjoyed the new APIs, and you're looking forward for the Axon Framework 5 release.
+You have also an opportunity to influence the future of the framework and help revolutionize the way people build applications.
+If you'd like to do so please share your feedback with us. You can do it on Discuss [TBD FORM LINK] or reach out to our Framework team directly on LinkedIn.
+We are looking forward to your opinion, and we will be happy to discuss your ideas with you.
