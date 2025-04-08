@@ -63,6 +63,11 @@ public class ParameterResolverFactoryUtils {
     ) {
         Objects.requireNonNull(componentRegistry, "ComponentRegistry cannot be null");
         Objects.requireNonNull(factory, "Factory cannot be null");
+
+        if (!componentRegistry.hasComponent(ParameterResolverFactory.class)) {
+            componentRegistry.registerComponent(ParameterResolverFactory.class, factory::apply);
+            return;
+        }
         componentRegistry.registerDecorator(
                 ParameterResolverFactory.class,
                 order,

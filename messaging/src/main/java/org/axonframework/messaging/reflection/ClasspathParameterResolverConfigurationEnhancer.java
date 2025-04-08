@@ -21,12 +21,11 @@ import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
+import org.axonframework.messaging.configuration.reflection.ParameterResolverFactoryUtils;
 
 /**
  * {@link ConfigurationEnhancer} that registers the {@link ClasspathParameterResolverFactory} as the default
- * {@link ParameterResolverFactory}. Disabling this enhancer will disable the {@link ParameterResolverFactory} component
- * registration completely. As such, without this enhancer, any other {@link ParameterResolverFactory} that was registered will
- * not work.
+ * {@link ParameterResolverFactory}.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -35,9 +34,9 @@ public class ClasspathParameterResolverConfigurationEnhancer implements Configur
 
     @Override
     public void enhance(@Nonnull ComponentRegistry componentRegistry) {
-        componentRegistry.registerComponent(
-                ParameterResolverFactory.class,
-                (c) -> ClasspathParameterResolverFactory.forClass(c.getClass())
+        ParameterResolverFactoryUtils.registerToComponentRegistry(
+                componentRegistry,
+                c -> ClasspathParameterResolverFactory.forClass(c.getClass())
         );
     }
 }

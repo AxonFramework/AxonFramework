@@ -34,18 +34,11 @@ class InjectEntityParameterResolverFactoryConfigurationEnhancerTest {
 
         DefaultComponentRegistry componentRegistry = new DefaultComponentRegistry();
         componentRegistry.disableEnhancerScanning()
-                         .registerEnhancer(new InjectEntityParameterResolverFactoryConfigurationEnhancer())
-                         .registerComponent(ParameterResolverFactory.class,
-                                            (c) -> new ConcludesBatchParameterResolverFactory());
+                         .registerEnhancer(new InjectEntityParameterResolverFactoryConfigurationEnhancer());
 
         NewConfiguration build = componentRegistry.build(Mockito.mock(LifecycleRegistry.class));
 
         ParameterResolverFactory factory = build.getComponent(ParameterResolverFactory.class);
-        assertInstanceOf(MultiParameterResolverFactory.class, factory);
-        assertEquals(2, ((MultiParameterResolverFactory) factory).getDelegates().size());
-        assertInstanceOf(ConcludesBatchParameterResolverFactory.class,
-                         ((MultiParameterResolverFactory) factory).getDelegates().get(0));
-        assertInstanceOf(InjectEntityParameterResolverFactory.class,
-                         ((MultiParameterResolverFactory) factory).getDelegates().get(1));
+        assertInstanceOf(InjectEntityParameterResolverFactory.class, factory);
     }
 }
