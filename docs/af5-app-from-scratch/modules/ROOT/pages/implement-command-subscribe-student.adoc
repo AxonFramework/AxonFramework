@@ -471,23 +471,18 @@ class SubscribeStudentCommandHandler {
             var studentId = id.studentId().raw();
             return EventCriteria.either(
                     EventCriteria.match()
-                                 .eventsOfTypes(
-                                         CourseCreated.class.getName(),
-                                         CourseCapacityChanged.class.getName()
-                                 ).withTags(Tag.of("courseId", courseId)),
+                            .eventsOfTypes(
+                                    CourseCreated.class.getName(),
+                                    CourseCapacityChanged.class.getName(),
+                                    StudentSubscribed.class.getName(),
+                                    StudentUnsubscribed.class.getName()
+                            ).withTags(Tag.of(FacultyTags.COURSE_ID, courseId)), // <3>
                     EventCriteria.match()
-                                 .eventsOfTypes(StudentEnrolledFaculty.class.getName())
-                                 .withTags(Tag.of("studentId", studentId)),
-                    EventCriteria.match()
-                                 .eventsOfTypes(
-                                         StudentSubscribed.class.getName(),
-                                         StudentUnsubscribed.class.getName()
-                                 ).withTags(Tag.of("courseId", courseId)), // <3>
-                    EventCriteria.match()
-                                 .eventsOfTypes(
-                                         StudentSubscribed.class.getName(),
-                                         StudentUnsubscribed.class.getName()
-                                 ).withTags(Tag.of("studentId", studentId))
+                            .eventsOfTypes(
+                                    StudentEnrolledFaculty.class.getName(),
+                                    StudentSubscribed.class.getName(),
+                                    StudentUnsubscribed.class.getName()
+                            ).withTags(Tag.of(FacultyTags.STUDENT_ID, studentId))
             );
         }
     }
