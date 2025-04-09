@@ -17,19 +17,27 @@
 package org.axonframework.configuration;
 
 /**
- * Test suite implementation validating the lifecycle operation registration of the {@link MessagingConfigurer}.
+ * Enumeration describing how a {@link ComponentRegistry} should react when a {@link Component} is to be overridden
+ * during a {@link ComponentRegistry#registerComponent(ComponentDefinition)} invocation.
  *
  * @author Steven van Beelen
+ * @author Mitchell Herrijgers
+ * @author Allard Buijze
+ * @author Mateusz Nowak
+ * @see ComponentRegistry#setOverridePolicy(OverridePolicy)
+ * @since 5.0.0
  */
-class MessagingConfigurerLifecycleOperationTest extends ConfigurerLifecycleOperationTestSuite<MessagingConfigurer> {
-
-    @Override
-    public MessagingConfigurer createConfigurer() {
-        return MessagingConfigurer.create();
-    }
-
-    @Override
-    public AxonConfiguration start(MessagingConfigurer configurer) {
-        return configurer.start();
-    }
+public enum OverridePolicy {
+    /**
+     * Overriding is allowed at all times.
+     */
+    ALLOW,
+    /**
+     * Overriding a components results in a WARN-level log message.
+     */
+    WARN,
+    /**
+     * Trying to override results in a {@link ComponentOverrideException}.
+     */
+    REJECT
 }

@@ -17,11 +17,8 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.Assert;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.Component.Identifier;
-
-import java.util.function.Consumer;
 
 /**
  * The starting point when configuring any Axon Framework application.
@@ -31,13 +28,11 @@ import java.util.function.Consumer;
  * {@link #hasComponent(Class) exists}, register {@link #registerEnhancer(ConfigurationEnhancer) enhancers} for the
  * entire configurer, and {@link #registerModule(Module) modules}.
  *
- * @param <S> The type of configurer this implementation returns. This generic allows us to support fluent interfacing.
  * @author Allard Buijze
  * @author Steven van Beelen
- * @since 3.0.0
+ * @since 5.0.0
  */
-// TODO Rename to Configurer once the old Configurer is removed
-public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOperations, DescribableComponent {
+public interface ComponentRegistry extends DescribableComponent {
 
     /**
      * Registers a {@link Component} that should be made available to other {@link Component components} or
@@ -46,17 +41,19 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      * The given {@code factory} function gets the {@link NewConfiguration configuration} as input, and is expected to
      * provide the component as output. The component will be registered under an {@link Identifier} based on the given
      * {@code type}.
-     * <p>
-     * Note that registering a component twice for the same {@code type} will remove the previous registration!
      *
      * @param type    The declared type of the component to build, typically an interface.
      * @param factory The factory building the component.
      * @param <C>     The type of component the {@code factory} builds.
      * @return The current instance of the {@code Configurer} for a fluent API.
+     * @throws ComponentOverrideException If the override policy is set to
+     *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
+     *                                    with the same type is already defined.
      */
-    default <C> S registerComponent(@Nonnull Class<C> type,
-                                    @Nonnull ComponentFactory<C> factory) {
-        return registerComponent(type, type.getSimpleName(), factory);
+    default <C> ComponentRegistry registerComponent(@Nonnull Class<C> type,
+                                                    @Nonnull ComponentFactory<C> factory) {
+        return registerComponent(ComponentDefinition.ofType(type)
+                                                    .withFactory(factory));
     }
 
     /**
@@ -66,19 +63,34 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      * The given {@code factory} function gets the {@link NewConfiguration configuration} as input, and is expected to
      * provide the component as output. The component will be registered under an {@link Identifier} based on the given
      * {@code type} and {@code name} combination.
-     * <p>
-     * Note that registering a component twice for the same {@code type} and {@code name} will remove the previous
-     * registration!
      *
      * @param type    The declared type of the component to build, typically an interface.
      * @param name    The name of the component to build.
      * @param factory The factory building the component.
      * @param <C>     The type of component the {@code factory} builds.
      * @return The current instance of the {@code Configurer} for a fluent API.
+     * @throws ComponentOverrideException If the override policy is set to
+     *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
+     *                                    with the same type and name is already defined.
      */
-    <C> S registerComponent(@Nonnull Class<? extends C> type,
-                            @Nonnull String name,
-                            @Nonnull ComponentFactory<? extends C> factory);
+    default <C> ComponentRegistry registerComponent(@Nonnull Class<C> type,
+                                                    @Nonnull String name,
+                                                    @Nonnull ComponentFactory<? extends C> factory) {
+        return registerComponent(ComponentDefinition.ofTypeAndName(type, name)
+                                                    .withFactory(factory));
+    }
+
+    /**
+     * Registers a component based on the given {@code componentDefinition}.
+     *
+     * @param componentDefinition The definition of the component to register.
+     * @param <C>                 The declared type of the component.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     * @throws ComponentOverrideException If the override policy is set to
+     *                                    {@link org.axonframework.configuration.OverridePolicy#REJECT} and a component
+     *                                    with the same type and name is already defined.
+     */
+    <C> ComponentRegistry registerComponent(@Nonnull ComponentDefinition<? extends C> componentDefinition);
 
     /**
      * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on <b>all</b>
@@ -95,14 +107,19 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      * @param order     The order of the given {@code decorator} among other decorators.
      * @param decorator The decoration function for a component of type {@code C}.
      * @param <C>       The type of component the {@code decorator} decorates.
+     * @param <D>       The type of component the {@code decorator} returns.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    <C> S registerDecorator(@Nonnull Class<C> type,
-                            int order,
-                            @Nonnull ComponentDecorator<C> decorator);
+    default <C, D extends C> ComponentRegistry registerDecorator(@Nonnull Class<C> type,
+                                                                 int order,
+                                                                 @Nonnull ComponentDecorator<C, D> decorator) {
+        return registerDecorator(DecoratorDefinition.forType(type)
+                                                    .with(decorator)
+                                                    .order(order));
+    }
 
     /**
-     * Registers a {@link Component} {@link ComponentDecorator decorator} that will act on
+     * Registers a {@link ComponentDecorator decorator} that will act on
      * {@link #registerComponent(Class, String, ComponentFactory) registered} components of the given {@code type}
      * <b>and</b> {@code name} combination.
      * <p>
@@ -117,18 +134,27 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
      * @param order     The order of the given {@code decorator} among other decorators.
      * @param decorator The decoration function for a component of type {@code C}.
      * @param <C>       The type of component the {@code decorator} decorates.
+     * @param <D>       The type of component the {@code decorator} returns.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    default <C> S registerDecorator(@Nonnull Class<C> type,
-                                    @Nonnull String name,
-                                    int order,
-                                    @Nonnull ComponentDecorator<C> decorator) {
-        Assert.nonEmpty(name, "The name cannot be empty or null.");
-        return registerDecorator(
-                type, order,
-                (config, n, delegate) -> name.equals(n) ? decorator.decorate(config, n, delegate) : delegate
-        );
+    default <C, D extends C> ComponentRegistry registerDecorator(@Nonnull Class<C> type,
+                                                                 @Nonnull String name,
+                                                                 int order,
+                                                                 @Nonnull ComponentDecorator<C, D> decorator) {
+        return registerDecorator(DecoratorDefinition.forTypeAndName(type, name)
+                                                    .with(decorator)
+                                                    .order(order));
     }
+
+    /**
+     * Registers a decorator based on the given {@code decoratorDefinition}.
+     *
+     * @param decoratorDefinition The definition of the decorator to apply to components.
+     * @param <C>                 The declared type of the component(s) to decorate.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     * @see DecoratorDefinition
+     */
+    <C> ComponentRegistry registerDecorator(@Nonnull DecoratorDefinition<C, ? extends C> decoratorDefinition);
 
     /**
      * Check whether there is a {@link Component} registered with this {@code Configurer} for the given {@code type}.
@@ -154,53 +180,44 @@ public interface NewConfigurer<S extends NewConfigurer<S>> extends LifecycleOper
                          @Nonnull String name);
 
     /**
-     * Registers an {@link ConfigurationEnhancer} with {@code this Configurer}.
+     * Registers an {@link ConfigurationEnhancer} with this {@code ComponentRegistry}.
      * <p>
-     * An {@code enhancer} is able to invoke <em>any</em> of the method on this {@code Configurer}, allowing it to add
-     * (sensible) defaults, decorate {@link Component components}, or replace components entirely.
+     * An {@code enhancer} is able to invoke <em>any</em> of the methods on this {@code ComponentRegistry}, allowing it
+     * to add (sensible) defaults, decorate {@link Component components}, or replace components entirely.
      * <p>
-     * An enhancer's {@link ConfigurationEnhancer#enhance(NewConfigurer)} method is invoked during the
-     * {@link ApplicationConfigurer#build()} of {@code this Configurer}. This right before the configurer resolves to a
-     * {@link NewConfiguration}. When multiple enhancers have been provided, their {@link ConfigurationEnhancer#order()}
-     * dictates the enhancement order. For enhancer with the same order, the insert order is leading.
+     * An enhancer's {@link ConfigurationEnhancer#enhance(ComponentRegistry)} method is invoked during the
+     * initialization phase when all components have been defined. This is right before the {@code ComponentRegistry}
+     * creates its {@link NewConfiguration}.
+     * <p>
+     * When multiple enhancers have been provided, their {@link ConfigurationEnhancer#order()} dictates the enhancement
+     * order. For enhancer with the same order, the order of execution is undefined.
      *
-     * @param enhancer The configuration enhancer to enhance {@code this Configurer} during
+     * @param enhancer The configuration enhancer to enhance ComponentRegistry during
      *                 {@link ApplicationConfigurer#build()}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    S registerEnhancer(@Nonnull ConfigurationEnhancer enhancer);
+    ComponentRegistry registerEnhancer(@Nonnull ConfigurationEnhancer enhancer);
 
     /**
-     * Registers a {@link Module} {@code builder} with this {@code Configurer}.
+     * Registers a {@link Module} with this registry.
      * <p>
-     * Note that a {@code Module} is able to access the components of {@code this Configurer} upon construction, but not
-     * vice versa. As such, the {@code Module} maintains encapsulation.
-     * <p>
-     * The given {@code builder} is typically constructed immediately by the {@code Configurer}.
+     * Note that a {@code Module} is able to access the components defined in this {@code ComponentRegistry} upon
+     * construction, but not vice versa. As such, the {@code Module} maintains encapsulation.
      *
      * @param module The module builder function to register.
-     * @return The current instance of the {@code Configurer} for a fluent API.
+     * @return The current instance of the {@code ComponentRegistry} for a fluent API.
+     * @throws ComponentOverrideException If a module with the same name already exists.
      */
-    S registerModule(@Nonnull Module<?> module);
+    ComponentRegistry registerModule(@Nonnull Module module);
 
     /**
-     * Invokes the given {@code configureTask} if (1) this configurer has a delegate configurer and (2) that delegate is
-     * of the given {@code type}.
+     * Sets the {@link OverridePolicy} for this {@code ComponentRegistry}.
      * <p>
-     * Enables more specific {@code Configurer} implementations to invoke registration methods on its delegate
-     * configurer. Through this approach, {@code this Configurer} does not have to override all methods from the
-     * configurer it is delegating too.
-     * <p>
-     * Note that this method is typically not used directly, but instead used by more specific delegation methods like
-     * {@link MessagingConfigurer#application(Consumer)}, for example.
+     * This policy dictates what should happen when components are registered with an identifier for which another
+     * component is already present.
      *
-     * @param type          The delegate type to invoke the given {@code configureTask} on, if it matches with this
-     *                      configurers delegate.
-     * @param configureTask Lambda consuming the delegate configurer if it matches the given {@code type}.
-     * @param <C>           The expected type of the delegate {@code Configurer}.
+     * @param overridePolicy The override policy for components defined in this registry.
      * @return The current instance of the {@code Configurer} for a fluent API.
-     * @see MessagingConfigurer#application(Consumer)
      */
-    <C extends NewConfigurer<C>> S delegate(@Nonnull Class<C> type,
-                                            @Nonnull Consumer<C> configureTask);
+    ComponentRegistry setOverridePolicy(@Nonnull OverridePolicy overridePolicy);
 }

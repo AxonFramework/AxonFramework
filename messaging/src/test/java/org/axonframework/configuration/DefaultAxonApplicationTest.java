@@ -17,26 +17,14 @@
 package org.axonframework.configuration;
 
 /**
- * Enumeration describing how a {@link NewConfigurer} should react when a {@link Component} is to be overridden during a
- * {@link NewConfigurer#registerComponent(Class, ComponentFactory)} invocation.
+ * Test class validating the {@link DefaultAxonApplication}.
  *
  * @author Steven van Beelen
- * @author Mitchell Herrijgers
- * @author Allard Buijze
- * @author Mateusz Nowak
- * @since 5.0.0
  */
-public enum OverrideBehavior {
-    /**
-     * Overriding is allowed at all times.
-     */
-    ALLOW,
-    /**
-     * Overriding a components results in a WARN-level log message.
-     */
-    WARN,
-    /**
-     * Trying to override results in a {@link ComponentOverrideException}.
-     */
-    THROW
+class DefaultAxonApplicationTest extends ApplicationConfigurerTestSuite<DefaultAxonApplication> {
+
+    @Override
+    public DefaultAxonApplication createConfigurer() {
+        return new DefaultAxonApplication();
+    }
 }

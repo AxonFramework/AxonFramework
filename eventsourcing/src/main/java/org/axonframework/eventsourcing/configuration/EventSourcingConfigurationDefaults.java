@@ -18,9 +18,9 @@ package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.NewConfiguration;
-import org.axonframework.configuration.NewConfigurer;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
@@ -56,26 +56,26 @@ class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     @Override
-    public void enhance(@Nonnull NewConfigurer<?> configurer) {
-        Objects.requireNonNull(configurer, "Cannot enhance a null Configurer.");
+    public void enhance(@Nonnull ComponentRegistry registry) {
+        Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.");
 
-        registerIfNotPresent(configurer, TagResolver.class,
+        registerIfNotPresent(registry, TagResolver.class,
                              EventSourcingConfigurationDefaults::defaultTagResolver);
-        registerIfNotPresent(configurer, AsyncEventStorageEngine.class,
+        registerIfNotPresent(registry, AsyncEventStorageEngine.class,
                              EventSourcingConfigurationDefaults::defaultEventStorageEngine);
-        registerIfNotPresent(configurer, AsyncEventStore.class,
+        registerIfNotPresent(registry, AsyncEventStore.class,
                              EventSourcingConfigurationDefaults::defaultEventStore);
-        registerIfNotPresent(configurer, EventSink.class,
+        registerIfNotPresent(registry, EventSink.class,
                              EventSourcingConfigurationDefaults::defaultEventSink);
-        registerIfNotPresent(configurer, Snapshotter.class,
+        registerIfNotPresent(registry, Snapshotter.class,
                              EventSourcingConfigurationDefaults::defaultSnapshotter);
     }
 
-    private <C> void registerIfNotPresent(NewConfigurer<?> configurer,
+    private <C> void registerIfNotPresent(ComponentRegistry registry,
                                           Class<C> type,
                                           ComponentFactory<C> factory) {
-        if (!configurer.hasComponent(type)) {
-            configurer.registerComponent(type, factory);
+        if (!registry.hasComponent(type)) {
+            registry.registerComponent(type, factory);
         }
     }
 

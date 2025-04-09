@@ -67,7 +67,7 @@ import static java.util.Objects.requireNonNull;
  * @since 5.0.0
  */
 public interface StatefulCommandHandlingModule extends
-        Module<StatefulCommandHandlingModule>,
+        Module,
         ModuleBuilder<StatefulCommandHandlingModule> {
 
     /**

@@ -17,14 +17,20 @@
 package org.axonframework.configuration;
 
 /**
- * An interface providing both {@link NewConfiguration} and {@link LifecycleOperations} support.
- * <p>
- * Ensures correct encapsulation when configuration instances get constructed.
+ * Exception indicating that a duplicate registration of modules has been detected. This happens when two modules are
+ * registered under the same name.
  *
  * @author Allard Buijze
- * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface LifecycleSupportingConfiguration extends NewConfiguration, LifecycleOperations {
+public class DuplicateModuleRegistrationException extends RuntimeException {
 
+    /**
+     * Initialize the exception indicating that the given {@code module} failed to register.
+     *
+     * @param module The module that failed to register.
+     */
+    public DuplicateModuleRegistrationException(Module module) {
+        super("A module with given name already exists: " + module.name());
+    }
 }

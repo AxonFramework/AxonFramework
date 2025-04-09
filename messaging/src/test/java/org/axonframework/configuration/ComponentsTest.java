@@ -18,8 +18,11 @@ package org.axonframework.configuration;
 
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Component.Identifier;
+import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -37,14 +40,10 @@ class ComponentsTest {
 
     private static final Identifier<String> IDENTIFIER = new Identifier<>(String.class, "id");
 
-    private LifecycleSupportingConfiguration config;
-
     private Components testSubject;
 
     @BeforeEach
     void setUp() {
-        config = mock(LifecycleSupportingConfiguration.class);
-
         testSubject = new Components();
     }
 
@@ -61,9 +60,9 @@ class ComponentsTest {
 
     @Test
     void getReturnsPutComponent() {
-        Component<String> testComponent = new Component<>(IDENTIFIER, config, c -> "some-state");
+        Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
 
-        testSubject.put(IDENTIFIER, testComponent);
+        testSubject.put(testComponent);
 
         Optional<Component<String>> result = testSubject.get(IDENTIFIER);
         assertTrue(result.isPresent());
@@ -71,65 +70,68 @@ class ComponentsTest {
     }
 
     @Test
-    void getUnwrappedThrowsNullPointerExceptionForNullIdentifier() {
-        //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> testSubject.getUnwrapped(null));
-    }
-
-    @Test
-    void getUnwrappedReturnsEmpty() {
-        assertTrue(testSubject.getUnwrapped(IDENTIFIER).isEmpty());
-    }
-
-    @Test
-    void getUnwrappedReturnsPutComponent() {
-        Component<String> testComponent = new Component<>(IDENTIFIER, config, c -> "some-state");
-
-        testSubject.put(IDENTIFIER, testComponent);
-
-        Optional<String> result = testSubject.getUnwrapped(IDENTIFIER);
-        assertTrue(result.isPresent());
-        assertEquals(testComponent.get(), result.get());
-    }
-
-    @Test
     void computeIfAbsentDoesNotComputeIfIdentifierIsAlreadyPresent() {
-        Component<String> testComponent = new Component<>(IDENTIFIER, config, c -> "some-state");
+        Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
         AtomicBoolean invoked = new AtomicBoolean(false);
 
-        testSubject.put(IDENTIFIER, testComponent);
-        testSubject.computeIfAbsent(IDENTIFIER, id -> {
+        testSubject.put(testComponent);
+        testSubject.computeIfAbsent(IDENTIFIER, () -> {
             invoked.set(true);
+            //noinspection unchecked
             return mock(Component.class);
         });
 
 
         assertFalse(invoked.get());
-        Optional<String> optionalResult = testSubject.getUnwrapped(IDENTIFIER);
+        Optional<Component<String>> optionalResult = testSubject.get(IDENTIFIER);
         assertTrue(optionalResult.isPresent());
-        assertEquals(testComponent.get(), optionalResult.get());
+        assertEquals(testComponent, optionalResult.get());
     }
 
     @Test
     void computeIfAbsentComputesForAbsentIdentifier() {
         AtomicBoolean invoked = new AtomicBoolean(false);
-        Component<String> testComponent = new Component<>(IDENTIFIER, config, c -> "some-state");
+        Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
 
-        testSubject.computeIfAbsent(IDENTIFIER, id -> {
+        testSubject.computeIfAbsent(IDENTIFIER, () -> {
             invoked.set(true);
             return testComponent;
         });
 
         assertTrue(invoked.get());
-        Optional<String> optionalResult = testSubject.getUnwrapped(IDENTIFIER);
+        Optional<Component<String>> optionalResult = testSubject.get(IDENTIFIER);
         assertTrue(optionalResult.isPresent());
-        assertEquals(testComponent.get(), optionalResult.get());
+        assertEquals(testComponent, optionalResult.get());
+    }
+
+    @Test
+    void replacingAComponentRemovesThePreviousOne() {
+        Component<String> original = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
+        Component<String> replacement = new InstantiatedComponentDefinition<>(IDENTIFIER, "other-state");
+
+        testSubject.put(original);
+        testSubject.replace(IDENTIFIER, c -> replacement);
+
+        assertTrue(testSubject.contains(IDENTIFIER));
+        assertTrue(testSubject.get(IDENTIFIER).isPresent());
+        assertSame(replacement, testSubject.get(IDENTIFIER).get());
+    }
+
+    @Test
+    void replacingNonExistentComponentDoesntRegisterIt() {
+        List<Component<?>> components = new ArrayList<>();
+        testSubject.replace(IDENTIFIER, c -> {
+            components.add(c);
+            return c;
+        });
+
+        assertTrue(components.isEmpty());
     }
 
     @Test
     void containsReturnsAsExpected() {
         Identifier<Integer> unknownIdentifier = new Identifier<>(Integer.class, "some-unknown-id");
-        testSubject.put(IDENTIFIER, new Component<>(IDENTIFIER, config, c -> "some-state"));
+        testSubject.put(new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state"));
 
         assertTrue(testSubject.contains(IDENTIFIER));
         assertFalse(testSubject.contains(unknownIdentifier));
@@ -139,7 +141,7 @@ class ComponentsTest {
     void identifiersReturnsAllRegisteredComponentsTheirIdentifiers() {
         assertTrue(testSubject.identifiers().isEmpty());
 
-        testSubject.put(IDENTIFIER, new Component<>(IDENTIFIER, config, c -> "some-state"));
+        testSubject.put(new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state"));
 
         Set<Identifier<?>> result = testSubject.identifiers();
         assertFalse(result.isEmpty());
@@ -152,7 +154,7 @@ class ComponentsTest {
 
         boolean result = testSubject.replace(IDENTIFIER, old -> {
             invoked.set(true);
-            return new Component<>(IDENTIFIER, config, c -> "replacement");
+            return new InstantiatedComponentDefinition<>(IDENTIFIER, "replacement");
         });
 
         assertFalse(invoked.get());
@@ -162,16 +164,16 @@ class ComponentsTest {
     @Test
     void replaceReplacesComponents() {
         AtomicBoolean invoked = new AtomicBoolean(false);
-        testSubject.put(IDENTIFIER, new Component<>(IDENTIFIER, config, c -> "some-state"));
+        testSubject.put(new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state"));
 
         boolean result = testSubject.replace(IDENTIFIER, old -> {
             invoked.set(true);
-            return new Component<>(IDENTIFIER, config, c -> "replacement");
+            return new InstantiatedComponentDefinition<>(IDENTIFIER, "replacement");
         });
 
         assertTrue(invoked.get());
         assertTrue(result);
-        Optional<String> resultComponent = testSubject.getUnwrapped(IDENTIFIER);
+        Optional<String> resultComponent = testSubject.get(IDENTIFIER).map(c -> c.resolve(mock()));
         assertTrue(resultComponent.isPresent());
         assertEquals("replacement", resultComponent.get());
     }
@@ -179,11 +181,51 @@ class ComponentsTest {
     @Test
     void describeToDescribesComponents() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
-        Component<String> testComponent = new Component<>(IDENTIFIER, config, c -> "some-state");
-        testSubject.put(IDENTIFIER, testComponent);
+        Component<String> testComponent = new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state");
+        testSubject.put(testComponent);
 
         testSubject.describeTo(testDescriptor);
 
         verify(testDescriptor).describeProperty("components", Map.of(IDENTIFIER, testComponent));
+    }
+
+    @Test
+    void listReturnsReadOnlyViewOfComponents() {
+        Identifier<Object> identifier2 = new Identifier<>(Object.class, "test2");
+        Set<Identifier<?>> identifiersBeforePut = testSubject.identifiers();
+
+        testSubject.put(new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state"));
+        testSubject.put(new InstantiatedComponentDefinition<>(identifier2, "some-state"));
+
+        Set<Identifier<?>> identifiersAfterPut = testSubject.identifiers();
+        assertFalse(identifiersBeforePut.contains(IDENTIFIER));
+        assertTrue(identifiersAfterPut.contains(IDENTIFIER));
+        assertTrue(identifiersAfterPut.contains(identifier2));
+
+        assertThrows(UnsupportedOperationException.class, () -> identifiersAfterPut.add(identifier2));
+    }
+
+    @Test
+    void postProcessComponentsProvidesAllAvailableComponents() {
+        Identifier<Object> identifier2 = new Identifier<>(Object.class, "test2");
+
+        testSubject.put(new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state"));
+        testSubject.put(new InstantiatedComponentDefinition<>(identifier2, "some-state"));
+
+        List<Component<?>> visited = new ArrayList<>();
+        testSubject.postProcessComponents(visited::add);
+        assertEquals(2, visited.size());
+    }
+
+    @Test
+    void postProcessComponentsRethrowsExceptions() {
+        Identifier<Object> identifier2 = new Identifier<>(Object.class, "test2");
+
+        testSubject.put(new InstantiatedComponentDefinition<>(IDENTIFIER, "some-state"));
+        testSubject.put(new InstantiatedComponentDefinition<>(identifier2, "some-state"));
+
+        assertThrows(MockException.class, () -> testSubject.postProcessComponents(c -> {
+            throw new MockException();
+        }));
     }
 }

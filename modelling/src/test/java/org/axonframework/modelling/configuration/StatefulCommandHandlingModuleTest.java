@@ -16,8 +16,11 @@
 
 package org.axonframework.modelling.configuration;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.LifecycleHandler;
+import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -29,6 +32,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -69,7 +73,25 @@ class StatefulCommandHandlingModuleTest {
                                                   .entity(entityBuilder)
                                                   .commandHandlers()
                                                   .build()
-                                                  .build(ModellingConfigurer.create().build());
+                                                  .build(ModellingConfigurer.create().build(), new LifecycleRegistry() {
+                                                      @Override
+                                                      public LifecycleRegistry registerLifecyclePhaseTimeout(
+                                                              long timeout, @Nonnull TimeUnit timeUnit) {
+                                                          return this;
+                                                      }
+
+                                                      @Override
+                                                      public LifecycleRegistry onStart(int phase,
+                                                                                       @Nonnull LifecycleHandler startHandler) {
+                                                          return this;
+                                                      }
+
+                                                      @Override
+                                                      public LifecycleRegistry onShutdown(int phase,
+                                                                                          @Nonnull LifecycleHandler shutdownHandler) {
+                                                          return this;
+                                                      }
+                                                  });
 
         //noinspection rawtypes
         Optional<AsyncRepository> optionalRepository =

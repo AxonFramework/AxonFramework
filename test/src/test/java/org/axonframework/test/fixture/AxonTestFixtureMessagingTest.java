@@ -40,7 +40,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-
 class AxonTestFixtureMessagingTest {
 
     @Nested
@@ -245,14 +244,14 @@ class AxonTestFixtureMessagingTest {
         @Test
         void givenNoPriorActivityWhenCommandThenExpectException() {
             var configurer = MessagingConfigurer.create();
-            configurer.registerDecorator(
+            configurer.componentRegistry(cr -> cr.registerDecorator(
                     CommandBus.class,
                     0,
                     (c, n, d) -> d.subscribe(
                             new QualifiedName(ChangeStudentNameCommand.class),
                             (command, context) -> MessageStream.failed(new RuntimeException("Test"))
                     )
-            );
+            ));
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -268,15 +267,16 @@ class AxonTestFixtureMessagingTest {
         @Test
         void givenNoPriorActivityWhenCommandHandlerThrowsThenExpectException() {
             var configurer = MessagingConfigurer.create();
-            configurer.registerDecorator(
+            configurer.componentRegistry(cr -> cr.registerDecorator(
                     CommandBus.class,
                     0,
                     (c, n, d) -> d.subscribe(
                             new QualifiedName(ChangeStudentNameCommand.class),
                             (command, context) -> {
                                 throw new RuntimeException("Simulated exception");
-                            })
-            );
+                            }
+                    )
+            ));
 
             var fixture = AxonTestFixture.with(configurer);
 
@@ -333,14 +333,14 @@ class AxonTestFixtureMessagingTest {
             @Test
             void ifExpectExceptionButSuccess() {
                 var configurer = MessagingConfigurer.create();
-                configurer.registerDecorator(
+                configurer.componentRegistry(cr -> cr.registerDecorator(
                         CommandBus.class,
                         0,
                         (c, n, d) -> d.subscribe(
                                 new QualifiedName(ChangeStudentNameCommand.class),
                                 (command, context) -> MessageStream.empty().cast()
                         )
-                );
+                ));
 
                 var fixture = AxonTestFixture.with(configurer);
 
@@ -360,14 +360,14 @@ class AxonTestFixtureMessagingTest {
             @Test
             void ifExpectSuccessButException() {
                 var configurer = MessagingConfigurer.create();
-                configurer.registerDecorator(
+                configurer.componentRegistry(cr -> cr.registerDecorator(
                         CommandBus.class,
                         0,
                         (c, n, d) -> d.subscribe(
                                 new QualifiedName(ChangeStudentNameCommand.class),
                                 (command, context) -> MessageStream.failed(new RuntimeException("Test"))
                         )
-                );
+                ));
 
                 var fixture = AxonTestFixture.with(configurer);
 
@@ -641,7 +641,7 @@ class AxonTestFixtureMessagingTest {
     }
 
     private static void registerChangeStudentNameHandlerReturnsEmpty(MessagingConfigurer configurer) {
-        configurer.registerDecorator(
+        configurer.componentRegistry(cr -> cr.registerDecorator(
                 CommandBus.class,
                 0,
                 (c, n, d) -> d.subscribe(
@@ -653,11 +653,11 @@ class AxonTestFixtureMessagingTest {
                                               studentNameChangedEventMessage(payload.id(), payload.name(), 1));
                             return MessageStream.empty().cast();
                         })
-        );
+        ));
     }
 
     private static void registerChangeStudentNameHandlerReturnsSingle(MessagingConfigurer configurer) {
-        configurer.registerDecorator(
+        configurer.componentRegistry(cr -> cr.registerDecorator(
                 CommandBus.class,
                 0,
                 (c, n, d) -> d.subscribe(
@@ -672,6 +672,6 @@ class AxonTestFixtureMessagingTest {
                                     new CommandResult("Result " + payload.name(), metadataSample));
                             return MessageStream.just(resultMessage);
                         })
-        );
+        ));
     }
 }

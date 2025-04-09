@@ -24,7 +24,7 @@ package org.axonframework.configuration;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface ModuleBuilder<M extends Module<M>> {
+public interface ModuleBuilder<M extends Module> {
 
     /**
      * Builds a {@link Module} of type {@code M}.

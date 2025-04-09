@@ -26,13 +26,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Wrapper around a {@link Map} of {@link Component Components} stored per {@link Component.Identifier}.
  * <p>
- * Provides a cleaner interface to the {@link NewConfigurer} and {@link NewConfiguration} when interacting with the
+ * Provides a cleaner interface to the {@link ComponentRegistry} and {@link NewConfiguration} when interacting with the
  * configured {@code Components}.
  *
  * @author Steven van Beelen
@@ -56,36 +59,21 @@ public class Components implements DescribableComponent {
     }
 
     /**
-     * Get an {@link Optional} on the unwrapped {@link Component} registered under the given {@code identifier}.
-     * <p>
-     * This operation will invoke {@link Component#get()} as part of the retrieval.
-     *
-     * @param identifier The identifier to retrieve a component for.
-     * @param <C>        The type of the component to retrieve.
-     * @return An {@code Optional} on the component of type {@code C} registered under the given {@code identifier}.
-     */
-    @Nonnull
-    public <C> Optional<C> getUnwrapped(@Nonnull Identifier<C> identifier) {
-        return get(identifier).map(Component::get);
-    }
-
-    /**
      * Puts the given {@code component}, identified by the given {@code identifier}, in this collection.
      *
-     * @param identifier The identifier for the {@code component} to put.
-     * @param component  The component to put in this collection.
-     * @param <C>        The type of the component to put.
+     * @param component The component to put in this collection.
+     * @param <C>       The type of the component to put.
      * @return A previous component registered under the given {@code identifier}, if present.
      */
     @Nullable
-    public <C> Component<C> put(@Nonnull Identifier<C> identifier, @Nonnull Component<C> component) {
+    public <C> Component<C> put(@Nonnull Component<C> component) {
         //noinspection unchecked
-        return (Component<C>) components.put(identifier, component);
+        return (Component<C>) components.put(component.identifier(), component);
     }
 
     /**
      * Computes a {@link Component} for the given {@code identifier} when absent, otherwise returns the
-     * {@code Component} {@link #put(Identifier, Component)} under the {@code identifier}.
+     * {@code Component} {@link #put(Component)} under the {@code identifier}.
      * <p>
      * The given {@code compute} operation is <b>only</b> invoked when there is no {@code Component} present for the
      * given {@code identifier}.
@@ -93,16 +81,16 @@ public class Components implements DescribableComponent {
      * @param identifier The identifier for which to check if a {@link Component} is already present.
      * @param compute    The lambda computing the {@link Component} to put into this collection when absent.
      * @param <C>        The type of the component to get and compute if absent.
-     * @return The previously {@link #put(Identifier, Component) put Component} identifier by the given
-     * {@code identifier}. When absent, the outcome of the {@code compute} operation is returned
+     * @return The previously {@link #put(Component) put Component} identifier by the given {@code identifier}. When
+     * absent, the outcome of the {@code compute} operation is returned
      */
     @Nonnull
     public <C> Component<C> computeIfAbsent(
             @Nonnull Identifier<C> identifier,
-            @Nonnull Function<? super Identifier<?>, ? extends Component<?>> compute
+            @Nonnull Supplier<Component<C>> compute
     ) {
         //noinspection unchecked
-        return (Component<C>) components.computeIfAbsent(identifier, compute);
+        return (Component<C>) components.computeIfAbsent(identifier, i -> compute.get());
     }
 
     /**
@@ -138,11 +126,23 @@ public class Components implements DescribableComponent {
      * or has been removed by the replacement function.
      */
     public <C> boolean replace(@Nonnull Identifier<C> identifier,
-                               @Nonnull UnaryOperator<Component<? extends C>> replacement) {
+                               @Nonnull UnaryOperator<Component<C>> replacement) {
         //noinspection unchecked
         Component<?> newValue = components.computeIfPresent(identifier,
-                                                            (i, c) -> replacement.apply((Component<? extends C>) c));
+                                                            (i, c) -> replacement.apply((Component<C>) c));
         return newValue != null;
+    }
+
+    /**
+     * Invoke the given {@code processor} on all components that are registered in this collection.
+     * <p>
+     * Exceptions thrown by the processor will be rethrown to the caller before all components have been processed.
+     *
+     * @param processor The action to invoke for each component.
+     */
+    public void postProcessComponents(@Nonnull Consumer<Component<?>> processor) {
+        requireNonNull(processor, "The component post processor must be null.");
+        components.values().forEach(processor);
     }
 
     @Override

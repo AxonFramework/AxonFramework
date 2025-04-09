@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package org.axonframework.config;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.lifecycle.ShutdownHandler;
@@ -31,7 +33,7 @@ import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
-import javax.annotation.Nonnull;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.invokeAndGetMethodValue;
@@ -76,16 +78,27 @@ public abstract class LifecycleHandlerInspector {
             logger.debug("Ignoring [null] component for inspection as it wont participate in the lifecycle");
             return;
         }
-        if (component instanceof Lifecycle) {
-            ((Lifecycle) component).registerLifecycleHandlers(new Lifecycle.LifecycleRegistry() {
+        if (component instanceof Lifecycle componentLifecycle) {
+            componentLifecycle.registerLifecycleHandlers(new LifecycleRegistry() {
                 @Override
-                public void onStart(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
-                    configuration.onStart(phase, action::run);
+                public LifecycleRegistry registerLifecyclePhaseTimeout(long timeout, @Nonnull TimeUnit timeUnit) {
+                    return this;
                 }
 
                 @Override
-                public void onShutdown(int phase, @Nonnull Lifecycle.LifecycleHandler action) {
-                    configuration.onShutdown(phase, action::run);
+                public LifecycleRegistry onStart(int phase,
+                                                 @Nonnull org.axonframework.configuration.LifecycleHandler startHandler) {
+                    //noinspection DataFlowIssue
+                    configuration.onStart(phase, () -> startHandler.run(null));
+                    return this;
+                }
+
+                @Override
+                public LifecycleRegistry onShutdown(int phase,
+                                                    @Nonnull org.axonframework.configuration.LifecycleHandler shutdownHandler) {
+                    //noinspection DataFlowIssue
+                    configuration.onShutdown(phase, () -> shutdownHandler.run(null));
+                    return this;
                 }
             });
         } else {

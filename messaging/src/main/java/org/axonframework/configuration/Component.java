@@ -17,143 +17,72 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.StringUtils;
-import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.lang.invoke.MethodHandles;
-import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
-import static org.axonframework.common.Assert.assertThat;
+import static org.axonframework.common.Assert.nonEmpty;
 
 /**
- * A component used in the Axon's configuration API.
+ * Describes a component defined in a {@link NewConfiguration}, that may depend on other component for its
+ * initialization or during it's startup/shutdown operations.
  * <p>
- * A component describes an object that needs to be created, possibly based on other components in the
- * {@link LifecycleSupportingConfiguration}, and initialized as part of the {@code NewConfiguration}.
- * <p>
- * Components are lazily initialized when they are accessed. During the initialization, they may trigger initialization
- * of components they depend on.
+ * Note: This interface is not expected to be used outside of Axon Framework!
  *
- * @param <C> The type of component contained.
+ * @param <C> The type of component.
  * @author Allard Buijze
  * @author Steven van Beelen
  * @since 3.0.0
  */
-public class Component<C> implements DescribableComponent {
-
-    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-
-    private final Identifier<? extends C> identifier;
-    private final Supplier<LifecycleSupportingConfiguration> configSupplier;
-    private final ComponentFactory<? extends C> factory;
-
-    private C instance;
+public interface Component<C> extends DescribableComponent {
 
     /**
-     * Creates a {@code Component} for the given {@code config} with given {@code identifier} created by the given
-     * {@code factory}.
+     * The identifier of this component.
+     *
+     * @return The identifier of this component.
+     */
+    Identifier<C> identifier();
+
+    /**
+     * Resolves the instance of this component, allowing it to retrieve any of its required dependencies from the given
+     * {@code configuration}.
      * <p>
-     * When the {@link LifecycleSupportingConfiguration} is not initialized yet, consider using
-     * {@link #Component(Identifier, Supplier, ComponentFactory)} instead.
+     * Subsequent calls to this method will result in the same instance, even when <b>different</b> instances of
+     * {@code configuration} are provided.
      *
-     * @param identifier The identifier of the component.
-     * @param config     The {@code NewConfiguration} the component is part of.
-     * @param factory    The factory building the component.
+     * @param configuration The configuration that declared this component.
+     * @return The resolved instance defined in this component.
      */
-    public Component(@Nonnull Identifier<? extends C> identifier,
-                     @Nonnull LifecycleSupportingConfiguration config,
-                     @Nonnull ComponentFactory<? extends C> factory) {
-        this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
-        requireNonNull(config, "The configuration supplier cannot be null.");
-        this.configSupplier = () -> config;
-        this.factory = requireNonNull(factory, "A Component factory cannot be null.");
-    }
+    C resolve(@Nonnull NewConfiguration configuration);
 
     /**
-     * Creates a {@code Component} for the given {@code configSupplier} with given {@code identifier} created by the
-     * given {@code factory}.
-     *
-     * @param identifier     The identifier of the component.
-     * @param configSupplier The supplier function of the {@code NewConfiguration}.
-     * @param factory        The factory building the component.
-     */
-    public Component(@Nonnull Identifier<? extends C> identifier,
-                     @Nonnull Supplier<LifecycleSupportingConfiguration> configSupplier,
-                     @Nonnull ComponentFactory<? extends C> factory) {
-        this.identifier = requireNonNull(identifier, "The given identifier cannot null.");
-        this.configSupplier = requireNonNull(configSupplier, "The configuration supplier cannot be null.");
-        this.factory = requireNonNull(factory, "A Component factory cannot be null.");
-    }
-
-    /**
-     * Retrieves the object contained in this {@code Component}, triggering the {@link ComponentFactory factory} and all
-     * attached {@link ComponentDecorator decorators} if the component hasn't been built yet.
+     * Indicates whether the component has been {@link #resolve(NewConfiguration) resolved}.
      * <p>
-     * This operation is {@code synchronized}, allowing the configuration to be thread-safe.
+     * When true, any subsequent call to {@link #resolve(NewConfiguration)} will return that same instance.
+     *
+     * @return {@code true} if the component has been instantiated, otherwise {@code false}.
+     */
+    boolean isInstantiated();
+
+    /**
+     * Initializes the lifecycle handlers associated with this component.
      * <p>
-     * Upon initiation of the instance the
-     * {@link LifecycleHandlerInspector#registerLifecycleHandlers(LifecycleSupportingConfiguration, Object)} methods
-     * will be called to resolve and register lifecycle methods.
+     * Subsequent calls to this method will <b>not</b> result in additional invocations of the lifecycle handlers
+     * registered with this component.
      *
-     * @return The initialized component contained in this instance.
+     * @param configuration     The configuration in which the component was defined, allowing retrieval of dependencies
+     *                          during the component's lifecycle.
+     * @param lifecycleRegistry The registry in which to register the lifecycle handlers.
      */
-    public synchronized C get() {
-        if (instance != null) {
-            return instance;
-        }
-
-        LifecycleSupportingConfiguration config = configSupplier.get();
-        instance = factory.build(config);
-        logger.debug("Instantiated component [{}]: {}", identifier, instance);
-        LifecycleHandlerInspector.registerLifecycleHandlers(config, instance);
-        return instance;
-    }
+    void initLifecycle(@Nonnull NewConfiguration configuration,
+                       @Nonnull LifecycleRegistry lifecycleRegistry);
 
     /**
-     * Checks if this {@code Component} is already initialized.
-     * <p>
-     * This operation is {@code synchronized}, allowing the configuration to be thread-safe.
+     * Indicates whether the {@link #initLifecycle(NewConfiguration, LifecycleRegistry)} method has already been invoked
+     * for this component.
      *
-     * @return {@code true} if this {@code Component} is initialized, {@code false} otherwise.
+     * @return {@code true} if the component's lifecycle has been initialized, otherwise {@code false}.
      */
-    public synchronized boolean isInitialized() {
-        return instance != null;
-    }
-
-    @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("identifier", identifier.toString());
-        if (isInitialized()) {
-            descriptor.describeProperty("component", instance);
-            descriptor.describeProperty("initialized", true);
-        } else {
-            descriptor.describeProperty("factory", factory);
-            descriptor.describeProperty("initialized", false);
-        }
-    }
-
-    /**
-     * Returns a {@code Component} that decorates this component, calling given {@code decorator} to wrap (or replace)
-     * the instance created by this {@code Component}.
-     *
-     * @param decorator The function that decorates the instance contained in this component.
-     * @return A new component that represents the decorated instance.
-     */
-    public Component<C> decorate(ComponentDecorator<C> decorator) {
-        return new Component<>(identifier, configSupplier,
-                               config -> decorator.decorate(config, identifier.name(), get()));
-    }
-
-    /**
-     * Returns the unique {@link Identifier} of this {@code Component}.
-     */
-    public Identifier<? extends C> identifier() {
-        return identifier;
-    }
+    boolean isInitialized();
 
     /**
      * A tuple representing a {@code Component's} uniqueness, consisting out of a {@code type} and {@code name}.
@@ -162,18 +91,17 @@ public class Component<C> implements DescribableComponent {
      * @param name The name of the component this object identifiers.
      * @param <C>  The type of the component this object identifiers, typically an interface.
      */
-    public record Identifier<C>(@Nonnull Class<? extends C> type, @Nonnull String name) {
+    record Identifier<C>(@Nonnull Class<C> type, @Nonnull String name) {
 
         /**
          * Compact constructor asserting whether the {@code type} and {@code name} are non-null and not empty.
+         *
+         * @param type The type of the component.
+         * @param name The name of the component.
          */
         public Identifier {
             requireNonNull(type, "The given type is unsupported because it is null.");
-            assertThat(
-                    requireNonNull(name, "The given name is unsupported because it is null."),
-                    StringUtils::nonEmpty,
-                    () -> new IllegalArgumentException("The given name is unsupported because it is empty.")
-            );
+            nonEmpty(name, "The given name is unsupported because it is null or empty.");
         }
 
         @Override

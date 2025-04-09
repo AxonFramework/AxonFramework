@@ -18,17 +18,17 @@ package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.AxonApplication;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Component;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.configuration.DelegatingConfigurer;
+import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.configuration.NewConfiguration;
-import org.axonframework.configuration.NewConfigurer;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
@@ -40,7 +40,7 @@ import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import java.util.function.Consumer;
 
 /**
- * The event sourcing {@link NewConfigurer} of Axon Framework's configuration API.
+ * The event sourcing {@link ApplicationConfigurer} of Axon Framework's configuration API.
  * <p>
  * Provides register operations for {@link #registerEventStorageEngine(ComponentFactory)} the event storage engine} and
  * {@link #registerEventStore(ComponentFactory) event store} infrastructure components.
@@ -54,15 +54,19 @@ import java.util.function.Consumer;
  *     <li>Registers a {@link org.axonframework.eventsourcing.AggregateSnapshotter} for class {@link org.axonframework.eventsourcing.Snapshotter}</li>
  * </ul>
  * To replace or decorate any of these defaults, use their respective interfaces as the identifier. For example, to
- * adjust the {@code EventStore}, invoke {@link #registerComponent(Class, ComponentFactory)} with
- * {@code EventStore.class} to replace it.
+ * adjust the {@code EventStore}, do
+ * <pre><code>
+ *     configurer.componentRegistry(cr ->
+ *                  cr.registerComponent(EventStore.class, c -> new CustomEventStore()))
+ * </code></pre>
+ * to replace it.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class EventSourcingConfigurer
-        extends DelegatingConfigurer<EventSourcingConfigurer>
-        implements ApplicationConfigurer<EventSourcingConfigurer> {
+public class EventSourcingConfigurer implements ApplicationConfigurer {
+
+    private final ModellingConfigurer delegate;
 
     /**
      * Build a default {@code EventSourcingConfigurer} instance with several event sourcing defaults.
@@ -76,8 +80,7 @@ public class EventSourcingConfigurer
      * @return A {@code EventSourcingConfigurer} instance for further configuring.
      */
     public static EventSourcingConfigurer create() {
-        return new EventSourcingConfigurer(ModellingConfigurer.create())
-                .registerEnhancer(new EventSourcingConfigurationDefaults());
+        return new EventSourcingConfigurer(ModellingConfigurer.create());
     }
 
     /**
@@ -89,7 +92,8 @@ public class EventSourcingConfigurer
      * @param delegate The delegate {@code ModellingConfigurer} the {@code EventSourcingConfigurer} is based on.
      */
     public EventSourcingConfigurer(@Nonnull ModellingConfigurer delegate) {
-        super(delegate);
+        delegate.componentRegistry(cr -> cr.registerEnhancer(new EventSourcingConfigurationDefaults()));
+        this.delegate = delegate;
     }
 
     /**
@@ -120,7 +124,8 @@ public class EventSourcingConfigurer
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public EventSourcingConfigurer registerTagResolver(@Nonnull ComponentFactory<TagResolver> tagResolverFactory) {
-        return registerComponent(TagResolver.class, tagResolverFactory);
+        delegate.componentRegistry(cr -> cr.registerComponent(TagResolver.class, tagResolverFactory));
+        return this;
     }
 
     /**
@@ -135,7 +140,10 @@ public class EventSourcingConfigurer
     public EventSourcingConfigurer registerEventStorageEngine(
             @Nonnull ComponentFactory<AsyncEventStorageEngine> eventStorageEngineFactory
     ) {
-        return registerComponent(AsyncEventStorageEngine.class, eventStorageEngineFactory);
+        delegate.componentRegistry(
+                cr -> cr.registerComponent(AsyncEventStorageEngine.class, eventStorageEngineFactory)
+        );
+        return this;
     }
 
     /**
@@ -148,7 +156,8 @@ public class EventSourcingConfigurer
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public EventSourcingConfigurer registerEventStore(@Nonnull ComponentFactory<AsyncEventStore> eventStoreFactory) {
-        return registerComponent(AsyncEventStore.class, eventStoreFactory);
+        delegate.componentRegistry(cr -> cr.registerComponent(AsyncEventStore.class, eventStoreFactory));
+        return this;
     }
 
     /**
@@ -163,45 +172,50 @@ public class EventSourcingConfigurer
     public EventSourcingConfigurer registerSnapshotter(
             @Nonnull ComponentFactory<Snapshotter> snapshotterFactory
     ) {
-        return registerComponent(Snapshotter.class, snapshotterFactory);
+        delegate.componentRegistry(cr -> cr.registerComponent(Snapshotter.class, snapshotterFactory));
+        return this;
     }
 
     /**
-     * Delegates the given {@code configureTask} to the {@link ModellingConfigurer} this {@code EventSourcingConfigurer}
-     * delegates to.
+     * Delegates the given {@code configurerTask} to the {@link ModellingConfigurer} this
+     * {@code EventSourcingConfigurer} delegates.
      * <p>
      * Use this operation to invoke registration methods that only exist on the {@code ModellingConfigurer}.
      *
-     * @param configureTask Lambda consuming the delegate {@link ModellingConfigurer}.
+     * @param configurerTask Lambda consuming the delegate {@link ModellingConfigurer}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public EventSourcingConfigurer modelling(@Nonnull Consumer<ModellingConfigurer> configureTask) {
-        return delegate(ModellingConfigurer.class, configureTask);
+    public EventSourcingConfigurer modelling(@Nonnull Consumer<ModellingConfigurer> configurerTask) {
+        configurerTask.accept(delegate);
+        return this;
     }
 
     /**
-     * Delegates the given {@code configureTask} to the {@link MessagingConfigurer} this {@code EventSourcingConfigurer}
-     * delegates to.
+     * Delegates the given {@code configurerTask} to the {@link MessagingConfigurer} this
+     * {@code EventSourcingConfigurer} delegates.
      * <p>
      * Use this operation to invoke registration methods that only exist on the {@code MessagingConfigurer}.
      *
-     * @param configureTask Lambda consuming the delegate {@link MessagingConfigurer}.
+     * @param configurerTask Lambda consuming the delegate {@link MessagingConfigurer}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public EventSourcingConfigurer messaging(@Nonnull Consumer<MessagingConfigurer> configureTask) {
-        return delegate(MessagingConfigurer.class, configureTask);
+    public EventSourcingConfigurer messaging(@Nonnull Consumer<MessagingConfigurer> configurerTask) {
+        delegate.messaging(configurerTask);
+        return this;
     }
 
-    /**
-     * Delegates the given {@code configureTask} to the {@link AxonApplication} this {@code EventSourcingConfigurer}
-     * delegates to.
-     * <p>
-     * Use this operation to invoke registration methods that only exist on the {@code AxonApplication}.
-     *
-     * @param configureTask Lambda consuming the delegate {@link AxonApplication}.
-     * @return The current instance of the {@code Configurer} for a fluent API.
-     */
-    public EventSourcingConfigurer application(@Nonnull Consumer<AxonApplication> configureTask) {
-        return delegate(AxonApplication.class, configureTask);
+    @Override
+    public ApplicationConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+        return delegate.componentRegistry(componentRegistrar);
+    }
+
+    @Override
+    public ApplicationConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
+        return delegate.lifecycleRegistry(lifecycleRegistrar);
+    }
+
+    @Override
+    public AxonConfiguration build() {
+        return delegate.build();
     }
 }

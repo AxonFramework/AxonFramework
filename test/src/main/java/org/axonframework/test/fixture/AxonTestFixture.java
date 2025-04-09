@@ -68,7 +68,7 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      *                   needed for test execution.
      * @return A new fixture instance
      */
-    public static AxonTestFixture with(@Nonnull ApplicationConfigurer<?> configurer) {
+    public static AxonTestFixture with(@Nonnull ApplicationConfigurer configurer) {
         return with(configurer, c -> c);
     }
 
@@ -80,13 +80,13 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * @param customization A function that allows to customize the fixture setup.
      * @return A new fixture instance
      */
-    public static AxonTestFixture with(@Nonnull ApplicationConfigurer<?> configurer,
+    public static AxonTestFixture with(@Nonnull ApplicationConfigurer configurer,
                                        @Nonnull UnaryOperator<Customization> customization) {
         Objects.requireNonNull(configurer, "Configurer may not be null");
         Objects.requireNonNull(customization, "Customization may not be null");
-        var configuration = configurer
-                .registerEnhancer(new MessagesRecordingConfigurationEnhancer())
-                .start();
+        var configuration =
+                configurer.componentRegistry(cr -> cr.registerEnhancer(new MessagesRecordingConfigurationEnhancer()))
+                          .start();
         return new AxonTestFixture(configuration, customization);
     }
 
