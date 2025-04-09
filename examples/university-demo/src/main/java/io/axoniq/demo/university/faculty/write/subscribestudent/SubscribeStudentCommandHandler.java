@@ -51,8 +51,8 @@ class SubscribeStudentCommandHandler {
 
     private static List<EventMessage<?>> toMessages(List<StudentSubscribed> events) {
         return events.stream()
-                     .map(SubscribeStudentCommandHandler::toMessage)
-                     .collect(Collectors.toList());
+                .map(SubscribeStudentCommandHandler::toMessage)
+                .collect(Collectors.toList());
     }
 
     private static EventMessage<?> toMessage(Object payload) {
@@ -129,7 +129,7 @@ class SubscribeStudentCommandHandler {
         void evolve(StudentSubscribed event) {
             var subscribingStudentId = new StudentId(event.studentId());
             var subscribedCourseId = new CourseId(event.courseId());
-            if(subscribedCourseId.equals(courseId)) {
+            if (subscribedCourseId.equals(courseId)) {
                 noOfStudentsSubscribedToCourse++;
             }
             if (subscribingStudentId.equals(studentId)) {
@@ -144,7 +144,7 @@ class SubscribeStudentCommandHandler {
         void evolve(StudentUnsubscribed event) {
             var subscribingStudentId = new StudentId(event.studentId());
             var subscribedCourseId = new CourseId(event.courseId());
-            if(subscribedCourseId.equals(courseId)) {
+            if (subscribedCourseId.equals(courseId)) {
                 noOfStudentsSubscribedToCourse--;
             }
             if (subscribingStudentId.equals(studentId)) {
@@ -161,23 +161,18 @@ class SubscribeStudentCommandHandler {
             var studentId = id.studentId().raw();
             return EventCriteria.either(
                     EventCriteria.match()
-                                 .eventsOfTypes(
-                                         CourseCreated.class.getName(),
-                                         CourseCapacityChanged.class.getName()
-                                 ).withTags(Tag.of(FacultyTags.COURSE_ID, courseId)),
+                            .eventsOfTypes(
+                                    CourseCreated.class.getName(),
+                                    CourseCapacityChanged.class.getName(),
+                                    StudentSubscribed.class.getName(),
+                                    StudentUnsubscribed.class.getName()
+                            ).withTags(Tag.of(FacultyTags.COURSE_ID, courseId)),
                     EventCriteria.match()
-                                 .eventsOfTypes(StudentEnrolledFaculty.class.getName())
-                                 .withTags(Tag.of(FacultyTags.STUDENT_ID, studentId)),
-                    EventCriteria.match()
-                                 .eventsOfTypes(
-                                         StudentSubscribed.class.getName(),
-                                         StudentUnsubscribed.class.getName()
-                                 ).withTags(Tag.of(FacultyTags.COURSE_ID, courseId)),
-                    EventCriteria.match()
-                                 .eventsOfTypes(
-                                         StudentSubscribed.class.getName(),
-                                         StudentUnsubscribed.class.getName()
-                                 ).withTags(Tag.of(FacultyTags.STUDENT_ID, studentId))
+                            .eventsOfTypes(
+                                    StudentEnrolledFaculty.class.getName(),
+                                    StudentSubscribed.class.getName(),
+                                    StudentUnsubscribed.class.getName()
+                            ).withTags(Tag.of(FacultyTags.STUDENT_ID, studentId))
             );
         }
     }
