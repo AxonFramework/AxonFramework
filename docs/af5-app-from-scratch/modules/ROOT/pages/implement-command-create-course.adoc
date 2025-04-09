@@ -65,7 +65,8 @@ package io.axoniq.demo.university.faculty.events;
 import org.axonframework.eventsourcing.annotations.EventTag;
 
 public record CourseCreated(
-    @EventTag String courseId, // <1>
+    @EventTag
+    String courseId, // <1>
     String name,
     int capacity
 ) {}
@@ -77,6 +78,12 @@ The EventStore in Axon Framework 5 always store your events along with assigned 
 
 Unlike commands, we use simple strings for identifiers in events to avoid potential deserialization issues if Value Object rules change.
 If you want to use the Value Objects in your events you may probably need custom deserializers for them to avoid `{"courseId": {"raw": "some-id"}}` in case of JSON.
+
+[NOTE]
+====
+For the first milestone it's only possible to define tags with annotations.
+In the future the configuration API will expose methods to do that without placing annotations on you events.
+====
 
 == Specification by example
 
