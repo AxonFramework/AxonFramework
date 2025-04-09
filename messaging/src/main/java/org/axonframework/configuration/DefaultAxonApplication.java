@@ -159,8 +159,6 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
                 invokeStartHandlers();
                 lifecycleState.set(LifecycleState.UP);
                 logger.debug("Finalized start sequence");
-            } else {
-                throw new RuntimeException("XXXXXXXXXXX");
             }
         }
 

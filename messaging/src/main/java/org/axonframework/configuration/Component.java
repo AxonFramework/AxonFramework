@@ -25,6 +25,8 @@ import static org.axonframework.common.Assert.nonEmpty;
 /**
  * Describes a component defined in a {@link NewConfiguration}, that may depend on other component for its
  * initialization or during it's startup/shutdown operations.
+ * <p>
+ * Note: This interface is not expected to be used outside of Axon Framework!
  *
  * @param <C> The type of component.
  * @author Allard Buijze
@@ -44,7 +46,7 @@ public interface Component<C> extends DescribableComponent {
      * Resolves the instance of this component, allowing it to retrieve any of its required dependencies from the given
      * {@code configuration}.
      * <p>
-     * Subsequent calls to this method will result in the same instance, even when different instances of
+     * Subsequent calls to this method will result in the same instance, even when <b>different</b> instances of
      * {@code configuration} are provided.
      *
      * @param configuration The configuration that declared this component.

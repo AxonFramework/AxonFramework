@@ -28,6 +28,12 @@ import jakarta.annotation.Nonnull;
  * components and/or decorators can be made conditional by using the {@link ComponentRegistry#hasComponent(Class)}
  * operation.
  * <p>
+ * If the components and/or decorators the enhancers includes have start-up or shutdown handlers, consider using the
+ * {@link ComponentRegistry#registerComponent(ComponentDefinition) component definition} and
+ * {@link ComponentRegistry#registerDecorator(DecoratorDefinition) decorator definition} registration methods. Both
+ * these operations inspect a definition to be given, for which the builder flow includes defining start-up and shutdown
+ * handlers.
+ * <p>
  * Note that enhancers have an {@link #order()} in which they enhance the {@code Configurer}. When not otherwise
  * specified, the order defaults to {@code 0}. Thus, without specifying the order, the insert order of enhancer dictates
  * the order.

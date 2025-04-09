@@ -791,7 +791,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             lifecycleOrder.verify(phaseOverNineThousandHandler).start();
         }
 
+        // Suppress Thread.sleep, as it's mandatory for this test.
         @Test
+        @SuppressWarnings("java:S2925")
         void startLifecycleHandlersWillOnlyProceedToFollowingPhaseAfterCurrentPhaseIsFinalized()
                 throws InterruptedException {
             // Create a lock for the slow handler and lock it immediately, to spoof the handler's slow/long process
@@ -883,7 +885,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             lifecycleOrder.verify(phaseZeroHandler).shutdown();
         }
 
+        // Suppress Thread.sleep, as it's mandatory for this test.
         @Test
+        @SuppressWarnings("java:S2925")
         void shutdownLifecycleHandlersWillOnlyProceedToFollowingPhaseAfterCurrentPhaseIsFinalized()
                 throws InterruptedException {
             // Create a lock for the slow handler and lock it immediately, to spoof the handler's slow/long process
@@ -1030,7 +1034,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertFalse(invoked.get());
         }
 
+        // Suppress Thread.sleep, as it's mandatory for this test.
         @Test
+        @SuppressWarnings("java:S2925")
         void timeOutContinuesWithTheNextLifecyclePhase() throws InterruptedException {
             CountDownLatch handlerStarted = new CountDownLatch(1);
             AtomicBoolean handler1Invoked = new AtomicBoolean();

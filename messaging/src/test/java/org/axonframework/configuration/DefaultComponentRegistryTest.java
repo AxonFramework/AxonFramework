@@ -51,21 +51,6 @@ class DefaultComponentRegistryTest {
     }
 
     @Test
-    void newComponentRegisterMethod() {
-        testSubject.registerComponent(ComponentDefinition.ofType(CharSequence.class)
-                                                         .withInstance("Hello world")
-                                                         .onStart(10, System.out::println))
-                   .registerDecorator(DecoratorDefinition.forTypeAndName(CharSequence.class, "myName")
-                                                         .with((config, name, delegate) -> "" + delegate)
-                                                         .order(10))
-                   .registerDecorator(DecoratorDefinition.forTypeAndName(CharSequence.class, "myName")
-                                                         .with((config, name, delegate) -> "" + delegate)
-                                                         .onShutdown(10, System.out::println)
-                                                         .order(10)
-                                                         .onStart(10, System.out::println));
-    }
-
-    @Test
     void registerComponentExposesRegisteredComponentUponBuild() {
         TestComponent testComponent = TEST_COMPONENT;
         testSubject.registerComponent(TestComponent.class, c -> testComponent);
