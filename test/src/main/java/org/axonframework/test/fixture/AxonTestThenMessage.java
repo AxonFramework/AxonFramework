@@ -20,14 +20,13 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.test.AxonAssertionError;
 import org.axonframework.test.aggregate.Reporter;
 import org.axonframework.test.matchers.MapEntryMatcher;
 import org.axonframework.test.matchers.MatchAllFieldFilter;
 import org.axonframework.test.matchers.Matchers;
 import org.axonframework.test.saga.CommandValidator;
-import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.hamcrest.StringDescription;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -48,6 +47,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     private final NewConfiguration configuration;
     private final AxonTestFixture.Customization customization;
     private final RecordingEventSink eventSink;
+    private final RecordingCommandBus commandBus;
 
     private final CommandValidator commandValidator;
     protected final Throwable actualException;
@@ -61,6 +61,7 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     ) {
         this.configuration = configuration;
         this.customization = customization;
+        this.commandBus = commandBus;
         this.eventSink = eventSink;
         this.actualException = actualException;
         this.commandValidator = new CommandValidator(commandBus::recordedCommands,
@@ -104,30 +105,24 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T events(@Nonnull Matcher<? extends List<? super EventMessage<?>>> matcher) {
+    public T eventsSatisfy(@Nonnull Consumer<List<EventMessage<?>>> consumer) {
         var publishedEvents = eventSink.recorded();
-        if (!matcher.matches(publishedEvents)) {
-            final Description expectation = new StringDescription();
-            matcher.describeTo(expectation);
-
-            final Description mismatch = new StringDescription();
-            matcher.describeMismatch(publishedEvents, mismatch);
-
-            reporter.reportWrongEvent(publishedEvents, expectation, mismatch, actualException);
+        try {
+            consumer.accept(publishedEvents);
+        } catch (AssertionError e) {
+            throw new AxonAssertionError("Events does not satisfy custom assertions", e);
         }
         return self();
     }
 
     @Override
-    public T events(@Nonnull Consumer<List<? super EventMessage<?>>> consumer) {
+    public T eventsMatch(@Nonnull Predicate<List<EventMessage<?>>> predicate) {
         var publishedEvents = eventSink.recorded();
-        consumer.accept(publishedEvents);
+        var result = predicate.test(publishedEvents);
+        if (!result) {
+            throw new AxonAssertionError("Events does not satisfy the predicate");
+        }
         return self();
-    }
-
-    @Override
-    public T eventsMatch(@Nonnull Predicate<List<? super EventMessage<?>>> predicate) {
-        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
@@ -143,18 +138,65 @@ abstract class AxonTestThenMessage<T extends AxonTestPhase.Then.Message<T>>
     }
 
     @Override
-    public T commands(@Nonnull Consumer<List<? super CommandMessage<?>>> consumer) {
-        throw new UnsupportedOperationException("Not implemented yet");
+    public T commandsSatisfy(@Nonnull Consumer<List<CommandMessage<?>>> consumer) {
+        var dispatchedCommands = commandBus.recordedCommands();
+        try {
+            consumer.accept(dispatchedCommands);
+        } catch (AssertionError e) {
+            throw new AxonAssertionError("Commands does not satisfy custom assertions", e);
+        }
+        return self();
     }
 
     @Override
-    public T commandsMatch(@Nonnull Predicate<List<? super CommandMessage<?>>> predicate) {
-        throw new UnsupportedOperationException("Not implemented yet");
+    public T commandsMatch(@Nonnull Predicate<List<CommandMessage<?>>> predicate) {
+        var dispatchedCommands = commandBus.recordedCommands();
+        var result = predicate.test(dispatchedCommands);
+        if (!result) {
+            throw new AxonAssertionError("Events does not satisfy the predicate");
+        }
+        return self();
     }
 
     @Override
     public T noCommands() {
         commandValidator.assertDispatchedMatching(Matchers.noCommands());
+        return self();
+    }
+
+    @Override
+    public T exceptionSatisfies(@Nonnull Consumer<Throwable> consumer) {
+        try {
+            consumer.accept(actualException);
+        } catch (AssertionError e) {
+            throw new AxonAssertionError("Exception does not satisfy custom assertions", e);
+        }
+        return self();
+    }
+
+    @Override
+    public T exception(@Nonnull Class<? extends Throwable> type, @Nonnull String message) {
+        if (actualException == null) {
+            throw new AxonAssertionError(
+                    "Expected exception of type " + type + " with message '" + message + "' but got none");
+        }
+        if (!type.isInstance(actualException) || !message.equals(actualException.getMessage())) {
+            throw new AxonAssertionError(
+                    "Expected " + type + " with message '" + message + "' but got " + actualException);
+        }
+        return self();
+    }
+
+    @Override
+    public T exception(@Nonnull Class<? extends Throwable> type) {
+        if (actualException == null) {
+            throw new AxonAssertionError(
+                    "Expected exception of type " + type + " but got none");
+        }
+        if (!type.isInstance(actualException)) {
+            throw new AxonAssertionError(
+                    "Expected " + type + " but got " + actualException);
+        }
         return self();
     }
 

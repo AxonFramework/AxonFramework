@@ -118,12 +118,9 @@ class DefaultStatefulCommandHandlingModule
     }
 
     private void registerRepositories() {
-        entityBuilders.forEach((name, entityBuilder) -> {
-            componentRegistry(cr -> cr.registerComponent(AsyncRepository.class,
-                                                         name,
-                                                         entityBuilder.repository())
-            );
-        });
+        entityBuilders.forEach((name, entityBuilder) -> componentRegistry(
+                cr -> cr.registerComponent(AsyncRepository.class, name, entityBuilder.repository())
+        ));
     }
 
     private SimpleStateManager stateManagerFactory(NewConfiguration config) {
@@ -136,19 +133,20 @@ class DefaultStatefulCommandHandlingModule
     }
 
     private void registerCommandHandlers() {
-        componentRegistry(cr -> {
-            cr.registerComponent(StatefulCommandHandlingComponent.class, statefulCommandHandlingComponentName, c -> {
-                StatefulCommandHandlingComponent statefulCommandHandler = StatefulCommandHandlingComponent.create(
-                        statefulCommandHandlingComponentName,
-                        c.getComponent(StateManager.class)
-                );
-                handlerFactories.forEach((key, value) -> statefulCommandHandler.subscribe(key, value.build(c)));
-                handlingComponentFactories.forEach(
-                        handlingComponent -> statefulCommandHandler.subscribe(handlingComponent.build(c))
-                );
-                return statefulCommandHandler;
-            });
-        });
+        componentRegistry(cr -> cr.registerComponent(
+                StatefulCommandHandlingComponent.class, statefulCommandHandlingComponentName,
+                c -> {
+                    StatefulCommandHandlingComponent statefulCommandHandler = StatefulCommandHandlingComponent.create(
+                            statefulCommandHandlingComponentName,
+                            c.getComponent(StateManager.class)
+                    );
+                    handlerFactories.forEach((key, value) -> statefulCommandHandler.subscribe(key, value.build(c)));
+                    handlingComponentFactories.forEach(
+                            handlingComponent -> statefulCommandHandler.subscribe(handlingComponent.build(c))
+                    );
+                    return statefulCommandHandler;
+                }
+        ));
     }
 
     @Override

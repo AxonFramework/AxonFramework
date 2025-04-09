@@ -23,11 +23,13 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+import static java.util.Objects.requireNonNull;
+
 /**
- * Defines the structure of a decorator for Components in the {@link NewConfiguration} of the application or one of its
- * Modules.
+ * Defines the structure of a decorator for {@link Component components} in the {@link NewConfiguration} of the
+ * application or one of its {@link Module Modules}.
  * <p>
- * Decorators can wrap or replace the implementation of defined Components based on their type and optionally their
+ * Decorators can wrap or replace the implementation of defined components based on their type and optionally their
  * name. Decorators must return an instance that is an implementation of the declared type. Typically, they wrap another
  * component to provide additional behavior.
  * <p>
@@ -35,130 +37,141 @@ import java.util.function.Consumer;
  * dependency, it would look as follows:
  * <pre><code>
  * DecoratorDefinition.forType(MyComponentInterface.class)
- *                    .with((cfg, name, delegate) -> new MyComponentWrapper(delegate, cfg.getComponent(MyDependency.class)))
+ *                    .with((config, name, delegate) -> new MyComponentWrapper(delegate, config.getComponent(MyDependency.class)))
  *                    .onStart(0, MyComponentWrapper::start)
- *                    .onShutdown(0, MyComponentWrapper::shutdown
+ *                    .onShutdown(0, MyComponentWrapper::shutdown)
  * </code></pre>
  * <p>
- * Alternatively, you can use
+ * Alternatively, you can use:
  * <pre><code>
  *     DecoratorDefinition.forTypeAndName(MyComponentInterface.class, "MyName")
- *                        .with(cfg -> ...)
+ *                        .with(config -> ...)
  * </code></pre>
- * in case you need to only wrap a component with a given name.
+ * In this case, you need to only wrap a component with a given name.
  *
  * @param <C> The declared type of the component.
  * @param <D> The instance type of the decorated component.
+ * @author Allard Buijze
+ * @since 5.0.0
  */
 public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDefinition.CompletedDecoratorDefinition {
 
     /**
-     * Initiates the configuration of a decorator for components with the given {@code type}, which must correspond with
-     * the declared type of these components.
+     * Initiates the configuration of a decorator for {@link Component components} with the given {@code type}, which
+     * must correspond with the declared type of these components.
      * <p>
      * If multiple components have been defined for this type, they all are subject to decoration under this definition.
-     * To decorate only a specific Component, consider using {@link #forTypeAndName(Class, String)}.
+     * To decorate only a specific component, consider using {@link #forTypeAndName(Class, String)}.
      *
      * @param type The class of the declared type of the components to decorate.
      * @param <C>  The declared type of the components to decorate.
-     * @return a builder for further configuration of this definition.
+     * @return A builder for further configuration of this decorator definition.
      */
-    static <C> PartialDecoratorDefinition<C> forType(Class<C> type) {
+    static <C> PartialDecoratorDefinition<C> forType(@Nonnull Class<C> type) {
+        requireNonNull(type, "The type must not be null.");
         return new PartialDecoratorDefinition<>() {
             @Override
             public <D extends C> DecoratorDefinition<C, D> with(@Nonnull ComponentDecorator<C, D> decorator) {
-                Objects.requireNonNull(decorator, "decorator must not be null");
-                return new DefaultDecoratorDefinition<>(i ->
-                                                                Objects.equals(type, i.type()), decorator);
+                return new DefaultDecoratorDefinition<>(id -> Objects.equals(type, id.type()), decorator);
             }
         };
     }
 
     /**
-     * Initiates the configuration of a decorator for a component with the given {@code type}, which must correspond
-     * with the declared type of these components, and {@code name}. The decorator is only invoked if such component
-     * with such name is defined in the ComponentRegistry where this decorator is registered.
+     * Initiates the configuration of a decorator for a {@link Component component} with the given {@code type} and
+     * {@code name}, which must correspond with the declared type of these components.
      * <p>
-     * If multiple components for this type have been defined, and all are subject to decoration, consider using
-     * {@link #forType(Class)}.
+     * The decorator is only invoked if such component with such name is defined in the component registry where this
+     * decorator is registered. If multiple components for this type have been defined, and all are subject to
+     * decoration, consider using {@link #forType(Class)}.
      *
      * @param type The class of the declared type of the components to decorate.
      * @param name The name of the component to decorate.
      * @param <C>  The declared type of the components to decorate.
-     * @return a builder for further configuration of this definition.
+     * @return A builder for further configuration of this decorator definition.
      */
     static <C> PartialDecoratorDefinition<C> forTypeAndName(@Nonnull Class<C> type, @Nonnull String name) {
-        Objects.requireNonNull(type, "type must not be null");
-        Objects.requireNonNull(name, "The name must not be empty or null.");
+        requireNonNull(type, "The type must not be null.");
         Assert.nonEmpty(name, "The name must not be empty or null.");
         return new PartialDecoratorDefinition<>() {
             @Override
             public <D extends C> DecoratorDefinition<C, D> with(@Nonnull ComponentDecorator<C, D> decorator) {
-                Objects.requireNonNull(decorator, "decorator must not be null");
-                return new DefaultDecoratorDefinition<>(i ->
-                                                                Objects.equals(type, i.type())
-                                                                        && Objects.equals(name, i.name()), decorator);
+                return new DefaultDecoratorDefinition<>(
+                        id -> Objects.equals(type, id.type()) && Objects.equals(name, id.name()),
+                        decorator
+                );
             }
         };
     }
 
     /**
-     * Sets the{@code order} in which this decorator will be invoked on a Component relative to other decorators. The
-     * relative order of decorators with the same {@code order} is undefined.
+     * Sets the {@code order} in which this decorator will be invoked on a component relative to other decorators.
+     * <p>
+     * The relative order of decorators with the same {@code order} is undefined.
      * <p>
      * In absence of configuration, the order is {@code 0}.
      *
      * @param order The relative order in which to invoke this decorator.
-     * @return this DecoratorDefinition fur fluent API.
+     * @return This {@code DecoratorDefinition} fur fluent API.
      */
     DecoratorDefinition<C, D> order(int order);
 
     /**
-     * Registers the given {@code handler} to be registered with the application's Lifecycle during startup. The handler
-     * will be invoked in the given startup {@code phase} for each component that has been decorated.
+     * Registers the given {@code handler} to be registered with the application's lifecycle during startup for this
+     * decorator.
+     * <p>
+     * The handler will be invoked in the given startup {@code phase} for each component that has been decorated.
      *
      * @param phase   The phase in which the handler must be invoked.
      * @param handler The handler to invoke.
-     * @return this DecoratorDefinition fur fluent API.
+     * @return This {@code DecoratorDefinition} fur fluent API.
      */
-    DecoratorDefinition<C, D> onStart(int phase, ComponentLifecycleHandler<D> handler);
+    DecoratorDefinition<C, D> onStart(int phase, @Nonnull ComponentLifecycleHandler<D> handler);
 
     /**
-     * Registers the given {@code handler} to be registered with the application's Lifecycle during startup. The handler
-     * will be invoked in the given startup {@code phase} for each component that has been decorated.
+     * Registers the given {@code handler} to be registered with the application's lifecycle during startup for this
+     * decorator.
+     * <p>
+     * The handler will be invoked in the given startup {@code phase} for each component that has been decorated.
      *
-     * @param phase   The phase in which the handler must be invoked.
+     * @param phase   The phase in which the start handler must be invoked.
      * @param handler The handler to invoke.
-     * @return this DecoratorDefinition fur fluent API.
+     * @return This {@code DecoratorDefinition} fur fluent API.
      */
-    default DecoratorDefinition<C, D> onStart(int phase, Consumer<D> handler) {
-        return onStart(phase, (cfg, cmp) -> {
-            handler.accept(cmp);
+    default DecoratorDefinition<C, D> onStart(int phase, @Nonnull Consumer<D> handler) {
+        return onStart(phase, (config, component) -> {
+            Objects.requireNonNull(handler, "The start handler cannot be null.")
+                   .accept(component);
             return CompletableFuture.completedFuture(null);
         });
     }
 
     /**
-     * Registers the given {@code handler} to be registered with the application's Lifecycle during shutdown. The
-     * handler will be invoked in the given startup {@code phase} for each component that has been decorated.
+     * Registers the given {@code handler} to be registered with the application's lifecycle during shutdown for this
+     * decorator.
+     * <p>
+     * The handler will be invoked in the given shutdown {@code phase} for each component that has been decorated.
      *
-     * @param phase   The phase in which the handler must be invoked.
+     * @param phase   The phase in which the shutdown handler must be invoked.
      * @param handler The handler to invoke.
-     * @return this DecoratorDefinition fur fluent API.
+     * @return This {@code DecoratorDefinition} fur fluent API.
      */
-    DecoratorDefinition<C, D> onShutdown(int phase, ComponentLifecycleHandler<D> handler);
+    DecoratorDefinition<C, D> onShutdown(int phase, @Nonnull ComponentLifecycleHandler<D> handler);
 
     /**
-     * Registers the given {@code handler} to be registered with the application's Lifecycle during shutdown. The
-     * handler will be invoked in the given startup {@code phase} for each component that has been decorated.
+     * Registers the given {@code handler} to be registered with the application's lifecycle during shutdown for this
+     * decorator.
+     * <p>
+     * The handler will be invoked in the given shutdown {@code phase} for each component that has been decorated.
      *
-     * @param phase   The phase in which the handler must be invoked.
+     * @param phase   The phase in which the shutdown handler must be invoked.
      * @param handler The handler to invoke.
-     * @return this DecoratorDefinition fur fluent API.
+     * @return This {@code DecoratorDefinition} fur fluent API.
      */
-    default DecoratorDefinition<C, D> onShutdown(int phase, Consumer<D> handler) {
-        return onShutdown(phase, (cfg, cmp) -> {
-            handler.accept(cmp);
+    default DecoratorDefinition<C, D> onShutdown(int phase, @Nonnull Consumer<D> handler) {
+        return onShutdown(phase, (config, component) -> {
+            Objects.requireNonNull(handler, "The shutdown handler cannot be null.")
+                   .accept(component);
             return CompletableFuture.completedFuture(null);
         });
     }
@@ -171,18 +184,19 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
     interface PartialDecoratorDefinition<C> {
 
         /**
-         * Defines the decorator function to use to decorate the target components.
+         * Defines the decorator function to use to decorate target components.
          *
          * @param decorator The function to use to decorate a component.
          * @param <D>       The instance type of the decorated component.
-         * @return a DecoratorDefinition for direct use or further configuration.
+         * @return A {@code DecoratorDefinition} for direct use or further configuration.
          */
         <D extends C> DecoratorDefinition<C, D> with(@Nonnull ComponentDecorator<C, D> decorator);
     }
 
     /**
-     * Defines the behavior that all implementation of {@link DecoratorDefinition} must provide. This separation is used
-     * to hide these methods from general use, as they are solely meant for Axon internals.
+     * Defines the behavior that all implementation of {@link DecoratorDefinition} must provide.
+     * <p>
+     * This separation is used to hide these methods from general use, as they are solely meant for Axon internals.
      *
      * @param <C> The declared type of the component.
      * @param <D> The implementation type of the decorator.
@@ -190,29 +204,31 @@ public sealed interface DecoratorDefinition<C, D extends C> permits DecoratorDef
     non-sealed interface CompletedDecoratorDefinition<C, D extends C> extends DecoratorDefinition<C, D> {
 
         /**
-         * The order in which this decorator must be invoked. The relative order of decorators with the same
-         * {@code order} is undefined.
+         * The order in which this decorator must be invoked.
+         * <p>
+         * The relative order of decorators with the same {@code order} is undefined.
          *
-         * @return the order in which this decorator must be invoked.
+         * @return The order in which this decorator must be invoked.
          */
         int order();
 
         /**
-         * Decorates the given {@code delegate} by returning the instance that should be used in its place. Generally,
-         * this is a component that delegates calls to the {@code delegate}, although decorators may choose to return a
-         * replacement altogether.
+         * Decorates the given {@code delegate} by returning the instance that should be used in its place.
+         * <p>
+         * Generally, this is a component that delegates calls to the {@code delegate}, although decorators may choose
+         * to return a replacement altogether.
          *
          * @param delegate The component to decorate.
-         * @return the decorated component.
+         * @return The decorated component.
          */
-        Component<C> decorate(Component<C> delegate);
+        Component<C> decorate(@Nonnull Component<C> delegate);
 
         /**
-         * Indicates whether the component with given {@code componentId} matches the definition of this decorator.
+         * Indicates whether the component with given {@code id} matches the definition of this decorator.
          *
-         * @param componentId The identifier of a component to possibly decorate.
+         * @param id The identifier of a component to possibly decorate.
          * @return {@code true} if the component's identifier matches this definition, otherwise {@code false}.
          */
-        boolean matches(Component.Identifier<?> componentId);
+        boolean matches(@Nonnull Component.Identifier<?> id);
     }
 }

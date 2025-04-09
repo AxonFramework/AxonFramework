@@ -394,13 +394,13 @@ public class SimpleQueryBus implements QueryBus {
 
     private NoHandlerForQueryException noHandlerException(QueryMessage<?, ?> intercepted) {
         return new NoHandlerForQueryException(format("No handler found for [%s] with response type [%s]",
-                                                     intercepted.getQueryName(),
+                                                     intercepted.type(),
                                                      intercepted.getResponseType()));
     }
 
     private static NoHandlerForQueryException noSuitableHandlerException(QueryMessage<?, ?> intercepted) {
         return new NoHandlerForQueryException(format("No suitable handler was found for [%s] with response type [%s]",
-                                                     intercepted.getQueryName(),
+                                                     intercepted.type(),
                                                      intercepted.getResponseType()));
     }
 
@@ -688,7 +688,7 @@ public class SimpleQueryBus implements QueryBus {
     private <Q, R> List<MessageHandler<? super QueryMessage<?, ?>, ? extends QueryResponseMessage<?>>> getHandlersForMessage(
             QueryMessage<Q, R> queryMessage) {
         ResponseType<R> responseType = queryMessage.getResponseType();
-        return subscriptions.computeIfAbsent(queryMessage.getQueryName(), k -> new CopyOnWriteArrayList<>())
+        return subscriptions.computeIfAbsent(queryMessage.type().name(), k -> new CopyOnWriteArrayList<>())
                             .stream()
                             .collect(groupingBy(
                                     querySubscription -> responseType.matchRank(querySubscription.getResponseType()),

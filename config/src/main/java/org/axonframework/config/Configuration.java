@@ -92,6 +92,7 @@ public interface Configuration extends LifecycleOperations {
                     int phase,
                     @jakarta.annotation.Nonnull org.axonframework.configuration.LifecycleHandler startHandler
             ) {
+                //noinspection DataFlowIssue
                 Configuration.this.onStart(phase, () -> startHandler.run(null));
                 return this;
             }
@@ -101,6 +102,7 @@ public interface Configuration extends LifecycleOperations {
                     int phase,
                     @jakarta.annotation.Nonnull org.axonframework.configuration.LifecycleHandler shutdownHandler
             ) {
+                //noinspection DataFlowIssue
                 Configuration.this.onShutdown(phase, () -> shutdownHandler.run(null));
                 return this;
             }

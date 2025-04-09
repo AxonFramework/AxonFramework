@@ -17,13 +17,14 @@
 package org.axonframework.configuration;
 
 /**
- * Enumeration describing how a {@link ComponentRegistry} should react when a {@link Component} is to be overridden during a
- * {@link ComponentRegistry#registerComponent(ComponentDefinition)} invocation.
+ * Enumeration describing how a {@link ComponentRegistry} should react when a {@link Component} is to be overridden
+ * during a {@link ComponentRegistry#registerComponent(ComponentDefinition)} invocation.
  *
  * @author Steven van Beelen
  * @author Mitchell Herrijgers
  * @author Allard Buijze
  * @author Mateusz Nowak
+ * @see ComponentRegistry#setOverridePolicy(OverridePolicy)
  * @since 5.0.0
  */
 public enum OverridePolicy {

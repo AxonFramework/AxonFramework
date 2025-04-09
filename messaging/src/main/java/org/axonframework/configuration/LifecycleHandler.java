@@ -16,6 +16,8 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -32,7 +34,8 @@ public interface LifecycleHandler {
      * this might be asynchronous through the return value.
      *
      * @param configuration The configuration that provides access to the components in this application.
-     * @return a {@link CompletableFuture} of unknown type which enables chaining several {@code LifecycleHandler} calls.
+     * @return a {@link CompletableFuture} of unknown type which enables chaining several {@code LifecycleHandler}
+     * calls.
      */
-    CompletableFuture<?> run(NewConfiguration configuration);
+    CompletableFuture<?> run(@Nonnull NewConfiguration configuration);
 }

@@ -22,29 +22,36 @@ import java.util.function.BiConsumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Test validating the {@link LazyInitializedComponentDefinition}.
+ *
+ * @author Allard Buijze
+ */
 class LazyInitializedComponentDefinitionTest
         extends ComponentTestSuite<LazyInitializedComponentDefinition<String, String>> {
 
     @Override
-    LazyInitializedComponentDefinition<String, String> createComponent(Component.Identifier<String> componentIdentifier,
+    LazyInitializedComponentDefinition<String, String> createComponent(Component.Identifier<String> id,
                                                                        String instance) {
-        return createComponent(componentIdentifier, c -> instance);
+        return createComponent(id, c -> instance);
     }
 
     @Override
-    LazyInitializedComponentDefinition<String, String> createComponent(Component.Identifier<String> componentIdentifier,
+    LazyInitializedComponentDefinition<String, String> createComponent(Component.Identifier<String> id,
                                                                        ComponentFactory<String> factory) {
-        return new LazyInitializedComponentDefinition<>(componentIdentifier, factory);
+        return new LazyInitializedComponentDefinition<>(id, factory);
     }
 
     @Override
-    void registerStartHandler(LazyInitializedComponentDefinition<String, String> testSubject, int phase,
+    void registerStartHandler(LazyInitializedComponentDefinition<String, String> testSubject,
+                              int phase,
                               BiConsumer<NewConfiguration, String> handler) {
         testSubject.onStart(phase, handler);
     }
 
     @Override
-    void registerShutdownHandler(LazyInitializedComponentDefinition<String, String> testSubject, int phase,
+    void registerShutdownHandler(LazyInitializedComponentDefinition<String, String> testSubject,
+                                 int phase,
                                  BiConsumer<NewConfiguration, String> handler) {
         testSubject.onShutdown(phase, handler);
     }
@@ -58,9 +65,8 @@ class LazyInitializedComponentDefinitionTest
 
     @Test
     void constructorThrowsNullPointerExceptionForNullComponentBuilder() {
+        Component.Identifier<String> testId = new Component.Identifier<>(String.class, "value");
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class,
-                     () -> new LazyInitializedComponentDefinition<>(new Component.Identifier<>(String.class, "value"),
-                                                                    null));
+        assertThrows(NullPointerException.class, () -> new LazyInitializedComponentDefinition<>(testId, null));
     }
 }

@@ -147,9 +147,9 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
     @Test
     void modellingDelegatesTasks() {
         TestComponent result =
-                testSubject.componentRegistry(
+                testSubject.modelling(modelling -> modelling.componentRegistry(
                                    cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
-                           )
+                           ))
                            .build()
                            .getComponent(TestComponent.class);
 
@@ -159,9 +159,9 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
     @Test
     void messagingDelegatesTasks() {
         TestComponent result =
-                testSubject.componentRegistry(
+                testSubject.messaging(messaging -> messaging.componentRegistry(
                                    cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
-                           )
+                           ))
                            .build()
                            .getComponent(TestComponent.class);
 
@@ -169,7 +169,7 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
     }
 
     @Test
-    void applicationDelegatesTasks() {
+    void componentRegistryDelegatesTasks() {
         TestComponent result =
                 testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT))
                            .build()

@@ -38,7 +38,7 @@ public abstract class BaseModule<S extends BaseModule<S>> implements Module {
     /**
      * Construct a base module with the given {@code name}.
      *
-     * @param name The name of this module. Must not be {@code null}
+     * @param name The name of this module. Must not be {@code null}.
      */
     protected BaseModule(@Nonnull String name) {
         Assert.nonEmpty(name, "The Module name cannot be null or empty.");

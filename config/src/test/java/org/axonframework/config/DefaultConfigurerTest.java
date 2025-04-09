@@ -269,7 +269,7 @@ class DefaultConfigurerTest {
         config.commandGateway()
               .sendAndWait(TEST_COMMAND);
         CommandMessage<String> testCommand = new GenericCommandMessage<>(
-                new GenericMessage<>(new MessageType("message"), "test"), "update"
+                new GenericMessage<>(new MessageType("update"), "test")
         );
         config.commandGateway().sendAndWait(testCommand);
         assertEquals(1, counter.get());

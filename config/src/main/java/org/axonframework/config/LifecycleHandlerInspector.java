@@ -88,6 +88,7 @@ public abstract class LifecycleHandlerInspector {
                 @Override
                 public LifecycleRegistry onStart(int phase,
                                                  @Nonnull org.axonframework.configuration.LifecycleHandler startHandler) {
+                    //noinspection DataFlowIssue
                     configuration.onStart(phase, () -> startHandler.run(null));
                     return this;
                 }
@@ -95,6 +96,7 @@ public abstract class LifecycleHandlerInspector {
                 @Override
                 public LifecycleRegistry onShutdown(int phase,
                                                     @Nonnull org.axonframework.configuration.LifecycleHandler shutdownHandler) {
+                    //noinspection DataFlowIssue
                     configuration.onShutdown(phase, () -> shutdownHandler.run(null));
                     return this;
                 }

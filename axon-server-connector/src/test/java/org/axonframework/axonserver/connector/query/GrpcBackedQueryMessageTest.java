@@ -59,7 +59,7 @@ class GrpcBackedQueryMessageTest {
         GrpcBackedQueryMessage<TestQuery, String> testSubject =
                 new GrpcBackedQueryMessage<>(testQueryRequest, serializer, serializer);
 
-        assertEquals(testQueryRequest.getQuery(), testSubject.getQueryName());
+        assertEquals(testQueryRequest.getQuery(), testSubject.type().name());
     }
 
     @Test

@@ -124,7 +124,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public EventSourcingConfigurer registerTagResolver(@Nonnull ComponentFactory<TagResolver> tagResolverFactory) {
-        componentRegistry(cr -> cr.registerComponent(TagResolver.class, tagResolverFactory));
+        delegate.componentRegistry(cr -> cr.registerComponent(TagResolver.class, tagResolverFactory));
         return this;
     }
 
@@ -140,7 +140,9 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     public EventSourcingConfigurer registerEventStorageEngine(
             @Nonnull ComponentFactory<AsyncEventStorageEngine> eventStorageEngineFactory
     ) {
-        componentRegistry(cr -> cr.registerComponent(AsyncEventStorageEngine.class, eventStorageEngineFactory));
+        delegate.componentRegistry(
+                cr -> cr.registerComponent(AsyncEventStorageEngine.class, eventStorageEngineFactory)
+        );
         return this;
     }
 
@@ -154,7 +156,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public EventSourcingConfigurer registerEventStore(@Nonnull ComponentFactory<AsyncEventStore> eventStoreFactory) {
-        componentRegistry(cr -> cr.registerComponent(AsyncEventStore.class, eventStoreFactory));
+        delegate.componentRegistry(cr -> cr.registerComponent(AsyncEventStore.class, eventStoreFactory));
         return this;
     }
 
@@ -170,35 +172,35 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     public EventSourcingConfigurer registerSnapshotter(
             @Nonnull ComponentFactory<Snapshotter> snapshotterFactory
     ) {
-        componentRegistry(cr -> cr.registerComponent(Snapshotter.class, snapshotterFactory));
+        delegate.componentRegistry(cr -> cr.registerComponent(Snapshotter.class, snapshotterFactory));
         return this;
     }
 
     /**
-     * Delegates the given {@code configureTask} to the {@link ModellingConfigurer} this {@code EventSourcingConfigurer}
-     * delegates to.
+     * Delegates the given {@code configurerTask} to the {@link ModellingConfigurer} this
+     * {@code EventSourcingConfigurer} delegates.
      * <p>
      * Use this operation to invoke registration methods that only exist on the {@code ModellingConfigurer}.
      *
-     * @param configureTask Lambda consuming the delegate {@link ModellingConfigurer}.
+     * @param configurerTask Lambda consuming the delegate {@link ModellingConfigurer}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public EventSourcingConfigurer modelling(@Nonnull Consumer<ModellingConfigurer> configureTask) {
-        configureTask.accept(delegate);
+    public EventSourcingConfigurer modelling(@Nonnull Consumer<ModellingConfigurer> configurerTask) {
+        configurerTask.accept(delegate);
         return this;
     }
 
     /**
-     * Delegates the given {@code configureTask} to the {@link MessagingConfigurer} this {@code EventSourcingConfigurer}
-     * delegates to.
+     * Delegates the given {@code configurerTask} to the {@link MessagingConfigurer} this
+     * {@code EventSourcingConfigurer} delegates.
      * <p>
      * Use this operation to invoke registration methods that only exist on the {@code MessagingConfigurer}.
      *
-     * @param configureTask Lambda consuming the delegate {@link MessagingConfigurer}.
+     * @param configurerTask Lambda consuming the delegate {@link MessagingConfigurer}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public EventSourcingConfigurer messaging(@Nonnull Consumer<MessagingConfigurer> configureTask) {
-        delegate.messaging(configureTask);
+    public EventSourcingConfigurer messaging(@Nonnull Consumer<MessagingConfigurer> configurerTask) {
+        delegate.messaging(configurerTask);
         return this;
     }
 

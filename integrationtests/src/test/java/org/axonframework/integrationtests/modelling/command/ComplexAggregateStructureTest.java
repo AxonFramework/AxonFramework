@@ -70,7 +70,7 @@ class ComplexAggregateStructureTest {
     }
 
     private CommandMessage<Object> command(Object payload) {
-        return new GenericCommandMessage<>(new MessageType("command"), payload);
+        return new GenericCommandMessage<>(new MessageType(payload.getClass().getName()), payload);
     }
 
     @SuppressWarnings("unused")

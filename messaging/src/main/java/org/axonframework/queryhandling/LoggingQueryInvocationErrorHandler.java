@@ -60,7 +60,7 @@ public class LoggingQueryInvocationErrorHandler implements QueryInvocationErrorH
     @Override
     public void onError(@Nonnull Throwable error, @Nonnull QueryMessage<?, ?> queryMessage,
                         @Nonnull MessageHandler messageHandler) {
-        logger.warn("An error occurred while processing query message [{}]", queryMessage.getQueryName(), error);
+        logger.warn("An error occurred while processing query message [{}]", queryMessage.type(), error);
     }
 
     /**

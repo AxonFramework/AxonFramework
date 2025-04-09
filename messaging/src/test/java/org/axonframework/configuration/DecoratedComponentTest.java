@@ -29,8 +29,44 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-public class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponent<String, String>> {
+/**
+ * Test validating the {@link DecoratedComponent}.
+ *
+ * @author Allard Buijze
+ */
+class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponent<String, String>> {
 
+    @Override
+    DecoratedComponent<String, String> createComponent(Component.Identifier<String> id,
+                                                       String instance) {
+        return new DecoratedComponent<>(new InstantiatedComponentDefinition<>(id, instance),
+                                        (config, name, delegate) -> delegate + "test",
+                                        Collections.emptyList(),
+                                        Collections.emptyList());
+    }
+
+    @Override
+    DecoratedComponent<String, String> createComponent(Component.Identifier<String> id,
+                                                       ComponentFactory<String> factory) {
+        return new DecoratedComponent<>(new LazyInitializedComponentDefinition<>(id, factory),
+                                        (config, name, delegate) -> delegate + "test",
+                                        Collections.emptyList(),
+                                        Collections.emptyList());
+    }
+
+    @Override
+    void registerStartHandler(DecoratedComponent<String, String> testSubject,
+                              int phase,
+                              BiConsumer<NewConfiguration, String> handler) {
+        testSubject.onStart(phase, handler);
+    }
+
+    @Override
+    void registerShutdownHandler(DecoratedComponent<String, String> testSubject,
+                                 int phase,
+                                 BiConsumer<NewConfiguration, String> handler) {
+        testSubject.onShutdown(phase, handler);
+    }
 
     @Test
     void delegateReusesPreviouslyCreatedInstance() {
@@ -44,7 +80,7 @@ public class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponen
                                                                Collections.emptyList(),
                                                                Collections.emptyList());
 
-        assertEquals(TEST_COMPONENT+"a", decorated.resolve(configuration));
+        assertEquals(TEST_COMPONENT + "a", decorated.resolve(configuration));
         verify(mock, times(1)).build(any());
 
         assertEquals(TEST_COMPONENT + "a", decorated.resolve(configuration));
@@ -53,61 +89,35 @@ public class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponen
 
     @Test
     void initializationRegistersLifecycleHandlersOfDecoratedComponents() {
-        LazyInitializedComponentDefinition<String, String> target = new LazyInitializedComponentDefinition<>(identifier,
-                                                                                                             factory);
+        LazyInitializedComponentDefinition<String, String> target =
+                new LazyInitializedComponentDefinition<>(identifier, factory);
         target.onStart(10, (configuration1, component) -> {
 
         });
 
-
-        Component<String> result = new DecoratedComponent<>(target,
-                                                            (config, name, delegate) -> delegate + "test",
-                                                            List.of(new AbstractComponent.HandlerRegistration<>(42,
-                                                                                                                (c, component) -> FutureUtils.emptyCompletedFuture())),
-                                                            Collections.emptyList());
+        Component<String> result = new DecoratedComponent<>(
+                target,
+                (config, name, delegate) -> delegate + "test",
+                List.of(new AbstractComponent.HandlerRegistration<>(
+                        42, (c, component) -> FutureUtils.emptyCompletedFuture()
+                )),
+                Collections.emptyList()
+        );
 
         result.initLifecycle(configuration, lifecycleRegistry);
 
+        //noinspection unchecked
         verify(lifecycleRegistry).onStart(eq(10), any(Supplier.class));
+        //noinspection unchecked
         verify(lifecycleRegistry).onStart(eq(42), any(Supplier.class));
     }
 
-
-    @Override
-    DecoratedComponent<String, String> createComponent(Component.Identifier<String> componentIdentifier,
-                                                       String instance) {
-        return new DecoratedComponent<>(new InstantiatedComponentDefinition<>(componentIdentifier, instance),
-                                        (config, name, delegate) -> delegate + "test",
-                                        Collections.emptyList(),
-                                        Collections.emptyList());
-    }
-
-    @Override
-    DecoratedComponent<String, String> createComponent(Component.Identifier<String> componentIdentifier,
-                                                       ComponentFactory<String> factory) {
-        return new DecoratedComponent<>(new LazyInitializedComponentDefinition<>(componentIdentifier, factory),
-                                        (config, name, delegate) -> delegate + "test",
-                                        Collections.emptyList(),
-                                        Collections.emptyList());
-    }
-
-    @Override
-    void registerStartHandler(DecoratedComponent<String, String> testSubject, int phase,
-                              BiConsumer<NewConfiguration, String> handler) {
-        testSubject.onStart(phase, handler);
-    }
-
-    @Override
-    void registerShutdownHandler(DecoratedComponent<String, String> testSubject, int phase,
-                                 BiConsumer<NewConfiguration, String> handler) {
-        testSubject.onShutdown(phase, handler);
-    }
-
     @Test
+    @Override
     void describeToDescribesBuilderWhenInstantiated() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
 
-        Component<String> testSubject = createComponent(identifier, TEST_COMPONENT);
+        Component<String> testSubject = createComponent(identifier, factory);
         testSubject.resolve(configuration);
 
         testSubject.describeTo(testDescriptor);
@@ -148,6 +158,7 @@ public class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponen
     }
 
     @Test
+    @Override
     void describeToDescribesInstanceWhenInstantiated() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
 
@@ -164,6 +175,7 @@ public class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponen
     }
 
     @Test
+    @Override
     void describeToDescribesInstanceWhenInstantiatedAndInitialized() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
 

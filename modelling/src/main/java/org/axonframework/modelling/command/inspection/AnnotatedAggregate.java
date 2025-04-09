@@ -445,7 +445,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                                        .orElse(true))
                        .findFirst()
                        .orElseThrow(() -> new AggregateEntityNotFoundException(
-                               "Aggregate cannot handle command [" + command.getCommandName()
+                               "Aggregate cannot handle command [" + command.type()
                                        + "], as there is no entity instance within the aggregate to forward it to."
                        ))
                        .handleSync(command, aggregateRoot);

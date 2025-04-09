@@ -22,50 +22,55 @@ import org.axonframework.common.infra.ComponentDescriptor;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Implementation of a {@link Component} that decorates another component's instance.
  * <p>
  * It is not recommended to use this class directly. Instead, use
  * {@link ComponentRegistry#registerDecorator(DecoratorDefinition)} using the {@link DecoratorDefinition}.
  *
- * @param <C> The declared type of the component
- * @param <D> The implementation type of the decorated component
+ * @param <C> The declared type of the component.
+ * @param <D> The implementation type of the decorated component.
+ * @author Allard Buijze
  * @see DecoratorDefinition
+ * @since 5.0.0
  */
-public class DecoratedComponent<C, D extends C> extends AbstractComponent<C, D> {
+class DecoratedComponent<C, D extends C> extends AbstractComponent<C, D> {
 
     private final Component<C> delegate;
     private final ComponentDecorator<C, D> decorator;
 
-    private final AtomicReference<D> instance = new AtomicReference<>();
+    private final AtomicReference<D> instanceReference = new AtomicReference<>();
 
     /**
-     * Initializes a Component that decorates the given {@code delegate} using given {@code decorator} function. The
-     * given {@code startHandlers} and {@code shutdownHandlers} are registered with the lifecycle registry upon
-     * initialization of the component
+     * Initializes a component that decorates the given {@code delegate} using given {@code decorator} function.
+     * <p>
+     * The given {@code startHandlers} and {@code shutdownHandlers} are registered with the lifecycle registry upon
+     * initialization of the component.
      *
-     * @param delegate         The component to decorate
-     * @param decorator        The decoration function creating an instance of the decorated component
-     * @param startHandlers    A list of handlers to invoke during application startup
-     * @param shutdownHandlers A list of handlers to invoke during application shutdown
+     * @param delegate         The component to decorate.
+     * @param decorator        The decoration function creating an instance of the decorated component.
+     * @param startHandlers    A list of handlers to invoke during application startup.
+     * @param shutdownHandlers A list of handlers to invoke during application shutdown.
      */
-    public DecoratedComponent(@Nonnull Component<C> delegate,
-                              @Nonnull ComponentDecorator<C, D> decorator,
-                              @Nonnull List<AbstractComponent.HandlerRegistration<D>> startHandlers,
-                              @Nonnull List<AbstractComponent.HandlerRegistration<D>> shutdownHandlers) {
-        super(delegate.identifier(), startHandlers, shutdownHandlers);
+    DecoratedComponent(@Nonnull Component<C> delegate,
+                       @Nonnull ComponentDecorator<C, D> decorator,
+                       @Nonnull List<AbstractComponent.HandlerRegistration<D>> startHandlers,
+                       @Nonnull List<AbstractComponent.HandlerRegistration<D>> shutdownHandlers) {
+        super(requireNonNull(delegate, "The delegate cannot be null.").identifier(), startHandlers, shutdownHandlers);
         this.delegate = delegate;
         this.decorator = decorator;
     }
 
     @Override
     public D doResolve(@Nonnull NewConfiguration configuration) {
-        D existingInstance = instance.get();
+        D existingInstance = instanceReference.get();
         if (existingInstance != null) {
             return existingInstance;
         }
         synchronized (this) {
-            return instance.updateAndGet(i -> i != null ? i :
+            return instanceReference.updateAndGet(instance -> instance != null ? instance :
                     decorator.decorate(configuration,
                                        identifier().name(),
                                        delegate.resolve(configuration))
@@ -75,22 +80,22 @@ public class DecoratedComponent<C, D extends C> extends AbstractComponent<C, D> 
     }
 
     @Override
+    public boolean isInstantiated() {
+        return instanceReference.get() != null;
+    }
+
+    @Override
     public void initLifecycle(@Nonnull NewConfiguration configuration, @Nonnull LifecycleRegistry lifecycleRegistry) {
         delegate.initLifecycle(configuration, lifecycleRegistry);
         super.initLifecycle(configuration, lifecycleRegistry);
     }
 
     @Override
-    public boolean isInstantiated() {
-        return instance.get() != null;
-    }
-
-    @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         super.describeTo(descriptor);
-        D preCreated = instance.get();
-        if (preCreated != null) {
-            descriptor.describeProperty("instance", preCreated);
+        D instance = instanceReference.get();
+        if (instance != null) {
+            descriptor.describeProperty("instance", instance);
         } else {
             descriptor.describeProperty("decorator", decorator);
             descriptor.describeWrapperOf(delegate);

@@ -21,8 +21,8 @@ import jakarta.annotation.Nonnull;
 import java.util.function.Consumer;
 
 /**
- * An ApplicationConfigurer combines the component registry with the notion of lifecycle. When started, lifecycle handlers
- * are invoked in the order specified during registration.
+ * An {@code ApplicationConfigurer} combines the component registry with the notion of lifecycle. When started,
+ * lifecycle handlers are invoked in the order specified during registration.
  * <p>
  * Building it exposes the {@link AxonConfiguration}, which can be {@link AxonConfiguration#start() started} and
  * {@link AxonConfiguration#shutdown() stopped}. Furthermore, there's a convenience {@link #start()} operation on this
@@ -36,19 +36,19 @@ public interface ApplicationConfigurer {
 
     /**
      * Executes the given {@code componentRegistrar} on the component registry associated with this
-     * ApplicationConfigurer.
+     * {@code ApplicationConfigurer}.
      *
-     * @param componentRegistrar the actions to take on the component registry
-     * @return this ApplicationConfigurer for a fluent API
+     * @param componentRegistrar The actions to take on the component registry.
+     * @return This {@code ApplicationConfigurer} for a fluent API.
      */
     ApplicationConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar);
 
     /**
      * Executes the given {@code lifecycleRegistrar} on the lifecycle registry associated with this
-     * ApplicationConfigurer.
+     * {@code ApplicationConfigurer}.
      *
-     * @param lifecycleRegistrar the actions to take on the lifecycle registry
-     * @return this ApplicationConfigurer for a fluent API
+     * @param lifecycleRegistrar The actions to take on the lifecycle registry.
+     * @return This {@code ApplicationConfigurer} for a fluent API.
      */
     ApplicationConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar);
 
@@ -56,7 +56,7 @@ public interface ApplicationConfigurer {
      * Returns the completely initialized {@link NewConfiguration} instance of type {@code C} built using this
      * {@code Configurer} implementation.
      * <p>
-     * It is not recommended to change any configuration on {@code this AxonApplicationConfigurer} once this method is
+     * It is not recommended to change any configuration on {@code this ApplicationConfigurer} once this method is
      * called.
      *
      * @return The fully initialized {@link NewConfiguration} instance of type {@code C}.
@@ -67,7 +67,7 @@ public interface ApplicationConfigurer {
      * {@link #build() Builds the configuration} and starts it immediately, by invoking
      * {@link AxonConfiguration#start()}.
      * <p>
-     * It is not recommended to change any configuration on {@code this AxonApplicationConfigurer} once this method is
+     * It is not recommended to change any configuration on {@code this ApplicationConfigurer} once this method is
      * called.
      *
      * @return The fully initialized and started {@link AxonConfiguration}.

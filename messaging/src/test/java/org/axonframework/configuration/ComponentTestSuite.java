@@ -54,12 +54,44 @@ abstract class ComponentTestSuite<D extends Component<String>> {
         lifecycleRegistry = mock();
     }
 
-    abstract D createComponent(Component.Identifier<String> componentIdentifier, String instance);
+    /**
+     * Creates a component for the given {@code id} and containing the given {@code instance} for testing.
+     *
+     * @param id       The identifier of the component to create for the given {@code instance}.
+     * @param instance The already instantiated instance to contain in a component.
+     * @return The {@link Component} of type {@code D} for testing.
+     */
+    abstract D createComponent(Component.Identifier<String> id,
+                               @SuppressWarnings("SameParameterValue") String instance);
 
-    abstract D createComponent(Component.Identifier<String> componentIdentifier, ComponentFactory<String> factory);
+    /**
+     * Creates a component for the given {@code id} and with the given {@code factory} to construct the component's
+     * instance for testing.
+     *
+     * @param id      The identifier of the component to create for the given {@code instance}.
+     * @param factory The factory constructing the component's instance.
+     * @return The {@link Component} of type {@code D} for testing.
+     */
+    abstract D createComponent(Component.Identifier<String> id, ComponentFactory<String> factory);
 
+    /**
+     * Registers a start-up {@code handler} with the given {@code testSubject} in the specified {@code phase}.
+     *
+     * @param testSubject The test subject to register a start-up {@code handler} for.
+     * @param phase       The phase to register the start-up {@code handler} in.
+     * @param handler     The start-up handler to trigger in the specified {@code phase} for the given
+     *                    {@code testSubject}.
+     */
     abstract void registerStartHandler(D testSubject, int phase, BiConsumer<NewConfiguration, String> handler);
 
+    /**
+     * Registers a shutdown {@code handler} with the given {@code testSubject} in the specified {@code phase}.
+     *
+     * @param testSubject The test subject to register a shutdown {@code handler} for.
+     * @param phase       The phase to register the shutdown {@code handler} in.
+     * @param handler     The shutdown handler to trigger in the specified {@code phase} for the given
+     *                    {@code testSubject}.
+     */
     abstract void registerShutdownHandler(D testSubject, int phase, BiConsumer<NewConfiguration, String> handler);
 
     @Test
@@ -143,9 +175,9 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     }
 
     @Test
-    void identifierConstructorThrowsNullPointerExceptionForNullName() {
+    void identifierConstructorThrowsIllegalArgumentExceptionForNullName() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new Identifier<>(String.class, null));
+        assertThrows(IllegalArgumentException.class, () -> new Identifier<>(String.class, null));
     }
 
     @Test
@@ -156,25 +188,29 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     @Test
     void initializationDoesNothingWhenAlreadyInitialized() {
         D testComponent = createComponent(identifier, factory);
-        registerStartHandler(testComponent, 10, (cfg, cmp) -> {});
+        registerStartHandler(testComponent, 10, (cfg, cmp) -> {
+        });
 
         testComponent.initLifecycle(configuration, lifecycleRegistry);
+        //noinspection unchecked
         verify(lifecycleRegistry).onStart(eq(10), any(Supplier.class));
         verifyNoMoreInteractions(lifecycleRegistry);
         reset(lifecycleRegistry);
 
         testComponent.initLifecycle(configuration, lifecycleRegistry);
         verifyNoInteractions(lifecycleRegistry);
-
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     void initializationRegistersStartupAndShutdownHandlers() {
         D testComponent = createComponent(identifier, TEST_COMPONENT);
+        //noinspection unchecked
         registerStartHandler(testComponent, 1, mock());
+        //noinspection unchecked
         registerStartHandler(testComponent, 10, mock());
+        //noinspection unchecked
         registerShutdownHandler(testComponent, 20, mock());
+        //noinspection unchecked
         registerShutdownHandler(testComponent, 42, mock());
 
         testComponent.initLifecycle(configuration, new LifecycleRegistry() {
@@ -218,7 +254,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     void describeToDescribesBuilderWhenInstantiated() {
         ComponentDescriptor testDescriptor = mock(ComponentDescriptor.class);
 
-        Component<String> testSubject = createComponent(identifier, TEST_COMPONENT);
+        Component<String> testSubject = createComponent(identifier, factory);
         testSubject.resolve(configuration);
 
         testSubject.describeTo(testDescriptor);

@@ -119,7 +119,7 @@ class SimpleQueryBusTest {
             throw new RuntimeException("Faking");
         });
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "test", "hello", instanceOf(String.class)
+                new MessageType("test"), "hello", instanceOf(String.class)
         );
 
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
@@ -156,7 +156,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe("test", String.class, handler);
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "test", "request", singleStringResponse
+                new MessageType("test"), "request", singleStringResponse
         );
         String result = testSubject.query(testQuery).thenApply(QueryResponseMessage::getPayload).get();
 
@@ -191,7 +191,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
 
         QueryMessage<String, String> testQuery =
-                new GenericQueryMessage<>(new MessageType("query"), "hello", singleStringResponse)
+                new GenericQueryMessage<>(new MessageType(String.class), "hello", singleStringResponse)
                         .andMetaData(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
 
@@ -207,7 +207,7 @@ class SimpleQueryBusTest {
     void nullResponseProperlyReturned() throws ExecutionException, InterruptedException {
         testSubject.subscribe(String.class.getName(), String.class, p -> null);
         QueryMessage<String, String> testQuery =
-                new GenericQueryMessage<>(new MessageType("query"), "hello", singleStringResponse)
+                new GenericQueryMessage<>(new MessageType(String.class), "hello", singleStringResponse)
                         .andMetaData(Collections.singletonMap(TRACE_ID, "fakeTraceId"));
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
 
@@ -234,7 +234,7 @@ class SimpleQueryBusTest {
                               q -> asList(q.getPayload() + "1234", q.getPayload() + "567"));
 
         QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "hello", multipleInstancesOf(String.class)
+                new MessageType(String.class), "hello", multipleInstancesOf(String.class)
         );
         CompletableFuture<List<String>> result = testSubject.query(testQuery)
                                                             .thenApply(QueryResponseMessage::getPayload);
@@ -264,7 +264,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "hello", singleStringResponse
+                new MessageType(String.class), "hello", singleStringResponse
         );
         CompletableFuture<String> result = testSubject.query(testQuery)
                                                       .thenApply(QueryResponseMessage::getPayload);
@@ -277,7 +277,7 @@ class SimpleQueryBusTest {
     @Test
     void querySingleIsTraced() throws ExecutionException, InterruptedException {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "hello", singleStringResponse
+                new MessageType(String.class), "hello", singleStringResponse
         );
         testSubject.subscribe(String.class.getName(), String.class, (q) -> {
             spanFactory.verifySpanActive("QueryBus.query", testQuery);
@@ -292,7 +292,7 @@ class SimpleQueryBusTest {
     @Test
     void ScatterGatherIsTraced() {
         QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "hello", multipleStringResponse
+                new MessageType(String.class), "hello", multipleStringResponse
         );
 
         testSubject.subscribe(String.class.getName(), String.class, (q) -> {
@@ -320,7 +320,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
 
         QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "hello", multipleStringResponse
+                new MessageType(String.class), "hello", multipleStringResponse
         );
         CompletableFuture<List<String>> result = testSubject.query(testQuery)
                                                             .thenApply(QueryResponseMessage::getPayload);
@@ -338,7 +338,7 @@ class SimpleQueryBusTest {
         ));
 
         QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "hello", multipleStringResponse
+                new MessageType(String.class), "hello", multipleStringResponse
         );
         CompletableFuture<List<String>> result = testSubject.query(testQuery)
                                                             .thenApply(QueryResponseMessage::getPayload);
@@ -365,7 +365,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe("query", String.class, passingHandler);
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "query", "query", singleStringResponse
+                new MessageType("query"), "query", singleStringResponse
         );
         CompletableFuture<String> result = testSubject.query(testQuery)
                                                       .thenApply(QueryResponseMessage::getPayload);
@@ -382,7 +382,7 @@ class SimpleQueryBusTest {
         });
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "query", "query", singleStringResponse
+                new MessageType(String.class), "query", singleStringResponse
         );
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
 
@@ -396,12 +396,11 @@ class SimpleQueryBusTest {
     @Test
     void queryReturnsResponseMessageFromHandlerAsIs() throws Exception {
         GenericQueryResponseMessage<String> soleResult =
-                new GenericQueryResponseMessage<>(new MessageType("query"), "soleResult");
+                new GenericQueryResponseMessage<>(new MessageType(String.class), "soleResult");
         testSubject.subscribe("query", String.class, message -> soleResult);
 
         QueryMessage<String, String> testQuery =
                 new GenericQueryMessage<>(new MessageType("query"),
-                                          "query",
                                           "query",
                                           singleStringResponse);
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
@@ -413,7 +412,7 @@ class SimpleQueryBusTest {
     @Test
     void queryWithHandlersResultsInException() throws Exception {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "query", "query", singleStringResponse
+                new MessageType("query"), "query", singleStringResponse
         );
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
 
@@ -432,7 +431,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe("query", String.class, failingHandler);
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "query", "query", singleStringResponse
+                new MessageType("query"), "query", singleStringResponse
         );
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
 
@@ -457,7 +456,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "hello", singleStringResponse
+                new MessageType(String.class), "hello", singleStringResponse
         );
         CompletableFuture<String> result = testSubject.query(testQuery)
                                                       .thenApply(QueryResponseMessage::getPayload);
@@ -471,7 +470,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + " is not here!").cancel();
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "hello", singleStringResponse
+                new MessageType(String.class), "hello", singleStringResponse
         );
         CompletableFuture<String> result = testSubject.query(testQuery)
                                                       .thenApply(QueryResponseMessage::getPayload);
@@ -487,7 +486,7 @@ class SimpleQueryBusTest {
         });
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "hello", singleStringResponse
+                new MessageType(String.class), "hello", singleStringResponse
         );
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
 
@@ -501,7 +500,7 @@ class SimpleQueryBusTest {
     @Test
     void queryUnknown() throws Exception {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "hello", singleStringResponse
+                new MessageType(String.class), "hello", singleStringResponse
         );
         CompletableFuture<?> result = testSubject.query(testQuery);
 
@@ -520,7 +519,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + " is not here!").cancel();
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "hello", singleStringResponse
+                new MessageType(String.class), "hello", singleStringResponse
         );
         CompletableFuture<?> result = testSubject.query(testQuery);
 
@@ -543,7 +542,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe(String.class.getName(), String.class, q -> q.getPayload() + "90");
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "Hello, World", singleStringResponse
+                new MessageType(String.class), "Hello, World", singleStringResponse
         );
         Set<QueryResponseMessage<String>> results = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS)
                                                                .collect(toSet());
@@ -571,7 +570,7 @@ class SimpleQueryBusTest {
                               q -> new String[]{q.getPayload() + "9", q.getPayload() + "0"});
 
         QueryMessage<String, List<String>> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "Hello, World", multipleInstancesOf(String.class)
+                new MessageType(String.class), "Hello, World", multipleInstancesOf(String.class)
         );
         Set<QueryResponseMessage<List<String>>> results =
                 testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS)
@@ -608,7 +607,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "567");
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "Hello, World", singleStringResponse
+                new MessageType(String.class), "Hello, World", singleStringResponse
         );
         Set<Object> results = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS).collect(toSet());
 
@@ -637,7 +636,7 @@ class SimpleQueryBusTest {
         });
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "Hello, World", singleStringResponse
+                new MessageType(String.class), "Hello, World", singleStringResponse
         );
         Set<Object> results = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS).collect(toSet());
 
@@ -666,7 +665,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "567");
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "Hello, World", singleStringResponse
+                new MessageType(String.class), "Hello, World", singleStringResponse
         );
         Optional<QueryResponseMessage<String>> firstResult =
                 testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS).findFirst();
@@ -693,7 +692,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "567");
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "Hello, World", singleStringResponse
+                new MessageType(String.class), "Hello, World", singleStringResponse
         );
         List<String> results = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS)
                                           .map(Message::getPayload)
@@ -708,7 +707,7 @@ class SimpleQueryBusTest {
     @Test
     void scatterGatherReturnsEmptyStreamWhenNoHandlersAvailable() {
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "Hello, World", singleStringResponse
+                new MessageType(String.class), "Hello, World", singleStringResponse
         );
         Set<Object> allResults = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS).collect(toSet());
 
@@ -725,7 +724,7 @@ class SimpleQueryBusTest {
         });
 
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "Hello, World", singleStringResponse
+                new MessageType(String.class), "Hello, World", singleStringResponse
         );
         Set<Object> results = testSubject.scatterGather(testQuery, 0, TimeUnit.SECONDS).collect(toSet());
 
@@ -741,7 +740,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe(String.class.getName(), String.class, (q) -> q.getPayload() + "1234");
         testSubject.registerHandlerInterceptor(new CorrelationDataInterceptor<>(new MessageOriginProvider()));
         QueryMessage<String, String> testQuery = new GenericQueryMessage<>(
-                new MessageType("query"), "Hello, World", singleStringResponse
+                new MessageType(String.class), "Hello, World", singleStringResponse
         );
         QueryResponseMessage<String> queryResponseMessage = testSubject.query(testQuery).get();
         assertEquals(testQuery.getIdentifier(), queryResponseMessage.getMetaData().get("traceId"));
@@ -756,7 +755,7 @@ class SimpleQueryBusTest {
         });
 
         SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                new MessageType("query"), "test", instanceOf(String.class), instanceOf(String.class)
+                new MessageType(String.class), "test", instanceOf(String.class), instanceOf(String.class)
         );
         SubscriptionQueryResult<QueryResponseMessage<String>, SubscriptionQueryUpdateMessage<String>> result =
                 testSubject.subscriptionQuery(testQuery);
@@ -788,14 +787,14 @@ class SimpleQueryBusTest {
                                             thousand.countDown();
                                         }
                                         value.set(next);
-                                        updateEmitter.emit(query -> "queryName".equals(query.getQueryName()), next);
+                                        updateEmitter.emit(query -> "queryName".equals(query.type().name()), next);
                                     })
-                                    .doOnComplete(() -> updateEmitter.complete(query -> "queryName".equals(query.getQueryName())))
+                                    .doOnComplete(() -> updateEmitter.complete(query -> "queryName".equals(query.type().name())))
                                     .subscribe();
 
 
         SubscriptionQueryMessage<String, Long, Long> testQuery = new GenericSubscriptionQueryMessage<>(
-                new MessageType("query"), "queryName", "test",
+                new MessageType("queryName"), "test",
                 instanceOf(Long.class), instanceOf(Long.class)
         );
         SubscriptionQueryResult<QueryResponseMessage<Long>, SubscriptionQueryUpdateMessage<Long>> result =
@@ -821,14 +820,14 @@ class SimpleQueryBusTest {
         Disposable disposable = Flux.interval(Duration.ofMillis(0), Duration.ofMillis(20))
                                     .doOnNext(next -> {
                                         updatedLatch.countDown();
-                                        updateEmitter.emit(query -> "queryName".equals(query.getQueryName()), next);
+                                        updateEmitter.emit(query -> "queryName".equals(query.type().name()), next);
                                     })
-                                    .doOnComplete(() -> updateEmitter.complete(query -> "queryName".equals(query.getQueryName())))
+                                    .doOnComplete(() -> updateEmitter.complete(query -> "queryName".equals(query.type().name())))
                                     .subscribe();
 
 
         SubscriptionQueryMessage<String, Long, Long> testQuery = new GenericSubscriptionQueryMessage<>(
-                new MessageType("query"), "queryName", "test",
+                new MessageType("queryName"), "test",
                 instanceOf(Long.class), instanceOf(Long.class)
         );
         try {
@@ -852,7 +851,7 @@ class SimpleQueryBusTest {
         });
 
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(
-                new GenericQueryMessage<>(new MessageType("query"), "test", instanceOf(String.class))
+                new GenericQueryMessage<>(new MessageType(String.class), "test", instanceOf(String.class))
         );
         assertFalse(result.thenApply(r -> false).exceptionally(MockException.class::isInstance).get(),
                     "Exception by handler should be reported in result, not on Mono");
@@ -867,7 +866,7 @@ class SimpleQueryBusTest {
                               (q) -> CompletableFuture.completedFuture(q.getPayload() + "1234"));
 
         QueryMessage<String, String> testQuery =
-                new GenericQueryMessage<>(new MessageType("query"), "hello", singleStringResponse);
+                new GenericQueryMessage<>(new MessageType(String.class), "hello", singleStringResponse);
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
 
         assertTrue(result.isDone(), "SimpleQueryBus should resolve CompletableFutures directly");
@@ -882,7 +881,7 @@ class SimpleQueryBusTest {
                               (q) -> CompletableFuture.completedFuture(q.getPayload() + "1234"));
 
         QueryMessage<String, String> testQuery =
-                new GenericQueryMessage<>(new MessageType("query"), "hello", singleStringResponse);
+                new GenericQueryMessage<>(new MessageType(String.class), "hello", singleStringResponse);
         CompletableFuture<QueryResponseMessage<String>> result = testSubject.query(testQuery);
 
         assertTrue(result.isDone(), "SimpleQueryBus should resolve CompletableFutures directly");
@@ -894,7 +893,7 @@ class SimpleQueryBusTest {
         testSubject.subscribe(String.class.getName(), String.class, q -> q.getPayload() + "1234");
 
         SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
-                new MessageType("query"), "test", instanceOf(String.class), instanceOf(String.class)
+                new MessageType(String.class), "test", instanceOf(String.class), instanceOf(String.class)
         );
 
         SubscriptionQueryResult<QueryResponseMessage<String>, SubscriptionQueryUpdateMessage<String>> result =

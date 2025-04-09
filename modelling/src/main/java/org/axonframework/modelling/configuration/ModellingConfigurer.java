@@ -92,16 +92,16 @@ public class ModellingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Delegates the given {@code configureTask} to the {@link MessagingConfigurer} this {@code ModellingConfigurer}
-     * delegates to.
+     * Delegates the given {@code configurerTask} to the {@link MessagingConfigurer} this {@code ModellingConfigurer}
+     * delegates.
      * <p>
      * Use this operation to invoke registration methods that only exist on the {@code MessagingConfigurer}.
      *
-     * @param configureTask Lambda consuming the delegate {@link MessagingConfigurer}.
+     * @param configurerTask Lambda consuming the delegate {@link MessagingConfigurer}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public ModellingConfigurer messaging(@Nonnull Consumer<MessagingConfigurer> configureTask) {
-        configureTask.accept(delegate);
+    public ModellingConfigurer messaging(@Nonnull Consumer<MessagingConfigurer> configurerTask) {
+        configurerTask.accept(delegate);
         return this;
     }
 

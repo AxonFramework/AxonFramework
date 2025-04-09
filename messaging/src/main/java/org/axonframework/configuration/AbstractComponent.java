@@ -20,17 +20,20 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Base implementation of a {@link Component} and
  * {@link org.axonframework.configuration.ComponentDefinition.ComponentCreator} to simplify definition and creation of
  * components through a {@link ComponentDefinition}.
  *
- * @param <C> The declared type of the Component
- * @param <A> The actual implementation type of the Component
+ * @param <C> The declared type of the component.
+ * @param <A> The actual implementation type of the component.
+ * @author Allard Buijze
+ * @since 3.0.0
  */
 public abstract class AbstractComponent<C, A extends C>
         implements ComponentDefinition.ComponentCreator<C>, Component<C> {
@@ -45,15 +48,15 @@ public abstract class AbstractComponent<C, A extends C>
      * {@code shutdownHandlers} lifecycle handlers.
      *
      * @param identifier       The identifier of the component.
-     * @param startHandlers    a list of preconfigured startup handlers for this component.
-     * @param shutdownHandlers a list of preconfigured shutdown handlers for this component.
+     * @param startHandlers    A list of preconfigured startup handlers for this component.
+     * @param shutdownHandlers A list of preconfigured shutdown handlers for this component.
      */
     protected AbstractComponent(@Nonnull Identifier<C> identifier,
                                 @Nonnull List<HandlerRegistration<A>> startHandlers,
                                 @Nonnull List<HandlerRegistration<A>> shutdownHandlers) {
         this(identifier);
-        this.startHandlers.addAll(startHandlers);
-        this.shutdownHandlers.addAll(shutdownHandlers);
+        this.startHandlers.addAll(requireNonNull(startHandlers, "The start handlers must not be null."));
+        this.shutdownHandlers.addAll(requireNonNull(shutdownHandlers, "The shutdown handlers must not be null."));
     }
 
     /**
@@ -62,7 +65,7 @@ public abstract class AbstractComponent<C, A extends C>
      * @param identifier The identifier of the component.
      */
     protected AbstractComponent(@Nonnull Identifier<C> identifier) {
-        this.identifier = Objects.requireNonNull(identifier, "identifier must not be null");
+        this.identifier = requireNonNull(identifier, "The identifier must not be null.");
     }
 
     @Override
@@ -72,24 +75,19 @@ public abstract class AbstractComponent<C, A extends C>
 
     @Override
     public ComponentDefinition<C> onStart(int phase, @Nonnull ComponentLifecycleHandler<C> handler) {
-        Objects.requireNonNull(handler, "handler must not be null");
-        this.startHandlers.add(new HandlerRegistration<>(phase, handler));
+        this.startHandlers.add(new HandlerRegistration<>(
+                phase, requireNonNull(handler, "The start handler must not be null.")
+        ));
         return this;
     }
 
     @Override
     public ComponentDefinition<C> onShutdown(int phase, @Nonnull ComponentLifecycleHandler<C> handler) {
-        Objects.requireNonNull(handler, "handler must not be null");
-        this.shutdownHandlers.add(new HandlerRegistration<>(phase, handler));
+        this.shutdownHandlers.add(new HandlerRegistration<>(
+                phase, requireNonNull(handler, "The shutdown handler must not be null.")
+        ));
         return this;
     }
-
-    @Override
-    public C resolve(@Nonnull NewConfiguration configuration) {
-        return doResolve(Objects.requireNonNull(configuration, "configuration must not be null"));
-    }
-
-    abstract A doResolve(@Nonnull NewConfiguration configuration);
 
     @Override
     public Identifier<C> identifier() {
@@ -97,21 +95,38 @@ public abstract class AbstractComponent<C, A extends C>
     }
 
     @Override
-    public void initLifecycle(@Nonnull NewConfiguration configuration, @Nonnull LifecycleRegistry lifecycleRegistry) {
-        Objects.requireNonNull(configuration, "configuration must not be null");
-        Objects.requireNonNull(lifecycleRegistry, "lifecycleRegistry must not be null");
-        if (!initialized.getAndSet(true)) {
-            startHandlers.forEach(startHandler ->
-                                          lifecycleRegistry.onStart(startHandler.phase,
-                                                                    () -> startHandler.handler.run(configuration,
-                                                                                                   doResolve(
-                                                                                                           configuration))));
+    public C resolve(@Nonnull NewConfiguration configuration) {
+        return doResolve(requireNonNull(configuration, "The configuration must not be null."));
+    }
 
-            shutdownHandlers.forEach(shutdownHandler ->
-                                             lifecycleRegistry.onShutdown(shutdownHandler.phase,
-                                                                          () -> shutdownHandler.handler.run(
-                                                                                  configuration,
-                                                                                  doResolve(configuration))));
+    /**
+     * Method invoked by {@link #resolve(NewConfiguration)}, allowing for customization per {@code AbstractComponent}
+     * implementation.
+     *
+     * @param configuration The configuration that declared this component.
+     * @return The resolved instance defined in this component.
+     */
+    abstract A doResolve(@Nonnull NewConfiguration configuration);
+
+    @Override
+    public void initLifecycle(@Nonnull NewConfiguration configuration,
+                              @Nonnull LifecycleRegistry lifecycleRegistry) {
+        requireNonNull(configuration, "The configuration must not be null.");
+        requireNonNull(lifecycleRegistry, "The lifecycle registry must not be null.");
+
+        if (!initialized.getAndSet(true)) {
+            startHandlers.forEach(
+                    startHandler -> lifecycleRegistry.onStart(
+                            startHandler.phase,
+                            () -> startHandler.handler.run(configuration, doResolve(configuration))
+                    )
+            );
+            shutdownHandlers.forEach(
+                    shutdownHandler -> lifecycleRegistry.onShutdown(
+                            shutdownHandler.phase,
+                            () -> shutdownHandler.handler.run(configuration, doResolve(configuration))
+                    )
+            );
         }
     }
 
@@ -131,8 +146,8 @@ public abstract class AbstractComponent<C, A extends C>
      * An entry holding the lifecycle {@code handler} and its corresponding {@code phase}.
      *
      * @param phase   The lifecycle phase to execute the handler in.
-     * @param handler The handler to execute
-     * @param <C>     The type of component
+     * @param handler The handler to execute.
+     * @param <C>     The type of component.
      */
     public record HandlerRegistration<C>(int phase, @Nonnull ComponentLifecycleHandler<C> handler) {
 
@@ -140,10 +155,10 @@ public abstract class AbstractComponent<C, A extends C>
          * Initializes an entry holding the lifecycle {@code handler} and its corresponding {@code phase}.
          *
          * @param phase   The lifecycle phase to execute the handler in.
-         * @param handler The handler to execute
+         * @param handler The handler to execute.
          */
         public HandlerRegistration {
-            Objects.requireNonNull(handler, "handler must not be null");
+            requireNonNull(handler, "The lifecycle handler must not be null.");
         }
     }
 }

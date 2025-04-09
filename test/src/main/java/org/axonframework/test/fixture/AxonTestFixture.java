@@ -29,6 +29,8 @@ import org.axonframework.test.matchers.IgnoreField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 /**
@@ -37,9 +39,9 @@ import java.util.function.UnaryOperator;
  * given-when-then style.
  *
  * @author Allard Buijze
- * @author Steven van Beelen
- * @author Mitchell Herrijgers
  * @author Mateusz Nowak
+ * @author Mitchell Herrijgers
+ * @author Steven van Beelen
  * @since 5.0.0
  */
 public class AxonTestFixture implements AxonTestPhase.Setup {
@@ -79,13 +81,12 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
      * @return A new fixture instance
      */
     public static AxonTestFixture with(@Nonnull ApplicationConfigurer configurer,
-                                           @Nonnull UnaryOperator<Customization> customization) {
+                                       @Nonnull UnaryOperator<Customization> customization) {
         Objects.requireNonNull(configurer, "Configurer may not be null");
         Objects.requireNonNull(customization, "Customization may not be null");
-        var configuration = configurer
-                .componentRegistry(cr -> cr
-                        .registerEnhancer(new MessagesRecordingConfigurationEnhancer()))
-                .start();
+        var configuration =
+                configurer.componentRegistry(cr -> cr.registerEnhancer(new MessagesRecordingConfigurationEnhancer()))
+                          .start();
         return new AxonTestFixture(configuration, customization);
     }
 
@@ -113,9 +114,17 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
 
         /**
          * Registers the given {@code fieldFilter}, which is used to define which Fields are used when comparing
-         * objects. The {@link org.axonframework.test.fixture.AxonTestPhase.Then.Event#events} and
-         * {@link org.axonframework.test.fixture.AxonTestPhase.Then.Command#resultMessage}, for example, use this
-         * filter.
+         * objects.
+         * <p>
+         * This filter is used by following methods:
+         * <ul>
+         *     <li>{@link AxonTestPhase.Then.Message#events}</li>
+         *     <li>{@link AxonTestPhase.Then.Message#commands}</li>
+         *     <li>{@link AxonTestPhase.Then.Command#resultMessagePayload}</li>
+         * </ul>
+         * <p>
+         * If you use custom assertions with methods like {@link AxonTestPhase.Then.Event#eventsSatisfy} or
+         * {@link AxonTestPhase.Then.Event#eventsMatch}  this filter is not taken into account.
          * <p/>
          * When multiple filters are registered, a Field must be accepted by all registered filters in order to be
          * accepted.
@@ -133,6 +142,16 @@ public class AxonTestFixture implements AxonTestPhase.Setup {
         /**
          * Indicates that a field with given {@code fieldName}, which is declared in given {@code declaringClass} is
          * ignored when performing deep equality checks.
+         * <p>
+         * This filter is used by following methods:
+         * <ul>
+         *     <li>{@link AxonTestPhase.Then.Message#events}</li>
+         *     <li>{@link AxonTestPhase.Then.Message#commands}</li>
+         *     <li>{@link AxonTestPhase.Then.Command#resultMessagePayload}</li>
+         * </ul>
+         * <p>
+         * If you use custom assertions with methods like {@link AxonTestPhase.Then.Event#eventsSatisfy} or
+         * {@link AxonTestPhase.Then.Event#eventsMatch}  this filter is not taken into account.
          *
          * @param declaringClass The class declaring the field.
          * @param fieldName      The name of the field.

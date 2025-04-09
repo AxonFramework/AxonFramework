@@ -142,6 +142,26 @@ class AnnotationBasedEventCriteriaResolverTest {
             );
         }
 
+
+        @EventSourcedEntity
+        class EntityWithPrivateEventCriteriaBuilder {
+
+            @EventCriteriaBuilder
+            private static EventCriteria buildCriteria(String id) {
+                return EventCriteria.match()
+                        .eventsOfAnyType()
+                        .withTags("aggregateIdentifier", id);
+            }
+        }
+
+        @Test
+        void testEventCriteriaBuilderWithPrivateBuilderWorks() {
+            var resolver = new AnnotationBasedEventCriteriaResolver(EntityWithPrivateEventCriteriaBuilder.class);
+            var criteria = resolver.resolve("id");
+            assertEquals(EventCriteria.match().eventsOfAnyType().withTags("aggregateIdentifier", "id"), criteria);
+        }
+
+
         @EventSourcedEntity
         class EntityWithVoidReturnValue {
 

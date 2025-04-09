@@ -29,7 +29,7 @@ import static java.util.Objects.requireNonNull;
 import static org.axonframework.messaging.configuration.reflection.ParameterResolverFactoryUtils.registerToComponentRegistry;
 
 /**
- * The messaging {@link ComponentRegistry} of Axon Framework's configuration API.
+ * The messaging {@link ApplicationConfigurer} of Axon Framework's configuration API.
  * <p>
  * Provides register operations for {@link #registerCommandBus(ComponentFactory) command},
  * {@link #registerEventSink(ComponentFactory) event}, and {@link #registerQueryBus(ComponentFactory) query}
@@ -67,21 +67,25 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     /**
      * Constructs a {@code MessagingConfigurer} based on the given {@code delegate}.
      *
-     * @param applicationConfigurer The delegate {@code ApplicationConfigurer} the {@code MessagingConfigurer} is based on.
+     * @param applicationConfigurer The delegate {@code ApplicationConfigurer} the {@code MessagingConfigurer} is based
+     *                              on.
      */
     private MessagingConfigurer(@Nonnull ApplicationConfigurer applicationConfigurer) {
-        this.applicationConfigurer = applicationConfigurer;
+        this.applicationConfigurer =
+                requireNonNull(applicationConfigurer, "The Application Configurer cannot be null.");
     }
 
     /**
-     * Creates a MessagingConfigurer that enhances an existing ApplicationConfigurer. This method is useful when applying
-     * multiple specialized Configurers to configure a single application.
-     * @param axonApplication the ApplicationConfigurer to enhance with configuration of Messaging components
+     * Creates a MessagingConfigurer that enhances an existing {@code ApplicationConfigurer}. This method is useful when
+     * applying multiple specialized Configurers to configure a single application.
+     *
+     * @param applicationConfigurer The {@code ApplicationConfigurer} to enhance with configuration of messaging
+     *                              components.
      * @return The current instance of the {@code Configurer} for a fluent API.
      * @see #create()
      */
-    public static MessagingConfigurer enhance(@Nonnull ApplicationConfigurer axonApplication) {
-        return new MessagingConfigurer(axonApplication)
+    public static MessagingConfigurer enhance(@Nonnull ApplicationConfigurer applicationConfigurer) {
+        return new MessagingConfigurer(applicationConfigurer)
                 .componentRegistry(cr -> cr
                         .registerEnhancer(new MessagingConfigurationDefaults())
                 );
@@ -175,19 +179,25 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     public MessagingConfigurer registerQueryUpdateEmitter(
             @Nonnull ComponentFactory<QueryUpdateEmitter> queryUpdateEmitterFactory
     ) {
-        return componentRegistry(cr -> cr.registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterFactory));
+        applicationConfigurer.componentRegistry(
+                cr -> cr.registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterFactory)
+        );
+        return this;
     }
 
     @Override
-    public MessagingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> configureTask) {
-        applicationConfigurer.componentRegistry(requireNonNull(configureTask, "The configure task must no be null."));
+    public MessagingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+        applicationConfigurer.componentRegistry(
+                requireNonNull(componentRegistrar, "The configure task must no be null.")
+        );
         return this;
     }
 
     @Override
     public MessagingConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
-        applicationConfigurer.lifecycleRegistry(requireNonNull(lifecycleRegistrar,
-                                                               "The lifecycle registrar must not be null."));
+        applicationConfigurer.lifecycleRegistry(
+                requireNonNull(lifecycleRegistrar, "The lifecycle registrar must not be null.")
+        );
         return this;
     }
 
