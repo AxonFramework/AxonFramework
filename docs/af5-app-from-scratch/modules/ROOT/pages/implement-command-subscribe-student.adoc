@@ -526,7 +526,8 @@ But in this case you load more than needed, and it's more possible to clash with
 == Summing up
 
 Let's summarize what we have done so far.
-You've implemented the whole `SubscribeStudent` command handler using the DCB concept in practice. It was easier than you expected, right?
+We've implemented the whole `SubscribeStudent` command handler using the DCB concept in practice.
+It was easier than you expected, right?
 If you're not sure if you followed the tutorial correctly, you can always check the code in the repository. The command handler code is here link:https://github.com/AxonIQ/university-demo/blob/master/src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentCommandHandler.java[SubscribeStudentCommandHandler].
 If you prefer to use different style (with multiple state classes - like `Course` and `Student` instead of just one) you may also compare the solution we have done with the code in the package link:https://github.com/AxonIQ/university-demo/tree/master/src/main/java/io/axoniq/demo/university/faculty/write/subscribestudentmulti[subscribestudentmulti].
 
