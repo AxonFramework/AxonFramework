@@ -200,8 +200,6 @@ Let's make it right away!
 ----
 package io.axoniq.demo.university.faculty.write.subscribestudent;
 
-import java.util.UUID;
-
 class SubscribeStudentCommandHandler {
 
     private static final int MAX_COURSES_PER_STUDENT = 3; // <1>
@@ -244,15 +242,19 @@ class SubscribeStudentCommandHandler {
 }
 ----
 
-<1> For the example simplicity we hardcoded the maximum number of courses per student.
-Each student can subscribe up to 3 courses in the same time.
+<1> For the sample simplicity, we hardcoded the maximum number of courses per student.
+Each student can subscribe up to 3 courses at the same time.
 <2> We use `@InjectEntity` to inject the state object.
 <3> This is your domain model invocation.
 You may keep it in the command handler as on the example or make the function unaware of the infrastructure like Axon Framework.
-This functional resembles the `Decider pattern.
-<4> As before we translate events (which are a result of our domain function) to messages to be able to publish them.
+This functional resembles the `Decider` pattern.
+<4> As before, we translate events (which are a result of our domain function) to messages to be able to publish them.
 <5> We use `EventSink` to publish events.
-<6> Before we defined `tagKey` in `@EventSourcedEntity` annotation, now we cannot do that, because we require events about subscriptions for student and the course, so we have multiple business concepts related to business process. In a few sections you will see how to do that with the `EventCriteria` API.
+<6> Before we defined `tagKey` in `@EventSourcedEntity` annotation, now we cannot do that, because we require events about every subscription of a student and every subscription to the course, so we have multiple business concepts related to a business process.
+In a few paragraphs you will see how to do that with the `EventCriteria` API.
+
+
+//----
 
 We always need one identifier to load the state, because the `@InjectEntity` annotation needs to know how to identify the entity to load.
 In this case it's more difficult, because the `SubscribeStudent` business process is identifier by the command type and also the `courseId` and `studentId`.
