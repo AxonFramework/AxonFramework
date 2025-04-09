@@ -576,7 +576,7 @@ Now we need to register the configuration in the `UniversityAxonApplication` cla
 ----
 public class UniversityAxonApplication {
 
-    public static ApplicationConfigurer<?> configurer() {
+    public static ApplicationConfigurer configurer() {
         var configurer = EventSourcingConfigurer.create();
         configurer = CreateCourseConfiguration.configure(configurer);
         configurer = SubscribeStudentConfiguration.configure(configurer); // <1>

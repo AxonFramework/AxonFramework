@@ -36,7 +36,7 @@ Following our Vertical Slice Architecture, we'll place each message in its appro
 package io.axoniq.demo.university.faculty.write.createcourse;
 
 import io.axoniq.demo.university.faculty.write.CourseId;
-import org.axonframework.modelling.command.annotation.TargetEntityId;
+import org.axonframework.modelling.annotation.TargetEntityId;
 
 public record CreateCourse(
     CourseId courseId,
@@ -212,7 +212,7 @@ package io.axoniq.demo.university.faculty.write.createcourse;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.annotation.InjectEntity;
+import org.axonframework.modelling.annotation.InjectEntity;
 
 class CreateCourseCommandHandler {
 
@@ -283,7 +283,7 @@ To do that, let's introduce changes in our main `UniversityAxonApplication` clas
 ----
 public class UniversityAxonApplication {
 
-    public static ApplicationConfigurer<?> configurer() {
+    public static ApplicationConfigurer configurer() {
         var configurer = EventSourcingConfigurer.create();
         configurer = CreateCourseConfiguration.configure(configurer);
         return configurer;
@@ -456,7 +456,7 @@ In the example below, we're doing essentially what the Test Fixture does for us 
 ----
 public class UniversityAxonApplication {
 
-    public static ApplicationConfigurer<?> configurer() {
+    public static ApplicationConfigurer configurer() {
         var configurer = EventSourcingConfigurer.create();
         configurer = CreateCourseConfiguration.configure(configurer);
         return configurer;

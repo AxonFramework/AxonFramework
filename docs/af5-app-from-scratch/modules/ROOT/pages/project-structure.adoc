@@ -222,7 +222,7 @@ In Milestone 1, only the in-memory implementation of the Event Store is supporte
 ----
 public class UniversityAxonApplication {
 
-    public static ApplicationConfigurer<?> configurer() {
+    public static ApplicationConfigurer configurer() {
         return EventSourcingConfigurer.create();
     }
 
