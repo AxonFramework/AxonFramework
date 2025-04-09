@@ -33,7 +33,7 @@ public class UniversityAxonApplication {
         logger.info("Application started with following configuration: \n" + componentDescriptor.describe());
     }
 
-    public ApplicationConfigurer<?> configurer() {
+    public ApplicationConfigurer configurer() {
         var configurer = EventSourcingConfigurer.create();
         configurer = FacultyModuleConfiguration.configure(configurer);
         return configurer;
