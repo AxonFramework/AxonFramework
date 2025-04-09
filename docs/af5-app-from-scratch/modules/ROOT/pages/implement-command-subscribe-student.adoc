@@ -255,8 +255,8 @@ In a few paragraphs you will see how to do that with the `EventCriteria` API.
 
 
 We always need single, unique identifier to load the state, because the `@InjectEntity` annotation needs to know how to identify the entity to load.
-In this case it's more difficult, because the `SubscribeStudent` business process is identified by the command type and also the `courseId` and `studentId`.
-When you subscribe to the course to valid business rules you need to be aware of all the subscriptions for the given course and all subscriptions for the given student.
+In this case it's more challenging, because the `SubscribeStudent` business process is identified by the command type and also the `courseId` and `studentId`.
+When you subscribe to the course to valid business rules, you need to be aware of all the subscriptions for the given course and all subscriptions for the given student.
 So similar like in the traditional databases, we need to introduce a type for composite key to identify the entity.
 We're going to use the `SubscriptionId` class and define it as an `TargetEntityId` in the `SubscribeStudent` command.
 
@@ -301,7 +301,7 @@ I will list them belong along with assertion function, and we will also see what
 
 **Rule #1: The student is enrolled in the faculty **
 
-When student is enrolled the faculty it has assigned `StudentId`, so we add it to the State:
+When a student is enrolled the faculty it has assigned `StudentId`, so we add it to the State:
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
@@ -326,7 +326,7 @@ class SubscribeStudentCommandHandler {
 
 In the business rule assertion function, we throw an exception if the rule is not satisfied.
 It's another approach than presented before.
-This error will buble up as a result of the command to the client.
+This error will bubble up as a result of the command to the client.
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
@@ -350,15 +350,18 @@ class SubscribeStudentCommandHandler {
 **Rule #4: The student is not subscribed to too many courses (max 3) **
 **Rule #5: The course is not fully booked (based on course capacity) **
 
+
 We're going to implement all the remaining rules at once.
 What else do we need in the `State` object to validate them?
-Definitely not the course name, because it has nothing to do with the business rules.
+Definitely not the course name, because it has nothing to do with the business rules, so we don't handle, even don't load events like `CourseRenamed` in order to process the command.
+
 What we'd like to introduce it's the minimal set of data we needed to be able to accept or reject the command.
-It's the same rule of thumb, that you use while designing DDD Aggregates.
+It's the same rule of thumb that you use while designing DDD Aggregates.
 
 So we are going to derive:
-- for Student: `alreadySubscribed` and `noOfCoursesStudentSubscribed` from `StudentSubscribed` and ``StudentUnsubscribed` events.
-- for Course: `courseCapacity` and `noOfStudentsSubscribedToCourse` from `CourseCreated`, `CourseCapacityChanged`, `StudentSubscribed` and `StudentUnsubscribed` events.
+
+* for Student: `alreadySubscribed` and `noOfCoursesStudentSubscribed` from `StudentSubscribed` and ``StudentUnsubscribed` events.
+* for Course: `courseCapacity` and `noOfStudentsSubscribedToCourse` from `CourseCreated`, `CourseCapacityChanged`, `StudentSubscribed` and `StudentUnsubscribed` events.
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
@@ -424,18 +427,18 @@ class SubscribeStudentCommandHandler {
 
 }
 ----
-<1> Same as with student, we store the `courseId` if was created along with the `capacity` from the same `CourseCreated` event.
+<1> Same as with a student, we store the `courseId` if was created along with the `capacity` from the same `CourseCreated` event.
 <2> We update the `capacity` on `CourseCapacityChanged` event.
-<3> In this case we're going to evolve the State on every `StudentSubscribed` event related to the course or the student which ids are in the command.
-How we instruct the store to load those events we will discuss in the next paragraph.
+<3> In this case, we're going to evolve the State on every StudentSubscribed event related to the course or the student whose IDs are in the command.
+How we instruct the store to load those events, we will discuss in the next paragraph.
 For now you need to be aware of that you may receive events about different student and different course as well, because we have one event handler per event type -> we handle there all `StudentSubscribed/Unsubscribed` for given course (different students) to know how much capacity left and all for given student (different courses) to know how many courses the student is subscribed to.
 <4> If the `StudentSubscribed` event is related to the course, we increase the number of students subscribed to the course.
 <5> If the `StudentSubscribed` event is related to the student, we increase the number of courses the student is subscribed to.
 <6> If the `StudentSubscribed` event is related to the course and the student, we set the `alreadySubscribed` flag to true.
 <7> This handler for `StudentUnsubscribed` is an exact opposite of the `evolve` method for `StudentSubscribed` event. We decrease the numbers which we increased in the previous one.
 
-But how do we limit that we won't receive events for every student and every course?
-How do we limit our Consistency Boundary to only what is really needed to valite business rules.
+But how do we ensure that we won't load events for every student and every course?
+How do we limit our Consistency Boundary to only what is really needed to validate business rules?
 It's where the `EventCriteria` comes into play.
 
 == Event Criteria
@@ -445,7 +448,7 @@ For the `SubscribeStudent` handling, this is not enough, because as you already 
 We need all `StudentSubscribed` events for the given `courseId` and also all `StudentSubscribed` events for the given `studentId`.
 The same applies to `StudentUnsubscribed` events.
 
-Whereas, for example with `StudentEnrolledFaculty` - we care about just one event for the given `studentId`; other students are not involved while processing this command, and there are no business rules between them.
+Whereas, for example, with `StudentEnrolledFaculty` - we care about just one event for the given `studentId`; other students are not involved while processing this command, and there are no business rules between them.
 The subscription story is different, because we have a limit of students per course and also a limit of courses per student.
 
 Thanks to the Axon Framework's `EventCriteria` concept, we're able to define the events we'd like to load dynamically.
@@ -460,11 +463,11 @@ You may think about that in such way: before event could have just one tag - the
 ====
 
 Here the situation is a bit more complicated, because we need to load events for two different entities - `Student` and `Course`.
-In a system based on Aggregates, you may load both and limit your accessibility - the risk of optimistic concurrency is higher, or implement a complex saga between those two entities - then you also need to duplicate the events and deal with eventual consistency.
+In a system based on Aggregates, you may load both and limit your accessibility - the risk of optimistic concurrency is higher, or implement a complex saga to orchestrate changes between those two entities - then you also need to duplicate the events and deal with eventual consistency.
 But in domain experts' language, `StudentSubscribed` is just one fact, which influences rules around both `Student` and `Course`.
 
 As long as we're in a single bounded context and have all events in one storage, we can define our custom `EventCriteria` to shape our `State` which mixes properties for `Student` and `Course`!
-The operation will be also immediate consistent and transactional.
+The operation will be also immediately consistent and transactional.
 If while executing the operation any event matching the same `EventCriteria` is stored, the operation will fail with an optimistic concurrency exception.
 The single responsibility of the State is just to give us enough information to determine if the command satisfies business rules.
 
