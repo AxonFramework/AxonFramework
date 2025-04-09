@@ -1,14 +1,17 @@
 :navtitle: Feature: Subscribe Student
 :reftext: Implementing the subscribe student feature
 
-As you may notice that we haven't implemented other things between `CreateCourse` and the `SubscribeStudent` commands.
-It's a great benefit of the Axon Framework 5 together with Vertical Slices!
-As long as you keep your `State` needed to validate the command private for the given slice you're only shared code between slices are events, which are the backbone of our system - contract between different parts.
+One of the major benefits of Axon Framework 5's Vertical Slice Architecture is the ability to implement features independently.
+Now we'll implement the `SubscribeStudent` feature without needing to implement every feature in between.
+As long as we keep the `State` needed for command validation private to each slice, the only shared code between slices are the events, which serve as the backbone contract of our system.
+
+You even don't need to stick to certain order. How many times have you heard in the development team: "I'm waiting till the feature X is implemented, so I can implement my feature Y"?
+
 
 == Define messages
 
-As before let's look at Event Modeling.
-Which events do we need for this slice to fulfill the Given-When-Then specifications?
+As before, let's look at the Event Modeling diagram.
+Which events do we need for this slice to fulfill the following Given-When-Then specification?
 
 image::EventModeling_GWT_SubscribeStudent.png[]
 
@@ -33,8 +36,6 @@ public record StudentEnrolledFaculty(
 ----
 
 <.> Always remember about marking which properties are event tags.
-It's needed when you load state based on events.
-If you used Aggregate approach before the Tag identifies the aggregate, but thanks to Dynamic Consistency Boundary you may how one event assigned to many business entities (not just once as before).
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/events/StudentSubscribed.java
@@ -52,11 +53,12 @@ public record StudentSubscribed(
 }
 ----
 
-<.> Thanks to those annotations the event will be tagged with `studentId` and `courseId`, so everytime when you define your event criteria to retrieve certain state you can TBD...
-It's a good example that StudentSubscribed event is connected to two business entities - Student and the Course.
-When domain experts says that "student subscribed" they know, that because of the event the course free spots decreased and also student subscription limit may be reached.
+<.> Thanks to those annotations the event will be tagged with `studentId` and `courseId`.
+It's a good example that StudentSubscribed event is connected to two business entities—Student and the Course.
+When domain experts say that "student subscribed", they know that means the course free spots decreased and also student subscription limit may be reached.
+In the case of one event type per entity/tag/aggregateId we would need to duplicate those events artificially to have two in two different streams.
 
-Last, but not least we define the command.
+Last, but not least, we define the `SubscribeStudent` command.
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
