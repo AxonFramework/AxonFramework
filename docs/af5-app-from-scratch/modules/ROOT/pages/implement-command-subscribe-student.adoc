@@ -254,11 +254,11 @@ This functional resembles the `Decider` pattern.
 In a few paragraphs you will see how to do that with the `EventCriteria` API.
 
 
-
-We always need one identifier to load the state, because the `@InjectEntity` annotation needs to know how to identify the entity to load.
+We always need single, unique identifier to load the state, because the `@InjectEntity` annotation needs to know how to identify the entity to load.
 In this case it's more difficult, because the `SubscribeStudent` business process is identifier by the command type and also the `courseId` and `studentId`.
-So similar as in databases we need some composite key to identify the entity.
-To do that we're going to use the `SubscriptionId` class and define it as an `TargetEntityId` in the `SubscribeStudent` command.
+When you subscribe to the course to valid business rules you need to be aware of all the subscriptions for the given course and all subscriptions for the given student.
+So similar like in the traditional databases, we need to introduce a type for composite key to identify the entity.
+We're going to use the `SubscriptionId` class and define it as an `TargetEntityId` in the `SubscribeStudent` command.
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscriptionId.java
@@ -292,6 +292,7 @@ public record SubscribeStudent(StudentId studentId, CourseId courseId) {
 }
 ----
 <1> The `@TargetEntityId` annotated method/property can be even private, because it's just for internal usage for the Axon Framework.
+Based on the `SubscriptionId` we can load the events to build the `State` object, we will use the value to define the `EventCriteria` later in this section.
 
 
 As you see there are two TODOs left in the `SubscribeStudentCommandHandler` code.
