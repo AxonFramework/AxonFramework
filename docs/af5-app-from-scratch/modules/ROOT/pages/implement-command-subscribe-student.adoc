@@ -440,15 +440,16 @@ It's where the `EventCriteria` comes into play.
 
 == Event Criteria
 
-While implementing the `CreateCourse` feature we defined that we want to build our state based on event's that are tagged with `courseId` by using this `@EventSourcedEntity(tagKey = "courseId")`.
-For the `SubscribeStudent` handling, it's not enough, because as you already know we need to build our state based on `studentId` and `courseId` tagged events.
+While implementing the `CreateCourse` feature, we defined that we want to build our state based on events that are tagged with `courseId` by using `@EventSourcedEntity(tagKey = "courseId")`.
+For the `SubscribeStudent` handling, this is not enough, because as you already know, we need to build our state based on both `studentId` and `courseId` tagged events.
 We need all `StudentSubscribed` events for the given `courseId` and also all `StudentSubscribed` events for the given `studentId`.
-As well as `StudentUnsubscribed` events.
-Whereas, for example `StudentEnrolledFaculty` - we care about just one event for the given `studentId`, other students are not interested while processing this command and there are no business rules between them.
-With the subscription story is different, because of that we have a limit of students per course and also the limit of courses per student.
+The same applies to `StudentUnsubscribed` events.
 
-Thanks to the Axon Framework `EventCriteria` concept we're able to define the events we'd like to load dynamically.
-It's where the Dynamic Consistency Boundary shines.
+Whereas, for example with `StudentEnrolledFaculty` - we care about just one event for the given `studentId`; other students are not involved while processing this command, and there are no business rules between them.
+The subscription story is different, because we have a limit of students per course and also a limit of courses per student.
+
+Thanks to the Axon Framework's `EventCriteria` concept, we're able to define the events we'd like to load dynamically.
+This is where the Dynamic Consistency Boundary shines.
 
 [NOTE]
 ====
@@ -459,10 +460,13 @@ You may think about that in such way: before event could have just one tag - the
 ====
 
 Here the situation is a bit more complicated, because we need to load events for two different entities - `Student` and `Course`.
-In the system based on Aggregates you may load both and limit your accessibility - the risk of optimistic concurrency is higher, or do complex saga between those two entities - then you also need to duplicate the events.
-But in domain experts language the 'StudentSubscribed' it's just one fact, which influences rules around `Student` and `Course`.
-As far as we're in the single bounded context, and we have all events in one storage, we good to go and define our custom Event Criteria to shape our `State` which mix properties for `Student` and `Course`!
-The single responsibility of the `State` it's just to give us enough information to say if the command satisfies business rules.
+In a system based on Aggregates, you may load both and limit your accessibility - the risk of optimistic concurrency is higher, or implement a complex saga between those two entities - then you also need to duplicate the events and deal with eventual consistency.
+But in domain experts' language, `StudentSubscribed` is just one fact, which influences rules around both `Student` and `Course`.
+
+As long as we're in a single bounded context and have all events in one storage, we can define our custom `EventCriteria` to shape our `State` which mixes properties for `Student` and `Course`!
+The operation will be also immediate consistent and transactional.
+If while executing the operation any event matching the same `EventCriteria` is stored, the operation will fail with an optimistic concurrency exception.
+The single responsibility of the State is just to give us enough information to determine if the command satisfies business rules.
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
