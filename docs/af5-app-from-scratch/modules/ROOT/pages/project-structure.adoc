@@ -212,6 +212,11 @@ We're going to use full potential of Event-Sourced application, so let's create 
 This will set up by default all necessary components to run an Event-Sourced application.
 Components like: `EventStore`, `CommandBus`, `EventSink` etc.
 
+[NOTE]
+====
+In Milestone 1, only the in-memory implementation of the Event Store is supported, but this still allows you to try out the new Command handling API.
+====
+
 [source,java]
 ./src/main/java/io/axoniq/demo/university/UniversityAxonApplication.java
 ----
