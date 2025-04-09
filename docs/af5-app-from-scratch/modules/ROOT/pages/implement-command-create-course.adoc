@@ -3,30 +3,29 @@
 
 = Create Course Feature
 
-When you implement a new feature the first step is to define the messages which will be the input and output of it.
-In Axon Framework messages are the first-class citizen and everything is designed around them.
-While designing the app and also during execution - you're always in the context of some command.
+When implementing a new feature in Axon Framework 5, the first step is defining the messages that will flow through the system. Messages are first-class citizens in Axon, and everything is designed around them.
+They are inputs and ouputs of the certain features (slices in the Vertical Slice Architecture).
+While designing the app and also during execution—you're always in the context of some command.
 
-Let's focus on the first feature for this sample app.
-We need to be able to create a new course.
-Could you imagine a faculty without any courses, which students may subscribe to?
-We can't either!
+For our first feature, we'll implement the capability to create a new course.
+After all, what's a university faculty without courses that students can subscribe to?
 
 == Define messages
 
 Messages are the contract between different parts of our system, so you need to pay attention to craft them correctly.
-Event Modeling helps a lot, thanks to it completeness check you can be sure you don't forgot about anything.
+Event Modeling helps a lot, thanks to its completeness check you can be sure that you don't forget about anything.
 So let's take the first Write Slice on the table.
-We can name it shortly as `CreateCourse`->`CourseCreated`.
-Now we're going to translate the sticky notes to the code.
-The orange sticky is an event, and every event needs a cause, which is a command which may trigger the event.
+
+Looking at our Event Modeling diagram, our first write slice involves `CreateCourse` leading to `CourseCreated`.
+Let's translate these sticky notes into code.
+The orange sticky is an event, and every event needs a cause, which is a command that may trigger the event.
 In this case it's a `CreatCourse` on the blue sticky note.
 
 image::EventModeling_CreateCourse_Stickies.png[]
 
-In Axon Framework 5, we typically define commands and events as simple data structures - using Java `records`.
-You can also use Java classes if you really want, but records fulfill nicely the characteristic of messages, because they are immutable by definition.
-As you remember we follow the Vertical Slice Architecture so please create files with corresponding content:
+In Axon Framework 5, we typically define commands and events as Java records to ensure immutability.
+You can also use Java classes if you really want, but records nicely fulfill the characteristic of messages, because they are immutable by definition.
+Following our Vertical Slice Architecture, we'll place each message in its appropriate package:
 
 * `CreateCourse` in the `io.axoniq.demo.university.faculty.write.createcourse` package (we place command inside the slice package, because the command has only one handler)
 * `CourseCreated` in the `io.axoniq.demo.university.faculty.events` package (events are shared between slices, there may be 0 to many handlers for the same event)
@@ -51,10 +50,12 @@ public record CreateCourse(
 You may notice that for the `courseId` field we use `CourseId` value object.
 It's not necessary, but it's a convention.
 This class provides type safety and domain semantics for course identifiers.
-Thanks to that you won't mix CourseId with other identifiers in the system like StudentId.
+Thanks to that, you won't mix CourseId with other identifiers in the system like StudentId.
 The class may be as simple as `public record CourseId(String raw) {}`.
-In the sample we have also some additional helpful methods which you may find in the repository, but for now this is enough.
+In the repository, we have also some additional helpful methods that you may find in the repository, but for now this is enough.
 ====
+
+Next, let's define the event that will be published when a course is created:
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/events/CourseCreated.java
@@ -70,11 +71,12 @@ public record CourseCreated(
 ) {}
 ----
 
-<1> The `courseId` is annotated with `@EventTag`, which allows Axon to tag the event as connected with the 'Course' business entity and then use it for efficiently retrieval of the events related to given 'Course'.
-It's a simple String - for events we prefer to avoid Value Objects, because events need to be deserialized regardless of the current rules for Value Objects creations.
-Always remember about marking which properties are event tags.
-It's needed when you load state based on events.
+<1> The `@EventTag` annotation is crucial—it allows Axon to tag events as connected to specific business entities, which enables efficient retrieval later.
 If you used Aggregate approach before the Tag identifies the aggregate, but thanks to Dynamic Consistency Boundary you may how one event assigned to many business entities (not just once as before).
+The EventStore in Axon Framework 5 always store your events along with assigned tags, so you can query them later based on those tags and types.
+
+Unlike commands, we use simple strings for identifiers in events to avoid potential deserialization issues if Value Object rules change.
+If you want to use the Value Objects in your events you may probably need custom deserializers for them to avoid `{"courseId": {"raw": "some-id"}}` in case of JSON.
 
 == Specification by example
 
