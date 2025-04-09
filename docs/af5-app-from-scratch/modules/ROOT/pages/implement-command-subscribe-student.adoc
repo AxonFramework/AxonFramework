@@ -254,7 +254,6 @@ This functional resembles the `Decider` pattern.
 In a few paragraphs you will see how to do that with the `EventCriteria` API.
 
 
-//----
 
 We always need one identifier to load the state, because the `@InjectEntity` annotation needs to know how to identify the entity to load.
 In this case it's more difficult, because the `SubscribeStudent` business process is identifier by the command type and also the `courseId` and `studentId`.
