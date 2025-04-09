@@ -3,33 +3,37 @@
 
 == The sample domain
 
-In this sample, we are dealing with the University Domain.
-The initial examples will be around the Faculty Bounded Context.
+In this tutorial, we'll be working with a University domain.
+Our initial examples will focus on the Faculty Bounded Context, where we'll implement features related to course management and student registrations.
 
-In the context there are students and courses, that students can subscribe to.
-A student can enroll in the faculty.
-The faculty can decide to create a course with assigned capacity—the number of students who can subscribe to a course.
-The capacity of the course must be maintained.
-After the course has been created, its capacity can be changed.
-A student can subscribe to a course and unsubscribe.
+Within this context, the business capabilities are:
+
+* The faculty can create courses with assigned capacity (the maximum number of students allowed)
+* Course capacity can be modified after creation
+* Course name can be changed after creation
+* Students can enroll in the faculty
+* Students can subscribe to courses (within capacity limits), there is also a limit of course subscriptions per student
+* Students can unsubscribe from courses
 
 == Event modeling
 
-Before jumping over the keyboard to start writing code, let's first introduce the small design up-front of our system so that we are prepared to split and scale it out later.
-We conducted an Event Modeling session to identify the messages that will be used in our system.
+Before diving into code, let's take a moment to design our system using Event Modeling.
+This approach helps us identify the messages that will flow through our application and ensures our flow of information is complete, and we are ready to go into implementation.
+
+We conducted an Event Modeling session to identify the command and events that will be used in our system.
 
 image::FacultyContext_EventModeling.png[]
 
-After an Event Modeling (which you can see above) session we have identified following events:
+After an Event Modeling (which you can see above) session we have identified the following events:
 
-* `StudentEnrolledFaculty` - a fact that a student has enrolled faculty
-* `CourseCreated` - a fact that a course has been created with assigned capacity
-* `CourseCapacityChanged` - a fact that the capacity of the course has changed
-* `StudentSubscribed` - a fact that the student has subscribed to the course
-* `StudentUnsubscribed` - a fact that the student has unsubscribed from the course
+* `StudentEnrolledFaculty` — a fact that a student has enrolled faculty
+* `CourseCreated` — a fact that a course has been created with assigned capacity
+* `CourseCapacityChanged` — a fact that a course's capacity has been modified
+* `StudentSubscribed` — a fact that the student has subscribed to a course
+* `StudentUnsubscribed` — a fact that the student has unsubscribed from a course
 
-Events are a backbone of our system and contract between slices.
+These events form the backbone of our system and serve as the contract between different slices of our application.
+By focusing on the events first, we can clearly define how information flows through our system.
 
-Now, when we get a little familiar with the domain, let's start shaping the structure of our University application.
-
+With this domain understanding established, we're ready to start building our University application following the Vertical Slice Architecture pattern that Axon Framework 5 supports so well.
 
