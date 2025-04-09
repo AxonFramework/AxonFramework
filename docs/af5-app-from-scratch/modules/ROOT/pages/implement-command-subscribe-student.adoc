@@ -444,7 +444,7 @@ It's where the `EventCriteria` comes into play.
 == Event Criteria
 
 While implementing the `CreateCourse` feature, we defined that we want to build our state based on events that are tagged with `courseId` by using `@EventSourcedEntity(tagKey = "courseId")`.
-For the `SubscribeStudent` handling, this is not enough, because as you already know, we need to build our state based on both `studentId` and `courseId` tagged events.
+For the `SubscribeStudent` handling, this is not enough, because, as you already know, we need to build our state based on both `studentId` and `courseId` tagged events.
 We need all `StudentSubscribed` events for the given `courseId` and also all `StudentSubscribed` events for the given `studentId`.
 The same applies to `StudentUnsubscribed` events.
 
@@ -469,7 +469,7 @@ But in domain experts' language, `StudentSubscribed` is just one fact, which inf
 As long as we're in a single bounded context and have all events in one storage, we can define our custom `EventCriteria` to shape our `State` which mixes properties for `Student` and `Course`!
 The operation will be also immediately consistent and transactional.
 If while executing the operation any event matching the same `EventCriteria` is stored, the operation will fail with an optimistic concurrency exception.
-The single responsibility of the State is just to give us enough information to determine if the command satisfies business rules.
+The single responsibility of the `State` is just to give us enough information to determine if the command satisfies business rules.
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
@@ -516,17 +516,18 @@ It's not what we wanted here.
 So, we split `StudentSubscribed` and `StudentUnsubscribed` events into two separate criteria (one for student and one for course), because we need to load all events of those types for either `courseId` or `studentId`.
 
 It gives us better accessibility of our system - thanks to that, as you see there is no `CourseRenamed` event in our criteria, so the Faculty administrator is still able to rename the course in the same time while processing the `SubscribeStudent` command, because the `CourseRenamed` event doesn't match the criteria - it's not in our operation consistency boundary.
-In case of Aggregates those operation may clash, or you need to introduce separated entity for the name if you want to avoid concurrency access issues.
+In case of Aggregates those operations may clash, or you need to introduce separated entity for the name if you want to avoid concurrency access issues.
 Our colleague Milan from AxonIQ (with our ex-colleague Sara) discuss those scenarios in the talk - we really encourage you to watch it link:https://www.youtube.com/watch?v=IgigmuHHchI[The Aggregate is dead. Long live the Aggregate! by Sara Pellegrini & Milan Savic @ Spring I/O 2023].
 
 [NOTE]
 ====
 Keep in mind it's beneficial to define events types in the criteria.
 Technically you can just use `EventCriteria.match().eventsOfTypes(...)` and load all events for the given tag.
-But in this case you load more than needed, and it's more possible to clash with other changes, which cause events that do not influence this certain business rules.
+But in this case, you load more than needed, and it's more possible to clash with other changes, which cause events that do not influence these certain business rules.
 ====
 
 == Summing up
+
 
 Let's summarize what we have done so far.
 We've implemented the whole `SubscribeStudent` command handler using the DCB concept in practice.
@@ -535,8 +536,8 @@ If you're not sure if you followed the tutorial correctly, you can always check 
 If you prefer to use different style (with multiple state classes - like `Course` and `Student` instead of just one) you may also compare the solution we have done with the code in the package link:https://github.com/AxonIQ/university-demo/tree/master/src/main/java/io/axoniq/demo/university/faculty/write/subscribestudentmulti[subscribestudentmulti].
 
 == Configuration
-Same as before to make our tests green the last thing to co it to configure the require infrastructure for the command handler.
-To do so let's create a new class `SubscribeStudentConfiguration` with following content.
+Same as before, to make our tests green, the last thing to do is to configure the required infrastructure for the command handler.
+To do so, let's create a new class `SubscribeStudentConfiguration` with the following content.
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseConfiguration.java
@@ -588,13 +589,13 @@ public class UniversityAxonApplication {
 ----
 <1> We register the `StatefulCommandHandlingModule` as a child of the `EventSourcingConfigurer`.
 
-Now what is better to developer that beeing flashed by the green bar in your IDE after running the tests?
-Let's do it! Don't forget to mark the slice as completed in the Event Modeling diagram if you use this approach.
-
+Now what's better for a developer than seeing the green bar flash in your IDE after running the tests?
+Let's do it! Remember to mark the slice as completed in the Event Modeling diagram if you use this approach.
 
 == Your opinion matters!
-Thank you for reading this tutorial!
-We hope you enjoyed the new APIs, and you're looking forward for the Axon Framework 5 release.
-You have also an opportunity to influence the future of the framework and help revolutionize the way people build applications.
-If you'd like to do so please share your feedback with us. You can do it on Discuss [TBD FORM LINK] or reach out to our Framework team directly on LinkedIn.
-We are looking forward to your opinion, and we will be happy to discuss your ideas with you.
+
+Thank you for completing this tutorial!
+We hope you've found value in exploring these new APIs and are excited about the upcoming Axon Framework 5 release.
+You now have a unique opportunity to shape the framework's future and transform application development practices across the industry.
+If you'd like to do so please share your feedback with us. You can do it on Discuss [TBD FORM LINK] or connect directly with our Framework team on LinkedIn.
+Your perspectives are invaluable to us, and we're eager to engage in meaningful discussions about your ideas and experiences.
