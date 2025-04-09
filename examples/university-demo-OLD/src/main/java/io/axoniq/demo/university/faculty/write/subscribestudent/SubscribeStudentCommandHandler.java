@@ -19,7 +19,7 @@ import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.annotation.InjectEntity;
+import org.axonframework.modelling.annotation.InjectEntity;
 
 import java.util.List;
 import java.util.stream.Collectors;
