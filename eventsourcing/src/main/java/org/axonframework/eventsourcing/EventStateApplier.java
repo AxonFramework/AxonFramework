@@ -33,11 +33,11 @@ import javax.annotation.Nonnull;
 public interface EventStateApplier<M> {
 
     /**
-     * Change the state of the given {@code state} by applying the given {@code event} to it.
+     * Change the state of the given {@code model} by applying the given {@code event} to it.
      *
-     * @param event The event that might adjust the {@code state}.
-     * @param state The current state of the entity to apply the given {@code event} to.
+     * @param event The event that might adjust the {@code model}.
+     * @param model The current state of the entity to apply the given {@code event} to.
      * @return The changed stated based on the given {@code event}.
      */
-    M apply(@Nonnull M state, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext processingContext);
+    M apply(@Nonnull M model, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext processingContext);
 }
