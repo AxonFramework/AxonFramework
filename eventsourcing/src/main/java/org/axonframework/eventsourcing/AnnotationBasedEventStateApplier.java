@@ -23,6 +23,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import static java.util.Objects.requireNonNull;
@@ -53,6 +54,21 @@ public class AnnotationBasedEventStateApplier<M> implements EventStateApplier<M>
                 AnnotatedHandlerInspector.inspectType(modelType,
                                                       ClasspathParameterResolverFactory.forClass(modelType),
                                                       ClasspathHandlerDefinition.forClass(modelType))
+        );
+    }
+
+    /**
+     * Initialize a new annotation-based {@link EventStateApplier}.
+     *
+     * @param modelType                The type of model this instance will handle state changes for.
+     * @param parameterResolverFactory The factory to use to resolve parameters for the annotated handlers.
+     */
+    public AnnotationBasedEventStateApplier(@Nonnull Class<M> modelType,
+                                            @Nonnull ParameterResolverFactory parameterResolverFactory) {
+        this(modelType,
+             AnnotatedHandlerInspector.inspectType(modelType,
+                                                   parameterResolverFactory,
+                                                   ClasspathHandlerDefinition.forClass(modelType))
         );
     }
 

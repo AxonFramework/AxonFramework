@@ -17,6 +17,7 @@
 package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.DescribableComponent;
 
 import java.util.List;
@@ -145,4 +146,14 @@ public interface NewConfiguration extends DescribableComponent {
      * empty optional if no module exists with that name.
      */
     Optional<NewConfiguration> getModuleConfiguration(@Nonnull String name);
+
+    /**
+     * Returns the parent configuration of this configuration, if the parent configuration exists. Components can use
+     * this to build hierarchical components, which prefer components from a child configuration over components from a
+     * parent configuration.
+     *
+     * @return The parent configuration of this configuration, or {@code null} if no parent configuration exists.
+     */
+    @Nullable
+    NewConfiguration getParent();
 }

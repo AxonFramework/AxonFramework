@@ -19,12 +19,14 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 
 import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
+import static org.axonframework.messaging.configuration.reflection.ParameterResolverFactoryUtils.registerToComponentRegistry;
 
 /**
  * The messaging {@link ApplicationConfigurer} of Axon Framework's configuration API.
@@ -84,7 +86,9 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      */
     public static MessagingConfigurer enhance(@Nonnull ApplicationConfigurer applicationConfigurer) {
         return new MessagingConfigurer(applicationConfigurer)
-                .componentRegistry(cr -> cr.registerEnhancer(new MessagingConfigurationDefaults()));
+                .componentRegistry(cr -> cr
+                        .registerEnhancer(new MessagingConfigurationDefaults())
+                );
     }
 
     /**
@@ -141,6 +145,25 @@ public class MessagingConfigurer implements ApplicationConfigurer {
      */
     public MessagingConfigurer registerQueryBus(@Nonnull ComponentFactory<QueryBus> queryBusFactory) {
         applicationConfigurer.componentRegistry(cr -> cr.registerComponent(QueryBus.class, queryBusFactory));
+        return this;
+    }
+
+    /**
+     * Registers the given {@link ParameterResolverFactory} factory in this {@code Configurer}.
+     * <p>
+     * The {@code parameterResolverFactoryFactory} receives the {@link NewConfiguration} as input and is expected to
+     * return a {@link ParameterResolverFactory} instance.
+     *
+     * @param parameterResolverFactoryFactory The factory building the {@link ParameterResolverFactory}.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    public MessagingConfigurer registerParameterResolverFactory(
+            @Nonnull ComponentFactory<ParameterResolverFactory> parameterResolverFactoryFactory
+    ) {
+        applicationConfigurer.componentRegistry(registry -> registerToComponentRegistry(
+                registry,
+                parameterResolverFactoryFactory::build
+        ));
         return this;
     }
 

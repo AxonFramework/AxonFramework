@@ -27,15 +27,15 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
+import org.axonframework.modelling.StateManager;
+import org.axonframework.modelling.HierarchicalStateManagerConfigurationEnhancer;
+import org.axonframework.modelling.annotation.InjectEntity;
 
 import java.util.function.Consumer;
 
 /**
- * The modelling {@link ApplicationConfigurer} of Axon Framework's configuration API, providing registration methods to, for
- * example, register a {@link StatefulCommandHandlingModule}.
- * <p>
- * This configurer does not set any defaults other than the defaults granted by the {@link MessagingConfigurer} it
- * wraps.
+ * The modelling {@link ApplicationConfigurer} of Axon Framework's configuration API, providing registration methods to,
+ * for example, register a {@link StatefulCommandHandlingModule}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -73,7 +73,8 @@ public class ModellingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link ModuleBuilder builder} for a {@link StatefulCommandHandlingModule} to use in this configuration.
+     * Registers the given {@link ModuleBuilder builder} for a {@link StatefulCommandHandlingModule} to use in this
+     * configuration.
      * <p>
      * As a {@link Module} implementation, any components registered with the result of the given {@code moduleBuilder}
      * will not be accessible from other {@code Modules} to enforce encapsulation. The sole exception to this, are

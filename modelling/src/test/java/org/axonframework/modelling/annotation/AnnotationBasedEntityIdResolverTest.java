@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.command.annotation;
+package org.axonframework.modelling.annotation;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageType;

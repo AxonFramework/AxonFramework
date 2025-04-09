@@ -18,6 +18,7 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -199,6 +200,35 @@ class DefaultComponentRegistryTest {
         testSubject.build(mock());
 
         assertEquals(List.of(enhancer1, enhancer2, enhancer3), invokedEnhancers);
+    }
+
+    @Test
+    void buildWillScanAndCallEnhancersFromClasspathIfNotDisabled() {
+        TestConfigurationEnhancer.withActiveTestEnhancer(() -> {
+            testSubject.build(new StubLifecycleRegistry());
+            assertTrue(TestConfigurationEnhancer.hasEnhanced());
+        });
+    }
+
+    @Test
+    void disableEnhancerScanningWillDisableAllEnhancers() {
+        testSubject.disableEnhancerScanning();
+
+        TestConfigurationEnhancer.withActiveTestEnhancer(() -> {
+            testSubject.build(new StubLifecycleRegistry());
+            assertFalse(TestConfigurationEnhancer.hasEnhanced());
+        });
+    }
+
+
+    @Test
+    void disableSpecificEnhancerWillDisableLoadingOfThatEnhancer() {
+        testSubject.disableEnhancer(TestConfigurationEnhancer.class);
+
+        TestConfigurationEnhancer.withActiveTestEnhancer(() -> {
+            testSubject.build(new StubLifecycleRegistry());
+            assertFalse(TestConfigurationEnhancer.hasEnhanced());
+        });
     }
 
     @Nested

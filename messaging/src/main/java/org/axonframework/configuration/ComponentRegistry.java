@@ -220,4 +220,25 @@ public interface ComponentRegistry extends DescribableComponent {
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     ComponentRegistry setOverridePolicy(@Nonnull OverridePolicy overridePolicy);
+
+    /**
+     * Completely disables scanning for enhancers on the classpath through the {@link java.util.ServiceLoader}
+     * mechanism. Note that this may lead to missing framework functionality. It is recommended to disable specific
+     * enhancers through {@link #disableEnhancer(Class)} instead. Does not affect enhancers that are registered through
+     * the {@link #registerEnhancer(ConfigurationEnhancer)} method.
+     *
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    DefaultComponentRegistry disableEnhancerScanning();
+
+    /**
+     * Disables the given {@link ConfigurationEnhancer} class from being registered as an enhancer through the
+     * {@link java.util.ServiceLoader}. Only specific classes can be disabled, and class hierarchies are not taken into
+     * account. Does not affect enhancers that are registered through the
+     * {@link #registerEnhancer(ConfigurationEnhancer)} method.
+     *
+     * @param enhancerClass The class of the enhancer to disable.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    DefaultComponentRegistry disableEnhancer(Class<? extends ConfigurationEnhancer> enhancerClass);
 }

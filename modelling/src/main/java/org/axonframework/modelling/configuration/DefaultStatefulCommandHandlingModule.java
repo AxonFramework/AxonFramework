@@ -19,15 +19,16 @@ package org.axonframework.modelling.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandlingComponent;
-import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.modelling.HierarchicalStateManagerConfigurationEnhancer;
 import org.axonframework.modelling.SimpleStateManager;
 import org.axonframework.modelling.StateManager;
+import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.repository.AsyncRepository;
@@ -36,12 +37,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Default implementation of the {@link StatefulCommandHandlingModule}.
+ * Default implementation of the {@link StatefulCommandHandlingModule}. Registers the
+ * {@link HierarchicalStateManagerConfigurationEnhancer} enhancer to the module so that message handlers get access
+ * to entities via defining parameters, such as entitiy classes with {@link InjectEntity}
+ * or the {@link StateManager} itself.
  *
  * @author Allard Buijze
  * @author Mateusz Nowak
@@ -148,15 +151,16 @@ class DefaultStatefulCommandHandlingModule
 
     @Override
     public NewConfiguration build(@Nonnull NewConfiguration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
-        NewConfiguration builtConfiguration = super.build(parent, lifecycleRegistry);
         lifecycleRegistry.onStart(
                 Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
-                (Consumer<AxonConfiguration>) config -> builtConfiguration.getComponent(CommandBus.class)
-                                                                          .subscribe(builtConfiguration.getComponent(
-                                                                                  StatefulCommandHandlingComponent.class,
-                                                                                  statefulCommandHandlingComponentName
-                                                                          ))
+                (c) -> {
+                    c.getComponent(CommandBus.class)
+                     .subscribe(c.getComponent(
+                             StatefulCommandHandlingComponent.class,
+                             statefulCommandHandlingComponentName
+                     ));
+                }
         );
-        return builtConfiguration;
+        return super.build(parent, lifecycleRegistry);
     }
 }

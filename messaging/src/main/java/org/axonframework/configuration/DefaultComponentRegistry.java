@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -58,6 +59,8 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private final Map<String, NewConfiguration> moduleConfigurations = new ConcurrentHashMap<>();
 
     private OverridePolicy overridePolicy = OverridePolicy.WARN;
+    private boolean enhancerScanning = true;
+    private final List<Class<? extends ConfigurationEnhancer>> disabledEnhancers = new ArrayList<>();
 
     @Override
     public <C> ComponentRegistry registerComponent(@Nonnull ComponentDefinition<? extends C> definition) {
@@ -154,7 +157,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         if (initialized.getAndSet(true)) {
             throw new IllegalStateException("Component registry has already been initialized.");
         }
-
+        if (enhancerScanning) {
+            scanForConfigurationEnhancers();
+        }
         invokeEnhancers();
         decorateComponents();
         NewConfiguration config = new LocalConfiguration(optionalParent);
@@ -194,7 +199,10 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      */
     private void buildModules(NewConfiguration config, LifecycleRegistry lifecycleRegistry) {
         for (Module module : modules.values()) {
-            moduleConfigurations.put(module.name(), module.build(config, lifecycleRegistry));
+            var builtModule = HierarchicalConfiguration.build(
+                    lifecycleRegistry, (childLifecycleRegistry) -> module.build(config, childLifecycleRegistry)
+            );
+            moduleConfigurations.put(module.name(), builtModule);
         }
     }
 
@@ -212,6 +220,28 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     public DefaultComponentRegistry setOverridePolicy(@Nonnull OverridePolicy overridePolicy) {
         this.overridePolicy = requireNonNull(overridePolicy, "The override policy must not be null.");
         return this;
+    }
+
+    @Override
+    public DefaultComponentRegistry disableEnhancer(Class<? extends ConfigurationEnhancer> enhancerClass) {
+        this.disabledEnhancers.add(enhancerClass);
+        return this;
+    }
+
+    @Override
+    public DefaultComponentRegistry disableEnhancerScanning() {
+        this.enhancerScanning = false;
+        return this;
+    }
+
+    private void scanForConfigurationEnhancers() {
+        ServiceLoader<ConfigurationEnhancer> enhancerLoader = ServiceLoader.load(
+                ConfigurationEnhancer.class, getClass().getClassLoader()
+        );
+        enhancerLoader.stream()
+                      .map(ServiceLoader.Provider::get)
+                      .filter(enhancer -> !disabledEnhancers.contains(enhancer.getClass()))
+                      .forEach(this::registerEnhancer);
     }
 
     @Override
@@ -238,6 +268,11 @@ public class DefaultComponentRegistry implements ComponentRegistry {
          */
         public LocalConfiguration(@Nullable NewConfiguration parent) {
             this.parent = parent;
+        }
+
+        @Override
+        public NewConfiguration getParent() {
+            return parent;
         }
 
         @Nonnull

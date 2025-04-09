@@ -89,7 +89,7 @@ public interface LifecycleRegistry {
      */
     default LifecycleRegistry onStart(int phase, @Nonnull Runnable startHandler) {
         requireNonNull(startHandler, "The start handler must not be null.");
-        return onStart(phase, (Consumer<AxonConfiguration>) configuration -> startHandler.run());
+        return onStart(phase, (Consumer<NewConfiguration>) configuration -> startHandler.run());
     }
 
     /**
@@ -123,10 +123,11 @@ public interface LifecycleRegistry {
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
      * @see AxonConfiguration#start()
      */
-    default LifecycleRegistry onStart(int phase, @Nonnull Consumer<AxonConfiguration> startHandler) {
+    default LifecycleRegistry onStart(int phase, @Nonnull Consumer<NewConfiguration> startHandler) {
+        requireNonNull(startHandler, "startHandler must not be null");
         return onStart(phase, configuration -> {
             try {
-                requireNonNull(startHandler, "The start handler must not be null.").accept(configuration);
+                startHandler.accept(configuration);
                 return FutureUtils.emptyCompletedFuture();
             } catch (Exception e) {
                 CompletableFuture<?> exceptionResult = new CompletableFuture<>();
@@ -180,7 +181,7 @@ public interface LifecycleRegistry {
      */
     default LifecycleRegistry onShutdown(int phase, @Nonnull Runnable shutdownHandler) {
         requireNonNull(shutdownHandler, "The shutdown handler must not be null.");
-        return onShutdown(phase, (Consumer<AxonConfiguration>) configuration -> shutdownHandler.run());
+        return onShutdown(phase, (Consumer<NewConfiguration>) configuration -> shutdownHandler.run());
     }
 
     /**
@@ -214,10 +215,11 @@ public interface LifecycleRegistry {
      * @return The current instance of the {@code LifecycleRegistry} for a fluent API.
      * @see AxonConfiguration#shutdown()
      */
-    default LifecycleRegistry onShutdown(int phase, @Nonnull Consumer<AxonConfiguration> shutdownHandler) {
+    default LifecycleRegistry onShutdown(int phase, @Nonnull Consumer<NewConfiguration> shutdownHandler) {
+        requireNonNull(shutdownHandler, "shutdownHandler must not be null");
         return onShutdown(phase, configuration -> {
             try {
-                requireNonNull(shutdownHandler, "The shutdown handler must not be null.").accept(configuration);
+                shutdownHandler.accept(configuration);
                 return FutureUtils.emptyCompletedFuture();
             } catch (Exception e) {
                 CompletableFuture<?> exceptionResult = new CompletableFuture<>();

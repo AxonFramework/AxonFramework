@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package org.axonframework.modelling.command.annotation;
+package org.axonframework.modelling.annotation;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Assert;
-import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.property.Property;
 import org.axonframework.common.property.PropertyAccessStrategy;
 import org.axonframework.messaging.Message;

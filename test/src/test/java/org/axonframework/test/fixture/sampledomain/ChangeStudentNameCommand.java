@@ -16,7 +16,7 @@
 
 package org.axonframework.test.fixture.sampledomain;
 
-import org.axonframework.modelling.command.annotation.TargetEntityId;
+import org.axonframework.modelling.annotation.TargetEntityId;
 
 public record ChangeStudentNameCommand(
         @TargetEntityId String id,

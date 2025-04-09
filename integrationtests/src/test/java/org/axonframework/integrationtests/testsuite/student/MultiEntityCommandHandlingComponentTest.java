@@ -19,7 +19,6 @@ package org.axonframework.integrationtests.testsuite.student;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -34,8 +33,8 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.command.EntityIdResolver;
-import org.axonframework.modelling.command.annotation.InjectEntity;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
@@ -54,11 +53,8 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
     @Test
     void canCombineModelsInAnnotatedCommandHandlerViaStateManagerParameter() {
-        registerCommandHandlers(handlerPhase -> handlerPhase.commandHandlingComponent(
-                c -> new AnnotatedCommandHandlingComponent<>(
-                        new MultiModelAnnotatedCommandHandler(),
-                        parameterResolverFactory(c)
-                )
+        registerCommandHandlers(handlerPhase -> handlerPhase.annotatedCommandHandlingComponent(
+                c -> new MultiModelAnnotatedCommandHandler()
         ));
         startApp();
 
@@ -120,11 +116,8 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
 
     @Test
     void canHandleCommandThatTargetsMultipleOfTheSameModelInSameAnnotatedCommandHandler() {
-        registerCommandHandlers(handlerPhase -> handlerPhase.commandHandlingComponent(
-                c -> new AnnotatedCommandHandlingComponent<>(
-                        new MultiModelAnnotatedCommandHandler(),
-                        parameterResolverFactory(c)
-                )
+        registerCommandHandlers(handlerPhase -> handlerPhase.annotatedCommandHandlingComponent(
+                c -> new MultiModelAnnotatedCommandHandler()
         ));
         startApp();
 

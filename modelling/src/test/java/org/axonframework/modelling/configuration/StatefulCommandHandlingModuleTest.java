@@ -16,23 +16,21 @@
 
 package org.axonframework.modelling.configuration;
 
-import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.configuration.ComponentFactory;
-import org.axonframework.configuration.LifecycleHandler;
-import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -73,25 +71,8 @@ class StatefulCommandHandlingModuleTest {
                                                   .entity(entityBuilder)
                                                   .commandHandlers()
                                                   .build()
-                                                  .build(ModellingConfigurer.create().build(), new LifecycleRegistry() {
-                                                      @Override
-                                                      public LifecycleRegistry registerLifecyclePhaseTimeout(
-                                                              long timeout, @Nonnull TimeUnit timeUnit) {
-                                                          return this;
-                                                      }
-
-                                                      @Override
-                                                      public LifecycleRegistry onStart(int phase,
-                                                                                       @Nonnull LifecycleHandler startHandler) {
-                                                          return this;
-                                                      }
-
-                                                      @Override
-                                                      public LifecycleRegistry onShutdown(int phase,
-                                                                                          @Nonnull LifecycleHandler shutdownHandler) {
-                                                          return this;
-                                                      }
-                                                  });
+                                                  .build(ModellingConfigurer.create().build(),
+                                                         new StubLifecycleRegistry());
 
         //noinspection rawtypes
         Optional<AsyncRepository> optionalRepository =
@@ -106,6 +87,27 @@ class StatefulCommandHandlingModuleTest {
                 StatefulCommandHandlingComponent.class, statefulCommandHandlingComponentName
         );
         assertTrue(optionalHandlingComponent.isPresent());
+    }
+
+    @Test
+    void buildAnnotatedCommandHandlingComponentSucceedsAndRegisters() {
+        var myCommandHandlingObject = new Object() {
+            @org.axonframework.commandhandling.annotation.CommandHandler
+            public void handle(String command) {
+            }
+        };
+
+
+        NewConfiguration resultConfig = setupPhase
+                .commandHandlers()
+                .annotatedCommandHandlingComponent(c -> myCommandHandlingObject)
+                .build()
+                .build(ModellingConfigurer.create().build(), new StubLifecycleRegistry());
+
+        Optional<StatefulCommandHandlingComponent> optionalHandlingComponent = resultConfig.getOptionalComponent(
+                StatefulCommandHandlingComponent.class, "StatefulCommandHandlingComponent[test-subject]");
+        assertTrue(optionalHandlingComponent.isPresent());
+        assertTrue(optionalHandlingComponent.get().supportedCommands().contains(new QualifiedName(String.class)));
     }
 
     @Test
@@ -167,6 +169,13 @@ class StatefulCommandHandlingModuleTest {
     void commandHandlingComponentThrowsNullPointerExceptionForNullCommandHandlingComponentBuilder() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> commandHandlerPhase.commandHandlingComponent(null));
+    }
+
+
+    @Test
+    void annotatedCommandHandlingComponentThrowsNullPointerExceptionForNullCommandHandlingComponentBuilder() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> commandHandlerPhase.annotatedCommandHandlingComponent(null));
     }
 
     @Test

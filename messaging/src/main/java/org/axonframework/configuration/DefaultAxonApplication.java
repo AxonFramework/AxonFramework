@@ -105,29 +105,12 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
         return this;
     }
 
-    // TODO - Move to componentRegistry
-    public DefaultAxonApplication disableEnhancerScanning() {
-        this.enhancerScanning = false;
-        return this;
-    }
-
     @Override
     public synchronized AxonConfiguration build() {
         if (configuration.get() == null) {
-            if (enhancerScanning) {
-                scanForConfigurationEnhancers();
-            }
             configuration.set(new AxonConfigurationImpl(componentRegistry.build(this)));
         }
         return configuration.get();
-    }
-
-    private void scanForConfigurationEnhancers() {
-        ServiceLoader<ConfigurationEnhancer> enhancerLoader =
-                ServiceLoader.load(ConfigurationEnhancer.class, getClass().getClassLoader());
-        List<ConfigurationEnhancer> enhancers = new ArrayList<>();
-        enhancerLoader.forEach(enhancers::add);
-        enhancers.forEach(componentRegistry::registerEnhancer);
     }
 
     @Override
@@ -265,6 +248,11 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
         @Override
         public <C> C getComponent(@Nonnull Class<C> type, @Nonnull String name, @Nonnull Supplier<C> defaultImpl) {
             return config.getComponent(type, name, defaultImpl);
+        }
+
+        @Override
+        public NewConfiguration getParent() {
+            return null;
         }
 
         @Nonnull

@@ -37,5 +37,5 @@ public interface LifecycleHandler {
      * @return a {@link CompletableFuture} of unknown type which enables chaining several {@code LifecycleHandler}
      * calls.
      */
-    CompletableFuture<?> run(@Nonnull AxonConfiguration configuration);
+    CompletableFuture<?> run(@Nonnull NewConfiguration configuration);
 }
