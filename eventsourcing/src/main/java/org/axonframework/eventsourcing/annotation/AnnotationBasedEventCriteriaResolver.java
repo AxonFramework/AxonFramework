@@ -144,8 +144,7 @@ public class AnnotationBasedEventCriteriaResolver implements CriteriaResolver<Ob
             return (EventCriteria) builderResult.get();
         }
         String key = Objects.requireNonNullElseGet(tagKey, entityType::getSimpleName);
-        return EventCriteria.havingTags(Tag.of(key, id.toString()))
-                            .andBeingOfAnyType();
+        return EventCriteria.havingTags(Tag.of(key, id.toString()));
     }
 
     private static void validateEventCriteriaBuilderMethod(Method m) {

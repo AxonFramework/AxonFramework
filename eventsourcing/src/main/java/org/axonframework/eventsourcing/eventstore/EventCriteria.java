@@ -297,7 +297,6 @@ public sealed interface EventCriteria
 
     /**
      * Indicates whether this {@code EventCriteria} instance has any criteria defined.
-     *
      * @return {@code true} if this {@code EventCriteria} instance has criteria defined, otherwise {@code false}.
      */
     boolean hasCriteria();

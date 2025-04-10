@@ -21,6 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.QualifiedName;
 
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -83,6 +84,7 @@ final class AnyEvent implements EventCriteria, EventTypeRestrictableEventCriteri
 
     @Override
     public EventCriteria andBeingOneOfTypes(@Nonnull Set<QualifiedName> types) {
+        Objects.requireNonNull(types, "The provided types should not be null");
         return new TagAndTypeFilteredEventCriteria(types, Collections.emptySet());
     }
 }
