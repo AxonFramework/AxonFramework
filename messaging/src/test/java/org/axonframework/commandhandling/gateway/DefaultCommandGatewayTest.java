@@ -40,12 +40,7 @@ class DefaultCommandGatewayTest {
 
     private DefaultCommandGateway testSubject;
     private CommandBus mockCommandBus;
-    private static final MessageTypeResolver TEST_MESSAGE_NAME_RESOLVER = new MessageTypeResolver() {
-        @Override
-        public <P> MessageType resolve(Class<P> payloadType) {
-            return new MessageType(payloadType.getSimpleName());
-        }
-    };
+    private static final MessageTypeResolver TEST_MESSAGE_NAME_RESOLVER = payloadType -> new MessageType(payloadType.getSimpleName());
 
     @BeforeEach
     void setUp() {

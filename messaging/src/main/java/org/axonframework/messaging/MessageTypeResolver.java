@@ -50,8 +50,7 @@ public interface MessageTypeResolver {
      *
      * @param payloadType The {@link Class type} of the {@link Message#getPayload() Message payload} to resolve a
      *                    {@link MessageType type} for.
-     * @param <P>         The type of the payload
      * @return The {@link MessageType type} for the given {@code payloadType}.
      */
-    <P> MessageType resolve(Class<P> payloadType);
+    MessageType resolve(Class<?> payloadType);
 }

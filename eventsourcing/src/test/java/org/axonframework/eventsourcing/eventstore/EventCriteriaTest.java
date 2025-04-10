@@ -16,11 +16,13 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
 
 import java.util.Set;
 
+import static org.axonframework.eventsourcing.eventstore.EventCriteria.havingTags;
 import static org.junit.jupiter.api.Assertions.*;
 
 class EventCriteriaTest {
@@ -31,17 +33,81 @@ class EventCriteriaTest {
 
         assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of()));
         assertTrue(testSubject.matches(new QualifiedName("Another"), Set.of()));
-        assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
+        assertTrue(testSubject.matches(new QualifiedName("OneType"),
+                                       Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
         assertTrue(testSubject.matches(new QualifiedName("Another"), Set.of(new Tag("key1", "value1"))));
     }
 
     @Test
+    void canConstructCriteriaWithOnlyTagsInDifferentWaysWithSameResult() {
+        EventCriteria testSubject1 = havingTags("key1", "value1").andBeingOfAnyType();
+        EventCriteria testSubject2 = havingTags(new Tag("key1", "value1")).andBeingOfAnyType();
+        EventCriteria testSubject3 = havingTags(Set.of(new Tag("key1", "value1"))).andBeingOfAnyType();
+
+        assertEquals(testSubject1, testSubject2);
+        assertEquals(testSubject1, testSubject3);
+    }
+
+    @Test
+    void canConstructCriteriaWithOnlyEventTypesInDifferentWaysWithSameResult() {
+        EventCriteria testSubject1 = EventCriteria.havingAnyTag()
+                                                  .andBeingOneOfTypes("OneType");
+        EventCriteria testSubject2 = EventCriteria.havingAnyTag()
+                                                  .andBeingOneOfTypes(Set.of(new QualifiedName("OneType")));
+        EventCriteria testSubject3 = EventCriteria.havingAnyTag()
+                                                  .andBeingOneOfTypes(new QualifiedName("OneType"));
+        EventCriteria testSubject4 = EventCriteria.havingAnyTag()
+                                                  .andBeingOneOfTypes(
+                                                          payloadType -> new MessageType(null, "OneType", "0.0.1"),
+                                                          String.class
+                                                  );
+
+        assertEquals(testSubject1, testSubject2);
+        assertEquals(testSubject1, testSubject3);
+        assertEquals(testSubject1, testSubject4);
+    }
+
+    @Test
+    void eventCriteriaBuiltUsingOrConditionInDifferentWaysHaveSameResult() {
+        EventCriteria testSubject1 = havingTags("key1", "value1")
+                .or()
+                .havingTags("key2", "value2");
+        EventCriteria testSubject2 = havingTags("key2", "value2")
+                .or()
+                .havingTags("key1", "value1");
+
+        assertEquals(testSubject1, testSubject2);
+        assertEquals(testSubject2, testSubject1);
+    }
+
+    @Test
+    void buildingUsingNestedOrsShouldLeadToSameResultAsNonNesting() {
+        EventCriteria testSubject1 = havingTags("key1", "value1")
+                .or()
+                .havingTags("key2", "value2")
+                .or()
+                .havingTags("key3", "value3")
+                .or()
+                .havingTags("key4", "value4");
+
+        EventCriteria testSubject2 = havingTags("key1", "value1")
+                .or(havingTags("key2", "value2")
+                            .or(havingTags("key3", "value3")
+                                        .or(havingTags("key4", "value4"))
+                            )
+                );
+
+        assertEquals(testSubject1, testSubject2);
+        assertEquals(testSubject2, testSubject1);
+    }
+
+    @Test
     void criteriaForEventsOfSpecificTypeIgnoresOtherTypes() {
-        EventCriteria testSubject = EventCriteria.havingAnyTag()
-                                                 .andBeingOneOfTypes("OneType");
+        EventCriteria testSubject = EventCriteria.havingAnyTag().andBeingOneOfTypes("OneType");
 
         assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of()));
-        assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
+        assertTrue(testSubject.matches(new QualifiedName("OneType"),
+                                       Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
 
         assertFalse(testSubject.matches(new QualifiedName("Another"), Set.of()));
         assertFalse(testSubject.matches(new QualifiedName("Another"), Set.of(new Tag("key1", "value1"))));
@@ -49,10 +115,11 @@ class EventCriteriaTest {
 
     @Test
     void criteriaWithTypesAndTagsIgnoresTagsForOtherTypes() {
-        EventCriteria testSubject = EventCriteria.havingTags("key1", "value1")
+        EventCriteria testSubject = havingTags("key1", "value1")
                                                  .andBeingOneOfTypes("OneType");
 
-        assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
+        assertTrue(testSubject.matches(new QualifiedName("OneType"),
+                                       Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
 
         assertFalse(testSubject.matches(new QualifiedName("OneType"), Set.of()));
         assertFalse(testSubject.matches(new QualifiedName("Another"), Set.of()));
@@ -61,10 +128,11 @@ class EventCriteriaTest {
 
     @Test
     void criteriaWithTypesAndTagsIgnoresEventsWithSubsetOfTags() {
-        EventCriteria testSubject = EventCriteria.havingTags("key1", "value1", "key2", "value2")
+        EventCriteria testSubject = havingTags("key1", "value1", "key2", "value2")
                                                  .andBeingOneOfTypes("OneType");
 
-        assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
+        assertTrue(testSubject.matches(new QualifiedName("OneType"),
+                                       Set.of(new Tag("key1", "value1"), new Tag("key2", "value2"))));
 
         assertFalse(testSubject.matches(new QualifiedName("OneType"), Set.of(new Tag("key1", "value1"))));
         assertFalse(testSubject.matches(new QualifiedName("OneType"), Set.of()));
@@ -74,19 +142,20 @@ class EventCriteriaTest {
 
     @Test
     void criteriaWithOddParameterCountForTagsIsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> EventCriteria.havingTags("odd"));
+        assertThrows(IllegalArgumentException.class, () -> havingTags("odd"));
         assertThrows(IllegalArgumentException.class,
-                     () -> EventCriteria.havingTags("odd", "even", "odd"));
+                     () -> havingTags("odd", "even", "odd"));
     }
 
     @Test
     void criteriaWithEqualParametersAreConsideredEqual() {
-        EventCriteria testSubject1 = EventCriteria.havingTags("key1", "value1").andBeingOneOfTypes("OneType");
-        EventCriteria testSubject2 = EventCriteria.havingTags(new Tag("key1", "value1")).andBeingOneOfTypes("OneType");
-        EventCriteria testSubject3 = EventCriteria.havingTags(new Tag("key1", "value1")).andBeingOneOfTypes("OtherType");
-        EventCriteria testSubject4 = EventCriteria.havingTags(new Tag("key2", "value2s")).andBeingOneOfTypes("OneType");
+        EventCriteria testSubject1 = havingTags("key1", "value1").andBeingOneOfTypes("OneType");
+        EventCriteria testSubject2 = havingTags(new Tag("key1", "value1")).andBeingOneOfTypes("OneType");
+        EventCriteria testSubject3 = havingTags(new Tag("key1", "value1"))
+                .andBeingOneOfTypes("OtherType");
+        EventCriteria testSubject4 = havingTags(new Tag("key2", "value2s")).andBeingOneOfTypes("OneType");
         EventCriteria testSubject5 = EventCriteria.havingAnyTag().andBeingOfAnyType();
-        EventCriteria testSubject6 = EventCriteria.havingTags(Set.of()).andBeingOfAnyType();
+        EventCriteria testSubject6 = havingTags(Set.of()).andBeingOfAnyType();
 
         assertEquals(testSubject1, testSubject2);
         assertEquals(testSubject5, testSubject6);
@@ -111,7 +180,7 @@ class EventCriteriaTest {
 
     @Test
     void criteriaWithOrConditionMatchBoth() {
-        EventCriteria testSubject = EventCriteria.havingTags("key1", "value1").andBeingOneOfTypes("OneType")
+        EventCriteria testSubject = havingTags("key1", "value1").andBeingOneOfTypes("OneType")
                                                  .or().havingTags("key2", "value2").andBeingOneOfTypes("OtherType");
 
         assertTrue(testSubject.matches(new QualifiedName("OneType"), Set.of(new Tag("key1", "value1"))));
@@ -123,7 +192,7 @@ class EventCriteriaTest {
 
     @Test
     void criteriaWithOrOnAnyEventWillMatchAllEvents() {
-        EventCriteria testSubject = EventCriteria.havingTags("key1", "value1")
+        EventCriteria testSubject = havingTags("key1", "value1")
                 .andBeingOfAnyType()
                                                  .or()
                                                  .havingAnyTag()
@@ -147,10 +216,10 @@ class EventCriteriaTest {
 
     @Test
     void whenNestingIsDifferentSameCriteriaStillLeadToEquals() {
-        EventCriteria testSubject1 = EventCriteria.havingTags("key1", "value1").andBeingOneOfTypes("OneType")
+        EventCriteria testSubject1 = havingTags("key1", "value1").andBeingOneOfTypes("OneType")
                                                   .or().havingTags("key2", "value2").andBeingOneOfTypes("OtherType")
                                                   .or().havingAnyTag().andBeingOneOfTypes("ThirdType");
-        EventCriteria testSubject2 = EventCriteria.havingTags("key2", "value2").andBeingOneOfTypes("OtherType")
+        EventCriteria testSubject2 = havingTags("key2", "value2").andBeingOneOfTypes("OtherType")
                                                   .or().havingTags("key1", "value1").andBeingOneOfTypes("OneType")
                                                   .or().havingAnyTag().andBeingOneOfTypes("ThirdType");
 
@@ -165,15 +234,14 @@ class EventCriteriaTest {
     }
 
 
-
     @Nested
     class FlattenTest {
 
 
         @Test
         void flatteningTwoConditionsInOrLeadsToTwoCriteria() {
-            EventCriteria testSubject1 = EventCriteria.havingTags("key1", "value1").andBeingOneOfTypes("OneType");
-            EventCriteria testSubject2 = EventCriteria.havingTags("key2", "value2").andBeingOneOfTypes("OneType");
+            EventCriteria testSubject1 = havingTags("key1", "value1").andBeingOneOfTypes("OneType");
+            EventCriteria testSubject2 = havingTags("key2", "value2").andBeingOneOfTypes("OneType");
             EventCriteria combined = testSubject1.or(testSubject2);
 
             Set<EventCriterion> flattened = combined.flatten();
@@ -184,9 +252,9 @@ class EventCriteriaTest {
 
         @Test
         void makingOrOfOrCriteriaWillMergeCriteria() {
-            EventCriteria testSubject1 = EventCriteria.havingTags("key1", "value1").andBeingOneOfTypes("OneType");
-            EventCriteria testSubject2 = EventCriteria.havingTags("key2", "value2").andBeingOneOfTypes("OneType");
-            EventCriteria testSubject3 = EventCriteria.havingTags("key3", "value3").andBeingOneOfTypes("OneType");
+            EventCriteria testSubject1 = havingTags("key1", "value1").andBeingOneOfTypes("OneType");
+            EventCriteria testSubject2 = havingTags("key2", "value2").andBeingOneOfTypes("OneType");
+            EventCriteria testSubject3 = havingTags("key3", "value3").andBeingOneOfTypes("OneType");
             EventCriteria combined1 = testSubject1.or(testSubject2);
             EventCriteria combined2 = testSubject1.or(testSubject3);
             EventCriteria combined = combined1.or(combined2);
@@ -200,8 +268,8 @@ class EventCriteriaTest {
 
         @Test
         void combiningSameCriteriaInOrLeadsToSingularCriteriaDuringFlatten() {
-            EventCriteria testSubject1 = EventCriteria.havingTags("key1", "value1").andBeingOneOfTypes("OneType");
-            EventCriteria testSubject2 = EventCriteria.havingTags("key1", "value1").andBeingOneOfTypes("OneType");
+            EventCriteria testSubject1 = havingTags("key1", "value1").andBeingOneOfTypes("OneType");
+            EventCriteria testSubject2 = havingTags("key1", "value1").andBeingOneOfTypes("OneType");
             EventCriteria combined = testSubject1.or(testSubject2);
 
             assertEquals(1, combined.flatten().size());
@@ -227,7 +295,7 @@ class EventCriteriaTest {
 
         @Test
         void criteriaWithEventTypesAndTagsWillHaveCriteria() {
-            EventCriteria testSubject = EventCriteria.havingTags("key1", "value1").andBeingOneOfTypes("OneType");
+            EventCriteria testSubject = havingTags("key1", "value1").andBeingOneOfTypes("OneType");
 
             assertTrue(testSubject.hasCriteria());
         }
@@ -238,6 +306,7 @@ class EventCriteriaTest {
 
             assertTrue(testSubject.hasCriteria());
         }
+
         @Test
         void criteriaWithoutEventTypesAndWithoutTagsWillNotHaveCriteria() {
             EventCriteria testSubject = EventCriteria.havingAnyTag().andBeingOfAnyType();
@@ -247,7 +316,7 @@ class EventCriteriaTest {
 
         @Test
         void orConditionWithCriteriaWillHaveCriteria() {
-            EventCriteria testSubject = EventCriteria.havingTags("key1", "value1").andBeingOneOfTypes("OneType")
+            EventCriteria testSubject = havingTags("key1", "value1").andBeingOneOfTypes("OneType")
                                                      .or()
                                                      .havingTags("key2", "value2").andBeingOneOfTypes("OtherType");
 

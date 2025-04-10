@@ -57,7 +57,7 @@ public class ClassBasedMessageTypeResolver implements MessageTypeResolver {
     }
 
     @Override
-    public <P> MessageType resolve(@Nonnull Class<P> payloadType) {
+    public MessageType resolve(@Nonnull Class<?> payloadType) {
         Objects.requireNonNull(payloadType, "payloadType may not be null");
         return new MessageType(payloadType.getName(), version);
     }
