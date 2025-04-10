@@ -42,8 +42,8 @@ class DefaultCommandGatewayTest {
     private CommandBus mockCommandBus;
     private static final MessageTypeResolver TEST_MESSAGE_NAME_RESOLVER = new MessageTypeResolver() {
         @Override
-        public <P> MessageType resolve(Class<P> payloadType) {
-            return new MessageType(payloadType.getSimpleName());
+        public <P> MessageType resolve(P payload) {
+            return new MessageType(payload.getClass().getSimpleName());
         }
     };
 

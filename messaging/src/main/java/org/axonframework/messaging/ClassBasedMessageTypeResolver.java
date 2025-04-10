@@ -57,7 +57,10 @@ public class ClassBasedMessageTypeResolver implements MessageTypeResolver {
     }
 
     @Override
-    public <P> MessageType resolve(Class<P> payloadType) {
-        return new MessageType(payloadType, version);
+    public MessageType resolve(@Nonnull Object payload) {
+        if (payload instanceof Message<?>) {
+            return ((Message<?>) payload).type();
+        }
+        return new MessageType(ObjectUtils.nullSafeTypeOf(payload), version);
     }
 }
