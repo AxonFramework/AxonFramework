@@ -33,8 +33,8 @@ import java.util.stream.Collectors;
  * <h3>Filtering</h3>
  * Filtering happens based on the {@link TaggedEventMessage#tags() tags} of the event, indicating an association during
  * publishing of the event. For example, a student enrolling in a course may have the "student" tag with the value of
- * its id. This value is determined during publishing by the {@link TagResolver}. If multiple tags are defined, the
- * event must match all of them to be considered a match.
+ * its id. This value is determined during publishing by the {@link TagResolver}. If an instance of a criteria contains
+ * multiple tags, the event must contain all of them to be considered a match.
  *
  * <pre>
  *     {@code
@@ -43,9 +43,9 @@ import java.util.stream.Collectors;
  *    }</pre>
  * <p>
  * After first defining the tags to filter on through {@link #havingTags(Tag...)} or one of its variants, the scope of
- * the read on the event store can further by determined by limiting the types, through
- * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(String...)}. This is optional, and will default to all types
- * if not specified.
+ * the read on the event store can further be limited on the {@link EventMessage#type() type}, through
+ * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(String...)}. This is optional, and will default to all
+ * types if not specified.
  * <pre>
  *     {@code
  *     EventCriteria criteria = EventCriteria
@@ -60,7 +60,7 @@ import java.util.stream.Collectors;
  *    </pre>
  * <p>
  * When using an event store that supports it, using such a type-filtered criteria will narrow the scope of your
- * transaction, leading to better performance and less chance of concurrency conflicts. So while optional, it's
+ * transaction, leading to better performance and a lower chance of concurrency conflicts. So while optional, it's
  * recommended to use it when possible.
  *
  * <h3>Combining</h3>
@@ -80,8 +80,8 @@ import java.util.stream.Collectors;
  *    </pre>
  *
  * <h3>Examples</h2>
- * To make it easier to understand how the criteria work, here are some examples. During the examples, the following
- * events are in the event store, and we want to load a subset of these events:
+ * To make it easier to understand how the criteria work, here are some examples. These examples all have the following
+ * event in the event store:
  * <ul>
  *     <li> Event [StudentRegistered, student -> matchingStudent]</li>
  *     <li> Event [CourseRegistered, course -> matchingCourse]</li>
@@ -269,8 +269,8 @@ public sealed interface EventCriteria
      * {@link #or(EventCriteria)}. The resulting {@code EventCriteria} will match events that match either this
      * {@code EventCriteria} or the built one.
      *
-     * @return A builder to construct an EventCriteria instance that will match
-     * events that match either this {@code EventCriteria} or the built one.
+     * @return A builder to construct an EventCriteria instance that will match events that match either this
+     * {@code EventCriteria} or the built one.
      */
     default OrEventCriteriaBuilder or() {
         return new OrEventCriteriaBuilder(this);
@@ -297,6 +297,7 @@ public sealed interface EventCriteria
 
     /**
      * Indicates whether this {@code EventCriteria} instance has any criteria defined.
+     *
      * @return {@code true} if this {@code EventCriteria} instance has criteria defined, otherwise {@code false}.
      */
     boolean hasCriteria();

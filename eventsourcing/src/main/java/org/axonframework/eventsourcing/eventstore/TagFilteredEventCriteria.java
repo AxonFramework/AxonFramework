@@ -25,8 +25,12 @@ import java.util.Set;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Filtered {@link EventCriteria} that matches events based on their tags. The tags of the event must contain all tags
- * in the {@code tags} set to match.
+ * Filtered {@link EventCriteria} that matches events based on only their tags. The tags of the event must contain all
+ * tags in the {@code tags} set to match.
+ * <p>
+ * You can limit the types of events to be matched by using the {@link AnyEvent#andBeingOneOfTypes(Set)} method, which
+ * will return a new {@link EventCriteria} that matches only the specified types.
+ *
  *
  * @param tags The tags that events are expected to have.
  * @author Steven van Beelen

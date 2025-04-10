@@ -39,7 +39,6 @@ public interface MessageTypeResolver {
      * @return The {@link MessageType type} for the given {@code payload}.
      */
     default MessageType resolve(Object payload) {
-
         if (payload instanceof Message<?>) {
             return ((Message<?>) payload).type();
         }
