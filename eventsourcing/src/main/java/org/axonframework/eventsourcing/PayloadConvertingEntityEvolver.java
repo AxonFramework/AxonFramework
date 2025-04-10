@@ -31,7 +31,7 @@ import static java.util.Objects.requireNonNull;
  * Will throw a {@link ClassCastException} if the {@code payloadType} does not match.
  *
  * @param <P> The payload type of the event to apply.
- * @param <E> The model type to apply the event state to.
+ * @param <E> The entity type to evolve.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
@@ -41,8 +41,8 @@ public class PayloadConvertingEntityEvolver<P, E> implements EntityEvolver<E> {
     private final BiFunction<E, P, E> evolver;
 
     /**
-     * Constructs an {@link EntityEvolver} for a {@code qualifiedName} that evolves an entity through the given
-     * {@code evolver} function.
+     * Constructs a {@code PayloadConvertingEntityEvolver}, converting the {@link EventMessage#getPayload()} to the
+     * given {@code payloadType}, after which it invokes the given {@code evolver}.
      * <p>
      * If the {@link EventMessage#getPayload()} cannot be converted to the requested {@code payloadType}, a
      * {@link ClassCastException} is thrown.

@@ -25,6 +25,9 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
  * {@link EventMessage}.
  *
  * @param <E> The entity type to evolve.
+ * @author Allard Buijze
+ * @author Mateusz Nowak
+ * @author Mitchell Herrijgers
  * @author Steven van Beelen
  * @since 5.0.0
  */

@@ -22,7 +22,7 @@ import org.axonframework.messaging.QualifiedName;
 import java.util.Set;
 
 /**
- * Interface describing a group of {@code EntityEvolvers} belonging to a single entity of type {@code E}.
+ * Interface describing a group of {@link EntityEvolver EntityEvolvers} belonging to a single entity of type {@code E}.
  * <p>
  * The {@link #supportedEvents()} describes the events supported by this entity evolver.
  *

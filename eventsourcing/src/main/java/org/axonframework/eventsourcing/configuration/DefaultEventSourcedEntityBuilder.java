@@ -85,7 +85,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     }
 
     @Override
-    public EventSourcingHandlerPhase<I, E> entityEvolver(@Nonnull ComponentFactory<EntityEvolver<E>> entityEvolver) {
+    public EventSourcedEntityBuilder<I, E> entityEvolver(@Nonnull ComponentFactory<EntityEvolver<E>> entityEvolver) {
         this.entityEvolver = requireNonNull(entityEvolver, "The event state applier cannot be null.");
         return this;
     }

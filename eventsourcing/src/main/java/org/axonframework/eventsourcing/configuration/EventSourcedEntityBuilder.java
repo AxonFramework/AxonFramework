@@ -205,6 +205,8 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          *                             handle.
          * @return This event sourcing handler phase, allowing for a fluent API to register several event sourcing
          * handlers.
+         * @throws IllegalArgumentException If there already is a matching {@link QualifiedName} based on the given
+         *                                  {@code payloadType} registered with this builder.
          */
         default <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(
                 @Nonnull Class<P> payloadType,
@@ -231,6 +233,8 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          *                             handle.
          * @return This event sourcing handler phase, allowing for a fluent API to register several event sourcing
          * handlers.
+         * @throws IllegalArgumentException If there already is a matching {@link QualifiedName} based on the given
+         *                                  {@code eventName} registered with this builder.
          */
         default <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(
                 @Nonnull QualifiedName eventName,
@@ -260,6 +264,8 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          *                             handle.
          * @return This event sourcing handler phase, allowing for a fluent API to register several event sourcing
          * handlers.
+         * @throws IllegalArgumentException If there already is a matching {@link QualifiedName} based on the given
+         *                                  {@code payloadType} registered with this builder.
          */
         default <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(
                 @Nonnull Class<P> payloadType,
@@ -286,6 +292,8 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          *                             handle.
          * @return This event sourcing handler phase, allowing for a fluent API to register several event sourcing
          * handlers.
+         * @throws IllegalArgumentException If there already is a matching {@link QualifiedName} based on the given
+         *                                  {@code eventName} registered with this builder.
          */
         <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(
                 @Nonnull QualifiedName eventName,

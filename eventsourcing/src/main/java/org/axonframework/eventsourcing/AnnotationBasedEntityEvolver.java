@@ -27,7 +27,6 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import static java.util.Objects.requireNonNull;
 
-
 /**
  * Implementation of the {@link EntityEvolver} that applies state changes through {@link EventSourcingHandler} annotated
  * methods using an {@link AnnotatedHandlerInspector}.

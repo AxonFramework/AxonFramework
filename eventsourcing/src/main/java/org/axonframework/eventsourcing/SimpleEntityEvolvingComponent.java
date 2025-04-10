@@ -49,10 +49,11 @@ public class SimpleEntityEvolvingComponent<E> implements EntityEvolvingComponent
     private final Map<QualifiedName, EntityEvolver<E>> entityEvolvers;
 
     /**
-     * Constructs a multi-{@link EntityEvolver} that applies state changes through the given
-     * {@code eventStateAppliers}.
+     * Constructs a {@code SimpleEntityEvolvingComponent} that evolves an entity of type {@code e} through the given
+     * {@code entityEvolvers}.
      *
-     * @param entityEvolvers The list of {@link EntityEvolver} instances to apply state changes through.
+     * @param entityEvolvers The map of {@link EntityEvolver} instance to {@link QualifiedName} to evolve an entity
+     *                       through.
      */
     public SimpleEntityEvolvingComponent(@Nonnull Map<QualifiedName, EntityEvolver<E>> entityEvolvers) {
         this.entityEvolvers = new HashMap<>(requireNonNull(entityEvolvers, "The entity evolvers cannot be null."));
@@ -66,7 +67,8 @@ public class SimpleEntityEvolvingComponent<E> implements EntityEvolvingComponent
         EntityEvolver<E> entityEvolver = entityEvolvers.get(eventName);
 
         if (entityEvolver == null) {
-            logger.debug("Returning entity as is since we could not find an entity evolver for event [{}].", eventName);
+            logger.debug("Returning entity as is since we could not find an entity evolver for named event [{}].",
+                         eventName);
             return entity;
         }
         return entityEvolver.evolve(
