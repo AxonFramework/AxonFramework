@@ -22,9 +22,9 @@ import org.axonframework.config.ConfigurationParameterResolverFactory;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
+import org.axonframework.eventsourcing.AnnotationBasedEntityEvolver;
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.eventsourcing.EventStateApplier;
+import org.axonframework.eventsourcing.EntityEvolver;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
@@ -81,11 +81,11 @@ public abstract class AbstractStudentTestSuite {
         studentEntity = EventSourcedEntityBuilder.entity(String.class, Student.class)
                                                  .entityFactory(c -> (type, id) -> new Student(id))
                                                  .criteriaResolver(c -> studentCriteriaResolver())
-                                                 .eventStateApplier(c -> studentAnnotationBasedEventStateApplier());
+                                                 .entityEvolver(c -> studentEvolver());
         courseEntity = EventSourcedEntityBuilder.entity(String.class, Course.class)
                                                 .entityFactory(c -> (type, id) -> new Course(id))
                                                 .criteriaResolver(c -> courseCriteriaResolver())
-                                                .eventStateApplier(c -> courseEventStateApplier());
+                                                .entityEvolver(c -> courseEvolver());
 
         statefulCommandHandlingModule = StatefulCommandHandlingModule.named("student-course-module")
                                                                      .entities()
@@ -136,15 +136,15 @@ public abstract class AbstractStudentTestSuite {
     }
 
     /**
-     * Returns the {@link EventStateApplier} for the {@link Course} model. Defaults to manually calling the event
-     * sourcing handlers on the model.
+     * Returns the {@link EntityEvolver} for the {@link Course} model. Defaults to manually calling the event sourcing
+     * handlers on the model.
      */
-    protected EventStateApplier<Course> courseEventStateApplier() {
-        return (model, em, ctx) -> {
-            if (em.getPayload() instanceof StudentEnrolledEvent e) {
-                model.handle(e);
+    protected EntityEvolver<Course> courseEvolver() {
+        return (state, event, context) -> {
+            if (event.getPayload() instanceof StudentEnrolledEvent e) {
+                state.handle(e);
             }
-            return model;
+            return state;
         };
     }
 
@@ -169,11 +169,11 @@ public abstract class AbstractStudentTestSuite {
     }
 
     /**
-     * Returns the {@link EventStateApplier} for the {@link Student} model. Defaults to using the
-     * {@link AnnotationBasedEventStateApplier} to use the annotations placed.
+     * Returns the {@link EntityEvolver} for the {@link Student} model. Defaults to using the
+     * {@link AnnotationBasedEntityEvolver} to use the annotations placed.
      */
-    protected EventStateApplier<Student> studentAnnotationBasedEventStateApplier() {
-        return new AnnotationBasedEventStateApplier<>(Student.class);
+    protected EntityEvolver<Student> studentEvolver() {
+        return new AnnotationBasedEntityEvolver<>(Student.class);
     }
 
     /**

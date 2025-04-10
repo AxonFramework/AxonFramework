@@ -22,16 +22,34 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * A mock {@link ComponentDescriptor} implementation, used for testing.
+ *
+ * @author Mitchll Herrijgers
+ */
 public class MockComponentDescriptor implements ComponentDescriptor {
 
-    private Map<String, Object> properties = new ConcurrentHashMap<>();
+    private final Map<String, Object> properties = new ConcurrentHashMap<>();
 
+    /**
+     * Returns all described properties.
+     *
+     * @return All described properties.
+     */
     public Map<String, Object> getProperties() {
         return properties;
     }
 
-    public Object getProperty(String name) {
-        return properties.get(name);
+    /**
+     * Returns a described property matching the given {@code name}, or {@code null} if this property does not exist.
+     *
+     * @param name The name for which to retrieve a described property.
+     * @param <R>  The expected type of the described property.
+     * @return The property described with the given {@code name}, or {@code null} if this property does not exist.
+     */
+    public <R> R getProperty(String name) {
+        //noinspection unchecked
+        return (R) properties.get(name);
     }
 
     @Override
@@ -66,6 +84,6 @@ public class MockComponentDescriptor implements ComponentDescriptor {
 
     @Override
     public String describe() {
-        return "";
+        throw new UnsupportedOperationException("This mock Component Descriptor cannot describe itself.");
     }
 }

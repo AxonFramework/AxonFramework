@@ -21,19 +21,21 @@ import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.eventsourcing.EventStateApplier;
-import org.axonframework.eventsourcing.MultiEventStateApplier;
-import org.axonframework.eventsourcing.SingleEventTypeStateApplier;
+import org.axonframework.eventsourcing.EntityEvolver;
+import org.axonframework.eventsourcing.PayloadConvertingEntityEvolver;
+import org.axonframework.eventsourcing.SimpleEntityEvolvingComponent;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
-import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.repository.AsyncRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.BiConsumer;
+import java.lang.invoke.MethodHandles;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -51,13 +53,17 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
         EventSourcedEntityBuilder.CriteriaResolverPhase<I, E>,
         EventSourcedEntityBuilder.EventSourcingHandlerPhase<I, E> {
 
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
     private final Class<I> idType;
     private final Class<E> entityType;
     private ComponentFactory<EventSourcedEntityFactory<I, E>> entityFactory;
     private ComponentFactory<CriteriaResolver<I>> criteriaResolver;
-    private final List<ComponentFactory<EventStateApplier<E>>> eventStateApplierFactories = new CopyOnWriteArrayList<>();
+    private ComponentFactory<EntityEvolver<E>> entityEvolver;
+    private final Map<QualifiedName, ComponentFactory<EntityEvolver<E>>> entityEvolverPerName = new HashMap<>();
 
-    DefaultEventSourcedEntityBuilder(@Nonnull Class<I> idType, @Nonnull Class<E> entityType) {
+    DefaultEventSourcedEntityBuilder(@Nonnull Class<I> idType,
+                                     @Nonnull Class<E> entityType) {
         this.idType = requireNonNull(idType, "The identifier type cannot be null.");
         this.entityType = requireNonNull(entityType, "The entity type cannot be null.");
     }
@@ -79,55 +85,23 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     }
 
     @Override
-    public EventSourcedEntityBuilder.EventSourcingHandlerPhase<I, E> eventStateApplier(
-            @Nonnull ComponentFactory<EventStateApplier<E>> eventStateApplier
-    ) {
-        this.eventStateApplierFactories.add(requireNonNull(eventStateApplier,
-                                                           "The event state applier cannot be null."));
+    public EventSourcingHandlerPhase<I, E> entityEvolver(@Nonnull ComponentFactory<EntityEvolver<E>> entityEvolver) {
+        this.entityEvolver = requireNonNull(entityEvolver, "The event state applier cannot be null.");
         return this;
     }
 
     @Override
     public <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull QualifiedName eventName,
                                                                     @Nonnull Class<P> payloadType,
-                                                                    @Nonnull BiConsumer<E, P> eventSourcingHandler) {
-        return eventStateApplier(c -> new SingleEventTypeStateApplier<>(eventName, payloadType, (model, payload) -> {
-            eventSourcingHandler.accept(model, payload);
-            return model;
-        }));
-    }
-
-    @Override
-    public <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull QualifiedName eventName,
-                                                                    @Nonnull Class<P> payloadType,
                                                                     @Nonnull BiFunction<E, P, E> eventSourcingHandler) {
-        return eventStateApplier(c -> new SingleEventTypeStateApplier<>(eventName, payloadType, eventSourcingHandler));
-    }
-
-    @Override
-    public <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull Class<P> payloadType,
-                                                                    @Nonnull BiConsumer<E, P> eventSourcingHandler) {
-        return eventStateApplier(c -> {
-            QualifiedName eventName = resolveQualifiedName(payloadType, c);
-            return new SingleEventTypeStateApplier<>(eventName, payloadType, (model, payload) -> {
-                eventSourcingHandler.accept(model, payload);
-                return model;
-            });
-        });
-    }
-
-    @Override
-    public <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull Class<P> payloadType,
-                                                                    @Nonnull BiFunction<E, P, E> eventSourcingHandler) {
-        return eventStateApplier(c -> {
-            QualifiedName eventName = resolveQualifiedName(payloadType, c);
-            return new SingleEventTypeStateApplier<>(eventName, payloadType, eventSourcingHandler);
-        });
-    }
-
-    private QualifiedName resolveQualifiedName(Class<?> payloadType, NewConfiguration configuration) {
-        MessageTypeResolver messageTypeResolver = configuration.getComponent(MessageTypeResolver.class);
-        return messageTypeResolver.resolve(payloadType).qualifiedName();
+        if (entityEvolverPerName.containsKey(eventName)) {
+            throw new IllegalArgumentException("Event Sourcing Handler for name [" + eventName + "] already exists");
+        }
+        entityEvolverPerName.put(
+                eventName,
+                c -> new PayloadConvertingEntityEvolver<>(payloadType, eventSourcingHandler)
+        );
+        return this;
     }
 
     @Override
@@ -137,24 +111,33 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
 
     @Override
     public ComponentFactory<AsyncRepository<I, E>> repository() {
-        return c -> new AsyncEventSourcingRepository<>(
+        return config -> new AsyncEventSourcingRepository<>(
                 idType,
                 entityType,
-                c.getComponent(AsyncEventStore.class),
-                entityFactory.build(c),
-                criteriaResolver.build(c),
-                constructEventStateApplier(c)
+                config.getComponent(AsyncEventStore.class),
+                entityFactory.build(config),
+                criteriaResolver.build(config),
+                constructEntityEvolver(config)
         );
     }
 
-    private EventStateApplier<E> constructEventStateApplier(NewConfiguration c) {
-        if (eventStateApplierFactories.size() == 1) {
-            return eventStateApplierFactories.getFirst().build(c);
+    private EntityEvolver<E> constructEntityEvolver(NewConfiguration config) {
+        if (entityEvolver != null) {
+            if (entityEvolverPerName.size() > 1) {
+                logger.warn("Ignoring separate Event Sourcing Handlers since an EntityEvolver has been given!");
+            }
+            return entityEvolver.build(config);
         }
-        List<EventStateApplier<E>> eventStateAppliers = eventStateApplierFactories
-                .stream()
-                .map(eventStateApplier -> eventStateApplier.build(c))
-                .toList();
-        return new MultiEventStateApplier<>(eventStateAppliers);
+        return new SimpleEntityEvolvingComponent<>(buildAndCollectEntityEvolvers(config));
+    }
+
+    private Map<QualifiedName, EntityEvolver<E>> buildAndCollectEntityEvolvers(NewConfiguration config) {
+        return entityEvolverPerName.entrySet()
+                                   .stream()
+                                   .collect(Collectors.toMap(
+                                           Map.Entry::getKey,
+                                           entry -> entry.getValue()
+                                                         .build(config)
+                                   ));
     }
 }
