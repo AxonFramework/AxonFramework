@@ -35,8 +35,6 @@ import org.axonframework.integrationtests.testsuite.student.events.StudentEnroll
 import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -150,9 +148,7 @@ public abstract class AbstractStudentTestSuite {
      * with the tag "Course" and the given model id.
      */
     protected CriteriaResolver<String> courseCriteriaResolver(NewConfiguration c) {
-        return courseId -> EventCriteria.match()
-                                        .eventsOfAnyType()
-                                        .withTags(new Tag("Course", courseId));
+        return courseId -> EventCriteria.havingTags(new Tag("Course", courseId));
     }
 
     /**
@@ -160,9 +156,7 @@ public abstract class AbstractStudentTestSuite {
      * with the tag "Student" and the given model id.
      */
     protected CriteriaResolver<String> studentCriteriaResolver(NewConfiguration c) {
-        return studentId -> EventCriteria.match()
-                                         .eventsOfAnyType()
-                                         .withTags(new Tag("Student", studentId));
+        return studentId -> EventCriteria.havingTags(new Tag("Student", studentId));
     }
 
     /**

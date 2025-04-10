@@ -18,48 +18,141 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.QualifiedName;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * Describes the criteria for {@link EventStoreTransaction#source(SourcingCondition) sourcing} or
- * {@link StreamableEventSource#open(String, StreamingCondition) streaming} events. The criteria are used to filter the
- * events to read from the {@link AsyncEventStore event store}.
+ * {@link StreamableEventSource#open(StreamingCondition) streaming} events. The criteria are used to filter the events
+ * to read from the {@link AsyncEventStore event store}.
  * <p>
- * The criteria can be singular, or a combination of multiple criteria. Criteria can be combined using
- * {@link #or(EventCriteria)} or {@link #or()}, after which events will match either of the multiple criteria. For
- * example, given the following set of criteria in which we load the events required to decide if "matchingStudent" can be
- * added to "matchingCourse":
+ * <h3>Filtering</h3>
+ * Filtering happens based on the {@link TaggedEventMessage#tags() tags} of the event, indicating an association during
+ * publishing of the event. For example, a student enrolling in a course may have the "student" tag with the value of
+ * its id. This value is determined during publishing by the {@link TagResolver}. If multiple tags are defined, the
+ * event must match all of them to be considered a match.
+ *
  * <pre>
  *     {@code
  *     EventCriteria criteria = EventCriteria
- *         .match()
- *         .eventTypes("StudentRegistered")
- *         .withTags(Tag.of("student", "matchingStudent"))
+ *         .havingTags(Tag.of("student", "matchingStudent"))
+ *    }</pre>
+ * <p>
+ * After first defining the tags to filter on through {@link #havingTags(Tag...)} or one of its variants, the scope of
+ * the read on the event store can further by determined by limiting the types, through
+ * {@link EventTypeRestrictableEventCriteria#andBeingOfType(String...)}. This is optional, and will default to all types
+ * if not specified.
+ * <pre>
+ *     {@code
+ *     EventCriteria criteria = EventCriteria
+ *         // Reads all events with this tag
+ *         .havingTags(Tag.of("student", "matchingStudent"))
  *         .or()
- *         .eventTypes("StudentAssignedToCourse", "CourseRegistered")
- *         .withTags(Tag.of("course", "matchingCourse"))
+ *         // Only reads events with this tag and type
+ *         .havingTags("course", "matchingCourse")
+ *         .andBeingOfType(new QualifiedName("CourseRegistered"))
  *
  *    }
  *    </pre>
  * <p>
- * The following events will match:
+ * When using an event store that supports it, using such a type-filtered criteria will narrow the scope of your
+ * transaction, leading to better performance and less chance of concurrency conflicts. So while optional, it's
+ * recommended to use it when possible.
+ *
+ * <h3>Combining</h3>
+ * You can combine multiple using {@link #either(EventCriteria...)}, or in a fluent fashion using {@link #or()}. This
+ * allows you to create more complex criteria that match events based on multiple tags or types. However, it's not
+ * possible to create AND conditions between multiple criteria.
+ *
+ * <pre>
+ *     {@code
+ *     EventCriteria criteria = EventCriteria
+ *         .havingTags(Tag.of("student", "matchingStudent"))
+ *         .andBeingOfType(new QualifiedName("StudentEnrolled"))
+ *         .or()
+ *         .havingTags("course", "matchingCourse")
+ *         .andBeingOfType(new QualifiedName("CourseRegistered"))
+ *    }
+ *    </pre>
+ *
+ * <h3>Examples</h2>
+ * To make it easier to understand how the criteria work, here are some examples. During the examples, the following
+ * events are in the event store, and we want to load a subset of these events:
  * <ul>
  *     <li> Event [StudentRegistered, student -> matchingStudent]</li>
  *     <li> Event [CourseRegistered, course -> matchingCourse]</li>
  *     <li> Event [StudentAssignedToCourse, student -> nonMatchingStudent, course -> matchingCourse]</li>
  *     <li> Event [StudentAssignedToCourse, student -> matchingStudent, course -> nonMatchingCourse]</li>
- * </ul>
- * <p>
- * The following events do not match:
- * <ul>
+ *     <li> Event [StudentAssignedToCourse, student -> matchingStudent, course -> matchingStudent]</li>
  *     <li> Event [StudentRegistered, student -> nonMatchingStudent]</li>
  *     <li> Event [CourseRegistered, course -> nonMatchingCourse]</li>
  *     <li> Event [StudentAssignedToCourse, student -> nonMatchingStudent, course -> nonMatchingCourse]</li>
  * </ul>
+ * <h4>Example 1</h4>
+ * <pre>
+ *     {@code
+ *     EventCriteria criteria = EventCriteria
+ *         .havingTags(Tag.of("student", "matchingStudent"))
+ *    }</pre>
+ * This criteria will match all events with the tag "student" and the value "matchingStudent". The following events will
+ * match:
+ * <ul>
+ *     <li> Event [StudentRegistered, student -> matchingStudent]</li>
+ *     <li> Event [StudentAssignedToCourse, student -> matchingStudent, course -> nonMatchingCourse]</li>
+ *     <li> Event [StudentAssignedToCourse, student -> matchingStudent, course -> matchingStudent]</li>
+ * </ul>
+ * <h4>Example 2</h4>
+ * We don't have to pass in {@link Tag#of(String, String) tags} as {@link Tag} instances. We can also pass them in as
+ * key-value pairs:
+ * <pre>
+ *     {@code
+ *     EventCriteria criteria = EventCriteria
+ *         .havingTags("student", "matchingStudent", "course", "matchingCourse")
+ *    }</pre>
  * <p>
+ * This criteria will match all events with both the "student" tag of value "matchingStudent" and the "course" tag with
+ * value "matchingStudent". The following events will match:
+ * <ul>
+ *     <li> Event [StudentRegistered, student -> matchingStudent]</li>
+ *     <li> Event [StudentAssignedToCourse, student -> matchingStudent, course -> matchingStudent]</li>
+ * </ul>
+ * <h4>Example 3</h4>
+ * We can also combine multiple criteria using {@link #or(EventCriteria)}, such as searching for multiple students:
+ * <pre>
+ *     {@code
+ *     EventCriteria criteria = EventCriteria
+ *         .havingTags("student", "matchingStudent")
+ *         .or()
+ *         .havingTags("student", "nonMatchingStudent")
+ *    }</pre>
+ * <p>
+ * This works as an OR condition, meaning that the following events will match:
+ * <ul>
+ *     <li> Event [StudentRegistered, student -> matchingStudent]</li>
+ *     <li> Event [StudentAssignedToCourse, student -> matchingStudent, course -> nonMatchingCourse]</li>
+ *     <li> Event [StudentAssignedToCourse, student -> nonMatchingStudent, course -> matchingCourse]</li>
+ *     <li> Event [StudentAssignedToCourse, student -> nonMatchingStudent, course -> nonMatchingCourse]</li>
+ * </ul>
+ * <h4>Example 4</h4>
+ * Last but not least, let's say that we only want the "StudentRegistered" events for the "matchingStudent". This
+ * can be done by using the {@link EventTypeRestrictableEventCriteria#andBeingOfType(String...)} method:
+ * <pre>
+ *     {@code
+ *     EventCriteria criteria = EventCriteria
+ *         .havingTags("student", "matchingStudent")
+ *         .andBeingOfType(new QualifiedName("StudentRegistered"))
+ *    }</pre>
+ * The following events will match:
+ * <ul>
+ *     <li> Event [StudentRegistered, student -> matchingStudent]</li>
+ * </ul>
+ * See {@link EventTypeRestrictableEventCriteria} for all the methods available to you.
+ *
+ * <h3>Flattening</h3>
  * The criteria can be flattened into a {@link Set} of {@link EventCriterion} instances, which are a specialized
  * representation of the criteria that are guaranteed to be non-nested. As such, these instances can be used to read
  * their {@link EventCriterion#tags()} and {@link EventCriterion#types()} without the need to interpret conditions,
@@ -73,66 +166,80 @@ import java.util.stream.Collectors;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public sealed interface EventCriteria permits OrEventCriteria, FilteredEventCriteria, AnyEvent, EventCriterion {
+public sealed interface EventCriteria
+        permits OrEventCriteria, TagAndTypeFilteredEventCriteria, TagFilteredEventCriteria, AnyEvent, EventCriterion,
+        EventTypeRestrictableEventCriteria {
 
     /**
      * Construct a {@code EventCriteria} that allows <b>any</b> events.
      * <p>
      * Use this instance when all events are of interest during
-     * {@link StreamableEventSource#open(String, StreamingCondition) streaming} or when there are no consistency
-     * boundaries to validate during {@link EventStoreTransaction#appendEvent(EventMessage) appending}. Note that this
+     * {@link StreamableEventSource#open(StreamingCondition) streaming} or when there are no consistency boundaries to
+     * validate during {@link EventStoreTransaction#appendEvent(EventMessage) appending}. Note that this
      * {@code EventCriteria} does not make sense for {@link EventStoreTransaction#source(SourcingCondition) sourcing},
      * as it is <b>not</b> recommended to source the entire event store.
+     * <p>
+     * Event though this criteria will not filter any tags, you can limit the types of events to be matched by using the
+     * {@link EventTypeRestrictableEventCriteria#andBeingOfType(Set)} method.
      *
      * @return An {@code EventCriteria} that contains no criteria at all.
      */
-    static EventCriteria anyEvent() {
+    static EventTypeRestrictableEventCriteria havingAnyTag() {
         return AnyEvent.INSTANCE;
     }
 
     /**
-     * Create a builder to construct a {@link FilteredEventCriteria} instance. This criteria will match events that
-     * match the given type and tags.
+     * Define that the event must contain all the provided {@code tags} to match. These tags function in an AND
+     * relation, meaning that an event must have all tags to match. A partial match is not sufficient.
      * <p>
-     * The event will match on type if it is contained in the {@link EventCriteriaBuilder#eventsOfTypes(String...)} set, or
-     * if the set is empty.
-     * <p>
-     * The event will match on tags if it contains all tags provided during building. If there are no tags, the event
-     * will match on all events. For example, given the following set of tags:
-     * <ul>
-     *      <li>STUDENT -> A</li>
-     *      <li>COURSE -> X</li>
-     * </ul>
-     * The following events will match:
-     * <ul>
-     *     <li> Event [STUDENT -> A, COURSE -> X]</li>
-     *     <li> Event [STUDENT -> A, COURSE -> X, FACULTY -> 1]</li>
-     * </ul>
-     * But the following events do not:
-     * <ul>
-     *     <li> Event [STUDENT -> A]</li>
-     *     <li> Event [STUDENT -> A, COURSE -> Z]</li>
-     *     <li> Event [STUDENT -> B, COURSE -> Z]</li>
-     *     <li> Event [STUDENT -> B, COURSE -> X]</li>
-     *     <li> Event [STUDENT -> Z]</li>
-     * </ul>
-     * <p>
-     * Note that constructing a {@link FilteredEventCriteria} makes most sense when
-     * {@link EventStoreTransaction#source(SourcingCondition) sourcing} entities from events.
-     * For example, when sourcing events for an Aggregate, the criteria could be constructed as follows:
+     * You can further limit the types of events to be matched by using the
+     * {@link EventTypeRestrictableEventCriteria#andBeingOfType(Set)} method.
      *
-     * <pre>
-     *     {@code
-     *     EventCriteria criteria = EventCriteria.match()
-     *     .eventTypes("StudentRegistered", "CourseRegistered")
-     *     .withTags(Tag.of("studentId", "A"))
-     *    }
-     *    </pre>
-     *
-     * @return A builder to construct a {@link FilteredEventCriteria} instance.
+     * @param tags The tags to match against.
+     * @return The completed EventCriteria instance.
      */
-    static EventCriteriaBuilderEventTypeStage match() {
-        return EventCriteriaBuilder.match();
+    static EventTypeRestrictableEventCriteria havingTags(@Nonnull Set<Tag> tags) {
+        if (tags.isEmpty()) {
+            return AnyEvent.INSTANCE;
+        }
+        return new TagFilteredEventCriteria(tags);
+    }
+
+    /**
+     * Define that the event must contain all the provided {@code tags} to match. These tags function in an AND
+     * relation, meaning that an event must have all tags to match. A partial match is not sufficient.
+     * <p>
+     * You can further limit the types of events to be matched by using the
+     * {@link EventTypeRestrictableEventCriteria#andBeingOfType(Set)} method.
+     *
+     * @param tags The tags to match against.
+     * @return The completed EventCriteria instance.
+     */
+    static EventTypeRestrictableEventCriteria havingTags(@Nonnull Tag... tags) {
+        return havingTags(Set.of(tags));
+    }
+
+    /**
+     * Define, as key-value pairs, that the event must contain all the provided {@code tags} to match. These tags
+     * function in an AND relation, meaning that an event must have all tags to match. A partial match is not
+     * sufficient.
+     * <p>
+     * You can further limit the types of events to be matched by using the
+     * {@link EventTypeRestrictableEventCriteria#andBeingOfType(Set)} method.
+     *
+     * @param tags The tags to match against.
+     * @return The completed EventCriteria instance.
+     */
+    static EventTypeRestrictableEventCriteria havingTags(@Nonnull String... tags) {
+        if ((tags.length & 1) == 1) {
+            throw new IllegalArgumentException("Tags must be in pairs of key and value");
+        }
+        var tagSet = new HashSet<Tag>();
+        for (int i = 0; i < tags.length; i += 2) {
+            tagSet.add(new Tag(tags[i], tags[i + 1]));
+        }
+
+        return havingTags(tagSet);
     }
 
     /**
@@ -158,30 +265,26 @@ public sealed interface EventCriteria permits OrEventCriteria, FilteredEventCrit
 
 
     /**
-     * Start a builder to construct an additional {@link FilteredEventCriteria} instance that when constructed matches
-     * both the events as defined by the builder and the events as defined by the current criteria. Once construction is
-     * complete, returns an {@link OrEventCriteria} that matches events from either {@code this EventCriteria} or
-     * the built one. See {@link EventCriteriaBuilder} for more details.
+     * Start a builder to construct an additional {@code EventCriteria} that will be combined with this one using
+     * {@link #or(EventCriteria)}. The resulting {@code EventCriteria} will match events that match either this
+     * {@code EventCriteria} or the built one.
      *
-     * @return A builder to construct a {@link FilteredEventCriteria} instance that, once built, will match events that
-     * match either this {@code EventCriteria} or the built one.
+     * @return A builder to construct an EventCriteria instance that will match
+     * events that match either this {@code EventCriteria} or the built one.
      */
-    default EventCriteriaBuilderEventTypeStage or() {
-        return EventCriteriaBuilder.or(this);
+    default OrEventCriteriaBuilder or() {
+        return new OrEventCriteriaBuilder(this);
     }
 
     /**
      * Indicates whether the given {@code type} and {@code tags} matches the types and tags defined in this or these
      * criteria. If no types are defined, any given {@code type} will be considered a match.
-     * <p/>
-     * See {@link #match()} for more details about how events are matched.
      *
      * @param type The type to match against this criteria instance.
      * @param tags The tags to match against this criteria instance.
      * @return {@code true} if the type matches, otherwise {@code false}.
-     * @see #match()
      */
-    boolean matches(@Nonnull String type, @Nonnull Set<Tag> tags);
+    boolean matches(@Nonnull QualifiedName type, @Nonnull Set<Tag> tags);
 
     /**
      * Flatten this, possibly nested, {@code EventCriteria} into a {@link Set} of {@link EventCriterion}. These
@@ -194,6 +297,7 @@ public sealed interface EventCriteria permits OrEventCriteria, FilteredEventCrit
 
     /**
      * Indicates whether this {@code EventCriteria} instance has any criteria defined.
+     *
      * @return {@code true} if this {@code EventCriteria} instance has criteria defined, otherwise {@code false}.
      */
     boolean hasCriteria();

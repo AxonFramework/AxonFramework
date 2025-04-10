@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 /**
- * An {@link AppendCondition} implementation that has {@link EventCriteria#anyEvent() no criteria}.
+ * An {@link AppendCondition} implementation that has {@link EventCriteria#havingAnyTag() no criteria}.
  * <p>
  * Only use this {@code AppendCondition} when appending events that <em>do not</em> partake in the consistency boundary
  * of any model(s).
@@ -43,7 +43,7 @@ final class NoAppendCondition implements AppendCondition {
 
     @Override
     public EventCriteria criteria() {
-        return EventCriteria.anyEvent();
+        return EventCriteria.havingAnyTag();
     }
 
     @Override

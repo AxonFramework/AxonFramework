@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.QualifiedName;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -43,7 +44,7 @@ record OrEventCriteria(Set<EventCriteria> criteria) implements EventCriteria {
     }
 
     @Override
-    public boolean matches(@Nonnull String type, @Nonnull Set<Tag> tags) {
+    public boolean matches(@Nonnull QualifiedName type, @Nonnull Set<Tag> tags) {
         return criteria.stream().anyMatch(criteria -> criteria.matches(type, tags));
     }
 

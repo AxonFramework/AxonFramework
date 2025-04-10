@@ -145,7 +145,7 @@ class AnnotatedEventSourcedEntityBuilderTest {
 
         @Override
         public EventCriteria apply(CourseId courseId) {
-            return EventCriteria.anyEvent();
+            return EventCriteria.havingAnyTag();
         }
     }
 

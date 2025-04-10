@@ -32,6 +32,7 @@ import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.SimpleEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -158,7 +159,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
                                 .values()
                                 .stream()
                                 .map(event -> (TaggedEventMessage<?>) event)
-                                .anyMatch(taggedEvent -> condition.matches(taggedEvent.event().type().name(), taggedEvent.tags()));
+                                .anyMatch(taggedEvent -> condition.matches(taggedEvent.event().type().qualifiedName(), taggedEvent.tags()));
     }
 
     @Override
@@ -188,7 +189,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     }
 
     private static boolean match(TaggedEventMessage<?> taggedEvent, EventsCondition condition) {
-        String qualifiedName = taggedEvent.event().type().name();
+        QualifiedName qualifiedName = taggedEvent.event().type().qualifiedName();
         return condition.matches(qualifiedName, taggedEvent.tags());
     }
 

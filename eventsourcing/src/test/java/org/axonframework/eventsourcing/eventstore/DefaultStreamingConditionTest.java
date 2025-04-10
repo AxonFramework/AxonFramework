@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DefaultStreamingConditionTest {
 
     private static final GlobalSequenceTrackingToken TEST_POSITION = new GlobalSequenceTrackingToken(1337);
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.match().eventsOfAnyType().withTags("key", "value");
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.havingTags("key", "value");
 
     private DefaultStreamingCondition testSubject;
 
@@ -60,13 +61,13 @@ class DefaultStreamingConditionTest {
 
     @Test
     void withCriteriaCombinesGivenWithExistingCriteria() {
-        EventCriteria testCriteria = EventCriteria.match().eventsOfTypes("test-type").withTags(new Tag("other-key", "other-value"));
+        EventCriteria testCriteria = EventCriteria.havingTags(new Tag("other-key", "other-value")).andBeingOfType("test-type");
 
         StreamingCondition result = testSubject.or(testCriteria);
 
         assertEquals(TEST_POSITION, result.position());
-        assertTrue(result.matches("test-type", Set.of(new Tag("other-key", "other-value"))));
-        assertFalse(result.matches("random-type", Set.of(new Tag("other-key", "other-value"))));
-        assertTrue(result.matches("random-type", Set.of(new Tag("key", "value"))));
+        assertTrue(result.matches(new QualifiedName("test-type"), Set.of(new Tag("other-key", "other-value"))));
+        assertFalse(result.matches(new QualifiedName("random-type"), Set.of(new Tag("other-key", "other-value"))));
+        assertTrue(result.matches(new QualifiedName("random-type"), Set.of(new Tag("key", "value"))));
     }
 }

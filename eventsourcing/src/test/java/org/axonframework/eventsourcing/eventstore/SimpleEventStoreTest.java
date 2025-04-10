@@ -26,7 +26,6 @@ import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -170,7 +169,7 @@ class SimpleEventStoreTest {
 
             var result = asyncUnitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc);
-                doConsumeAll(transaction.source(SourcingCondition.conditionFor(EventCriteria.anyEvent())));
+                doConsumeAll(transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag())));
                 transaction.appendEvent(eventMessage(0));
                 return completedFuture(transaction);
             });
@@ -206,10 +205,10 @@ class SimpleEventStoreTest {
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
             var result = asyncUnitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc);
-                var firstStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.anyEvent()));
+                var firstStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag()));
 
-                var secondStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.anyEvent()));
-                var thirdStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.anyEvent()));
+                var secondStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag()));
+                var thirdStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag()));
                 doConsumeAll(firstStream, secondStream, thirdStream);
                 transaction.appendEvent(eventMessage(0));
                 return completedFuture(transaction);

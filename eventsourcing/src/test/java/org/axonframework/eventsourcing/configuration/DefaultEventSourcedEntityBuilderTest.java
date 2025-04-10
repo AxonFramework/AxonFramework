@@ -47,7 +47,7 @@ class DefaultEventSourcedEntityBuilderTest {
     @BeforeEach
     void setUp() {
         testEntityFactory = (type, id) -> new Course(id);
-        testCriteriaResolver = event -> EventCriteria.anyEvent();
+        testCriteriaResolver = event -> EventCriteria.havingAnyTag();
         testEventStateApplier = (model, event, processingContext) -> model;
         constructedEntityFactory = new AtomicBoolean(false);
         constructedCriteriaResolver = new AtomicBoolean(false);

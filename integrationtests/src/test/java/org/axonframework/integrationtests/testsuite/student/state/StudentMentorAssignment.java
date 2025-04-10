@@ -56,12 +56,11 @@ public class StudentMentorAssignment {
     @EventCriteriaBuilder
     public static EventCriteria resolveCriteria(StudentMentorModelIdentifier id) {
         return EventCriteria.either(
-                EventCriteria.match()
-                             .eventsOfTypes(MentorAssignedToStudentEvent.class.getName())
-                             .withTags(new Tag("Student", id.menteeId())),
-                EventCriteria.match()
-                             .eventsOfTypes(MentorAssignedToStudentEvent.class.getName())
-                             .withTags(new Tag("Student", id.mentorId()))
+                EventCriteria.havingTags(new Tag("Student", id.menteeId()))
+                             .andBeingOfType(MentorAssignedToStudentEvent.class.getName()),
+                EventCriteria.havingTags(new Tag("Student", id.mentorId()))
+                             .andBeingOfType(MentorAssignedToStudentEvent.class.getName())
+
         );
     }
 }

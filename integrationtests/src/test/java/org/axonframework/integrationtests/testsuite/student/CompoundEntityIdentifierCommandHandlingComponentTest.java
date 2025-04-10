@@ -18,7 +18,6 @@ package org.axonframework.integrationtests.testsuite.student;
 
 
 import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
@@ -30,7 +29,6 @@ import org.axonframework.integrationtests.testsuite.student.events.MentorAssigne
 import org.axonframework.integrationtests.testsuite.student.state.StudentMentorAssignment;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
@@ -53,12 +51,12 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                 EventSourcedEntityBuilder.entity(StudentMentorModelIdentifier.class, StudentMentorAssignment.class)
                                          .entityFactory(c -> (type, id) -> new StudentMentorAssignment(id))
                                          .criteriaResolver(c -> id -> EventCriteria.either(
-                                                 EventCriteria.match()
-                                                              .eventsOfTypes(MentorAssignedToStudentEvent.class.getName())
-                                                              .withTags(new Tag("Student", id.menteeId())),
-                                                 EventCriteria.match()
-                                                              .eventsOfTypes(MentorAssignedToStudentEvent.class.getName())
-                                                              .withTags(new Tag("Student", id.mentorId()))
+                                                 EventCriteria.havingTags(new Tag("Student", id.menteeId()))
+                                                              .or()
+                                                              .havingTags(new Tag("Student", id.mentorId()))
+                                                              .andBeingOfType("blabla"),
+                                                 EventCriteria.havingTags(new Tag("Student", id.mentorId()))
+                                                              .andBeingOfType(MentorAssignedToStudentEvent.class.getName())
                                          ))
                                          .eventStateApplier(
                                                  c -> new AnnotationBasedEventStateApplier<>(StudentMentorAssignment.class)
