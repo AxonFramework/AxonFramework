@@ -104,7 +104,7 @@ class DefaultEventSourcedEntityBuilderTest {
     }
 
     @Test
-    void eventStateApplierThrowsNullPointerExceptionForNullEntityEvolver() {
+    void entityEvolverThrowsNullPointerExceptionForNullEntityEvolver() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class,
                      () -> EventSourcedEntityBuilder.entity(CourseId.class, Course.class)

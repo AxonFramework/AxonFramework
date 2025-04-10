@@ -42,8 +42,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class AnnotationBasedEntityEvolverTest {
 
-    private static final EntityEvolver<TestState> ENTITY_EVOLVER = new AnnotationBasedEntityEvolver<>(
-            TestState.class);
+    private static final EntityEvolver<TestState> ENTITY_EVOLVER = new AnnotationBasedEntityEvolver<>(TestState.class);
+
     private final ProcessingContext processingContext = ProcessingContext.NONE;
 
     @Nested
@@ -192,6 +192,7 @@ class AnnotationBasedEntityEvolverTest {
     @Nested
     class RecordSupport {
 
+        @SuppressWarnings("unused")
         private record RecordState(String handledPayloads) {
 
             private static RecordState empty() {
@@ -249,8 +250,10 @@ class AnnotationBasedEntityEvolverTest {
             // when-then
             var exception = assertThrows(StateEvolvingException.class,
                                          () -> testSubject.evolve(state, event, processingContext));
-            assertEquals(exception.getMessage(),
-                         "Failed to apply event [event#0.0.1] in order to evolve [class org.axonframework.eventsourcing.AnnotationBasedEntityEvolverTest$ErrorThrowingState] state");
+            assertEquals(
+                    "Failed to apply event [event#0.0.1] in order to evolve [class org.axonframework.eventsourcing.AnnotationBasedEntityEvolverTest$ErrorThrowingState] state",
+                    exception.getMessage()
+            );
             assertInstanceOf(RuntimeException.class, exception.getCause());
             assertTrue(exception.getCause().getMessage().contains("Simulated error for event: 0"));
         }
@@ -261,6 +264,7 @@ class AnnotationBasedEntityEvolverTest {
             var event = domainEvent(0);
 
             // when-then
+            //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
                          () -> ENTITY_EVOLVER.evolve(null, event, processingContext),
                          "Model may not be null");
@@ -272,6 +276,7 @@ class AnnotationBasedEntityEvolverTest {
             var state = new TestState();
 
             // when-then
+            //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
                          () -> ENTITY_EVOLVER.evolve(state, null, processingContext),
                          "Event Message may not be null");
@@ -327,6 +332,7 @@ class AnnotationBasedEntityEvolverTest {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class ErrorThrowingState {
 
         @EventSourcingHandler
@@ -335,6 +341,7 @@ class AnnotationBasedEntityEvolverTest {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class HandlingJustStringState {
 
         private int handledCount = 0;

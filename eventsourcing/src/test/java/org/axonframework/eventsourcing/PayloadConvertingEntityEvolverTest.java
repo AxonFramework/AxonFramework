@@ -16,6 +16,7 @@
 
 package org.axonframework.eventsourcing;
 
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -41,29 +42,43 @@ class PayloadConvertingEntityEvolverTest {
     }
 
     @Test
-    void appliesEventWhenTypeMatchesAndPayloadTypeIsConvertible() {
-        String result = testSubject.evolve(ENTITY,
-                                           new GenericEventMessage<>(new MessageType(String.class), PAYLOAD),
-                                           ProcessingContext.NONE);
+    void evolveAppliesEventWhenPayloadTypeIsConvertible() {
+        EventMessage<String> testEvent = new GenericEventMessage<>(new MessageType(String.class), PAYLOAD);
+
+        String result = testSubject.evolve(ENTITY, testEvent, ProcessingContext.NONE);
 
         assertEquals(ENTITY + PAYLOAD, result);
     }
 
     @Test
-    void throwsExceptionWhenTypeMatchesAndPayloadTypeCannotBeConverted() {
-        assertThrows(ClassCastException.class,
-                     () -> testSubject.evolve(ENTITY,
-                                              new GenericEventMessage<>(new MessageType(String.class),
-                                                                        new StringBuilder()),
-                                              ProcessingContext.NONE));
+    void evolveThrowsExceptionWhenPayloadTypeCannotBeConverted() {
+        EventMessage<StringBuilder> testEvent =
+                new GenericEventMessage<>(new MessageType(String.class), new StringBuilder());
+
+        assertThrows(ClassCastException.class, () -> testSubject.evolve(ENTITY, testEvent, ProcessingContext.NONE));
     }
 
     @Test
-    void invokesEvolveRegardlessOfQualifiedNameMismatch() {
-        String result = testSubject.evolve(ENTITY,
-                                           new GenericEventMessage<>(new MessageType(Integer.class), PAYLOAD),
-                                           ProcessingContext.NONE);
+    void evolveIsInvokedSuccessfullyRegardlessOfQualifiedNameMismatch() {
+        EventMessage<String> testEvent = new GenericEventMessage<>(new MessageType(Integer.class), PAYLOAD);
+
+        String result = testSubject.evolve(ENTITY, testEvent, ProcessingContext.NONE);
+
         assertEquals(ENTITY + PAYLOAD, result);
+    }
+
+    @Test
+    void evolveThrowsNullPointerExceptionForNullEntity() {
+        EventMessage<String> testEvent = new GenericEventMessage<>(new MessageType(String.class), PAYLOAD);
+
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> testSubject.evolve(null, testEvent, ProcessingContext.NONE));
+    }
+
+    @Test
+    void evolveThrowsNullPointerExceptionForNullEvent() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> testSubject.evolve(ENTITY, null, ProcessingContext.NONE));
     }
 
     @Test
