@@ -16,8 +16,8 @@ so even if you are already familiar with Axon Framework 4, we still recommend yo
 == What's New in Axon Framework 5?
 Axon Framework 5 represents a significant evolution with major improvements to the framework's architecture:
 
-* Dynamic Consistency Boundary (DCB) - A revolutionary concept that allows more flexible event sourcing patterns overcoming traditional aggregates limitations. With this mind-shift you may organize your code more around features than entities. It plays very nicely with Vertical Slice Architecture.
-* Revisited Configuration — A new, more flexible configuration model.
+* Dynamic Consistency Boundary (DCB) - A revolutionary concept that allows more flexible event sourcing patterns overcoming traditional aggregates limitations. With this mind-shift you may organize your code more around features than entities. It plays nicely with Vertical Slice Architecture.
+* Revisited Configuration - A new, more flexible configuration model.
 * Improved Testing Support - Enhanced testing fixtures that allow you to verify your app configured as same as in the production code.
 * Java 21 Required - Taking advantage of the latest Java features.
 

@@ -441,7 +441,7 @@ But how do we ensure that we won't load events for every student and every cours
 How do we limit our Consistency Boundary to only what is really needed to validate business rules?
 It's where the `EventCriteria` comes into play.
 
-== Event Criteria
+== Event criteria
 
 While implementing the `CreateCourse` feature, we defined that we want to build our state based on events that are tagged with `courseId` by using `@EventSourcedEntity(tagKey = "courseId")`.
 For the `SubscribeStudent` handling, this is not enough, because, as you already know, we need to build our state based on both `studentId` and `courseId` tagged events.
@@ -464,7 +464,7 @@ You may think about that in such way: before event could have just one tag - the
 
 Here the situation is a bit more complicated, because we need to load events for two different entities - `Student` and `Course`.
 In a system based on Aggregates, you may load both and limit your accessibility - the risk of optimistic concurrency is higher, or implement a complex saga to orchestrate changes between those two entities - then you also need to duplicate the events and deal with eventual consistency.
-But in domain experts' language, `StudentSubscribed` is just one fact, which influences rules around both `Student` and `Course`.
+Whereas in the domain experts' language, `StudentSubscribed` is just one fact, which influences rules around both `Student` and `Course`.
 
 As long as we're in a single bounded context and have all events in one storage, we can define our custom `EventCriteria` to shape our `State` which mixes properties for `Student` and `Course`!
 The operation will be also immediately consistent and transactional.
@@ -523,7 +523,7 @@ Our colleague Milan from AxonIQ (with our ex-colleague Sara) discuss those scena
 ====
 Keep in mind it's beneficial to define events types in the criteria.
 Technically you can just use `EventCriteria.match().eventsOfTypes(...)` and load all events for the given tag.
-But in this case, you load more than needed, and it's more possible to clash with other changes, which cause events that do not influence these certain business rules.
+But in this case, you load more than needed, and it's possible to clash with other changes, which cause events that do not influence these certain business rules.
 ====
 
 == Summing up

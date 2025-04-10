@@ -139,11 +139,11 @@ Adding the code to create the `AxonTestFixture` here will ensure that we have a 
 
 Thanks to the help of the `AxonTestFixture` we can now create a test following the Given-When-Then pattern:
 
-- *Given*: Set the initial state for our test.
+* *Given*: Set the initial state for our test.
 Since we are designing our system to follow Event-Sourcing patterns, we need to set the list of events that have already happened before receiving the command.
-- *When*: Specify the command whose execution we want to test.
+* *When*: Specify the command whose execution we want to test.
 In this case, we will test the processing of a `CreateCourse`.
-- *Expect*: We can instruct the fixture on the expectations we have from our system after processing the command.
+* *Expect*: We can instruct the fixture on the expectations we have from our system after processing the command.
 In an Event-Sourcing system, we will specify these expectations in the form of what events should have been produced by the command handler as a result of processing the command.
 
 So, let's define a method in our unit test to check that our system can successfully process the request to create a course.
@@ -475,7 +475,7 @@ public class UniversityAxonApplication {
 
 }
 ----
-<.> The `start` method builds and starts (e.g., register lifecycle hooks) the configuration and returns the `NewConfiguration` instance. The name of the `NewConfiguration` type will definitely be changed to `Configuration` when the Framework is released.
+<.> The `start` method builds and starts (for example, register lifecycle hooks) the configuration and returns the `NewConfiguration` instance. The name of the `NewConfiguration` type will definitely be changed to `Configuration` when the Framework is released.
 <.> The `getComponent` method allows us to retrieve the `CommandGateway` component from the configuration.
 <.> The `sendAndWait` method sends the command to the command bus and waits for the result.
 
