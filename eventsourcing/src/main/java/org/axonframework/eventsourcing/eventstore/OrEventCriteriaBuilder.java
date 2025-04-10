@@ -17,7 +17,6 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.eventhandling.EventMessage;
 
 import java.util.Objects;
 import java.util.Set;
@@ -43,7 +42,7 @@ public final class OrEventCriteriaBuilder {
      * relation, meaning that an event must have all tags to match. A partial match is not sufficient.
      * <p>
      * You can further limit the types of events to be matched by using the
-     * {@link EventTypeRestrictableEventCriteria#andBeingOfType(Set)} method.
+     * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(Set)} method.
      *
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.
@@ -57,7 +56,7 @@ public final class OrEventCriteriaBuilder {
      * relation, meaning that an event must have all tags to match. A partial match is not sufficient.
      * <p>
      * You can further limit the types of events to be matched by using the
-     * {@link EventTypeRestrictableEventCriteria#andBeingOfType(Set)} method.
+     * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(Set)} method.
      *
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.
@@ -71,7 +70,7 @@ public final class OrEventCriteriaBuilder {
      * relation, meaning that an event must have all tags to match. A partial match is not sufficient.
      * <p>
      * You can further limit the types of events to be matched by using the
-     * {@link EventTypeRestrictableEventCriteria#andBeingOfType(Set)} method.
+     * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(Set)} method.
      *
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.
@@ -84,7 +83,7 @@ public final class OrEventCriteriaBuilder {
      * Construct a {@code EventCriteria} that allows <b>any</b> events.
      * <p>
      * Event though this criteria will not filter any tags, you can limit the types of events to be matched by using the
-     * {@link EventTypeRestrictableEventCriteria#andBeingOfType(Set)} method.
+     * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(Set)} method.
      *
      * @return An {@code EventCriteria} that contains no criteria at all.
      */

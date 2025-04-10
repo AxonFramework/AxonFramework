@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  * <p>
  * After first defining the tags to filter on through {@link #havingTags(Tag...)} or one of its variants, the scope of
  * the read on the event store can further by determined by limiting the types, through
- * {@link EventTypeRestrictableEventCriteria#andBeingOfType(String...)}. This is optional, and will default to all types
+ * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(String...)}. This is optional, and will default to all types
  * if not specified.
  * <pre>
  *     {@code
@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
  *         .or()
  *         // Only reads events with this tag and type
  *         .havingTags("course", "matchingCourse")
- *         .andBeingOfType(new QualifiedName("CourseRegistered"))
+ *         .andBeingOneOfTypes(new QualifiedName("CourseRegistered"))
  *
  *    }
  *    </pre>
@@ -72,10 +72,10 @@ import java.util.stream.Collectors;
  *     {@code
  *     EventCriteria criteria = EventCriteria
  *         .havingTags(Tag.of("student", "matchingStudent"))
- *         .andBeingOfType(new QualifiedName("StudentEnrolled"))
+ *         .andBeingOneOfTypes(new QualifiedName("StudentEnrolled"))
  *         .or()
  *         .havingTags("course", "matchingCourse")
- *         .andBeingOfType(new QualifiedName("CourseRegistered"))
+ *         .andBeingOneOfTypes(new QualifiedName("CourseRegistered"))
  *    }
  *    </pre>
  *
@@ -139,12 +139,12 @@ import java.util.stream.Collectors;
  * </ul>
  * <h4>Example 4</h4>
  * Last but not least, let's say that we only want the "StudentRegistered" events for the "matchingStudent". This
- * can be done by using the {@link EventTypeRestrictableEventCriteria#andBeingOfType(String...)} method:
+ * can be done by using the {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(String...)} method:
  * <pre>
  *     {@code
  *     EventCriteria criteria = EventCriteria
  *         .havingTags("student", "matchingStudent")
- *         .andBeingOfType(new QualifiedName("StudentRegistered"))
+ *         .andBeingOneOfTypes(new QualifiedName("StudentRegistered"))
  *    }</pre>
  * The following events will match:
  * <ul>
@@ -180,7 +180,7 @@ public sealed interface EventCriteria
      * as it is <b>not</b> recommended to source the entire event store.
      * <p>
      * Event though this criteria will not filter any tags, you can limit the types of events to be matched by using the
-     * {@link EventTypeRestrictableEventCriteria#andBeingOfType(Set)} method.
+     * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(Set)} method.
      *
      * @return An {@code EventCriteria} that contains no criteria at all.
      */
@@ -193,7 +193,7 @@ public sealed interface EventCriteria
      * relation, meaning that an event must have all tags to match. A partial match is not sufficient.
      * <p>
      * You can further limit the types of events to be matched by using the
-     * {@link EventTypeRestrictableEventCriteria#andBeingOfType(Set)} method.
+     * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(Set)} method.
      *
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.
@@ -210,7 +210,7 @@ public sealed interface EventCriteria
      * relation, meaning that an event must have all tags to match. A partial match is not sufficient.
      * <p>
      * You can further limit the types of events to be matched by using the
-     * {@link EventTypeRestrictableEventCriteria#andBeingOfType(Set)} method.
+     * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(Set)} method.
      *
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.
@@ -225,7 +225,7 @@ public sealed interface EventCriteria
      * sufficient.
      * <p>
      * You can further limit the types of events to be matched by using the
-     * {@link EventTypeRestrictableEventCriteria#andBeingOfType(Set)} method.
+     * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(Set)} method. It is VERY
      *
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.

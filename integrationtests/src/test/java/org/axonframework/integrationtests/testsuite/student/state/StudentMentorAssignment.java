@@ -57,9 +57,9 @@ public class StudentMentorAssignment {
     public static EventCriteria resolveCriteria(StudentMentorModelIdentifier id) {
         return EventCriteria.either(
                 EventCriteria.havingTags(new Tag("Student", id.menteeId()))
-                             .andBeingOfType(MentorAssignedToStudentEvent.class.getName()),
+                             .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName()),
                 EventCriteria.havingTags(new Tag("Student", id.mentorId()))
-                             .andBeingOfType(MentorAssignedToStudentEvent.class.getName())
+                             .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName())
 
         );
     }

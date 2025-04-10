@@ -25,7 +25,7 @@ import java.util.Set;
 
 /**
  * Implementation of the {@link EventCriteria} allowing <b>any</b> event, regardless of its type or tags.
- * You can limit the types of events to be matched by using the {@link AnyEvent#andBeingOfType(Set)} method, which
+ * You can limit the types of events to be matched by using the {@link AnyEvent#andBeingOneOfTypes(Set)} method, which
  * will return a new {@link EventCriteria} that matches only the specified types.
  * <p>
  * Use this instance when all events are of interest during
@@ -82,7 +82,7 @@ final class AnyEvent implements EventCriteria, EventTypeRestrictableEventCriteri
     }
 
     @Override
-    public EventCriteria andBeingOfType(@Nonnull Set<QualifiedName> types) {
+    public EventCriteria andBeingOneOfTypes(@Nonnull Set<QualifiedName> types) {
         return new TagAndTypeFilteredEventCriteria(types, Collections.emptySet());
     }
 }

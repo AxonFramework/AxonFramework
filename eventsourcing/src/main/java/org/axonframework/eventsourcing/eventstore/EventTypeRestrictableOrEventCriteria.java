@@ -38,8 +38,8 @@ record EventTypeRestrictableOrEventCriteria(
 ) implements EventTypeRestrictableEventCriteria {
 
     @Override
-    public EventCriteria andBeingOfType(@Nonnull Set<QualifiedName> types) {
-        EventCriteria builtEventCriteria = buildingCriteria.andBeingOfType(types);
+    public EventCriteria andBeingOneOfTypes(@Nonnull Set<QualifiedName> types) {
+        EventCriteria builtEventCriteria = buildingCriteria.andBeingOneOfTypes(types);
         return otherCriteria.or(builtEventCriteria);
     }
 

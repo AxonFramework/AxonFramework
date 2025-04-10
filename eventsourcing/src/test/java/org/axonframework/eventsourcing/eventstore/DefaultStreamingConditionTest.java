@@ -61,7 +61,7 @@ class DefaultStreamingConditionTest {
 
     @Test
     void withCriteriaCombinesGivenWithExistingCriteria() {
-        EventCriteria testCriteria = EventCriteria.havingTags(new Tag("other-key", "other-value")).andBeingOfType("test-type");
+        EventCriteria testCriteria = EventCriteria.havingTags(new Tag("other-key", "other-value")).andBeingOneOfTypes("test-type");
 
         StreamingCondition result = testSubject.or(testCriteria);
 

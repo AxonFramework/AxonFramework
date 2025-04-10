@@ -45,7 +45,7 @@ public sealed interface EventTypeRestrictableEventCriteria extends EventCriteria
      * @param types The types to match against.
      * @return The finished {@link EventCriteria} instance.
      */
-    EventCriteria andBeingOfType(@Nonnull Set<QualifiedName> types);
+    EventCriteria andBeingOneOfTypes(@Nonnull Set<QualifiedName> types);
 
     /**
      * Define that the event must have one of the provided {@code types} to match. If the {@code types} set is empty,
@@ -55,8 +55,8 @@ public sealed interface EventTypeRestrictableEventCriteria extends EventCriteria
      * @param types The types to match against.
      * @return The finished {@link EventCriteria} instance.
      */
-    default EventCriteria andBeingOfType(@Nonnull QualifiedName... types) {
-        return andBeingOfType(Set.of(types));
+    default EventCriteria andBeingOneOfTypes(@Nonnull QualifiedName... types) {
+        return andBeingOneOfTypes(Set.of(types));
     }
 
     /**
@@ -69,11 +69,11 @@ public sealed interface EventTypeRestrictableEventCriteria extends EventCriteria
      * @param types        The types to match against.
      * @return The finished {@link EventCriteria} instance.
      */
-    default EventCriteria andBeingOfType(@Nonnull MessageTypeResolver typeResolver, @Nonnull Class<?>... types) {
-        return andBeingOfType(Arrays.stream(types)
-                                    .map(typeResolver::resolve)
-                                    .map(MessageType::qualifiedName)
-                                    .collect(Collectors.toSet()));
+    default EventCriteria andBeingOneOfTypes(@Nonnull MessageTypeResolver typeResolver, @Nonnull Class<?>... types) {
+        return andBeingOneOfTypes(Arrays.stream(types)
+                                        .map(typeResolver::resolve)
+                                        .map(MessageType::qualifiedName)
+                                        .collect(Collectors.toSet()));
     }
 
     /**
@@ -85,10 +85,10 @@ public sealed interface EventTypeRestrictableEventCriteria extends EventCriteria
      * @param types The types to match against.
      * @return The finished {@link EventCriteria} instance.
      */
-    default EventCriteria andBeingOfType(@Nonnull String... types) {
-        return andBeingOfType(Arrays.stream(types)
-                                    .map(QualifiedName::new)
-                                    .collect(Collectors.toSet()));
+    default EventCriteria andBeingOneOfTypes(@Nonnull String... types) {
+        return andBeingOneOfTypes(Arrays.stream(types)
+                                        .map(QualifiedName::new)
+                                        .collect(Collectors.toSet()));
     }
 
     /**

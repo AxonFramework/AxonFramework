@@ -97,7 +97,7 @@ record TagFilteredEventCriteria(@Nonnull Set<Tag> tags)
     }
 
     @Override
-    public EventCriteria andBeingOfType(@Nonnull Set<QualifiedName> types) {
+    public EventCriteria andBeingOneOfTypes(@Nonnull Set<QualifiedName> types) {
         return new TagAndTypeFilteredEventCriteria(types, tags);
     }
 }
