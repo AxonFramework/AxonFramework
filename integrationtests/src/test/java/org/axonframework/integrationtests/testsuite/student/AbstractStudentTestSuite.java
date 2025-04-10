@@ -35,8 +35,6 @@ import org.axonframework.integrationtests.testsuite.student.events.StudentEnroll
 import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -141,7 +139,7 @@ public abstract class AbstractStudentTestSuite {
             if (event.getPayload() instanceof StudentEnrolledEvent e) {
                 entity.handle(e);
             }
-            return state;
+            return entity;
         };
     }
 
@@ -170,7 +168,7 @@ public abstract class AbstractStudentTestSuite {
      * {@link AnnotationBasedEntityEvolver} to use the annotations placed.
      */
     protected EntityEvolver<Student> studentEvolver(NewConfiguration c) {
-        return new AnnotationBasedEntityEvolver<>(Student.class, c.getComponent(ParameterResolverFactory.class));
+        return new AnnotationBasedEntityEvolver<>(Student.class);
     }
 
     protected void changeStudentName(String studentId, String name) {
