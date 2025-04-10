@@ -78,7 +78,7 @@ As you remember from the previous section, we do not focus on entities but on be
 So we're going to describe our feature in a Given-When-Then manner based on commands and events.
 Let's create the first test case using Axon Test Fixture.
 
-We're going to translate the Event Modeling specification, which you've seen on the top of the page + other test cases for this slice, to the code.
+We're going to translate the Event Modeling specification, which you've seen on the top of the page plus other test cases for this slice, to the code.
 We call it Test First, we don't use TDD to design our application, but we do the design on the whiteboard using Event Modeling, which is faster and much less expensive than in the code.
 From Event Modeling we can derive the test cases for specific slice (functionality) and translate them directly to the code.
 The Axon Framework supports the Given-When-Then convention pretty well.
@@ -431,13 +431,13 @@ class SubscribeStudentCommandHandler {
 <2> We update the `capacity` on `CourseCapacityChanged` event.
 <3> In this case, we're going to evolve the State on every StudentSubscribed event related to the course or the student whose IDs are in the command.
 How we instruct the store to load those events, we will discuss in the next paragraph.
-For now you need to be aware of that you may receive events about different student and different course as well, because we have one event handler per event type -> we handle there all `StudentSubscribed/Unsubscribed` for given course (different students) to know how much capacity left and all for given student (different courses) to know how many courses the student is subscribed to.
+For now, you need to be aware of that you may receive events about different student and different course as well, because we have one event handler per event type -> we handle there all `StudentSubscribed/Unsubscribed` for given course (different students) to know how much capacity left and all for given student (different courses) to know how many courses the student is subscribed to.
 <4> If the `StudentSubscribed` event is related to the course, we increase the number of students subscribed to the course.
 <5> If the `StudentSubscribed` event is related to the student, we increase the number of courses the student is subscribed to.
 <6> If the `StudentSubscribed` event is related to the course and the student, we set the `alreadySubscribed` flag to true.
-<7> This handler for `StudentUnsubscribed` is an exact opposite of the `evolve` method for `StudentSubscribed` event. We decrease the numbers which we increased in the previous one.
+<7> This handler for `StudentUnsubscribed` is an exact opposite of the `evolve` method for `StudentSubscribed` event. We decreased the numbers which we increased in the previous one.
 
-But how do we ensure that we won't load events for every student and every course?
+How do we ensure that we won't load events for every student and every course?
 How do we limit our Consistency Boundary to only what is really needed to validate business rules?
 It's where the `EventCriteria` comes into play.
 
@@ -458,8 +458,8 @@ This is where the Dynamic Consistency Boundary shines.
 ====
 For Axon Framework 4 users:
 Before we had to load all events for the given aggregate (from the event stream). We were defining the "tag" of events by using the `@TargetAggregateIdentifier` annotation.
-Since Axon Framework 5 we can load events that are relevant for the given command using custom criteria (you choose event types and tags).
-You may think about that in such way: before event could have just one tag - the aggregateId, but now we can have multiple tags for the same event.
+Since Axon Framework 5, we can load events that are relevant for the given command using custom criteria (you choose event types and tags).
+You may think about that in such a way: before event could have just one tag—the aggregateId, but now we can have multiple tags for the same event.
 ====
 
 Here the situation is a bit more complicated, because we need to load events for two different entities - `Student` and `Course`.
@@ -516,8 +516,8 @@ It's not what we wanted here.
 So, we split `StudentSubscribed` and `StudentUnsubscribed` events into two separate criteria (one for student and one for course), because we need to load all events of those types for either `courseId` or `studentId`.
 
 It gives us better accessibility of our system - thanks to that, as you see there is no `CourseRenamed` event in our criteria, so the Faculty administrator is still able to rename the course in the same time while processing the `SubscribeStudent` command, because the `CourseRenamed` event doesn't match the criteria - it's not in our operation consistency boundary.
-In case of Aggregates those operations may clash, or you need to introduce separated entity for the name if you want to avoid concurrency access issues.
-Our colleague Milan from AxonIQ (with our ex-colleague Sara) discuss those scenarios in the talk - we really encourage you to watch it link:https://www.youtube.com/watch?v=IgigmuHHchI[The Aggregate is dead. Long live the Aggregate! by Sara Pellegrini & Milan Savic @ Spring I/O 2023].
+In case of Aggregates, those operations may clash, or you need to introduce separated entity for the name if you want to avoid concurrency access issues.
+Our colleague Milan from AxonIQ (with our ex-colleague Sara) discuss those scenarios in the talk—we really encourage you to watch it link:https://www.youtube.com/watch?v=IgigmuHHchI[The Aggregate is dead. Long live the Aggregate! by Sara Pellegrini & Milan Savic @ Spring I/O 2023].
 
 [NOTE]
 ====
@@ -597,5 +597,5 @@ Let's do it! Remember to mark the slice as completed in the Event Modeling diagr
 Thank you for completing this tutorial!
 We hope you've found value in exploring these new APIs and are excited about the upcoming Axon Framework 5 release.
 You now have a unique opportunity to shape the framework's future and transform application development practices across the industry.
-If you'd like to do so please share your feedback with us. You can do it on Discuss [TBD FORM LINK] or connect directly with our Framework team on LinkedIn.
+If you'd like to do so, please share your feedback with us. You can do it on Discuss [TBD FORM LINK] or connect directly with our Framework team on LinkedIn.
 Your perspectives are invaluable to us, and we're eager to engage in meaningful discussions about your ideas and experiences.

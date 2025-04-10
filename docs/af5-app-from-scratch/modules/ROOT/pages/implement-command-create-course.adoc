@@ -16,7 +16,7 @@ Messages are the contract between different parts of our system, so you need to 
 Event Modeling helps a lot, thanks to its completeness check you can be sure that you don't forget about anything.
 So let's take the first Write Slice on the table.
 
-Looking at our Event Modeling diagram, our first write slice involves `CreateCourse` leading to `CourseCreated`.
+Looking at our Event Modeling diagram, our first writing slice involves `CreateCourse` leading to `CourseCreated`.
 Let's translate these sticky notes into code.
 The orange sticky is an event, and every event needs a cause, which is a command that may trigger the event.
 In this case it's a `CreatCourse` on the blue sticky note.
@@ -24,7 +24,7 @@ In this case it's a `CreatCourse` on the blue sticky note.
 image::EventModeling_CreateCourse_Stickies.png[]
 
 In Axon Framework 5, we typically define commands and events as Java records to ensure immutability.
-You can also use Java classes if you really want, but records nicely fulfill the characteristic of messages, because they are immutable by definition.
+You can also use Java classes if you really want, but records nicely fulfill the characteristic of messages because they are immutable by definition.
 Following our Vertical Slice Architecture, we'll place each message in its appropriate package:
 
 * `CreateCourse` in the `io.axoniq.demo.university.faculty.write.createcourse` package (we place command inside the slice package, because the command has only one handler)
@@ -73,16 +73,16 @@ public record CourseCreated(
 ----
 
 <1> The `@EventTag` annotation is crucial—it allows Axon to tag events as connected to specific business entities, which enables efficient retrieval later.
-If you used Aggregate approach before the Tag identifies the aggregate, but thanks to Dynamic Consistency Boundary you may how one event assigned to many business entities (not just once as before).
-The EventStore in Axon Framework 5 always store your events along with assigned tags, so you can query them later based on those tags and types.
+If you used Aggregate approach before the Tag identifies the aggregate, but thanks to Dynamic Consistency Boundary, you may how one event assigned to many business entities (not just once as before).
+The EventStore in Axon Framework 5 always stores your events along with assigned tags, so you can query them later based on those tags and types.
 
 Unlike commands, we use simple strings for identifiers in events to avoid potential deserialization issues if Value Object rules change.
-If you want to use the Value Objects in your events you may probably need custom deserializers for them to avoid `{"courseId": {"raw": "some-id"}}` in case of JSON.
+If you want to use the Value Objects in your events, you may probably need custom deserializers for them to avoid `{"courseId": {"raw": "some-id"}}` in case of JSON.
 
 [NOTE]
 ====
-For the first milestone it's only possible to define tags with annotations.
-In the future the configuration API will expose methods to do that without placing annotations on you events.
+For the first milestone, it's only possible to define tags with annotations.
+In the future, the configuration API will expose methods to do that without placing annotations on your events.
 ====
 
 == Specification by example
@@ -112,7 +112,7 @@ Axon Framework test fixture allows you to execute certain test cases against pro
 It may be your module/component or even the whole application.
 Do you remember the configurer which we used while bootstrapping the application?
 Now it's time to use it in order to initialize our TestFixture.
-We need to have access to application components in tests to verify their behaviour, which the configuration provides.
+We need to have access to application components in tests to verify their behavior, which the configuration provides.
 
 [source,java]
 .src/test/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourse.java
@@ -395,7 +395,7 @@ class CreateCourseCommandHandler {
 
 <1> The `@EventSourcedEntity` annotation indicates that this class state is derived from the events published with the given tag key (`courseId` in this case).
 We've already annotated `courseId` property in the `CourseCreated` event class with `@EventTag`, so the event will be applied while loading the entity if the `courseId` value matches.
-Pay attention that `State` per feature/slice approach gives us a high level of encapsulation, because we may keep it package-private. The cohesion is also higher, because you don't care about unrelated to the current process properties. It reduces the cognitive load on developer — you need to understand that the state needed for the particular slice.
+Pay attention that `State` per feature/slice approach gives us a high level of encapsulation, because we may keep it package-private. The cohesion is also higher, because you don't care about unrelated to the current process properties. It reduces the cognitive load on a developer—you need to understand that the state needed for the particular slice.
 <2> The properties needed to guard certain business rules.
 In this case, we need to know if the course was already created or not.
 While executing the command, we don't care about the name or other properties.
@@ -406,7 +406,7 @@ In this case, we want to inject the `State` entity with the `courseId` property.
 <5> The `if` statement checks if the course was already created.
 If it was, we don't need to do anything, so we just return from the method.
 To just ignore the command (do not publish events) is a choice. Thanks to that, the command can be safely retried.
-Alternatively, you may throw an exception or publish an event that notify about the failure.
+Alternatively, you may throw an exception or publish an event that notifies about the failure.
 
 CAUTION: In the `EventSourcingHandler` method, we should never validate or ignore the changes represented by the event received.
 The reception of the event and the invocation of the method imply that the command has already been processed previously.
