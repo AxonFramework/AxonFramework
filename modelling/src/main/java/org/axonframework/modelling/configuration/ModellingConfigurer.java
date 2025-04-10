@@ -18,31 +18,31 @@ package org.axonframework.modelling.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.AxonApplication;
+import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Component;
 import org.axonframework.configuration.ComponentDecorator;
+import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.configuration.DelegatingConfigurer;
+import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.configuration.NewConfigurer;
+import org.axonframework.modelling.StateManager;
+import org.axonframework.modelling.HierarchicalStateManagerConfigurationEnhancer;
+import org.axonframework.modelling.annotation.InjectEntity;
 
 import java.util.function.Consumer;
 
 /**
- * The modelling {@link NewConfigurer} of Axon Framework's configuration API, providing registration methods to, for
- * example, register a {@link StatefulCommandHandlingModule}.
- * <p>
- * This configurer does not set any defaults other than the defaults granted by the {@link MessagingConfigurer} it
- * wraps.
+ * The modelling {@link ApplicationConfigurer} of Axon Framework's configuration API, providing registration methods to,
+ * for example, register a {@link StatefulCommandHandlingModule}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public class ModellingConfigurer
-        extends DelegatingConfigurer<ModellingConfigurer>
-        implements ApplicationConfigurer<ModellingConfigurer> {
+public class ModellingConfigurer implements ApplicationConfigurer {
+
+    private final MessagingConfigurer delegate;
 
     /**
      * This configurer does not set any defaults other than the defaults granted by the {@link MessagingConfigurer} it
@@ -69,11 +69,12 @@ public class ModellingConfigurer
      * @param delegate The delegate {@code MessagingConfigurer} the {@code ModellingConfigurer} is based on.
      */
     public ModellingConfigurer(@Nonnull MessagingConfigurer delegate) {
-        super(delegate);
+        this.delegate = delegate;
     }
 
     /**
-     * Registers the given {@link ModuleBuilder builder} for a {@link StatefulCommandHandlingModule} to use in this configuration.
+     * Registers the given {@link ModuleBuilder builder} for a {@link StatefulCommandHandlingModule} to use in this
+     * configuration.
      * <p>
      * As a {@link Module} implementation, any components registered with the result of the given {@code moduleBuilder}
      * will not be accessible from other {@code Modules} to enforce encapsulation. The sole exception to this, are
@@ -86,32 +87,38 @@ public class ModellingConfigurer
     public ModellingConfigurer registerStatefulCommandHandlingModule(
             ModuleBuilder<StatefulCommandHandlingModule> moduleBuilder
     ) {
-        return registerModule(moduleBuilder.build());
+        delegate.componentRegistry(cr -> cr.registerModule(moduleBuilder.build()));
+        return this;
     }
 
     /**
-     * Delegates the given {@code configureTask} to the {@link MessagingConfigurer} this {@code ModellingConfigurer}
-     * delegates to.
+     * Delegates the given {@code configurerTask} to the {@link MessagingConfigurer} this {@code ModellingConfigurer}
+     * delegates.
      * <p>
      * Use this operation to invoke registration methods that only exist on the {@code MessagingConfigurer}.
      *
-     * @param configureTask Lambda consuming the delegate {@link MessagingConfigurer}.
+     * @param configurerTask Lambda consuming the delegate {@link MessagingConfigurer}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public ModellingConfigurer messaging(@Nonnull Consumer<MessagingConfigurer> configureTask) {
-        return delegate(MessagingConfigurer.class, configureTask);
+    public ModellingConfigurer messaging(@Nonnull Consumer<MessagingConfigurer> configurerTask) {
+        configurerTask.accept(delegate);
+        return this;
     }
 
-    /**
-     * Delegates the given {@code configureTask} to the {@link AxonApplication} this {@code ModellingConfigurer}
-     * delegates to.
-     * <p>
-     * Use this operation to invoke registration methods that only exist on the {@code AxonApplication}.
-     *
-     * @param configureTask Lambda consuming the delegate {@link AxonApplication}.
-     * @return The current instance of the {@code Configurer} for a fluent API.
-     */
-    public ModellingConfigurer application(@Nonnull Consumer<AxonApplication> configureTask) {
-        return delegate(AxonApplication.class, configureTask);
+    @Override
+    public ModellingConfigurer componentRegistry(@Nonnull Consumer<ComponentRegistry> componentRegistrar) {
+        delegate.componentRegistry(componentRegistrar);
+        return this;
+    }
+
+    @Override
+    public ModellingConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar) {
+        delegate.lifecycleRegistry(lifecycleRegistrar);
+        return this;
+    }
+
+    @Override
+    public AxonConfiguration build() {
+        return delegate.build();
     }
 }

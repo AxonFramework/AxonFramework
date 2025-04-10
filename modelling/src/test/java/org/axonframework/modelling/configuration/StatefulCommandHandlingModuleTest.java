@@ -20,11 +20,13 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
 import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
 import java.util.Optional;
@@ -69,7 +71,8 @@ class StatefulCommandHandlingModuleTest {
                                                   .entity(entityBuilder)
                                                   .commandHandlers()
                                                   .build()
-                                                  .build(ModellingConfigurer.create().build());
+                                                  .build(ModellingConfigurer.create().build(),
+                                                         new StubLifecycleRegistry());
 
         //noinspection rawtypes
         Optional<AsyncRepository> optionalRepository =
@@ -84,6 +87,27 @@ class StatefulCommandHandlingModuleTest {
                 StatefulCommandHandlingComponent.class, statefulCommandHandlingComponentName
         );
         assertTrue(optionalHandlingComponent.isPresent());
+    }
+
+    @Test
+    void buildAnnotatedCommandHandlingComponentSucceedsAndRegisters() {
+        var myCommandHandlingObject = new Object() {
+            @org.axonframework.commandhandling.annotation.CommandHandler
+            public void handle(String command) {
+            }
+        };
+
+
+        NewConfiguration resultConfig = setupPhase
+                .commandHandlers()
+                .annotatedCommandHandlingComponent(c -> myCommandHandlingObject)
+                .build()
+                .build(ModellingConfigurer.create().build(), new StubLifecycleRegistry());
+
+        Optional<StatefulCommandHandlingComponent> optionalHandlingComponent = resultConfig.getOptionalComponent(
+                StatefulCommandHandlingComponent.class, "StatefulCommandHandlingComponent[test-subject]");
+        assertTrue(optionalHandlingComponent.isPresent());
+        assertTrue(optionalHandlingComponent.get().supportedCommands().contains(new QualifiedName(String.class)));
     }
 
     @Test
@@ -145,6 +169,13 @@ class StatefulCommandHandlingModuleTest {
     void commandHandlingComponentThrowsNullPointerExceptionForNullCommandHandlingComponentBuilder() {
         //noinspection DataFlowIssue
         assertThrows(NullPointerException.class, () -> commandHandlerPhase.commandHandlingComponent(null));
+    }
+
+
+    @Test
+    void annotatedCommandHandlingComponentThrowsNullPointerExceptionForNullCommandHandlingComponentBuilder() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> commandHandlerPhase.annotatedCommandHandlingComponent(null));
     }
 
     @Test

@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
-import org.axonframework.modelling.command.annotation.TargetEntityId;
+import org.axonframework.modelling.annotation.TargetEntityId;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -34,12 +34,8 @@ import java.lang.annotation.Target;
  *     <li>Accept a single parameter of the type of the {@link TargetEntityId} of the {@link EventSourcedEntity}</li>
  *     <li>Return an {@link EventCriteria} instance</li>
  * </ul>
- * <p>
- * In all other cases, an exception will be thrown during initialization of the
- * {@link AnnotationBasedEventSourcingEntityRepository}.
  *
  * @author Mitchell Herrijgers
- * @see AnnotationBasedEventSourcingEntityRepository
  * @see TargetEntityId
  * @see EventSourcedEntity
  * @since 5.0.0

@@ -397,7 +397,7 @@ This section contains two tables:
 | org.axonframework.config.ModuleConfiguration                 | org.axonframework.configuration.Module                       | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.LifecycleHandler                    | org.axonframework.configuration.LifecycleHandler             | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.LifecycleHandlerInspector           | org.axonframework.configuration.LifecycleHandlerInspector    | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.LifecycleOperations                 | org.axonframework.configuration.LifecycleOperations          | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleOperations                 | org.axonframework.configuration.LifecycleRegistry            | Yes. Moved to `axon-messaging` |
 
 ### Removed
 

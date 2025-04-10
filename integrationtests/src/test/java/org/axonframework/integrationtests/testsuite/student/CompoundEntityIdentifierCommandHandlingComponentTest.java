@@ -29,8 +29,9 @@ import org.axonframework.integrationtests.testsuite.student.events.MentorAssigne
 import org.axonframework.integrationtests.testsuite.student.state.StudentMentorAssignment;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.command.annotation.InjectEntity;
+import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.junit.jupiter.api.*;
 
@@ -65,11 +66,8 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
 
     @Test
     void canHandleCommandThatTargetsMultipleModelsViaInjectionOfCompoundModel() {
-        registerCommandHandlers(handlerPhase -> handlerPhase.commandHandlingComponent(
-                c -> new AnnotatedCommandHandlingComponent<>(
-                        new CompoundModelAnnotatedCommandHandler(),
-                        parameterResolverFactory(c)
-                )
+        registerCommandHandlers(handlerPhase -> handlerPhase.annotatedCommandHandlingComponent(
+                c -> new CompoundModelAnnotatedCommandHandler()
         ));
         startApp();
 

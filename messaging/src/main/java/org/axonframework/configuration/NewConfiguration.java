@@ -16,12 +16,13 @@
 
 package org.axonframework.configuration;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.common.infra.DescribableComponent;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-
-import jakarta.annotation.Nonnull;
-import org.axonframework.common.infra.DescribableComponent;
 
 /**
  * Interface providing access to all configured {@link Component components} in an Axon Framework application.
@@ -55,7 +56,8 @@ public interface NewConfiguration extends DescribableComponent {
      * @param name The name of the component to retrieve.
      * @param <C>  The type of component.
      * @return The component registered for the given {@code type} and {@code name}.
-     * @throws NullPointerException Whenever there is no component present for the given {@code type} and {@code name}.
+     * @throws ComponentNotFoundException Whenever there is no component present for the given {@code type} and
+     *                                    {@code name}.
      */
     @Nonnull
     default <C> C getComponent(@Nonnull Class<C> type,
@@ -126,10 +128,32 @@ public interface NewConfiguration extends DescribableComponent {
 
     /**
      * Returns all {@code Configurations} from the {@link Module Modules} that have been
-     * {@link NewConfigurer#registerModule(Module) registered} with this {@code Configuration}.
+     * {@link ComponentRegistry#registerModule(Module) registered} with this {@code Configuration}.
      *
      * @return The resulting {@code Configuration} from each
-     * {@link NewConfigurer#registerModule(Module) registered module} with this {@code Configuration}.
+     * {@link ComponentRegistry#registerModule(Module) registered module} with this {@code Configuration}.
      */
     List<NewConfiguration> getModuleConfigurations();
+
+    /**
+     * Returns the {@code Configuration} from the {@link Module} with the given {@code name}.
+     * <p>
+     * The module must have been {@link ComponentRegistry#registerModule(Module) registered} with this
+     * {@code Configuration} directly.
+     *
+     * @param name The name of the {@link Module} to get the configuration for.
+     * @return An {@code Optional} with the {@code Configuration} for a {@link Module} with the given {@code name} or an
+     * empty optional if no module exists with that name.
+     */
+    Optional<NewConfiguration> getModuleConfiguration(@Nonnull String name);
+
+    /**
+     * Returns the parent configuration of this configuration, if the parent configuration exists. Components can use
+     * this to build hierarchical components, which prefer components from a child configuration over components from a
+     * parent configuration.
+     *
+     * @return The parent configuration of this configuration, or {@code null} if no parent configuration exists.
+     */
+    @Nullable
+    NewConfiguration getParent();
 }

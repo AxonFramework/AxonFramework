@@ -19,10 +19,12 @@ package org.axonframework.modelling.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandHandlingComponent;
+import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 
 import java.util.function.Consumer;
@@ -67,7 +69,7 @@ import static java.util.Objects.requireNonNull;
  * @since 5.0.0
  */
 public interface StatefulCommandHandlingModule extends
-        Module<StatefulCommandHandlingModule>,
+        Module,
         ModuleBuilder<StatefulCommandHandlingModule> {
 
     /**
@@ -227,6 +229,30 @@ public interface StatefulCommandHandlingModule extends
         CommandHandlerPhase commandHandlingComponent(
                 @Nonnull ComponentFactory<CommandHandlingComponent> handlingComponentBuilder
         );
+
+        /**
+         * Registers the given {@code handlingComponentBuilder} as an {@link AnnotatedCommandHandlingComponent} within
+         * this module.
+         * <p>
+         * This will scan the given {@code handlingComponentBuilder} for methods annotated with {@link CommandHandler}
+         * and register them as command handlers for the {@link org.axonframework.commandhandling.CommandBus} of the
+         * {@link org.axonframework.configuration.ApplicationConfigurer}.
+         *
+         * @param handlingComponentBuilder A factory method of a {@link CommandHandlingComponent}. Provides the
+         *                                 {@link org.axonframework.configuration.NewConfiguration} to retrieve
+         *                                 components from to use during construction of the command handling
+         *                                 component.
+         * @return The command handler phase of this builder, for a fluent API.
+         */
+        default CommandHandlerPhase annotatedCommandHandlingComponent(
+                @Nonnull ComponentFactory<Object> handlingComponentBuilder
+        ) {
+            requireNonNull(handlingComponentBuilder, "The handling component builder cannot be null.");
+            return commandHandlingComponent(c -> new AnnotatedCommandHandlingComponent<>(
+                    handlingComponentBuilder.build(c),
+                    c.getComponent(ParameterResolverFactory.class)
+            ));
+        }
     }
 
     /**

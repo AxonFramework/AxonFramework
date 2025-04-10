@@ -67,8 +67,8 @@ class MessagingConfigurationDefaultsTest {
 
     @Test
     void enhanceSetsExpectedDefaultsInAbsenceOfTheseComponents() {
-        ApplicationConfigurer<?> configurer = AxonApplication.create();
-        testSubject.enhance(configurer);
+        ApplicationConfigurer configurer = new DefaultAxonApplication();
+        configurer.componentRegistry(cr -> testSubject.enhance(cr));
         NewConfiguration resultConfig = configurer.build();
 
         assertInstanceOf(ClassBasedMessageTypeResolver.class, resultConfig.getComponent(MessageTypeResolver.class));
@@ -85,11 +85,9 @@ class MessagingConfigurationDefaultsTest {
     void enhanceOnlySetsDefaultsThatAreNotPresentYet() {
         TestCommandBus testCommandBus = new TestCommandBus();
 
-        ApplicationConfigurer<?> configurer =
-                AxonApplication.create()
-                               .registerComponent(CommandBus.class, c -> testCommandBus);
-
-        testSubject.enhance(configurer);
+        ApplicationConfigurer configurer = new DefaultAxonApplication()
+                .componentRegistry(cr -> cr.registerComponent(CommandBus.class, c -> testCommandBus)
+                                           .registerEnhancer(testSubject));
 
         CommandBus configuredCommandBus = configurer.build()
                                                     .getComponent(CommandBus.class);

@@ -27,6 +27,7 @@ import org.axonframework.axonserver.connector.util.GrpcMessageSizeInterceptor;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.config.TagsConfiguration;
+import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 

@@ -18,7 +18,6 @@ package org.axonframework.integrationtests.testsuite.student;
 
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.config.ConfigurationParameterResolverFactory;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -36,17 +35,15 @@ import org.axonframework.integrationtests.testsuite.student.events.StudentEnroll
 import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
+import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
+import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.command.annotation.InjectEntityParameterResolverFactory;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.junit.jupiter.api.*;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -80,12 +77,12 @@ public abstract class AbstractStudentTestSuite {
     void setUp() {
         studentEntity = EventSourcedEntityBuilder.entity(String.class, Student.class)
                                                  .entityFactory(c -> (type, id) -> new Student(id))
-                                                 .criteriaResolver(c -> studentCriteriaResolver())
-                                                 .entityEvolver(c -> studentEvolver());
+                                                 .criteriaResolver(this::studentCriteriaResolver)
+                                                 .entityEvolver(this::studentEvolver);
         courseEntity = EventSourcedEntityBuilder.entity(String.class, Course.class)
                                                 .entityFactory(c -> (type, id) -> new Course(id))
-                                                .criteriaResolver(c -> courseCriteriaResolver())
-                                                .entityEvolver(c -> courseEvolver());
+                                                .criteriaResolver(this::courseCriteriaResolver)
+                                                .entityEvolver(this::courseEvolver);
 
         statefulCommandHandlingModule = StatefulCommandHandlingModule.named("student-course-module")
                                                                      .entities()
@@ -139,10 +136,10 @@ public abstract class AbstractStudentTestSuite {
      * Returns the {@link EntityEvolver} for the {@link Course} model. Defaults to manually calling the event sourcing
      * handlers on the model.
      */
-    protected EntityEvolver<Course> courseEvolver() {
-        return (state, event, context) -> {
+    protected EntityEvolver<Course> courseEvolver(NewConfiguration c) {
+        return (entity, event, context) -> {
             if (event.getPayload() instanceof StudentEnrolledEvent e) {
-                state.handle(e);
+                entity.handle(e);
             }
             return state;
         };
@@ -152,7 +149,7 @@ public abstract class AbstractStudentTestSuite {
      * Returns the {@link CriteriaResolver} for the {@link Course} model. Defaults to a criteria that matches any event
      * with the tag "Course" and the given model id.
      */
-    protected CriteriaResolver<String> courseCriteriaResolver() {
+    protected CriteriaResolver<String> courseCriteriaResolver(NewConfiguration c) {
         return courseId -> EventCriteria.match()
                                         .eventsOfAnyType()
                                         .withTags(new Tag("Course", courseId));
@@ -162,7 +159,7 @@ public abstract class AbstractStudentTestSuite {
      * Returns the {@link CriteriaResolver} for the {@link Student} model. Defaults to a criteria that matches any event
      * with the tag "Student" and the given model id.
      */
-    protected CriteriaResolver<String> studentCriteriaResolver() {
+    protected CriteriaResolver<String> studentCriteriaResolver(NewConfiguration c) {
         return studentId -> EventCriteria.match()
                                          .eventsOfAnyType()
                                          .withTags(new Tag("Student", studentId));
@@ -172,23 +169,8 @@ public abstract class AbstractStudentTestSuite {
      * Returns the {@link EntityEvolver} for the {@link Student} model. Defaults to using the
      * {@link AnnotationBasedEntityEvolver} to use the annotations placed.
      */
-    protected EntityEvolver<Student> studentEvolver() {
-        return new AnnotationBasedEntityEvolver<>(Student.class);
-    }
-
-    /**
-     * Returns the {@link MultiParameterResolverFactory} to use for the testsuite. Defaults to a factory that can
-     * resolve parameters from the classpath, the configuration, and the {@link StateManager}.
-     */
-    protected MultiParameterResolverFactory parameterResolverFactory(NewConfiguration configuration) {
-        return MultiParameterResolverFactory.ordered(List.of(
-                ClasspathParameterResolverFactory.forClass(this.getClass()),
-                // To be able to get components
-                new ConfigurationParameterResolverFactory(configuration),
-                // To be able to get the entity, the StateManager needs to be available.
-                // When the new configuration API is there, we should have a way to resolve this
-                new InjectEntityParameterResolverFactory(configuration.getComponent(StateManager.class))
-        ));
+    protected EntityEvolver<Student> studentEvolver(NewConfiguration c) {
+        return new AnnotationBasedEntityEvolver<>(Student.class, c.getComponent(ParameterResolverFactory.class));
     }
 
     protected void changeStudentName(String studentId, String name) {

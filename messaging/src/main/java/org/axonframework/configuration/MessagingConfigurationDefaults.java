@@ -69,30 +69,30 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     @Override
-    public void enhance(@Nonnull NewConfigurer<?> configurer) {
-        Objects.requireNonNull(configurer, "Cannot enhance a null Configurer.");
+    public void enhance(@Nonnull ComponentRegistry registry) {
+        Objects.requireNonNull(registry, "Cannot enhance a null ComponentRegistry.");
 
-        registerIfNotPresent(configurer, MessageTypeResolver.class,
+        registerIfNotPresent(registry, MessageTypeResolver.class,
                              MessagingConfigurationDefaults::defaultMessageTypeResolver);
-        registerIfNotPresent(configurer, CommandGateway.class,
+        registerIfNotPresent(registry, CommandGateway.class,
                              MessagingConfigurationDefaults::defaultCommandGateway);
-        registerIfNotPresent(configurer, CommandBus.class,
+        registerIfNotPresent(registry, CommandBus.class,
                              MessagingConfigurationDefaults::defaultCommandBus);
-        registerIfNotPresent(configurer, EventGateway.class,
+        registerIfNotPresent(registry, EventGateway.class,
                              MessagingConfigurationDefaults::defaultEventGateway);
-        registerIfNotPresent(configurer, EventSink.class,
+        registerIfNotPresent(registry, EventSink.class,
                              MessagingConfigurationDefaults::defaultEventSink);
-        registerIfNotPresent(configurer, EventBus.class,
+        registerIfNotPresent(registry, EventBus.class,
                              MessagingConfigurationDefaults::defaultEventBus);
-        registerIfNotPresent(configurer, QueryGateway.class,
+        registerIfNotPresent(registry, QueryGateway.class,
                              MessagingConfigurationDefaults::defaultQueryGateway);
-        registerIfNotPresent(configurer, QueryBus.class,
+        registerIfNotPresent(registry, QueryBus.class,
                              MessagingConfigurationDefaults::defaultQueryBus);
-        registerIfNotPresent(configurer, QueryUpdateEmitter.class,
+        registerIfNotPresent(registry, QueryUpdateEmitter.class,
                              MessagingConfigurationDefaults::defaultQueryUpdateEmitter);
     }
 
-    private <C> void registerIfNotPresent(NewConfigurer<?> configurer,
+    private <C> void registerIfNotPresent(ComponentRegistry configurer,
                                           Class<C> type,
                                           ComponentFactory<C> factory) {
         if (!configurer.hasComponent(type)) {
@@ -105,7 +105,6 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static CommandBus defaultCommandBus(NewConfiguration config) {
-        // TODO #3067 - Discuss to adjust this to registerComponent-and-Decorator invocations
         CommandBusBuilder commandBusBuilder = CommandBusBuilder.forSimpleCommandBus();
         config.getOptionalComponent(TransactionManager.class)
               .ifPresent(commandBusBuilder::withTransactions);

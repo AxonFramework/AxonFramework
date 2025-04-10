@@ -16,9 +16,9 @@
 
 package org.axonframework.test.fixture;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,15 +38,15 @@ class RecordingEventSink implements EventSink {
 
     @Override
     public void publish(
-            @NotNull ProcessingContext processingContext,
-            @NotNull List<EventMessage<?>> events
+            @Nonnull ProcessingContext processingContext,
+            @Nonnull List<EventMessage<?>> events
     ) {
         recorded.addAll(events);
         delegate.publish(processingContext, events);
     }
 
     @Override
-    public CompletableFuture<Void> publish(@NotNull List<EventMessage<?>> events) {
+    public CompletableFuture<Void> publish(@Nonnull List<EventMessage<?>> events) {
         return delegate.publish(events)
                        .thenRun(() -> recorded.addAll(events));
     }

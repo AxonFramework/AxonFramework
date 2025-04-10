@@ -38,6 +38,7 @@ import org.axonframework.test.fixture.sampledomain.Student;
 import org.axonframework.test.fixture.sampledomain.StudentNameChangedEvent;
 import org.junit.jupiter.api.*;
 
+import java.util.List;
 import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -76,7 +77,10 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                .when()
                .command(changeToTheSameName)
                .then()
-               .events(events -> assertTrue(events.isEmpty()));
+               .noEvents()
+               .eventsSatisfy(events -> assertTrue(events.isEmpty()))
+               .eventsMatch(List::isEmpty)
+               .success();
     }
 
     @Test
@@ -107,6 +111,58 @@ class AxonTestFixtureStatefulCommandHandlerTest {
         fixture.given()
                .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-2"))
+               .when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+               .then()
+               .events(new StudentNameChangedEvent("my-studentId-1", "name-3", 3));
+    }
+
+    @Test
+    void givenMultipleEventsWhenCommandThenEvents() {
+        var configurer = MessagingConfigurer.create();
+        registerSampleStatefulCommandHandler(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        fixture.given()
+               .event(new StudentNameChangedEvent("my-studentId-1", "name-1", 1))
+               .event(new StudentNameChangedEvent("my-studentId-1", "name-2", 2))
+               .when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+               .then()
+               .events(new StudentNameChangedEvent("my-studentId-1", "name-3", 3));
+    }
+
+    @Test
+    void givenEventsListWhenCommandThenEvents() {
+        var configurer = MessagingConfigurer.create();
+        registerSampleStatefulCommandHandler(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        var givenEventsList = List.of(
+                new StudentNameChangedEvent("my-studentId-1", "name-1", 1),
+                new StudentNameChangedEvent("my-studentId-1", "name-2", 2));
+        fixture.given()
+               .events(givenEventsList)
+               .when()
+               .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
+               .then()
+               .events(new StudentNameChangedEvent("my-studentId-1", "name-3", 3));
+    }
+
+    @Test
+    void givenCommandsListWhenCommandThenEvents() {
+        var configurer = MessagingConfigurer.create();
+        registerSampleStatefulCommandHandler(configurer);
+
+        var fixture = AxonTestFixture.with(configurer);
+
+        var givenCommandsList = List.of(
+                new ChangeStudentNameCommand("my-studentId-1", "name-1"),
+                new ChangeStudentNameCommand("my-studentId-1", "name-2"));
+        fixture.given()
+               .commands(givenCommandsList)
                .when()
                .command(new ChangeStudentNameCommand("my-studentId-1", "name-3"))
                .then()
@@ -179,12 +235,10 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                 .then()
                 .noEvents();
         }
-
-
     }
 
     private static void registerSampleStatefulCommandHandler(MessagingConfigurer configurer) {
-        configurer.registerComponent(
+        configurer.componentRegistry(cr -> cr.registerComponent(
                 StateManager.class,
                 c -> {
                     var repository = new AsyncEventSourcingRepository<>(
@@ -200,37 +254,41 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                     return SimpleStateManager.builder("testfixture")
                                              .register(repository)
                                              .build();
-                });
+                })
+                                             .registerComponent(AsyncEventStore.class,
+                                                                c -> new SimpleEventStore(new AsyncInMemoryEventStorageEngine(),
+                                                                                          new AnnotationBasedTagResolver()))
+                                             .registerComponent(EventSink.class,
+                                                                c -> c.getComponent(AsyncEventStore.class))
+                                             .registerDecorator(CommandBus.class, 50, (c, name, delegate) -> {
+                                                 var stateManager = c.getComponent(StateManager.class);
+                                                 var statefulCommandHandler = StatefulCommandHandlingComponent
+                                                         .create("mystatefulCH", stateManager)
+                                                         .subscribe(
+                                                                 new QualifiedName(ChangeStudentNameCommand.class),
+                                                                 (cmd, sm, ctx) -> {
+                                                                     ChangeStudentNameCommand payload = (ChangeStudentNameCommand) cmd.getPayload();
+                                                                     var student = sm.loadEntity(Student.class,
+                                                                                                 payload.id(),
+                                                                                                 ctx).join();
+                                                                     if (!Objects.equals(student.getName(),
+                                                                                         payload.name())) {
+                                                                         var eventSink = c.getComponent(EventSink.class);
+                                                                         eventSink.publish(
+                                                                                 ctx,
+                                                                                 studentNameChangedEventMessage(payload.id(),
+                                                                                                                payload.name(),
+                                                                                                                student.getChanges()
+                                                                                                                        + 1)
+                                                                         );
+                                                                     }
+                                                                     return MessageStream.empty().cast();
+                                                                 });
+                                                 delegate.subscribe(statefulCommandHandler);
 
-        configurer.registerComponent(AsyncEventStore.class,
-                                     c -> new SimpleEventStore(new AsyncInMemoryEventStorageEngine(),
-                                                               new AnnotationBasedTagResolver()))
-                  .registerComponent(EventSink.class, c -> c.getComponent(AsyncEventStore.class));
-
-        configurer.registerDecorator(CommandBus.class, 50, (c, name, delegate) -> {
-            var stateManager = c.getComponent(StateManager.class);
-            var statefulCommandHandler = StatefulCommandHandlingComponent
-                    .create("mystatefulCH", stateManager)
-                    .subscribe(
-                            new QualifiedName(ChangeStudentNameCommand.class),
-                            (cmd, sm, ctx) -> {
-                                ChangeStudentNameCommand payload = (ChangeStudentNameCommand) cmd.getPayload();
-                                var student = sm.loadEntity(Student.class, payload.id(), ctx).join();
-                                if (!Objects.equals(student.getName(), payload.name())) {
-                                    var eventSink = c.getComponent(EventSink.class);
-                                    eventSink.publish(
-                                            ctx,
-                                            studentNameChangedEventMessage(payload.id(),
-                                                                           payload.name(),
-                                                                           student.getChanges() + 1)
-                                    );
-                                }
-                                return MessageStream.empty().cast();
-                            });
-            delegate.subscribe(statefulCommandHandler);
-
-            return delegate;
-        });
+                                                 return delegate;
+                                             })
+        );
     }
 
     private static GenericEventMessage<StudentNameChangedEvent> studentNameChangedEventMessage(
