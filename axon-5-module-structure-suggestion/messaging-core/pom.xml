@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.axonframework</groupId>
         <artifactId>axon</artifactId>
-        <version>5.0.0-SNAPSHOT</version>
+        <version>5.0.0-M1</version>
     </parent>
 
     <!-- TODO all previous artifact ids are prefixed with 'axon-' - should we keep that? -->
