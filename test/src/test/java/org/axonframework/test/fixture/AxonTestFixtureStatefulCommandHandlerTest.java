@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
+import org.axonframework.eventsourcing.AnnotationBasedEntityEvolver;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
@@ -249,7 +249,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                             id -> EventCriteria.match()
                                                .eventsOfAnyType()
                                                .withTags("Student", id),
-                            new AnnotationBasedEventStateApplier<>(Student.class)
+                            new AnnotationBasedEntityEvolver<>(Student.class)
                     );
                     return SimpleStateManager.builder("testfixture")
                                              .register(repository)

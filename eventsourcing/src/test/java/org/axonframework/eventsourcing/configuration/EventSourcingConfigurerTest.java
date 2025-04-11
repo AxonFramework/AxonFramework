@@ -84,7 +84,7 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                 EventSourcedEntityBuilder.entity(String.class, Object.class)
                                          .entityFactory(c -> (entityType, id) -> null)
                                          .criteriaResolver(c -> event -> EventCriteria.anyEvent())
-                                         .eventStateApplier(c -> (model, event, context) -> model);
+                                         .entityEvolver(c -> (entity, event, context) -> entity);
         ModuleBuilder<StatefulCommandHandlingModule> statefulCommandHandlingModule =
                 StatefulCommandHandlingModule.named("test")
                                              .entities(entityPhase -> entityPhase.entity(testEntityBuilder))

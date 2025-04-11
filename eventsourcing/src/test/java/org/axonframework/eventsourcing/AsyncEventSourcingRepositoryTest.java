@@ -44,13 +44,15 @@ import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link AsyncEventSourcingRepository}.
+ *
+ * @author Allard Buijze
  */
 class AsyncEventSourcingRepositoryTest {
 
-    private static final Set<Tag> TEST_MODEL_TAGS = Set.of(new Tag("aggregateId", "id"));
-    private static final EventCriteria TEST_MODEL_CRITERIA = EventCriteria.match()
-                                                                          .eventsOfAnyType()
-                                                                          .withTags("aggregateId", "id");
+    private static final Set<Tag> TEST_TAGS = Set.of(new Tag("aggregateId", "id"));
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.match()
+                                                                    .eventsOfAnyType()
+                                                                    .withTags("aggregateId", "id");
 
     private AsyncEventStore eventStore;
     private EventStoreTransaction eventStoreTransaction;
@@ -67,9 +69,9 @@ class AsyncEventSourcingRepositoryTest {
                 String.class,
                 String.class,
                 eventStore,
-                (entityType, id) -> id, 
-                identifier -> TEST_MODEL_CRITERIA,
-                (currentState, event, ctx) -> currentState + "-" + event.getPayload()
+                (entityType, id) -> id,
+                identifier -> TEST_CRITERIA,
+                (entity, event, context) -> entity + "-" + event.getPayload()
         );
     }
 
@@ -220,7 +222,7 @@ class AsyncEventSourcingRepositoryTest {
     }
 
     private static boolean conditionPredicate(SourcingCondition condition) {
-        return condition.matches("ignored", TEST_MODEL_TAGS);
+        return condition.matches("ignored", TEST_TAGS);
     }
 
     // TODO - Discuss: Perfect candidate to move to a commons test utils module?

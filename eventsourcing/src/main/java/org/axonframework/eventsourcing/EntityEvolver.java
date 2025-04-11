@@ -16,28 +16,34 @@
 
 package org.axonframework.eventsourcing;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import javax.annotation.Nonnull;
-
 /**
- * Functional interface describing state changes made on a model of type {@code M} based on a given
+ * Functional interface describing how to evolve a given {@code entity} of type {@code e} based on a given
  * {@link EventMessage}.
  *
- * @param <M> The model to apply the event state to.
+ * @param <E> The entity type to evolve.
+ * @author Allard Buijze
+ * @author Mateusz Nowak
+ * @author Mitchell Herrijgers
  * @author Steven van Beelen
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface EventStateApplier<M> {
+public interface EntityEvolver<E> {
 
     /**
-     * Change the state of the given {@code model} by applying the given {@code event} to it.
+     * Evolve the given {@code entity} by applying the given {@code event} to it.
      *
-     * @param event The event that might adjust the {@code model}.
-     * @param model The current state of the entity to apply the given {@code event} to.
-     * @return The changed stated based on the given {@code event}.
+     * @param event   The event that might adjust the {@code entity}.
+     * @param entity  The current entity to evolve with the given {@code event}.
+     * @param context The context within which to evolve the {@code entity} by the given {@code event}.
+     * @return The evolved {@code entity} based on the given {@code event}, or the same {@code entity} when nothing
+     * happened.
      */
-    M apply(@Nonnull M model, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext processingContext);
+    E evolve(@Nonnull E entity,
+             @Nonnull EventMessage<?> event,
+             @Nonnull ProcessingContext context);
 }

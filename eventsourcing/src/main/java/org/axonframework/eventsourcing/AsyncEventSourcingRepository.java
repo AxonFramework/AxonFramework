@@ -57,7 +57,7 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
     private final Class<E> entityType;
     private final AsyncEventStore eventStore;
     private final CriteriaResolver<I> criteriaResolver;
-    private final EventStateApplier<E> eventStateApplier;
+    private final EntityEvolver<E> entityEvolver;
     private final EventSourcedEntityFactory<I, E> entityFactory;
 
     /**
@@ -66,28 +66,28 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
      * the {@link org.axonframework.eventsourcing.eventstore.EventCriteria} of the given identifier type used to source
      * an entity.
      *
-     * @param idType            The type of the identifier for the event sourced entity this repository serves.
-     * @param entityType        The type of the event sourced entity this repository serves.
-     * @param eventStore        The event store to load events from.
-     * @param entityFactory     A factory method to create new instances of the entity based on the entity's type and a
-     *                          provided identifier.
-     * @param criteriaResolver  Converts the given identifier to an
-     *                          {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a matching
-     *                          event stream.
-     * @param eventStateApplier The function to apply event state changes to the loaded entities.
+     * @param idType           The type of the identifier for the event sourced entity this repository serves.
+     * @param entityType       The type of the event sourced entity this repository serves.
+     * @param eventStore       The event store to load events from.
+     * @param entityFactory    A factory method to create new instances of the entity based on the entity's type and a
+     *                         provided identifier.
+     * @param criteriaResolver Converts the given identifier to an
+     *                         {@link org.axonframework.eventsourcing.eventstore.EventCriteria} used to load a matching
+     *                         event stream.
+     * @param entityEvolver    The function used to evolve the state of loaded entities based on events.
      */
     public AsyncEventSourcingRepository(@Nonnull Class<I> idType,
                                         @Nonnull Class<E> entityType,
                                         @Nonnull AsyncEventStore eventStore,
                                         @Nonnull EventSourcedEntityFactory<I, E> entityFactory,
                                         @Nonnull CriteriaResolver<I> criteriaResolver,
-                                        @Nonnull EventStateApplier<E> eventStateApplier) {
-        this.idType = requireNonNull(idType, "The id type cannot be null.");
-        this.entityType = requireNonNull(entityType, "The entity type cannot be null.");
-        this.eventStore = requireNonNull(eventStore, "The event store cannot be null.");
-        this.entityFactory = requireNonNull(entityFactory, "The entity factory cannot be null.");
-        this.criteriaResolver = requireNonNull(criteriaResolver, "The criteria resolver cannot be null.");
-        this.eventStateApplier = requireNonNull(eventStateApplier, "The event state applier cannot be null.");
+                                        @Nonnull EntityEvolver<E> entityEvolver) {
+        this.idType = requireNonNull(idType, "The id type must not be null.");
+        this.entityType = requireNonNull(entityType, "The entity type must not be null.");
+        this.eventStore = requireNonNull(eventStore, "The event store must not be null.");
+        this.entityFactory = requireNonNull(entityFactory, "The entity factory must not be null.");
+        this.criteriaResolver = requireNonNull(criteriaResolver, "The criteria resolver must not be null.");
+        this.entityEvolver = requireNonNull(entityEvolver, "The entity evolver must not be null.");
     }
 
     @Override
@@ -131,9 +131,9 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
                                                 entityFactory.createEntity(entityType(), identifier)
                                         ),
                                         (entity, entry) -> {
-                                            entity.applyStateChange(entry.message(),
-                                                                    eventStateApplier,
-                                                                    processingContext);
+                                            entity.evolve(entry.message(),
+                                                          entityEvolver,
+                                                          processingContext);
                                             return entity;
                                         })
                                 .whenComplete((entity, exception) -> {
@@ -174,8 +174,8 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
 
     /**
      * Update the given {@code entity} for any event that is published within its lifecycle, by invoking the
-     * {@link EventStateApplier} in the {@link EventStoreTransaction#onAppend(Consumer)}. The {@code onAppend} hook is
-     * used to immediately source events that are being published by the entity.
+     * {@link EntityEvolver} in the {@link EventStoreTransaction#onAppend(Consumer)}. The {@code onAppend} hook is used
+     * to immediately source events that are being published by the entity.
      *
      * @param entity            An {@link ManagedEntity} to make the state change for.
      * @param processingContext The {@link ProcessingContext} for which to retrieve the active
@@ -183,7 +183,7 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
      */
     private void updateActiveEntity(EventSourcedEntity<I, E> entity, ProcessingContext processingContext) {
         eventStore.transaction(processingContext)
-                  .onAppend(event -> entity.applyStateChange(event, eventStateApplier, processingContext));
+                  .onAppend(event -> entity.evolve(event, entityEvolver, processingContext));
     }
 
     @Override
@@ -193,7 +193,7 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
         descriptor.describeProperty("eventStore", eventStore);
         descriptor.describeProperty("entityFactory", entityFactory);
         descriptor.describeProperty("criteriaResolver", criteriaResolver);
-        descriptor.describeProperty("eventStateApplier", eventStateApplier);
+        descriptor.describeProperty("entityEvolver", entityEvolver);
     }
 
     /**
@@ -233,9 +233,10 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
             return currentState.updateAndGet(change);
         }
 
-        private M applyStateChange(EventMessage<?> event, EventStateApplier<M> applier,
-                                   ProcessingContext processingContext) {
-            return currentState.updateAndGet(current -> applier.apply(current, event, processingContext));
+        private M evolve(EventMessage<?> event,
+                         EntityEvolver<M> evolver,
+                         ProcessingContext processingContext) {
+            return currentState.updateAndGet(current -> evolver.evolve(current, event, processingContext));
         }
     }
 }
