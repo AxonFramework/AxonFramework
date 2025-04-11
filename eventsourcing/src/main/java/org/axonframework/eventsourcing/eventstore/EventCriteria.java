@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  * <p>
  * After first defining the tags to filter on through {@link #havingTags(Tag...)} or one of its variants, the scope of
  * the read on the event store can further be limited on the {@link EventMessage#type() type}, through
- * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(String...)}. This is optional, and will default to all
+ * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(QualifiedName...)}. This is optional, and will default to all
  * types if not specified.
  * <pre>
  *     {@code
@@ -81,7 +81,7 @@ import java.util.stream.Collectors;
  *
  * <h3>Examples</h2>
  * To make it easier to understand how the criteria work, here are some examples. These examples all have the following
- * event in the event store:
+ * events in the event store:
  * <ul>
  *     <li> Event [StudentRegistered, student -> matchingStudent]</li>
  *     <li> Event [CourseRegistered, course -> matchingCourse]</li>
@@ -139,7 +139,7 @@ import java.util.stream.Collectors;
  * </ul>
  * <h4>Example 4</h4>
  * Last but not least, let's say that we only want the "StudentRegistered" events for the "matchingStudent". This
- * can be done by using the {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(String...)} method:
+ * can be done by using the {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(QualifiedName...)} method:
  * <pre>
  *     {@code
  *     EventCriteria criteria = EventCriteria
@@ -225,7 +225,7 @@ public sealed interface EventCriteria
      * sufficient.
      * <p>
      * You can further limit the types of events to be matched by using the
-     * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(Set)} method. It is VERY
+     * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(Set)} method.
      *
      * @param tags The tags to match against.
      * @return The completed EventCriteria instance.

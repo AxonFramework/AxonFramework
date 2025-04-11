@@ -28,14 +28,15 @@ import java.util.Set;
  * @see EventCriteria
  * @since 5.0.0
  */
-public sealed interface EventCriterion extends EventCriteria permits TagAndTypeFilteredEventCriteria, TagFilteredEventCriteria {
+public sealed interface EventCriterion extends EventCriteria
+        permits TagAndTypeFilteredEventCriteria, TagFilteredEventCriteria {
 
     /**
-     * A {@link Set} of {@link String Strings} containing all the types of events applicable for sourcing, streaming, or
-     * appending events.
+     * A {@link Set} of {@link QualifiedName QualifiedNames} containing all the types of events applicable for sourcing,
+     * streaming, or appending events.
      *
-     * @return The {@link Set} of {@link String Strings} containing all the types of events applicable for sourcing, streaming,
-     * or appending events.
+     * @return The {@link Set} of {@link QualifiedName QualifiedNames} containing all the types of events applicable for
+     * sourcing, streaming, or appending events.
      */
     Set<QualifiedName> types();
 

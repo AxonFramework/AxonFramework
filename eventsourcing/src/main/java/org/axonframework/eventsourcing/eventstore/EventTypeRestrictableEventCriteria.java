@@ -38,9 +38,8 @@ public sealed interface EventTypeRestrictableEventCriteria extends EventCriteria
 
 
     /**
-     * Define that the event must have one of the provided {@code types} to match. If the {@code types} set is empty,
-     * the criteria will match against any type. The types match in an OR relation, meaning that an event must have at
-     * least one of the types to match.
+     * Define that the event must be one of the provided {@code types}. If the {@code types} set is empty, the criteria
+     * allows any type.
      *
      * @param types The types to match against.
      * @return The finished {@link EventCriteria} instance.
@@ -48,9 +47,8 @@ public sealed interface EventTypeRestrictableEventCriteria extends EventCriteria
     EventCriteria andBeingOneOfTypes(@Nonnull Set<QualifiedName> types);
 
     /**
-     * Define that the event must have one of the provided {@code types} to match. If the {@code types} set is empty,
-     * the criteria will match against any type. The types match in an OR relation, meaning that an event must have at
-     * least one of the types to match.
+     * Define that the event must be one of the provided {@code types}. If the {@code types} set is empty, the criteria
+     * allows any type.
      *
      * @param types The types to match against.
      * @return The finished {@link EventCriteria} instance.
@@ -60,10 +58,9 @@ public sealed interface EventTypeRestrictableEventCriteria extends EventCriteria
     }
 
     /**
-     * Define that the event must match on one of the provided {@code types} to match. The {@code types} are resolved to
-     * a {@link QualifiedName} using the provided {@code typeResolver}. If the {@code types} set is empty, the criteria
-     * will match against any type. The types match in an OR relation, meaning that an event must have at least one of
-     * the types to match.
+     * Define that the event must be one of the provided {@code types}. The {@code types} are resolved to a
+     * {@link QualifiedName} using the provided {@code typeResolver}. If the {@code types} set is empty, the criteria
+     * allows any type.
      *
      * @param typeResolver The {@link MessageTypeResolver} to resolve the types to a {@link QualifiedName}.
      * @param types        The types to match against.
@@ -77,10 +74,8 @@ public sealed interface EventTypeRestrictableEventCriteria extends EventCriteria
     }
 
     /**
-     * Define that the event must match on one of the provided {@code types} to match.
-     * {@link QualifiedName qualified names} are constructed from the string values. If the {@code types} set is empty,
-     * the criteria will match against any type. The types match in an OR relation, meaning that an event must have at
-     * least one of the types to match.
+     * Define that the event must be one of the provided {@code types}. {@link QualifiedName qualified names} are
+     * constructed from the string values. If the {@code types} set is empty, the criteria allow any type.
      *
      * @param types The types to match against.
      * @return The finished {@link EventCriteria} instance.
@@ -92,7 +87,7 @@ public sealed interface EventTypeRestrictableEventCriteria extends EventCriteria
     }
 
     /**
-     * Specifies that the event can have any type to match.
+     * Specifies that the event can be of any type.
      *
      * @return The finished {@link EventCriteria} instance.
      */

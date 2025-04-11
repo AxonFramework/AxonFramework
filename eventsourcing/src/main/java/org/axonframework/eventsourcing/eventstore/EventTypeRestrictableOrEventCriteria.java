@@ -38,8 +38,8 @@ final class EventTypeRestrictableOrEventCriteria extends OrEventCriteria impleme
     private final EventCriteria otherCriteria;
 
     /**
-     * Constructs a that will match the {@code buildingCriteria} and the {@code otherCriteria}, but of whic the
-     * {@code buildingCriteria} can still be restricted on event types.
+     * Constructs an {@code OrEventCriteria} that will match the {@code buildingCriteria} and the {@code otherCriteria},
+     * but of which the {@code buildingCriteria} can still be restricted on event types.
      *
      * @param buildingCriteria The {@link EventCriteria} that is being built. The
      *                         {@link EventTypeRestrictableEventCriteria} methods will apply to this instance.
