@@ -18,14 +18,24 @@ package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentFactory;
-import org.axonframework.eventhandling.EventHandler;
+import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.eventsourcing.EventStateApplier;
+import org.axonframework.eventsourcing.EntityEvolver;
+import org.axonframework.eventsourcing.PayloadBasedEntityEvolver;
+import org.axonframework.eventsourcing.SimpleEventSourcedComponent;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.repository.AsyncRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.invoke.MethodHandles;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -43,13 +53,17 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
         EventSourcedEntityBuilder.CriteriaResolverPhase<I, E>,
         EventSourcedEntityBuilder.EventSourcingHandlerPhase<I, E> {
 
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
     private final Class<I> idType;
     private final Class<E> entityType;
     private ComponentFactory<EventSourcedEntityFactory<I, E>> entityFactory;
     private ComponentFactory<CriteriaResolver<I>> criteriaResolver;
-    private ComponentFactory<EventStateApplier<E>> eventStateApplier;
+    private ComponentFactory<EntityEvolver<E>> entityEvolver;
+    private final Map<QualifiedName, ComponentFactory<EntityEvolver<E>>> entityEvolverPerName = new HashMap<>();
 
-    DefaultEventSourcedEntityBuilder(@Nonnull Class<I> idType, @Nonnull Class<E> entityType) {
+    DefaultEventSourcedEntityBuilder(@Nonnull Class<I> idType,
+                                     @Nonnull Class<E> entityType) {
         this.idType = requireNonNull(idType, "The identifier type cannot be null.");
         this.entityType = requireNonNull(entityType, "The entity type cannot be null.");
     }
@@ -71,17 +85,22 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     }
 
     @Override
-    public EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull QualifiedName eventName,
-                                                                @Nonnull EventHandler eventHandler) {
-        // TODO #3286 - Providing separate lambdas/methods should result in a lambda-based EventStateApplier.
-        throw new UnsupportedOperationException("Not implemented yet");
+    public EventSourcedEntityBuilder<I, E> entityEvolver(@Nonnull ComponentFactory<EntityEvolver<E>> entityEvolver) {
+        this.entityEvolver = requireNonNull(entityEvolver, "The event state applier cannot be null.");
+        return this;
     }
 
     @Override
-    public EventSourcedEntityBuilder<I, E> eventStateApplier(
-            @Nonnull ComponentFactory<EventStateApplier<E>> eventStateApplier
-    ) {
-        this.eventStateApplier = requireNonNull(eventStateApplier, "The event state applier cannot be null.");
+    public <P> EventSourcingHandlerPhase<I, E> eventSourcingHandler(@Nonnull QualifiedName eventName,
+                                                                    @Nonnull Class<P> payloadType,
+                                                                    @Nonnull BiFunction<E, P, E> eventSourcingHandler) {
+        if (entityEvolverPerName.containsKey(eventName)) {
+            throw new IllegalArgumentException("Event Sourcing Handler for name [" + eventName + "] already exists");
+        }
+        entityEvolverPerName.put(
+                eventName,
+                c -> new PayloadBasedEntityEvolver<>(payloadType, eventSourcingHandler)
+        );
         return this;
     }
 
@@ -92,13 +111,33 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
 
     @Override
     public ComponentFactory<AsyncRepository<I, E>> repository() {
-        return c -> new AsyncEventSourcingRepository<>(
+        return config -> new AsyncEventSourcingRepository<>(
                 idType,
                 entityType,
-                c.getComponent(AsyncEventStore.class),
-                entityFactory.build(c), 
-                criteriaResolver.build(c),
-                eventStateApplier.build(c)
+                config.getComponent(AsyncEventStore.class),
+                entityFactory.build(config),
+                criteriaResolver.build(config),
+                constructEntityEvolver(config)
         );
+    }
+
+    private EntityEvolver<E> constructEntityEvolver(NewConfiguration config) {
+        if (entityEvolver != null) {
+            if (entityEvolverPerName.size() > 1) {
+                logger.warn("Ignoring separate Event Sourcing Handlers since an EntityEvolver has been given!");
+            }
+            return entityEvolver.build(config);
+        }
+        return new SimpleEventSourcedComponent<>(buildAndCollectEntityEvolvers(config));
+    }
+
+    private Map<QualifiedName, EntityEvolver<E>> buildAndCollectEntityEvolvers(NewConfiguration config) {
+        return entityEvolverPerName.entrySet()
+                                   .stream()
+                                   .collect(Collectors.toMap(
+                                           Map.Entry::getKey,
+                                           entry -> entry.getValue()
+                                                         .build(config)
+                                   ));
     }
 }

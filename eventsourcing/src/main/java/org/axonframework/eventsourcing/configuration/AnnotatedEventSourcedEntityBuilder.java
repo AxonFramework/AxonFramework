@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.configuration.ComponentFactory;
-import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
+import org.axonframework.eventsourcing.AnnotationBasedEntityEvolver;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
@@ -50,7 +50,7 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
     private final Class<E> entityType;
     private final EventSourcedEntityFactory<I, E> entityFactory;
     private final CriteriaResolver<I> criteriaResolver;
-    private final AnnotationBasedEventStateApplier<E> stateApplier;
+    private final AnnotationBasedEntityEvolver<E> entityEvolver;
 
     AnnotatedEventSourcedEntityBuilder(@Nonnull Class<I> idType,
                                        @Nonnull Class<E> entityType) {
@@ -67,7 +67,7 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
         Class<CriteriaResolver<I>> criteriaResolverType =
                 (Class<CriteriaResolver<I>>) annotationAttributes.get("criteriaResolver");
         this.criteriaResolver = factoryForTypeWithOptionalArgument(criteriaResolverType, Class.class).apply(entityType);
-        this.stateApplier = new AnnotationBasedEventStateApplier<>(entityType);
+        this.entityEvolver = new AnnotationBasedEntityEvolver<>(entityType);
     }
 
     @Override
@@ -81,8 +81,9 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
                 idType,
                 entityType,
                 c.getComponent(AsyncEventStore.class),
-                entityFactory, criteriaResolver,
-                stateApplier
+                entityFactory,
+                criteriaResolver,
+                entityEvolver
         );
     }
 }

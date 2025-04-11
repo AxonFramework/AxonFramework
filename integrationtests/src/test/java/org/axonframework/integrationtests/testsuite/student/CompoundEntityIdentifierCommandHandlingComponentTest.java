@@ -19,7 +19,6 @@ package org.axonframework.integrationtests.testsuite.student;
 
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.Tag;
@@ -55,9 +54,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                                                  EventCriteria.havingTags(new Tag("Student", id.mentorId()))
                                                               .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName())
                                          ))
-                                         .eventStateApplier(
-                                                 c -> new AnnotationBasedEventStateApplier<>(StudentMentorAssignment.class)
-                                         );
+                                         .eventSourcingHandler(MentorAssignedToStudentEvent.class, StudentMentorAssignment::handle);
 
         entityConfigurer.entity(mentorAssignmentSlice);
     }
