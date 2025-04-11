@@ -16,9 +16,9 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.common.ObjectUtils;
+import jakarta.annotation.Nonnull;
 
-import javax.annotation.Nonnull;
+import java.util.Objects;
 
 /**
  * A {@link MessageTypeResolver} using the {@link Class} of the given {@code payload} to base the
@@ -57,10 +57,8 @@ public class ClassBasedMessageTypeResolver implements MessageTypeResolver {
     }
 
     @Override
-    public MessageType resolve(@Nonnull Object payload) {
-        if (payload instanceof Message<?>) {
-            return ((Message<?>) payload).type();
-        }
-        return new MessageType(ObjectUtils.nullSafeTypeOf(payload), version);
+    public MessageType resolve(@Nonnull Class<?> payloadType) {
+        Objects.requireNonNull(payloadType, "payloadType may not be null");
+        return new MessageType(payloadType.getName(), version);
     }
 }

@@ -56,7 +56,7 @@ public sealed interface StreamingCondition extends EventsCondition permits Defau
     TrackingToken position();
 
     default EventCriteria criteria() {
-        return EventCriteria.anyEvent();
+        return EventCriteria.havingAnyTag();
     }
 
     /**

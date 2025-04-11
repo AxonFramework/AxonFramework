@@ -53,7 +53,7 @@ class DefaultEventSourcedEntityBuilderTest {
     @BeforeEach
     void setUp() {
         testEntityFactory = (type, id) -> new Course(id);
-        testCriteriaResolver = event -> EventCriteria.anyEvent();
+        testCriteriaResolver = event -> EventCriteria.havingAnyTag();
         testEntityEvolver = (entity, event, context) -> entity;
         constructedEntityFactory = new AtomicBoolean(false);
         constructedCriteriaResolver = new AtomicBoolean(false);

@@ -28,10 +28,10 @@ class AnnotationBasedEventCriteriaResolverTest {
         var resolver = new AnnotationBasedEventCriteriaResolver(FunctionalEventSourcedEntity.class);
 
         var criteriaString = resolver.resolve("id");
-        assertEquals(EventCriteria.match().eventsOfAnyType().withTags("aggregateIdentifierOfString", "id"), criteriaString);
+        assertEquals(EventCriteria.havingTags("aggregateIdentifierOfString", "id"), criteriaString);
 
         var criteriaLong = resolver.resolve(1L);
-        assertEquals(EventCriteria.match().eventsOfAnyType().withTags("aggregateIdentifierOfLong", "1"), criteriaLong);
+        assertEquals(EventCriteria.havingTags("aggregateIdentifierOfLong", "1"), criteriaLong);
     }
 
     @Test
@@ -53,7 +53,7 @@ class AnnotationBasedEventCriteriaResolverTest {
         var resolver = new AnnotationBasedEventCriteriaResolver(FunctionalEventSourcedEntity.class);
 
         var criteria = resolver.resolve(0.0);
-        assertEquals(EventCriteria.match().eventsOfAnyType().withTags("fallbackTagKey", "0.0"), criteria);
+        assertEquals(EventCriteria.havingTags("fallbackTagKey", "0.0"), criteria);
     }
 
     @EventSourcedEntity(tagKey = "fallbackTagKey")
@@ -61,12 +61,12 @@ class AnnotationBasedEventCriteriaResolverTest {
 
         @EventCriteriaBuilder
         public static EventCriteria buildCriteria(String id) {
-            return EventCriteria.match().eventsOfAnyType().withTags("aggregateIdentifierOfString", id);
+            return EventCriteria.havingTags("aggregateIdentifierOfString", id);
         }
 
         @EventCriteriaBuilder
         public static EventCriteria buildCriteria(Long id) {
-            return EventCriteria.match().eventsOfAnyType().withTags("aggregateIdentifierOfLong", id.toString());
+            return EventCriteria.havingTags("aggregateIdentifierOfLong", id.toString());
         }
 
         @EventCriteriaBuilder
@@ -80,7 +80,7 @@ class AnnotationBasedEventCriteriaResolverTest {
         var resolver = new AnnotationBasedEventCriteriaResolver(DefaultEventSourcedEntity.class);
 
         var criteria = resolver.resolve("id");
-        assertEquals(EventCriteria.match().eventsOfAnyType().withTags("DefaultEventSourcedEntity", "id"), criteria);
+        assertEquals(EventCriteria.havingTags("DefaultEventSourcedEntity", "id"), criteria);
     }
 
     @EventSourcedEntity()
@@ -106,7 +106,7 @@ class AnnotationBasedEventCriteriaResolverTest {
 
             @EventCriteriaBuilder
             public EventCriteria buildCriteria(String id) {
-                return EventCriteria.match().eventsOfAnyType().withTags("aggregateIdentifier", id);
+                return EventCriteria.havingTags("aggregateIdentifier", id);
             }
         }
 
@@ -127,7 +127,7 @@ class AnnotationBasedEventCriteriaResolverTest {
 
             @EventCriteriaBuilder
             public static EventCriteria buildCriteria() {
-                return EventCriteria.anyEvent();
+                return EventCriteria.havingAnyTag();
             }
         }
 
@@ -148,9 +148,7 @@ class AnnotationBasedEventCriteriaResolverTest {
 
             @EventCriteriaBuilder
             private static EventCriteria buildCriteria(String id) {
-                return EventCriteria.match()
-                        .eventsOfAnyType()
-                        .withTags("aggregateIdentifier", id);
+                return EventCriteria.havingTags("aggregateIdentifier", id);
             }
         }
 
@@ -158,7 +156,7 @@ class AnnotationBasedEventCriteriaResolverTest {
         void testEventCriteriaBuilderWithPrivateBuilderWorks() {
             var resolver = new AnnotationBasedEventCriteriaResolver(EntityWithPrivateEventCriteriaBuilder.class);
             var criteria = resolver.resolve("id");
-            assertEquals(EventCriteria.match().eventsOfAnyType().withTags("aggregateIdentifier", "id"), criteria);
+            assertEquals(EventCriteria.havingTags("aggregateIdentifier", "id"), criteria);
         }
 
 
@@ -202,12 +200,12 @@ class AnnotationBasedEventCriteriaResolverTest {
 
             @EventCriteriaBuilder
             public static EventCriteria buildCriteriaOne(String id) {
-                return EventCriteria.anyEvent();
+                return EventCriteria.havingAnyTag();
             }
 
             @EventCriteriaBuilder
             public static EventCriteria buildCriteriaTwo(String id) {
-                return EventCriteria.anyEvent();
+                return EventCriteria.havingAnyTag();
             }
         }
     }

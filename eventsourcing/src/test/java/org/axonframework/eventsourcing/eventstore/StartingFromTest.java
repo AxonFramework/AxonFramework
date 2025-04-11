@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class StartingFromTest {
 
     private static final GlobalSequenceTrackingToken TEST_POSITION = new GlobalSequenceTrackingToken(1337);
-    private static final EventCriteria TEST_CRITERIA = EventCriteria.match().eventsOfAnyType().withTags("key", "value");
+    private static final EventCriteria TEST_CRITERIA = EventCriteria.havingTags("key", "value");
 
     private StreamingCondition testSubject;
 
@@ -41,12 +41,12 @@ class StartingFromTest {
     @Test
     void containsExpectedData() {
         assertEquals(TEST_POSITION, testSubject.position());
-        assertEquals(EventCriteria.anyEvent(), testSubject.criteria());
+        assertEquals(EventCriteria.havingAnyTag(), testSubject.criteria());
     }
 
     @Test
     void withCriteriaReplaceNoCriteriaForGivenCriteria() {
-        assertEquals(EventCriteria.anyEvent(), testSubject.criteria());
+        assertEquals(EventCriteria.havingAnyTag(), testSubject.criteria());
 
         StreamingCondition result = testSubject.or(TEST_CRITERIA);
 

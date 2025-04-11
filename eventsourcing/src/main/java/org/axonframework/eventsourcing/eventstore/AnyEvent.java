@@ -18,15 +18,19 @@ package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.messaging.QualifiedName;
 
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 
 /**
  * Implementation of the {@link EventCriteria} allowing <b>any</b> event, regardless of its type or tags.
+ * You can limit the types of events to be matched by using the {@link AnyEvent#andBeingOneOfTypes(Set)} method, which
+ * will return a new {@link EventCriteria} that matches only the specified types.
  * <p>
  * Use this instance when all events are of interest during
- * {@link StreamableEventSource#open(String, org.axonframework.eventsourcing.eventstore.StreamingCondition) streaming}
+ * {@link StreamableEventSource#open(org.axonframework.eventsourcing.eventstore.StreamingCondition) streaming}
  * or when there are no consistency boundaries to validate during
  * {@link EventStoreTransaction#appendEvent(EventMessage) appending}. Note that {@code AnyEvent} criteria does not make
  * sense for {@link EventStoreTransaction#source(SourcingCondition) sourcing}, as it is
@@ -35,7 +39,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-final class AnyEvent implements EventCriteria {
+final class AnyEvent implements EventCriteria, EventTypeRestrictableEventCriteria {
 
     /**
      * Default instance of the {@link AnyEvent}.
@@ -53,7 +57,7 @@ final class AnyEvent implements EventCriteria {
     }
 
     @Override
-    public boolean matches(@Nonnull String type, @Nonnull Set<Tag> tags) {
+    public boolean matches(@Nonnull QualifiedName type, @Nonnull Set<Tag> tags) {
         return true;
     }
 
@@ -76,5 +80,11 @@ final class AnyEvent implements EventCriteria {
     @Override
     public boolean hasCriteria() {
         return false;
+    }
+
+    @Override
+    public EventCriteria andBeingOneOfTypes(@Nonnull Set<QualifiedName> types) {
+        Objects.requireNonNull(types, "The provided types should not be null");
+        return new TagAndTypeFilteredEventCriteria(types, Collections.emptySet());
     }
 }

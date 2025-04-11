@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.QualifiedName;
 
 import java.util.Set;
 
@@ -50,7 +51,7 @@ public sealed interface EventsCondition permits SourcingCondition, StreamingCond
      * @return {@code true} if given type and tags match, otherwise {@code false}.
      * @see EventCriteria
      */
-    default boolean matches(@Nonnull String type, @Nonnull Set<Tag> tags) {
+    default boolean matches(@Nonnull QualifiedName type, @Nonnull Set<Tag> tags) {
         return criteria().matches(type, tags);
     }
 }

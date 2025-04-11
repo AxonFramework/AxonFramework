@@ -147,9 +147,7 @@ public abstract class AbstractStudentTestSuite {
      * with the tag "Course" and the given model id.
      */
     protected CriteriaResolver<String> courseCriteriaResolver(NewConfiguration config) {
-        return courseId -> EventCriteria.match()
-                                        .eventsOfAnyType()
-                                        .withTags(new Tag("Course", courseId));
+        return courseId -> EventCriteria.havingTags(new Tag("Course", courseId));
     }
 
     /**
@@ -157,9 +155,7 @@ public abstract class AbstractStudentTestSuite {
      * with the tag "Student" and the given model id.
      */
     protected CriteriaResolver<String> studentCriteriaResolver(NewConfiguration config) {
-        return studentId -> EventCriteria.match()
-                                         .eventsOfAnyType()
-                                         .withTags(new Tag("Student", studentId));
+        return studentId -> EventCriteria.havingTags(new Tag("Student", studentId));
     }
 
     /**
