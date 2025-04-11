@@ -173,7 +173,7 @@ public class MethodInvokingMessageHandlingMember<T> implements MessageHandlingMe
             if (e.getCause() instanceof Exception) {
                 return MessageStream.failed(e.getCause());
             } else if (e.getCause() instanceof Error) {
-                throw (Error) e.getCause();
+                return MessageStream.failed(e.getCause());
             }
             return MessageStream.failed(new MessageHandlerInvocationException(String.format(
                     "Error handling an object of type [%s]",

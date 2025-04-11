@@ -82,7 +82,7 @@ public class StatefulCommandHandlingComponent implements
         handlingComponent.subscribe(name, ((command, context) -> {
             try {
                 return commandHandler.handle(command, stateManager, context);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 return MessageStream.failed(e);
             }
         }));

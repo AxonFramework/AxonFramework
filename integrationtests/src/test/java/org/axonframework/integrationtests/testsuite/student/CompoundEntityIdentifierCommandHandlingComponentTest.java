@@ -18,8 +18,8 @@ package org.axonframework.integrationtests.testsuite.student;
 
 
 import org.axonframework.commandhandling.CommandExecutionException;
-import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
 import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
@@ -30,8 +30,6 @@ import org.axonframework.integrationtests.testsuite.student.events.MentorAssigne
 import org.axonframework.integrationtests.testsuite.student.state.StudentMentorAssignment;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.junit.jupiter.api.*;
@@ -81,21 +79,25 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
     void canHandleCommandThatTargetsMultipleModelsViaStatefulCommandHandler() {
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
                 new QualifiedName(AssignMentorCommand.class),
-                (command, state, context) -> {
-                    AssignMentorCommand payload = (AssignMentorCommand) command.getPayload();
-                    StudentMentorAssignment assignment = state.loadEntity(
-                            StudentMentorAssignment.class, payload.modelIdentifier(), context
-                    ).join();
+                c -> {
+                    EventGateway eventGateway = c.getComponent(EventGateway.class);
+                    return (command, state, context) -> {
+                        EventGateway boundEventGateway = eventGateway.forProcessingContext(context);
+                        AssignMentorCommand payload = (AssignMentorCommand) command.getPayload();
+                        StudentMentorAssignment assignment = state.loadEntity(
+                                StudentMentorAssignment.class, payload.modelIdentifier(), context
+                        ).join();
 
-                    if (assignment.isMentorHasMentee()) {
-                        throw new IllegalArgumentException("Mentor already assigned to a mentee");
-                    }
-                    if (assignment.isMenteeHasMentor()) {
-                        throw new IllegalArgumentException("Mentee already has a mentor");
-                    }
-                    appendEvent(context,
-                                new MentorAssignedToStudentEvent(payload.mentorId(), payload.menteeId()));
-                    return MessageStream.just(SUCCESSFUL_COMMAND_RESULT).cast();
+                        if (assignment.isMentorHasMentee()) {
+                            throw new IllegalArgumentException("Mentor already assigned to a mentee");
+                        }
+                        if (assignment.isMenteeHasMentor()) {
+                            throw new IllegalArgumentException("Mentee already has a mentor");
+                        }
+                        boundEventGateway.publish(new MentorAssignedToStudentEvent(payload.mentorId(),
+                                                                                   payload.menteeId()));
+                        return MessageStream.just(SUCCESSFUL_COMMAND_RESULT).cast();
+                    };
                 }
         ));
         startApp();
@@ -138,7 +140,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
         @CommandHandler
         public void handle(AssignMentorCommand command,
                            @InjectEntity StudentMentorAssignment assignment,
-                           ProcessingContext context
+                           EventGateway eventGateway
         ) {
             if (assignment.isMentorHasMentee()) {
                 throw new IllegalArgumentException("Mentor already assigned to a mentee");
@@ -147,7 +149,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                 throw new IllegalArgumentException("Mentee already has a mentor");
             }
 
-            appendEvent(context, new MentorAssignedToStudentEvent(command.mentorId(), command.menteeId()));
+            eventGateway.publish(new MentorAssignedToStudentEvent(command.mentorId(), command.menteeId()));
         }
     }
 }

@@ -16,100 +16,77 @@
 
 package org.axonframework.eventhandling.gateway;
 
-import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.EventBus;
+import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.eventhandling.EventSink;
+import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
+import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
-import javax.annotation.Nonnull;
-
-import static org.axonframework.common.BuilderUtils.assertNonNull;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 /**
- * Default implementation of the EventGateway interface. It allow configuration of
- * {@link MessageDispatchInterceptor EventDispatchInterceptors}.
- * The Event Dispatch Interceptors can intercept and alter events dispatched on this specific gateway. Typically,
- * this would be used to add gateway specific meta data to the Event.
+ * Default implementation of the {@link EventGateway} interface. Events are published using the {@link EventSink} in a
+ * new {@link AsyncUnitOfWork}
  *
  * @author Bert laverman
+ * @author Mitchell Herrijgers
  * @since 4.1
  */
-public class DefaultEventGateway extends AbstractEventGateway implements EventGateway {
+public class DefaultEventGateway implements EventGateway {
+
+    private final EventSink eventSink;
+    private final MessageTypeResolver messageTypeResolver;
 
     /**
-     * Instantiate a {@link DefaultEventGateway} based on the fields contained in the {@link Builder}.
-     * <p>
-     * Will assert that the {@link EventBus} is not {@code null} and will throw an {@link AxonConfigurationException}
-     * if this is the case.
+     * Creates a new {@link EventGateway} that uses the given {@code eventSink} to publish events. The
+     * {@code messageTypeResolver} is used to resolve the type of the event if no {@link EventMessage} is provided but a
+     * payload.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link DefaultEventGateway}
-     *                instance
+     * @param eventSink           The {@link EventSink} to publish events to.
+     * @param messageTypeResolver The {@link MessageTypeResolver} to resolve the type of the event.
      */
-    protected DefaultEventGateway(Builder builder) {
-        super(builder);
-    }
-
-    /**
-     * Instantiate a Builder to be able to create a {@link DefaultEventGateway}.
-     * <p>
-     * The {@code dispatchInterceptors} are defaulted to an empty list.
-     * The {@link EventBus} is a <b>hard requirement</b> and as such should be provided.
-     *
-     * @return a Builder to be able to create a {@link DefaultEventGateway}
-     */
-    public static Builder builder() {
-        return new Builder();
+    public DefaultEventGateway(@Nonnull EventSink eventSink, @Nonnull MessageTypeResolver messageTypeResolver) {
+        this.eventSink = Objects.requireNonNull(eventSink, "EventSink may not be null");
+        this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
     }
 
     @Override
     public void publish(@Nonnull List<?> events) {
-        this.publishAll(events);
+        AsyncUnitOfWork unitOfWork = new AsyncUnitOfWork();
+        unitOfWork.onInvocation(context -> {
+            publish(context, events);
+            return CompletableFuture.completedFuture(null);
+        });
+        unitOfWork.execute().join();
     }
 
-    /**
-     * A Builder class for {@link DefaultEventGateway}s.
-     * <p>
-     * The {@code dispatchInterceptors} are defaulted to an empty list.
-     * The {@link EventBus} is a <b>hard requirement</b> and as such should be provided.
-     */
-    public static class Builder extends AbstractEventGateway.Builder {
+    @Override
+    public void publish(@Nonnull ProcessingContext context, @Nonnull List<?> events) {
+        List<EventMessage<?>> convertedEvents = events.stream()
+                                                      .map(this::asEventMessage)
+                                                      .collect(Collectors.toList());
+        this.eventSink.publish(context, convertedEvents);
+    }
 
-        @Override
-        public Builder eventBus(@Nonnull EventBus eventBus) {
-            super.eventBus(eventBus);
-            return this;
+    @SuppressWarnings("unchecked")
+    private <E> EventMessage<E> asEventMessage(@Nonnull Object event) {
+        if (event instanceof EventMessage<?>) {
+            return (EventMessage<E>) event;
+        } else if (event instanceof Message<?>) {
+            Message<E> message = (Message<E>) event;
+            return new GenericEventMessage<>(message, () -> GenericEventMessage.clock.instant());
         }
-
-        @Override
-        public Builder dispatchInterceptors(
-                MessageDispatchInterceptor<? super EventMessage<?>>... dispatchInterceptors) {
-            super.dispatchInterceptors(dispatchInterceptors);
-            return this;
-        }
-
-        @Override
-        public Builder dispatchInterceptors(
-                List<MessageDispatchInterceptor<? super EventMessage<?>>> dispatchInterceptors) {
-            super.dispatchInterceptors(dispatchInterceptors);
-            return this;
-        }
-
-        @Override
-        public AbstractEventGateway.Builder messageNameResolver(MessageTypeResolver messageTypeResolver) {
-            assertNonNull(messageTypeResolver, "MessageNameResolver may not be null");
-            super.messageNameResolver(messageTypeResolver);
-            return this;
-        }
-
-        /**
-         * Initializes a {@link DefaultEventGateway} as specified through this Builder.
-         *
-         * @return a {@link DefaultEventGateway} as specified through this Builder
-         */
-        public DefaultEventGateway build() {
-            return new DefaultEventGateway(this);
-        }
+        return new GenericEventMessage<>(
+                messageTypeResolver.resolve(event),
+                (E) event,
+                MetaData.emptyInstance()
+        );
     }
 }

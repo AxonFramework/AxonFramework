@@ -20,13 +20,12 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.NewConfiguration;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EventStateApplier;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
@@ -35,11 +34,8 @@ import org.axonframework.integrationtests.testsuite.student.events.StudentEnroll
 import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.junit.jupiter.api.*;
@@ -69,7 +65,7 @@ public abstract class AbstractStudentTestSuite {
     private EventSourcedEntityBuilder<String, Student> studentEntity;
 
     protected CommandGateway commandGateway;
-    protected AsyncEventStore eventStore;
+    protected EventGateway eventGateway;
     protected AsyncRepository<String, Student> studentRepository;
     protected AsyncRepository<String, Course> courseRepository;
 
@@ -113,7 +109,7 @@ public abstract class AbstractStudentTestSuite {
                                        .registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
                                        .start();
         commandGateway = configuration.getComponent(CommandGateway.class);
-        eventStore = configuration.getComponent(AsyncEventStore.class);
+        eventGateway = configuration.getComponent(EventGateway.class);
 
         NewConfiguration moduleConfig = configuration.getModuleConfigurations().getFirst();
         //noinspection unchecked
@@ -183,11 +179,6 @@ public abstract class AbstractStudentTestSuite {
 
     protected <T> void sendCommand(T payload) {
         commandGateway.sendAndWait(payload);
-    }
-
-    protected void appendEvent(ProcessingContext context, Object event) {
-        eventStore.transaction(context)
-                  .appendEvent(new GenericEventMessage<>(new MessageType(event.getClass()), event));
     }
 
     protected void verifyStudentName(String id, String name) {

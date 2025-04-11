@@ -16,12 +16,14 @@
 
 package org.axonframework.eventhandling.gateway;
 
-import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.MessageDispatchInterceptor;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.StubProcessingContext;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -41,66 +43,72 @@ import static org.mockito.Mockito.*;
 class DefaultEventGatewayTest {
 
     private DefaultEventGateway testSubject;
-    private EventBus mockEventBus;
-    private MessageDispatchInterceptor<EventMessage<?>> mockEventMessageTransformer;
+    private EventSink mockEventSink;
 
     @BeforeEach
     void setUp() {
-        mockEventBus = mock(EventBus.class);
-        //noinspection unchecked
-        mockEventMessageTransformer = mock(MessageDispatchInterceptor.class);
-
-        when(mockEventMessageTransformer.handle(isA(EventMessage.class)))
-                .thenAnswer(invocation -> invocation.getArguments()[0]);
-        //noinspection unchecked
-        testSubject = DefaultEventGateway.builder()
-                                         .eventBus(mockEventBus)
-                                         .dispatchInterceptors(mockEventMessageTransformer)
-                                         .build();
+        mockEventSink = mock(EventSink.class);
+        testSubject = new DefaultEventGateway(
+                mockEventSink,
+                new ClassBasedMessageTypeResolver()
+        );
     }
 
     @Test
-    void publishSingleEvent() {
+    void publishSingleEventWithoutContextPublishesWithContext() {
         // Given
         //noinspection unchecked
-        ArgumentCaptor<EventMessage<?>> eventCaptor = ArgumentCaptor.forClass(EventMessage.class);
+        ArgumentCaptor<List<EventMessage<?>>> eventCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<ProcessingContext> contextCaptor = ArgumentCaptor.forClass(ProcessingContext.class);
 
         // When
         testSubject.publish("Event1");
 
         // Then
-        verify(mockEventBus).publish(eventCaptor.capture());
-        EventMessage<?> result = eventCaptor.getValue();
-        assertEquals("Event1", result.getPayload());
-
-        verify(mockEventMessageTransformer).handle(eventCaptor.capture());
-        EventMessage<?> interceptedResult = eventCaptor.getValue();
-        assertEquals("Event1", interceptedResult.getPayload());
+        verify(mockEventSink).publish(contextCaptor.capture(), eventCaptor.capture());
+        List<EventMessage<?>> result = eventCaptor.getValue();
+        assertEquals("Event1", result.getFirst().getPayload());
+        assertEquals("java.lang.String", result.getFirst().type().qualifiedName().name());
+        assertTrue(contextCaptor.getValue().isCommitted());
     }
+
+    @Test
+    void publishSingleEventWithContextPublishesWithThatContext() {
+        // Given
+        //noinspection unchecked
+        ArgumentCaptor<List<EventMessage<?>>> eventCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<ProcessingContext> contextCaptor = ArgumentCaptor.forClass(ProcessingContext.class);
+
+        // When
+        StubProcessingContext context = new StubProcessingContext();
+        testSubject.publish(context, "Event1");
+
+        // Then
+        verify(mockEventSink).publish(contextCaptor.capture(), eventCaptor.capture());
+        List<EventMessage<?>> result = eventCaptor.getValue();
+        assertEquals("Event1", result.getFirst().getPayload());
+        assertEquals("java.lang.String", result.getFirst().type().qualifiedName().name());
+        assertSame(context, contextCaptor.getValue());
+    }
+
 
     @Test
     void publishMultipleEvents() {
         //Given
         //noinspection unchecked
         ArgumentCaptor<List<EventMessage<?>>> eventsCaptor = ArgumentCaptor.forClass(List.class);
-        //noinspection unchecked
-        ArgumentCaptor<EventMessage<?>> interceptedCaptor = ArgumentCaptor.forClass(EventMessage.class);
 
         //When
         testSubject.publish("Event2", "Event3");
 
         //Then
-        verify(mockEventBus).publish(eventsCaptor.capture());
+        verify(mockEventSink).publish(any(ProcessingContext.class), eventsCaptor.capture());
         List<EventMessage<?>> result = eventsCaptor.getValue();
         assertEquals(2, result.size());
         assertEquals("Event2", result.get(0).getPayload());
+        assertEquals("java.lang.String", result.getFirst().type().qualifiedName().name());
         assertEquals("Event3", result.get(1).getPayload());
-
-        verify(mockEventMessageTransformer, times(2)).handle(interceptedCaptor.capture());
-        List<EventMessage<?>> interceptedResult = interceptedCaptor.getAllValues();
-        assertEquals(2, interceptedResult.size());
-        assertEquals("Event2", interceptedResult.get(0).getPayload());
-        assertEquals("Event3", interceptedResult.get(1).getPayload());
+        assertEquals("java.lang.String", result.get(1).type().qualifiedName().name());
     }
 
     @Test
@@ -112,10 +120,21 @@ class DefaultEventGatewayTest {
         testSubject.publish(message);
 
         // then
-        verify(mockEventBus).publish(
-                argThat((GenericEventMessage<?> msg) -> msg.equals(message)));
-        verify(mockEventMessageTransformer).handle(
-                argThat((GenericEventMessage<?> msg) -> msg.equals(message)));
+        verify(mockEventSink).publish(
+                any(ProcessingContext.class),
+                argThat((List<EventMessage<?>> msgs) -> msgs.size() == 1 && msgs.getFirst().equals(message)));
+    }
+
+    @Test
+    void forProcessingContextReturnsBoundGateway() {
+        StubProcessingContext boundProcessingContext = new StubProcessingContext();
+        EventGateway boundTestSubject = testSubject.forProcessingContext(boundProcessingContext);
+        ArgumentCaptor<ProcessingContext> contextCaptor = ArgumentCaptor.forClass(ProcessingContext.class);
+
+        boundTestSubject.publish("Event1");
+
+        verify(mockEventSink).publish(contextCaptor.capture(), anyList());
+        assertSame(boundProcessingContext, contextCaptor.getValue());
     }
 
     private record TestPayload(String value) {

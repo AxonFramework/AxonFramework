@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.integrationtests.testsuite.student.commands.AssignMentorCommand;
 import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
 import org.axonframework.integrationtests.testsuite.student.events.MentorAssignedToStudentEvent;
@@ -67,20 +68,24 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
     void canCombineStatesInLambdaCommandHandlerViaStateManagerParameter() {
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
                 new QualifiedName(EnrollStudentToCourseCommand.class),
-                (command, state, context) -> {
-                    EnrollStudentToCourseCommand payload = (EnrollStudentToCourseCommand) command.getPayload();
-                    Student student = state.loadEntity(Student.class, payload.studentId(), context).join();
-                    Course course = state.loadEntity(Course.class, payload.courseId(), context).join();
+                c -> {
+                    EventGateway eventGateway = c.getComponent(EventGateway.class);
+                    return (command, state, context) -> {
+                        EventGateway boundEventGateway = eventGateway.forProcessingContext(context);
+                        EnrollStudentToCourseCommand payload = (EnrollStudentToCourseCommand) command.getPayload();
+                        Student student = state.loadEntity(Student.class, payload.studentId(), context).join();
+                        Course course = state.loadEntity(Course.class, payload.courseId(), context).join();
 
-                    if (student.getCoursesEnrolled().size() > 2) {
-                        throw new IllegalArgumentException("Student already enrolled in 3 courses");
-                    }
+                        if (student.getCoursesEnrolled().size() > 2) {
+                            throw new IllegalArgumentException("Student already enrolled in 3 courses");
+                        }
 
-                    if (course.getStudentsEnrolled().size() > 2) {
-                        throw new IllegalArgumentException("Course already has 3 students");
-                    }
-                    appendEvent(context, new StudentEnrolledEvent(payload.studentId(), payload.courseId()));
-                    return MessageStream.just(SUCCESSFUL_COMMAND_RESULT).cast();
+                        if (course.getStudentsEnrolled().size() > 2) {
+                            throw new IllegalArgumentException("Course already has 3 students");
+                        }
+                        boundEventGateway.publish(new StudentEnrolledEvent(payload.studentId(), payload.courseId()));
+                        return MessageStream.just(SUCCESSFUL_COMMAND_RESULT).cast();
+                    };
                 }
         ));
         startApp();
@@ -167,7 +172,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
         public void handle(AssignMentorCommand command,
                            @InjectEntity(idResolver = MentorIdResolver.class) Student mentor,
                            @InjectEntity(idProperty = "menteeId") ManagedEntity<?, Student> mentee,
-                           EventSink eventSink,
+                           EventGateway eventGateway,
                            ProcessingContext context) {
             if (mentor.getMenteeId() != null) {
                 throw new IllegalArgumentException("Mentor already assigned to a mentee");
@@ -176,10 +181,9 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
                 throw new IllegalArgumentException("Mentee already has a mentor");
             }
 
-            eventSink.publish(context, new GenericEventMessage<>(
-                    new MessageType(MentorAssignedToStudentEvent.class),
+            eventGateway.publish(
                     new MentorAssignedToStudentEvent(mentor.getId(), mentee.entity().getId())
-            ));
+            );
         }
 
         public static class MentorIdResolver implements EntityIdResolver<String> {
