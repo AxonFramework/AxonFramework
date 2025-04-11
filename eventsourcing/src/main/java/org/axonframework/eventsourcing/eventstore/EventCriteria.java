@@ -44,8 +44,8 @@ import java.util.stream.Collectors;
  * <p>
  * After first defining the tags to filter on through {@link #havingTags(Tag...)} or one of its variants, the scope of
  * the read on the event store can further be limited on the {@link EventMessage#type() type}, through
- * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(QualifiedName...)}. This is optional, and will default to all
- * types if not specified.
+ * {@link EventTypeRestrictableEventCriteria#andBeingOneOfTypes(QualifiedName...)}. This is optional, and will default
+ * to all types if not specified.
  * <pre>
  *     {@code
  *     EventCriteria criteria = EventCriteria
@@ -64,9 +64,9 @@ import java.util.stream.Collectors;
  * recommended to use it when possible.
  *
  * <h3>Combining</h3>
- * You can combine multiple using {@link #either(EventCriteria...)}, or in a fluent fashion using {@link #or()}. This
- * allows you to create more complex criteria that match events based on multiple tags or types. However, it's not
- * possible to create AND conditions between multiple criteria.
+ * You can combine multiple criteriaa using {@link #either(EventCriteria...)}, or in a fluent fashion using
+ * {@link #or()}. This allows you to create more complex criteria that match events based on multiple tags or types.
+ * However, it's not possible to create AND conditions between multiple criteria.
  *
  * <pre>
  *     {@code
