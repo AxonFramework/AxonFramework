@@ -22,7 +22,8 @@ import org.axonframework.messaging.QualifiedName;
 import java.util.Set;
 
 /**
- * Interface describing a group of {@link EntityEvolver EntityEvolvers} belonging to a single entity of type {@code E}.
+ * Interface describing a group of {@link EntityEvolver EntityEvolvers} belonging to a single entity of type {@code E},
+ * forming an event sourced component.
  * <p>
  * The {@link #supportedEvents()} describes the events supported by this entity evolver.
  *
@@ -30,7 +31,7 @@ import java.util.Set;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface EntityEvolvingComponent<E> extends EntityEvolver<E> {
+public interface EventSourcedComponent<E> extends EntityEvolver<E> {
 
     /**
      * All supported {@link EventMessage events}, referenced through a {@link QualifiedName}.

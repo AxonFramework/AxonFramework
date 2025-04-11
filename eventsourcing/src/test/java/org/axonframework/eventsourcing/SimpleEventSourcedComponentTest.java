@@ -32,12 +32,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link SimpleEntityEvolvingComponent}.
+ * Test class validating the {@link SimpleEventSourcedComponent}.
  *
  * @author Mitchll Herrijgers
  * @author Steven van Beelen
  */
-class SimpleEntityEvolvingComponentTest {
+class SimpleEventSourcedComponentTest {
 
     private static final String ENTITY = "entity";
     private static final EventMessage<String> STRING_EVENT =
@@ -48,7 +48,7 @@ class SimpleEntityEvolvingComponentTest {
     private AtomicBoolean stringEvolverInvoked;
     private AtomicBoolean integerEvolverInvoked;
 
-    private SimpleEntityEvolvingComponent<String> testSubject;
+    private SimpleEventSourcedComponent<String> testSubject;
 
     @BeforeEach
     void setUp() {
@@ -68,13 +68,13 @@ class SimpleEntityEvolvingComponentTest {
         evolvers.put(STRING_EVENT.type().qualifiedName(), stringBasedEntityEvolver);
         evolvers.put(INT_EVENT.type().qualifiedName(), integerBasedEntityEvolver);
 
-        testSubject = new SimpleEntityEvolvingComponent<>(evolvers);
+        testSubject = new SimpleEventSourcedComponent<>(evolvers);
     }
 
     @Test
     void constructorThrowsNullPointerExceptionForNullEntityEvolverCollection() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new SimpleEntityEvolvingComponent<>(null));
+        assertThrows(NullPointerException.class, () -> new SimpleEventSourcedComponent<>(null));
     }
 
     @Test
