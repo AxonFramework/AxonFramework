@@ -25,20 +25,20 @@ import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link PayloadConvertingEntityEvolver}.
+ * Test class validating the {@link PayloadBasedEntityEvolver}.
  *
  * @author Mitchell Herrijgers
  */
-class PayloadConvertingEntityEvolverTest {
+class PayloadBasedEntityEvolverTest {
 
     private static final String ENTITY = "base";
     private static final String PAYLOAD = ":test-event";
 
-    private PayloadConvertingEntityEvolver<String, String> testSubject;
+    private PayloadBasedEntityEvolver<String, String> testSubject;
 
     @BeforeEach
     void setUp() {
-        testSubject = new PayloadConvertingEntityEvolver<>(String.class, (entity, event) -> entity + event);
+        testSubject = new PayloadBasedEntityEvolver<>(String.class, (entity, event) -> entity + event);
     }
 
     @Test
@@ -84,7 +84,7 @@ class PayloadConvertingEntityEvolverTest {
     @Test
     void throwsExceptionIfNullPayloadTypeIsSupplied() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new PayloadConvertingEntityEvolver<String, String>(
+        assertThrows(NullPointerException.class, () -> new PayloadBasedEntityEvolver<String, String>(
                 null,
                 (entity, event) -> entity + event
         ));
@@ -93,7 +93,7 @@ class PayloadConvertingEntityEvolverTest {
     @Test
     void throwsExceptionIfNullEventStateApplierIsSupplied() {
         //noinspection DataFlowIssue
-        assertThrows(NullPointerException.class, () -> new PayloadConvertingEntityEvolver<String, String>(
+        assertThrows(NullPointerException.class, () -> new PayloadBasedEntityEvolver<String, String>(
                 String.class,
                 null
         ));

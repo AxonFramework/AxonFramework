@@ -22,7 +22,7 @@ import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EntityEvolver;
-import org.axonframework.eventsourcing.PayloadConvertingEntityEvolver;
+import org.axonframework.eventsourcing.PayloadBasedEntityEvolver;
 import org.axonframework.eventsourcing.SimpleEntityEvolvingComponent;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
@@ -99,7 +99,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
         }
         entityEvolverPerName.put(
                 eventName,
-                c -> new PayloadConvertingEntityEvolver<>(payloadType, eventSourcingHandler)
+                c -> new PayloadBasedEntityEvolver<>(payloadType, eventSourcingHandler)
         );
         return this;
     }

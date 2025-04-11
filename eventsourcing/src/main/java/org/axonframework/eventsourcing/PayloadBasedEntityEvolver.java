@@ -35,7 +35,7 @@ import static java.util.Objects.requireNonNull;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class PayloadConvertingEntityEvolver<P, E> implements EntityEvolver<E> {
+public class PayloadBasedEntityEvolver<P, E> implements EntityEvolver<E> {
 
     private final Class<P> payloadType;
     private final BiFunction<E, P, E> evolver;
@@ -50,8 +50,8 @@ public class PayloadConvertingEntityEvolver<P, E> implements EntityEvolver<E> {
      * @param payloadType The payload type to check against.
      * @param evolver     The function to evolve the entity with.
      */
-    public PayloadConvertingEntityEvolver(@Nonnull Class<P> payloadType,
-                                          @Nonnull BiFunction<E, P, E> evolver) {
+    public PayloadBasedEntityEvolver(@Nonnull Class<P> payloadType,
+                                     @Nonnull BiFunction<E, P, E> evolver) {
         this.payloadType = requireNonNull(payloadType, "The payload type must not be null.");
         this.evolver = requireNonNull(evolver, "The evolver must not be null.");
     }
