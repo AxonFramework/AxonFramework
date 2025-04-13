@@ -108,7 +108,7 @@
         <micrometer.version>1.14.5</micrometer.version>
         <!-- Other -->
         <byte-buddy.version>1.17.5</byte-buddy.version>
-        <commons-io.version>2.18.0</commons-io.version>
+        <commons-io.version>2.19.0</commons-io.version>
         <disruptor.version>3.4.4</disruptor.version>
         <findbugs-jsr305.version>3.0.2</findbugs-jsr305.version>
         <javassist.version>3.30.2-GA</javassist.version>
@@ -119,7 +119,7 @@
         <!-- Serialization -->
         <avro.version>1.11.4</avro.version><!-- Don't upgrade due to JDK8, the JDK11+ version is defined in profile below -->
         <dom4j.version>2.1.4</dom4j.version>
-        <gson.version>2.12.1</gson.version>
+        <gson.version>2.13.0</gson.version>
         <jackson.version>2.18.3</jackson.version>
         <xstream.version>1.4.21</xstream.version>
         <!-- Scheduling -->
@@ -134,7 +134,7 @@
         <awaitility.version>4.3.0</awaitility.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit4.version>4.13.2</junit4.version>
-        <junit.jupiter.version>5.12.1</junit.jupiter.version>
+        <junit.jupiter.version>5.12.2</junit.jupiter.version>
         <mockito.version>4.11.0</mockito.version>
         <testcontainers.version>1.19.3</testcontainers.version>
         <!-- Validation -->
