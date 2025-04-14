@@ -24,11 +24,11 @@ import org.axonframework.modelling.command.EntityIdResolver;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class UnsubscribeStudentCommandHandler {
+class UnsubscribeStudentFromCourseCommandHandler {
 
     @CommandHandler
     void handle(
-            UnsubscribeStudent command,
+            UnsubscribeStudentFromCourse command,
             @InjectEntity(idResolver = SubscriptionIdResolver.class) State state,
             EventSink eventSink,
             ProcessingContext processingContext
@@ -37,7 +37,7 @@ class UnsubscribeStudentCommandHandler {
         eventSink.publish(processingContext, toMessages(events));
     }
 
-    private List<StudentUnsubscribed> decide(UnsubscribeStudent command, State state) {
+    private List<StudentUnsubscribed> decide(UnsubscribeStudentFromCourse command, State state) {
         return state.subscribed
                 ? List.of(new StudentUnsubscribed(command.studentId().raw(), command.courseId().raw()))
                 : List.of();
@@ -45,7 +45,7 @@ class UnsubscribeStudentCommandHandler {
 
     private static List<EventMessage<?>> toMessages(List<StudentUnsubscribed> events) {
         return events.stream()
-                     .map(UnsubscribeStudentCommandHandler::toMessage)
+                     .map(UnsubscribeStudentFromCourseCommandHandler::toMessage)
                      .collect(Collectors.toList());
     }
 
@@ -89,7 +89,7 @@ class UnsubscribeStudentCommandHandler {
         @Override
         @Nonnull
         public SubscriptionId resolve(@Nonnull Message<?> command, @Nonnull ProcessingContext context) {
-            if (command.getPayload() instanceof UnsubscribeStudent(StudentId studentId, CourseId courseId)) {
+            if (command.getPayload() instanceof UnsubscribeStudentFromCourse(StudentId studentId, CourseId courseId)) {
                 return new SubscriptionId(courseId, studentId);
             }
             throw new IllegalArgumentException("Can not resolve SubscriptionId from command");

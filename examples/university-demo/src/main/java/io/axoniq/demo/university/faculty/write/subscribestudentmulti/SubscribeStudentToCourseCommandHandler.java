@@ -13,13 +13,13 @@ import org.axonframework.modelling.annotation.InjectEntity;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class SubscribeStudentCommandHandler {
+class SubscribeStudentToCourseCommandHandler {
 
     private static final int MAX_COURSES_PER_STUDENT = 3;
 
     @CommandHandler
     void handle(
-            SubscribeStudent command,
+            SubscribeStudentToCourse command,
             @InjectEntity(idProperty = FacultyTags.COURSE_ID) Course course,
             @InjectEntity(idProperty = FacultyTags.STUDENT_ID) Student student,
             EventSink eventSink,
@@ -29,7 +29,7 @@ class SubscribeStudentCommandHandler {
         eventSink.publish(processingContext, toMessages(events));
     }
 
-    private List<StudentSubscribed> decide(SubscribeStudent command, Course course, Student student) {
+    private List<StudentSubscribed> decide(SubscribeStudentToCourse command, Course course, Student student) {
         assertStudentEnrolledFaculty(student);
         assertStudentNotSubscribedToTooManyCourses(student);
         assertCourseExists(course);
@@ -41,7 +41,7 @@ class SubscribeStudentCommandHandler {
 
     private static List<EventMessage<?>> toMessages(List<StudentSubscribed> events) {
         return events.stream()
-                     .map(SubscribeStudentCommandHandler::toMessage)
+                     .map(SubscribeStudentToCourseCommandHandler::toMessage)
                      .collect(Collectors.toList());
     }
 

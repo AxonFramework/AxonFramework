@@ -20,7 +20,7 @@ public class SubscribeStudentMultiEntityConfiguration {
                 .entity(courseEntity)
                 .entity(studentEntity)
                 .commandHandlers()
-                .annotatedCommandHandlingComponent(c -> new SubscribeStudentCommandHandler());
+                .annotatedCommandHandlingComponent(c -> new SubscribeStudentToCourseCommandHandler());
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }
 
