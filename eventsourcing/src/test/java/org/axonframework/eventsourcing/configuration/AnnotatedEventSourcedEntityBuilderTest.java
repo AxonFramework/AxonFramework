@@ -26,6 +26,7 @@ import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.junit.jupiter.api.*;
@@ -82,7 +83,7 @@ class AnnotatedEventSourcedEntityBuilderTest {
     }
 
     @Test
-    void repositoryConstructsEventSourcingRepositoryForEntityFactoryCriteriaResolverAndEventStateApplier() {
+    void repositoryConstructsEventSourcingRepositoryForEntityFactory() {
         EventSourcedEntityBuilder<CourseId, Course> testSubject =
                 EventSourcedEntityBuilder.annotatedEntity(CourseId.class, Course.class);
 
@@ -150,6 +151,7 @@ class AnnotatedEventSourcedEntityBuilderTest {
         public <E, ID> CriteriaResolver<ID> construct(@Nonnull Class<E> entityType,
                                                       @Nonnull Class<ID> idType,
                                                       @Nonnull MessageTypeResolver messageTypeResolver) {
+            assertInstanceOf(ClassBasedMessageTypeResolver.class, messageTypeResolver);
             return new CustomCriteriaResolver<>();
         }
     }
