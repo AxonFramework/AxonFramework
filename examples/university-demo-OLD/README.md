@@ -6,7 +6,7 @@ Axon version: 5.0.0-M1
 Now only in-memory implementation of an Event Store is supported, but you can play around with the Command handling API. 
 The in-memory Event Store supports the [DCB (Dynamic Consistency Boundary) concept](https://www.youtube.com/watch?v=IgigmuHHchI).
 
-# Domain: University
+# Domain: The Axon University
 
 ## Bounded Context: Faculty
 
@@ -25,14 +25,10 @@ After an Event Modeling (which you can see above) session we have identified fol
 * `StudentSubscribed` - a fact that the student has subscribed to the course
 * `StudentUnsubscribed` - a fact that the student has unsubscribed from the course
 
-> Note that the implementation of this interface does not have to be in the domain itself; it can be in the integration
-> layer that would delegate calls to the domain. This way, the domain can remain clean of any framework code. However,
-> we decided to implement it right in the domain layer for the simplicity of this sample.
-
 
 ## 🏛️ Screaming Architecture (Vertical Slices)
 
-The project follows a Screaming Architecture pattern organized around vertical slices that mirror Event Modeling concepts.
+The project follows a [Screaming Architecture](https://www.milanjovanovic.tech/blog/screaming-architecture) pattern organized around vertical slices that mirror Event Modeling concepts.
 
 The package structure screams the capabilities of the system by making explicit: commands available to users, events that capture what happened, queries for retrieving information, business rules, and system automations.
 This architecture makes it immediately obvious what the system can do, what rules govern those actions, and how different parts of the system interact through events.

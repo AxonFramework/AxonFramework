@@ -35,10 +35,4 @@ class Student {
         return List.copyOf(subscribedCourses);
     }
 
-//    @EventCriteriaBuilder
-//    public static EventCriteria resolveCriteria(StudentId studentId) {
-//        return EventCriteria.match()
-//                            .eventsOfAnyType()
-//                            .withTags(Tag.of(FacultyTags.STUDENT_ID, studentId.raw()));
-//    }
 }
