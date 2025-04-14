@@ -22,6 +22,7 @@ With this mind-shift, you can organize your code  around features than entities 
 * Revisited Configuration - A new, more flexible configuration model.
 * Improved Testing Support - Enhanced testing fixtures that allow you to verify your app configured as same as in the production code.
 * Java 21 Baseline - Taking advantage of the latest Java features.
+* Async Native Architecture - The new Unit of Work is fully composable from async functions. With the removal of `ThreadLocal` usage, the framework now better supports asynchronous programming models like Project Reactor, Kotlin Coroutines, and the upcoming Java Fiber.
 
 Whether you're new to Axon Framework or upgrading from version 4,
 this tutorial will help you understand these new concepts through practical examples.
