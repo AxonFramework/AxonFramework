@@ -8,12 +8,12 @@ Our initial examples will focus on the Faculty Bounded Context, where we'll impl
 
 Within this context, the business capabilities are:
 
-* The faculty can create courses with assigned capacity (the maximum number of students allowed)
-* Course capacity can be modified after creation
-* Course name can be changed after creation
-* Students can enroll in the faculty
-* Students can subscribe to courses (within capacity limits), there is also a limit of course subscriptions per student
-* Students can unsubscribe from courses
+* The faculty can create courses with assigned capacity (the maximum number of students allowed).
+* Course capacity can be modified after creation.
+* Course name can be changed after creation.
+* Students can enroll in the faculty.
+* Students can subscribe to courses (within capacity limits), there is also a limit of course subscriptions per student.
+* Students can unsubscribe from courses.
 
 == Event modeling
 

@@ -25,7 +25,7 @@ In this step we will configure the dependencies to use Axon Framework 5 in our p
 To enable the use of Axon Framework, we can configure the required Axon Framework dependencies in our project's `pom.xml` file.
 Nevertheless, depending on the specific features we plan to use later, we may need to add additional dependencies for other libraries or tools later (for example, `micrometer` or `reactor`).
 
-Below you may see the resulting pom.
+Below you can see the resulting pom from our current set of requirements.
 Please ensure you have the following properties and dependencies in your `pom.xml` file:
 
 [source,xml]
@@ -148,7 +148,7 @@ Please ensure you have the following properties and dependencies in your `pom.xm
 
 We will design our project follows a *Vertical Slice Architecture* approach.
 This approach organizes code around features (slices) rather than technical layers.
-It aligns perfectly with the Event Modeling which we used to design our application and also with the Axon Framework architecture which is designed around messages.
+It aligns perfectly with the Event Modeling that we used to design our application and also with Axon Framework's architecture that is designed around messages.
 
 Our project will follow this structure of packages:
 
@@ -214,7 +214,7 @@ Components like: `EventStore`, `CommandBus`, `EventSink` etc.
 
 [NOTE]
 ====
-In Milestone 1, only the in-memory implementation of the Event Store is supported, but this still allows you to try out the new Command handling API.
+In Milestone 1, only the in-memory implementation of the Event Store is supported, but this still allows you to try out the new Command handling API and the new DCB-support just the same.
 ====
 
 [source,java]

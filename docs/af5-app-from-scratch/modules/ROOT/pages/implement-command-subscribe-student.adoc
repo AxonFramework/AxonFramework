@@ -5,7 +5,7 @@ One of the major benefits of Axon Framework 5's Vertical Slice Architecture is t
 Now we'll implement the `SubscribeStudent` feature without needing to implement every feature in between.
 As long as we keep the `State` needed for command validation private to each slice, the only shared code between slices are the events, which serve as the backbone contract of our system.
 
-You even don't need to stick to certain order. How many times have you heard in the development team: "I'm waiting till the feature X is implemented, so I can implement my feature Y"?
+You don't even need to stick to certain order. How many times have you heard in the development team: "I'm waiting till the feature X is implemented, so I can implement my feature Y"?
 
 
 == Define messages
@@ -87,11 +87,11 @@ NOTE: Translating Event Modeling specification to test is a repeatable task, so 
 
  The Subscribe Student feature has several business rules which you may derive from the Event Modeling GWTs:
 
-1. The student must be enrolled in the faculty
-2. The course must exist
-3. The student should not yet be subscribed to the course
-4. The student must not be subscribed to too many courses (limit: 3)
-5. The course must not be at full capacity
+1. The student must be enrolled in the faculty.
+2. The course must exist.
+3. The student should not yet be subscribed to the course.
+4. The student must not be subscribed to too many courses (limit: 3).
+5. The course must not be at full capacity.
 
 Let's create tests for these scenarios.
 
@@ -191,7 +191,7 @@ class SubscribeStudentTest {
 ----
 
 These tests demonstrate the behavior we want to implement, checking both successful and error cases.
-To those tests we need to implement the command handler for `SubscribeStudent` command.
+For these tests we need to implement the command handler for `SubscribeStudent` command.
 As you've seen before, for the behavior which is based on some state (so we have something in a Given phase of the test), we need to have State for our command handler to validate commands against it.
 Let's make it right away!
 
@@ -247,17 +247,17 @@ Each student can subscribe up to 3 courses at the same time.
 <2> We use `@InjectEntity` to inject the state object.
 <3> This is your domain model invocation.
 You may keep it in the command handler as on the example or make the function unaware of the infrastructure like Axon Framework.
-This functional resembles the `Decider` pattern.
+This function resembles the `Decider` pattern.
 <4> As before, we translate events (which are a result of our domain function) to messages to be able to publish them.
-<5> We use `EventSink` to publish events.
-<6> Before we defined `tagKey` in `@EventSourcedEntity` annotation, now we cannot do that, because we require events about every subscription of a student and every subscription to the course, so we have multiple business concepts related to a business process.
+<5> We use the `EventSink` to publish events.
+<6> Before we defined a `tagKey` in `@EventSourcedEntity` annotation. Now we cannot do that, because we require events about every subscription of a student and every subscription to the course. So we have multiple business concepts related to a business process!
 In a few paragraphs you will see how to do that with the `EventCriteria` API.
 
 
-We always need single, unique identifier to load the state, because the `@InjectEntity` annotation needs to know how to identify the entity to load.
+We always need a single, unique identifier to load the state, because the `@InjectEntity` annotation needs to know how to identify the entity to load.
 In this case it's more challenging, because the `SubscribeStudent` business process is identified by the command type and also the `courseId` and `studentId`.
-When you subscribe to the course to valid business rules, you need to be aware of all the subscriptions for the given course and all subscriptions for the given student.
-So similar like in the traditional databases, we need to introduce a type for composite key to identify the entity.
+When you subscribe to the course and want to validate the business rules, you need to be aware of all the subscriptions for the given course and all subscriptions for the given student.
+Hence, similar to traditional databases, we need to introduce a type for composite key to identify the entity.
 We're going to use the `SubscriptionId` class and define it as an `TargetEntityId` in the `SubscribeStudent` command.
 
 [source,java]
@@ -291,17 +291,18 @@ public record SubscribeStudent(StudentId studentId, CourseId courseId) {
 
 }
 ----
-<1> The `@TargetEntityId` annotated method/property can be even private, because it's just for internal usage for the Axon Framework.
-Based on the `SubscriptionId` we can load the events to build the `State` object, we will use the value to define the `EventCriteria` later in this section.
+<1> The `@TargetEntityId` annotated method/property can even be  private, because it's just for internal usage for the Axon Framework.
+Based on the `SubscriptionId` we can load the events to build the `State` object. 
+We will use the value to define the `EventCriteria` later in this section.
 
 As you see there are two TODOs left in the `SubscribeStudentCommandHandler` code.
-Now we need to validate business rules, there are a few of them.
-The student can subscribe to course only if adhere to the domain invariants of this operation.
-I will list them belong along with assertion function, and we will also see what you need in the State object to validate them.
+Now we need to validate the business rules, and there are quite a few of them.
+The student can subscribe to a course only if he/she adheres to the domain invariants of the operation.
+We will list them along with the assertion function, as well as show what's needed in the State object to validate them.
 
 **Rule #1: The student is enrolled in the faculty **
 
-When a student is enrolled the faculty it has assigned `StudentId`, so we add it to the State:
+When a student is enrolled in the faculty it has an assigned `StudentId`, so we add it to the State:
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
@@ -355,7 +356,7 @@ We're going to implement all the remaining rules at once.
 What else do we need in the `State` object to validate them?
 Definitely not the course name, because it has nothing to do with the business rules, so we don't handle, even don't load events like `CourseRenamed` in order to process the command.
 
-What we'd like to introduce it's the minimal set of data we needed to be able to accept or reject the command.
+What we'd like to introduce is the minimal set of data we needed to be able to accept or reject the command.
 It's the same rule of thumb that you use while designing DDD Aggregates.
 
 So we are going to derive:
@@ -398,7 +399,7 @@ class SubscribeStudentCommandHandler {
         void evolve(StudentSubscribed event) { // <3>
             var subscribingStudentId = new StudentId(event.studentId());
             var subscribedCourseId = new CourseId(event.courseId());
-            if(subscribedCourseId.equals(courseId)) { // <4>
+            if (subscribedCourseId.equals(courseId)) { // <4>
                 noOfStudentsSubscribedToCourse++;
             }
             if (subscribingStudentId.equals(studentId)) { // <5>
@@ -427,7 +428,7 @@ class SubscribeStudentCommandHandler {
 
 }
 ----
-<1> Same as with a student, we store the `courseId` if was created along with the `capacity` from the same `CourseCreated` event.
+<1> Same as with a student, we store the `courseId`, along with the `capacity`, from the `CourseCreated` event.
 <2> We update the `capacity` on `CourseCapacityChanged` event.
 <3> In this case, we're going to evolve the State on every StudentSubscribed event related to the course or the student whose IDs are in the command.
 How we instruct the store to load those events, we will discuss in the next paragraph.
@@ -435,11 +436,11 @@ For now, you need to be aware of that you may receive events about different stu
 <4> If the `StudentSubscribed` event is related to the course, we increase the number of students subscribed to the course.
 <5> If the `StudentSubscribed` event is related to the student, we increase the number of courses the student is subscribed to.
 <6> If the `StudentSubscribed` event is related to the course and the student, we set the `alreadySubscribed` flag to true.
-<7> This handler for `StudentUnsubscribed` is an exact opposite of the `evolve` method for `StudentSubscribed` event. We decreased the numbers which we increased in the previous one.
+<7> The handler for the `StudentUnsubscribed` event is an exact opposite of the `evolve` method for `StudentSubscribed` event. We decrease the numbers that we increased in the previous one.
 
 How do we ensure that we won't load events for every student and every course?
 How do we limit our Consistency Boundary to only what is really needed to validate business rules?
-It's where the `EventCriteria` comes into play.
+This is where the `EventCriteria` comes into play.
 
 == Event criteria
 
@@ -459,16 +460,16 @@ This is where the Dynamic Consistency Boundary shines.
 For Axon Framework 4 users:
 Before we had to load all events for the given aggregate (from the event stream). We were defining the "tag" of events by using the `@TargetAggregateIdentifier` annotation.
 Since Axon Framework 5, we can load events that are relevant for the given command using custom criteria (you choose event types and tags).
-You may think about that in such a way: before event could have just one tag—the aggregateId, but now we can have multiple tags for the same event.
+You may think about it as follows: before, an event could have just one tag—the aggregateId. Now we can have multiple tags for any given event!
 ====
 
 Here the situation is a bit more complicated, because we need to load events for two different entities - `Student` and `Course`.
 In a system based on Aggregates, you may load both and limit your accessibility - the risk of optimistic concurrency is higher, or implement a complex saga to orchestrate changes between those two entities - then you also need to duplicate the events and deal with eventual consistency.
 Whereas in the domain experts' language, `StudentSubscribed` is just one fact, which influences rules around both `Student` and `Course`.
 
-As long as we're in a single bounded context and have all events in one storage, we can define our custom `EventCriteria` to shape our `State` which mixes properties for `Student` and `Course`!
+As long as we're in a single bounded context and have all events in one storage, we can define our custom `EventCriteria` to shape our `State`, mixing properties from both `Student` and `Course`!
 The operation will be also immediately consistent and transactional.
-If while executing the operation any event matching the same `EventCriteria` is stored, the operation will fail with an optimistic concurrency exception.
+If while executing the command, any event matching the same `EventCriteria` is stored, the operation will fail with an optimistic concurrency exception.
 The single responsibility of the `State` is just to give us enough information to determine if the command satisfies business rules.
 
 [source,java]
@@ -509,14 +510,14 @@ class SubscribeStudentCommandHandler {
 }
 ----
 <1> The `@EventCriteriaBuilder` annotation marks the method as a criteria builder for the given entity. It gives you more flexibility than just using `tagKey` property on the `@EventSourcedEntity` annotation.
-<2> Thanks to the `SubscriptionId` which is composed of `courseId` and `studentId` we know the values of those tags we needed.
-<3> As you may see at the highest level those `EventCriteria` are combined with `either` method, but when we define tags in `withTags` it means that the certain type of event requires all of them (there is an OR relation between event types, an AND relation between tags and OR between criteria).
-If we do `.withTags(Tag.of("courseId", courseId), Tag.of("studentId", studentId))` we will receive just subscription event of the given student for just one given course.
-It's not what we wanted here.
+<2> Thanks to the `SubscriptionId`, which is composed of `courseId` and `studentId`, we know the values of those tags we needed.
+<3> As you may see at the highest level that we combine `EventCriteria` with `either`. But, when we define tags through `withTags`, it means that a certain type of event requires all of them (there is an OR relation between event types, an AND relation between tags and OR between criteria).
+Hence, if we do `.withTags(Tag.of("courseId", courseId), Tag.of("studentId", studentId))` we will only receive subscription events of the given student for one given course.
+This is not what we want here.
 So, we split `StudentSubscribed` and `StudentUnsubscribed` events into two separate criteria (one for student and one for course), because we need to load all events of those types for either `courseId` or `studentId`.
 
-It gives us better accessibility of our system - thanks to that, as you see there is no `CourseRenamed` event in our criteria, so the Faculty administrator is still able to rename the course in the same time while processing the `SubscribeStudent` command, because the `CourseRenamed` event doesn't match the criteria - it's not in our operation consistency boundary.
-In case of Aggregates, those operations may clash, or you need to introduce separated entity for the name if you want to avoid concurrency access issues.
+It gives us better accessibility of our system - thanks to that, as you see there is no `CourseRenamed` event in our criteria, so the Faculty administrator is still able to rename the course in the same time while processing the `SubscribeStudent` command. Because the `CourseRenamed` event doesn't match the criteria, it's not in our operation's consistency boundary.
+In case of Aggregates, these operations may clash, or you need to introduce a separate entity for the name to avoid concurrency access issues.
 Our colleague Milan from AxonIQ (with our ex-colleague Sara) discuss those scenarios in the talk—we really encourage you to watch it link:https://www.youtube.com/watch?v=IgigmuHHchI[The Aggregate is dead. Long live the Aggregate! by Sara Pellegrini & Milan Savic @ Spring I/O 2023].
 
 [NOTE]
@@ -533,7 +534,7 @@ Let's summarize what we have done so far.
 We've implemented the whole `SubscribeStudent` command handler using the DCB concept in practice.
 It was easier than you expected, right?
 If you're not sure if you followed the tutorial correctly, you can always check the code in the repository. The command handler code is here link:https://github.com/AxonIQ/university-demo/blob/master/src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentCommandHandler.java[SubscribeStudentCommandHandler].
-If you prefer to use different style (with multiple state classes - like `Course` and `Student` instead of just one) you may also compare the solution we have done with the code in the package link:https://github.com/AxonIQ/university-demo/tree/master/src/main/java/io/axoniq/demo/university/faculty/write/subscribestudentmulti[subscribestudentmulti].
+If you prefer to use a different style (with multiple state classes - like `Course` and `Student` instead of just one) you may also compare it with the solution we have done in the link:https://github.com/AxonIQ/university-demo/tree/master/src/main/java/io/axoniq/demo/university/faculty/write/subscribestudentmulti[subscribestudentmulti] package.
 
 == Configuration
 Same as before, to make our tests green, the last thing to do is to configure the required infrastructure for the command handler.

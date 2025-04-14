@@ -442,7 +442,6 @@ public class CreateCourseConfiguration {
 We use `annotatedEntity`, because of the style we follow here, but you may also invoke just an `entity` builder method and do everything like defining event handlers here, so you can keep your domain model free from annotations if it's your preferred way of coding.
 <2> The `entity` method allows us to register the `State` class as the entity for the `CreateCourse` command handling module.
 
-With this step, we have completed the code to process a Command that represents the request to register a new bike in our system.
 You may run the tests again and see that all of them should pass!
 
 === Execute the command
