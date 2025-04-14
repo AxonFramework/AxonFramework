@@ -42,7 +42,8 @@ import java.lang.annotation.Target;
  *         By defining a static method in the entity class annotated with {@link EventCriteriaBuilder} which returns an
  *         {@link EventCriteria} and accepts the {@code id} as a parameter. This method should be static and return an
  *         {@link EventCriteria}. Multiple methods can be defined with different id types, and the first matching method
- *         will be used.
+ *         will be used. Optionally, you can define {@link org.axonframework.messaging.MessageTypeResolver} as a second
+ *         parameter to resolve the type of the message. Other arguments are not supported.
  *     </li>
  *     <li>
  *         If no matching {@link EventCriteriaBuilder} is found, the {@link EventSourcedEntity#tagKey()} will be used as the tag key, and the {@link Object#toString()} of the id will be used as value.
