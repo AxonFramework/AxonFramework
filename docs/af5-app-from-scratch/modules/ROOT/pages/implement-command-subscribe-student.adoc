@@ -55,7 +55,7 @@ public record StudentSubscribed(
 
 <.> Thanks to those annotations the event will be tagged with `studentId` and `courseId`.
 It's a good example that StudentSubscribed event is connected to two business entities—Student and the Course.
-When domain experts say that "student subscribed", they know that means the course free spots decreased and also student subscription limit may be reached.
+When domain experts say that "student subscribed", they know that means the course free spots decreased. And, that the student subscription limit may have been reached.
 In the case of one event type per entity/tag/aggregateId we would need to duplicate those events artificially to have two in two different streams.
 
 Last, but not least, we define the `SubscribeStudent` command.

@@ -354,7 +354,7 @@ Now we are definitely going to do that, because the system decision what to do w
 
 The only thing we need to know when handling a `CreateCourse` command, is whether a certain course already exists.
 So let's add the `State` class which will be responsible for providing that information.
-We will use the term `State`, because it's not everything what we know about the `Course`, we don't need subscribed students etc. just for this command purposes.
+We will use the generic term `State`, because we do not need the entire `Course` to make our decision.
 You can name it `Course` as well, but keep in mind it's just a part of information needed for the validation of this command.
 I'm going to put it as internal class in the handler, because it will be used just there.
 
@@ -400,6 +400,7 @@ Pay attention that `State` per feature/slice approach gives us a high level of e
 <2> The properties needed to guard certain business rules.
 In this case, we need to know if the course was already created or not.
 While executing the command, we don't care about the name or other properties.
+In other words: you don't need to know who/how many students are subscribed to decide if the name can be changed.
 <3> The `@EventSourcingHandler` annotation indicates to Axon Framework that this method should be called while rehydrating the state of the entity.
 Axon Framework will use the type of the annotated method argument to link this method to the specific type of event. Furthermore, the event type is used to query the `Event Store` just for those types.
 <4> The `@InjectEntity` annotation indicates to Axon Framework to inject the entity with the given identifier property which needs to be present in the processed command.
