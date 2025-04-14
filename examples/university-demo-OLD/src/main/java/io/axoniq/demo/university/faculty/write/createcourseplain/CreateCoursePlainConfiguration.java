@@ -22,9 +22,11 @@ public class CreateCoursePlainConfiguration {
                 .entity(CourseId.class, CreateCourseCommandHandler.State.class)
                 .entityFactory(c -> (type, id) -> CreateCourseCommandHandler.State.initial())
                 .criteriaResolver(c -> id -> EventCriteria.match()
-                                                          .eventsOfTypes(CourseCreated.class.getName())
-                                                          .withTags(Tag.of(FacultyTags.COURSE_ID, id.raw())))
-                .eventStateApplier(c -> new CourseEventStateApplier());
+                        .eventsOfTypes(CourseCreated.class.getName())
+                        .withTags(Tag.of(FacultyTags.COURSE_ID, id.raw())))
+                .eventStateApplier(c -> (state, event, context) ->
+                        event.getPayload() instanceof CourseCreated courseCreated ? state.apply(courseCreated) : state
+                );
 
         var commandHandlingModule = StatefulCommandHandlingModule
                 .named("CreateCoursePlain")
@@ -32,23 +34,9 @@ public class CreateCoursePlainConfiguration {
                 .entity(stateEntity)
                 .commandHandlers()
                 .commandHandler(new QualifiedName(CreateCourse.class),
-                                c -> new CreateCourseCommandHandler(c.getComponent(EventSink.class)));
+                        c -> new CreateCourseCommandHandler(c.getComponent(EventSink.class)));
 
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }
 
-    private static class CourseEventStateApplier implements EventStateApplier<CreateCourseCommandHandler.State> {
-
-
-        @Override
-        public CreateCourseCommandHandler.State apply(@Nonnull CreateCourseCommandHandler.State model,
-                                                      @Nonnull EventMessage<?> event,
-                                                      @Nonnull ProcessingContext processingContext
-        ) {
-            var payload = event.getPayload();
-            return payload instanceof CourseCreated courseCreated
-                    ? model.apply(courseCreated)
-                    : model;
-        }
-    }
 }
