@@ -3,27 +3,27 @@ Axon version: 5.0.0-M1
 
 ## Event Store implementation
 
-Now only in-memory implementation of an Event Store is supported, but you can play around with the Command handling API. 
+Now only the in-memory implementation of the Event Store is supported, but this still allows you try out the new Command handling API. 
 The in-memory Event Store supports the [DCB (Dynamic Consistency Boundary) concept](https://www.youtube.com/watch?v=IgigmuHHchI).
 
 # Domain: The Axon University
 
 ## Bounded Context: Faculty
 
-In the context there are students and courses, that students can subscribe to. 
+In the faculty context there are students and courses, that students can subscribe to.
 
-A student can enroll in the faculty. The faculty can decide to create a course with assigned capacity—the number of
+A student can enroll in the faculty. The administrators of the faculty can create a course with assigned capacity—the number of
 students who can subscribe to a course. The capacity of the course must be maintained. After the course has been
 created, its capacity can be changed. A student can subscribe to a course and unsubscribe.
 
 ![FacultyContext_EventModeling.png](docs/images/FacultyContext_EventModeling.png)
 
-After an Event Modeling (which you can see above) session we have identified following events:
-* `StudentEnrolledFaculty` - a fact that a student has enrolled faculty
-* `CourseCreated` - a fact that a course has been created with assigned capacity
-* `CourseCapacityChanged` - a fact that the capacity of the course has changed
-* `StudentSubscribed` - a fact that the student has subscribed to the course
-* `StudentUnsubscribed` - a fact that the student has unsubscribed from the course
+After an Event Modeling (which you can see above) session, we have identified the following events:
+* `StudentEnrolledInFaculty` - A fact that a student has enrolled faculty.
+* `CourseCreated` - A fact that a course has been created with assigned capacity.
+* `CourseCapacityChanged` - A fact that the capacity of the course has changed.
+* `StudentSubscribedToCourse` - A fact that the student has subscribed to the course.
+* `StudentUnsubscribedFromCourse` - A fact that the student has unsubscribed from the course.
 
 
 ## 🏛️ Screaming Architecture (Vertical Slices)
@@ -34,13 +34,8 @@ The package structure screams the capabilities of the system by making explicit:
 This architecture makes it immediately obvious what the system can do, what rules govern those actions, and how different parts of the system interact through events.
 
 Each module is structured into three distinct types of slices (packages `write`, `read`, `automation`) and there are events (package `events`) between them, which are a system backbone - a contract between all other parts:
-Thanks to Axon Framework 5 support for State (entity) per Command Handler those slices can be totally independent and can be developed in parallel (before they needed to share the Aggregate).
-
-Any slice can be implemented differently. Thanks to the Axon approach what's really matters are messages (Commands, Events and Queries) which shape the API.
-Event within the framework you can use variety of approaches.
-You may see that - you can use annotation based / plain Java configuration and mix of those. 
-You can have one or multiple state entities per Command Handler or even share (if you really want) entities between those handlers!
-
+Thanks to Axon Framework 5 support dynamic boundaries, each slice can have its own entities based on the same events, and thus be totally independent. There's no need for cross-slice communication and can be developed in parallel. In Axon Framework 4 and other Event-Sourcing frameworks, they needed to share an aggregate.
+Any slice can be implemented differently. Thanks to the architecture of Axon Framework, what really matters are messages (Commands, Events and Queries) that shape the API.
 
 ### Write Slices
 Contains commands that represent user intentions, defines business rules through aggregates, produces domain events, and enforces invariants (e.g., SubscribeStudent command → StudentSubscribed event, with SubscriptionsPerStudentNotExceedMax rule).
