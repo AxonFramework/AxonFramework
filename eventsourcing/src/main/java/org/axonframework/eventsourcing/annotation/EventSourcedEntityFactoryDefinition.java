@@ -37,5 +37,5 @@ public interface EventSourcedEntityFactoryDefinition<E, ID> {
      * @param idType     The identifier type of the entity to create.
      * @return A new {@link EventSourcedEntityFactory} for the given {@code entityType} and {@code idType}.
      */
-    EventSourcedEntityFactory<E, ID> createFactory(@Nonnull Class<E> entityType, @Nonnull Class<ID> idType);
+    EventSourcedEntityFactory<ID, E> createFactory(@Nonnull Class<E> entityType, @Nonnull Class<ID> idType);
 }

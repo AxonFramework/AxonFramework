@@ -34,7 +34,6 @@ import org.axonframework.modelling.repository.AsyncRepository;
 import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
-import static org.axonframework.common.ConstructorUtils.factoryForTypeWithOptionalArgument;
 import static org.axonframework.common.ConstructorUtils.getConstructorFunctionWithZeroArguments;
 
 /**
@@ -87,7 +86,7 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
                     idType,
                     c.getComponent(MessageTypeResolver.class)
             );
-            EventSourcedEntityFactory<E, I> entityFactory = entityFactoryDefinition.createFactory(
+            EventSourcedEntityFactory<I, E> entityFactory = entityFactoryDefinition.createFactory(
                     entityType,
                     idType
             );

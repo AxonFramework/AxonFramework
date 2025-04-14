@@ -171,7 +171,7 @@ class AnnotatedEventSourcedEntityBuilderTest {
             implements EventSourcedEntityFactoryDefinition<CustomEntityFactoryCourse, CourseId> {
 
         @Override
-        public EventSourcedEntityFactory<CustomEntityFactoryCourse, CourseId> createFactory(
+        public EventSourcedEntityFactory<CourseId, CustomEntityFactoryCourse> createFactory(
                 @Nonnull Class<CustomEntityFactoryCourse> entityType,
                 @Nonnull Class<CourseId> idType) {
             return new CustomEventSourcedEntityFactory();
@@ -179,7 +179,7 @@ class AnnotatedEventSourcedEntityBuilderTest {
     }
 
     static class CustomEventSourcedEntityFactory
-            implements EventSourcedEntityFactory<CustomEntityFactoryCourse, CourseId> {
+            implements EventSourcedEntityFactory<CourseId, CustomEntityFactoryCourse> {
 
         @Override
         public CustomEntityFactoryCourse createEntity(@Nonnull Class<CustomEntityFactoryCourse> entityType,

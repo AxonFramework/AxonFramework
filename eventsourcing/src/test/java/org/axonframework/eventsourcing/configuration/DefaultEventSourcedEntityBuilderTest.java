@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class DefaultEventSourcedEntityBuilderTest {
 
-    private EventSourcedEntityFactory<Course, CourseId> testEntityFactory;
+    private EventSourcedEntityFactory<CourseId, Course> testEntityFactory;
     private CriteriaResolver<CourseId> testCriteriaResolver;
     private EntityEvolver<Course> testEntityEvolver;
     private AtomicBoolean constructedEntityFactory;

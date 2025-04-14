@@ -57,7 +57,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
 
     private final Class<I> idType;
     private final Class<E> entityType;
-    private ComponentFactory<EventSourcedEntityFactory<E, I>> entityFactory;
+    private ComponentFactory<EventSourcedEntityFactory<I, E>> entityFactory;
     private ComponentFactory<CriteriaResolver<I>> criteriaResolver;
     private ComponentFactory<EntityEvolver<E>> entityEvolver;
     private final Map<QualifiedName, ComponentFactory<EntityEvolver<E>>> entityEvolverPerName = new HashMap<>();
@@ -70,7 +70,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
 
     @Override
     public CriteriaResolverPhase<I, E> entityFactory(
-            @Nonnull ComponentFactory<EventSourcedEntityFactory<E, I>> entityFactory
+            @Nonnull ComponentFactory<EventSourcedEntityFactory<I, E>> entityFactory
     ) {
         this.entityFactory = requireNonNull(entityFactory, "The entity factory cannot be null.");
         return this;

@@ -28,7 +28,7 @@ import jakarta.annotation.Nonnull;
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface EventSourcedEntityFactory<E, ID> {
+public interface EventSourcedEntityFactory<ID, E> {
 
     /**
      * Creates a new instance of an entity of the given {@code entityType} and {@code idType}.
