@@ -29,7 +29,7 @@ this tutorial will help you understand these new concepts through practical exam
 
 == About this tutorial
 This tutorial will guide you through creating a "University Registration Application" using Axon Framework 5.
-We'll follow a test-first approach, implementing features using Vertical Slice Architecture.
+We will implement features using Vertical Slice Architecture using "Test First" approach.
 
 You can either:
 
