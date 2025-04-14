@@ -1,8 +1,8 @@
 package io.axoniq.demo.university.faculty.write.subscribestudentmulti;
 
 import io.axoniq.demo.university.faculty.FacultyTags;
-import io.axoniq.demo.university.faculty.events.StudentEnrolledFaculty;
-import io.axoniq.demo.university.faculty.events.StudentSubscribed;
+import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty;
+import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
 import io.axoniq.demo.university.faculty.write.CourseId;
 import io.axoniq.demo.university.faculty.write.StudentId;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -18,12 +18,12 @@ class Student {
     private final List<CourseId> subscribedCourses = new ArrayList<>();
 
     @EventSourcingHandler
-    void handle(StudentEnrolledFaculty event) {
+    void handle(StudentEnrolledInFaculty event) {
         id = new StudentId(event.studentId());
     }
 
     @EventSourcingHandler
-    void handle(StudentSubscribed event) {
+    void handle(StudentSubscribedToCourse event) {
         subscribedCourses.add(new CourseId(event.courseId()));
     }
 

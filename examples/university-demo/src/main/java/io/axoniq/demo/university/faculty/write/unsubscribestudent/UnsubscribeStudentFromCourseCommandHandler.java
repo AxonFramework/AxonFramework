@@ -1,8 +1,8 @@
 package io.axoniq.demo.university.faculty.write.unsubscribestudent;
 
 import io.axoniq.demo.university.faculty.FacultyTags;
-import io.axoniq.demo.university.faculty.events.StudentSubscribed;
-import io.axoniq.demo.university.faculty.events.StudentUnsubscribed;
+import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
+import io.axoniq.demo.university.faculty.events.StudentUnsubscribedFromCourse;
 import io.axoniq.demo.university.faculty.write.CourseId;
 import io.axoniq.demo.university.faculty.write.StudentId;
 import jakarta.annotation.Nonnull;
@@ -37,13 +37,13 @@ class UnsubscribeStudentFromCourseCommandHandler {
         eventSink.publish(processingContext, toMessages(events));
     }
 
-    private List<StudentUnsubscribed> decide(UnsubscribeStudentFromCourse command, State state) {
+    private List<StudentUnsubscribedFromCourse> decide(UnsubscribeStudentFromCourse command, State state) {
         return state.subscribed
-                ? List.of(new StudentUnsubscribed(command.studentId().raw(), command.courseId().raw()))
+                ? List.of(new StudentUnsubscribedFromCourse(command.studentId().raw(), command.courseId().raw()))
                 : List.of();
     }
 
-    private static List<EventMessage<?>> toMessages(List<StudentUnsubscribed> events) {
+    private static List<EventMessage<?>> toMessages(List<StudentUnsubscribedFromCourse> events) {
         return events.stream()
                      .map(UnsubscribeStudentFromCourseCommandHandler::toMessage)
                      .collect(Collectors.toList());
@@ -62,12 +62,12 @@ class UnsubscribeStudentFromCourseCommandHandler {
         boolean subscribed = false;
 
         @EventSourcingHandler
-        void apply(StudentSubscribed event) {
+        void apply(StudentSubscribedToCourse event) {
             this.subscribed = true;
         }
 
         @EventSourcingHandler
-        void apply(StudentUnsubscribed event) {
+        void apply(StudentUnsubscribedFromCourse event) {
             this.subscribed = false;
         }
 
@@ -77,8 +77,8 @@ class UnsubscribeStudentFromCourseCommandHandler {
             var studentId = id.studentId().raw();
             return EventCriteria.match()
                                 .eventsOfTypes(
-                                        StudentSubscribed.class.getName(),
-                                        StudentUnsubscribed.class.getName()
+                                        StudentSubscribedToCourse.class.getName(),
+                                        StudentUnsubscribedFromCourse.class.getName()
                                 ).withTags(Tag.of(FacultyTags.COURSE_ID, courseId),
                                            Tag.of(FacultyTags.STUDENT_ID, studentId));
         }

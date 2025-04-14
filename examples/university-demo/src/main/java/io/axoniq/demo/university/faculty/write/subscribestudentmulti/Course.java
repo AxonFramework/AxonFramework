@@ -3,7 +3,7 @@ package io.axoniq.demo.university.faculty.write.subscribestudentmulti;
 import io.axoniq.demo.university.faculty.FacultyTags;
 import io.axoniq.demo.university.faculty.events.CourseCapacityChanged;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
-import io.axoniq.demo.university.faculty.events.StudentSubscribed;
+import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
 import io.axoniq.demo.university.faculty.write.CourseId;
 import io.axoniq.demo.university.faculty.write.StudentId;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -32,7 +32,7 @@ class Course {
     }
 
     @EventSourcingHandler
-    void handle(StudentSubscribed event) {
+    void handle(StudentSubscribedToCourse event) {
         studentsSubscribed.add(new StudentId(event.studentId()));
     }
 
