@@ -8,13 +8,13 @@ public class SubscribeStudentConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var stateEntity = EventSourcedEntityBuilder
-                .annotatedEntity(SubscriptionId.class, SubscribeStudentCommandHandler.State.class);
+                .annotatedEntity(SubscriptionId.class, SubscribeStudentToCourseCommandHandler.State.class);
         var commandHandlingModule = StatefulCommandHandlingModule
                 .named("SubscribeStudent")
                 .entities()
                 .entity(stateEntity)
                 .commandHandlers()
-                .annotatedCommandHandlingComponent(c -> new SubscribeStudentCommandHandler());
+                .annotatedCommandHandlingComponent(c -> new SubscribeStudentToCourseCommandHandler());
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }
 

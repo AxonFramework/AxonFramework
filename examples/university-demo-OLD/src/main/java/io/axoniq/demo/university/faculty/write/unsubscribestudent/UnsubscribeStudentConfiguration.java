@@ -8,13 +8,13 @@ public class UnsubscribeStudentConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var stateEntity = EventSourcedEntityBuilder
-                .annotatedEntity(SubscriptionId.class, UnsubscribeStudentCommandHandler.State.class);
+                .annotatedEntity(SubscriptionId.class, UnsubscribeStudentFromCourseCommandHandler.State.class);
         var commandHandlingModule = StatefulCommandHandlingModule
                 .named("UnsubscribeStudent")
                 .entities()
                 .entity(stateEntity)
                 .commandHandlers()
-                .annotatedCommandHandlingComponent(c -> new UnsubscribeStudentCommandHandler());
+                .annotatedCommandHandlingComponent(c -> new UnsubscribeStudentFromCourseCommandHandler());
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }
 
