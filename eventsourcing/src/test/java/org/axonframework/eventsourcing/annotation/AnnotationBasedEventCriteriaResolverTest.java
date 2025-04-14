@@ -256,5 +256,51 @@ class AnnotationBasedEventCriteriaResolverTest {
                                     .andBeingOneOfTypes(messageTypeResolver, Integer.class);
             }
         }
+
+        @Test
+        void throwsOnUnknownParameterOfEventCriteriaBuilderMethod() {
+            var exception = Assertions.assertThrows(
+                    IllegalArgumentException.class,
+                    () -> new AnnotationBasedEventCriteriaResolver<>(EntityWithUnknownInjectionParameter.class,
+                                                                     Object.class,
+                                                                     messageTypeResolver));
+            assertEquals(
+                    "Found injection parameter of class java.lang.Integer. You can only inject one identifier and a MessageTypeResolver, and we already found identifier type java.lang.String. Offending method: buildCriteria(java.lang.String,java.lang.Integer)",
+                    exception.getMessage()
+            );
+        }
+
+        @EventSourcedEntity
+        static class EntityWithUnknownInjectionParameter {
+
+            @EventCriteriaBuilder
+            public static EventCriteria buildCriteria(String id, Integer integer) {
+                return EventCriteria.havingTags("aggregateIdentifier", id);
+            }
+        }
+
+        @Test
+        void throwsOnDoubleInjectedMessageTypeResolver() {
+            var exception = Assertions.assertThrows(
+                    IllegalArgumentException.class,
+                    () -> new AnnotationBasedEventCriteriaResolver<>(EntityWithDoubleMessageTypeResolver.class,
+                                                                     Object.class,
+                                                                     messageTypeResolver));
+            assertEquals(
+                    "Can not inject multiple MessageTypeResolvers in an @EventCriteriaBuilder method. Please remove one of the arguments. Offending method: buildCriteria(java.lang.String,org.axonframework.messaging.MessageTypeResolver,org.axonframework.messaging.MessageTypeResolver)",
+                    exception.getMessage()
+            );
+        }
+
+        @EventSourcedEntity
+        static class EntityWithDoubleMessageTypeResolver {
+            @EventCriteriaBuilder
+            public static EventCriteria buildCriteria(String id,
+                                                      MessageTypeResolver messageTypeResolver,
+                                                      MessageTypeResolver messageTypeResolver2
+            ) {
+                return EventCriteria.havingTags("aggregateIdentifier", id);
+            }
+        }
     }
 }

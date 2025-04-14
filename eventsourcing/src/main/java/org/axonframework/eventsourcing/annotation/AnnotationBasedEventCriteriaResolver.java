@@ -148,7 +148,7 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
                 if (parameterType.isAssignableFrom(MessageTypeResolver.class)) {
                     if (messageTypeResolverIndex != -1) {
                         throw new IllegalArgumentException(
-                                "Can not inject multiple MessageTypeResolvers in @EventCriteriaBuilder method. Offending method: %s".formatted(
+                                "Can not inject multiple MessageTypeResolvers in an @EventCriteriaBuilder method. Please remove one of the arguments. Offending method: %s".formatted(
                                         ReflectionUtils.toDiscernibleSignature(method)));
                     }
                     messageTypeResolverIndex = i;
@@ -156,7 +156,9 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
                     // Must be the ID type
                     if (identifierIndex != -1) {
                         throw new IllegalArgumentException(
-                                "Can not inject multiple ID types in @EventCriteriaBuilder method. Offending method: %s".formatted(
+                                "Found injection parameter of class %s. You can only inject one identifier and a MessageTypeResolver, and we already found identifier type %s. Offending method: %s".formatted(
+                                        method.getParameterTypes()[i].getName(),
+                                        identifierType.getName(),
                                         ReflectionUtils.toDiscernibleSignature(method)));
                     }
                     identifierIndex = i;
