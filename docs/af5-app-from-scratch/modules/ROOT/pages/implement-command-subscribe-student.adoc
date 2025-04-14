@@ -327,7 +327,7 @@ class SubscribeStudentCommandHandler {
 ----
 
 In the business rule assertion function, we throw an exception if the rule is not satisfied.
-It's another approach than presented before.
+This is a different approach from what we used in the `CreateCourse` feature, where we returned an empty list of events when a business rule was violated.
 This error will bubble up as a result of the command to the client.
 
 [source,java]
