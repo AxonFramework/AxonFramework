@@ -19,23 +19,23 @@ package org.axonframework.eventsourcing.annotation;
 import jakarta.annotation.Nonnull;
 
 /**
- * Functional interface towards creating a new instance of an entity of the given {@code entityType} and the given
- * {@code id}.
+ * Defines how an {@link EventSourcedEntityFactory} should be constructed for an {@link EventSourcedEntity} annotated
+ * class. The definition received the {@code entityType} and {@code idType} to create a factory for the given types.
  *
- * @param <ID> The type of the identifier of the entity to create.
  * @param <E>  The type of the entity to create.
+ * @param <ID> The type of the identifier of the entity to create.
  * @author Mitchell Herrijgers
+ * @see EventSourcedEntity
  * @since 5.0.0
  */
-@FunctionalInterface
-public interface EventSourcedEntityFactory<E, ID> {
+public interface EventSourcedEntityFactoryDefinition<E, ID> {
 
     /**
-     * Creates a new instance of an entity of the given {@code entityType} and {@code idType}.
+     * Creates a new {@link EventSourcedEntityFactory} for the given {@code entityType} and {@code idType}.
      *
      * @param entityType The type of the entity to create.
-     * @param id         The identifier of the entity to create.
-     * @return A new instance of the entity.
+     * @param idType     The identifier type of the entity to create.
+     * @return A new {@link EventSourcedEntityFactory} for the given {@code entityType} and {@code idType}.
      */
-    E createEntity(@Nonnull Class<E> entityType, @Nonnull ID id);
+    EventSourcedEntityFactory<E, ID> createFactory(@Nonnull Class<E> entityType, @Nonnull Class<ID> idType);
 }

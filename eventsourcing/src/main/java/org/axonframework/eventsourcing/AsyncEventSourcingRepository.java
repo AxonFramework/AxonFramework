@@ -58,7 +58,7 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
     private final AsyncEventStore eventStore;
     private final CriteriaResolver<I> criteriaResolver;
     private final EntityEvolver<E> entityEvolver;
-    private final EventSourcedEntityFactory<I, E> entityFactory;
+    private final EventSourcedEntityFactory<E, I> entityFactory;
 
     /**
      * Initialize the repository to load events from the given {@code eventStore} using the given {@code applier} to
@@ -79,7 +79,7 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
     public AsyncEventSourcingRepository(@Nonnull Class<I> idType,
                                         @Nonnull Class<E> entityType,
                                         @Nonnull AsyncEventStore eventStore,
-                                        @Nonnull EventSourcedEntityFactory<I, E> entityFactory,
+                                        @Nonnull EventSourcedEntityFactory<E, I> entityFactory,
                                         @Nonnull CriteriaResolver<I> criteriaResolver,
                                         @Nonnull EntityEvolver<E> entityEvolver) {
         this.idType = requireNonNull(idType, "The id type must not be null.");

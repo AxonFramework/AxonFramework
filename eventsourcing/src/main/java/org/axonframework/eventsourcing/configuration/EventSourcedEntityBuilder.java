@@ -112,7 +112,7 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          * @return The {@link CriteriaResolver} phase of this builder, for a fluent API.
          */
         CriteriaResolverPhase<I, E> entityFactory(
-                @Nonnull ComponentFactory<EventSourcedEntityFactory<I, E>> entityFactory
+                @Nonnull ComponentFactory<EventSourcedEntityFactory<E, I>> entityFactory
         );
     }
 

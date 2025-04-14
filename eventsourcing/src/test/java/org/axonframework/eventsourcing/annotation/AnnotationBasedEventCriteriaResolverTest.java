@@ -17,15 +17,21 @@
 package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AnnotationBasedEventCriteriaResolverTest {
 
+    private final MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
+
     @Test
     void resolvedRightBuilderMethodForDifferentIdTypes() {
-        var resolver = new AnnotationBasedEventCriteriaResolver(FunctionalEventSourcedEntity.class);
+        var resolver = new AnnotationBasedEventCriteriaResolver<>(FunctionalEventSourcedEntity.class,
+                                                                  Object.class,
+                                                                  messageTypeResolver);
 
         var criteriaString = resolver.resolve("id");
         assertEquals(EventCriteria.havingTags("aggregateIdentifierOfString", "id"), criteriaString);
@@ -36,7 +42,9 @@ class AnnotationBasedEventCriteriaResolverTest {
 
     @Test
     void throwsWhenEventCriteriaBuilderReturnsNull() {
-        var resolver = new AnnotationBasedEventCriteriaResolver(FunctionalEventSourcedEntity.class);
+        var resolver = new AnnotationBasedEventCriteriaResolver<>(FunctionalEventSourcedEntity.class,
+                                                                  Object.class,
+                                                                  messageTypeResolver);
 
         var exception = Assertions.assertThrows(
                 IllegalArgumentException.class,
@@ -50,14 +58,16 @@ class AnnotationBasedEventCriteriaResolverTest {
 
     @Test
     void usesTagKeyPropertyIfNoEventCriteriaBuilderMatches() {
-        var resolver = new AnnotationBasedEventCriteriaResolver(FunctionalEventSourcedEntity.class);
+        var resolver = new AnnotationBasedEventCriteriaResolver<>(FunctionalEventSourcedEntity.class,
+                                                                  Object.class,
+                                                                  messageTypeResolver);
 
         var criteria = resolver.resolve(0.0);
         assertEquals(EventCriteria.havingTags("fallbackTagKey", "0.0"), criteria);
     }
 
     @EventSourcedEntity(tagKey = "fallbackTagKey")
-    class FunctionalEventSourcedEntity {
+    static class FunctionalEventSourcedEntity {
 
         @EventCriteriaBuilder
         public static EventCriteria buildCriteria(String id) {
@@ -77,14 +87,16 @@ class AnnotationBasedEventCriteriaResolverTest {
 
     @Test
     void usesSimpleClassNameAsTagNameIfNoTagKeyPropertyIsSet() {
-        var resolver = new AnnotationBasedEventCriteriaResolver(DefaultEventSourcedEntity.class);
+        var resolver = new AnnotationBasedEventCriteriaResolver<>(DefaultEventSourcedEntity.class,
+                                                                  Object.class,
+                                                                  messageTypeResolver);
 
         var criteria = resolver.resolve("id");
         assertEquals(EventCriteria.havingTags("DefaultEventSourcedEntity", "id"), criteria);
     }
 
     @EventSourcedEntity()
-    class DefaultEventSourcedEntity {
+    static class DefaultEventSourcedEntity {
     }
 
     @Nested
@@ -94,7 +106,9 @@ class AnnotationBasedEventCriteriaResolverTest {
         void testEventCriteriaBuilderWithNonStaticBuilderThrowsException() {
             var exception = Assertions.assertThrows(
                     IllegalArgumentException.class,
-                    () -> new AnnotationBasedEventCriteriaResolver(EntityWithNonStaticEventCriteriaBuilder.class));
+                    () -> new AnnotationBasedEventCriteriaResolver<>(EntityWithNonStaticEventCriteriaBuilder.class,
+                                                                   Object.class,
+                                                                   messageTypeResolver));
             assertEquals(
                     "Method annotated with @EventCriteriaBuilder must be static. Violating method: buildCriteria(java.lang.String)",
                     exception.getMessage()
@@ -102,7 +116,7 @@ class AnnotationBasedEventCriteriaResolverTest {
         }
 
         @EventSourcedEntity
-        class EntityWithNonStaticEventCriteriaBuilder {
+        static class EntityWithNonStaticEventCriteriaBuilder {
 
             @EventCriteriaBuilder
             public EventCriteria buildCriteria(String id) {
@@ -114,16 +128,18 @@ class AnnotationBasedEventCriteriaResolverTest {
         void testEventCriteriaBuilderWithZeroArgBuilderThrowsException() {
             var exception = Assertions.assertThrows(
                     IllegalArgumentException.class,
-                    () -> new AnnotationBasedEventCriteriaResolver(EntityWithZeroArgEventCriteriaBuilder.class));
+                    () -> new AnnotationBasedEventCriteriaResolver<>(EntityWithZeroArgEventCriteriaBuilder.class,
+                                                                     Object.class,
+                                                                     messageTypeResolver));
             assertEquals(
-                    "Method annotated with @EventCriteriaBuilder must have exactly one parameter. Violating method: buildCriteria()",
+                    "No ID type found in @EventCriteriaBuilder method. Offending method: buildCriteria()",
                     exception.getMessage()
             );
         }
 
 
         @EventSourcedEntity
-        class EntityWithZeroArgEventCriteriaBuilder {
+        static class EntityWithZeroArgEventCriteriaBuilder {
 
             @EventCriteriaBuilder
             public static EventCriteria buildCriteria() {
@@ -135,7 +151,9 @@ class AnnotationBasedEventCriteriaResolverTest {
         void testEventCriteriaBuilderWithVoidReturnValueThrowsException() {
             var exception = Assertions.assertThrows(
                     IllegalArgumentException.class,
-                    () -> new AnnotationBasedEventCriteriaResolver(EntityWithVoidReturnValue.class));
+                    () -> new AnnotationBasedEventCriteriaResolver<>(EntityWithVoidReturnValue.class,
+                                                                     Object.class,
+                                                                     messageTypeResolver));
             assertEquals(
                     "Method annotated with @EventCriteriaBuilder must return an EventCriteria. Violating method: buildCriteria(java.lang.String)",
                     exception.getMessage()
@@ -154,7 +172,9 @@ class AnnotationBasedEventCriteriaResolverTest {
 
         @Test
         void testEventCriteriaBuilderWithPrivateBuilderWorks() {
-            var resolver = new AnnotationBasedEventCriteriaResolver(EntityWithPrivateEventCriteriaBuilder.class);
+            var resolver = new AnnotationBasedEventCriteriaResolver<>(EntityWithPrivateEventCriteriaBuilder.class,
+                                                                      Object.class,
+                                                                      messageTypeResolver);
             var criteria = resolver.resolve("id");
             assertEquals(EventCriteria.havingTags("aggregateIdentifier", "id"), criteria);
         }
@@ -172,14 +192,16 @@ class AnnotationBasedEventCriteriaResolverTest {
         void testEventCriteriaBuilderWithNonEventSourcedEntityThrowsException() {
             var exception = Assertions.assertThrows(
                     IllegalArgumentException.class,
-                    () -> new AnnotationBasedEventCriteriaResolver(NonEventSourcedEntity.class));
+                    () -> new AnnotationBasedEventCriteriaResolver<>(NonEventSourcedEntity.class,
+                                                                     Object.class,
+                                                                     messageTypeResolver));
             assertEquals(
                     "The given class is not an @EventSourcedEntity",
                     exception.getMessage()
             );
         }
 
-        class NonEventSourcedEntity {
+        static class NonEventSourcedEntity {
 
         }
 
@@ -187,7 +209,9 @@ class AnnotationBasedEventCriteriaResolverTest {
         void testEventCriteriaBuilderWithDuplicatedParamterTypeThrowsException() {
             var exception = Assertions.assertThrows(
                     IllegalArgumentException.class,
-                    () -> new AnnotationBasedEventCriteriaResolver(EntityWithDuplicatedParameterType.class));
+                    () -> new AnnotationBasedEventCriteriaResolver<>(EntityWithDuplicatedParameterType.class,
+                                                                     Object.class,
+                                                                     messageTypeResolver));
             assertEquals(
                     "Multiple @EventCriteriaBuilder methods found with the same parameter type: buildCriteriaOne(java.lang.String), buildCriteriaTwo(java.lang.String)",
                     exception.getMessage()
@@ -196,7 +220,7 @@ class AnnotationBasedEventCriteriaResolverTest {
 
 
         @EventSourcedEntity
-        class EntityWithDuplicatedParameterType {
+        static class EntityWithDuplicatedParameterType {
 
             @EventCriteriaBuilder
             public static EventCriteria buildCriteriaOne(String id) {
