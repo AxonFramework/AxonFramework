@@ -73,7 +73,7 @@ public record CourseCreated(
 ----
 
 <1> The `@EventTag` annotation is crucial—it allows Axon to tag events as connected to specific business entities, which enables efficient retrieval later.
-If you used Aggregate approach before the Tag identifies the aggregate, but thanks to Dynamic Consistency Boundary, you may how one event assigned to many business entities (not just once as before).
+If you are used to Aggregate approach before, note that the Tag identifies the aggregate. But, thanks to Dynamic Consistency Boundary, you now can have one event assigned to many business entities (instead of one, as before!).
 The EventStore in Axon Framework 5 always stores your events along with assigned tags, so you can query them later based on those tags and types.
 
 Unlike commands, we use simple strings for identifiers in events to avoid potential deserialization issues if Value Object rules change.
@@ -108,10 +108,11 @@ class CreateCourseTest {
 
 === Defining the test fixture
 
-Axon Framework test fixture allows you to execute certain test cases against provided configuration.
-It may be your module/component or even the whole application.
-Do you remember the configurer which we used while bootstrapping the application?
-Now it's time to use it in order to initialize our TestFixture.
+Axon Framework's test fixture allows you to execute test cases against a provided configuration.
+It may be your module/component configuration, or even the whole application!
+
+Do you remember the configurer that we used while bootstrapping the application?
+Now it's time to use it in order to initialize our test fixture.
 We need to have access to application components in tests to verify their behavior, which the configuration provides.
 
 [source,java]
@@ -160,9 +161,9 @@ import java.util.UUID;class CreateCourseTest {
 
     private AxonTestFixture fixture;
 
-    @BeforeEach // <1>
+    @BeforeEach
     void beforeEach() {
-        fixture = AxonTestFixture.with(UniversityAxonApplication.configurer()); // <2>
+        fixture = AxonTestFixture.with(UniversityAxonApplication.configurer());
     }
 
     @Test
@@ -201,8 +202,8 @@ And this will be our next step!
 === Implementing the command handler
 
 To process a `CreateCourse` command in our application, we must define a method that receives the command as an argument.
-To indicate that the method should be invoked upon receiving a command, we will add the `@CommandHandler` annotation provided by AxonFramework.
-Let's create a new class for that inside the slice package and name it `CreateCourseCommandHandler` and implement the minimum required to make the test pass.
+To indicate that the method should be invoked upon receiving a command, we will add the `@CommandHandler` annotation provided by Axon Framework.
+Let's create a new class for that inside the slice package, name it `CreateCourseCommandHandler`, and implement the minimum required to make the test pass.
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseCommandHandler.java
@@ -243,7 +244,7 @@ class CreateCourseCommandHandler {
 In this case, to notify that the *course has been created*.
 <.> The `ProcessingContext` is a component that allows us to manage the lifecycle of the message processing.
 Allows us to publish events in the context of the current command so the events will be published after successful command execution.
-<.> The `EventSink` interface require implementation of the `EventMessage` as a second argument so we provide one.
+<.> The `EventSink` interface requires an implementation of the `EventMessage` as a second argument.
 <.> The invocation of `EventSink#publish` stage event to be published after the current `ProcessingContext` is completed.
 <.> While creating the new `EventMessage` instance you need to define the `MessageType` manually (it's good enough to use the payload class for now), because of the `EventSink` it's relatively low-level API.
 In the future it will be done by the framework itself.
@@ -351,7 +352,7 @@ Now we are definitely going to do that, because the system decision what to do w
 
 === Validate the Command against the state
 
-The only think we need to know about certain course for the `CreateCourse` command handling if it already exists or not.
+The only thing we need to know when handling a `CreateCourse` command, is whether a certain course already exists.
 So let's add the `State` class which will be responsible for providing that information.
 We will use the term `State`, because it's not everything what we know about the `Course`, we don't need subscribed students etc. just for this command purposes.
 You can name it `Course` as well, but keep in mind it's just a part of information needed for the validation of this command.
@@ -393,14 +394,14 @@ class CreateCourseCommandHandler {
 
 ----
 
-<1> The `@EventSourcedEntity` annotation indicates that this class state is derived from the events published with the given tag key (`courseId` in this case).
+<1> The `@EventSourcedEntity` annotation indicates that this class' state is derived from the events published with the given tag key (`courseId` in this case).
 We've already annotated `courseId` property in the `CourseCreated` event class with `@EventTag`, so the event will be applied while loading the entity if the `courseId` value matches.
-Pay attention that `State` per feature/slice approach gives us a high level of encapsulation, because we may keep it package-private. The cohesion is also higher, because you don't care about unrelated to the current process properties. It reduces the cognitive load on a developer—you need to understand that the state needed for the particular slice.
+Pay attention that `State` per feature/slice approach gives us a high level of encapsulation, because we can keep it package-private. The cohesion is also higher, because you don't care about the unrelated topics for the current process. It reduces the cognitive load on a developer—you only need to comprehend the state needed for that particular slice.
 <2> The properties needed to guard certain business rules.
 In this case, we need to know if the course was already created or not.
 While executing the command, we don't care about the name or other properties.
 <3> The `@EventSourcingHandler` annotation indicates to Axon Framework that this method should be called while rehydrating the state of the entity.
-Axon Framework will use the type of the annotated method argument to link this method to the specific type of event and also to query the `Event Store` just for events of those types.
+Axon Framework will use the type of the annotated method argument to link this method to the specific type of event. Furthermore, the event type is used to query the `Event Store` just for those types.
 <4> The `@InjectEntity` annotation indicates to Axon Framework to inject the entity with the given identifier property which needs to be present in the processed command.
 In this case, we want to inject the `State` entity with the `courseId` property.
 <5> The `if` statement checks if the course was already created.
@@ -438,7 +439,7 @@ public class CreateCourseConfiguration {
 ----
 
 <1> The `EventSourcedEntityBuilder` is a builder that allows us to create an entity with the given identifier type and state class.
-We use `annotatedEntity`, because of the style we follow here, but you may also invoke just an `entity` builder method and do everything like defining event handlers here, so you ken keep your domain model free from annotations if it's your preferred way of coding.
+We use `annotatedEntity`, because of the style we follow here, but you may also invoke just an `entity` builder method and do everything like defining event handlers here, so you can keep your domain model free from annotations if it's your preferred way of coding.
 <2> The `entity` method allows us to register the `State` class as the entity for the `CreateCourse` command handling module.
 
 With this step, we have completed the code to process a Command that represents the request to register a new bike in our system.
@@ -446,9 +447,9 @@ You may run the tests again and see that all of them should pass!
 
 === Execute the command
 
-In your production application to execute the command you need to get the `CommandGateway` component from your configuration.
+In your production application you need to get the `CommandGateway` from your configuration to execute commands.
 This component was configured by default for you, because you have used `EventSourcingConfigurer`.
-To be able to get components from the configuration, you need to start it from the configurer.
+To be able to get components from the configuration, you need to start the `ApplicationConfigurer`.
 In the example below, we're doing essentially what the Test Fixture does for us under the hood while testing.
 
 [source,java]
@@ -475,7 +476,7 @@ public class UniversityAxonApplication {
 
 }
 ----
-<.> The `start` method builds and starts (for example, register lifecycle hooks) the configuration and returns the `NewConfiguration` instance. The name of the `NewConfiguration` type will definitely be changed to `Configuration` when the Framework is released.
+<.> The `start` method builds and starts (for example, invoke lifecycle hooks) the configuration and returns the `NewConfiguration` instance. The name of the `NewConfiguration` type will definitely change to `Configuration` when the Framework is released fully.
 <.> The `getComponent` method allows us to retrieve the `CommandGateway` component from the configuration.
 <.> The `sendAndWait` method sends the command to the command bus and waits for the result.
 
@@ -492,7 +493,7 @@ What we like even more are green slices on Event Modeling.
 So if you use this approach now you can mark your first slice as implemented!
 Congratulations!
 
-In the next section, we'll tackle a more complex feature: allowing students to subscribe to courses, where we have to deal with business rules spans wider scope of the system state.
+In the next section, we'll tackle a more complex feature: allowing students to subscribe to courses, where we have to deal with business rules spanning a wider scope of the system.
 
 == Alternative approach without annotations
 
