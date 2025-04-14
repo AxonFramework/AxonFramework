@@ -48,10 +48,4 @@ class Course {
         return List.copyOf(studentsSubscribed);
     }
 
-//    @EventCriteriaBuilder
-//    public static EventCriteria resolveCriteria(CourseId courseId) {
-//        return EventCriteria.match()
-//                            .eventsOfAnyType()
-//                            .withTags(Tag.of(FacultyTags.COURSE_ID, courseId.raw()));
-//    }
 }
