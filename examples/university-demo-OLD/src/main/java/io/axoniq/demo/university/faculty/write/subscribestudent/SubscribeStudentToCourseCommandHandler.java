@@ -3,9 +3,9 @@ package io.axoniq.demo.university.faculty.write.subscribestudent;
 import io.axoniq.demo.university.faculty.FacultyTags;
 import io.axoniq.demo.university.faculty.events.CourseCapacityChanged;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
-import io.axoniq.demo.university.faculty.events.StudentEnrolledFaculty;
-import io.axoniq.demo.university.faculty.events.StudentSubscribed;
-import io.axoniq.demo.university.faculty.events.StudentUnsubscribed;
+import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty;
+import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
+import io.axoniq.demo.university.faculty.events.StudentUnsubscribedFromCourse;
 import io.axoniq.demo.university.faculty.write.CourseId;
 import io.axoniq.demo.university.faculty.write.StudentId;
 import org.axonframework.commandhandling.annotation.CommandHandler;
@@ -39,17 +39,17 @@ class SubscribeStudentToCourseCommandHandler {
         eventSink.publish(processingContext, toMessages(events));
     }
 
-    private List<StudentSubscribed> decide(SubscribeStudentToCourse command, State state) {
+    private List<StudentSubscribedToCourse> decide(SubscribeStudentToCourse command, State state) {
         assertStudentEnrolledFaculty(state);
         assertStudentNotSubscribedToTooManyCourses(state);
         assertCourseExists(state);
         assertEnoughVacantSpotsInCourse(state);
         assertStudentNotAlreadySubscribed(state);
 
-        return List.of(new StudentSubscribed(command.studentId().raw(), command.courseId().raw()));
+        return List.of(new StudentSubscribedToCourse(command.studentId().raw(), command.courseId().raw()));
     }
 
-    private static List<EventMessage<?>> toMessages(List<StudentSubscribed> events) {
+    private static List<EventMessage<?>> toMessages(List<StudentSubscribedToCourse> events) {
         return events.stream()
                 .map(SubscribeStudentToCourseCommandHandler::toMessage)
                 .collect(Collectors.toList());
@@ -121,12 +121,12 @@ class SubscribeStudentToCourseCommandHandler {
         }
 
         @EventSourcingHandler
-        void evolve(StudentEnrolledFaculty event) {
+        void evolve(StudentEnrolledInFaculty event) {
             this.studentId = new StudentId(event.studentId());
         }
 
         @EventSourcingHandler
-        void evolve(StudentSubscribed event) {
+        void evolve(StudentSubscribedToCourse event) {
             var subscribingStudentId = new StudentId(event.studentId());
             var subscribedCourseId = new CourseId(event.courseId());
             if (subscribedCourseId.equals(courseId)) {
@@ -141,7 +141,7 @@ class SubscribeStudentToCourseCommandHandler {
         }
 
         @EventSourcingHandler
-        void evolve(StudentUnsubscribed event) {
+        void evolve(StudentUnsubscribedFromCourse event) {
             var subscribingStudentId = new StudentId(event.studentId());
             var subscribedCourseId = new CourseId(event.courseId());
             if (subscribedCourseId.equals(courseId)) {
@@ -164,14 +164,14 @@ class SubscribeStudentToCourseCommandHandler {
                             .eventsOfTypes(
                                     CourseCreated.class.getName(),
                                     CourseCapacityChanged.class.getName(),
-                                    StudentSubscribed.class.getName(),
-                                    StudentUnsubscribed.class.getName()
+                                    StudentSubscribedToCourse.class.getName(),
+                                    StudentUnsubscribedFromCourse.class.getName()
                             ).withTags(Tag.of(FacultyTags.COURSE_ID, courseId)),
                     EventCriteria.match()
                             .eventsOfTypes(
-                                    StudentEnrolledFaculty.class.getName(),
-                                    StudentSubscribed.class.getName(),
-                                    StudentUnsubscribed.class.getName()
+                                    StudentEnrolledInFaculty.class.getName(),
+                                    StudentSubscribedToCourse.class.getName(),
+                                    StudentUnsubscribedFromCourse.class.getName()
                             ).withTags(Tag.of(FacultyTags.STUDENT_ID, studentId))
             );
         }

@@ -2,9 +2,9 @@ package io.axoniq.demo.university.faculty.write.unsubscribestudent;
 
 import io.axoniq.demo.university.UniversityAxonApplication;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
-import io.axoniq.demo.university.faculty.events.StudentEnrolledFaculty;
-import io.axoniq.demo.university.faculty.events.StudentSubscribed;
-import io.axoniq.demo.university.faculty.events.StudentUnsubscribed;
+import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty;
+import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
+import io.axoniq.demo.university.faculty.events.StudentUnsubscribedFromCourse;
 import io.axoniq.demo.university.faculty.write.CourseId;
 import io.axoniq.demo.university.faculty.write.StudentId;
 import org.axonframework.test.fixture.AxonTestFixture;
@@ -26,13 +26,13 @@ class UnsubscribeStudentFromCourseTest {
         var courseId = CourseId.random();
 
         fixture.given()
-               .event(new StudentEnrolledFaculty(studentId.raw(), "Novak", "Djokovic"))
+               .event(new StudentEnrolledInFaculty(studentId.raw(), "Novak", "Djokovic"))
                .event(new CourseCreated(courseId.raw(), "Tennis", 1))
-               .event(new StudentSubscribed(studentId.raw(), courseId.raw()))
+               .event(new StudentSubscribedToCourse(studentId.raw(), courseId.raw()))
                .when()
                .command(new UnsubscribeStudentFromCourse(studentId, courseId))
                .then()
-               .events(new StudentUnsubscribed(studentId.raw(), courseId.raw()));
+               .events(new StudentUnsubscribedFromCourse(studentId.raw(), courseId.raw()));
     }
 
     @Test
@@ -52,8 +52,8 @@ class UnsubscribeStudentFromCourseTest {
         var studentId = StudentId.random();
 
         fixture.given()
-               .event(new StudentSubscribed(studentId.raw(), courseId.raw()))
-               .event(new StudentUnsubscribed(studentId.raw(), courseId.raw()))
+               .event(new StudentSubscribedToCourse(studentId.raw(), courseId.raw()))
+               .event(new StudentUnsubscribedFromCourse(studentId.raw(), courseId.raw()))
                .when()
                .command(new UnsubscribeStudentFromCourse(studentId, courseId))
                .then()

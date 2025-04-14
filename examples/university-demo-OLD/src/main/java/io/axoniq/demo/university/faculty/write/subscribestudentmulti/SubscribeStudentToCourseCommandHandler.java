@@ -1,7 +1,7 @@
 package io.axoniq.demo.university.faculty.write.subscribestudentmulti;
 
 import io.axoniq.demo.university.faculty.FacultyTags;
-import io.axoniq.demo.university.faculty.events.StudentSubscribed;
+import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
@@ -29,17 +29,17 @@ class SubscribeStudentToCourseCommandHandler {
         eventSink.publish(processingContext, toMessages(events));
     }
 
-    private List<StudentSubscribed> decide(SubscribeStudentToCourse command, Course course, Student student) {
+    private List<StudentSubscribedToCourse> decide(SubscribeStudentToCourse command, Course course, Student student) {
         assertStudentEnrolledFaculty(student);
         assertStudentNotSubscribedToTooManyCourses(student);
         assertCourseExists(course);
         assertEnoughVacantSpotsInCourse(course);
         assertStudentNotAlreadySubscribed(course, student);
 
-        return List.of(new StudentSubscribed(command.studentId().raw(), command.courseId().raw()));
+        return List.of(new StudentSubscribedToCourse(command.studentId().raw(), command.courseId().raw()));
     }
 
-    private static List<EventMessage<?>> toMessages(List<StudentSubscribed> events) {
+    private static List<EventMessage<?>> toMessages(List<StudentSubscribedToCourse> events) {
         return events.stream()
                      .map(SubscribeStudentToCourseCommandHandler::toMessage)
                      .collect(Collectors.toList());
