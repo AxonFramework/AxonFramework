@@ -17,6 +17,8 @@
 package org.axonframework.eventhandling.gateway;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
@@ -35,7 +37,7 @@ import java.util.stream.Collectors;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ProcessingContextEventAppender implements EventAppender {
+public class ProcessingContextEventAppender implements EventAppender, DescribableComponent {
 
     private final ProcessingContext processingContext;
     private final EventSink eventSink;
@@ -70,5 +72,10 @@ public class ProcessingContextEventAppender implements EventAppender {
                 .map(e -> EventPublishingUtils.asEventMessage(e, messageTypeResolver))
                 .collect(Collectors.toList());
         eventSink.publish(processingContext, eventMessages);
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("processingContext", processingContext);
     }
 }
