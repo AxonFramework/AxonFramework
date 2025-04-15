@@ -56,7 +56,7 @@ Tests are focused on observable behavior, so the domain model can be refactored 
 
 ### Example: write slice
 
-![WriteSlice_GWT.png](docs/images/WriteSlice_GWT.png)
+![WriteSlice_GWT.png](docs/images/EventModeling_GWT_SubscribeStudent.png)
 
 ```java
 @BeforeEach
