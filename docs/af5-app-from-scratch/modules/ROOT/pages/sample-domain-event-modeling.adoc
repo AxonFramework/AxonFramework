@@ -26,11 +26,11 @@ image::FacultyContext_EventModeling.png[]
 
 After an Event Modeling (which you can see above) session we have identified the following events:
 
-* `StudentEnrolledFaculty` - A fact that a student has enrolled faculty.
+* `StudentEnrolledInFaculty` - A fact that a student has enrolled faculty.
 * `CourseCreated` - A fact that a course has been created with assigned capacity.
 * `CourseCapacityChanged` - A fact that a course's capacity has been modified.
-* `StudentSubscribed` - A fact that the student has subscribed to a course.
-* `StudentUnsubscribed` - A fact that the student has unsubscribed from a course.
+* `StudentSubscribedToCourse` - A fact that the student has subscribed to a course.
+* `StudentUnsubscribedFromCourse` - A fact that the student has unsubscribed from a course.
 
 These events form the backbone of our system and serve as the contract between different slices of our application.
 By focusing on the events first, we can clearly define how information flows through our system.

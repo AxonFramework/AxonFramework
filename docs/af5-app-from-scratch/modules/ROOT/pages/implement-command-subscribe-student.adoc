@@ -4,7 +4,7 @@
 = Subscribe Student Feature
 
 One of the major benefits of Axon Framework 5's Vertical Slice Architecture is the ability to implement features independently.
-Now we'll implement the `SubscribeStudent` feature without needing to implement every feature in between.
+Now we'll implement the `SubscribeStudentToCourse` feature without needing to implement every feature in between.
 As long as we keep the `State` needed for command validation private to each slice, the only shared code between slices are the events, which serve as the backbone contract of our system.
 
 You don't even need to stick to certain order. How many times have you heard in the development team: "I'm waiting till the feature X is implemented, so I can implement my feature Y"?
@@ -21,13 +21,13 @@ In previous section we've defined the `CourseCreated` events, so there are two l
 Let's define them as Java records, as before.
 
 [source,java]
-.src/main/java/io/axoniq/demo/university/faculty/events/StudentSubscribed.java
+.src/main/java/io/axoniq/demo/university/faculty/events/StudentSubscribedToCourse.java
 ----
 package io.axoniq.demo.university.faculty.events;
 
 import org.axonframework.eventsourcing.annotations.EventTag;
 
-public record StudentEnrolledFaculty(
+public record StudentEnrolledInFaculty(
         @EventTag // <1>
         String studentId,
         String firstName,
@@ -40,13 +40,13 @@ public record StudentEnrolledFaculty(
 <.> Always remember about marking which properties are event tags.
 
 [source,java]
-.src/main/java/io/axoniq/demo/university/faculty/events/StudentSubscribed.java
+.src/main/java/io/axoniq/demo/university/faculty/events/StudentSubscribedToCourse.java
 ----
 package io.axoniq.demo.university.faculty.events;
 
 import org.axonframework.eventsourcing.annotations.EventTag;
 
-public record StudentSubscribed(
+public record StudentSubscribedToCourse(
         @EventTag // <1>
         String studentId,
         @EventTag // <1>
@@ -56,21 +56,21 @@ public record StudentSubscribed(
 ----
 
 <.> Thanks to those annotations the event will be tagged with `studentId` and `courseId`.
-It's a good example that StudentSubscribed event is connected to two business entities—Student and the Course.
+It's a good example that StudentSubscribedToCourse event is connected to two business entities—Student and the Course.
 When domain experts say that "student subscribed", they know that means the course free spots decreased. And, that the student subscription limit may have been reached.
 In the case of one event type per entity/tag/aggregateId we would need to duplicate those events artificially to have two in two different streams.
 
-Last, but not least, we define the `SubscribeStudent` command.
+Last, but not least, we define the `SubscribeStudentToCourse` command.
 
 [source,java]
-.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourse.java
 ----
 package io.axoniq.demo.university.faculty.write.createcourse;
 
 import io.axoniq.demo.university.faculty.write.StudentId;
 import io.axoniq.demo.university.faculty.write.CourseId;
 
-public record SubscribeStudent(StudentId studentId, CourseId courseId) {
+public record SubscribeStudentToCourse(StudentId studentId, CourseId courseId) {
 }
 ----
 
@@ -99,13 +99,13 @@ NOTE: Translating Event Modeling specification to test is a repeatable task, so 
 Let's create tests for these scenarios.
 
 [source,java]
-.src/test/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentTest.java
+.src/test/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourseTest.java
 ----
 package io.axoniq.demo.university.faculty.write.createcourse;
 
 import java.util.UUID;
 
-class SubscribeStudentTest {
+class SubscribeStudentToCourseTest {
 
     private AxonTestFixture fixture;
 
@@ -121,11 +121,11 @@ class SubscribeStudentTest {
 
         fixture.given()
                .event(new CourseCreated(courseId.raw(), "Event Sourcing in Practice", 2))
-               .event(new StudentEnrolledFaculty(studentId.raw(), "Mateusz", "Nowak"))
+               .event(new StudentEnrolledInFaculty(studentId.raw(), "Mateusz", "Nowak"))
                .when()
-               .command(new SubscribeStudent(studentId, courseId))
+               .command(new SubscribeStudentToCourse(studentId, courseId))
                .then()
-               .events(new StudentSubscribed(studentId.raw(), courseId.raw()));
+               .events(new StudentSubscribedToCourse(studentId.raw(), courseId.raw()));
     }
 
     @Test
@@ -134,11 +134,11 @@ class SubscribeStudentTest {
         var studentId = StudentId.random();
 
         fixture.given()
-               .event(new StudentEnrolledFaculty(studentId.raw(), "Allard", "Buijze"))
+               .event(new StudentEnrolledInFaculty(studentId.raw(), "Allard", "Buijze"))
                .event(new CourseCreated(courseId.raw(), "Axon Framework 5: Be a PRO", 2))
-               .event(new StudentSubscribed(studentId.raw(), courseId.raw()))
+               .event(new StudentSubscribedToCourse(studentId.raw(), courseId.raw()))
                .when()
-               .command(new SubscribeStudent(studentId, courseId))
+               .command(new SubscribeStudentToCourse(studentId, courseId))
                .then()
                .exception(RuntimeException.class, "Student already subscribed to this course");
     }
@@ -151,14 +151,14 @@ class SubscribeStudentTest {
         var student3Id = StudentId.random();
 
         fixture.given()
-               .event(new StudentEnrolledFaculty(student1Id.raw(), "Mateusz", "Nowak"))
-               .event(new StudentEnrolledFaculty(student2Id.raw(), "Steven", "van Beelen"))
-               .event(new StudentEnrolledFaculty(student3Id.raw(), "Mitchell", "Herrijgers"))
+               .event(new StudentEnrolledInFaculty(student1Id.raw(), "Mateusz", "Nowak"))
+               .event(new StudentEnrolledInFaculty(student2Id.raw(), "Steven", "van Beelen"))
+               .event(new StudentEnrolledInFaculty(student3Id.raw(), "Mitchell", "Herrijgers"))
                .event(new CourseCreated(courseId.raw(), "Event Sourcing Masterclass", 2))
-               .event(new StudentSubscribed(student1Id.raw(), courseId.raw()))
-               .event(new StudentSubscribed(student2Id.raw(), courseId.raw()))
+               .event(new StudentSubscribedToCourse(student1Id.raw(), courseId.raw()))
+               .event(new StudentSubscribedToCourse(student2Id.raw(), courseId.raw()))
                .when()
-               .command(new SubscribeStudent(student3Id, courseId))
+               .command(new SubscribeStudentToCourse(student3Id, courseId))
                .then()
                .exception(RuntimeException.class, "Course is fully booked");
     }
@@ -172,16 +172,16 @@ class SubscribeStudentTest {
         var targetCourseId = CourseId.random();
 
         fixture.given()
-                .event(new StudentEnrolledFaculty(studentId.raw(), "Milan", "Savic"))
+                .event(new StudentEnrolledInFaculty(studentId.raw(), "Milan", "Savic"))
                 .event(new CourseCreated(targetCourseId.raw(), "Programming", 10))
                 .event(new CourseCreated(course1Id.raw(), "Course 1", 10))
                 .event(new CourseCreated(course2Id.raw(), "Course 2", 10))
                 .event(new CourseCreated(course3Id.raw(), "Course 3", 10))
-                .event(new StudentSubscribed(studentId.raw(), course1Id.raw()))
-                .event(new StudentSubscribed(studentId.raw(), course2Id.raw()))
-                .event(new StudentSubscribed(studentId.raw(), course3Id.raw()))
+                .event(new StudentSubscribedToCourse(studentId.raw(), course1Id.raw()))
+                .event(new StudentSubscribedToCourse(studentId.raw(), course2Id.raw()))
+                .event(new StudentSubscribedToCourse(studentId.raw(), course3Id.raw()))
                 .when()
-                .command(new io.axoniq.demo.university.faculty.write.subscribestudentmulti.SubscribeStudent(studentId, targetCourseId))
+                .command(new io.axoniq.demo.university.faculty.write.subscribestudentmulti.SubscribeStudentToCourse(studentId, targetCourseId))
                 .then()
                 .noEvents()
                 .exceptionSatisfies(thrown -> assertThat(thrown)
@@ -194,22 +194,22 @@ class SubscribeStudentTest {
 ----
 
 These tests demonstrate the behavior we want to implement, checking both successful and error cases.
-For these tests we need to implement the command handler for `SubscribeStudent` command.
+For these tests we need to implement the command handler for `SubscribeStudentToCourse` command.
 As you've seen before, for the behavior which is based on some state (so we have something in a Given phase of the test), we need to have State for our command handler to validate commands against it.
 Let's make it right away!
 
 [source,java]
-.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourse.java
 ----
 package io.axoniq.demo.university.faculty.write.subscribestudent;
 
-class SubscribeStudentCommandHandler {
+class SubscribeStudentToCourseCommandHandler {
 
     private static final int MAX_COURSES_PER_STUDENT = 3; // <1>
 
     @CommandHandler
     void handle(
-            SubscribeStudent command,
+            SubscribeStudentToCourse command,
             @InjectEntity State state, // <2>
             EventSink eventSink,
             ProcessingContext processingContext
@@ -219,14 +219,14 @@ class SubscribeStudentCommandHandler {
         eventSink.publish(processingContext, messages); // <5>
     }
 
-    private List<StudentSubscribed> decide(SubscribeStudent command, State state) {
+    private List<StudentSubscribedToCourse> decide(SubscribeStudentToCourse command, State state) {
         // todo: check business rules
-        return List.of(new StudentSubscribed(command.studentId().raw(), command.courseId().raw()));
+        return List.of(new StudentSubscribedToCourse(command.studentId().raw(), command.courseId().raw()));
     }
 
-    private static List<EventMessage<?>> toMessages(List<StudentSubscribed> events) {
+    private static List<EventMessage<?>> toMessages(List<StudentSubscribedToCourse> events) {
         return events.stream()
-                     .map(SubscribeStudentCommandHandler::toMessage)
+                     .map(SubscribeStudentToCourseCommandHandler::toMessage)
                      .collect(Collectors.toList());
     }
 
@@ -239,7 +239,7 @@ class SubscribeStudentCommandHandler {
 
     @EventSourcedEntity // <6>
     static class State {
-        // todo: define state necessary to accept or reject `SubscribeStudent` command
+        // todo: define state necessary to accept or reject `SubscribeStudentToCourse` command
     }
 
 }
@@ -258,10 +258,10 @@ In a few paragraphs you will see how to do that with the `EventCriteria` API.
 
 
 We always need a single, unique identifier to load the state, because the `@InjectEntity` annotation needs to know how to identify the entity to load.
-In this case it's more challenging, because the `SubscribeStudent` business process is identified by the command type and also the `courseId` and `studentId`.
+In this case it's more challenging, because the `SubscribeStudentToCourse` business process is identified by the command type and also the `courseId` and `studentId`.
 When you subscribe to the course and want to validate the business rules, you need to be aware of all the subscriptions for the given course and all subscriptions for the given student.
 Hence, similar to traditional databases, we need to introduce a type for composite key to identify the entity.
-We're going to use the `SubscriptionId` class and define it as an `TargetEntityId` in the `SubscribeStudent` command.
+We're going to use the `SubscriptionId` class and define it as an `TargetEntityId` in the `SubscribeStudentToCourse` command.
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscriptionId.java
@@ -278,14 +278,14 @@ record SubscriptionId(CourseId courseId, StudentId studentId) {
 ----
 
 [source,java]
-.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourse.java
 ----
 package io.axoniq.demo.university.faculty.write.createcourse;
 
 import io.axoniq.demo.university.faculty.write.StudentId;
 import io.axoniq.demo.university.faculty.write.CourseId;
 
-public record SubscribeStudent(StudentId studentId, CourseId courseId) {
+public record SubscribeStudentToCourse(StudentId studentId, CourseId courseId) {
 
     @TargetEntityId
     private SubscriptionId subscriptionId() { // <1>
@@ -298,7 +298,7 @@ public record SubscribeStudent(StudentId studentId, CourseId courseId) {
 Based on the `SubscriptionId` we can load the events to build the `State` object. 
 We will use the value to define the `EventCriteria` later in this section.
 
-As you see there are two TODOs left in the `SubscribeStudentCommandHandler` code.
+As you see there are two TODOs left in the `SubscribeStudentToCourseCommandHandler` code.
 Now we need to validate the business rules, and there are quite a few of them.
 The student can subscribe to a course only if he/she adheres to the domain invariants of the operation.
 We will list them along with the assertion function, as well as show what's needed in the State object to validate them.
@@ -308,9 +308,9 @@ We will list them along with the assertion function, as well as show what's need
 When a student is enrolled in the faculty it has an assigned `StudentId`, so we add it to the State:
 
 [source,java]
-.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourse.java
 ----
-class SubscribeStudentCommandHandler {
+class SubscribeStudentToCourseCommandHandler {
 
     // rest omitted for brevity
 
@@ -320,7 +320,7 @@ class SubscribeStudentCommandHandler {
         private StudentId studentId;
 
         @EventSourcingHandler
-        void evolve(StudentEnrolledFaculty event) {
+        void evolve(StudentEnrolledInFaculty event) {
             this.studentId = new StudentId(event.studentId());
         }
     }
@@ -333,13 +333,13 @@ This is a different approach from what we used in the `CreateCourse` feature, wh
 This error will bubble up as a result of the command to the client.
 
 [source,java]
-.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourse.java
 ----
-class SubscribeStudentCommandHandler {
+class SubscribeStudentToCourseCommandHandler {
 
     // rest omitted for brevity
 
-    private void assertStudentEnrolledFaculty(State state) {
+    private void assertStudentEnrolledInFaculty(State state) {
         var studentId = state.studentId;
         if (studentId == null) {
             throw new RuntimeException("Student with given id never enrolled the faculty");
@@ -364,13 +364,13 @@ It's the same rule of thumb that you use while designing DDD Aggregates.
 
 So we are going to derive:
 
-* for Student: `alreadySubscribed` and `noOfCoursesStudentSubscribed` from `StudentSubscribed` and ``StudentUnsubscribed` events.
-* for Course: `courseCapacity` and `noOfStudentsSubscribedToCourse` from `CourseCreated`, `CourseCapacityChanged`, `StudentSubscribed` and `StudentUnsubscribed` events.
+* for Student: `alreadySubscribed` and `noOfCoursesStudentSubscribed` from `StudentSubscribedToCourse` and `StudentUnsubscribedFromCourse` events.
+* for Course: `courseCapacity` and `noOfStudentsSubscribedToCourse` from `CourseCreated`, `CourseCapacityChanged`, `StudentSubscribedToCourse` and `StudentUnsubscribedFromCourse` events.
 
 [source,java]
-.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourse.java
 ----
-class SubscribeStudentCommandHandler {
+class SubscribeStudentToCourseCommandHandler {
 
     // rest omitted for brevity
 
@@ -399,7 +399,7 @@ class SubscribeStudentCommandHandler {
         }
 
         @EventSourcingHandler
-        void evolve(StudentSubscribed event) { // <3>
+        void evolve(StudentSubscribedToCourse event) { // <3>
             var subscribingStudentId = new StudentId(event.studentId());
             var subscribedCourseId = new CourseId(event.courseId());
             if (subscribedCourseId.equals(courseId)) { // <4>
@@ -414,7 +414,7 @@ class SubscribeStudentCommandHandler {
         }
 
         @EventSourcingHandler
-        void evolve(StudentUnsubscribed event) { // <7>
+        void evolve(StudentUnsubscribedFromCourse event) { // <7>
             var subscribingStudentId = new StudentId(event.studentId());
             var subscribedCourseId = new CourseId(event.courseId());
             if(subscribedCourseId.equals(courseId)) {
@@ -433,13 +433,13 @@ class SubscribeStudentCommandHandler {
 ----
 <1> Same as with a student, we store the `courseId`, along with the `capacity`, from the `CourseCreated` event.
 <2> We update the `capacity` on `CourseCapacityChanged` event.
-<3> In this case, we're going to evolve the State on every StudentSubscribed event related to the course or the student whose IDs are in the command.
+<3> In this case, we're going to evolve the State on every StudentSubscribedToCourse event related to the course or the student whose IDs are in the command.
 How we instruct the store to load those events, we will discuss in the next paragraph.
-For now, you need to be aware of that you may receive events about different student and different course as well, because we have one event handler per event type -> we handle there all `StudentSubscribed/Unsubscribed` for given course (different students) to know how much capacity left and all for given student (different courses) to know how many courses the student is subscribed to.
-<4> If the `StudentSubscribed` event is related to the course, we increase the number of students subscribed to the course.
-<5> If the `StudentSubscribed` event is related to the student, we increase the number of courses the student is subscribed to.
-<6> If the `StudentSubscribed` event is related to the course and the student, we set the `alreadySubscribed` flag to true.
-<7> The handler for the `StudentUnsubscribed` event is an exact opposite of the `evolve` method for `StudentSubscribed` event. We decrease the numbers that we increased in the previous one.
+For now, you need to be aware of that you may receive events about different student and different course as well, because we have one event handler per event type -> we handle there all `StudentSubscribedToCourse/Unsubscribed` for given course (different students) to know how much capacity left and all for given student (different courses) to know how many courses the student is subscribed to.
+<4> If the `StudentSubscribedToCourse` event is related to the course, we increase the number of students subscribed to the course.
+<5> If the `StudentSubscribedToCourse` event is related to the student, we increase the number of courses the student is subscribed to.
+<6> If the `StudentSubscribedToCourse` event is related to the course and the student, we set the `alreadySubscribed` flag to true.
+<7> The handler for the `StudentUnsubscribedFromCourse` event is an exact opposite of the `evolve` method for `StudentSubscribedToCourse` event. We decrease the numbers that we increased in the previous one.
 
 How do we ensure that we won't load events for every student and every course?
 How do we limit our Consistency Boundary to only what is really needed to validate business rules?
@@ -448,11 +448,11 @@ This is where the `EventCriteria` comes into play.
 == Event criteria
 
 While implementing the `CreateCourse` feature, we defined that we want to build our state based on events that are tagged with `courseId` by using `@EventSourcedEntity(tagKey = "courseId")`.
-For the `SubscribeStudent` handling, this is not enough, because, as you already know, we need to build our state based on both `studentId` and `courseId` tagged events.
-We need all `StudentSubscribed` events for the given `courseId` and also all `StudentSubscribed` events for the given `studentId`.
-The same applies to `StudentUnsubscribed` events.
+For the `SubscribeStudentToCourse` handling, this is not enough, because, as you already know, we need to build our state based on both `studentId` and `courseId` tagged events.
+We need all `StudentSubscribedToCourse` events for the given `courseId` and also all `StudentSubscribedToCourse` events for the given `studentId`.
+The same applies to `StudentUnsubscribedFromCourse` events.
 
-Whereas, for example, with `StudentEnrolledFaculty` - we care about just one event for the given `studentId`; other students are not involved while processing this command, and there are no business rules between them.
+Whereas, for example, with `StudentEnrolledInFaculty` - we care about just one event for the given `studentId`; other students are not involved while processing this command, and there are no business rules between them.
 The subscription story is different, because we have a limit of students per course and also a limit of courses per student.
 
 Thanks to the Axon Framework's `EventCriteria` concept, we're able to define the events we'd like to load dynamically.
@@ -468,7 +468,7 @@ You may think about it as follows: before, an event could have just one tag—th
 
 Here the situation is a bit more complicated, because we need to load events for two different entities - `Student` and `Course`.
 In a system based on Aggregates, you may load both and limit your accessibility - the risk of optimistic concurrency is higher, or implement a complex saga to orchestrate changes between those two entities - then you also need to duplicate the events and deal with eventual consistency.
-Whereas in the domain experts' language, `StudentSubscribed` is just one fact, which influences rules around both `Student` and `Course`.
+Whereas in the domain experts' language, `StudentSubscribedToCourse` is just one fact, which influences rules around both `Student` and `Course`.
 
 As long as we're in a single bounded context and have all events in one storage, we can define our custom `EventCriteria` to shape our `State`, mixing properties from both `Student` and `Course`!
 The operation will be also immediately consistent and transactional.
@@ -476,9 +476,9 @@ If while executing the command, any event matching the same `EventCriteria` is s
 The single responsibility of the `State` is just to give us enough information to determine if the command satisfies business rules.
 
 [source,java]
-.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudent.java
+.src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourse.java
 ----
-class SubscribeStudentCommandHandler {
+class SubscribeStudentToCourseCommandHandler {
 
     // rest omitted for brevity
 
@@ -497,14 +497,14 @@ class SubscribeStudentCommandHandler {
                             .eventsOfTypes(
                                     CourseCreated.class.getName(),
                                     CourseCapacityChanged.class.getName(),
-                                    StudentSubscribed.class.getName(),
-                                    StudentUnsubscribed.class.getName()
+                                    StudentSubscribedToCourse.class.getName(),
+                                    StudentUnsubscribedFromCourse.class.getName()
                             ).withTags(Tag.of("courseId", courseId)), // <3>
                     EventCriteria.match()
                             .eventsOfTypes(
-                                    StudentEnrolledFaculty.class.getName(),
-                                    StudentSubscribed.class.getName(),
-                                    StudentUnsubscribed.class.getName()
+                                    StudentEnrolledInFaculty.class.getName(),
+                                    StudentSubscribedToCourse.class.getName(),
+                                    StudentUnsubscribedFromCourse.class.getName()
                             ).withTags(Tag.of("studentId", studentId))
             );
         }
@@ -517,9 +517,9 @@ class SubscribeStudentCommandHandler {
 <3> As you may see at the highest level that we combine `EventCriteria` with `either`. But, when we define tags through `withTags`, it means that a certain type of event requires all of them (there is an OR relation between event types, an AND relation between tags and OR between criteria).
 Hence, if we do `.withTags(Tag.of("courseId", courseId), Tag.of("studentId", studentId))` we will only receive subscription events of the given student for one given course.
 This is not what we want here.
-So, we split `StudentSubscribed` and `StudentUnsubscribed` events into two separate criteria (one for student and one for course), because we need to load all events of those types for either `courseId` or `studentId`.
+So, we split `StudentSubscribedToCourse` and `StudentUnsubscribedFromCourse` events into two separate criteria (one for student and one for course), because we need to load all events of those types for either `courseId` or `studentId`.
 
-It gives us better accessibility of our system - thanks to that, as you see there is no `CourseRenamed` event in our criteria, so the Faculty administrator is still able to rename the course in the same time while processing the `SubscribeStudent` command. Because the `CourseRenamed` event doesn't match the criteria, it's not in our operation's consistency boundary.
+It gives us better accessibility of our system - thanks to that, as you see there is no `CourseRenamed` event in our criteria, so the Faculty administrator is still able to rename the course in the same time while processing the `SubscribeStudentToCourse` command. Because the `CourseRenamed` event doesn't match the criteria, it's not in our operation's consistency boundary.
 In case of Aggregates, these operations may clash, or you need to introduce a separate entity for the name to avoid concurrency access issues.
 Our colleague Milan from AxonIQ (with our ex-colleague Sara) discuss those scenarios in the talk—we really encourage you to watch it link:https://www.youtube.com/watch?v=IgigmuHHchI[The Aggregate is dead. Long live the Aggregate! by Sara Pellegrini & Milan Savic @ Spring I/O 2023].
 
@@ -534,14 +534,14 @@ But in this case, you load more than needed, and it's possible to clash with oth
 
 
 Let's summarize what we have done so far.
-We've implemented the whole `SubscribeStudent` command handler using the DCB concept in practice.
+We've implemented the whole `SubscribeStudentToCourse` command handler using the DCB concept in practice.
 It was easier than you expected, right?
-If you're not sure if you followed the tutorial correctly, you can always check the code in the repository. The command handler code is here link:https://github.com/AxonIQ/university-demo/blob/master/src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentCommandHandler.java[SubscribeStudentCommandHandler].
+If you're not sure if you followed the tutorial correctly, you can always check the code in the repository. The command handler code is here link:https://github.com/AxonIQ/university-demo/blob/master/src/main/java/io/axoniq/demo/university/faculty/write/subscribestudent/SubscribeStudentToCourseCommandHandler.java[SubscribeStudentToCourseCommandHandler].
 If you prefer to use a different style (with multiple state classes - like `Course` and `Student` instead of just one) you may also compare it with the solution we have done in the link:https://github.com/AxonIQ/university-demo/tree/master/src/main/java/io/axoniq/demo/university/faculty/write/subscribestudentmulti[subscribestudentmulti] package.
 
 == Configuration
 Same as before, to make our tests green, the last thing to do is to configure the required infrastructure for the command handler.
-To do so, let's create a new class `SubscribeStudentConfiguration` with the following content.
+To do so, let's create a new class `SubscribeStudentToCourseConfiguration` with the following content.
 
 [source,java]
 .src/main/java/io/axoniq/demo/university/faculty/write/createcourse/CreateCourseConfiguration.java
@@ -560,13 +560,13 @@ public class SubscribeStudentConfiguration {
 
     public static EventSourcingConfigurer configure(EventSourcingConfigurer configurer) {
         var stateEntity = EventSourcedEntityBuilder
-                .annotatedEntity(SubscriptionId.class, SubscribeStudentCommandHandler.State.class);
+                .annotatedEntity(SubscriptionId.class, SubscribeStudentToCourseCommandHandler.State.class);
         var commandHandlingModule = StatefulCommandHandlingModule
-                .named("SubscribeStudent")
+                .named("SubscribeStudentToCourse")
                 .entities()
                 .entity(stateEntity)
                 .commandHandlers()
-                .annotatedCommandHandlingComponent(c -> new SubscribeStudentCommandHandler());
+                .annotatedCommandHandlingComponent(c -> new SubscribeStudentToCourseCommandHandler());
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }
 
