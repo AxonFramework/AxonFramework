@@ -7,9 +7,6 @@ import io.axoniq.demo.university.faculty.write.CourseId;
 import io.axoniq.demo.university.faculty.write.StudentId;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
@@ -17,13 +14,11 @@ import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.command.EntityIdResolver;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 class UnsubscribeStudentFromCourseCommandHandler {
 

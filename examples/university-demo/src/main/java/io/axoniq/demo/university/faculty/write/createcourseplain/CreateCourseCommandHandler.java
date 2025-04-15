@@ -6,19 +6,15 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 class CreateCourseCommandHandler implements StatefulCommandHandler {
 
