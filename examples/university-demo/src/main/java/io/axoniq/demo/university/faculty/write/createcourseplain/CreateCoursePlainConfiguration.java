@@ -34,4 +34,8 @@ public class CreateCoursePlainConfiguration {
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }
 
+    private CreateCoursePlainConfiguration() {
+        // Prevent instantiation
+    }
+
 }
