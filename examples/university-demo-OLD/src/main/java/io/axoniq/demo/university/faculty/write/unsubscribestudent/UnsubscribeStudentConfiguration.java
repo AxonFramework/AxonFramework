@@ -18,4 +18,8 @@ public class UnsubscribeStudentConfiguration {
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }
 
+    private UnsubscribeStudentConfiguration() {
+        // Prevent instantiation
+    }
+
 }

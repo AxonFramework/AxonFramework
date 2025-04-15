@@ -21,4 +21,8 @@ public class ChangeCourseCapacityConfiguration {
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }
 
+    private ChangeCourseCapacityConfiguration() {
+        // Prevent instantiation
+    }
+
 }

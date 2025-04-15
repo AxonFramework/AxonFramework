@@ -18,4 +18,8 @@ public class SubscribeStudentConfiguration {
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }
 
+    private SubscribeStudentConfiguration() {
+        // Prevent instantiation
+    }
+
 }

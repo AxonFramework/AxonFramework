@@ -24,4 +24,8 @@ public class SubscribeStudentMultiEntityConfiguration {
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }
 
+    private SubscribeStudentMultiEntityConfiguration() {
+        // Prevent instantiation
+    }
+
 }

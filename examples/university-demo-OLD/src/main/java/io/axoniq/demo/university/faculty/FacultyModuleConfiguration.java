@@ -21,4 +21,8 @@ public class FacultyModuleConfiguration {
         configurer = UnsubscribeStudentConfiguration.configure(configurer);
         return configurer;
     }
+
+    private FacultyModuleConfiguration() {
+        // Prevent instantiation
+    }
 }

@@ -19,4 +19,8 @@ public class RenameCourseConfiguration {
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }
 
+    private RenameCourseConfiguration() {
+        // Prevent instantiation
+    }
+
 }
