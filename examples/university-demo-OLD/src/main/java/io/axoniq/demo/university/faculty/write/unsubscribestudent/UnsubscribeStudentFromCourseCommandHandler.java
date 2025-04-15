@@ -45,8 +45,8 @@ class UnsubscribeStudentFromCourseCommandHandler {
 
     private static List<EventMessage<?>> toMessages(List<StudentUnsubscribedFromCourse> events) {
         return events.stream()
-                     .map(UnsubscribeStudentFromCourseCommandHandler::toMessage)
-                     .collect(Collectors.toList());
+                .map(UnsubscribeStudentFromCourseCommandHandler::toMessage)
+                .collect(Collectors.toList());
     }
 
     private static EventMessage<?> toMessage(Object payload) {
@@ -62,12 +62,12 @@ class UnsubscribeStudentFromCourseCommandHandler {
         boolean subscribed = false;
 
         @EventSourcingHandler
-        void apply(StudentSubscribedToCourse event) {
+        void evolve(StudentSubscribedToCourse event) {
             this.subscribed = true;
         }
 
         @EventSourcingHandler
-        void apply(StudentUnsubscribedFromCourse event) {
+        void evolve(StudentUnsubscribedFromCourse event) {
             this.subscribed = false;
         }
 
@@ -75,12 +75,12 @@ class UnsubscribeStudentFromCourseCommandHandler {
         private static EventCriteria resolveCriteria(SubscriptionId id) {
             var courseId = id.courseId().raw();
             var studentId = id.studentId().raw();
-            return EventCriteria.match()
-                                .eventsOfTypes(
-                                        StudentSubscribedToCourse.class.getName(),
-                                        StudentUnsubscribedFromCourse.class.getName()
-                                ).withTags(Tag.of(FacultyTags.COURSE_ID, courseId),
-                                           Tag.of(FacultyTags.STUDENT_ID, studentId));
+            return EventCriteria
+                    .havingTags(Tag.of(FacultyTags.COURSE_ID, courseId), Tag.of(FacultyTags.STUDENT_ID, studentId))
+                    .andBeingOneOfTypes(
+                            StudentSubscribedToCourse.class.getName(),
+                            StudentUnsubscribedFromCourse.class.getName()
+                    );
         }
     }
 

@@ -76,7 +76,7 @@ class CreateCourseCommandHandler implements StatefulCommandHandler {
             return new State(false);
         }
 
-        State apply(CourseCreated event) {
+        State evolve(CourseCreated event) {
             this.created = true;
             return this;
         }
