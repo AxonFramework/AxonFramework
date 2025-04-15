@@ -22,7 +22,7 @@ import org.axonframework.configuration.NewConfiguration;
 /**
  * Defines how an {@link EventSourcedEntityFactory} should be constructed for an {@link EventSourcedEntity} annotated
  * class. The definition receives the {@code entityType} and {@code idType} to create the factory for. In addition, it
- * receives * the {@link NewConfiguration} to resolve any component dependencies that are necessary for creating the
+ * receives the {@link NewConfiguration} to resolve any component dependencies that are necessary for creating the
  * factory.
  *
  * @param <E>  The type of the entity to create.
@@ -34,7 +34,9 @@ import org.axonframework.configuration.NewConfiguration;
 public interface EventSourcedEntityFactoryDefinition<E, ID> {
 
     /**
-     * Creates a new {@link EventSourcedEntityFactory} for the given {@code entityType} and {@code idType}.
+     * Creates a new {@link EventSourcedEntityFactory} for the given {@code entityType} and {@code idType}. In addition, it
+     * receives the {@link NewConfiguration} to resolve any component dependencies that are necessary for creating the
+     * factory.
      *
      * @param entityType    The type of the entity to create.
      * @param idType        The identifier type of the entity to create.

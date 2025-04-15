@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.annotation;
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventsourcing.CriteriaResolver;
+import org.axonframework.messaging.MessageTypeResolver;
 
 /**
  * Defines how a {@link CriteriaResolver} should be constructed for an {@link EventSourcedEntity} annotated class. The
@@ -28,12 +29,12 @@ import org.axonframework.eventsourcing.CriteriaResolver;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-@FunctionalInterface
 public interface CriteriaResolverDefinition {
 
     /**
      * Constructs a {@link CriteriaResolver} for the given {@code entityType} and {@code idType}. The
-     * {@code messageTypeResolver} can be used to resolve the type of the message that is being processed.
+     * {@code configuration} can be used to retrieve components that help with the resolution of types. For example, a
+     * {@link MessageTypeResolver}.
      *
      * @param entityType    The entity type the resolver is for.
      * @param idType        The identifier type the resolver is for.

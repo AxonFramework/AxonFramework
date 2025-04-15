@@ -178,7 +178,7 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
             }
         }
 
-        public Object resolve(Object id) {
+        private Object resolve(Object id) {
             Object[] args = new Object[method.getParameterCount()];
             args[0] = id;
             System.arraycopy(optionalArgumentSuppliers, 0, args, 1, optionalArgumentSuppliers.length);

@@ -21,7 +21,7 @@ import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import java.util.function.Function;
 
 /**
- * Functional interface describing a resolver of an {@link EventCriteria} based on an identifier of type {@code ID}.
+ * Functional interface describing a resolver of an {@link EventCriteria} based on an identifier of type {@code I}.
  *
  * @param <I> The type of identifier to resolve to an {@link EventCriteria}.
  * @author Steven van Beelen
