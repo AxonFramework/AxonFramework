@@ -1,7 +1,7 @@
 package io.axoniq.demo.university.faculty.write.subscribestudentmulti;
 
-import io.axoniq.demo.university.faculty.write.CourseId;
-import io.axoniq.demo.university.faculty.write.StudentId;
+import io.axoniq.demo.university.shared.ids.CourseId;
+import io.axoniq.demo.university.shared.ids.StudentId;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;

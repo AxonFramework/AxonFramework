@@ -1,24 +1,24 @@
-package io.axoniq.demo.university.faculty.write;
+package io.axoniq.demo.university.shared.ids;
 
 import java.util.UUID;
 
-public record CourseId(String raw) {
+public record StudentId(String raw) {
 
-    private final static String ENTITY_TYPE = "Course";
+    private final static String ENTITY_TYPE = "Student";
 
-    public CourseId {
+    public StudentId {
         if (raw == null || raw.isBlank()) {
             throw new IllegalArgumentException("Course ID cannot be null or empty");
         }
         raw = withType(raw);
     }
 
-    public static CourseId of(String raw) {
-        return new CourseId(raw);
+    public static StudentId of(String raw) {
+        return new StudentId(raw);
     }
 
-    public static CourseId random() {
-        return new CourseId(UUID.randomUUID().toString());
+    public static StudentId random() {
+        return new StudentId(UUID.randomUUID().toString());
     }
 
     @Override

@@ -30,7 +30,7 @@ class SubscribeStudentToCourseCommandHandler {
         assertEnoughVacantSpotsInCourse(course);
         assertStudentNotAlreadySubscribed(course, student);
 
-        return List.of(new StudentSubscribedToCourse(command.studentId().raw(), command.courseId().raw()));
+        return List.of(new StudentSubscribedToCourse(command.studentId(), command.courseId()));
     }
 
     private void assertStudentEnrolledFaculty(Student student) {

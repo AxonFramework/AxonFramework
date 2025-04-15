@@ -6,8 +6,8 @@ import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty;
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
 import io.axoniq.demo.university.faculty.events.StudentUnsubscribedFromCourse;
-import io.axoniq.demo.university.faculty.write.CourseId;
-import io.axoniq.demo.university.faculty.write.StudentId;
+import io.axoniq.demo.university.shared.ids.CourseId;
+import io.axoniq.demo.university.shared.ids.StudentId;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -44,20 +44,7 @@ class SubscribeStudentToCourseCommandHandler {
         assertEnoughVacantSpotsInCourse(state);
         assertStudentNotAlreadySubscribed(state);
 
-        return List.of(new StudentSubscribedToCourse(command.studentId().raw(), command.courseId().raw()));
-    }
-
-    private static List<EventMessage<?>> toMessages(List<StudentSubscribedToCourse> events) {
-        return events.stream()
-                .map(SubscribeStudentToCourseCommandHandler::toMessage)
-                .collect(Collectors.toList());
-    }
-
-    private static EventMessage<?> toMessage(Object payload) {
-        return new GenericEventMessage<>(
-                new MessageType(payload.getClass()),
-                payload
-        );
+        return List.of(new StudentSubscribedToCourse(command.studentId(), command.courseId()));
     }
 
     private void assertStudentEnrolledFaculty(State state) {
@@ -109,7 +96,7 @@ class SubscribeStudentToCourseCommandHandler {
 
         @EventSourcingHandler
         void evolve(CourseCreated event) {
-            this.courseId = new CourseId(event.courseId());
+            this.courseId =event.courseId();
             this.courseCapacity = event.capacity();
         }
 
@@ -120,13 +107,13 @@ class SubscribeStudentToCourseCommandHandler {
 
         @EventSourcingHandler
         void evolve(StudentEnrolledInFaculty event) {
-            this.studentId = new StudentId(event.studentId());
+            this.studentId = event.studentId();
         }
 
         @EventSourcingHandler
         void evolve(StudentSubscribedToCourse event) {
-            var subscribingStudentId = new StudentId(event.studentId());
-            var subscribedCourseId = new CourseId(event.courseId());
+            var subscribingStudentId = event.studentId();
+            var subscribedCourseId = event.courseId();
             if (subscribedCourseId.equals(courseId)) {
                 noOfStudentsSubscribedToCourse++;
             }
@@ -140,8 +127,8 @@ class SubscribeStudentToCourseCommandHandler {
 
         @EventSourcingHandler
         void evolve(StudentUnsubscribedFromCourse event) {
-            var subscribingStudentId = new StudentId(event.studentId());
-            var subscribedCourseId = new CourseId(event.courseId());
+            var subscribingStudentId = event.studentId();
+            var subscribedCourseId = event.courseId();
             if (subscribedCourseId.equals(courseId)) {
                 noOfStudentsSubscribedToCourse--;
             }
