@@ -18,12 +18,12 @@ class Student {
     private final List<CourseId> subscribedCourses = new ArrayList<>();
 
     @EventSourcingHandler
-    void handle(StudentEnrolledInFaculty event) {
+    void evolve(StudentEnrolledInFaculty event) {
         id = new StudentId(event.studentId());
     }
 
     @EventSourcingHandler
-    void handle(StudentSubscribedToCourse event) {
+    void evolve(StudentSubscribedToCourse event) {
         subscribedCourses.add(new CourseId(event.courseId()));
     }
 

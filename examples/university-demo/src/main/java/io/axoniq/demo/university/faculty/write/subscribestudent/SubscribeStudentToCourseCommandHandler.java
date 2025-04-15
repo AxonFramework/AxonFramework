@@ -160,19 +160,21 @@ class SubscribeStudentToCourseCommandHandler {
             var courseId = id.courseId().raw();
             var studentId = id.studentId().raw();
             return EventCriteria.either(
-                    EventCriteria.match()
-                            .eventsOfTypes(
+                    EventCriteria
+                            .havingTags(Tag.of(FacultyTags.COURSE_ID, courseId))
+                            .andBeingOneOfTypes(
                                     CourseCreated.class.getName(),
                                     CourseCapacityChanged.class.getName(),
                                     StudentSubscribedToCourse.class.getName(),
                                     StudentUnsubscribedFromCourse.class.getName()
-                            ).withTags(Tag.of(FacultyTags.COURSE_ID, courseId)),
-                    EventCriteria.match()
-                            .eventsOfTypes(
+                            ),
+                    EventCriteria
+                            .havingTags(Tag.of(FacultyTags.STUDENT_ID, studentId))
+                            .andBeingOneOfTypes(
                                     StudentEnrolledInFaculty.class.getName(),
                                     StudentSubscribedToCourse.class.getName(),
                                     StudentUnsubscribedFromCourse.class.getName()
-                            ).withTags(Tag.of(FacultyTags.STUDENT_ID, studentId))
+                            )
             );
         }
     }

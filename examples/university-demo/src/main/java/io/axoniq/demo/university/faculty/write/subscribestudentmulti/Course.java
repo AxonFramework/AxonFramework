@@ -20,19 +20,19 @@ class Course {
     private final List<StudentId> studentsSubscribed = new ArrayList<>();
 
     @EventSourcingHandler
-    void handle(CourseCreated event) {
+    void evolve(CourseCreated event) {
         id = new CourseId(event.courseId());
         capacity = event.capacity();
     }
 
     @EventSourcingHandler
-    void handle(CourseCapacityChanged event) {
+    void evolve(CourseCapacityChanged event) {
         id = new CourseId(event.courseId());
         capacity = event.capacity();
     }
 
     @EventSourcingHandler
-    void handle(StudentSubscribedToCourse event) {
+    void evolve(StudentSubscribedToCourse event) {
         studentsSubscribed.add(new StudentId(event.studentId()));
     }
 
