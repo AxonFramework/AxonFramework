@@ -30,7 +30,7 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.Snapshotter;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -105,7 +105,7 @@ class AggregateStereotypeAutoConfigurationTest {
             assertTrue(snapshotFilterInvoked.get());
             assertTrue(commandTargetResolverInvoked.get());
 
-            EventStore eventStore = context.getBean("eventBus", EventStore.class);
+            LegacyEventStore eventStore = context.getBean("eventBus", LegacyEventStore.class);
             assertTrue(eventStore.readEvents(aggregateId)
                                  .asStream()
                                  .allMatch(event -> Objects.equals(event.getType(), "testType")));
@@ -149,7 +149,7 @@ class AggregateStereotypeAutoConfigurationTest {
             assertFalse(cacheInvoked.get());
             assertFalse(lockFactoryInvoked.get());
 
-            EventStore eventStore = context.getBean("eventBus", EventStore.class);
+            LegacyEventStore eventStore = context.getBean("eventBus", LegacyEventStore.class);
             assertTrue(eventStore.readEvents(aggregateId)
                                  .asStream()
                                  .allMatch(event -> Objects.equals(event.getType(), "testTypeWithCustomRepository")));
@@ -374,7 +374,7 @@ class AggregateStereotypeAutoConfigurationTest {
         }
 
         @Bean
-        public Repository<CustomRepoTestAggregate> testRepository(EventStore eventStore) {
+        public Repository<CustomRepoTestAggregate> testRepository(LegacyEventStore eventStore) {
             return spy(EventSourcingRepository.builder(CustomRepoTestAggregate.class)
                                               .eventStore(eventStore)
                                               .build());

@@ -21,7 +21,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.*;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -64,7 +64,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
     /**
      * Instantiate a {@link AggregateSnapshotter} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link EventStore}, {@link ParameterResolverFactory} and {@link HandlerDefinition} are not
+     * Will assert that the {@link LegacyEventStore}, {@link ParameterResolverFactory} and {@link HandlerDefinition} are not
      * {@code null}, and will throw an {@link AxonConfigurationException} if any of them is {@code null}. The
      * {@link SpanFactory} is defaulted to a {@link org.axonframework.tracing.NoOpSpanFactory}.
      *
@@ -89,7 +89,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * (respectively {@link Builder#buildParameterResolverFactory()} and {@link Builder#buildHandlerDefinition()}). Upon
      * instantiation of a {@link AggregateSnapshotter}, it is recommended to use these function to set those fields.
      * <p>
-     * The {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
+     * The {@link LegacyEventStore} is a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link AggregateSnapshotter}
      * @see ClasspathParameterResolverFactory
@@ -164,7 +164,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
      * {@link Builder#buildParameterResolverFactory()} and {@link Builder#buildHandlerDefinition()}). Upon instantiation
      * of a {@link AggregateSnapshotter}, it is recommended to use these function to set those fields.
      * <p>
-     * The {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
+     * The {@link LegacyEventStore} is a <b>hard requirement</b> and as such should be provided.
      *
      * @see ClasspathParameterResolverFactory
      * @see ClasspathHandlerDefinition
@@ -184,7 +184,7 @@ public class AggregateSnapshotter extends AbstractSnapshotter {
         }
 
         @Override
-        public Builder eventStore(EventStore eventStore) {
+        public Builder eventStore(LegacyEventStore eventStore) {
             super.eventStore(eventStore);
             return this;
         }

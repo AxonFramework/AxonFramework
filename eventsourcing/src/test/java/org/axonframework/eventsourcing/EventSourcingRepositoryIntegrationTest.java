@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -53,7 +53,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     private static final int CONCURRENT_MODIFIERS = 10;
     private EventSourcingRepository<SimpleAggregateRoot> repository;
     private String aggregateIdentifier;
-    private EventStore eventStore;
+    private LegacyEventStore eventStore;
     private List<Throwable> uncaughtExceptions = new CopyOnWriteArrayList<>();
     private List<Thread> startedThreads = new ArrayList<>();
 

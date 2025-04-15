@@ -39,7 +39,7 @@ import org.axonframework.eventsourcing.EventSourcedAggregate;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.GenericMessage;
@@ -125,7 +125,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private final Class<T> aggregateType;
     private final Set<Class<? extends T>> subtypes = new HashSet<>();
     private final SimpleCommandBus commandBus;
-    private final EventStore eventStore;
+    private final LegacyEventStore eventStore;
     private final List<FieldFilter> fieldFilters = new ArrayList<>();
     private final List<Object> resources = new ArrayList<>();
     private boolean useStateStorage;
@@ -781,7 +781,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public EventStore getEventStore() {
+    public LegacyEventStore getEventStore() {
         return eventStore;
     }
 
@@ -974,7 +974,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
     }
 
-    private class RecordingEventStore implements EventStore {
+    private class RecordingEventStore implements LegacyEventStore {
 
         @Override
         public DomainEventStream readEvents(@Nonnull String identifier) {

@@ -31,7 +31,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
@@ -111,12 +111,12 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @BeforeEach
     void setUp() {
         spanFactory = new TestSpanFactory();
-        EventStore eventStore = spy(EmbeddedEventStore.builder()
-                                                      .storageEngine(new InMemoryEventStorageEngine())
-                                                      .spanFactory(DefaultEventBusSpanFactory
+        LegacyEventStore eventStore = spy(EmbeddedEventStore.builder()
+                                                            .storageEngine(new InMemoryEventStorageEngine())
+                                                            .spanFactory(DefaultEventBusSpanFactory
                                                                            .builder()
                                                                            .spanFactory(spanFactory).build())
-                                                      .build());
+                                                            .build());
         List<CorrelationDataProvider> correlationDataProviders = new ArrayList<>();
         correlationDataProviders.add(new MessageOriginProvider());
         correlationDataProviders.add(new SimpleCorrelationDataProvider(CUSTOM_CORRELATION_DATA_KEY));
@@ -441,7 +441,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
 
     @Test
     void sagaEndingDeadlineEndsTheSaga() {
-        EventStore eventStore = configuration.eventStore();
+        LegacyEventStore eventStore = configuration.eventStore();
         eventStore.publish(asEventMessage(new SagaStartingEvent(IDENTIFIER, CANCEL_BEFORE_DEADLINE)));
         eventStore.publish(asEventMessage(new ScheduleSpecificDeadline(IDENTIFIER, END_SAGA)));
 
@@ -907,7 +907,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @SuppressWarnings("unused")
     public static class MySaga {
 
-        private transient EventStore eventStore;
+        private transient LegacyEventStore eventStore;
 
         @StartSaga
         @SagaEventHandler(associationProperty = "id")
@@ -970,7 +970,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         }
 
         @Autowired
-        public void setEventStore(EventStore eventStore) {
+        public void setEventStore(LegacyEventStore eventStore) {
             this.eventStore = eventStore;
         }
     }

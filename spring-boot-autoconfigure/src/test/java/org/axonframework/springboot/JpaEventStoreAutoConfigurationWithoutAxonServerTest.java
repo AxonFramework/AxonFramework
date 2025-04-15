@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -48,7 +48,7 @@ class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
                 .run(context -> {
                     assertThat(context).hasSingleBean(JpaEventStorageEngine.class);
                     assertThat(context).getBean(JpaEventStorageEngine.class).isInstanceOf(JpaEventStorageEngine.class);
-                    assertThat(context).getBean(EventStore.class).isInstanceOf(EmbeddedEventStore.class);
+                    assertThat(context).getBean(LegacyEventStore.class).isInstanceOf(EmbeddedEventStore.class);
                 });
     }
 
@@ -60,7 +60,7 @@ class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
                 .run(context -> {
                     assertThat(context).hasBean("simpleEventBus");
                     assertThat(context).getBean(EventBus.class).isInstanceOf(SimpleEventBus.class);
-                    assertThat(context).doesNotHaveBean(EventStore.class);
+                    assertThat(context).doesNotHaveBean(LegacyEventStore.class);
                     assertThat(context).doesNotHaveBean(EventStorageEngine.class);
                 });
     }

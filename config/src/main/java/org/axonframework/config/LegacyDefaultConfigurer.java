@@ -52,7 +52,7 @@ import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
@@ -205,7 +205,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         components.put(Serializer.class, new Component<>(config, "serializer", this::defaultSerializer));
         components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
         components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
-        components.put(EventStore.class, new Component<>(config, "eventStore", LegacyConfiguration::eventStore));
+        components.put(LegacyEventStore.class, new Component<>(config, "eventStore", LegacyConfiguration::eventStore));
         components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
         components.put(QueryBus.class, new Component<>(config, "queryBus", this::defaultQueryBus));
         components.put(

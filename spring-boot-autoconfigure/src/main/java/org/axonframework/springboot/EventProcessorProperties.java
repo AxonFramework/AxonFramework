@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package org.axonframework.springboot;
 
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.HashMap;
@@ -69,7 +70,7 @@ public class EventProcessorProperties {
         /**
          * Sets the source for this processor.
          * <p>
-         * Defaults to streaming from the {@link org.axonframework.eventsourcing.eventstore.EventStore} when the
+         * Defaults to streaming from the {@link LegacyEventStore} when the
          * {@link #mode} is set to {@link Mode#TRACKING} or {@link Mode#POOLED}, and to subscribing to the
          * {@link org.axonframework.eventhandling.EventBus} when the {@link #mode} is set to {@link Mode#SUBSCRIBING}.
          */

@@ -43,7 +43,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.SequenceEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.integrationtests.utils.MockException;
@@ -1985,7 +1985,7 @@ class TrackingEventProcessorTest {
                 TrackingEventProcessorConfiguration.forParallelProcessing(2)
                                                    .andInitialSegmentsCount(1)
                                                    .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS);
-        EventStore enhancedEventStore = new EmbeddedEventStore(
+        LegacyEventStore enhancedEventStore = new EmbeddedEventStore(
                 EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine())
         ) {
             @Override

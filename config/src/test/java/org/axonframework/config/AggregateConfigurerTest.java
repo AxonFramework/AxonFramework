@@ -30,7 +30,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry;
 import org.axonframework.eventsourcing.snapshotting.RevisionSnapshotFilter;
@@ -73,7 +73,7 @@ import static org.mockito.Mockito.*;
 public class AggregateConfigurerTest {
 
     private LegacyConfiguration mockConfiguration;
-    private EventStore testEventStore;
+    private LegacyEventStore testEventStore;
     private final RevisionResolver revisionResolver = Mockito.mock(AnnotationRevisionResolver.class);
 
     private AggregateConfigurer<TestAggregate> testSubject;
@@ -82,7 +82,7 @@ public class AggregateConfigurerTest {
     public void setUp() {
         mockConfiguration = mock(LegacyConfiguration.class);
 
-        testEventStore = mock(EventStore.class);
+        testEventStore = mock(LegacyEventStore.class);
         when(mockConfiguration.eventBus()).thenReturn(testEventStore);
         when(mockConfiguration.eventStore()).thenReturn(testEventStore);
 

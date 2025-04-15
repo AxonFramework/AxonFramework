@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.TokenSchema;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
@@ -82,7 +82,7 @@ public class JdbcAutoConfigurationTest {
         testContext.run(context -> {
             assertThat(context).hasSingleBean(JdbcEventStorageEngine.class);
             assertThat(context).getBean(EventStorageEngine.class).isInstanceOf(JdbcEventStorageEngine.class);
-            assertThat(context).getBean(EventStore.class).isInstanceOf(EmbeddedEventStore.class);
+            assertThat(context).getBean(LegacyEventStore.class).isInstanceOf(EmbeddedEventStore.class);
             assertThat(context).getBean(TokenStore.class).isInstanceOf(JdbcTokenStore.class);
             assertThat(context).getBean(SagaStore.class).isInstanceOf(JdbcSagaStore.class);
             assertThat(context).getBean(TokenStore.class)
@@ -145,7 +145,7 @@ public class JdbcAutoConfigurationTest {
     void configurationOfEventBusPreventsEventStoreDefinition() {
         testContext.withUserConfiguration(ExplicitEventBusContext.class)
                    .run(context -> assertThat(context).doesNotHaveBean(EventStorageEngine.class)
-                                                      .doesNotHaveBean(EventStore.class));
+                                                      .doesNotHaveBean(LegacyEventStore.class));
     }
 
     @Test

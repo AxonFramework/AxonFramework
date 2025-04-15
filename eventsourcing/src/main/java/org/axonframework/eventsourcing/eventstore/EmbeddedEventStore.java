@@ -54,7 +54,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertPositive;
 
 /**
- * Implementation of an {@link EventStore} that stores and fetches events using an {@link EventStorageEngine}. If
+ * Implementation of an {@link LegacyEventStore} that stores and fetches events using an {@link EventStorageEngine}. If
  * supported by its storage engine the embedded event store provides event tracking and replaying capabilities.
  * <p>
  * The event store can be tracked by multiple event processors simultaneously. To prevent that each event processor

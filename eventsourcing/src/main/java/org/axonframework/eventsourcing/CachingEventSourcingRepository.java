@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.common.caching.Cache;
 import org.axonframework.common.lock.LockFactory;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.RepositoryProvider;
@@ -39,7 +39,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  */
 public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T> {
 
-    private final EventStore eventStore;
+    private final LegacyEventStore eventStore;
     private final RepositoryProvider repositoryProvider;
     private final Cache cache;
     private final SnapshotTriggerDefinition snapshotTriggerDefinition;
@@ -58,7 +58,7 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
      * will be instantiated internally based on the {@code aggregateType}. Hence, one of both is a hard requirement, and
      * will also result in an AxonConfigurationException if both are missing.
      * <p>
-     * Additionally will assert that the {@link LockFactory}, {@link EventStore}, {@link SnapshotTriggerDefinition} and
+     * Additionally will assert that the {@link LockFactory}, {@link LegacyEventStore}, {@link SnapshotTriggerDefinition} and
      * {@link Cache} are not {@code null}, resulting in an AxonConfigurationException if for any of these this is the
      * case.
      *

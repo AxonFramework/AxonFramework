@@ -43,7 +43,7 @@ import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -275,7 +275,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     public EmbeddedEventStore eventStore(EventStorageEngine storageEngine, LegacyConfiguration configuration) {
         return EmbeddedEventStore.builder()
                                  .storageEngine(storageEngine)
-                                 .messageMonitor(configuration.messageMonitor(EventStore.class, "eventStore"))
+                                 .messageMonitor(configuration.messageMonitor(LegacyEventStore.class, "eventStore"))
                                  .spanFactory(configuration.getComponent(EventBusSpanFactory.class))
                                  .build();
     }
@@ -296,7 +296,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class})
     public SimpleEventBus eventBus(LegacyConfiguration configuration) {
         return SimpleEventBus.builder()
-                             .messageMonitor(configuration.messageMonitor(EventStore.class, "eventStore"))
+                             .messageMonitor(configuration.messageMonitor(LegacyEventStore.class, "eventStore"))
                              .spanFactory(configuration.getComponent(EventBusSpanFactory.class))
                              .build();
     }
@@ -308,12 +308,12 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     @ConditionalOnMissingBean(Snapshotter.class)
-    @ConditionalOnBean(EventStore.class)
+    @ConditionalOnBean(LegacyEventStore.class)
     @Bean
     public SpringAggregateSnapshotter aggregateSnapshotter(LegacyConfiguration configuration,
                                                            HandlerDefinition handlerDefinition,
                                                            ParameterResolverFactory parameterResolverFactory,
-                                                           EventStore eventStore,
+                                                           LegacyEventStore eventStore,
                                                            TransactionManager transactionManager,
                                                            SnapshotterSpanFactory spanFactory) {
         return SpringAggregateSnapshotter.builder()

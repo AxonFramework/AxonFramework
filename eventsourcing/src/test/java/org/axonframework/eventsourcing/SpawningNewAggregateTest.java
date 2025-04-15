@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
@@ -63,7 +63,7 @@ class SpawningNewAggregateTest {
     @Mock
     private RepositoryProvider repositoryProvider;
     @Mock
-    private EventStore eventStore;
+    private LegacyEventStore eventStore;
     private AggregateModel<Aggregate1> aggregate1Model;
 
     @SuppressWarnings("unchecked")

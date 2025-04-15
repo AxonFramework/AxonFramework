@@ -23,7 +23,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.util.RegisterDefaultEntities;
@@ -45,7 +45,7 @@ import org.springframework.context.annotation.Bean;
  */
 @AutoConfiguration
 @ConditionalOnBean(EntityManagerFactory.class)
-@ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class, EventStore.class})
+@ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class, LegacyEventStore.class})
 @AutoConfigureAfter({AxonServerBusAutoConfiguration.class, HibernateJpaAutoConfiguration.class})
 @AutoConfigureBefore(AxonAutoConfiguration.class)
 @RegisterDefaultEntities(packages = {

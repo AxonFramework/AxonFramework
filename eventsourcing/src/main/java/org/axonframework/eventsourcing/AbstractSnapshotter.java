@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.ConcurrencyException;
@@ -56,7 +56,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractSnapshotter.class);
 
-    private final EventStore eventStore;
+    private final LegacyEventStore eventStore;
     private final Executor executor;
     private final TransactionManager transactionManager;
     private final Set<AggregateTypeId> snapshotsInProgress = ConcurrentHashMap.newKeySet();
@@ -65,7 +65,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
     /**
      * Instantiate a {@link AbstractSnapshotter} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link EventStore} is not {@code null}, and will throw an {@link AxonConfigurationException}
+     * Will assert that the {@link LegacyEventStore} is not {@code null}, and will throw an {@link AxonConfigurationException}
      * if it is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AbstractSnapshotter} instance
@@ -148,7 +148,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      *
      * @return the event store this snapshotter uses to load domain events and store snapshot events.
      */
-    protected EventStore getEventStore() {
+    protected LegacyEventStore getEventStore() {
         return eventStore;
     }
 
@@ -196,24 +196,24 @@ public abstract class AbstractSnapshotter implements Snapshotter {
      * The {@link Executor} is defaulted to an {@link DirectExecutor#INSTANCE}, the {@link TransactionManager} defaults
      * to a {@link NoTransactionManager}, and the {@link SnapshotterSpanFactory} defaults to a
      * {@link DefaultSnapshotterSpanFactory} with a {@link NoOpSpanFactory} delegate. The
-     * {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
+     * {@link LegacyEventStore} is a <b>hard requirement</b> and as such should be provided.
      */
     public abstract static class Builder {
 
-        private EventStore eventStore;
+        private LegacyEventStore eventStore;
         private Executor executor = DirectExecutor.INSTANCE;
         private TransactionManager transactionManager = NoTransactionManager.INSTANCE;
         private SnapshotterSpanFactory builderSpanFactory = DefaultSnapshotterSpanFactory.builder().spanFactory(NoOpSpanFactory.INSTANCE).build();
 
         /**
-         * Sets the {@link EventStore} instance which this {@link AbstractSnapshotter} implementation will store
+         * Sets the {@link LegacyEventStore} instance which this {@link AbstractSnapshotter} implementation will store
          * snapshots in.
          *
-         * @param eventStore the {@link EventStore} instance which this {@link AbstractSnapshotter} implementation will
+         * @param eventStore the {@link LegacyEventStore} instance which this {@link AbstractSnapshotter} implementation will
          *                   store snapshots in
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder eventStore(EventStore eventStore) {
+        public Builder eventStore(LegacyEventStore eventStore) {
             assertNonNull(eventStore, "EventStore may not be null");
             this.eventStore = eventStore;
             return this;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
-import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,13 +36,13 @@ import javax.annotation.Nonnull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Abstract implementation of an {@link EventStore} that uses a {@link EventStorageEngine} to store and load events.
+ * Abstract implementation of an {@link LegacyEventStore} that uses a {@link EventStorageEngine} to store and load events.
  *
  * @author Rene de Waele
  * @since 3.0
  */
 @Deprecated // TODO Remove once SimpleEventStore is fully integrated
-public abstract class AbstractEventStore extends AbstractEventBus implements EventStore {
+public abstract class AbstractEventStore extends AbstractEventBus implements LegacyEventStore {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractEventStore.class);
 

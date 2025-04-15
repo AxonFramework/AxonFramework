@@ -40,7 +40,7 @@ import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
@@ -97,7 +97,7 @@ class AxonAutoConfigurationTest {
                     assertNotNull(applicationContext.getBean(CommandBus.class));
                     assertNotNull(applicationContext.getBean(EventBus.class));
                     assertNotNull(applicationContext.getBean(QueryBus.class));
-                    assertNotNull(applicationContext.getBean(EventStore.class));
+                    assertNotNull(applicationContext.getBean(LegacyEventStore.class));
                     assertNotNull(applicationContext.getBean(CommandGateway.class));
                     assertNotNull(applicationContext.getBean(EventGateway.class));
                     assertNotNull(applicationContext.getBean(Serializer.class));
@@ -242,7 +242,7 @@ class AxonAutoConfigurationTest {
         }
 
         @Bean
-        public EventStore eventStore() {
+        public LegacyEventStore eventStore() {
             return spy(EmbeddedEventStore.builder().storageEngine(storageEngine()).build());
         }
 

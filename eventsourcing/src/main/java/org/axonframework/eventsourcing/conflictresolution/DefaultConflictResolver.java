@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.conflictresolution;
 import org.axonframework.modelling.command.ConflictingAggregateVersionException;
 import org.axonframework.modelling.command.ConflictingModificationException;
 import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,13 +28,13 @@ import java.util.function.Predicate;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Implementation of a {@link ConflictResolver} that fetches any unseen changes from the {@link EventStore}.
+ * Implementation of a {@link ConflictResolver} that fetches any unseen changes from the {@link LegacyEventStore}.
  *
  * @author Rene de Waele
  */
 public class DefaultConflictResolver implements ConflictResolver {
 
-    private final EventStore eventStore;
+    private final LegacyEventStore eventStore;
     private final String aggregateIdentifier;
     private final long expectedVersion;
     private final long actualVersion;
@@ -50,7 +50,7 @@ public class DefaultConflictResolver implements ConflictResolver {
      * @param expectedVersion     the last seen version (sequence number) of the aggregate
      * @param actualVersion       the actual version (sequence number) of the aggregate
      */
-    public DefaultConflictResolver(EventStore eventStore, String aggregateIdentifier, long expectedVersion,
+    public DefaultConflictResolver(LegacyEventStore eventStore, String aggregateIdentifier, long expectedVersion,
                                    long actualVersion) {
         this.eventStore = eventStore;
         this.aggregateIdentifier = aggregateIdentifier;

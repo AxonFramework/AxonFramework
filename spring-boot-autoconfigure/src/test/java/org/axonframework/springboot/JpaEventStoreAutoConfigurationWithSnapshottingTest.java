@@ -25,7 +25,7 @@ import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.Snapshotter;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -104,7 +104,7 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
             commandGateway.send(new TestContext.UpdateCommand(AGGREGATE_ID), ProcessingContext.NONE)
                           .getResultMessage().get();
 
-            EventStore eventStore = context.getBean(EventStore.class);
+            LegacyEventStore eventStore = context.getBean(LegacyEventStore.class);
             eventStore.readEvents(AGGREGATE_ID);
 
             assertTrue(TestContext.SNAPSHOT_FILTER_INVOKED.get());
@@ -118,7 +118,7 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
         protected static final AtomicBoolean SNAPSHOT_FILTER_INVOKED = new AtomicBoolean(false);
 
         @Bean
-        public Snapshotter snapshotter(EventStore eventStore, TransactionManager transactionManager) {
+        public Snapshotter snapshotter(LegacyEventStore eventStore, TransactionManager transactionManager) {
             return spy(AggregateSnapshotter.builder()
                                            .aggregateFactories(new GenericAggregateFactory<>(TestAggregate.class))
                                            .eventStore(eventStore)

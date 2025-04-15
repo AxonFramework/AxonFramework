@@ -23,7 +23,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.utils.RecordingAppender;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
@@ -51,14 +51,14 @@ import static org.mockito.Mockito.*;
  */
 class AbstractSnapshotterTest {
 
-    private EventStore mockEventStore;
+    private LegacyEventStore mockEventStore;
     private TestSpanFactory spanFactory;
 
     private AbstractSnapshotter testSubject;
 
     @BeforeEach
     void setUp() throws Exception {
-        mockEventStore = mock(EventStore.class);
+        mockEventStore = mock(LegacyEventStore.class);
         spanFactory = new TestSpanFactory();
         SnapshotterSpanFactory snapshotterSpanFactory = DefaultSnapshotterSpanFactory.builder()
                                                                                      .spanFactory(spanFactory)
@@ -259,7 +259,7 @@ class AbstractSnapshotterTest {
         private static class Builder extends AbstractSnapshotter.Builder {
 
             @Override
-            public Builder eventStore(EventStore eventStore) {
+            public Builder eventStore(LegacyEventStore eventStore) {
                 super.eventStore(eventStore);
                 return this;
             }

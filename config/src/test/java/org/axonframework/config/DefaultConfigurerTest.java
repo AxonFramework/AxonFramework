@@ -52,7 +52,7 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
@@ -601,7 +601,7 @@ class DefaultConfigurerTest {
                                                                   .configureAggregate(aggregateConfigurerTwo)
                                                                   .buildConfiguration();
 
-        EventStore resultEventStore = resultConfig.eventStore();
+        LegacyEventStore resultEventStore = resultConfig.eventStore();
         resultEventStore.readEvents("some-aggregate-id");
 
         assertTrue(filteredFirst.get());
