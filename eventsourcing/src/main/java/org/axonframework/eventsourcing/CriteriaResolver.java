@@ -21,14 +21,14 @@ import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import java.util.function.Function;
 
 /**
- * Functional interface describing a resolver of an {@link EventCriteria} based on an identifier of type {@code ID}.
+ * Functional interface describing a resolver of an {@link EventCriteria} based on an identifier of type {@code I}.
  *
- * @param <ID> The type of identifier to resolve to an {@link EventCriteria}.
+ * @param <I> The type of identifier to resolve to an {@link EventCriteria}.
  * @author Steven van Beelen
  * @since 5.0.0
  */
 @FunctionalInterface
-public interface CriteriaResolver<ID> extends Function<ID, EventCriteria> {
+public interface CriteriaResolver<I> extends Function<I, EventCriteria> {
 
     /**
      * Resolves the given {@code identifier} to an {@link EventCriteria}.
@@ -36,7 +36,7 @@ public interface CriteriaResolver<ID> extends Function<ID, EventCriteria> {
      * @param identifier The instance to resolve to an {@link EventCriteria}.
      * @return The given {@code identifier} resolved to an {@link EventCriteria}.
      */
-    default EventCriteria resolve(ID identifier) {
+    default EventCriteria resolve(I identifier) {
         return apply(identifier);
     }
 }
