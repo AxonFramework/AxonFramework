@@ -18,7 +18,7 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
@@ -42,7 +42,7 @@ class ConfigurationParameterResolverFactoryTest {
 
     private Method method;
     private Parameter[] parameters;
-    private NewConfiguration configuration;
+    private Configuration configuration;
     private CommandBus commandBus;
 
     private ConfigurationParameterResolverFactory testSubject;
@@ -51,7 +51,7 @@ class ConfigurationParameterResolverFactoryTest {
     void setUp() throws Exception {
         method = getClass().getMethod("donorMethod", String.class, CommandBus.class);
         parameters = method.getParameters();
-        configuration = mock(NewConfiguration.class);
+        configuration = mock(Configuration.class);
         commandBus = new SimpleCommandBus();
         when(configuration.getOptionalComponent(CommandBus.class)).thenReturn(Optional.of(commandBus));
 

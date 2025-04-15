@@ -57,14 +57,14 @@ class DecoratedComponentTest extends ComponentTestSuite<DecoratedComponent<Strin
     @Override
     void registerStartHandler(DecoratedComponent<String, String> testSubject,
                               int phase,
-                              BiConsumer<NewConfiguration, String> handler) {
+                              BiConsumer<Configuration, String> handler) {
         testSubject.onStart(phase, handler);
     }
 
     @Override
     void registerShutdownHandler(DecoratedComponent<String, String> testSubject,
                                  int phase,
-                                 BiConsumer<NewConfiguration, String> handler) {
+                                 BiConsumer<Configuration, String> handler) {
         testSubject.onShutdown(phase, handler);
     }
 

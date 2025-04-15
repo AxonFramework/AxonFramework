@@ -45,14 +45,14 @@ class LazyInitializedComponentDefinitionTest
     @Override
     void registerStartHandler(LazyInitializedComponentDefinition<String, String> testSubject,
                               int phase,
-                              BiConsumer<NewConfiguration, String> handler) {
+                              BiConsumer<Configuration, String> handler) {
         testSubject.onStart(phase, handler);
     }
 
     @Override
     void registerShutdownHandler(LazyInitializedComponentDefinition<String, String> testSubject,
                                  int phase,
-                                 BiConsumer<NewConfiguration, String> handler) {
+                                 BiConsumer<Configuration, String> handler) {
         testSubject.onShutdown(phase, handler);
     }
 

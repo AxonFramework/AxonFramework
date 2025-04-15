@@ -19,6 +19,7 @@ package org.axonframework.config;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.common.AxonConfigurationException;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
@@ -59,7 +60,7 @@ import javax.annotation.Nonnull;
  *
  * @author Allard Buijze
  * @since 3.0
- * @deprecated In favor of {@link org.axonframework.configuration.NewConfiguration}.
+ * @deprecated In favor of {@link Configuration}.
  */
 @Deprecated
 public interface LegacyConfiguration extends LifecycleOperations {

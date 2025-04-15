@@ -17,7 +17,7 @@
 package org.axonframework.modelling.annotation;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -28,7 +28,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * A {@link ParameterResolver} implementation that loads an entity from the {@link StateManager} of the given
- * {@link NewConfiguration}. The entity is loaded based on the id resolved from the message using the given
+ * {@link Configuration}. The entity is loaded based on the id resolved from the message using the given
  * {@link EntityIdResolver}.
  * <p>
  * Can either load the {@link org.axonframework.modelling.repository.ManagedEntity} or just the entity itself.
@@ -38,7 +38,7 @@ import static java.util.Objects.requireNonNull;
  */
 class InjectEntityParameterResolver implements ParameterResolver<Object> {
 
-    private final NewConfiguration configuration;
+    private final Configuration configuration;
     private final Class<?> type;
     private final EntityIdResolver<?> identifierResolver;
     private final boolean managedEntity;
@@ -47,18 +47,18 @@ class InjectEntityParameterResolver implements ParameterResolver<Object> {
      * Instantiate a {@link ParameterResolver} that loads an entity of {@code type} using the given
      * {@code stateManager}, resolving the needed id using the {@code identifierResolver}.
      * <p>
-     * This constructor depends on the {@link NewConfiguration} instead of the {@link StateManager} to prevent
+     * This constructor depends on the {@link Configuration} instead of the {@link StateManager} to prevent
      * circular dependencies during creation of message handlers. For example, if the repository uses an annotation-based
      * event state applier, it would construct methods, which would then require the {@link StateManager} to be
      * created during the construction of the parameter resolvers. This would lead to a circular dependency.
      *
-     * @param configuration      The {@link NewConfiguration} from which a {@link StateManager} can be retrieved to load
+     * @param configuration      The {@link Configuration} from which a {@link StateManager} can be retrieved to load
      *                           the entity.
      * @param type               The type of the entity to load.
      * @param identifierResolver The {@link EntityIdResolver} to resolve the id of the entity.
      */
     public InjectEntityParameterResolver(
-            @Nonnull NewConfiguration configuration,
+            @Nonnull Configuration configuration,
             @Nonnull Class<?> type,
             @Nonnull EntityIdResolver<?> identifierResolver,
             boolean managedEntity

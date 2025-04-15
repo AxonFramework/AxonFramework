@@ -95,21 +95,21 @@ public abstract class AbstractComponent<C, A extends C>
     }
 
     @Override
-    public C resolve(@Nonnull NewConfiguration configuration) {
+    public C resolve(@Nonnull Configuration configuration) {
         return doResolve(requireNonNull(configuration, "The configuration must not be null."));
     }
 
     /**
-     * Method invoked by {@link #resolve(NewConfiguration)}, allowing for customization per {@code AbstractComponent}
+     * Method invoked by {@link #resolve(Configuration)}, allowing for customization per {@code AbstractComponent}
      * implementation.
      *
      * @param configuration The configuration that declared this component.
      * @return The resolved instance defined in this component.
      */
-    abstract A doResolve(@Nonnull NewConfiguration configuration);
+    abstract A doResolve(@Nonnull Configuration configuration);
 
     @Override
-    public void initLifecycle(@Nonnull NewConfiguration configuration,
+    public void initLifecycle(@Nonnull Configuration configuration,
                               @Nonnull LifecycleRegistry lifecycleRegistry) {
         requireNonNull(configuration, "The configuration must not be null.");
         requireNonNull(lifecycleRegistry, "The lifecycle registry must not be null.");

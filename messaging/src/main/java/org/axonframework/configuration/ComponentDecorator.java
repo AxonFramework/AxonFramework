@@ -47,13 +47,13 @@ public interface ComponentDecorator<C, D> {
      * The latter form is suitable when customizing the configuration instance of an infrastructure component.
      *
      * @param config   The configuration of this Axon application. Provided to support retrieval of other
-     *                 {@link NewConfiguration#getComponent(Class) components} for construction or mutation of the given
+     *                 {@link Configuration#getComponent(Class) components} for construction or mutation of the given
      *                 {@code delegate}.
      * @param name     The name of the component to be decorated.
      * @param delegate The delegate of type {@code C} to be decorated.
      * @return A decorated component of type {@code C}, typically based on the given {@code delegate}.
      */
-    D decorate(@Nonnull NewConfiguration config,
+    D decorate(@Nonnull Configuration config,
                @Nonnull String name,
                @Nonnull C delegate);
 }

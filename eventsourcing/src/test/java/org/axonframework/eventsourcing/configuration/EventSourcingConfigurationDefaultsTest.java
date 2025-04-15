@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.configuration;
 
 import org.axonframework.configuration.ApplicationConfigurer;
 import org.axonframework.configuration.MessagingConfigurer;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
@@ -59,7 +59,7 @@ class EventSourcingConfigurationDefaultsTest {
     void enhanceSetsExpectedDefaultsInAbsenceOfTheseComponents() {
         ApplicationConfigurer configurer = MessagingConfigurer.create();
         configurer.componentRegistry(cr -> cr.registerEnhancer(testSubject));
-        NewConfiguration resultConfig = configurer.build();
+        Configuration resultConfig = configurer.build();
 
         assertInstanceOf(AnnotationBasedTagResolver.class, resultConfig.getComponent(TagResolver.class));
         assertInstanceOf(AsyncInMemoryEventStorageEngine.class,

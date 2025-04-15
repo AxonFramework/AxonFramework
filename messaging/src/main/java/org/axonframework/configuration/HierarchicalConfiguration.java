@@ -35,10 +35,10 @@ import static java.util.Objects.requireNonNull;
 public class HierarchicalConfiguration implements LifecycleRegistry {
 
     private final LifecycleRegistry parentLifecycleRegistry;
-    private final NewConfiguration childConfiguration;
+    private final Configuration childConfiguration;
 
     /**
-     * Builds a {@link NewConfiguration} based on the passed {@code childConfigurationBuilder}. This builder will
+     * Builds a {@link Configuration} based on the passed {@code childConfigurationBuilder}. This builder will
      * receive a {@link LifecycleRegistry} that is a child of the passed {@code parentLifecycleRegistry}.  The builder
      * is created with a new {@link LifecycleRegistry} that is scoped to the child configuration. This will ensure child
      * configuration lifecycle handlers are called with the child configuration, not with the parent, which would leave
@@ -50,22 +50,22 @@ public class HierarchicalConfiguration implements LifecycleRegistry {
      *                                  {@code parentLifecycleRegistry}.
      * @return The child configuration that was built using the passed {@code childConfigurationBuilder}.
      */
-    public static NewConfiguration build(
+    public static Configuration build(
             LifecycleRegistry parentLifecycleRegistry,
-            Function<LifecycleRegistry, NewConfiguration> childConfigurationBuilder
+            Function<LifecycleRegistry, Configuration> childConfigurationBuilder
     ) {
         HierarchicalConfiguration hierarchicalConfiguration = new HierarchicalConfiguration(parentLifecycleRegistry,
                                                                                             childConfigurationBuilder);
         return hierarchicalConfiguration.getConfiguration();
     }
 
-    private NewConfiguration getConfiguration() {
+    private Configuration getConfiguration() {
         return childConfiguration;
     }
 
     private HierarchicalConfiguration(
             @Nonnull LifecycleRegistry parentLifecycleRegistry,
-            @Nonnull Function<LifecycleRegistry, NewConfiguration> childConfigurationBuilder) {
+            @Nonnull Function<LifecycleRegistry, Configuration> childConfigurationBuilder) {
         this.parentLifecycleRegistry = requireNonNull(parentLifecycleRegistry,
                                                       "parentLifecycleRegistry may not be null");
         this.childConfiguration = childConfigurationBuilder.apply(this);

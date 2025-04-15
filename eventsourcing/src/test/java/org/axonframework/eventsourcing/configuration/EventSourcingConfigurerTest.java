@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.configuration;
 
 import org.axonframework.configuration.ApplicationConfigurerTestSuite;
 import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
@@ -53,7 +53,7 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
 
     @Test
     void defaultComponents() {
-        NewConfiguration result = testSubject.build();
+        Configuration result = testSubject.build();
 
         Optional<TagResolver> tagResolver = result.getOptionalComponent(TagResolver.class);
         assertTrue(tagResolver.isPresent());
@@ -93,7 +93,7 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
                                                      (command, stateManager, context) -> MessageStream.empty().cast()
                                              ));
 
-        List<NewConfiguration> moduleConfigurations =
+        List<Configuration> moduleConfigurations =
                 testSubject.registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
                            .build()
                            .getModuleConfigurations();
@@ -106,8 +106,8 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
     void registerTagResolverOverridesDefault() {
         TagResolver expected = PayloadBasedTagResolver.forPayloadType(String.class);
 
-        NewConfiguration result = testSubject.registerTagResolver(c -> expected)
-                                             .build();
+        Configuration result = testSubject.registerTagResolver(c -> expected)
+                                          .build();
 
         assertEquals(expected, result.getComponent(TagResolver.class));
     }
@@ -116,8 +116,8 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
     void registerEventStorageEngineOverridesDefault() {
         AsyncEventStorageEngine expected = new AsyncInMemoryEventStorageEngine();
 
-        NewConfiguration result = testSubject.registerEventStorageEngine(c -> expected)
-                                             .build();
+        Configuration result = testSubject.registerEventStorageEngine(c -> expected)
+                                          .build();
 
         assertEquals(expected, result.getComponent(AsyncEventStorageEngine.class));
     }
@@ -126,8 +126,8 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
     void registerEventStoreOverridesDefault() {
         AsyncEventStore expected = new SimpleEventStore(null, null);
 
-        NewConfiguration result = testSubject.registerEventStore(c -> expected)
-                                             .build();
+        Configuration result = testSubject.registerEventStore(c -> expected)
+                                          .build();
 
         assertEquals(expected, result.getComponent(AsyncEventStore.class));
     }
@@ -138,8 +138,8 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
 
         };
 
-        NewConfiguration result = testSubject.registerSnapshotter(c -> expected)
-                                             .build();
+        Configuration result = testSubject.registerSnapshotter(c -> expected)
+                                          .build();
 
         assertEquals(expected, result.getComponent(Snapshotter.class));
     }

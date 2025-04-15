@@ -19,10 +19,9 @@ package org.axonframework.test.fixture;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
@@ -35,14 +34,14 @@ import java.util.function.Function;
 
 class AxonTestGiven implements AxonTestPhase.Given {
 
-    private final NewConfiguration configuration;
+    private final Configuration configuration;
     private final AxonTestFixture.Customization customization;
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
     private final MessageTypeResolver messageTypeResolver;
 
     AxonTestGiven(
-            NewConfiguration configuration,
+            Configuration configuration,
             AxonTestFixture.Customization customization,
             RecordingCommandBus commandBus,
             RecordingEventSink eventSink,

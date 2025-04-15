@@ -51,7 +51,7 @@ class LazyInitializedComponentDefinition<C, A extends C> extends AbstractCompone
     }
 
     @Override
-    public A doResolve(@Nonnull NewConfiguration configuration) {
+    public A doResolve(@Nonnull Configuration configuration) {
         A resolvedInstance = instanceReference.get();
         if (resolvedInstance != null) {
             return resolvedInstance;

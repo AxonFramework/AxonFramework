@@ -69,7 +69,7 @@ class MessagingConfigurationDefaultsTest {
     void enhanceSetsExpectedDefaultsInAbsenceOfTheseComponents() {
         ApplicationConfigurer configurer = new DefaultAxonApplication();
         configurer.componentRegistry(cr -> testSubject.enhance(cr));
-        NewConfiguration resultConfig = configurer.build();
+        Configuration resultConfig = configurer.build();
 
         assertInstanceOf(ClassBasedMessageTypeResolver.class, resultConfig.getComponent(MessageTypeResolver.class));
         assertInstanceOf(DefaultCommandGateway.class, resultConfig.getComponent(CommandGateway.class));

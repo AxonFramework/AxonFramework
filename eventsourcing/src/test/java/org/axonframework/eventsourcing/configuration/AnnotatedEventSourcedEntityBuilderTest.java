@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.configuration;
 
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
@@ -43,7 +43,7 @@ import static org.mockito.Mockito.*;
  */
 class AnnotatedEventSourcedEntityBuilderTest {
 
-    private NewConfiguration parentConfiguration;
+    private Configuration parentConfiguration;
 
     @BeforeEach
     void setUp() {

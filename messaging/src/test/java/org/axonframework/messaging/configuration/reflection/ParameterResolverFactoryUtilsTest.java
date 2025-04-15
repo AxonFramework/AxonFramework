@@ -18,7 +18,7 @@ package org.axonframework.messaging.configuration.reflection;
 
 import org.axonframework.configuration.DefaultComponentRegistry;
 import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.junit.jupiter.api.*;
@@ -38,7 +38,7 @@ class ParameterResolverFactoryUtilsTest {
                 (c) -> factory
         );
 
-        NewConfiguration build = componentRegistry.build(Mockito.mock(LifecycleRegistry.class));
+        Configuration build = componentRegistry.build(Mockito.mock(LifecycleRegistry.class));
 
         ParameterResolverFactory actualFactory = build.getComponent(ParameterResolverFactory.class);
         assertSame(factory, actualFactory);
@@ -61,7 +61,7 @@ class ParameterResolverFactoryUtilsTest {
 
         );
 
-        NewConfiguration build = componentRegistry.build(Mockito.mock(LifecycleRegistry.class));
+        Configuration build = componentRegistry.build(Mockito.mock(LifecycleRegistry.class));
 
         ParameterResolverFactory actualFactory = build.getComponent(ParameterResolverFactory.class);
         assertInstanceOf(MultiParameterResolverFactory.class, actualFactory);

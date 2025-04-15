@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.testsuite.student;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.AxonConfiguration;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.AnnotationBasedEntityEvolver;
 import org.axonframework.eventsourcing.CriteriaResolver;
@@ -112,7 +112,7 @@ public abstract class AbstractStudentTestSuite {
         commandGateway = configuration.getComponent(CommandGateway.class);
         eventStore = configuration.getComponent(AsyncEventStore.class);
 
-        NewConfiguration moduleConfig = configuration.getModuleConfigurations().getFirst();
+        Configuration moduleConfig = configuration.getModuleConfigurations().getFirst();
         //noinspection unchecked
         studentRepository = moduleConfig.getComponent(AsyncRepository.class, studentEntity.entityName());
         //noinspection unchecked
@@ -133,7 +133,7 @@ public abstract class AbstractStudentTestSuite {
      * Returns the {@link EntityEvolver} for the {@link Course} model. Defaults to manually calling the event sourcing
      * handlers on the model.
      */
-    protected EntityEvolver<Course> courseEvolver(NewConfiguration config) {
+    protected EntityEvolver<Course> courseEvolver(Configuration config) {
         return (course, event, context) -> {
             if (event.getPayload() instanceof StudentEnrolledEvent e) {
                 course.handle(e);
@@ -146,7 +146,7 @@ public abstract class AbstractStudentTestSuite {
      * Returns the {@link CriteriaResolver} for the {@link Course} model. Defaults to a criteria that matches any event
      * with the tag "Course" and the given model id.
      */
-    protected CriteriaResolver<String> courseCriteriaResolver(NewConfiguration config) {
+    protected CriteriaResolver<String> courseCriteriaResolver(Configuration config) {
         return courseId -> EventCriteria.havingTags(new Tag("Course", courseId));
     }
 
@@ -154,7 +154,7 @@ public abstract class AbstractStudentTestSuite {
      * Returns the {@link CriteriaResolver} for the {@link Student} model. Defaults to a criteria that matches any event
      * with the tag "Student" and the given model id.
      */
-    protected CriteriaResolver<String> studentCriteriaResolver(NewConfiguration config) {
+    protected CriteriaResolver<String> studentCriteriaResolver(Configuration config) {
         return studentId -> EventCriteria.havingTags(new Tag("Student", studentId));
     }
 
@@ -162,7 +162,7 @@ public abstract class AbstractStudentTestSuite {
      * Returns the {@link EntityEvolver} for the {@link Student} model. Defaults to using the
      * {@link AnnotationBasedEntityEvolver} to use the annotations placed.
      */
-    protected EntityEvolver<Student> studentEvolver(NewConfiguration config) {
+    protected EntityEvolver<Student> studentEvolver(Configuration config) {
         return new AnnotationBasedEntityEvolver<>(Student.class);
     }
 

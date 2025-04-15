@@ -23,7 +23,7 @@ import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.Assert.nonEmpty;
 
 /**
- * Describes a component defined in a {@link NewConfiguration}, that may depend on other component for its
+ * Describes a component defined in a {@link Configuration}, that may depend on other component for its
  * initialization or during it's startup/shutdown operations.
  * <p>
  * Note: This interface is not expected to be used outside of Axon Framework!
@@ -52,12 +52,12 @@ public interface Component<C> extends DescribableComponent {
      * @param configuration The configuration that declared this component.
      * @return The resolved instance defined in this component.
      */
-    C resolve(@Nonnull NewConfiguration configuration);
+    C resolve(@Nonnull Configuration configuration);
 
     /**
-     * Indicates whether the component has been {@link #resolve(NewConfiguration) resolved}.
+     * Indicates whether the component has been {@link #resolve(Configuration) resolved}.
      * <p>
-     * When true, any subsequent call to {@link #resolve(NewConfiguration)} will return that same instance.
+     * When true, any subsequent call to {@link #resolve(Configuration)} will return that same instance.
      *
      * @return {@code true} if the component has been instantiated, otherwise {@code false}.
      */
@@ -73,11 +73,11 @@ public interface Component<C> extends DescribableComponent {
      *                          during the component's lifecycle.
      * @param lifecycleRegistry The registry in which to register the lifecycle handlers.
      */
-    void initLifecycle(@Nonnull NewConfiguration configuration,
+    void initLifecycle(@Nonnull Configuration configuration,
                        @Nonnull LifecycleRegistry lifecycleRegistry);
 
     /**
-     * Indicates whether the {@link #initLifecycle(NewConfiguration, LifecycleRegistry)} method has already been invoked
+     * Indicates whether the {@link #initLifecycle(Configuration, LifecycleRegistry)} method has already been invoked
      * for this component.
      *
      * @return {@code true} if the component's lifecycle has been initialized, otherwise {@code false}.

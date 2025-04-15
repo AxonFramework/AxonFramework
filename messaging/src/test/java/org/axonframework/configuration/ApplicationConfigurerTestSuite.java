@@ -86,7 +86,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             TestComponent testComponent = TEST_COMPONENT;
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> testComponent));
 
-            NewConfiguration config = testSubject.build();
+            Configuration config = testSubject.build();
 
             assertEquals(testComponent, config.getComponent(TestComponent.class));
         }
@@ -96,7 +96,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             TestComponent testComponent = TEST_COMPONENT;
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> testComponent));
 
-            NewConfiguration config = testSubject.build();
+            Configuration config = testSubject.build();
 
             Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class);
 
@@ -124,7 +124,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                     testNameTwo,
                     c -> testComponentTwo));
 
-            NewConfiguration config = testSubject.build();
+            Configuration config = testSubject.build();
 
             assertEquals(testComponentOne, config.getComponent(TestComponent.class, testNameOne));
             assertEquals(testComponentTwo, config.getComponent(TestComponent.class, testNameTwo));
@@ -138,7 +138,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                 return TEST_COMPONENT;
             }));
 
-            NewConfiguration config = testSubject.build();
+            Configuration config = testSubject.build();
 
             assertEquals(0, invocationCounter.get());
             config.getComponent(TestComponent.class, "name");
@@ -154,7 +154,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> testComponent)
                                                   .registerComponent(TestComponent.class, c -> expectedComponent));
 
-            NewConfiguration config = testSubject.build();
+            Configuration config = testSubject.build();
 
             assertNotEquals(testComponent, config.getComponent(TestComponent.class));
             assertEquals(expectedComponent, config.getComponent(TestComponent.class));
@@ -169,7 +169,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                                      "name",
                                                                      c -> expectedComponent));
 
-            NewConfiguration config = testSubject.build();
+            Configuration config = testSubject.build();
 
             assertNotEquals(testComponent, config.getComponent(TestComponent.class, "name"));
             assertEquals(expectedComponent, config.getComponent(TestComponent.class, "name"));
@@ -184,7 +184,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                                      "id",
                                                                      c -> registeredComponent));
 
-            NewConfiguration config = testSubject.build();
+            Configuration config = testSubject.build();
 
             TestComponent result = config.getComponent(TestComponent.class, "id", () -> {
                 invoked.set(true);
@@ -460,7 +460,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                     TestComponent.class, c -> TEST_COMPONENT
             )));
 
-            NewConfiguration config = testSubject.build();
+            Configuration config = testSubject.build();
 
             assertEquals(TEST_COMPONENT, config.getComponent(TestComponent.class));
         }
@@ -474,7 +474,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             testSubject.componentRegistry(cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
                                                   .registerEnhancer(enhancer));
 
-            NewConfiguration config = testSubject.build();
+            Configuration config = testSubject.build();
 
             assertEquals(expected, config.getComponent(TestComponent.class));
         }
@@ -491,7 +491,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                             ))
             );
 
-            NewConfiguration config = testSubject.build();
+            Configuration config = testSubject.build();
 
             assertNotEquals(TEST_COMPONENT, config.getComponent(TestComponent.class));
             assertEquals(expected, config.getComponent(TestComponent.class));
@@ -510,7 +510,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                       }
                                                   }));
 
-            NewConfiguration config = testSubject.build();
+            Configuration config = testSubject.build();
 
             assertEquals(TEST_COMPONENT, config.getComponent(TestComponent.class));
             assertEquals(expected, config.getComponent(TestComponent.class, "conditional"));
@@ -533,7 +533,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                                                   .registerModule(new TestModule("two")));
 
             AxonConfiguration configuration = testSubject.build();
-            List<NewConfiguration> result = configuration.getModuleConfigurations();
+            List<Configuration> result = configuration.getModuleConfigurations();
 
             assertEquals(2, result.size());
 
@@ -581,21 +581,21 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             );
 
             // Root configurer outcome only has own components.
-            NewConfiguration rootConfig = testSubject.build();
+            Configuration rootConfig = testSubject.build();
             assertEquals(rootComponent, rootConfig.getComponent(TestComponent.class, "root"));
             assertFalse(rootConfig.getOptionalComponent(TestComponent.class, "one").isPresent());
             assertFalse(rootConfig.getOptionalComponent(TestComponent.class, "two").isPresent());
             // Level one module outcome has own components and access to parent.
-            List<NewConfiguration> levelOneConfigurations = rootConfig.getModuleConfigurations();
+            List<Configuration> levelOneConfigurations = rootConfig.getModuleConfigurations();
             assertEquals(1, levelOneConfigurations.size());
-            NewConfiguration levelOneConfig = levelOneConfigurations.getFirst();
+            Configuration levelOneConfig = levelOneConfigurations.getFirst();
             assertTrue(levelOneConfig.getOptionalComponent(TestComponent.class, "root").isPresent());
             assertEquals(levelOneModuleComponent, levelOneConfig.getComponent(TestComponent.class, "one"));
             assertFalse(levelOneConfig.getOptionalComponent(TestComponent.class, "two").isPresent());
             // Level two module outcome has own components and access to parent, and parent's parent.
-            List<NewConfiguration> levelTwoConfigurations = levelOneConfig.getModuleConfigurations();
+            List<Configuration> levelTwoConfigurations = levelOneConfig.getModuleConfigurations();
             assertEquals(1, levelTwoConfigurations.size());
-            NewConfiguration levelTwoConfig = levelTwoConfigurations.getFirst();
+            Configuration levelTwoConfig = levelTwoConfigurations.getFirst();
             assertTrue(levelTwoConfig.getOptionalComponent(TestComponent.class, "root").isPresent());
             assertTrue(levelTwoConfig.getOptionalComponent(TestComponent.class, "one").isPresent());
             assertEquals(levelTwoModuleComponent, levelTwoConfig.getComponent(TestComponent.class, "two"));
@@ -618,19 +618,19 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             );
 
             // Root configurer outcome only has own components.
-            NewConfiguration rootConfig = testSubject.build();
+            Configuration rootConfig = testSubject.build();
             assertEquals(rootComponent, rootConfig.getComponent(TestComponent.class, "root"));
             assertFalse(rootConfig.getOptionalComponent(TestComponent.class, "one").isPresent());
             assertFalse(rootConfig.getOptionalComponent(TestComponent.class, "two").isPresent());
-            List<NewConfiguration> levelOneConfigurations = rootConfig.getModuleConfigurations();
+            List<Configuration> levelOneConfigurations = rootConfig.getModuleConfigurations();
             assertEquals(2, levelOneConfigurations.size());
             // Left module can access own components and parent, not its siblings.
-            NewConfiguration leftConfig = levelOneConfigurations.getFirst();
+            Configuration leftConfig = levelOneConfigurations.getFirst();
             assertTrue(leftConfig.getOptionalComponent(TestComponent.class, "root").isPresent());
             assertEquals(leftModuleComponent, leftConfig.getComponent(TestComponent.class, "left"));
             assertFalse(leftConfig.getOptionalComponent(TestComponent.class, "right").isPresent());
             // Right module can access own components and parent, not its siblings,
-            NewConfiguration rightConfig = levelOneConfigurations.get(1);
+            Configuration rightConfig = levelOneConfigurations.get(1);
             assertTrue(rightConfig.getOptionalComponent(TestComponent.class, "root").isPresent());
             assertEquals(rightModuleComponent, rightConfig.getComponent(TestComponent.class, "right"));
             assertFalse(rightConfig.getOptionalComponent(TestComponent.class, "left").isPresent());
@@ -683,21 +683,21 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             );
 
             // Check decoration on root level.
-            NewConfiguration root = testSubject.build();
+            Configuration root = testSubject.build();
             assertEquals(expectedRootComponentState, root.getComponent(TestComponent.class).state());
             assertNotEquals(expectedLevelOneComponentState, root.getComponent(TestComponent.class).state());
             assertNotEquals(expectedLevelTwoComponentState, root.getComponent(TestComponent.class).state());
             // Check decoration on level one.
-            List<NewConfiguration> rootModuleConfigs = root.getModuleConfigurations();
+            List<Configuration> rootModuleConfigs = root.getModuleConfigurations();
             assertEquals(1, rootModuleConfigs.size());
-            NewConfiguration levelOne = rootModuleConfigs.getFirst();
+            Configuration levelOne = rootModuleConfigs.getFirst();
             assertNotEquals(expectedRootComponentState, levelOne.getComponent(TestComponent.class).state());
             assertEquals(expectedLevelOneComponentState, levelOne.getComponent(TestComponent.class).state());
             assertNotEquals(expectedLevelTwoComponentState, levelOne.getComponent(TestComponent.class).state());
             // Check decoration on level two.
-            List<NewConfiguration> levelOneConfigs = levelOne.getModuleConfigurations();
+            List<Configuration> levelOneConfigs = levelOne.getModuleConfigurations();
             assertEquals(1, levelOneConfigs.size());
-            NewConfiguration levelTwo = levelOneConfigs.getFirst();
+            Configuration levelTwo = levelOneConfigs.getFirst();
             assertNotEquals(expectedRootComponentState, levelTwo.getComponent(TestComponent.class).state());
             assertNotEquals(expectedLevelOneComponentState, levelTwo.getComponent(TestComponent.class).state());
             assertEquals(expectedLevelTwoComponentState, levelTwo.getComponent(TestComponent.class).state());
@@ -714,7 +714,7 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
                     )
             );
 
-            NewConfiguration rootConfig = testSubject.build();
+            Configuration rootConfig = testSubject.build();
 
             TestComponent result = rootConfig.getComponent(TestComponent.class, "id", () -> {
                 invoked.set(true);
@@ -726,9 +726,9 @@ public abstract class ApplicationConfigurerTestSuite<C extends ApplicationConfig
             assertNotEquals(registeredComponent, result);
 
             invoked.set(false);
-            List<NewConfiguration> levelOneConfigs = rootConfig.getModuleConfigurations();
+            List<Configuration> levelOneConfigs = rootConfig.getModuleConfigurations();
             assertEquals(1, levelOneConfigs.size());
-            NewConfiguration levelOneConfig = levelOneConfigs.getFirst();
+            Configuration levelOneConfig = levelOneConfigs.getFirst();
             result = levelOneConfig.getComponent(TestComponent.class, "id", () -> {
                 invoked.set(true);
                 return defaultComponent;

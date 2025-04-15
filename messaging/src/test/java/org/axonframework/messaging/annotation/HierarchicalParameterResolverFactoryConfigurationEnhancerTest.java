@@ -18,7 +18,7 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.configuration.DefaultComponentRegistry;
 import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.reflection.HierarchicalParameterResolverFactoryConfigurationEnhancer;
 import org.junit.jupiter.api.*;
 
@@ -48,8 +48,8 @@ class HierarchicalParameterResolverFactoryConfigurationEnhancerTest {
         child.registerComponent(ParameterResolverFactory.class, c -> childParameterResolverFactory);
 
         // Build both in a nested way - this will create a HierarchicalParameterResolverFactory
-        NewConfiguration parentConfiguration = parent.build(mock(LifecycleRegistry.class));
-        NewConfiguration childConfiguration = child.buildNested(parentConfiguration, mock(LifecycleRegistry.class));
+        Configuration parentConfiguration = parent.build(mock(LifecycleRegistry.class));
+        Configuration childConfiguration = child.buildNested(parentConfiguration, mock(LifecycleRegistry.class));
 
         // So, we can assert the right factories are created
         ParameterResolverFactory parentFactory = parentConfiguration.getComponent(ParameterResolverFactory.class);

@@ -45,14 +45,14 @@ class InstantiatedComponentDefinitionTest extends ComponentTestSuite<Instantiate
     @Override
     void registerStartHandler(InstantiatedComponentDefinition<String> testSubject,
                               int phase,
-                              BiConsumer<NewConfiguration, String> handler) {
+                              BiConsumer<Configuration, String> handler) {
         testSubject.onStart(phase, handler);
     }
 
     @Override
     void registerShutdownHandler(InstantiatedComponentDefinition<String> testSubject,
                                  int phase,
-                                 BiConsumer<NewConfiguration, String> handler) {
+                                 BiConsumer<Configuration, String> handler) {
         testSubject.onShutdown(phase, handler);
     }
 
