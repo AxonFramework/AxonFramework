@@ -1,7 +1,7 @@
 :navtitle: Sample Domain & Event Modeling
 :reftext: Sample Domain & Event Modeling
 
-== The sample domain
+= The sample domain
 
 In this tutorial, we'll be working with a University domain.
 Our initial examples will focus on the Faculty Bounded Context, where we'll implement features related to course management and student registrations.

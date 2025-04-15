@@ -1,5 +1,7 @@
-:navtitle: Feature: Subscribe Student
+:navtitle: Feature: Subscribe Student To Course
 :reftext: Implementing the subscribe student feature
+
+= Subscribe Student Feature
 
 One of the major benefits of Axon Framework 5's Vertical Slice Architecture is the ability to implement features independently.
 Now we'll implement the `SubscribeStudent` feature without needing to implement every feature in between.
