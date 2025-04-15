@@ -40,7 +40,7 @@ class CreateCourseCommandHandler implements StatefulCommandHandler {
                 .thenApply(entity -> decide(payload, entity))
                 .thenAccept(eventAppender::append)
                 .thenApply(r -> new GenericCommandResultMessage<>(messageTypeResolver.resolve(CommandResult.class),
-                                                                  new CommandResult(payload.courseId().raw())));
+                                                                  new CommandResult(payload.courseId().toString())));
         return MessageStream.fromFuture(decideFuture);
     }
 

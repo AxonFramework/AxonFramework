@@ -19,7 +19,7 @@ public class CreateCoursePlainConfiguration {
                 .entity(CourseId.class, CreateCourseCommandHandler.State.class)
                 .entityFactory(c -> (type, id) -> CreateCourseCommandHandler.State.initial())
                 .criteriaResolver(c -> id -> EventCriteria
-                        .havingTags(Tag.of(FacultyTags.COURSE_ID, id.raw()))
+                        .havingTags(Tag.of(FacultyTags.COURSE_ID, id.toString()))
                         .andBeingOneOfTypes(CourseCreated.class.getName())
                 ).eventSourcingHandler(CourseCreated.class, CreateCourseCommandHandler.State::evolve);
 

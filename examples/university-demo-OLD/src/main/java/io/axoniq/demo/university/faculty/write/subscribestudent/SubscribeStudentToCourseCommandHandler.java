@@ -142,8 +142,8 @@ class SubscribeStudentToCourseCommandHandler {
 
         @EventCriteriaBuilder
         private static EventCriteria resolveCriteria(SubscriptionId id) {
-            var courseId = id.courseId().raw();
-            var studentId = id.studentId().raw();
+            var courseId = id.courseId().toString();
+            var studentId = id.studentId().toString();
             return EventCriteria.either(
                     EventCriteria
                             .havingTags(Tag.of(FacultyTags.COURSE_ID, courseId))

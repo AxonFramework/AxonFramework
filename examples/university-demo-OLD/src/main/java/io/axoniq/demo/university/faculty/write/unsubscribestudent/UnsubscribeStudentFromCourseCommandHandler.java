@@ -55,8 +55,8 @@ class UnsubscribeStudentFromCourseCommandHandler {
 
         @EventCriteriaBuilder
         private static EventCriteria resolveCriteria(SubscriptionId id) {
-            var courseId = id.courseId().raw();
-            var studentId = id.studentId().raw();
+            var courseId = id.courseId().toString();
+            var studentId = id.studentId().toString();
             return EventCriteria
                     .havingTags(Tag.of(FacultyTags.COURSE_ID, courseId), Tag.of(FacultyTags.STUDENT_ID, studentId))
                     .andBeingOneOfTypes(
