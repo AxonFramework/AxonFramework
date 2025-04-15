@@ -68,14 +68,15 @@ public class InterceptorAutoConfiguration {
 //        return () -> interceptors.ifPresent(it -> it.forEach(commandGateway::registerDispatchInterceptor));
 //    }
 
-    @Bean
-    @ConditionalOnBean(MessageDispatchInterceptor.class)
-    public InitializingBean eventDispatchInterceptorConfigurer(
-            EventGateway eventGateway,
-            Optional<List<MessageDispatchInterceptor<? super EventMessage<?>>>> interceptors
-    ) {
-        return () -> interceptors.ifPresent(it -> it.forEach(eventGateway::registerDispatchInterceptor));
-    }
+    // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
+//    @Bean
+//    @ConditionalOnBean(MessageDispatchInterceptor.class)
+//    public InitializingBean eventDispatchInterceptorConfigurer(
+//            EventGateway eventGateway,
+//            Optional<List<MessageDispatchInterceptor<? super EventMessage<?>>>> interceptors
+//    ) {
+//        return () -> interceptors.ifPresent(it -> it.forEach(eventGateway::registerDispatchInterceptor));
+//    }
 
     @Bean
     @ConditionalOnBean(MessageDispatchInterceptor.class)

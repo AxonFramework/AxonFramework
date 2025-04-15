@@ -40,6 +40,7 @@ import org.axonframework.eventhandling.DefaultEventProcessorSpanFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventProcessorSpanFactory;
+import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
@@ -241,6 +242,9 @@ public class DefaultConfigurer implements Configurer {
                        new Component<>(config, "repositorySpanFactory", this::defaultRepositorySpanFactory));
         components.put(EventProcessorSpanFactory.class,
                        new Component<>(config, "eventProcessorSpanFactory", this::defaultEventProcessorSpanFactory));
+        components.put(EventSink.class, new Component<>(config, "eventSink", this::defaultEventSink));
+        components.put(MessageTypeResolver.class,
+                       new Component<>(config, "messageTypeResolver", this::defaultMessageTypeResolver));
         registerModule(new AxonIQConsoleModule());
     }
 
@@ -540,7 +544,10 @@ public class DefaultConfigurer implements Configurer {
      */
     protected EventGateway defaultEventGateway(Configuration config) {
         return defaultComponent(EventGateway.class, config)
-                .orElseGet(() -> DefaultEventGateway.builder().eventBus(config.eventBus()).build());
+                .orElseGet(() -> new DefaultEventGateway(
+                        config.getComponent(EventSink.class),
+                        config.getComponent(MessageTypeResolver.class)
+                ));
     }
 
     /**
@@ -753,6 +760,32 @@ public class DefaultConfigurer implements Configurer {
                                                                                             aggregateConfigurations))
                                                .build();
                 });
+    }
+
+    /**
+     * Provides the default {@link EventSink} implementation, which delegates publishing to the {@link EventBus} in the
+     * given {@code configuration}. Subclasses may override this method to provide their own default.
+     *
+     * @param configuration The configuration based on which the component is initialized.
+     * @return The default EventSink to use.
+     */
+    protected EventSink defaultEventSink(Configuration configuration) {
+        EventBus eventBus = configuration.getComponent(EventBus.class);
+        return events -> {
+            eventBus.publish(events);
+            return CompletableFuture.completedFuture(null);
+        };
+    }
+
+    /**
+     * Provides the default {@link MessageTypeResolver} implementation, which is a {@link ClassBasedMessageTypeResolver}
+     * by default. Subclasses may override this method to provide their own default.
+     *
+     * @param configuration The configuration based on which the component is initialized.
+     * @return The default MessageTypeResolver to use.
+     */
+    private MessageTypeResolver defaultMessageTypeResolver(Configuration configuration) {
+        return new ClassBasedMessageTypeResolver();
     }
 
     /**

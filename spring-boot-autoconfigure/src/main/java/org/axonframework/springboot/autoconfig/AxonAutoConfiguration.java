@@ -27,11 +27,17 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.AxonThreadFactory;
+import org.axonframework.common.FutureUtils;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.*;
+import org.axonframework.config.Configuration;
+import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.EventProcessingConfigurer;
+import org.axonframework.config.SubscribableMessageSourceDefinition;
+import org.axonframework.config.TagsConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
@@ -45,6 +51,7 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -303,8 +310,23 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
 
     @ConditionalOnMissingBean
     @Bean
-    public EventGateway eventGateway(EventBus eventBus) {
-        return DefaultEventGateway.builder().eventBus(eventBus).build();
+    public EventSink eventSink(EventBus eventBus) {
+        return events -> {
+            eventBus.publish(events);
+            return FutureUtils.emptyCompletedFuture();
+        };
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public MessageTypeResolver messageTypeResolver() {
+        return new ClassBasedMessageTypeResolver();
+    }
+
+    @ConditionalOnMissingBean
+    @Bean
+    public EventGateway eventGateway(EventSink eventSink, MessageTypeResolver messageTypeResolver) {
+        return new DefaultEventGateway(eventSink, messageTypeResolver);
     }
 
     @ConditionalOnMissingBean(Snapshotter.class)

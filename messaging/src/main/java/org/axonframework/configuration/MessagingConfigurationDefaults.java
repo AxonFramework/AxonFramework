@@ -132,9 +132,10 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static EventGateway defaultEventGateway(NewConfiguration config) {
-        return DefaultEventGateway.builder()
-                                  .eventBus(config.getComponent(EventBus.class))
-                                  .build();
+        return new DefaultEventGateway(
+                config.getComponent(EventSink.class),
+                config.getComponent(MessageTypeResolver.class)
+        );
     }
 
     private static QueryGateway defaultQueryGateway(NewConfiguration config) {
