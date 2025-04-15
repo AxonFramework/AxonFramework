@@ -4,8 +4,8 @@ import io.axoniq.demo.university.faculty.FacultyTags;
 import io.axoniq.demo.university.faculty.events.CourseCapacityChanged;
 import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
-import io.axoniq.demo.university.faculty.write.CourseId;
-import io.axoniq.demo.university.faculty.write.StudentId;
+import io.axoniq.demo.university.shared.ids.CourseId;
+import io.axoniq.demo.university.shared.ids.StudentId;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 
@@ -21,19 +21,19 @@ class Course {
 
     @EventSourcingHandler
     void evolve(CourseCreated event) {
-        id = new CourseId(event.courseId());
+        id = event.courseId();
         capacity = event.capacity();
     }
 
     @EventSourcingHandler
     void evolve(CourseCapacityChanged event) {
-        id = new CourseId(event.courseId());
+        id = event.courseId();
         capacity = event.capacity();
     }
 
     @EventSourcingHandler
     void evolve(StudentSubscribedToCourse event) {
-        studentsSubscribed.add(new StudentId(event.studentId()));
+        studentsSubscribed.add(event.studentId());
     }
 
     CourseId id() {

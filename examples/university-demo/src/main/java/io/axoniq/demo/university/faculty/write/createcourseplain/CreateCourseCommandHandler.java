@@ -48,7 +48,7 @@ class CreateCourseCommandHandler implements StatefulCommandHandler {
         if (state.created) {
             return List.of();
         }
-        return List.of(new CourseCreated(command.courseId().raw(), command.name(), command.capacity()));
+        return List.of(new CourseCreated(command.courseId(), command.name(), command.capacity()));
     }
 
     static final class State {

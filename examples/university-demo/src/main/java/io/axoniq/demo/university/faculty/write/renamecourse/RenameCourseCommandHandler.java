@@ -30,7 +30,7 @@ class RenameCourseCommandHandler {
         if (command.name().equals(state.name)) {
             return List.of();
         }
-        return List.of(new CourseRenamed(command.courseId().raw(), command.name()));
+        return List.of(new CourseRenamed(command.courseId(), command.name()));
     }
 
     @EventSourcedEntity(tagKey = FacultyTags.COURSE_ID)

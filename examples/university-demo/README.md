@@ -72,10 +72,10 @@ void successfulSubscription() {
 
     fixture.given()
            .event(new CourseCreated(courseId.raw(), "Axon Framework 5: Getting Started", 2))
-           .event(new StudentEnrolledFaculty(studentId.raw(), "Mateusz", "Nowak"))
+           .event(new StudentEnrolledInFaculty(studentId.raw(), "Mateusz", "Nowak"))
            .when()
-           .command(new SubscribeStudent(studentId, courseId))
+           .command(new SubscribeStudentToCourse(studentId, courseId))
            .then()
-           .events(new StudentSubscribed(studentId.raw(), courseId.raw()));
+           .events(new StudentSubscribedToCourse(studentId.raw(), courseId.raw()));
 }
 ```

@@ -5,8 +5,8 @@ import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty;
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
 import io.axoniq.demo.university.faculty.events.StudentUnsubscribedFromCourse;
-import io.axoniq.demo.university.faculty.write.CourseId;
-import io.axoniq.demo.university.faculty.write.StudentId;
+import io.axoniq.demo.university.shared.ids.CourseId;
+import io.axoniq.demo.university.shared.ids.StudentId;
 import org.axonframework.test.fixture.AxonTestFixture;
 import org.junit.jupiter.api.*;
 
@@ -26,13 +26,13 @@ class UnsubscribeStudentFromCourseTest {
         var courseId = CourseId.random();
 
         fixture.given()
-               .event(new StudentEnrolledInFaculty(studentId.raw(), "Novak", "Djokovic"))
-               .event(new CourseCreated(courseId.raw(), "Tennis", 1))
-               .event(new StudentSubscribedToCourse(studentId.raw(), courseId.raw()))
+               .event(new StudentEnrolledInFaculty(studentId, "Novak", "Djokovic"))
+               .event(new CourseCreated(courseId, "Tennis", 1))
+               .event(new StudentSubscribedToCourse(studentId, courseId))
                .when()
                .command(new UnsubscribeStudentFromCourse(studentId, courseId))
                .then()
-               .events(new StudentUnsubscribedFromCourse(studentId.raw(), courseId.raw()));
+               .events(new StudentUnsubscribedFromCourse(studentId, courseId));
     }
 
     @Test
@@ -52,8 +52,8 @@ class UnsubscribeStudentFromCourseTest {
         var studentId = StudentId.random();
 
         fixture.given()
-               .event(new StudentSubscribedToCourse(studentId.raw(), courseId.raw()))
-               .event(new StudentUnsubscribedFromCourse(studentId.raw(), courseId.raw()))
+               .event(new StudentSubscribedToCourse(studentId, courseId))
+               .event(new StudentUnsubscribedFromCourse(studentId, courseId))
                .when()
                .command(new UnsubscribeStudentFromCourse(studentId, courseId))
                .then()

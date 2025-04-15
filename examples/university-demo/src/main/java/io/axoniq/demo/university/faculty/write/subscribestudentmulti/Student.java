@@ -3,8 +3,8 @@ package io.axoniq.demo.university.faculty.write.subscribestudentmulti;
 import io.axoniq.demo.university.faculty.FacultyTags;
 import io.axoniq.demo.university.faculty.events.StudentEnrolledInFaculty;
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
-import io.axoniq.demo.university.faculty.write.CourseId;
-import io.axoniq.demo.university.faculty.write.StudentId;
+import io.axoniq.demo.university.shared.ids.CourseId;
+import io.axoniq.demo.university.shared.ids.StudentId;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 
@@ -19,12 +19,12 @@ class Student {
 
     @EventSourcingHandler
     void evolve(StudentEnrolledInFaculty event) {
-        id = new StudentId(event.studentId());
+        id = event.studentId();
     }
 
     @EventSourcingHandler
     void evolve(StudentSubscribedToCourse event) {
-        subscribedCourses.add(new CourseId(event.courseId()));
+        subscribedCourses.add(event.courseId());
     }
 
     StudentId id() {

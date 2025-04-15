@@ -3,8 +3,8 @@ package io.axoniq.demo.university.faculty.write.unsubscribestudent;
 import io.axoniq.demo.university.faculty.FacultyTags;
 import io.axoniq.demo.university.faculty.events.StudentSubscribedToCourse;
 import io.axoniq.demo.university.faculty.events.StudentUnsubscribedFromCourse;
-import io.axoniq.demo.university.faculty.write.CourseId;
-import io.axoniq.demo.university.faculty.write.StudentId;
+import io.axoniq.demo.university.shared.ids.CourseId;
+import io.axoniq.demo.university.shared.ids.StudentId;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
@@ -34,7 +34,7 @@ class UnsubscribeStudentFromCourseCommandHandler {
 
     private List<StudentUnsubscribedFromCourse> decide(UnsubscribeStudentFromCourse command, State state) {
         return state.subscribed
-                ? List.of(new StudentUnsubscribedFromCourse(command.studentId().raw(), command.courseId().raw()))
+                ? List.of(new StudentUnsubscribedFromCourse(command.studentId(), command.courseId()))
                 : List.of();
     }
 
