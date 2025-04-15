@@ -220,8 +220,7 @@ Let's create a new class for that inside the slice package, name it `CreateCours
 package io.axoniq.demo.university.faculty.write.createcourse;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventhandling.EventSink;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.modelling.annotation.InjectEntity;
 
 class CreateCourseCommandHandler {
@@ -229,34 +228,20 @@ class CreateCourseCommandHandler {
     @CommandHandler // <1>
      void handle(
             CreateCourse command,  // <2>
-            EventSink eventSink,  // <3>
-            ProcessingContext processingContext  // <4>
+            EventAppender eventAppender // <3>
     ) {
-        var event = new CourseCreated(command.courseId(), command.name(), command.capacity());  // <5>
-        var message = toMessage(event); // <6>
-        eventSink.publish(processingContext, message); // <7>
-    }
-
-    private static EventMessage<?> toMessage(Object payload) {
-        return new GenericEventMessage<>(
-                new MessageType(payload.getClass()), // <8>
-                payload
-        );
+        var event = new CourseCreated(command.courseId(), command.name(), command.capacity());  // <4>
+        eventAppender.append(event); // <5>
     }
 
 }
 ----
 
-<.> The `org.axonframework.commandhandling.annotation.CommandHandler` annotation instructs Axon Framework to call this method upon receiving commands.
-<.> The type of the argument indicates to Axon Framework which type of commands should be linked to the invocation of this method.
-<.> The `EventSink` is a component that allows us to publish the Event that notifies the change in the state of our system.
-In this case, to notify that the *course has been created*.
-<.> The `ProcessingContext` is a component that allows us to manage the lifecycle of the message processing.
-Allows us to publish events in the context of the current command so the events will be published after successful command execution.
-<.> The `EventSink` interface requires an implementation of the `EventMessage` as a second argument.
-<.> The invocation of `EventSink#publish` stage event to be published after the current `ProcessingContext` is completed.
-<.> While creating the new `EventMessage` instance you need to define the `MessageType` manually (it's good enough to use the payload class for now), because of the `EventSink` it's relatively low-level API.
-In the future it will be done by the framework itself.
+<1> The `org.axonframework.commandhandling.annotation.CommandHandler` annotation instructs Axon Framework to call this method upon receiving commands.
+<2> The type of the argument indicates to Axon Framework which type of commands should be linked to the invocation of this method.
+<3> The `EventAppender` is a component that allows us to publish events in the context of the current command so the events will be published after successful command execution.
+<4> We create the Event as a result of the command handling. The Event message responsibility is to notify the change in the state of our system. In this case, the event notifies that the *course has been created*.
+<5> The invocation of `EventAppender#append` stage event to be published after the current `ProcessingContext` is completed.
 
 Have you already tried to run the test?
 Unfortunately, it will fail again.
@@ -389,14 +374,13 @@ class CreateCourseCommandHandler {
     void handle(
         CreateCourse command,
         @InjectEntity(idProperty = "courseId") State state, // <4>
-        EventSink eventSink,
-        ProcessingContext processingContext
+        EventAppender eventAppender
     ) {
         if(state.created) { // <5>
             return;
         }
         var event = new CourseCreated(command.courseId(), command.name(), command.capacity());
-        eventSink.publish(processingContext, toMessage(event));
+        eventAppender.append(event);
     }
 
 }

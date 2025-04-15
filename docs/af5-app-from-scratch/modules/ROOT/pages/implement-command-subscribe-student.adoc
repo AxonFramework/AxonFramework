@@ -215,12 +215,10 @@ class SubscribeStudentToCourseCommandHandler {
     void handle(
             SubscribeStudentToCourse command,
             @InjectEntity State state, // <2>
-            EventSink eventSink,
-            ProcessingContext processingContext
+            EventAppender eventAppender
     ) {
         var events = decide(command, state); // <3>
-        var messages = toMessages(events); // <4>
-        eventSink.publish(processingContext, messages); // <5>
+        eventAppender.append(events); // <4>
     }
 
     private List<StudentSubscribedToCourse> decide(SubscribeStudentToCourse command, State state) {
@@ -228,20 +226,7 @@ class SubscribeStudentToCourseCommandHandler {
         return List.of(new StudentSubscribedToCourse(command.studentId(), command.courseId()));
     }
 
-    private static List<EventMessage<?>> toMessages(List<StudentSubscribedToCourse> events) {
-        return events.stream()
-                     .map(SubscribeStudentToCourseCommandHandler::toMessage)
-                     .collect(Collectors.toList());
-    }
-
-    private static EventMessage<?> toMessage(Object payload) {
-        return new GenericEventMessage<>(
-                new MessageType(payload.getClass()),
-                payload
-        );
-    }
-
-    @EventSourcedEntity // <6>
+    @EventSourcedEntity // <5>
     static class State {
         // todo: define state necessary to accept or reject `SubscribeStudentToCourse` command
     }
@@ -255,9 +240,8 @@ Each student can subscribe up to 3 courses at the same time.
 <3> This is your domain model invocation.
 You may keep it in the command handler as on the example or make the function unaware of the infrastructure like Axon Framework.
 This function resembles the `Decider` pattern.
-<4> As before, we translate events (which are a result of our domain function) to messages to be able to publish them.
-<5> We use the `EventSink` to publish events.
-<6> Before we defined a `tagKey` in `@EventSourcedEntity` annotation. Now we cannot do that, because we require events about every subscription of a student and every subscription to the course. So we have multiple business concepts related to a business process!
+<4> We use the `EventAppender` to stage events to be published after the successful command handling.
+<5> Before we defined a `tagKey` in `@EventSourcedEntity` annotation. Now we cannot do that, because we require events about every subscription of a student and every subscription to the course. So we have multiple business concepts related to a business process!
 In a few paragraphs you will see how to do that with the `EventCriteria` API.
 
 
@@ -325,7 +309,7 @@ class SubscribeStudentToCourseCommandHandler {
 
         @EventSourcingHandler
         void evolve(StudentEnrolledInFaculty event) {
-            this.studentId = new StudentId(event.studentId());
+            this.studentId = event.studentId();
         }
     }
 
@@ -393,7 +377,7 @@ class SubscribeStudentToCourseCommandHandler {
 
         @EventSourcingHandler
         void evolve(CourseCreated event) { // <1>
-            this.courseId = new CourseId(event.courseId());
+            this.courseId = event.courseId();
             this.courseCapacity = event.capacity();
         }
 
@@ -404,8 +388,8 @@ class SubscribeStudentToCourseCommandHandler {
 
         @EventSourcingHandler
         void evolve(StudentSubscribedToCourse event) { // <3>
-            var subscribingStudentId = new StudentId(event.studentId());
-            var subscribedCourseId = new CourseId(event.courseId());
+            var subscribingStudentId = event.studentId();
+            var subscribedCourseId = event.courseId();
             if (subscribedCourseId.equals(courseId)) { // <4>
                 noOfStudentsSubscribedToCourse++;
             }
@@ -419,8 +403,8 @@ class SubscribeStudentToCourseCommandHandler {
 
         @EventSourcingHandler
         void evolve(StudentUnsubscribedFromCourse event) { // <7>
-            var subscribingStudentId = new StudentId(event.studentId());
-            var subscribedCourseId = new CourseId(event.courseId());
+            var subscribingStudentId = event.studentId();
+            var subscribedCourseId = event.courseId();
             if(subscribedCourseId.equals(courseId)) {
                 noOfStudentsSubscribedToCourse--;
             }
