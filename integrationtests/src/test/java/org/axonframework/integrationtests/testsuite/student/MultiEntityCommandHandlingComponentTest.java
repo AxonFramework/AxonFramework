@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.integrationtests.testsuite.student.commands.AssignMentorCommand;
 import org.axonframework.integrationtests.testsuite.student.commands.EnrollStudentToCourseCommand;
@@ -68,24 +69,21 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
     void canCombineStatesInLambdaCommandHandlerViaStateManagerParameter() {
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
                 new QualifiedName(EnrollStudentToCourseCommand.class),
-                c -> {
-                    EventGateway eventGateway = c.getComponent(EventGateway.class);
-                    return (command, state, context) -> {
-                        EventGateway boundEventGateway = eventGateway.forProcessingContext(context);
-                        EnrollStudentToCourseCommand payload = (EnrollStudentToCourseCommand) command.getPayload();
-                        Student student = state.loadEntity(Student.class, payload.studentId(), context).join();
-                        Course course = state.loadEntity(Course.class, payload.courseId(), context).join();
+                c -> (command, state, context) -> {
+                    EventAppender eventAppender = EventAppender.forContext(context, c);
+                    EnrollStudentToCourseCommand payload = (EnrollStudentToCourseCommand) command.getPayload();
+                    Student student = state.loadEntity(Student.class, payload.studentId(), context).join();
+                    Course course = state.loadEntity(Course.class, payload.courseId(), context).join();
 
-                        if (student.getCoursesEnrolled().size() > 2) {
-                            throw new IllegalArgumentException("Student already enrolled in 3 courses");
-                        }
+                    if (student.getCoursesEnrolled().size() > 2) {
+                        throw new IllegalArgumentException("Student already enrolled in 3 courses");
+                    }
 
-                        if (course.getStudentsEnrolled().size() > 2) {
-                            throw new IllegalArgumentException("Course already has 3 students");
-                        }
-                        boundEventGateway.publish(new StudentEnrolledEvent(payload.studentId(), payload.courseId()));
-                        return MessageStream.just(SUCCESSFUL_COMMAND_RESULT).cast();
-                    };
+                    if (course.getStudentsEnrolled().size() > 2) {
+                        throw new IllegalArgumentException("Course already has 3 students");
+                    }
+                    eventAppender.append(new StudentEnrolledEvent(payload.studentId(), payload.courseId()));
+                    return MessageStream.just(SUCCESSFUL_COMMAND_RESULT).cast();
                 }
         ));
         startApp();

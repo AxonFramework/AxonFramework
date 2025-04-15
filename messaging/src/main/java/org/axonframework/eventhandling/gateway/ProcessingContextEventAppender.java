@@ -17,60 +17,58 @@
 package org.axonframework.eventhandling.gateway;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
- * Default implementation of the {@link EventGateway} interface. Events are published using the {@link EventSink} in a
- * new {@link AsyncUnitOfWork}.
+ * Component that publishes events to an {@link EventSink} in the context of a {@link ProcessingContext}. The events
+ * will be published in the context this appender was created for. You can construct one through the
+ * {@link EventAppender#forContext(ProcessingContext, NewConfiguration)} method.
  *
- * @author Bert laverman
  * @author Mitchell Herrijgers
- * @since 4.1
+ * @since 5.0.0
  */
-public class DefaultEventGateway implements EventGateway {
+public class ProcessingContextEventAppender implements EventAppender {
 
+    private final ProcessingContext processingContext;
     private final EventSink eventSink;
     private final MessageTypeResolver messageTypeResolver;
 
     /**
-     * Creates a new {@link EventGateway} that uses the given {@code eventSink} to publish events. The
+     * Creates a new {@link EventAppender} that uses the given {@code eventSink} to publish events. The
      * {@code messageTypeResolver} is used to resolve the type of the event if no {@link EventMessage} is provided but a
      * payload.
      *
+     * @param processingContext   The {@link ProcessingContext} to publish events to.
      * @param eventSink           The {@link EventSink} to publish events to.
      * @param messageTypeResolver The {@link MessageTypeResolver} to resolve the type of the event.
      */
-    public DefaultEventGateway(@Nonnull EventSink eventSink, @Nonnull MessageTypeResolver messageTypeResolver) {
-        this.eventSink = Objects.requireNonNull(eventSink, "EventSink may not be null");
-        this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
+    ProcessingContextEventAppender(
+            ProcessingContext processingContext,
+            EventSink eventSink,
+            MessageTypeResolver messageTypeResolver
+    ) {
+        Objects.requireNonNull(eventSink, "EventSink may not be null");
+        Objects.requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
+        this.processingContext = processingContext;
+        this.eventSink = eventSink;
+        this.messageTypeResolver = messageTypeResolver;
     }
 
     @Override
-    public void publish(@Nonnull List<?> events) {
-        AsyncUnitOfWork unitOfWork = new AsyncUnitOfWork();
-        unitOfWork.onInvocation(context -> {
-            doPublish(events, context);
-            return CompletableFuture.completedFuture(null);
-        });
-        unitOfWork.execute().join();
-    }
-
-    private void doPublish(List<?> events, ProcessingContext context) {
+    public void append(@Nonnull List<?> events) {
         Objects.requireNonNull(events, "Events may not be null");
-        Objects.requireNonNull(context, "Context may not be null");
         List<EventMessage<?>> eventMessages = events
                 .stream()
                 .map(e -> EventPublishingUtils.asEventMessage(e, messageTypeResolver))
                 .collect(Collectors.toList());
-        this.eventSink.publish(context, eventMessages);
+        eventSink.publish(processingContext, eventMessages);
     }
 }

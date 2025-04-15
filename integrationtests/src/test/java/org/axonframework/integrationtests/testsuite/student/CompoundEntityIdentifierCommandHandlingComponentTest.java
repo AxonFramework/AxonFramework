@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.testsuite.student;
 
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventhandling.gateway.EventGateway;
+import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
@@ -79,25 +79,22 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
     void canHandleCommandThatTargetsMultipleModelsViaStatefulCommandHandler() {
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
                 new QualifiedName(AssignMentorCommand.class),
-                c -> {
-                    EventGateway eventGateway = c.getComponent(EventGateway.class);
-                    return (command, state, context) -> {
-                        EventGateway boundEventGateway = eventGateway.forProcessingContext(context);
-                        AssignMentorCommand payload = (AssignMentorCommand) command.getPayload();
-                        StudentMentorAssignment assignment = state.loadEntity(
-                                StudentMentorAssignment.class, payload.modelIdentifier(), context
-                        ).join();
+                c -> (command, state, context) -> {
+                    EventAppender eventAppender = EventAppender.forContext(context, c);
+                    AssignMentorCommand payload = (AssignMentorCommand) command.getPayload();
+                    StudentMentorAssignment assignment = state.loadEntity(
+                            StudentMentorAssignment.class, payload.modelIdentifier(), context
+                    ).join();
 
-                        if (assignment.isMentorHasMentee()) {
-                            throw new IllegalArgumentException("Mentor already assigned to a mentee");
-                        }
-                        if (assignment.isMenteeHasMentor()) {
-                            throw new IllegalArgumentException("Mentee already has a mentor");
-                        }
-                        boundEventGateway.publish(new MentorAssignedToStudentEvent(payload.mentorId(),
-                                                                                   payload.menteeId()));
-                        return MessageStream.just(SUCCESSFUL_COMMAND_RESULT).cast();
-                    };
+                    if (assignment.isMentorHasMentee()) {
+                        throw new IllegalArgumentException("Mentor already assigned to a mentee");
+                    }
+                    if (assignment.isMenteeHasMentor()) {
+                        throw new IllegalArgumentException("Mentee already has a mentor");
+                    }
+                    eventAppender.append(new MentorAssignedToStudentEvent(payload.mentorId(),
+                                                                     payload.menteeId()));
+                    return MessageStream.just(SUCCESSFUL_COMMAND_RESULT).cast();
                 }
         ));
         startApp();
@@ -140,7 +137,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
         @CommandHandler
         public void handle(AssignMentorCommand command,
                            @InjectEntity StudentMentorAssignment assignment,
-                           EventGateway eventGateway
+                           EventAppender appender
         ) {
             if (assignment.isMentorHasMentee()) {
                 throw new IllegalArgumentException("Mentor already assigned to a mentee");
@@ -149,7 +146,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                 throw new IllegalArgumentException("Mentee already has a mentor");
             }
 
-            eventGateway.publish(new MentorAssignedToStudentEvent(command.mentorId(), command.menteeId()));
+            appender.append(new MentorAssignedToStudentEvent(command.mentorId(), command.menteeId()));
         }
     }
 }
