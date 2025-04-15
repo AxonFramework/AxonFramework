@@ -75,7 +75,7 @@ import static org.axonframework.common.BuilderUtils.assertPositive;
  * @since 3.0
  */
 @Deprecated // TODO Replace for SimpleEventStore once fully integrated
-public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle {
+public class EmbeddedEventStore extends AbstractLegacyEventStore implements Lifecycle {
 
     private static final Logger logger = LoggerFactory.getLogger(EmbeddedEventStore.class);
 
@@ -495,7 +495,7 @@ public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle 
      * </ul>
      * The {@link EventStorageEngine} is a <b>hard requirement</b> and as such should be provided.
      */
-    public static class Builder extends AbstractEventStore.Builder {
+    public static class Builder extends AbstractLegacyEventStore.Builder {
 
         private int cachedEvents = 10000;
         private long fetchDelay = 1000L;

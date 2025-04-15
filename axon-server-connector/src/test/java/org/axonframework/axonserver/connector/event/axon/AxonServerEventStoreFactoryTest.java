@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStore;
+import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStore;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
@@ -91,7 +91,7 @@ class AxonServerEventStoreFactoryTest {
         AxonServerEventStore result = testSubject.constructFor(TEST_CONTEXT);
 
         AxonServerEventStore.AxonIQEventStorageEngine storageEngine =
-                getFieldValue(AbstractEventStore.class.getDeclaredField("storageEngine"), result);
+                getFieldValue(AbstractLegacyEventStore.class.getDeclaredField("storageEngine"), result);
 
         String resultContext = getFieldValue(
                 AxonServerEventStore.AxonIQEventStorageEngine.class.getDeclaredField("context"), storageEngine
@@ -136,7 +136,7 @@ class AxonServerEventStoreFactoryTest {
         AxonServerEventStore result = testSubject.constructFor(TEST_CONTEXT, customization);
 
         AxonServerEventStore.AxonIQEventStorageEngine storageEngine =
-                getFieldValue(AbstractEventStore.class.getDeclaredField("storageEngine"), result);
+                getFieldValue(AbstractLegacyEventStore.class.getDeclaredField("storageEngine"), result);
 
         String resultContext = getFieldValue(
                 AxonServerEventStore.AxonIQEventStorageEngine.class.getDeclaredField("context"), storageEngine
