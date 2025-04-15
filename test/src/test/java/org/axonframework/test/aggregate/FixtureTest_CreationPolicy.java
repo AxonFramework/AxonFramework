@@ -17,6 +17,7 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
+import org.axonframework.eventsourcing.AggregateDeletedException;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -25,11 +26,11 @@ import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
 
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -211,64 +212,34 @@ class FixtureTest_CreationPolicy {
                 .expectSuccessfulHandlerExecution();
     }
 
-    private static class CreateOrUpdateCommand {
-
-        @TargetAggregateIdentifier
-        private final ComplexAggregateId id;
-        private final boolean shouldPublishEvent;
-
-        private CreateOrUpdateCommand(ComplexAggregateId id, boolean shouldPublishEvent) {
-            this.id = id;
-            this.shouldPublishEvent = shouldPublishEvent;
-        }
-
-        public ComplexAggregateId getId() {
-            return id;
-        }
-
-        public boolean shouldPublishEvent() {
-            return shouldPublishEvent;
-        }
+    @Test
+    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    void markedDeletedAggregateDoesNotAllowForCreateIfMissingButRethrowsAggregateDeletedException() {
+        fixture.given(new CreatedEvent(AGGREGATE_ID), new MarkedDeleted(AGGREGATE_ID))
+               .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_EVENTS))
+               .expectNoEvents()
+               .expectException(AggregateDeletedException.class);
     }
 
-    private static class AlwaysCreateWithoutResultCommand {
+    private record CreateOrUpdateCommand(
+            @TargetAggregateIdentifier ComplexAggregateId id,
+            boolean shouldPublishEvent
+    ) {
 
-        @TargetAggregateIdentifier
-        private final ComplexAggregateId id;
-        private final boolean shouldPublishEvent;
-
-        private AlwaysCreateWithoutResultCommand(ComplexAggregateId id, boolean shouldPublishEvent) {
-            this.id = id;
-            this.shouldPublishEvent = shouldPublishEvent;
-        }
-
-        public ComplexAggregateId getId() {
-            return id;
-        }
-
-        public boolean shouldPublishEvent() {
-            return shouldPublishEvent;
-        }
     }
 
-    private static class AlwaysCreateWithResultCommand {
+    private record AlwaysCreateWithoutResultCommand(
+            @TargetAggregateIdentifier ComplexAggregateId id,
+            boolean shouldPublishEvent
+    ) {
 
-        @TargetAggregateIdentifier
-        private final ComplexAggregateId id;
-        private final Object result;
+    }
 
-        private AlwaysCreateWithResultCommand(ComplexAggregateId id, Object result) {
-            this.id = id;
-            this.result = result;
-        }
+    private record AlwaysCreateWithResultCommand(
+            @TargetAggregateIdentifier ComplexAggregateId id,
+            Object result
+    ) {
 
-        public ComplexAggregateId getId() {
-            return id;
-        }
-
-        public Object getResult() {
-            return result;
-        }
     }
 
     private static class AlwaysCreateWithEventSourcedResultCommand {
@@ -291,112 +262,36 @@ class FixtureTest_CreationPolicy {
         }
     }
 
-    private static class ExecuteOnExistingCommand {
+    private record ExecuteOnExistingCommand(@TargetAggregateIdentifier ComplexAggregateId id) {
 
-        @TargetAggregateIdentifier
-        private final ComplexAggregateId id;
-
-        private ExecuteOnExistingCommand(ComplexAggregateId id) {
-            this.id = id;
-        }
-
-        public ComplexAggregateId getId() {
+        @Override
+        public ComplexAggregateId id() {
             return id;
         }
     }
 
-    private static class CreatedOrUpdatedEvent {
+    private record CreatedEvent(ComplexAggregateId id) {
 
-        private final ComplexAggregateId id;
-
-        private CreatedOrUpdatedEvent(ComplexAggregateId id) {
-            this.id = id;
-        }
-
-        public ComplexAggregateId getId() {
-            return id;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            CreatedOrUpdatedEvent that = (CreatedOrUpdatedEvent) o;
-            return Objects.equals(id, that.id);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(id);
-        }
     }
 
-    private static class AlwaysCreatedEvent {
+    private record CreatedOrUpdatedEvent(ComplexAggregateId id) {
 
-        private final ComplexAggregateId id;
-
-        private AlwaysCreatedEvent(ComplexAggregateId id) {
-            this.id = id;
-        }
-
-        public ComplexAggregateId getId() {
-            return id;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            AlwaysCreatedEvent that = (AlwaysCreatedEvent) o;
-            return Objects.equals(id, that.id);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(id);
-        }
     }
 
-    private static class ExecutedOnExistingEvent {
+    private record AlwaysCreatedEvent(ComplexAggregateId id) {
 
-        private final ComplexAggregateId id;
+    }
 
-        private ExecutedOnExistingEvent(ComplexAggregateId id) {
-            this.id = id;
-        }
+    private record ExecutedOnExistingEvent(ComplexAggregateId id) {
 
-        public ComplexAggregateId getId() {
-            return id;
-        }
+    }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            ExecutedOnExistingEvent that = (ExecutedOnExistingEvent) o;
-            return Objects.equals(id, that.id);
-        }
+    private record MarkedDeleted(ComplexAggregateId id) {
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(id);
-        }
     }
 
     @SuppressWarnings("unused")
-    public static class TestAggregate {
+    private static class TestAggregate implements TestAggregateInterface {
 
         @AggregateIdentifier
         private ComplexAggregateId id;
@@ -413,23 +308,22 @@ class FixtureTest_CreationPolicy {
         @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
         public void handle(CreateOrUpdateCommand command) {
             if (command.shouldPublishEvent()) {
-                apply(new CreatedOrUpdatedEvent(command.getId()));
+                apply(new CreatedOrUpdatedEvent(command.id()));
             }
         }
 
-        @CommandHandler
-        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        @Override
         public void handle(AlwaysCreateWithoutResultCommand command) {
             if (command.shouldPublishEvent()) {
-                apply(new AlwaysCreatedEvent(command.getId()));
+                apply(new AlwaysCreatedEvent(command.id()));
             }
         }
 
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public Object handle(AlwaysCreateWithResultCommand command) {
-            apply(new AlwaysCreatedEvent(command.getId()));
-            return command.getResult();
+            apply(new AlwaysCreatedEvent(command.id()));
+            return command.result();
         }
 
         @CommandHandler
@@ -447,21 +341,37 @@ class FixtureTest_CreationPolicy {
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.NEVER)
         public void handle(ExecuteOnExistingCommand command) {
-            apply(new ExecutedOnExistingEvent(command.getId()));
+            apply(new ExecutedOnExistingEvent(command.id()));
         }
 
         @EventSourcingHandler
         public void on(CreatedOrUpdatedEvent event) {
-            this.id = event.getId();
+            this.id = event.id();
         }
 
         @EventSourcingHandler
         public void on(AlwaysCreatedEvent event) {
-            this.id = event.getId();
+            this.id = event.id();
+        }
+
+        @EventSourcingHandler
+        public void on(MarkedDeleted event) {
+            markDeleted();
         }
     }
 
-    public static class TestAggregateWithPrivateNoArgConstructor {
+    private interface TestAggregateInterface {
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
+        void handle(CreateOrUpdateCommand command);
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        void handle(AlwaysCreateWithoutResultCommand command);
+    }
+
+    private static class TestAggregateWithPrivateNoArgConstructor {
 
         @AggregateIdentifier
         private ComplexAggregateId id;
@@ -474,7 +384,7 @@ class FixtureTest_CreationPolicy {
         @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
         public void handle(CreateOrUpdateCommand command) {
             if (command.shouldPublishEvent()) {
-                apply(new CreatedOrUpdatedEvent(command.getId()));
+                apply(new CreatedOrUpdatedEvent(command.id()));
             }
         }
 
@@ -482,22 +392,22 @@ class FixtureTest_CreationPolicy {
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public void handle(AlwaysCreateWithoutResultCommand command) {
             if (command.shouldPublishEvent()) {
-                apply(new AlwaysCreatedEvent(command.getId()));
+                apply(new AlwaysCreatedEvent(command.id()));
             }
         }
 
         @EventSourcingHandler
         private void on(CreatedOrUpdatedEvent event) {
-            this.id = event.getId();
+            this.id = event.id();
         }
 
         @EventSourcingHandler
         public void on(AlwaysCreatedEvent event) {
-            this.id = event.getId();
+            this.id = event.id();
         }
     }
 
-    public static class TestAggregateWithProtectedNoArgConstructor {
+    private static class TestAggregateWithProtectedNoArgConstructor {
 
         @AggregateIdentifier
         private ComplexAggregateId id;
@@ -510,7 +420,7 @@ class FixtureTest_CreationPolicy {
         @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
         public void handle(CreateOrUpdateCommand command) {
             if (command.shouldPublishEvent()) {
-                apply(new CreatedOrUpdatedEvent(command.getId()));
+                apply(new CreatedOrUpdatedEvent(command.id()));
             }
         }
 
@@ -518,22 +428,22 @@ class FixtureTest_CreationPolicy {
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public void handle(AlwaysCreateWithoutResultCommand command) {
             if (command.shouldPublishEvent()) {
-                apply(new AlwaysCreatedEvent(command.getId()));
+                apply(new AlwaysCreatedEvent(command.id()));
             }
         }
 
         @EventSourcingHandler
         private void on(CreatedOrUpdatedEvent event) {
-            this.id = event.getId();
+            this.id = event.id();
         }
 
         @EventSourcingHandler
         public void on(AlwaysCreatedEvent event) {
-            this.id = event.getId();
+            this.id = event.id();
         }
     }
 
-    public static abstract class TestAggregateParentForPolymorphicCase {
+    private static abstract class TestAggregateParentForPolymorphicCase {
 
         @AggregateIdentifier
         protected ComplexAggregateId id;
@@ -543,7 +453,7 @@ class FixtureTest_CreationPolicy {
         }
     }
 
-    public static class TestAggregateChildForPolymorphicCase extends TestAggregateParentForPolymorphicCase {
+    private static class TestAggregateChildForPolymorphicCase extends TestAggregateParentForPolymorphicCase {
 
         public TestAggregateChildForPolymorphicCase() {
             // Constructor made public on purpose for testing.
@@ -553,7 +463,7 @@ class FixtureTest_CreationPolicy {
         @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
         public void handle(CreateOrUpdateCommand command) {
             if (command.shouldPublishEvent()) {
-                apply(new CreatedOrUpdatedEvent(command.getId()));
+                apply(new CreatedOrUpdatedEvent(command.id()));
             }
         }
 
@@ -561,18 +471,18 @@ class FixtureTest_CreationPolicy {
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public void handle(AlwaysCreateWithoutResultCommand command) {
             if (command.shouldPublishEvent()) {
-                apply(new AlwaysCreatedEvent(command.getId()));
+                apply(new AlwaysCreatedEvent(command.id()));
             }
         }
 
         @EventSourcingHandler
         private void on(CreatedOrUpdatedEvent event) {
-            this.id = event.getId();
+            this.id = event.id();
         }
 
         @EventSourcingHandler
         public void on(AlwaysCreatedEvent event) {
-            this.id = event.getId();
+            this.id = event.id();
         }
     }
 
@@ -580,16 +490,10 @@ class FixtureTest_CreationPolicy {
      * Test identifier introduced for issue <a
      * href="https://github.com/AxonFramework/AxonFramework/pull/1356">#1356</a>.
      */
-    private static class ComplexAggregateId {
-
-        private final UUID actualId;
-        @SuppressWarnings({"FieldCanBeLocal", "unused"})
-        private final Integer someOtherField;
-
-        private ComplexAggregateId(UUID actualId, Integer someOtherField) {
-            this.actualId = actualId;
-            this.someOtherField = someOtherField;
-        }
+    private record ComplexAggregateId(
+            UUID actualId,
+            Integer someOtherField
+    ) {
 
         @Override
         public String toString() {

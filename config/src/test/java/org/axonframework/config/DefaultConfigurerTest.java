@@ -23,11 +23,11 @@ import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Id;
 import jakarta.persistence.Persistence;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.caching.WeakReferenceCache;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
@@ -68,9 +68,9 @@ import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
-import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
+import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
@@ -455,6 +455,16 @@ class DefaultConfigurerTest {
                                                           .buildConfiguration().snapshotter();
 
         assertInstanceOf(AggregateSnapshotter.class, defaultSnapshotter);
+    }
+
+    @Test
+    void defaultSnapshotterDefaultsToNoOpWhenNoAggregatesAreKnown() {
+        Snapshotter defaultSnapshotter =
+                DefaultConfigurer.jpaConfiguration(() -> entityManager)
+                                 .configureSerializer(configuration -> TestSerializer.xStreamSerializer())
+                                 .buildConfiguration().snapshotter();
+
+        assertFalse(defaultSnapshotter instanceof AggregateSnapshotter);
     }
 
     @Test

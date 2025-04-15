@@ -20,7 +20,6 @@ package org.axonframework.integrationtests.testsuite.student;
 import org.axonframework.commandhandling.CommandExecutionException;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
-import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.Tag;
@@ -51,16 +50,12 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
                 EventSourcedEntityBuilder.entity(StudentMentorModelIdentifier.class, StudentMentorAssignment.class)
                                          .entityFactory(c -> (type, id) -> new StudentMentorAssignment(id))
                                          .criteriaResolver(c -> id -> EventCriteria.either(
-                                                 EventCriteria.match()
-                                                              .eventsOfTypes(MentorAssignedToStudentEvent.class.getName())
-                                                              .withTags(new Tag("Student", id.menteeId())),
-                                                 EventCriteria.match()
-                                                              .eventsOfTypes(MentorAssignedToStudentEvent.class.getName())
-                                                              .withTags(new Tag("Student", id.mentorId()))
+                                                 EventCriteria.havingTags(new Tag("Student", id.menteeId())),
+                                                 EventCriteria.havingTags(new Tag("Student", id.mentorId()))
+                                                              .andBeingOneOfTypes(MentorAssignedToStudentEvent.class.getName())
                                          ))
-                                         .eventStateApplier(
-                                                 c -> new AnnotationBasedEventStateApplier<>(StudentMentorAssignment.class)
-                                         );
+                                         .eventSourcingHandler(MentorAssignedToStudentEvent.class,
+                                                               StudentMentorAssignment::handle);
 
         entityConfigurer.entity(mentorAssignmentSlice);
     }

@@ -17,20 +17,23 @@
 package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.ConstructorUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.configuration.ComponentFactory;
-import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
+import org.axonframework.eventsourcing.AnnotationBasedEntityEvolver;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
+import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
+import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
 import org.axonframework.modelling.repository.AsyncRepository;
 
 import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
-import static org.axonframework.common.ConstructorUtils.factoryForTypeWithOptionalArgument;
+import static org.axonframework.common.ConstructorUtils.getConstructorFunctionWithZeroArguments;
 
 /**
  * Annotation-based implementation of the {@link EventSourcedEntityBuilder}.
@@ -48,9 +51,9 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
 
     private final Class<I> idType;
     private final Class<E> entityType;
-    private final EventSourcedEntityFactory<I, E> entityFactory;
-    private final CriteriaResolver<I> criteriaResolver;
-    private final AnnotationBasedEventStateApplier<E> stateApplier;
+    private final EventSourcedEntityFactoryDefinition<E, I> entityFactoryDefinition;
+    private final CriteriaResolverDefinition criteriaResolverDefinition;
+    private final AnnotationBasedEntityEvolver<E> entityEvolver;
 
     AnnotatedEventSourcedEntityBuilder(@Nonnull Class<I> idType,
                                        @Nonnull Class<E> entityType) {
@@ -60,14 +63,13 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
                 .findAnnotationAttributes(entityType, EventSourcedEntity.class)
                 .orElseThrow(() -> new IllegalArgumentException("The given class is not an @EventSourcingEntity."));
         //noinspection unchecked
-        Class<EventSourcedEntityFactory<I, E>> entityFactoryType =
-                (Class<EventSourcedEntityFactory<I, E>>) annotationAttributes.get("entityFactory");
-        this.entityFactory = factoryForTypeWithOptionalArgument(entityFactoryType, Class.class).apply(entityType);
+        Class<EventSourcedEntityFactoryDefinition<E, I>> entityFactoryType =
+                (Class<EventSourcedEntityFactoryDefinition<E, I>>) annotationAttributes.get("entityFactoryDefinition");
+        this.entityFactoryDefinition = getConstructorFunctionWithZeroArguments(entityFactoryType).get();
         //noinspection unchecked
-        Class<CriteriaResolver<I>> criteriaResolverType =
-                (Class<CriteriaResolver<I>>) annotationAttributes.get("criteriaResolver");
-        this.criteriaResolver = factoryForTypeWithOptionalArgument(criteriaResolverType, Class.class).apply(entityType);
-        this.stateApplier = new AnnotationBasedEventStateApplier<>(entityType);
+        var criteriaResolverType = (Class<CriteriaResolverDefinition>) annotationAttributes.get("criteriaResolverDefinition");
+        this.criteriaResolverDefinition = ConstructorUtils.getConstructorFunctionWithZeroArguments(criteriaResolverType).get();
+        this.entityEvolver = new AnnotationBasedEntityEvolver<>(entityType);
     }
 
     @Override
@@ -77,12 +79,19 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
 
     @Override
     public ComponentFactory<AsyncRepository<I, E>> repository() {
-        return c -> new AsyncEventSourcingRepository<>(
-                idType,
-                entityType,
-                c.getComponent(AsyncEventStore.class),
-                entityFactory, criteriaResolver,
-                stateApplier
-        );
+        return c -> {
+            CriteriaResolver<I> criteriaResolver = criteriaResolverDefinition
+                    .createEventCriteriaResolver(entityType, idType, c);
+            EventSourcedEntityFactory<I, E> entityFactory = entityFactoryDefinition
+                    .createFactory(entityType, idType, c);
+            return new AsyncEventSourcingRepository<>(
+                    idType,
+                    entityType,
+                    c.getComponent(AsyncEventStore.class),
+                    entityFactory,
+                    criteriaResolver,
+                    entityEvolver
+            );
+        };
     }
 }

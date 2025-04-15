@@ -57,6 +57,7 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.StreamableMessageSource;
+import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
@@ -347,6 +348,28 @@ class EventProcessingModuleTest {
                      ((SimpleEventHandlerInvoker) defaultInvoker.delegates().getFirst()).getSequencingPolicy());
         assertEquals(fullConcurrencyPolicy,
                      ((SimpleEventHandlerInvoker) specialInvoker.delegates().getFirst()).getSequencingPolicy());
+    }
+
+    @Test
+    void createSubscribingEventProcessorIfSubscribableMessageSourceDefinitionBuilderPresent(
+            @Mock EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder mockBuilder,
+            @Mock SubscribableMessageSourceDefinition<EventMessage<?>> definition,
+            @Mock SubscribableMessageSource source) {
+        when(mockBuilder.build("pooled-streaming")).thenReturn(definition);
+        when(mockBuilder.build("tracking")).thenReturn(definition);
+        when(definition.create(any())).thenReturn(source);
+
+        configurer.eventProcessing()
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .registerEventHandler(config -> new TrackingEventHandler())
+                  .usingSubscribingEventProcessors(mockBuilder);
+        Configuration config = configurer.start();
+
+        Map<String, EventProcessor> processorMap = config.eventProcessingConfiguration().eventProcessors();
+
+        processorMap.forEach((c, processor) -> assertInstanceOf(SubscribingEventProcessor.class, processor));
+        assertEquals(2, processorMap.size());
+        verify(mockBuilder, times(2)).build(anyString());
     }
 
     @Test

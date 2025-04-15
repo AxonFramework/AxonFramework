@@ -35,15 +35,15 @@ import java.time.ZoneId;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link AnnotationBasedEventStateApplier}.
+ * Test class validating the {@link AnnotationBasedEntityEvolver}.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class AnnotationBasedEventStateApplierTest {
+class AnnotationBasedEntityEvolverTest {
 
-    private static final EventStateApplier<TestState> eventStateApplier = new AnnotationBasedEventStateApplier<>(
-            TestState.class);
+    private static final EntityEvolver<TestState> ENTITY_EVOLVER = new AnnotationBasedEntityEvolver<>(TestState.class);
+
     private final ProcessingContext processingContext = ProcessingContext.NONE;
 
     @Nested
@@ -56,7 +56,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            eventStateApplier.apply(state, event, processingContext);
+            ENTITY_EVOLVER.evolve(state, event, processingContext);
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -69,7 +69,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            state = eventStateApplier.apply(state, event, processingContext);
+            state = ENTITY_EVOLVER.evolve(state, event, processingContext);
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -81,9 +81,9 @@ class AnnotationBasedEventStateApplierTest {
             var state = new TestState();
 
             // when
-            state = eventStateApplier.apply(state, domainEvent(0), processingContext);
-            state = eventStateApplier.apply(state, domainEvent(1), processingContext);
-            state = eventStateApplier.apply(state, domainEvent(2), processingContext);
+            state = ENTITY_EVOLVER.evolve(state, domainEvent(0), processingContext);
+            state = ENTITY_EVOLVER.evolve(state, domainEvent(1), processingContext);
+            state = ENTITY_EVOLVER.evolve(state, domainEvent(2), processingContext);
 
             // then
             assertEquals("null-0-1-2", state.handledPayloads);
@@ -101,7 +101,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0, "sampleValue");
 
             // when
-            state = eventStateApplier.apply(state, event, processingContext);
+            state = ENTITY_EVOLVER.evolve(state, event, processingContext);
 
             // then
             assertEquals("null-sampleValue", state.handledMetadata);
@@ -114,7 +114,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            state = eventStateApplier.apply(state, event, processingContext);
+            state = ENTITY_EVOLVER.evolve(state, event, processingContext);
 
             // then
             assertEquals("null-0", state.handledSequences);
@@ -127,7 +127,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            state = eventStateApplier.apply(state, event, processingContext);
+            state = ENTITY_EVOLVER.evolve(state, event, processingContext);
 
             // then
             assertEquals("null-id", state.handledSources);
@@ -143,7 +143,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            state = eventStateApplier.apply(state, event, processingContext);
+            state = ENTITY_EVOLVER.evolve(state, event, processingContext);
 
             // then
             assertEquals("null-" + timestamp, state.handledTimestamps);
@@ -161,12 +161,12 @@ class AnnotationBasedEventStateApplierTest {
         @Test
         void doNotHandleNotDeclaredEventType() {
             // given
-            var eventStateApplier = new AnnotationBasedEventStateApplier<>(HandlingJustStringState.class);
+            var eventStateApplier = new AnnotationBasedEntityEvolver<>(HandlingJustStringState.class);
             var state = new HandlingJustStringState();
             var event = domainEvent(0);
 
             // when
-            state = eventStateApplier.apply(state, event, processingContext);
+            state = eventStateApplier.evolve(state, event, processingContext);
 
             // then
             assertEquals(0, state.handledCount);
@@ -179,7 +179,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            state = eventStateApplier.apply(state, event, processingContext);
+            state = ENTITY_EVOLVER.evolve(state, event, processingContext);
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -192,6 +192,7 @@ class AnnotationBasedEventStateApplierTest {
     @Nested
     class RecordSupport {
 
+        @SuppressWarnings("unused")
         private record RecordState(String handledPayloads) {
 
             private static RecordState empty() {
@@ -206,7 +207,7 @@ class AnnotationBasedEventStateApplierTest {
             }
         }
 
-        private static final EventStateApplier<RecordState> eventStateApplier = new AnnotationBasedEventStateApplier<>(
+        private static final EntityEvolver<RecordState> ENTITY_EVOLVER = new AnnotationBasedEntityEvolver<>(
                 RecordState.class);
 
         @Test
@@ -216,7 +217,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            eventStateApplier.apply(state, event, processingContext);
+            ENTITY_EVOLVER.evolve(state, event, processingContext);
 
             // then
             assertEquals("null", state.handledPayloads);
@@ -229,7 +230,7 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when
-            state = eventStateApplier.apply(state, event, processingContext);
+            state = ENTITY_EVOLVER.evolve(state, event, processingContext);
 
             // then
             assertEquals("null-0", state.handledPayloads);
@@ -242,15 +243,17 @@ class AnnotationBasedEventStateApplierTest {
         @Test
         void throwsStateEvolvingExceptionOnExceptionInsideEventHandler() {
             // given
-            var eventStateApplier = new AnnotationBasedEventStateApplier<>(ErrorThrowingState.class);
+            var testSubject = new AnnotationBasedEntityEvolver<>(ErrorThrowingState.class);
             var state = new ErrorThrowingState();
             var event = domainEvent(0);
 
             // when-then
             var exception = assertThrows(StateEvolvingException.class,
-                                         () -> eventStateApplier.apply(state, event, processingContext));
-            assertEquals(exception.getMessage(),
-                         "Failed to apply event [event#0.0.1] in order to evolve [class org.axonframework.eventsourcing.AnnotationBasedEventStateApplierTest$ErrorThrowingState] state");
+                                         () -> testSubject.evolve(state, event, processingContext));
+            assertEquals(
+                    "Failed to apply event [event#0.0.1] in order to evolve [class org.axonframework.eventsourcing.AnnotationBasedEntityEvolverTest$ErrorThrowingState] state",
+                    exception.getMessage()
+            );
             assertInstanceOf(RuntimeException.class, exception.getCause());
             assertTrue(exception.getCause().getMessage().contains("Simulated error for event: 0"));
         }
@@ -261,8 +264,9 @@ class AnnotationBasedEventStateApplierTest {
             var event = domainEvent(0);
 
             // when-then
+            //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
-                         () -> eventStateApplier.apply(null, event, processingContext),
+                         () -> ENTITY_EVOLVER.evolve(null, event, processingContext),
                          "Model may not be null");
         }
 
@@ -272,8 +276,9 @@ class AnnotationBasedEventStateApplierTest {
             var state = new TestState();
 
             // when-then
+            //noinspection DataFlowIssue
             assertThrows(NullPointerException.class,
-                         () -> eventStateApplier.apply(state, null, processingContext),
+                         () -> ENTITY_EVOLVER.evolve(state, null, processingContext),
                          "Event Message may not be null");
         }
     }
@@ -327,6 +332,7 @@ class AnnotationBasedEventStateApplierTest {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class ErrorThrowingState {
 
         @EventSourcingHandler
@@ -335,6 +341,7 @@ class AnnotationBasedEventStateApplierTest {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class HandlingJustStringState {
 
         private int handledCount = 0;

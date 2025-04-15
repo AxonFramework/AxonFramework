@@ -17,59 +17,51 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.messaging.QualifiedName;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Filtered {@link EventCriteria} that takes both the tags and the event's type into consideration.
+ * Filtered {@link EventCriteria} that matches events based on only their tags. The tags of the event must contain all
+ * tags in the {@code tags} set to match.
  * <p>
- * Events match if the following conditions are met:
- * <ol>
- *     <li>The event's type is in the {@code types} set, or the {@code types} set is empty.</li>
- *     <li>The event tags contain all tags in the {@code tags} set, or the {@code tags} set is empty.</li>
- * </ol>
- * <p>
- * To construct an instance of a filtered {@link EventCriteria}, use the {@link EventCriteria#match()} method.
+ * You can limit the types of events to be matched by using the {@link AnyEvent#andBeingOneOfTypes(Set)} method, which
+ * will return a new {@link EventCriteria} that matches only the specified types.
  *
- * @param types The types that this criteria instance matches with.
- * @param tags  The tags that events are expected to have.
+ *
+ * @param tags The tags that events are expected to have.
  * @author Steven van Beelen
  * @author Allard Buijze
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-record FilteredEventCriteria(@Nonnull Set<String> types,
-                             @Nonnull Set<Tag> tags) implements EventCriteria, EventCriterion {
+record TagFilteredEventCriteria(@Nonnull Set<Tag> tags)
+        implements EventCriteria, EventCriterion, EventTypeRestrictableEventCriteria {
 
     /**
-     * Constructs an {@link EventCriteria} that matches against given {@code types} and the given {@code tags}. If the
-     * {@code types} set is empty, the criteria will match against any type. If the {@code tags} set is empty, the
-     * criteria will match against any tags.
+     * Constructs an {@link EventCriteria} that matches against the given {@code tags}. If the {@code tags} set is
+     * empty, the criteria will match against any tags.
      *
-     * @param types The types that this criteria instance matches with.
-     * @param tags  The tags that events are expected to have.
+     * @param tags The tags that events are expected to have.
      */
-    FilteredEventCriteria(@Nonnull Set<String> types,
-                          @Nonnull Set<Tag> tags) {
-        this.types = Set.copyOf(requireNonNull(types, "The types cannot be null"));
+    TagFilteredEventCriteria(@Nonnull Set<Tag> tags) {
         this.tags = Set.copyOf(requireNonNull(tags, "The tags cannot be null"));
     }
 
     @Override
     public Set<EventCriterion> flatten() {
-        if (types.isEmpty() && tags.isEmpty()) {
+        if (tags.isEmpty()) {
             return Collections.emptySet();
         }
         return Set.of(this);
     }
 
     @Override
-    public Set<String> types() {
-        return types;
+    public Set<QualifiedName> types() {
+        return Collections.emptySet();
     }
 
     @Override
@@ -78,12 +70,8 @@ record FilteredEventCriteria(@Nonnull Set<String> types,
     }
 
     @Override
-    public boolean matches(@Nonnull String type, @Nonnull Set<Tag> tags) {
-        return matchesType(type) && matchesTags(tags);
-    }
-
-    private boolean matchesType(String type) {
-        return types.isEmpty() || types.contains(type);
+    public boolean matches(@Nonnull QualifiedName type, @Nonnull Set<Tag> tags) {
+        return matchesTags(tags);
     }
 
     private boolean matchesTags(Set<Tag> tags) {
@@ -109,6 +97,11 @@ record FilteredEventCriteria(@Nonnull Set<String> types,
 
     @Override
     public boolean hasCriteria() {
-        return !tags.isEmpty() || !types.isEmpty();
+        return !tags.isEmpty();
+    }
+
+    @Override
+    public EventCriteria andBeingOneOfTypes(@Nonnull Set<QualifiedName> types) {
+        return new TagAndTypeFilteredEventCriteria(types, tags);
     }
 }

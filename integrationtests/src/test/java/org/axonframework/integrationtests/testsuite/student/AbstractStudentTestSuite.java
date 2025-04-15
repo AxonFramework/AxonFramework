@@ -20,10 +20,9 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.NewConfiguration;
-import org.axonframework.eventhandling.gateway.EventGateway;
-import org.axonframework.eventsourcing.AnnotationBasedEventStateApplier;
+import org.axonframework.eventsourcing.AnnotationBasedEntityEvolver;
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.eventsourcing.EventStateApplier;
+import org.axonframework.eventsourcing.EntityEvolver;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
@@ -34,7 +33,6 @@ import org.axonframework.integrationtests.testsuite.student.events.StudentEnroll
 import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.modelling.repository.AsyncRepository;
@@ -73,11 +71,11 @@ public abstract class AbstractStudentTestSuite {
         studentEntity = EventSourcedEntityBuilder.entity(String.class, Student.class)
                                                  .entityFactory(c -> (type, id) -> new Student(id))
                                                  .criteriaResolver(this::studentCriteriaResolver)
-                                                 .eventStateApplier(this::studentAnnotationBasedEventStateApplier);
+                                                 .entityEvolver(this::studentEvolver);
         courseEntity = EventSourcedEntityBuilder.entity(String.class, Course.class)
                                                 .entityFactory(c -> (type, id) -> new Course(id))
                                                 .criteriaResolver(this::courseCriteriaResolver)
-                                                .eventStateApplier(this::courseEventStateApplier);
+                                                .entityEvolver(this::courseEvolver);
 
         statefulCommandHandlingModule = StatefulCommandHandlingModule.named("student-course-module")
                                                                      .entities()
@@ -127,15 +125,15 @@ public abstract class AbstractStudentTestSuite {
     }
 
     /**
-     * Returns the {@link EventStateApplier} for the {@link Course} model. Defaults to manually calling the event
-     * sourcing handlers on the model.
+     * Returns the {@link EntityEvolver} for the {@link Course} model. Defaults to manually calling the event sourcing
+     * handlers on the model.
      */
-    protected EventStateApplier<Course> courseEventStateApplier(NewConfiguration c) {
-        return (model, em, ctx) -> {
-            if (em.getPayload() instanceof StudentEnrolledEvent e) {
-                model.handle(e);
+    protected EntityEvolver<Course> courseEvolver(NewConfiguration config) {
+        return (course, event, context) -> {
+            if (event.getPayload() instanceof StudentEnrolledEvent e) {
+                course.handle(e);
             }
-            return model;
+            return course;
         };
     }
 
@@ -143,28 +141,24 @@ public abstract class AbstractStudentTestSuite {
      * Returns the {@link CriteriaResolver} for the {@link Course} model. Defaults to a criteria that matches any event
      * with the tag "Course" and the given model id.
      */
-    protected CriteriaResolver<String> courseCriteriaResolver(NewConfiguration c) {
-        return courseId -> EventCriteria.match()
-                                        .eventsOfAnyType()
-                                        .withTags(new Tag("Course", courseId));
+    protected CriteriaResolver<String> courseCriteriaResolver(NewConfiguration config) {
+        return courseId -> EventCriteria.havingTags(new Tag("Course", courseId));
     }
 
     /**
      * Returns the {@link CriteriaResolver} for the {@link Student} model. Defaults to a criteria that matches any event
      * with the tag "Student" and the given model id.
      */
-    protected CriteriaResolver<String> studentCriteriaResolver(NewConfiguration c) {
-        return studentId -> EventCriteria.match()
-                                         .eventsOfAnyType()
-                                         .withTags(new Tag("Student", studentId));
+    protected CriteriaResolver<String> studentCriteriaResolver(NewConfiguration config) {
+        return studentId -> EventCriteria.havingTags(new Tag("Student", studentId));
     }
 
     /**
-     * Returns the {@link EventStateApplier} for the {@link Student} model. Defaults to using the
-     * {@link AnnotationBasedEventStateApplier} to use the annotations placed.
+     * Returns the {@link EntityEvolver} for the {@link Student} model. Defaults to using the
+     * {@link AnnotationBasedEntityEvolver} to use the annotations placed.
      */
-    protected EventStateApplier<Student> studentAnnotationBasedEventStateApplier(NewConfiguration c) {
-        return new AnnotationBasedEventStateApplier<>(Student.class, c.getComponent(ParameterResolverFactory.class));
+    protected EntityEvolver<Student> studentEvolver(NewConfiguration config) {
+        return new AnnotationBasedEntityEvolver<>(Student.class);
     }
 
     protected void changeStudentName(String studentId, String name) {

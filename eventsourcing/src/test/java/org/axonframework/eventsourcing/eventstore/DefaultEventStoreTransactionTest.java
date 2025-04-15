@@ -54,7 +54,7 @@ class DefaultEventStoreTransactionTest {
     private static final String TEST_AGGREGATE_ID = "someId";
     public static final Tag AGGREGATE_ID_TAG = new Tag("aggregateIdentifier", TEST_AGGREGATE_ID);
     private static final EventCriteria TEST_AGGREGATE_CRITERIA =
-            EventCriteria.match().eventsOfAnyType().withTags(AGGREGATE_ID_TAG);
+            EventCriteria.havingTags(AGGREGATE_ID_TAG);
     private final Context.ResourceKey<EventStoreTransaction> testEventStoreTransactionKey =
             Context.ResourceKey.withLabel("eventStoreTransaction");
     private final AsyncInMemoryEventStorageEngine eventStorageEngine = new AsyncInMemoryEventStorageEngine();
@@ -146,9 +146,9 @@ class DefaultEventStoreTransactionTest {
         @Test
         void appendCommitsOfNonExistentTagWhenOfTwoNonOverlappingTagsOneYieldedNoEvents() {
             Tag nonExistentTag = new Tag("nonExistent", "tag");
-            EventCriteria nonExistingCriteria = EventCriteria.match().eventsOfAnyType().withTags(nonExistentTag);
+            EventCriteria nonExistingCriteria = EventCriteria.havingTags(nonExistentTag);
             Tag existentTag = new Tag("existent", "tag");
-            EventCriteria existingCriteria = EventCriteria.match().eventsOfAnyType().withTags(existentTag);
+            EventCriteria existingCriteria = EventCriteria.havingTags(existentTag);
 
             appendEventForTag(existentTag);
             testCanCommitTag(nonExistingCriteria, existingCriteria, nonExistentTag);
@@ -157,9 +157,9 @@ class DefaultEventStoreTransactionTest {
         @Test
         void appendCommitsOfExistentTagWhenOfTwoNonOverlappingTagsOneYieldedNoEvents() {
             Tag nonExistentTag = new Tag("nonExistent", "tag");
-            EventCriteria nonExistingCriteria = EventCriteria.match().eventsOfAnyType().withTags(nonExistentTag);
+            EventCriteria nonExistingCriteria = EventCriteria.havingTags(nonExistentTag);
             Tag existentTag = new Tag("existent", "tag");
-            EventCriteria existingCriteria = EventCriteria.match().eventsOfAnyType().withTags(existentTag);
+            EventCriteria existingCriteria = EventCriteria.havingTags(existentTag);
 
             appendEventForTag(existentTag);
             testCanCommitTag(nonExistingCriteria, existingCriteria, existentTag);
