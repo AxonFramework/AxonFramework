@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class ProcessingContextEventAppender implements EventAppender, DescribableComponent {
+class ProcessingContextEventAppender implements EventAppender, DescribableComponent {
 
     private final ProcessingContext processingContext;
     private final EventSink eventSink;
@@ -57,11 +57,9 @@ public class ProcessingContextEventAppender implements EventAppender, Describabl
             EventSink eventSink,
             MessageTypeResolver messageTypeResolver
     ) {
-        Objects.requireNonNull(eventSink, "EventSink may not be null");
-        Objects.requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
-        this.processingContext = processingContext;
-        this.eventSink = eventSink;
-        this.messageTypeResolver = messageTypeResolver;
+        this.processingContext = Objects.requireNonNull(processingContext, "ProcessingContext may not be null");
+        this.eventSink = Objects.requireNonNull(eventSink, "EventSink may not be null");
+        this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver, "MessageTypeResolver may not be null");
     }
 
     @Override
@@ -77,5 +75,7 @@ public class ProcessingContextEventAppender implements EventAppender, Describabl
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("processingContext", processingContext);
+        descriptor.describeProperty("eventSink", eventSink);
+        descriptor.describeProperty("messageTypeResolver", messageTypeResolver);
     }
 }

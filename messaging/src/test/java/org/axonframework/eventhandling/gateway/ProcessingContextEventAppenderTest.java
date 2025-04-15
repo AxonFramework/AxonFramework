@@ -35,7 +35,6 @@ class ProcessingContextEventAppenderTest {
     private final EventSink mockEventSink = mock(EventSink.class);
     private final MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
-
     @Test
     void publishesPayloadsAsMessagesToEventSink() {
         ProcessingContext context = new StubProcessingContext();
