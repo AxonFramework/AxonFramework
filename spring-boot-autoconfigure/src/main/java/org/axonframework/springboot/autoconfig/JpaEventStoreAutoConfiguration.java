@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import jakarta.persistence.EntityManagerFactory;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
@@ -56,7 +57,7 @@ public class JpaEventStoreAutoConfiguration {
     public EventStorageEngine eventStorageEngine(Serializer defaultSerializer,
                                                  PersistenceExceptionResolver persistenceExceptionResolver,
                                                  @Qualifier("eventSerializer") Serializer eventSerializer,
-                                                 org.axonframework.config.Configuration configuration,
+                                                 LegacyConfiguration configuration,
                                                  EntityManagerProvider entityManagerProvider,
                                                  TransactionManager transactionManager) {
         return JpaEventStorageEngine.builder()

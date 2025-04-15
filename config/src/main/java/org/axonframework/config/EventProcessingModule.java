@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,8 +121,8 @@ public class EventProcessingModule
     protected final Map<String, Component<EventProcessor>> eventProcessors = new HashMap<>();
     protected final Map<String, DeadLetteringEventHandlerInvoker> deadLetteringEventHandlerInvokers = new HashMap<>();
 
-    protected final List<BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
-    protected final Map<String, List<Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
+    protected final List<BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<? super EventMessage<?>>>> defaultHandlerInterceptors = new ArrayList<>();
+    protected final Map<String, List<Function<LegacyConfiguration, MessageHandlerInterceptor<? super EventMessage<?>>>>> handlerInterceptorsBuilders = new HashMap<>();
     protected final Map<String, Component<ListenerInvocationErrorHandler>> listenerInvocationErrorHandlers = new HashMap<>();
     protected final Map<String, Component<ErrorHandler>> errorHandlers = new HashMap<>();
     protected final Map<String, Component<SequencingPolicy<? super EventMessage<?>>>> sequencingPolicies = new HashMap<>();
@@ -136,10 +136,10 @@ public class EventProcessingModule
     protected final Map<String, Component<TrackingEventProcessorConfiguration>> tepConfigs = new HashMap<>();
     protected final Map<String, PooledStreamingProcessorConfiguration> psepConfigs = new HashMap<>();
     protected final Map<String, DeadLetteringInvokerConfiguration> deadLetteringInvokerConfigs = new HashMap<>();
-    protected Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider = processingGroup -> null;
+    protected Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider = processingGroup -> null;
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
-    protected Configuration configuration;
+    protected LegacyConfiguration configuration;
 
     private final Component<ListenerInvocationErrorHandler> defaultListenerInvocationErrorHandler = new Component<>(
             () -> configuration,
@@ -193,7 +193,7 @@ public class EventProcessingModule
             new Component<>(
                     () -> configuration,
                     "defaultSubscribableMessageSource",
-                    Configuration::eventBus
+                    LegacyConfiguration::eventBus
             );
     private final Component<TrackingEventProcessorConfiguration> defaultTepConfig =
             new Component<>(
@@ -208,7 +208,7 @@ public class EventProcessingModule
     private Function<String, String> defaultProcessingGroupAssignment = Function.identity();
 
     @Override
-    public void initialize(Configuration configuration) {
+    public void initialize(LegacyConfiguration configuration) {
         this.configuration = configuration;
         eventProcessors.clear();
         configuration.onStart(Integer.MIN_VALUE, this::initializeProcessors);
@@ -230,7 +230,7 @@ public class EventProcessingModule
 
             instanceSelectors.sort(comparing(InstanceProcessingGroupSelector::getPriority).reversed());
 
-            Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers = new HashMap<>();
+            Map<String, List<Function<LegacyConfiguration, EventHandlerInvoker>>> handlerInvokers = new HashMap<>();
             registerEventHandlerInvokers(handlerInvokers);
             registerSagaManagers(handlerInvokers);
 
@@ -263,7 +263,7 @@ public class EventProcessingModule
     }
 
     private void registerEventHandlerInvokers(
-            Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers
+            Map<String, List<Function<LegacyConfiguration, EventHandlerInvoker>>> handlerInvokers
     ) {
         Map<String, List<Object>> assignments = new HashMap<>();
 
@@ -359,7 +359,9 @@ public class EventProcessingModule
         return configuration.handlerDefinition(handlers.get(0).getClass());
     }
 
-    private void registerSagaManagers(Map<String, List<Function<Configuration, EventHandlerInvoker>>> handlerInvokers) {
+    private void registerSagaManagers(
+            Map<String, List<Function<LegacyConfiguration, EventHandlerInvoker>>> handlerInvokers
+    ) {
         sagaConfigurations.values().forEach(sc -> {
             SagaConfiguration<?> sagaConfig = sc.initialize(configuration);
             String processingGroup = selectProcessingGroupByType(sagaConfig.type());
@@ -389,8 +391,10 @@ public class EventProcessingModule
                 && !psepConfigs.containsKey(CONFIGURED_DEFAULT_PSEP_CONFIG);
     }
 
-    private EventProcessor buildEventProcessor(List<Function<Configuration, EventHandlerInvoker>> builderFunctions,
-                                               String processorName) {
+    private EventProcessor buildEventProcessor(
+            List<Function<LegacyConfiguration, EventHandlerInvoker>> builderFunctions,
+            String processorName
+    ) {
         List<EventHandlerInvoker> invokers = builderFunctions
                 .stream()
                 .map(invokerBuilder -> invokerBuilder.apply(configuration))
@@ -576,14 +580,16 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerSagaStore(
-            Function<Configuration, SagaStore> sagaStoreBuilder) {
+            Function<LegacyConfiguration, SagaStore> sagaStoreBuilder
+    ) {
         this.sagaStore.update(sagaStoreBuilder);
         return this;
     }
 
     @Override
     public EventProcessingConfigurer registerEventHandler(
-            Function<Configuration, Object> eventHandlerBuilder) {
+            Function<LegacyConfiguration, Object> eventHandlerBuilder
+    ) {
         this.eventHandlerBuilders.add(new Component<>(() -> configuration,
                                                       "eventHandler",
                                                       eventHandlerBuilder));
@@ -594,14 +600,15 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerDefaultListenerInvocationErrorHandler(
-            Function<Configuration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder) {
+            Function<LegacyConfiguration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder
+    ) {
         defaultListenerInvocationErrorHandler.update(listenerInvocationErrorHandlerBuilder);
         return this;
     }
 
     @Override
     public EventProcessingConfigurer registerListenerInvocationErrorHandler(String processingGroup,
-                                                                            Function<Configuration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder) {
+                                                                            Function<LegacyConfiguration, ListenerInvocationErrorHandler> listenerInvocationErrorHandlerBuilder) {
         listenerInvocationErrorHandlers.put(processingGroup, new Component<>(() -> configuration,
                                                                              "listenerInvocationErrorHandler",
                                                                              listenerInvocationErrorHandlerBuilder));
@@ -610,14 +617,16 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer configureDefaultStreamableMessageSource(
-            Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> defaultSource) {
+            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> defaultSource
+    ) {
         this.defaultStreamableSource.update(defaultSource);
         return this;
     }
 
     @Override
     public EventProcessingConfigurer configureDefaultSubscribableMessageSource(
-            Function<Configuration, SubscribableMessageSource<EventMessage<?>>> defaultSource) {
+            Function<LegacyConfiguration, SubscribableMessageSource<EventMessage<?>>> defaultSource
+    ) {
         this.defaultSubscribableSource.update(defaultSource);
         return this;
     }
@@ -625,15 +634,15 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer registerTrackingEventProcessor(
             String name,
-            Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source
+            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> source
     ) {
         return registerTrackingEventProcessor(name, source, c -> trackingEventProcessorConfig(name));
     }
 
     @Override
     public EventProcessingConfigurer registerTrackingEventProcessor(String name,
-                                                                    Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> source,
-                                                                    Function<Configuration, TrackingEventProcessorConfiguration> processorConfiguration) {
+                                                                    Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> source,
+                                                                    Function<LegacyConfiguration, TrackingEventProcessorConfiguration> processorConfiguration) {
         registerEventProcessor(
                 name,
                 (n, c, ehi) -> trackingEventProcessor(n, ehi, processorConfiguration.apply(c), source.apply(c))
@@ -660,7 +669,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerTokenStore(String processorName,
-                                                        Function<Configuration, TokenStore> tokenStore) {
+                                                        Function<LegacyConfiguration, TokenStore> tokenStore) {
         this.tokenStore.put(processorName, new Component<>(() -> configuration,
                                                            "tokenStore",
                                                            tokenStore));
@@ -668,7 +677,7 @@ public class EventProcessingModule
     }
 
     @Override
-    public EventProcessingConfigurer registerTokenStore(Function<Configuration, TokenStore> tokenStore) {
+    public EventProcessingConfigurer registerTokenStore(Function<LegacyConfiguration, TokenStore> tokenStore) {
         this.defaultTokenStore.update(tokenStore);
         return this;
     }
@@ -698,21 +707,21 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerSubscribingEventProcessor(String name,
-                                                                       Function<Configuration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
+                                                                       Function<LegacyConfiguration, SubscribableMessageSource<? extends EventMessage<?>>> messageSource) {
         registerEventProcessor(name, (n, c, ehi) -> subscribingEventProcessor(n, ehi, messageSource.apply(c)));
         return this;
     }
 
     @Override
     public EventProcessingConfigurer registerDefaultErrorHandler(
-            Function<Configuration, ErrorHandler> errorHandlerBuilder) {
+            Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder) {
         this.defaultErrorHandler.update(errorHandlerBuilder);
         return this;
     }
 
     @Override
     public EventProcessingConfigurer registerErrorHandler(String eventProcessorName,
-                                                          Function<Configuration, ErrorHandler> errorHandlerBuilder) {
+                                                          Function<LegacyConfiguration, ErrorHandler> errorHandlerBuilder) {
         this.errorHandlers.put(eventProcessorName, new Component<>(() -> configuration,
                                                                    "errorHandler",
                                                                    errorHandlerBuilder));
@@ -759,7 +768,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerHandlerInterceptor(String processorName,
-                                                                Function<Configuration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
+                                                                Function<LegacyConfiguration, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
         Component<EventProcessor> eps = eventProcessors.get(processorName);
         if (eps != null && eps.isInitialized()) {
             eps.get().registerHandlerInterceptor(interceptorBuilder.apply(configuration));
@@ -771,14 +780,15 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerDefaultHandlerInterceptor(
-            BiFunction<Configuration, String, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder) {
+            BiFunction<LegacyConfiguration, String, MessageHandlerInterceptor<? super EventMessage<?>>> interceptorBuilder
+    ) {
         this.defaultHandlerInterceptors.add(interceptorBuilder);
         return this;
     }
 
     @Override
     public EventProcessingConfigurer registerSequencingPolicy(String processingGroup,
-                                                              Function<Configuration, SequencingPolicy<? super EventMessage<?>>> policyBuilder) {
+                                                              Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> policyBuilder) {
         this.sequencingPolicies.put(processingGroup, new Component<>(() -> configuration,
                                                                      "sequencingPolicy",
                                                                      policyBuilder));
@@ -787,7 +797,8 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerDefaultSequencingPolicy(
-            Function<Configuration, SequencingPolicy<? super EventMessage<?>>> policyBuilder) {
+            Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> policyBuilder
+    ) {
         this.defaultSequencingPolicy.update(policyBuilder);
         return this;
     }
@@ -801,7 +812,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerRollbackConfiguration(String name,
-                                                                   Function<Configuration, RollbackConfiguration> rollbackConfigurationBuilder) {
+                                                                   Function<LegacyConfiguration, RollbackConfiguration> rollbackConfigurationBuilder) {
         this.rollbackConfigurations.put(name, new Component<>(() -> configuration,
                                                               "rollbackConfiguration",
                                                               rollbackConfigurationBuilder));
@@ -810,7 +821,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerTransactionManager(String name,
-                                                                Function<Configuration, TransactionManager> transactionManagerBuilder) {
+                                                                Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder) {
         this.transactionManagers.put(name, new Component<>(() -> configuration,
                                                            "transactionManager",
                                                            transactionManagerBuilder));
@@ -819,7 +830,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerDefaultTransactionManager(
-            Function<Configuration, TransactionManager> transactionManagerBuilder
+            Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder
     ) {
         this.defaultTransactionManager.update(transactionManagerBuilder);
         return this;
@@ -828,7 +839,7 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
             String name,
-            Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
+            Function<LegacyConfiguration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
     ) {
         this.tepConfigs.put(name, new Component<>(() -> configuration,
                                                   "trackingEventProcessorConfiguration",
@@ -838,7 +849,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerTrackingEventProcessorConfiguration(
-            Function<Configuration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
+            Function<LegacyConfiguration, TrackingEventProcessorConfiguration> trackingEventProcessorConfigurationBuilder
     ) {
         this.tepConfigs.put(CONFIGURED_DEFAULT_TEP_CONFIG,
                             new Component<>(() -> configuration,
@@ -850,7 +861,7 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer registerPooledStreamingEventProcessor(
             String name,
-            Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource,
+            Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource,
             PooledStreamingProcessorConfiguration processorConfiguration
     ) {
         registerEventProcessor(
@@ -872,7 +883,7 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer registerDeadLetterQueue(
             @Nonnull String processingGroup,
-            @Nonnull Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>> queueBuilder
+            @Nonnull Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>> queueBuilder
     ) {
         this.deadLetterQueues.put(
                 processingGroup, new Component<>(() -> configuration, "deadLetterQueue", queueBuilder)
@@ -882,7 +893,7 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerDefaultDeadLetterPolicy(
-            @Nonnull Function<Configuration, EnqueuePolicy<EventMessage<?>>> policyBuilder
+            @Nonnull Function<LegacyConfiguration, EnqueuePolicy<EventMessage<?>>> policyBuilder
     ) {
         this.defaultDeadLetterPolicy.update(policyBuilder);
         return this;
@@ -891,7 +902,7 @@ public class EventProcessingModule
     @Override
     public EventProcessingConfigurer registerDeadLetterPolicy(
             @Nonnull String processingGroup,
-            @Nonnull Function<Configuration, EnqueuePolicy<EventMessage<?>>> policyBuilder
+            @Nonnull Function<LegacyConfiguration, EnqueuePolicy<EventMessage<?>>> policyBuilder
     ) {
         deadLetterPolicies.put(processingGroup,
                                new Component<>(() -> configuration, "deadLetterPolicy", policyBuilder));
@@ -917,13 +928,14 @@ public class EventProcessingModule
 
     @Override
     public EventProcessingConfigurer registerDeadLetterQueueProvider(
-            Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider) {
+            Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider
+    ) {
         this.deadLetterQueueProvider = deadLetterQueueProvider;
         return this;
     }
 
     private EventProcessor defaultEventProcessor(String name,
-                                                 Configuration conf,
+                                                 LegacyConfiguration conf,
                                                  EventHandlerInvoker eventHandlerInvoker) {
         if (conf.eventBus() instanceof StreamableMessageSource) {
             return trackingEventProcessor(
@@ -1008,7 +1020,7 @@ public class EventProcessingModule
     protected EventProcessor pooledStreamingEventProcessor(
             String name,
             EventHandlerInvoker eventHandlerInvoker,
-            Configuration config,
+            LegacyConfiguration config,
             StreamableMessageSource<TrackedEventMessage<?>> messageSource,
             PooledStreamingProcessorConfiguration processorConfiguration
     ) {

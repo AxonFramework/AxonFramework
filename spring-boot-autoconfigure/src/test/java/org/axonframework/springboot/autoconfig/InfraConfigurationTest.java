@@ -19,7 +19,7 @@ package org.axonframework.springboot.autoconfig;
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingModule;
@@ -113,7 +113,7 @@ class InfraConfigurationTest {
             assertThat(context).getBean("secondUpcasterChain")
                                .isInstanceOf(EventUpcasterChain.class);
 
-            EventUpcasterChain result = context.getBean("springAxonConfiguration", Configuration.class)
+            EventUpcasterChain result = context.getBean("springAxonConfiguration", LegacyConfiguration.class)
                                                .upcasterChain();
             assertThat(result).isNotNull();
 

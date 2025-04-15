@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ package org.axonframework.config;
 import java.util.List;
 
 import static java.util.Arrays.stream;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Assertion utils for axon {@link Configuration}.
+ * Assertion utils for axon {@link LegacyConfiguration}.
  *
  * @author Milan Savic
  * @since 3.3
@@ -40,7 +40,7 @@ public class ConfigAssertions {
      * @param moduleTypes   expected module configuration types present in {@code configuration}
      */
     @SafeVarargs
-    public static void assertExpectedModules(Configuration configuration,
+    public static void assertExpectedModules(LegacyConfiguration configuration,
                                              Class<? extends ModuleConfiguration>... moduleTypes) {
         stream(moduleTypes).forEach(moduleType -> {
             List<? extends ModuleConfiguration> matches = configuration.findModules(moduleType);

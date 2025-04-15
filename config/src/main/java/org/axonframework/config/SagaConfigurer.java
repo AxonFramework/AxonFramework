@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.axonframework.config;
 
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.modelling.saga.AbstractSagaManager;
 import org.axonframework.modelling.saga.AnnotatedSagaManager;
@@ -29,7 +28,6 @@ import org.axonframework.modelling.saga.repository.SagaStore;
 
 import java.util.function.Function;
 
-import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -42,10 +40,10 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 public class SagaConfigurer<T> {
 
     private final Class<T> type;
-    private Function<Configuration, AbstractSagaManager<T>> managerBuilder;
-    private Function<Configuration, SagaRepository<T>> repositoryBuilder;
+    private Function<LegacyConfiguration, AbstractSagaManager<T>> managerBuilder;
+    private Function<LegacyConfiguration, SagaRepository<T>> repositoryBuilder;
     @SuppressWarnings("unchecked")
-    private Function<Configuration, SagaStore<? super T>> storeBuilder =
+    private Function<LegacyConfiguration, SagaStore<? super T>> storeBuilder =
             c -> c.eventProcessingConfiguration()
                   .sagaStore();
     private SagaConfigurationImpl<T> sagaConfig;
@@ -80,7 +78,8 @@ public class SagaConfigurer<T> {
      * @return this {@link SagaConfigurer} instance, for fluent interfacing
      */
     public SagaConfigurer<T> configureSagaManager(
-            Function<Configuration, AbstractSagaManager<T>> managerBuilder) {
+            Function<LegacyConfiguration, AbstractSagaManager<T>> managerBuilder
+    ) {
         verifyNotInitialized();
         assertNonNull(managerBuilder, "SagaManager builder is not allowed to be null");
         this.managerBuilder = managerBuilder;
@@ -94,7 +93,8 @@ public class SagaConfigurer<T> {
      * @return this {@link SagaConfigurer} instance, for fluent interfacing
      */
     public SagaConfigurer<T> configureRepository(
-            Function<Configuration, SagaRepository<T>> repositoryBuilder) {
+            Function<LegacyConfiguration, SagaRepository<T>> repositoryBuilder
+    ) {
         verifyNotInitialized();
         assertNonNull(repositoryBuilder, "SagaRepository builder is not allowed to be null");
         this.repositoryBuilder = repositoryBuilder;
@@ -108,7 +108,8 @@ public class SagaConfigurer<T> {
      * @return this {@link SagaConfigurer} instance, for fluent interfacing
      */
     public SagaConfigurer<T> configureSagaStore(
-            Function<Configuration, SagaStore<? super T>> storeBuilder) {
+            Function<LegacyConfiguration, SagaStore<? super T>> storeBuilder
+    ) {
         verifyNotInitialized();
         assertNonNull(storeBuilder, "SagaStore builder is not allowed to be null");
         this.storeBuilder = storeBuilder;
@@ -123,13 +124,13 @@ public class SagaConfigurer<T> {
     }
 
     /**
-     * Initializes Saga Configuration by using the main {@link Configuration}. After initialization, it is safe to call
-     * accessor methods on this Configuration.
+     * Initializes Saga Configuration by using the main {@link LegacyConfiguration}. After initialization, it is safe to
+     * call accessor methods on this Configuration.
      *
-     * @param configuration the main {@link Configuration} used to provide components to this Saga Configuration
+     * @param configuration the main {@link LegacyConfiguration} used to provide components to this Saga Configuration
      * @return the instance describing the Saga Configuration
      */
-    public SagaConfiguration<T> initialize(Configuration configuration) {
+    public SagaConfiguration<T> initialize(LegacyConfiguration configuration) {
         if (this.sagaConfig == null) {
             sagaConfig = new SagaConfigurationImpl<>(this);
             sagaConfig.initialize(configuration);
@@ -140,7 +141,7 @@ public class SagaConfigurer<T> {
     private static class SagaConfigurationImpl<S> implements SagaConfiguration<S> {
 
         private final SagaConfigurer<S> configurer;
-        private Configuration config;
+        private LegacyConfiguration config;
         private Component<AbstractSagaManager<S>> manager;
         private Component<SagaRepository<S>> repository;
         private Component<SagaStore<? super S>> store;
@@ -191,24 +192,24 @@ public class SagaConfigurer<T> {
                          .sagaProcessingGroup(configurer.type);
         }
 
-        private void initialize(Configuration configuration) {
+        private void initialize(LegacyConfiguration configuration) {
             this.config = configuration;
             String managerName = configurer.type.getSimpleName() + "Manager";
             String repositoryName = configurer.type.getSimpleName() + "Repository";
             store = new Component<>(configuration, "sagaStore", configurer.storeBuilder);
-            Function<Configuration, SagaRepository<S>> repositoryBuilder = configurer.repositoryBuilder;
+            Function<LegacyConfiguration, SagaRepository<S>> repositoryBuilder = configurer.repositoryBuilder;
             if (repositoryBuilder == null) {
                 repositoryBuilder = c -> AnnotatedSagaRepository.<S>builder()
-                        .sagaType(configurer.type)
-                        .sagaStore(store.get())
-                        .resourceInjector(c.resourceInjector())
-                        .parameterResolverFactory(c.parameterResolverFactory())
-                        .handlerDefinition(c.handlerDefinition(configurer.type))
-                        .build();
+                                                                .sagaType(configurer.type)
+                                                                .sagaStore(store.get())
+                                                                .resourceInjector(c.resourceInjector())
+                                                                .parameterResolverFactory(c.parameterResolverFactory())
+                                                                .handlerDefinition(c.handlerDefinition(configurer.type))
+                                                                .build();
             }
             repository = new Component<>(configuration, repositoryName, repositoryBuilder);
 
-            Function<Configuration, AbstractSagaManager<S>> managerBuilder = configurer.managerBuilder;
+            Function<LegacyConfiguration, AbstractSagaManager<S>> managerBuilder = configurer.managerBuilder;
             if (managerBuilder == null) {
                 managerBuilder = c -> {
                     EventProcessingConfiguration eventProcessingConfiguration = c.eventProcessingConfiguration();

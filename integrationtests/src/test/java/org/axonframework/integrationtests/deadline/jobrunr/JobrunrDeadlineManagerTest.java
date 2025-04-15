@@ -17,14 +17,13 @@
 package org.axonframework.integrationtests.deadline.jobrunr;
 
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
 import org.axonframework.deadline.jobrunr.JobRunrDeadlineManager;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
 import org.axonframework.messaging.ScopeAwareProvider;
-import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.modelling.command.AggregateScopeDescriptor;
 import org.axonframework.serialization.TestSerializer;
 import org.jobrunr.configuration.JobRunr;
@@ -59,7 +58,7 @@ class JobrunrDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
     }
 
     @Override
-    public DeadlineManager buildDeadlineManager(Configuration configuration) {
+    public DeadlineManager buildDeadlineManager(LegacyConfiguration configuration) {
         StorageProvider storageProvider = new InMemoryStorageProvider();
         JobScheduler scheduler = new JobScheduler(storageProvider);
         JobRunrDeadlineManager manager = JobRunrDeadlineManager

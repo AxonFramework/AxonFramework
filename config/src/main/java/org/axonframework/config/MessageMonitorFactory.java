@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,5 +33,5 @@ public interface MessageMonitorFactory {
      * @param componentName The name of the component for which the Message Monitor must be created
      * @return the Message Monitor for the component
      */
-    MessageMonitor<Message<?>> create(Configuration configuration, Class<?> componentType, String componentName);
+    MessageMonitor<Message<?>> create(LegacyConfiguration configuration, Class<?> componentType, String componentName);
 }

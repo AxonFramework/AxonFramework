@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.cache;
 
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.caching.Cache;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.config.SagaConfigurer;
 import org.axonframework.eventhandling.EventMessage;
@@ -79,7 +79,7 @@ public abstract class CachingIntegrationTestSuite {
     private static final Duration SIXTEEN_SECONDS = Duration.ofSeconds(16);
     private static final Duration THIRTY_TWO_SECONDS = Duration.ofSeconds(32);
 
-    protected Configuration config;
+    protected LegacyConfiguration config;
     private StreamingEventProcessor sagaProcessor;
 
     private EntryListenerValidator<SagaStore.Entry<CachedSaga>> sagaCacheListener;

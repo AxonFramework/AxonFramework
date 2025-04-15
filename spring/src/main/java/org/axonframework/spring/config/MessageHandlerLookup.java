@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.spring.config;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandler;
 import org.slf4j.Logger;
@@ -45,7 +46,7 @@ import javax.annotation.Nonnull;
 /**
  * A {@link BeanDefinitionRegistryPostProcessor} implementation that detects beans with Axon Message handlers and
  * registers an {@link MessageHandlerConfigurer} to have these handlers registered in the Axon
- * {@link org.axonframework.config.Configuration}.
+ * {@link LegacyConfiguration}.
  *
  * @author Allard Buijze
  * @since 4.6.0

@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.eventsourcing;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -44,12 +44,13 @@ class NestedUnitOfWorkTest {
     @Test
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void stagedEventsLoadInCorrectOrder() {
-        Configuration config = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
-                                                      .configureAggregate(TestAggregate.class)
-                                                      .registerCommandHandler(x -> new Handler())
-                                                      .configureEmbeddedEventStore(x -> new InMemoryEventStorageEngine())
-                                                      .registerComponent(List.class, c -> new CopyOnWriteArrayList<>())
-                                                      .buildConfiguration();
+        LegacyConfiguration config =
+                LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
+                                       .configureAggregate(TestAggregate.class)
+                                       .registerCommandHandler(x -> new Handler())
+                                       .configureEmbeddedEventStore(x -> new InMemoryEventStorageEngine())
+                                       .registerComponent(List.class, c -> new CopyOnWriteArrayList<>())
+                                       .buildConfiguration();
 
         config.start();
         CommandGateway gw = config.commandGateway();
@@ -59,8 +60,8 @@ class NestedUnitOfWorkTest {
 
         config.shutdown();
 
-        assertEquals(asList("pre-rollback-first","pre-rollback-second",
-                            "post-rollback-first","post-rollback-second",
+        assertEquals(asList("pre-rollback-first", "pre-rollback-second",
+                            "post-rollback-first", "post-rollback-second",
                             "from-eventstore-first", "from-eventstore-second"),
                      config.getComponent(List.class));
     }
@@ -102,6 +103,7 @@ class NestedUnitOfWorkTest {
     }
 
     static class Create {
+
         @TargetAggregateIdentifier
         String id;
 
@@ -111,6 +113,7 @@ class NestedUnitOfWorkTest {
     }
 
     static class Add {
+
         @TargetAggregateIdentifier
         String id;
         String item;
@@ -122,6 +125,7 @@ class NestedUnitOfWorkTest {
     }
 
     static class ShowItems {
+
         @TargetAggregateIdentifier
         String id;
         String message;
@@ -133,12 +137,15 @@ class NestedUnitOfWorkTest {
     }
 
     static class Test1 {
+
     }
 
     static class Test2 {
+
     }
 
     static class Oops {
+
     }
 
     static class Handler {

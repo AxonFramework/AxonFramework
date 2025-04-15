@@ -16,7 +16,7 @@
 
 package org.axonframework.springboot.util;
 
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.eventhandling.EventMessage;
@@ -44,7 +44,7 @@ import javax.annotation.Nonnull;
 public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule {
 
     private final EventProcessorProperties eventProcessorProperties;
-    private final Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider;
+    private final Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider;
 
     /**
      * Construct a {@link DeadLetterQueueProviderConfigurerModule}, using the given {@code eventProcessorProperties} to
@@ -57,7 +57,7 @@ public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule
      */
     public DeadLetterQueueProviderConfigurerModule(
             EventProcessorProperties eventProcessorProperties,
-            Function<String, Function<Configuration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider
+            Function<String, Function<LegacyConfiguration, SequencedDeadLetterQueue<EventMessage<?>>>> deadLetterQueueProvider
     ) {
         this.eventProcessorProperties = eventProcessorProperties;
         this.deadLetterQueueProvider = deadLetterQueueProvider;

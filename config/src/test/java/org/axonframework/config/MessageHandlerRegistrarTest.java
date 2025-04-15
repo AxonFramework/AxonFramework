@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ class MessageHandlerRegistrarTest {
     private static final Registration TEST_REGISTRATION_IMPLEMENTATION = () -> false;
 
     @Test
-    void startThrowsAxonConfigurationExceptionForCreatingNullMessageHandler(@Mock Configuration config) {
+    void startThrowsAxonConfigurationExceptionForCreatingNullMessageHandler(@Mock LegacyConfiguration config) {
         MessageHandlerRegistrar testSubject = new MessageHandlerRegistrar(
                 () -> config, c -> null, (c, msgHandler) -> TEST_REGISTRATION_IMPLEMENTATION
         );
@@ -47,7 +47,7 @@ class MessageHandlerRegistrarTest {
     }
 
     @Test
-    void startRegistersCreatedMessageHandler(@Mock Configuration config) {
+    void startRegistersCreatedMessageHandler(@Mock LegacyConfiguration config) {
         AtomicBoolean isCreated = new AtomicBoolean(false);
         AtomicBoolean isRegistered = new AtomicBoolean(false);
 
@@ -66,7 +66,7 @@ class MessageHandlerRegistrarTest {
     }
 
     @Test
-    void shutdownCancelsMessageHandlerRegistration(@Mock Configuration config) {
+    void shutdownCancelsMessageHandlerRegistration(@Mock LegacyConfiguration config) {
         AtomicBoolean isCanceled = new AtomicBoolean(false);
 
         MessageHandlerRegistrar testSubject = new MessageHandlerRegistrar(
@@ -84,7 +84,7 @@ class MessageHandlerRegistrarTest {
     }
 
     @Test
-    void shutdownDoesNotThrowExceptionsIfWhenTheRegistrarHasNotStartedYet(@Mock Configuration config) {
+    void shutdownDoesNotThrowExceptionsIfWhenTheRegistrarHasNotStartedYet(@Mock LegacyConfiguration config) {
         AtomicBoolean isCanceled = new AtomicBoolean(false);
 
         MessageHandlerRegistrar testSubject = new MessageHandlerRegistrar(

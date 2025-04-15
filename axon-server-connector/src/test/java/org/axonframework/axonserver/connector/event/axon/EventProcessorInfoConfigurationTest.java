@@ -19,7 +19,7 @@ package org.axonframework.axonserver.connector.event.axon;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.LegacyDefaultConfigurer;
 import org.junit.jupiter.api.AfterEach;
@@ -33,7 +33,7 @@ class EventProcessorInfoConfigurationTest {
 
     private StubServer stubServer;
     private int port;
-    private Configuration configuration;
+    private LegacyConfiguration configuration;
 
     @BeforeEach
     void setUp() throws IOException {

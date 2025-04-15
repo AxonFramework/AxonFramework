@@ -25,7 +25,7 @@ import io.axoniq.axonserver.connector.impl.StreamClosedException;
 import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
@@ -64,7 +64,7 @@ public class PersistentStreamConnection {
     private final Logger logger = LoggerFactory.getLogger(PersistentStreamConnection.class);
 
     private final String streamId;
-    private final Configuration configuration;
+    private final LegacyConfiguration configuration;
     private final PersistentStreamProperties persistentStreamProperties;
 
     private final AtomicReference<PersistentStream> persistentStreamHolder = new AtomicReference<>();
@@ -90,7 +90,7 @@ public class PersistentStreamConnection {
      * @param batchSize                  The batch size for collecting events.
      */
     public PersistentStreamConnection(String streamId,
-                                      Configuration configuration,
+                                      LegacyConfiguration configuration,
                                       PersistentStreamProperties persistentStreamProperties,
                                       ScheduledExecutorService scheduler,
                                       int batchSize) {
@@ -113,7 +113,7 @@ public class PersistentStreamConnection {
      * @param defaultContext             The default context to use for the connection.
      */
     public PersistentStreamConnection(String streamId,
-                                      Configuration configuration,
+                                      LegacyConfiguration configuration,
                                       PersistentStreamProperties persistentStreamProperties,
                                       ScheduledExecutorService scheduler,
                                       int batchSize,

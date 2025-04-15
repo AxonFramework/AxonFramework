@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.springboot.integration;
 
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.EventUpcasterChain;
@@ -58,7 +58,7 @@ class UpcasterOrderingTest {
         //noinspection unchecked
         Stream<IntermediateEventRepresentation> mockStream = mock(Stream.class);
         testApplicationContext.run(context -> {
-            EventUpcasterChain testSubject = context.getBean(Configuration.class).upcasterChain();
+            EventUpcasterChain testSubject = context.getBean(LegacyConfiguration.class).upcasterChain();
 
             testSubject.upcast(mockStream);
 

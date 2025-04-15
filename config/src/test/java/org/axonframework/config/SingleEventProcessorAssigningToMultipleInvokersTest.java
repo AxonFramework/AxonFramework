@@ -39,7 +39,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                   .registerSaga(Saga2.class)
                   .registerSaga(Saga3.class);
 
-        Configuration configuration = configurer.buildConfiguration();
+        LegacyConfiguration configuration = configurer.buildConfiguration();
 
         EventProcessor saga1Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga1.class).orElse(null);
         EventProcessor saga2Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga2.class).orElse(null);
@@ -65,7 +65,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                   .registerSaga(Saga1.class)
                   .registerSaga(Saga2.class)
                   .registerSaga(Saga3.class);
-        Configuration configuration = configurer.buildConfiguration();
+        LegacyConfiguration configuration = configurer.buildConfiguration();
 
         EventProcessor saga1Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga1.class).orElse(null);
         EventProcessor saga2Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga2.class).orElse(null);
@@ -103,7 +103,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                                                    .messageSource(conf.eventBus())
                                                    .build()
                   );
-        Configuration configuration = configurer.buildConfiguration();
+        LegacyConfiguration configuration = configurer.buildConfiguration();
 
         EventProcessor saga1Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga1.class).orElse(null);
         EventProcessor saga2Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga2.class).orElse(null);
@@ -133,7 +133,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                   .registerSaga(Saga1.class)
                   .registerSaga(Saga2.class)
                   .registerSaga(Saga3.class);
-        Configuration configuration = configurer.buildConfiguration();
+        LegacyConfiguration configuration = configurer.buildConfiguration();
 
         EventProcessor saga1Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga1.class).orElse(null);
         EventProcessor saga2Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga2.class).orElse(null);
@@ -160,7 +160,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
                                                    .build())
                   .assignProcessingGroup(group -> "myProcessor");
 
-        Configuration configuration = configurer.buildConfiguration();
+        LegacyConfiguration configuration = configurer.buildConfiguration();
 
         EventProcessor saga1Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga1.class).orElse(null);
         EventProcessor saga2Processor = configuration.eventProcessingConfiguration().sagaEventProcessor(Saga2.class).orElse(null);

@@ -62,7 +62,7 @@ import javax.annotation.Nonnull;
  * @deprecated In favor of {@link org.axonframework.configuration.NewConfiguration}.
  */
 @Deprecated
-public interface Configuration extends LifecycleOperations {
+public interface LegacyConfiguration extends LifecycleOperations {
 
     /**
      * Retrieves the Event Bus defined in this Configuration.
@@ -93,7 +93,7 @@ public interface Configuration extends LifecycleOperations {
                     @jakarta.annotation.Nonnull org.axonframework.configuration.LifecycleHandler startHandler
             ) {
                 //noinspection DataFlowIssue
-                Configuration.this.onStart(phase, () -> startHandler.run(null));
+                LegacyConfiguration.this.onStart(phase, () -> startHandler.run(null));
                 return this;
             }
 
@@ -103,7 +103,7 @@ public interface Configuration extends LifecycleOperations {
                     @jakarta.annotation.Nonnull org.axonframework.configuration.LifecycleHandler shutdownHandler
             ) {
                 //noinspection DataFlowIssue
-                Configuration.this.onShutdown(phase, () -> shutdownHandler.run(null));
+                LegacyConfiguration.this.onShutdown(phase, () -> shutdownHandler.run(null));
                 return this;
             }
         };
@@ -183,11 +183,10 @@ public interface Configuration extends LifecycleOperations {
 
     /**
      * Returns the {@link EventProcessingConfiguration} defined in this Configuration. If there aren't any defined,
-     * {@code null} will be returned. If there is exactly one, it will be returned. For case when there are multiple,
-     * an {@link AxonConfigurationException} is thrown and the {@link #getModules()} API should be used instead.
+     * {@code null} will be returned. If there is exactly one, it will be returned. For case when there are multiple, an
+     * {@link AxonConfigurationException} is thrown and the {@link #getModules()} API should be used instead.
      *
      * @return the {@link EventProcessingConfiguration} defined in this Configuration
-     *
      * @throws AxonConfigurationException thrown if there are more than one Event Processing Configurations defined with
      *                                    this configuration
      */
@@ -333,8 +332,8 @@ public interface Configuration extends LifecycleOperations {
     }
 
     /**
-     * Returns the {@link Serializer} defined in this Configuration to be used for serializing Event Message payload
-     * and their metadata.
+     * Returns the {@link Serializer} defined in this Configuration to be used for serializing Event Message payload and
+     * their metadata.
      *
      * @return the event serializer defined in this Configuration.
      */
@@ -383,18 +382,18 @@ public interface Configuration extends LifecycleOperations {
     HandlerDefinition handlerDefinition(Class<?> inspectedType);
 
     /**
-     * Returns the {@link EventScheduler} defined in this {@link Configuration}.
+     * Returns the {@link EventScheduler} defined in this {@link LegacyConfiguration}.
      *
-     * @return the {@link EventScheduler} defined in this {@link Configuration}
+     * @return the {@link EventScheduler} defined in this {@link LegacyConfiguration}
      */
     default EventScheduler eventScheduler() {
         return getComponent(EventScheduler.class);
     }
 
     /**
-     * Returns the {@link DeadlineManager} defined in this {@link Configuration}.
+     * Returns the {@link DeadlineManager} defined in this {@link LegacyConfiguration}.
      *
-     * @return the {@link DeadlineManager} defined in this {@link Configuration}
+     * @return the {@link DeadlineManager} defined in this {@link LegacyConfiguration}
      */
     default DeadlineManager deadlineManager() {
         return getComponent(DeadlineManager.class);
@@ -433,8 +432,8 @@ public interface Configuration extends LifecycleOperations {
     EventUpcasterChain upcasterChain();
 
     /**
-     * Returns the {@link SnapshotFilter} combining all defined filters per {@link AggregateConfigurer} in an {@link
-     * SnapshotFilter#combine(SnapshotFilter)} operation.
+     * Returns the {@link SnapshotFilter} combining all defined filters per {@link AggregateConfigurer} in an
+     * {@link SnapshotFilter#combine(SnapshotFilter)} operation.
      *
      * @return the {@link SnapshotFilter}  combining all defined filters per {@link AggregateConfigurer}
      */

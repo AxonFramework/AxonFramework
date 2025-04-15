@@ -22,6 +22,7 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.config.AggregateConfigurer;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -40,7 +41,7 @@ import javax.annotation.Nonnull;
 
 /**
  * A {@link ConfigurerModule} implementation that will configure an Aggregate with the Axon {@link
- * org.axonframework.config.Configuration}.
+ * LegacyConfiguration}.
  *
  * @param <T> The type of Aggregate to configure
  *

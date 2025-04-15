@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.deadline.dbscheduler;
 
 import com.github.kagkarlsson.scheduler.Scheduler;
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
@@ -60,7 +60,7 @@ class HumanReadableDbSchedulerDeadlineManagerTest extends AbstractDeadlineManage
     }
 
     @Override
-    public DeadlineManager buildDeadlineManager(Configuration configuration) {
+    public DeadlineManager buildDeadlineManager(LegacyConfiguration configuration) {
         reCreateTable(dataSource);
         DbSchedulerDeadlineManagerSupplier supplier = new DbSchedulerDeadlineManagerSupplier();
         scheduler = getScheduler(dataSource, DbSchedulerDeadlineManager.humanReadableTask(supplier));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,23 @@
 
 package org.axonframework.config;
 
-import org.axonframework.modelling.command.Repository;
 import org.axonframework.common.Assert;
-import org.axonframework.modelling.saga.AbstractSagaManager;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
+import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.saga.AbstractSagaManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
 /**
  * Implementation of the {@link ScopeAwareProvider} which will retrieve a {@link List} of {@link ScopeAware} components
- * in a lazy manner. It does this by pulling these components from the provided {@link Configuration} as soon as
+ * in a lazy manner. It does this by pulling these components from the provided {@link LegacyConfiguration} as soon as
  * {@link #provideScopeAwareStream(ScopeDescriptor)} is called.
  *
  * @author Steven van Beelen
@@ -42,17 +41,17 @@ import static java.util.stream.Collectors.toList;
  */
 public class ConfigurationScopeAwareProvider implements ScopeAwareProvider {
 
-    private final Configuration configuration;
+    private final LegacyConfiguration configuration;
 
     private List<ScopeAware> scopeAwareComponents;
 
     /**
      * Instantiate a lazy {@link ScopeAwareProvider} with the given {@code configuration} parameter.
      *
-     * @param configuration a {@link Configuration} used to retrieve {@link ScopeAware} components from
+     * @param configuration a {@link LegacyConfiguration} used to retrieve {@link ScopeAware} components from
      * @throws IllegalArgumentException when {@code configuration} is {@code null}
      */
-    public ConfigurationScopeAwareProvider(Configuration configuration) {
+    public ConfigurationScopeAwareProvider(LegacyConfiguration configuration) {
         this.configuration = Assert.nonNull(configuration, () -> "configuration may not be null");
     }
 
@@ -73,19 +72,19 @@ public class ConfigurationScopeAwareProvider implements ScopeAwareProvider {
 
     private List<Repository> retrieveAggregateRepositories() {
         return configuration.findModules(AggregateConfiguration.class).stream()
-                            .map((Function<AggregateConfiguration, Repository>) AggregateConfiguration::repository)
+                            .map(AggregateConfiguration::repository)
                             .collect(toList());
     }
 
     private List<AbstractSagaManager> retrieveSagaManagers() {
         EventProcessingConfiguration eventProcessingConfiguration = configuration.eventProcessingConfiguration();
         if (eventProcessingConfiguration == null) {
-        	return Collections.emptyList();
+            return Collections.emptyList();
         }
         return eventProcessingConfiguration
-                            .sagaConfigurations()
-                            .stream()
-                            .map(SagaConfiguration::manager)
-                            .collect(toList());
+                .sagaConfigurations()
+                .stream()
+                .map(SagaConfiguration::manager)
+                .collect(toList());
     }
 }

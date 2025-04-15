@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.AggregateConfigurer;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -60,7 +60,7 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
 
     private final String aggregateIdentifier = "Aggregate";
     private MyCommand command;
-    private Configuration configuration;
+    private LegacyConfiguration configuration;
 
     @BeforeEach
     void setUp() {

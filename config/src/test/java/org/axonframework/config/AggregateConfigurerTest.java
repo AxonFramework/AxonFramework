@@ -72,7 +72,7 @@ import static org.mockito.Mockito.*;
  */
 public class AggregateConfigurerTest {
 
-    private Configuration mockConfiguration;
+    private LegacyConfiguration mockConfiguration;
     private EventStore testEventStore;
     private final RevisionResolver revisionResolver = Mockito.mock(AnnotationRevisionResolver.class);
 
@@ -80,7 +80,7 @@ public class AggregateConfigurerTest {
 
     @BeforeEach
     public void setUp() {
-        mockConfiguration = mock(Configuration.class);
+        mockConfiguration = mock(LegacyConfiguration.class);
 
         testEventStore = mock(EventStore.class);
         when(mockConfiguration.eventBus()).thenReturn(testEventStore);
@@ -104,10 +104,10 @@ public class AggregateConfigurerTest {
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class)
                                                                         .withSubtypes(B.class);
 
-        Configuration configuration = LegacyDefaultConfigurer.defaultConfiguration()
-                                                             .configureAggregate(aggregateConfigurer)
-                                                             .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                             .buildConfiguration();
+        LegacyConfiguration configuration = LegacyDefaultConfigurer.defaultConfiguration()
+                                                                   .configureAggregate(aggregateConfigurer)
+                                                                   .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                                   .buildConfiguration();
         configuration.start();
 
         CommandGateway commandGateway = configuration.commandGateway();
@@ -189,10 +189,10 @@ public class AggregateConfigurerTest {
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class)
                                                                         .configureLockFactory(config -> lockFactory);
 
-        Configuration config = LegacyDefaultConfigurer.defaultConfiguration()
-                                                      .configureAggregate(aggregateConfigurer)
-                                                      .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                      .buildConfiguration();
+        LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
+                                                            .configureAggregate(aggregateConfigurer)
+                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .buildConfiguration();
         config.start();
 
         CommandGateway commandGateway = config.commandGateway();
@@ -211,11 +211,11 @@ public class AggregateConfigurerTest {
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(A.class);
 
         TestSpanFactory testSpanFactory = new TestSpanFactory();
-        Configuration config = LegacyDefaultConfigurer.defaultConfiguration()
-                                                      .configureAggregate(aggregateConfigurer)
-                                                      .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                      .configureSpanFactory(c -> testSpanFactory)
-                                                      .buildConfiguration();
+        LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
+                                                            .configureAggregate(aggregateConfigurer)
+                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .configureSpanFactory(c -> testSpanFactory)
+                                                            .buildConfiguration();
         config.start();
 
         CommandGateway commandGateway = config.commandGateway();
@@ -234,14 +234,15 @@ public class AggregateConfigurerTest {
         AggregateConfigurer<A> aggregateConfigurer = AggregateConfigurer.jpaMappedConfiguration(A.class)
                                                                         .configureLockFactory(config -> lockFactory);
 
-        Configuration config = LegacyDefaultConfigurer.defaultConfiguration()
-                                                      .configureAggregate(aggregateConfigurer)
-                                                      .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                      .registerComponent(
-                                                        EntityManagerProvider.class,
-                                                        c -> new SimpleEntityManagerProvider(mock(EntityManager.class))
-                                                )
-                                                      .buildConfiguration();
+        LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
+                                                            .configureAggregate(aggregateConfigurer)
+                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .registerComponent(
+                                                                    EntityManagerProvider.class,
+                                                                    c -> new SimpleEntityManagerProvider(mock(
+                                                                            EntityManager.class))
+                                                            )
+                                                            .buildConfiguration();
         config.start();
 
         CommandGateway commandGateway = config.commandGateway();
@@ -259,15 +260,16 @@ public class AggregateConfigurerTest {
                                                                         .configureLockFactory(config -> lockFactory);
 
         TestSpanFactory testSpanFactory = new TestSpanFactory();
-        Configuration config = LegacyDefaultConfigurer.defaultConfiguration()
-                                                      .configureAggregate(aggregateConfigurer)
-                                                      .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                      .registerComponent(
-                                                        EntityManagerProvider.class,
-                                                        c -> new SimpleEntityManagerProvider(mock(EntityManager.class))
-                                                )
-                                                      .configureSpanFactory(c -> testSpanFactory)
-                                                      .buildConfiguration();
+        LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
+                                                            .configureAggregate(aggregateConfigurer)
+                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .registerComponent(
+                                                                    EntityManagerProvider.class,
+                                                                    c -> new SimpleEntityManagerProvider(mock(
+                                                                            EntityManager.class))
+                                                            )
+                                                            .configureSpanFactory(c -> testSpanFactory)
+                                                            .buildConfiguration();
         config.start();
 
         CommandGateway commandGateway = config.commandGateway();
@@ -288,10 +290,10 @@ public class AggregateConfigurerTest {
                                    )
                                    .configureLockFactory(config -> lockFactory);
 
-        Configuration config = LegacyDefaultConfigurer.defaultConfiguration()
-                                                      .configureAggregate(aggregateConfigurer)
-                                                      .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                      .buildConfiguration();
+        LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
+                                                            .configureAggregate(aggregateConfigurer)
+                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .buildConfiguration();
         config.start();
 
         CommandGateway commandGateway = config.commandGateway();
@@ -311,11 +313,11 @@ public class AggregateConfigurerTest {
                 );
 
         TestSpanFactory testSpanFactory = new TestSpanFactory();
-        Configuration config = LegacyDefaultConfigurer.defaultConfiguration()
-                                                      .configureAggregate(aggregateConfigurer)
-                                                      .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                      .configureSpanFactory(c -> testSpanFactory)
-                                                      .buildConfiguration();
+        LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
+                                                            .configureAggregate(aggregateConfigurer)
+                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .configureSpanFactory(c -> testSpanFactory)
+                                                            .buildConfiguration();
         config.start();
 
         CommandGateway commandGateway = config.commandGateway();
@@ -387,10 +389,10 @@ public class AggregateConfigurerTest {
                 AggregateConfigurer.defaultConfiguration(A.class)
                                    .configureCreationPolicyAggregateFactory(c -> testFactory);
 
-        Configuration testConfig = LegacyDefaultConfigurer.defaultConfiguration()
-                                                          .configureAggregate(testAggregateConfigurer)
-                                                          .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                          .start();
+        LegacyConfiguration testConfig = LegacyDefaultConfigurer.defaultConfiguration()
+                                                                .configureAggregate(testAggregateConfigurer)
+                                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                                .start();
 
         CreationPolicyAggregateFactory<A> resultFactory = testAggregateConfigurer.creationPolicyAggregateFactory();
         assertEquals(testFactory, resultFactory);

@@ -17,6 +17,7 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.eventhandling.EventMessage;
@@ -34,7 +35,7 @@ import javax.annotation.Nonnull;
  * message.
  * <p>
  * The beans will be lazily resolved to avoid circular dependencies if any these beans relies on the Axon {@link
- * org.axonframework.config.Configuration} to be available in the Application Context.
+ * LegacyConfiguration} to be available in the Application Context.
  * <p>
  * Typically, an application context would have an instance of this class registered for each type of message to
  * register.
@@ -50,7 +51,7 @@ public class MessageHandlerConfigurer implements ConfigurerModule, ApplicationCo
 
     /**
      * Registers the beans identified in given {@code beanRefs} as the given {@code type} of handler with the Axon
-     * {@link org.axonframework.config.Configuration}.
+     * {@link LegacyConfiguration}.
      *
      * @param type     The type of handler to register the beans as.
      * @param beanRefs A list of bean identifiers to register.

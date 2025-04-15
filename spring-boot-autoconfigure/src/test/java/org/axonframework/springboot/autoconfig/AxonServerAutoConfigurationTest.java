@@ -30,7 +30,7 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.LegacyDefaultConfigurer;
@@ -262,7 +262,7 @@ class AxonServerAutoConfigurationTest {
                                "defaultEventProcessorBuilder",
                                eventProcessingModule);
 
-                       Configuration config = getField("configuration", eventProcessingModule);
+                       LegacyConfiguration config = getField("configuration", eventProcessingModule);
                        Object processor = defaultEventProcessorBuilder.build("processingGroupName",
                                                                              config,
                                                                              new MultiEventHandlerInvoker(
@@ -309,7 +309,7 @@ class AxonServerAutoConfigurationTest {
                                context.getBean("persistentStreamProcessorsConfigurerModule", ConfigurerModule.class);
                        LegacyConfigurer defaultConfigurer = LegacyDefaultConfigurer.defaultConfiguration();
                        configurerModule.configureModule(defaultConfigurer);
-                       Configuration configuration = defaultConfigurer.buildConfiguration();
+                       LegacyConfiguration configuration = defaultConfigurer.buildConfiguration();
                        SequencingPolicy<? super EventMessage<?>> sequencingPolicy =
                                configuration.eventProcessingConfiguration().sequencingPolicy("payments");
                        assertThat(sequencingPolicy).isNotNull();
@@ -328,7 +328,7 @@ class AxonServerAutoConfigurationTest {
                                context.getBean("persistentStreamProcessorsConfigurerModule", ConfigurerModule.class);
                        LegacyConfigurer defaultConfigurer = LegacyDefaultConfigurer.defaultConfiguration();
                        configurerModule.configureModule(defaultConfigurer);
-                       Configuration configuration = defaultConfigurer.buildConfiguration();
+                       LegacyConfiguration configuration = defaultConfigurer.buildConfiguration();
                        assertThat(
                                configuration.eventProcessingConfiguration().sequencingPolicy("payments")
                        ).isInstanceOf(DEFAULT_SEQUENCING_POLICY_CLASS);

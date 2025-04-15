@@ -147,7 +147,8 @@ import static org.axonframework.util.HandlerTypeResolver.*;
  *
  * @author Allard Buijze
  * @since 3.0
- * @deprecated In favor of using the {@link org.axonframework.configuration.ApplicationConfigurer} with additional modules.
+ * @deprecated In favor of using the {@link org.axonframework.configuration.ApplicationConfigurer} with additional
+ * modules.
  */
 @Deprecated
 public class LegacyDefaultConfigurer implements LegacyConfigurer {
@@ -157,7 +158,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     private static final Runnable NOTHING = () -> {
     };
 
-    private final Configuration config = new ConfigurationImpl();
+    private final LegacyConfiguration config = new ConfigurationImpl();
 
     private final MessageMonitorFactoryBuilder messageMonitorFactoryBuilder = new MessageMonitorFactoryBuilder();
     private final Component<BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryComponent =
@@ -169,9 +170,9 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     private final Map<Class<?>, Component<?>> components = new ConcurrentHashMap<>();
     private final List<Component<MessageHandlerRegistrar>> messageHandlerRegistrars = new ArrayList<>();
     private final Component<Serializer> eventSerializer =
-            new Component<>(config, "eventSerializer", Configuration::messageSerializer);
+            new Component<>(config, "eventSerializer", LegacyConfiguration::messageSerializer);
     private final Component<Serializer> messageSerializer =
-            new Component<>(config, "messageSerializer", Configuration::serializer);
+            new Component<>(config, "messageSerializer", LegacyConfiguration::serializer);
     private final List<Component<EventUpcaster>> upcasters = new ArrayList<>();
     private final Component<EventUpcasterChain> upcasterChain = new Component<>(
             config, "eventUpcasterChain", this::defaultUpcasterChain
@@ -184,7 +185,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     );
     private final List<Component<HandlerEnhancerDefinition>> handlerEnhancerDefinitions = new ArrayList<>();
 
-    private final List<Consumer<Configuration>> initHandlers = new ArrayList<>();
+    private final List<Consumer<LegacyConfiguration>> initHandlers = new ArrayList<>();
     private final TreeMap<Integer, List<LifecycleHandler>> startHandlers = new TreeMap<>();
     private final TreeMap<Integer, List<LifecycleHandler>> shutdownHandlers = new TreeMap<>(Comparator.reverseOrder());
     private final List<ModuleConfiguration> modules = new ArrayList<>();
@@ -204,7 +205,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         components.put(Serializer.class, new Component<>(config, "serializer", this::defaultSerializer));
         components.put(CommandBus.class, new Component<>(config, "commandBus", this::defaultCommandBus));
         components.put(EventBus.class, new Component<>(config, "eventBus", this::defaultEventBus));
-        components.put(EventStore.class, new Component<>(config, "eventStore", Configuration::eventStore));
+        components.put(EventStore.class, new Component<>(config, "eventStore", LegacyConfiguration::eventStore));
         components.put(CommandGateway.class, new Component<>(config, "commandGateway", this::defaultCommandGateway));
         components.put(QueryBus.class, new Component<>(config, "queryBus", this::defaultQueryBus));
         components.put(
@@ -344,7 +345,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param <T>           The type of component.
      * @return An Optional containing a default component, or empty if none can be provided.
      */
-    protected <T> Optional<T> defaultComponent(Class<T> type, Configuration configuration) {
+    protected <T> Optional<T> defaultComponent(Class<T> type, LegacyConfiguration configuration) {
         return Optional.empty();
     }
 
@@ -355,7 +356,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration that supplies the command bus.
      * @return The default command gateway.
      */
-    protected CommandGateway defaultCommandGateway(Configuration config) {
+    protected CommandGateway defaultCommandGateway(LegacyConfiguration config) {
         return defaultComponent(CommandGateway.class, config)
                 .orElseGet(() -> new DefaultCommandGateway(config.commandBus(), messageTypeResolver));
     }
@@ -366,7 +367,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration that supplies the query bus.
      * @return The default query gateway.
      */
-    protected QueryGateway defaultQueryGateway(Configuration config) {
+    protected QueryGateway defaultQueryGateway(LegacyConfiguration config) {
         return defaultComponent(QueryGateway.class, config)
                 .orElseGet(() -> DefaultQueryGateway.builder().queryBus(config.queryBus()).build());
     }
@@ -377,7 +378,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration based on which the component is initialized.
      * @return The default QueryBus to use.
      */
-    protected QueryBus defaultQueryBus(Configuration config) {
+    protected QueryBus defaultQueryBus(LegacyConfiguration config) {
         return defaultComponent(QueryBus.class, config)
                 .orElseGet(() -> {
                     QueryBus queryBus = SimpleQueryBus.builder()
@@ -405,7 +406,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration based on which the component is initialized
      * @return The default QueryUpdateEmitter to use
      */
-    protected QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
+    protected QueryUpdateEmitter defaultQueryUpdateEmitter(LegacyConfiguration config) {
         return defaultComponent(QueryUpdateEmitter.class, config)
                 .orElseGet(() -> {
                     MessageMonitor<? super SubscriptionQueryUpdateMessage<?>> updateMessageMonitor =
@@ -423,7 +424,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration based on which the component is initialized.
      * @return The default ParameterResolverFactory to use.
      */
-    protected ParameterResolverFactory defaultParameterResolverFactory(Configuration config) {
+    protected ParameterResolverFactory defaultParameterResolverFactory(LegacyConfiguration config) {
         return defaultComponent(ParameterResolverFactory.class, config)
                 .orElseGet(() -> ClasspathParameterResolverFactory.forClass(getClass()));
     }
@@ -459,7 +460,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration based on which the component is initialized.
      * @return The default CommandBus to use.
      */
-    protected CommandBus defaultCommandBus(Configuration config) {
+    protected CommandBus defaultCommandBus(LegacyConfiguration config) {
         return defaultComponent(CommandBus.class, config)
                 .orElseGet(() -> {
                     CommandBusBuilder commandBusBuilder = CommandBusBuilder.forSimpleCommandBus();
@@ -484,7 +485,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration that supplies registered components.
      * @return A resource injector that supplies components registered with the configuration.
      */
-    protected ResourceInjector defaultResourceInjector(Configuration config) {
+    protected ResourceInjector defaultResourceInjector(LegacyConfiguration config) {
         return defaultComponent(ResourceInjector.class, config)
                 .orElseGet(() -> new ConfigurationResourceInjector(config));
     }
@@ -498,7 +499,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @return a {@link ScopeAwareProvider} that provides {@link org.axonframework.messaging.ScopeAware} instances to be
      * used by a {@link DeadlineManager}
      */
-    protected ScopeAwareProvider defaultScopeAwareProvider(Configuration config) {
+    protected ScopeAwareProvider defaultScopeAwareProvider(LegacyConfiguration config) {
         return defaultComponent(ScopeAwareProvider.class, config)
                 .orElseGet(() -> new ConfigurationScopeAwareProvider(config));
     }
@@ -510,7 +511,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration that supplies registered components.
      * @return The default DeadlineManager to use
      */
-    protected DeadlineManager defaultDeadlineManager(Configuration config) {
+    protected DeadlineManager defaultDeadlineManager(LegacyConfiguration config) {
         return defaultComponent(DeadlineManager.class, config)
                 .orElseGet(() -> SimpleDeadlineManager.builder()
                                                       .scopeAwareProvider(config.scopeAwareProvider())
@@ -524,7 +525,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration based on which the component is initialized.
      * @return The default EventBus to use.
      */
-    protected EventBus defaultEventBus(Configuration config) {
+    protected EventBus defaultEventBus(LegacyConfiguration config) {
         return defaultComponent(EventBus.class, config)
                 .orElseGet(() -> SimpleEventBus.builder()
                                                .messageMonitor(config.messageMonitor(EventBus.class, "eventBus"))
@@ -538,7 +539,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration that supplies the event bus.
      * @return The default event gateway.
      */
-    protected EventGateway defaultEventGateway(Configuration config) {
+    protected EventGateway defaultEventGateway(LegacyConfiguration config) {
         return defaultComponent(EventGateway.class, config)
                 .orElseGet(() -> DefaultEventGateway.builder().eventBus(config.eventBus()).build());
     }
@@ -549,7 +550,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration that supplies the span factory.
      * @return The default {@link SpanFactory}.
      */
-    protected SpanFactory defaultSpanFactory(Configuration config) {
+    protected SpanFactory defaultSpanFactory(LegacyConfiguration config) {
         return defaultComponent(SpanFactory.class, config)
                 .orElseGet(NoOpSpanFactory::new);
     }
@@ -561,7 +562,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration that supplies the span factory.
      * @return The default {@link SnapshotterSpanFactory}.
      */
-    protected SnapshotterSpanFactory defaultSnapshotterSpanFactory(Configuration config) {
+    protected SnapshotterSpanFactory defaultSnapshotterSpanFactory(LegacyConfiguration config) {
         return defaultComponent(SnapshotterSpanFactory.class, this.config)
                 .orElseGet(() -> DefaultSnapshotterSpanFactory
                         .builder()
@@ -576,7 +577,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration that supplies the span factory.
      * @return The default {@link CommandBusSpanFactory}.
      */
-    protected CommandBusSpanFactory defaultCommandBusSpanFactory(Configuration config) {
+    protected CommandBusSpanFactory defaultCommandBusSpanFactory(LegacyConfiguration config) {
         return defaultComponent(CommandBusSpanFactory.class, this.config)
                 .orElseGet(() -> DefaultCommandBusSpanFactory
                         .builder()
@@ -591,7 +592,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration that supplies the span factory.
      * @return The default {@link QueryBusSpanFactory}.
      */
-    protected QueryBusSpanFactory defaultQueryBusSpanFactory(Configuration config) {
+    protected QueryBusSpanFactory defaultQueryBusSpanFactory(LegacyConfiguration config) {
         return defaultComponent(QueryBusSpanFactory.class, this.config)
                 .orElseGet(() -> DefaultQueryBusSpanFactory
                         .builder()
@@ -606,7 +607,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration that supplies the span factory.
      * @return The default {@link QueryUpdateEmitterSpanFactory}.
      */
-    protected QueryUpdateEmitterSpanFactory defaultQueryUpdateEmitterSpanFactory(Configuration config) {
+    protected QueryUpdateEmitterSpanFactory defaultQueryUpdateEmitterSpanFactory(LegacyConfiguration config) {
         return defaultComponent(QueryUpdateEmitterSpanFactory.class, this.config)
                 .orElseGet(() -> DefaultQueryUpdateEmitterSpanFactory
                         .builder()
@@ -621,7 +622,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration that supplies the span factory.
      * @return The default {@link EventBusSpanFactory}.
      */
-    protected EventBusSpanFactory defaultEventBusSpanFactory(Configuration config) {
+    protected EventBusSpanFactory defaultEventBusSpanFactory(LegacyConfiguration config) {
         return defaultComponent(EventBusSpanFactory.class, this.config)
                 .orElseGet(() -> DefaultEventBusSpanFactory
                         .builder()
@@ -636,7 +637,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration that supplies the span factory.
      * @return The default {@link DeadlineManagerSpanFactory}.
      */
-    protected DeadlineManagerSpanFactory defaultDeadlineManagerSpanFactory(Configuration config) {
+    protected DeadlineManagerSpanFactory defaultDeadlineManagerSpanFactory(LegacyConfiguration config) {
         return defaultComponent(DeadlineManagerSpanFactory.class, this.config)
                 .orElseGet(() -> DefaultDeadlineManagerSpanFactory
                         .builder()
@@ -651,7 +652,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration that supplies the span factory.
      * @return The default {@link RepositorySpanFactory}.
      */
-    protected RepositorySpanFactory defaultRepositorySpanFactory(Configuration config) {
+    protected RepositorySpanFactory defaultRepositorySpanFactory(LegacyConfiguration config) {
         return defaultComponent(RepositorySpanFactory.class, this.config)
                 .orElseGet(() -> DefaultRepositorySpanFactory
                         .builder()
@@ -666,7 +667,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration that supplies the span factory.
      * @return The default {@link EventProcessorSpanFactory}.
      */
-    protected EventProcessorSpanFactory defaultEventProcessorSpanFactory(Configuration config) {
+    protected EventProcessorSpanFactory defaultEventProcessorSpanFactory(LegacyConfiguration config) {
         return defaultComponent(EventProcessorSpanFactory.class, this.config)
                 .orElseGet(() -> DefaultEventProcessorSpanFactory
                         .builder()
@@ -681,7 +682,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration that supplies the span factory.
      * @return The default {@link SagaManagerSpanFactory}.
      */
-    protected SagaManagerSpanFactory defaultSagaManagerSpanFactory(Configuration config) {
+    protected SagaManagerSpanFactory defaultSagaManagerSpanFactory(LegacyConfiguration config) {
         return defaultComponent(SagaManagerSpanFactory.class, this.config)
                 .orElseGet(() -> DefaultSagaManagerSpanFactory
                         .builder()
@@ -696,7 +697,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration based on which the component is initialized.
      * @return The default Serializer to use.
      */
-    protected Serializer defaultSerializer(Configuration config) {
+    protected Serializer defaultSerializer(LegacyConfiguration config) {
         return defaultComponent(Serializer.class, config)
                 .orElseGet(() -> XStreamSerializer.builder()
                                                   .revisionResolver(config.getComponent(RevisionResolver.class,
@@ -712,7 +713,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config The configuration based on which the component is initialized.
      * @return The default EventUpcasterChain to use.
      */
-    protected EventUpcasterChain defaultUpcasterChain(Configuration config) {
+    protected EventUpcasterChain defaultUpcasterChain(LegacyConfiguration config) {
         return new EventUpcasterChain(upcasters.stream().map(Component::get).collect(toList()));
     }
 
@@ -723,7 +724,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param config the configuration based on which the {@link Snapshotter} will be initialized
      * @return the default {@link Snapshotter}
      */
-    protected Snapshotter defaultSnapshotter(Configuration config) {
+    protected Snapshotter defaultSnapshotter(LegacyConfiguration config) {
         return defaultComponent(Snapshotter.class, config)
                 .orElseGet(() -> {
                     List<AggregateConfiguration<?>> aggregateConfigurations =
@@ -762,7 +763,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * {@link ClassLoader} instances per aggregate. For now we have deduced the latter to be to much of an edge case.
      * Hence we assume users will use the same ClassLoader for differing aggregates within a single configuration.
      */
-    private HandlerDefinition retrieveHandlerDefinition(Configuration configuration,
+    private HandlerDefinition retrieveHandlerDefinition(LegacyConfiguration configuration,
                                                         List<AggregateConfiguration<?>> aggregateConfigurations) {
         return configuration.handlerDefinition(aggregateConfigurations.get(0).aggregateType());
     }
@@ -790,14 +791,17 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     }
 
     @Override
-    public LegacyConfigurer registerEventUpcaster(@Nonnull Function<Configuration, EventUpcaster> upcasterBuilder) {
+    public LegacyConfigurer registerEventUpcaster(
+            @Nonnull Function<LegacyConfiguration, EventUpcaster> upcasterBuilder
+    ) {
         upcasters.add(new Component<>(config, "upcaster", upcasterBuilder));
         return this;
     }
 
     @Override
     public LegacyConfigurer configureMessageMonitor(
-            @Nonnull Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> builder) {
+            @Nonnull Function<LegacyConfiguration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> builder
+    ) {
         messageMonitorFactoryBuilder.add((conf, type, name) -> builder.apply(conf).apply(type, name));
         return this;
     }
@@ -819,7 +823,8 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
 
     @Override
     public LegacyConfigurer configureCorrelationDataProviders(
-            @Nonnull Function<Configuration, List<CorrelationDataProvider>> correlationDataProviderBuilder) {
+            @Nonnull Function<LegacyConfiguration, List<CorrelationDataProvider>> correlationDataProviderBuilder
+    ) {
         correlationProviders.update(correlationDataProviderBuilder);
         return this;
     }
@@ -836,14 +841,16 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
 
     @Override
     public <C> LegacyConfigurer registerComponent(@Nonnull Class<C> componentType,
-                                                  @Nonnull Function<Configuration, ? extends C> componentBuilder) {
+                                                  @Nonnull Function<LegacyConfiguration, ? extends C> componentBuilder) {
         logger.debug("Registering component [{}]", componentType.getSimpleName());
         components.put(componentType, new Component<>(config, componentType.getSimpleName(), componentBuilder));
         return this;
     }
 
     @Override
-    public LegacyConfigurer registerCommandHandler(@Nonnull Function<Configuration, Object> commandHandlerBuilder) {
+    public LegacyConfigurer registerCommandHandler(
+            @Nonnull Function<LegacyConfiguration, Object> commandHandlerBuilder
+    ) {
         messageHandlerRegistrars.add(new Component<>(
                 () -> config,
                 "CommandHandlerRegistrar",
@@ -869,7 +876,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     }
 
     @Override
-    public LegacyConfigurer registerQueryHandler(@Nonnull Function<Configuration, Object> queryHandlerBuilder) {
+    public LegacyConfigurer registerQueryHandler(@Nonnull Function<LegacyConfiguration, Object> queryHandlerBuilder) {
         messageHandlerRegistrars.add(new Component<>(
                 () -> config,
                 "QueryHandlerRegistrar",
@@ -887,7 +894,9 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     }
 
     @Override
-    public LegacyConfigurer registerMessageHandler(@Nonnull Function<Configuration, Object> messageHandlerBuilder) {
+    public LegacyConfigurer registerMessageHandler(
+            @Nonnull Function<LegacyConfiguration, Object> messageHandlerBuilder
+    ) {
         Component<Object> messageHandler = new Component<>(() -> config, "", messageHandlerBuilder);
         Class<?> handlerClass = messageHandler.get().getClass();
         if (isCommandHandler(handlerClass)) {
@@ -904,7 +913,8 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
 
     @Override
     public LegacyConfigurer configureEmbeddedEventStore(
-            @Nonnull Function<Configuration, EventStorageEngine> storageEngineBuilder) {
+            @Nonnull Function<LegacyConfiguration, EventStorageEngine> storageEngineBuilder
+    ) {
         return configureEventStore(c -> {
             MessageMonitor<Message<?>> monitor =
                     messageMonitorFactoryComponent.get().apply(EmbeddedEventStore.class, "eventStore");
@@ -918,14 +928,17 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     }
 
     @Override
-    public LegacyConfigurer configureEventSerializer(@Nonnull Function<Configuration, Serializer> eventSerializerBuilder) {
+    public LegacyConfigurer configureEventSerializer(
+            @Nonnull Function<LegacyConfiguration, Serializer> eventSerializerBuilder
+    ) {
         eventSerializer.update(eventSerializerBuilder);
         return this;
     }
 
     @Override
     public LegacyConfigurer configureMessageSerializer(
-            @Nonnull Function<Configuration, Serializer> messageSerializerBuilder) {
+            @Nonnull Function<LegacyConfiguration, Serializer> messageSerializerBuilder
+    ) {
         messageSerializer.update(messageSerializerBuilder);
         return this;
     }
@@ -937,14 +950,15 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
 
     @Override
     public LegacyConfigurer registerHandlerDefinition(
-            @Nonnull BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass) {
+            @Nonnull BiFunction<LegacyConfiguration, Class, HandlerDefinition> handlerDefinitionClass
+    ) {
         this.handlerDefinition.update(c -> clazz -> handlerDefinitionClass.apply(c, clazz));
         return this;
     }
 
     @Override
     public LegacyConfigurer registerHandlerEnhancerDefinition(
-            Function<Configuration, HandlerEnhancerDefinition> handlerEnhancerBuilder
+            Function<LegacyConfiguration, HandlerEnhancerDefinition> handlerEnhancerBuilder
     ) {
         this.handlerEnhancerDefinitions.add(
                 new Component<>(config, "HandlerEnhancerDefinition", handlerEnhancerBuilder)
@@ -962,7 +976,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     }
 
     @Override
-    public Configuration buildConfiguration() {
+    public LegacyConfiguration buildConfiguration() {
         if (!initialized) {
             verifyIdentifierFactory();
             prepareModules();
@@ -1097,7 +1111,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      *
      * @return The current Configuration object being built by this Configurer.
      */
-    protected Configuration getConfig() {
+    protected LegacyConfiguration getConfig() {
         return config;
     }
 
@@ -1135,7 +1149,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
         }
     }
 
-    private class ConfigurationImpl implements Configuration {
+    private class ConfigurationImpl implements LegacyConfiguration {
 
         @Override
         public <T> T getComponent(@Nonnull Class<T> componentType, @Nonnull Supplier<T> defaultImpl) {

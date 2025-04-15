@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.deadletter.jdbc.DeadLetterSchema;
 import org.axonframework.eventhandling.deadletter.jdbc.JdbcSequencedDeadLetterQueue;
@@ -81,7 +82,7 @@ public class JdbcAutoConfiguration {
     public EventStorageEngine eventStorageEngine(Serializer defaultSerializer,
                                                  PersistenceExceptionResolver persistenceExceptionResolver,
                                                  @Qualifier("eventSerializer") Serializer eventSerializer,
-                                                 org.axonframework.config.Configuration configuration,
+                                                 LegacyConfiguration configuration,
                                                  ConnectionProvider connectionProvider,
                                                  TransactionManager transactionManager,
                                                  EventSchema eventSchema) {

@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.config;
 
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.spring.event.AxonStartedEvent;
 import org.junit.jupiter.api.*;
@@ -32,7 +32,7 @@ class SpringAxonConfigurationTest {
     void axonStartedEventIsPublished() {
         LegacyConfigurer configurer = mock(LegacyConfigurer.class);
         ApplicationContext context = mock(ApplicationContext.class);
-        Configuration configuration = mock(Configuration.class);
+        LegacyConfiguration configuration = mock(LegacyConfiguration.class);
         when(configurer.buildConfiguration()).thenReturn(configuration);
 
         SpringAxonConfiguration springAxonConfiguration = new SpringAxonConfiguration(configurer);

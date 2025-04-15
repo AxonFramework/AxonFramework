@@ -23,7 +23,7 @@ import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.LegacyDefaultConfigurer;
@@ -70,7 +70,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
         configurer.registerComponent(AxonServerEventStoreFactory.class, this::buildEventStoreFactory);
     }
 
-    private AxonServerConnectionManager buildAxonServerConnectionManager(Configuration c) {
+    private AxonServerConnectionManager buildAxonServerConnectionManager(LegacyConfiguration c) {
         AxonServerConfiguration axonServerConfiguration = c.getComponent(AxonServerConfiguration.class);
         return AxonServerConnectionManager.builder()
                                           .routingServers(axonServerConfiguration.getServers())
@@ -82,7 +82,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                           .build();
     }
 
-    private AxonServerEventStore buildEventStore(Configuration c) {
+    private AxonServerEventStore buildEventStore(LegacyConfiguration c) {
         return AxonServerEventStore.builder()
                                    .configuration(c.getComponent(AxonServerConfiguration.class))
                                    .platformConnectionManager(c.getComponent(AxonServerConnectionManager.class))
@@ -95,7 +95,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                    .build();
     }
 
-    private QueryBus buildQueryBus(Configuration c) {
+    private QueryBus buildQueryBus(LegacyConfiguration c) {
         SimpleQueryBus localSegment =
                 SimpleQueryBus.builder()
                               .transactionManager(
@@ -126,7 +126,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                  .build();
     }
 
-    private AxonServerEventStoreFactory buildEventStoreFactory(Configuration config) {
+    private AxonServerEventStoreFactory buildEventStoreFactory(LegacyConfiguration config) {
         return AxonServerEventStoreFactory.builder()
                                           .configuration(config.getComponent(AxonServerConfiguration.class))
                                           .connectionManager(

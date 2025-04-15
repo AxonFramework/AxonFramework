@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.queryhandling;
 
 import org.axonframework.commandhandling.SimpleCommandBus;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventhandling.annotation.EventHandler;
@@ -44,7 +44,7 @@ class ProjectorTest {
         configurer.eventProcessing()
                   .registerEventHandler(c -> userSummaryProjection);
 
-        Configuration configuration = configurer.buildConfiguration();
+        LegacyConfiguration configuration = configurer.buildConfiguration();
 
         configuration.start();
         configuration.shutdown();

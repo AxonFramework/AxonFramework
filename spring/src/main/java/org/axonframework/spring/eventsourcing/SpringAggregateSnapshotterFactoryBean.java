@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.spring.eventsourcing;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
@@ -82,7 +82,7 @@ public class SpringAggregateSnapshotterFactoryBean
         }
 
         if (repositoryProvider == null) {
-            repositoryProvider = applicationContext.getBean(Configuration.class)::repository;
+            repositoryProvider = applicationContext.getBean(LegacyConfiguration.class)::repository;
         }
 
         if (parameterResolverFactory == null) {

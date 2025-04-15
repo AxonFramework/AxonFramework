@@ -19,6 +19,7 @@ package org.axonframework.springboot;
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.EventProcessingModule;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
@@ -141,7 +142,7 @@ class SagaCustomizeIntegrationTest {
                 if (!registeredProcessingGroups.contains(processorGroupName)) {
                     eventProcessingConfiguration.registerTrackingEventProcessor(
                             processorGroupName,
-                            org.axonframework.config.Configuration::eventStore,
+                            LegacyConfiguration::eventStore,
                             c -> TrackingEventProcessorConfiguration.forParallelProcessing(2)
                                                                     .andInitialSegmentsCount(2)
                     );

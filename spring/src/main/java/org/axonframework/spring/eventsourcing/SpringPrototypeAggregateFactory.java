@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.AggregateFactory;
@@ -28,7 +28,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
@@ -147,8 +146,8 @@ public class SpringPrototypeAggregateFactory<T>
         }
 
         AggregateModel<T> model;
-        if (applicationContext.getBeanNamesForType(Configuration.class).length > 0) {
-            Configuration configuration = applicationContext.getBean(Configuration.class);
+        if (applicationContext.getBeanNamesForType(LegacyConfiguration.class).length > 0) {
+            LegacyConfiguration configuration = applicationContext.getBean(LegacyConfiguration.class);
             model = AnnotatedAggregateMetaModelFactory.inspectAggregate(getAggregateType(),
                                                                         configuration.parameterResolverFactory(),
                                                                         configuration

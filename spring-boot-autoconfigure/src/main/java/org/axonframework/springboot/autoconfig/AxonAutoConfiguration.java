@@ -272,7 +272,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Bean(name = "eventBus")
     @ConditionalOnMissingBean(EventBus.class)
     @ConditionalOnBean(EventStorageEngine.class)
-    public EmbeddedEventStore eventStore(EventStorageEngine storageEngine, Configuration configuration) {
+    public EmbeddedEventStore eventStore(EventStorageEngine storageEngine, LegacyConfiguration configuration) {
         return EmbeddedEventStore.builder()
                                  .storageEngine(storageEngine)
                                  .messageMonitor(configuration.messageMonitor(EventStore.class, "eventStore"))
@@ -294,7 +294,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
 
     @Bean
     @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class})
-    public SimpleEventBus eventBus(Configuration configuration) {
+    public SimpleEventBus eventBus(LegacyConfiguration configuration) {
         return SimpleEventBus.builder()
                              .messageMonitor(configuration.messageMonitor(EventStore.class, "eventStore"))
                              .spanFactory(configuration.getComponent(EventBusSpanFactory.class))
@@ -310,7 +310,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean(Snapshotter.class)
     @ConditionalOnBean(EventStore.class)
     @Bean
-    public SpringAggregateSnapshotter aggregateSnapshotter(Configuration configuration,
+    public SpringAggregateSnapshotter aggregateSnapshotter(LegacyConfiguration configuration,
                                                            HandlerDefinition handlerDefinition,
                                                            ParameterResolverFactory parameterResolverFactory,
                                                            EventStore eventStore,
@@ -331,7 +331,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     public void configureEventHandling(EventProcessingConfigurer eventProcessingConfigurer,
                                        ApplicationContext applicationContext) {
         eventProcessorProperties.getProcessors().forEach((name, settings) -> {
-            Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy =
+            Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy =
                     resolveSequencingPolicy(applicationContext, settings);
             eventProcessingConfigurer.registerSequencingPolicy(name, sequencingPolicy);
 
@@ -342,7 +342,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
                         .andInitialSegmentsCount(initialSegmentCount(settings, 1))
                         .andTokenClaimInterval(settings.getTokenClaimInterval(),
                                                settings.getTokenClaimIntervalTimeUnit());
-                Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource =
+                Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource =
                         resolveMessageSource(applicationContext, settings);
                 eventProcessingConfigurer.registerTrackingEventProcessor(name, messageSource, c -> config);
             } else if (settings.getMode() == EventProcessorProperties.Mode.POOLED) {
@@ -403,11 +403,12 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     @SuppressWarnings("unchecked")
-    private Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> resolveMessageSource(
-            ApplicationContext applicationContext, EventProcessorProperties.ProcessorSettings v) {
-        Function<Configuration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource;
+    private Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> resolveMessageSource(
+            ApplicationContext applicationContext, EventProcessorProperties.ProcessorSettings v
+    ) {
+        Function<LegacyConfiguration, StreamableMessageSource<TrackedEventMessage<?>>> messageSource;
         if (v.getSource() == null) {
-            messageSource = Configuration::eventStore;
+            messageSource = LegacyConfiguration::eventStore;
         } else {
             messageSource = c -> applicationContext.getBean(v.getSource(), StreamableMessageSource.class);
         }
@@ -415,9 +416,9 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     @SuppressWarnings("unchecked")
-    private Function<Configuration, SequencingPolicy<? super EventMessage<?>>> resolveSequencingPolicy(
+    private Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> resolveSequencingPolicy(
             ApplicationContext applicationContext, EventProcessorProperties.ProcessorSettings v) {
-        Function<Configuration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy;
+        Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> sequencingPolicy;
         if (v.getSequencingPolicy() != null) {
             sequencingPolicy = c -> applicationContext.getBean(v.getSequencingPolicy(), SequencingPolicy.class);
         } else {
@@ -435,7 +436,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     )
     @Qualifier("localSegment")
     @Bean
-    public CommandBus commandBus(TransactionManager txManager, Configuration axonConfiguration) {
+    public CommandBus commandBus(TransactionManager txManager, LegacyConfiguration axonConfiguration) {
         SimpleCommandBus commandBus = new SimpleCommandBus(txManager);
         return new InterceptingCommandBus(
                 commandBus,
@@ -447,7 +448,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @ConditionalOnMissingBean(value = QueryBus.class)
     @Qualifier("localSegment")
     @Bean
-    public SimpleQueryBus queryBus(Configuration axonConfiguration, TransactionManager transactionManager) {
+    public SimpleQueryBus queryBus(LegacyConfiguration axonConfiguration, TransactionManager transactionManager) {
         return SimpleQueryBus.builder()
                              .messageMonitor(axonConfiguration.messageMonitor(QueryBus.class, "queryBus"))
                              .transactionManager(transactionManager)
@@ -461,7 +462,7 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     }
 
     @Bean
-    public QueryUpdateEmitter queryUpdateEmitter(Configuration configuration) {
+    public QueryUpdateEmitter queryUpdateEmitter(LegacyConfiguration configuration) {
         return SimpleQueryUpdateEmitter.builder()
                                        .updateMessageMonitor(configuration.messageMonitor(
                                                QueryUpdateEmitter.class, "queryUpdateEmitter"

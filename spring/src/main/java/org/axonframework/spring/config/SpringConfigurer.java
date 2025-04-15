@@ -17,7 +17,7 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.config.LegacyConfigurer;
 import org.springframework.beans.factory.BeanFactoryUtils;
@@ -48,7 +48,7 @@ public class SpringConfigurer extends LegacyDefaultConfigurer {
     }
 
     @Override
-    protected <T> Optional<T> defaultComponent(Class<T> type, Configuration config) {
+    protected <T> Optional<T> defaultComponent(Class<T> type, LegacyConfiguration config) {
         return locator.findBean(type);
     }
 

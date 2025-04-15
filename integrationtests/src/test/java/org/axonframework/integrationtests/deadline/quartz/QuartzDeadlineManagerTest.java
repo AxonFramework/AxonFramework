@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.deadline.quartz;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineException;
 import org.axonframework.deadline.DeadlineManager;
@@ -26,7 +26,6 @@ import org.axonframework.deadline.quartz.QuartzDeadlineManager;
 import org.axonframework.integrationtests.deadline.AbstractDeadlineManagerTestSuite;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.serialization.TestSerializer;
-import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -43,7 +42,7 @@ import static org.mockito.Mockito.*;
 class QuartzDeadlineManagerTest extends AbstractDeadlineManagerTestSuite {
 
     @Override
-    public DeadlineManager buildDeadlineManager(Configuration configuration) {
+    public DeadlineManager buildDeadlineManager(LegacyConfiguration configuration) {
         try {
             Scheduler scheduler = new StdSchedulerFactory().getScheduler();
             QuartzDeadlineManager quartzDeadlineManager =

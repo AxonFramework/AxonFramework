@@ -25,7 +25,6 @@ import org.axonframework.eventhandling.AbstractEventProcessor;
 import org.axonframework.eventhandling.AnnotationEventHandlerAdapter;
 import org.axonframework.eventhandling.ErrorContext;
 import org.axonframework.eventhandling.ErrorHandler;
-import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.EventHandlerInvoker;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventMessageHandler;
@@ -43,6 +42,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.async.SequentialPolicy;
 import org.axonframework.eventhandling.deadletter.DeadLetteringEventHandlerInvoker;
@@ -140,7 +140,7 @@ class EventProcessingModuleTest {
                   .registerEventHandler(c -> map) // --> java.util.concurrent
                   .registerEventHandler(c -> annotatedBean)
                   .registerEventHandler(c -> annotatedBeanSubclass);
-        Configuration configuration = configurer.start();
+        LegacyConfiguration configuration = configurer.start();
 
         assertEquals(3, configuration.eventProcessingConfiguration().eventProcessors().size());
         assertTrue(processors.get("java.util.concurrent").getEventHandlers().contains("concurrent"));
@@ -171,7 +171,7 @@ class EventProcessingModuleTest {
                   .registerEventHandler(c -> map) // --> java.util.concurrent
                   .registerEventHandler(c -> annotatedBean)
                   .registerEventHandler(c -> annotatedBeanSubclass);
-        Configuration configuration = configurer.start();
+        LegacyConfiguration configuration = configurer.start();
 
         assertEquals(3, configuration.eventProcessingConfiguration().eventProcessors().size());
         assertTrue(processors.get("java.lang").getEventHandlers().contains("concurrent"));
@@ -183,11 +183,12 @@ class EventProcessingModuleTest {
 
     @Test
     void processorsDefaultToSubscribingWhenUsingSimpleEventBus() {
-        Configuration configuration = LegacyDefaultConfigurer.defaultConfiguration()
-                                                             .configureEventBus(c -> SimpleEventBus.builder().build())
-                                                             .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
-                                                                                .registerEventHandler(c -> new TrackingEventHandler()))
-                                                             .start();
+        LegacyConfiguration configuration =
+                LegacyDefaultConfigurer.defaultConfiguration()
+                                       .configureEventBus(c -> SimpleEventBus.builder().build())
+                                       .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
+                                                                .registerEventHandler(c -> new TrackingEventHandler()))
+                                       .start();
 
         EventProcessingConfiguration processingConfig = configuration.eventProcessingConfiguration();
 
@@ -203,11 +204,12 @@ class EventProcessingModuleTest {
 
     @Test
     void assigningATrackingProcessorFailsWhenUsingSimpleEventBus() {
-        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration()
-                                                             .configureEventBus(c -> SimpleEventBus.builder().build())
-                                                             .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
-                                                                          .registerEventHandler(c -> new TrackingEventHandler())
-                                                                          .registerTrackingEventProcessor("tracking"));
+        LegacyConfigurer configurer =
+                LegacyDefaultConfigurer.defaultConfiguration()
+                                       .configureEventBus(c -> SimpleEventBus.builder().build())
+                                       .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
+                                                                .registerEventHandler(c -> new TrackingEventHandler())
+                                                                .registerTrackingEventProcessor("tracking"));
 
         assertThrows(LifecycleHandlerInvocationException.class, configurer::start);
     }
@@ -230,7 +232,7 @@ class EventProcessingModuleTest {
                   .registerEventHandler(c -> "") // --> java.lang
                   .registerEventHandler(c -> "concurrent") // --> java.util.concurrent2
                   .registerEventHandler(c -> map); // --> java.util.concurrent
-        Configuration configuration = configurer.start();
+        LegacyConfiguration configuration = configurer.start();
 
         assertEquals(3, configuration.eventProcessingConfiguration().eventProcessors().size());
         assertTrue(processors.get("java.util.concurrent2").getEventHandlers().contains("concurrent"));
@@ -327,7 +329,7 @@ class EventProcessingModuleTest {
                   .byDefaultAssignTo("default")
                   .registerDefaultSequencingPolicy(c -> sequentialPolicy)
                   .registerSequencingPolicy("special", c -> fullConcurrencyPolicy);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<AbstractEventProcessor> defaultProcessorOptional =
                 config.eventProcessingConfiguration().eventProcessor("default", AbstractEventProcessor.class);
@@ -363,7 +365,7 @@ class EventProcessingModuleTest {
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerEventHandler(config -> new TrackingEventHandler())
                   .usingSubscribingEventProcessors(mockBuilder);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Map<String, EventProcessor> processorMap = config.eventProcessingConfiguration().eventProcessors();
 
@@ -384,7 +386,7 @@ class EventProcessingModuleTest {
                   .registerEventHandler(c -> "concurrent") // --> java.util.concurrent2
                   .registerHandlerInterceptor("default", c -> interceptor1)
                   .registerDefaultHandlerInterceptor((c, n) -> interceptor2);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         // CorrelationDataInterceptor is automatically configured
         Optional<EventProcessor> defaultProcessor = config.eventProcessingConfiguration()
@@ -403,7 +405,7 @@ class EventProcessingModuleTest {
         configurer.eventProcessing()
                   .registerMessageMonitor("subscribing", c -> subscribingMonitor)
                   .registerMessageMonitor("tracking", c -> trackingMonitor);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         try {
             config.eventBus()
@@ -424,7 +426,7 @@ class EventProcessingModuleTest {
 
         buildComplexEventHandlingConfiguration(tokenStoreInvocation);
         configurer.configureSpanFactory(c -> spanFactory);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         try {
             EventMessage<Object> message =
@@ -452,7 +454,7 @@ class EventProcessingModuleTest {
         buildComplexEventHandlingConfiguration(tokenStoreInvocation);
         configurer.eventProcessing()
                   .registerDefaultListenerInvocationErrorHandler(config -> errorHandler);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         //noinspection Duplicates
         try {
@@ -481,7 +483,7 @@ class EventProcessingModuleTest {
         configurer.eventProcessing()
                   .registerListenerInvocationErrorHandler("subscribing", config -> subscribingErrorHandler)
                   .registerListenerInvocationErrorHandler("tracking", config -> trackingErrorHandler);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         //noinspection Duplicates
         try {
@@ -511,7 +513,7 @@ class EventProcessingModuleTest {
         configurer.eventProcessing()
                   .registerDefaultListenerInvocationErrorHandler(c -> PropagatingErrorHandler.instance())
                   .registerDefaultErrorHandler(config -> errorHandler);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         //noinspection Duplicates
         try {
@@ -531,7 +533,7 @@ class EventProcessingModuleTest {
         configurer.eventProcessing().usingTrackingEventProcessors();
         configurer.registerEventHandler(c -> new TrackingEventHandler());
 
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
         Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration()
                                                            .eventProcessor("tracking", TrackingEventProcessor.class);
         assertTrue(processor.isPresent());
@@ -545,7 +547,7 @@ class EventProcessingModuleTest {
                   .registerTrackingEventProcessor("tracking", c -> eventStoreTwo)
                   .registerEventHandler(c -> new TrackingEventHandler());
 
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
         Optional<TrackingEventProcessor> processor = config.eventProcessingConfiguration()
                                                            .eventProcessor("tracking", TrackingEventProcessor.class);
         assertTrue(processor.isPresent());
@@ -558,7 +560,7 @@ class EventProcessingModuleTest {
         configurer.eventProcessing().usingSubscribingEventProcessors();
         configurer.registerEventHandler(c -> new SubscribingEventHandler());
 
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
         Optional<SubscribingEventProcessor> processor = config.eventProcessingConfiguration()
                                                               .eventProcessor("subscribing");
         assertTrue(processor.isPresent());
@@ -572,7 +574,7 @@ class EventProcessingModuleTest {
                   .registerSubscribingEventProcessor("subscribing", c -> eventStoreTwo)
                   .registerEventHandler(c -> new SubscribingEventHandler());
 
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
         Optional<SubscribingEventProcessor> processor = config.eventProcessingConfiguration()
                                                               .eventProcessor("subscribing");
         assertTrue(processor.isPresent());
@@ -596,7 +598,7 @@ class EventProcessingModuleTest {
                   .registerDefaultListenerInvocationErrorHandler(c -> PropagatingErrorHandler.instance())
                   .registerErrorHandler("subscribing", config -> subscribingErrorHandler)
                   .registerErrorHandler("tracking", config -> trackingErrorHandler);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         //noinspection Duplicates
         try {
@@ -630,7 +632,7 @@ class EventProcessingModuleTest {
                   .registerEventHandler(config -> someHandler)
                   .registerEventHandler(config -> new TrackingEventHandler())
                   .registerTrackingEventProcessorConfiguration(config -> testTepConfig);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<TrackingEventProcessor> resultTrackingTep =
                 config.eventProcessingConfiguration().eventProcessor("tracking", TrackingEventProcessor.class);
@@ -661,7 +663,7 @@ class EventProcessingModuleTest {
                   .registerEventHandler(config -> someHandler)
                   .registerEventHandler(config -> new TrackingEventHandler())
                   .registerTrackingEventProcessorConfiguration("tracking", config -> testTepConfig);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<TrackingEventProcessor> resultTrackingTep =
                 config.eventProcessingConfiguration().eventProcessor("tracking", TrackingEventProcessor.class);
@@ -687,7 +689,7 @@ class EventProcessingModuleTest {
                   .usingTrackingEventProcessors()
                   .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .registerSaga(Object.class);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<TrackingEventProcessor> resultTep =
                 config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
@@ -711,7 +713,7 @@ class EventProcessingModuleTest {
                   .assignProcessingGroup(someGroup -> "custom-processor")
                   .registerTrackingEventProcessor("custom-processor", config -> eventStoreOne)
                   .registerSaga(CustomSaga.class);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<TrackingEventProcessor> resultTep = config.eventProcessingConfiguration().eventProcessor(
                 "custom-processor", TrackingEventProcessor.class
@@ -738,7 +740,7 @@ class EventProcessingModuleTest {
         configurer.eventProcessing()
                   .registerTrackingEventProcessor("ObjectProcessor", config -> eventStoreOne, config -> testTepConfig)
                   .registerSaga(Object.class);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<TrackingEventProcessor> resultTep =
                 config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
@@ -766,7 +768,7 @@ class EventProcessingModuleTest {
                   .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .registerSaga(Object.class)
                   .registerTrackingEventProcessorConfiguration("ObjectProcessor", config -> testTepConfig);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<TrackingEventProcessor> resultTep =
                 config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
@@ -794,7 +796,7 @@ class EventProcessingModuleTest {
                   .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .registerSaga(Object.class)
                   .registerTrackingEventProcessorConfiguration(config -> testTepConfig);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<TrackingEventProcessor> resultTep =
                 config.eventProcessingConfiguration().eventProcessor("ObjectProcessor", TrackingEventProcessor.class);
@@ -819,7 +821,7 @@ class EventProcessingModuleTest {
                   .usingPooledStreamingEventProcessors()
                   .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .registerSaga(Object.class);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<PooledStreamingEventProcessor> resultPsep =
                 config.eventProcessingConfiguration()
@@ -846,7 +848,7 @@ class EventProcessingModuleTest {
                   .assignProcessingGroup(someGroup -> "custom-processor")
                   .registerPooledStreamingEventProcessor("custom-processor", config -> eventStoreOne)
                   .registerSaga(CustomSaga.class);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<PooledStreamingEventProcessor> resultPsep =
                 config.eventProcessingConfiguration()
@@ -875,7 +877,7 @@ class EventProcessingModuleTest {
         configurer.eventProcessing()
                   .registerPooledStreamingEventProcessor("ObjectProcessor", config -> eventStoreOne, testPsepConfig)
                   .registerSaga(Object.class);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<PooledStreamingEventProcessor> resultPsep =
                 config.eventProcessingConfiguration()
@@ -903,7 +905,7 @@ class EventProcessingModuleTest {
                   .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .registerSaga(Object.class)
                   .registerPooledStreamingEventProcessorConfiguration("ObjectProcessor", testPsepConfig);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<PooledStreamingEventProcessor> resultPsep =
                 config.eventProcessingConfiguration()
@@ -931,7 +933,7 @@ class EventProcessingModuleTest {
                   .usingPooledStreamingEventProcessors(psepConfig)
                   .configureDefaultStreamableMessageSource(config -> eventStoreOne)
                   .registerSaga(Object.class);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<PooledStreamingEventProcessor> resultPsep =
                 config.eventProcessingConfiguration()
@@ -957,7 +959,7 @@ class EventProcessingModuleTest {
                   .byDefaultAssignTo("default")
                   .registerEventHandler(config -> someHandler)
                   .registerEventHandler(config -> new PooledStreamingEventHandler());
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<PooledStreamingEventProcessor> resultPooledPsep =
                 config.eventProcessingConfiguration()
@@ -994,7 +996,7 @@ class EventProcessingModuleTest {
                   .registerErrorHandler(testName, config -> PropagatingErrorHandler.INSTANCE)
                   .registerTokenStore(testName, config -> testTokenStore)
                   .registerTransactionManager(testName, config -> NoTransactionManager.INSTANCE);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<PooledStreamingEventProcessor> optionalResult =
                 config.eventProcessingConfiguration()
@@ -1026,7 +1028,7 @@ class EventProcessingModuleTest {
                   .registerErrorHandler(testName, config -> PropagatingErrorHandler.INSTANCE)
                   .registerTokenStore(testName, config -> testTokenStore)
                   .registerTransactionManager(testName, config -> NoTransactionManager.INSTANCE);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<PooledStreamingEventProcessor> optionalResult =
                 config.eventProcessingConfiguration()
@@ -1057,7 +1059,7 @@ class EventProcessingModuleTest {
                           (config, builder) -> builder.maxClaimedSegments(testCapacity)
                   )
                   .registerEventHandler(config -> new PooledStreamingEventHandler());
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<PooledStreamingEventProcessor> optionalResult =
                 config.eventProcessingConfiguration()
@@ -1085,7 +1087,7 @@ class EventProcessingModuleTest {
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .byDefaultAssignTo("default")
                   .registerEventHandler(config -> testHandler);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<PooledStreamingEventProcessor> optionalResult =
                 config.eventProcessingConfiguration()
@@ -1118,7 +1120,7 @@ class EventProcessingModuleTest {
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .byDefaultAssignTo("default")
                   .registerEventHandler(config -> testHandler);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<PooledStreamingEventProcessor> optionalResult =
                 config.eventProcessingConfiguration()
@@ -1154,7 +1156,7 @@ class EventProcessingModuleTest {
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .byDefaultAssignTo("default")
                   .registerEventHandler(config -> testHandler);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<PooledStreamingEventProcessor> optionalResult =
                 config.eventProcessingConfiguration()
@@ -1191,7 +1193,7 @@ class EventProcessingModuleTest {
                           (config, builder) -> builder.maxClaimedSegments(testCapacity)
                   )
                   .registerEventHandler(config -> new PooledStreamingEventHandler());
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<PooledStreamingEventProcessor> optionalResult =
                 config.eventProcessingConfiguration()
@@ -1224,7 +1226,7 @@ class EventProcessingModuleTest {
                           (config, builder) -> builder.maxClaimedSegments(testCapacity)
                   )
                   .registerEventHandler(config -> new PooledStreamingEventHandler());
-        Configuration config = configurer.buildConfiguration();
+        LegacyConfiguration config = configurer.buildConfiguration();
 
         Optional<PooledStreamingEventProcessor> optionalResult =
                 config.eventProcessingConfiguration()
@@ -1250,7 +1252,7 @@ class EventProcessingModuleTest {
                   .registerPooledStreamingEventProcessor(testName)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerDefaultTransactionManager(c -> defaultTransactionManager);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         try {
             config.eventBus().publish(testEvent);
@@ -1275,7 +1277,7 @@ class EventProcessingModuleTest {
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerDefaultTransactionManager(c -> defaultTransactionManager)
                   .registerTransactionManager(testName, c -> processorSpecificTransactionManager);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         try {
             config.eventBus().publish(testEvent);
@@ -1298,7 +1300,7 @@ class EventProcessingModuleTest {
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<EnqueuePolicy<EventMessage<?>>> optionalPolicy = config.eventProcessingConfiguration()
                                                                         .deadLetterPolicy(processingGroup);
@@ -1344,7 +1346,7 @@ class EventProcessingModuleTest {
                   .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
                   .registerDefaultDeadLetterPolicy(c -> expectedPolicy)
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<EnqueuePolicy<EventMessage<?>>> optionalPolicy = config.eventProcessingConfiguration()
                                                                         .deadLetterPolicy(processingGroup);
@@ -1391,7 +1393,7 @@ class EventProcessingModuleTest {
                   .registerDeadLetterPolicy(processingGroup, c -> expectedPolicy)
                   .registerDeadLetterPolicy("unused-processing-group", c -> unexpectedPolicy)
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<EnqueuePolicy<EventMessage<?>>> optionalPolicy = config.eventProcessingConfiguration()
                                                                         .deadLetterPolicy(processingGroup);
@@ -1440,7 +1442,7 @@ class EventProcessingModuleTest {
                           processingGroup, (config, builder) -> builder.allowReset(true)
                   )
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<SequencedDeadLetterQueue<EventMessage<?>>> configuredDlq =
                 config.eventProcessingConfiguration().deadLetterQueue(processingGroup);
@@ -1482,7 +1484,7 @@ class EventProcessingModuleTest {
                   .registerDeadLetterQueue(processingGroup, c -> deadLetterQueue)
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
 
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
         EventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
 
         Optional<SequencedDeadLetterQueue<EventMessage<?>>> configuredDlq =
@@ -1518,7 +1520,7 @@ class EventProcessingModuleTest {
                   .registerHandlerInterceptor(processingGroup, c -> interceptor1)
                   .registerDefaultHandlerInterceptor((c, n) -> interceptor2);
 
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
         EventProcessingConfiguration eventProcessingConfig = config.eventProcessingConfiguration();
 
         Optional<SequencedDeadLetterProcessor<EventMessage<?>>> optionalDeadLetterProcessor =
@@ -1540,7 +1542,7 @@ class EventProcessingModuleTest {
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
                   .registerDeadLetterQueueProvider(p -> c -> deadLetterQueue)
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<EnqueuePolicy<EventMessage<?>>> optionalPolicy = config.eventProcessingConfiguration()
                                                                         .deadLetterPolicy(processingGroup);
@@ -1587,7 +1589,7 @@ class EventProcessingModuleTest {
                   .registerDeadLetterQueue(processingGroup, c -> specificDeadLetterQueue)
                   .registerDeadLetterQueueProvider(p -> c -> genericDeadLetterQueue)
                   .registerTransactionManager(processingGroup, c -> NoTransactionManager.INSTANCE);
-        Configuration config = configurer.start();
+        LegacyConfiguration config = configurer.start();
 
         Optional<SequencedDeadLetterQueue<EventMessage<?>>> configuredDlq =
                 config.eventProcessingConfiguration().deadLetterQueue(processingGroup);

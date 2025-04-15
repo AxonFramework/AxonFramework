@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.config;
 
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.modelling.command.Repository;
 
 /**
@@ -36,7 +36,7 @@ public abstract class BeanHelper {
      * @return The {@link Repository} instance for the aggregate.
      * @throws IllegalArgumentException if the given {@code aggregateType} has not been configured.
      */
-    public static <T> Repository<T> repository(Class<T> aggregateType, Configuration configuration) {
+    public static <T> Repository<T> repository(Class<T> aggregateType, LegacyConfiguration configuration) {
         return configuration.repository(aggregateType);
     }
 
