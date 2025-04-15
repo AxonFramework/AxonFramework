@@ -86,7 +86,7 @@ Let's create the first test case using Axon Test Fixture.
 
 We're going to translate the Event Modeling specification, which you've seen on the top of the page plus other test cases for this slice, to the code.
 We call it "Test First" as we don't use TDD to design our application.
-But, we do the design on the whiteboard using Event Modeling, which is faster and much less expensive than in the code.
+We do the design on the whiteboard using Event Modeling, which is faster and much less expensive than in the code.
 From Event Modeling we can derive the test cases for specific slice (functionality) and translate them directly to the code.
 The Axon Framework supports the Given-When-Then convention pretty well.
 
