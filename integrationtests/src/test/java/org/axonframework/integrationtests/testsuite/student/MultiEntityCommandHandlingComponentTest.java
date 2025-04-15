@@ -146,7 +146,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
         public void handle(EnrollStudentToCourseCommand command,
                            @InjectEntity(idProperty = "studentId") Student student,
                            @InjectEntity(idProperty = "courseId") Course course,
-                           EventSink eventSink,
+                           EventAppender eventAppender,
                            ProcessingContext context) {
             if (student.getCoursesEnrolled().size() > 2) {
                 throw new IllegalArgumentException("Student already enrolled in 3 courses");
@@ -156,10 +156,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
                 throw new IllegalArgumentException("Course already has 3 students");
             }
 
-            eventSink.publish(context, new GenericEventMessage<>(
-                    new MessageType(StudentEnrolledEvent.class),
-                    new StudentEnrolledEvent(command.studentId(), command.courseId())
-            ));
+            eventAppender.append( new StudentEnrolledEvent(command.studentId(), command.courseId()));
 
             assertTrue(student.getCoursesEnrolled().contains(command.courseId()));
             assertTrue(course.getStudentsEnrolled().contains(command.studentId()));
@@ -170,7 +167,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
         public void handle(AssignMentorCommand command,
                            @InjectEntity(idResolver = MentorIdResolver.class) Student mentor,
                            @InjectEntity(idProperty = "menteeId") ManagedEntity<?, Student> mentee,
-                           EventGateway eventGateway,
+                           EventAppender eventAppender,
                            ProcessingContext context) {
             if (mentor.getMenteeId() != null) {
                 throw new IllegalArgumentException("Mentor already assigned to a mentee");
@@ -179,7 +176,7 @@ class MultiEntityCommandHandlingComponentTest extends AbstractStudentTestSuite {
                 throw new IllegalArgumentException("Mentee already has a mentor");
             }
 
-            eventGateway.publish(
+            eventAppender.append(
                     new MentorAssignedToStudentEvent(mentor.getId(), mentee.entity().getId())
             );
         }

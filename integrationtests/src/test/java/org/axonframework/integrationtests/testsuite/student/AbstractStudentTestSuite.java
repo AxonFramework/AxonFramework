@@ -65,7 +65,6 @@ public abstract class AbstractStudentTestSuite {
     private EventSourcedEntityBuilder<String, Student> studentEntity;
 
     protected CommandGateway commandGateway;
-    protected EventGateway eventGateway;
     protected AsyncRepository<String, Student> studentRepository;
     protected AsyncRepository<String, Course> courseRepository;
 
@@ -109,7 +108,6 @@ public abstract class AbstractStudentTestSuite {
                                        .registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
                                        .start();
         commandGateway = configuration.getComponent(CommandGateway.class);
-        eventGateway = configuration.getComponent(EventGateway.class);
 
         NewConfiguration moduleConfig = configuration.getModuleConfigurations().getFirst();
         //noinspection unchecked

@@ -18,7 +18,6 @@ package org.axonframework.modelling.command;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.configuration.MessageHandler;

@@ -33,8 +33,10 @@ import javax.annotation.Nonnull;
  * {@link #forContext(ProcessingContext, NewConfiguration)}.
  * <p>
  * When using annotation-based {@link org.axonframework.messaging.annotation.MessageHandler @MessageHandler-methods} and
- * you have declared a {@link EventAppender} argument, this will automatically be created by the
+ * you have declared an argument of type {@link EventAppender}, the appender will automatically be injected by the
  * {@link EventAppenderParameterResolverFactory}.
+ * <p>
+ * As this component is {@link ProcessingContext}-scoped, it is not retrievable from the {@link NewConfiguration}.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0

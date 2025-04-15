@@ -86,9 +86,9 @@ class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite 
         @CommandHandler
         public void handle(ChangeStudentNameCommand command,
                            @InjectEntity Student student,
-                           EventGateway eventGateway) {
+                           EventAppender eventAppender) {
             // Change name through event
-            eventGateway.publish(new StudentNameChangedEvent(student.getId(), command.name()));
+            eventAppender.append(new StudentNameChangedEvent(student.getId(), command.name()));
             // Model through magic of repository automatically updated
             assertEquals(student.getName(), command.name());
         }
