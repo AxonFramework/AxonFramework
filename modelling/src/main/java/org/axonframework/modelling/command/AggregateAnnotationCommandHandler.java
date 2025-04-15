@@ -200,10 +200,12 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
             } else {
                 messageHandler = switch (policy.orElse(NEVER)) {
                     case ALWAYS -> new AlwaysCreateAggregateCommandHandler(
-                            handler, factoryPerType.get(handler.declaringClass())
+                            handler, Optional.ofNullable(factoryPerType.get(handler.declaringClass()))
+                                             .orElse(factoryPerType.get(aggregateModel.entityClass()))
                     );
                     case CREATE_IF_MISSING -> new AggregateCreateOrUpdateCommandHandler(
-                            handler, factoryPerType.get(handler.declaringClass())
+                            handler, Optional.ofNullable(factoryPerType.get(handler.declaringClass()))
+                                             .orElse(factoryPerType.get(aggregateModel.entityClass()))
                     );
                     case NEVER -> new AggregateCommandHandler(handler);
                 };

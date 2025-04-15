@@ -242,3 +242,224 @@ ALTER TABLE token_entry  RENAME COLUMN token_bytea to token;
 ----
 
 After making all the changes and running the SQL script, the data-affected columns should now all be readable.
+
+=== Liquibase
+
+Liquibase is a database-independent library for tracking, managing, and applying database schema changes.
+It is a popular choice for managing database changes in a structured and automated way.
+
+You can use the Liquibase changelog below to bootstrap the table of Axon Framework.
+Note that this has been generated for PostgreSQL, so you may need to adjust it for other database systems.
+
+[source, yaml]
+----
+databaseChangeLog:
+  - changeSet:
+      id: axon-framework-bootstrap
+      author: AxonIQ
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: token_entry_pkey
+                  name: processor_name
+                  type: VARCHAR(512)
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: token_entry_pkey
+                  name: segment
+                  type: INTEGER
+              - column:
+                  name: owner
+                  type: VARCHAR(512)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: timestamp
+                  type: VARCHAR(512)
+              - column:
+                  name: token
+                  type: BYTEA
+              - column:
+                  name: token_type
+                  type: VARCHAR(512)
+            tableName: token_entry
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: saga_entry_pkey
+                  name: saga_id
+                  type: VARCHAR(512)
+              - column:
+                  name: revision
+                  type: VARCHAR(512)
+              - column:
+                  name: saga_type
+                  type: VARCHAR(512)
+              - column:
+                  name: serialized_saga
+                  type: BYTEA
+            tableName: saga_entry
+        - createTable:
+            columns:
+              - column:
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: association_value_entry_pkey
+                  name: id
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: association_key
+                  type: VARCHAR(512)
+              - column:
+                  name: association_value
+                  type: VARCHAR(512)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: saga_id
+                  type: VARCHAR(512)
+              - column:
+                  name: saga_type
+                  type: VARCHAR(512)
+            tableName: association_value_entry
+        - createIndex:
+            columns:
+              - column:
+                  name: saga_type
+              - column:
+                  name: association_key
+              - column:
+                  name: association_value
+            indexName: saga_association_full_index
+            tableName: association_value_entry
+        - createIndex:
+            columns:
+              - column:
+                  name: saga_id
+              - column:
+                  name: saga_type
+            indexName: saga_association_type_index
+            tableName: association_value_entry
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: dead_letter_entry_pkey
+                  name: dead_letter_id
+                  type: VARCHAR(512)
+              - column:
+                  name: cause_message
+                  type: VARCHAR(512)
+              - column:
+                  name: cause_type
+                  type: VARCHAR(512)
+              - column:
+                  name: diagnostics
+                  type: BYTEA
+              - column:
+                  constraints:
+                    nullable: false
+                  name: enqueued_at
+                  type: TIMESTAMP WITHOUT TIME ZONE
+              - column:
+                  name: last_touched
+                  type: TIMESTAMP WITHOUT TIME ZONE
+              - column:
+                  name: aggregate_identifier
+                  type: VARCHAR(512)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: event_identifier
+                  type: VARCHAR(512)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: message_type
+                  type: VARCHAR(512)
+              - column:
+                  name: meta_data
+                  type: BYTEA
+              - column:
+                  constraints:
+                    nullable: false
+                  name: payload
+                  type: BYTEA
+              - column:
+                  name: payload_revision
+                  type: VARCHAR(512)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: payload_type
+                  type: VARCHAR(512)
+              - column:
+                  name: sequence_number
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: time_stamp
+                  type: VARCHAR(512)
+              - column:
+                  name: token
+                  type: BYTEA
+              - column:
+                  name: token_type
+                  type: VARCHAR(512)
+              - column:
+                  name: type
+                  type: VARCHAR(512)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: processing_group
+                  type: VARCHAR(512)
+              - column:
+                  name: processing_started
+                  type: TIMESTAMP WITHOUT TIME ZONE
+              - column:
+                  constraints:
+                    nullable: false
+                  name: sequence_identifier
+                  type: VARCHAR(255)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: sequence_index
+                  type: BIGINT
+            tableName: dead_letter_entry
+        - createIndex:
+            columns:
+              - column:
+                  name: processing_group
+            indexName: dead_letter_proc_group_index
+            tableName: dead_letter_entry
+        - createIndex:
+            columns:
+              - column:
+                  name: processing_group
+              - column:
+                  name: sequence_identifier
+            indexName: dead_letter_sequence_index
+            tableName: dead_letter_entry
+        - addUniqueConstraint:
+            columnNames: processing_group, sequence_identifier, sequence_index
+            constraintName: dead_letter_sequence_index_index
+            tableName: dead_letter_entry
+----

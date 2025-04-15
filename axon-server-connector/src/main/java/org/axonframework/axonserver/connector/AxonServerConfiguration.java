@@ -292,6 +292,16 @@ public class AxonServerConfiguration {
     private final Map<String, PersistentStreamSettings> persistentStreams = new HashMap<>();
 
     /**
+     * A toggle dictating whether to create persistent streams for all processing groups. Defaults to {@code false}.
+     */
+    private boolean autoPersistentStreamsEnable = false;
+
+    /**
+     * Settings that are used to create persistent stream definition.
+     */
+    private PersistentStreamSettings autoPersistentStreamsSettings = new PersistentStreamSettings();
+
+    /**
      * Instantiate a {@link Builder} to create an {@link AxonServerConfiguration}.
      *
      * @return a {@link Builder} to be able to create an {@link AxonServerConfiguration}.
@@ -365,6 +375,32 @@ public class AxonServerConfiguration {
      */
     public String getClientId() {
         return clientId;
+    }
+
+    public boolean isAutoPersistentStreamsEnable() {
+        return autoPersistentStreamsEnable;
+    }
+
+    public void setAutoPersistentStreamsEnable(boolean autoPersistentStreamsEnable) {
+        this.autoPersistentStreamsEnable = autoPersistentStreamsEnable;
+    }
+
+    /**
+     * Return the settings for all persistent streams that will be created automatically.
+     * <p>
+     * Each persistent stream will be named according to the following pattern:
+     * <p>
+     * processingGroupName + "-stream"
+     *
+     * @return Return the settings for all persistent streams that will be created automatically.
+     */
+    public PersistentStreamSettings getAutoPersistentStreamsSettings() {
+        return autoPersistentStreamsSettings;
+    }
+
+    public void setAutoPersistentStreamsSettings(
+            PersistentStreamSettings autoPersistentStreamsSettings) {
+        this.autoPersistentStreamsSettings = autoPersistentStreamsSettings;
     }
 
     /**

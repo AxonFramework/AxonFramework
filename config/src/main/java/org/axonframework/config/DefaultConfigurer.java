@@ -731,6 +731,13 @@ public class DefaultConfigurer implements Configurer {
                                   .stream()
                                   .map(aggregateConfiguration -> (AggregateConfiguration<?>) aggregateConfiguration)
                                   .collect(Collectors.toList());
+                    if (aggregateConfigurations.isEmpty()) {
+                        // No configurations, so we return a no-op snapshotter, or retrieveHandlerDefinition will throw
+                        // an exception.
+                        return (aggregateType, aggregateIdentifier) -> {
+                            // No-op Snapshotter.
+                        };
+                    }
                     List<AggregateFactory<?>> aggregateFactories = new ArrayList<>();
                     for (AggregateConfiguration<?> aggregateConfiguration : aggregateConfigurations) {
                         aggregateFactories.add(aggregateConfiguration.aggregateFactory());

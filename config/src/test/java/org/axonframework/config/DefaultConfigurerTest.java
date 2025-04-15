@@ -458,6 +458,16 @@ class DefaultConfigurerTest {
     }
 
     @Test
+    void defaultSnapshotterDefaultsToNoOpWhenNoAggregatesAreKnown() {
+        Snapshotter defaultSnapshotter =
+                DefaultConfigurer.jpaConfiguration(() -> entityManager)
+                                 .configureSerializer(configuration -> TestSerializer.xStreamSerializer())
+                                 .buildConfiguration().snapshotter();
+
+        assertFalse(defaultSnapshotter instanceof AggregateSnapshotter);
+    }
+
+    @Test
     @Disabled("#3360 Broken due to ConfigurationParameterResolverFactory")
     void configureSnapshotterSetsCustomSnapshotter() {
         Snapshotter expectedSnapshotter = mock(Snapshotter.class);
