@@ -45,7 +45,7 @@ Your feedback is incredibly valuable as we refine the framework.
 
 Because of that, your opinion is even more valuable to us.
 Your input will help shape the future of event sourcing with Axon Framework!
-After playing around with the Axon Framework 5, please share your feedback on link:https://discuss.axoniq.io/c/axonframework/af5-milestones/38[AxonIQ Discuss].
+After playing around with the Axon Framework 5, please share your feedback on link:https://discuss.axoniq.io/t/feedback-template/6034[https://discuss.axoniq.io/c/axonframework/af5-milestones/38][AxonIQ Discuss].
 If you'd like to, please don't hesitate to reach out to our team directly on LinkedIn,
 we will be so happy to talk with you.
 
