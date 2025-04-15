@@ -479,31 +479,33 @@ class SubscribeStudentToCourseCommandHandler {
         private static EventCriteria resolveCriteria(SubscriptionId id) { // <2>
             var courseId = id.courseId().toString();
             var studentId = id.studentId().toString();
-
             return EventCriteria.either(
-                    EventCriteria.match()
-                            .eventsOfTypes(
+                    EventCriteria
+                            .havingTags(Tag.of(FacultyTags.COURSE_ID, courseId)) // <3>
+                            .andBeingOneOfTypes(
                                     CourseCreated.class.getName(),
                                     CourseCapacityChanged.class.getName(),
                                     StudentSubscribedToCourse.class.getName(),
                                     StudentUnsubscribedFromCourse.class.getName()
-                            ).withTags(Tag.of("courseId", courseId)), // <3>
-                    EventCriteria.match()
-                            .eventsOfTypes(
+                            ),
+                    EventCriteria
+                            .havingTags(Tag.of(FacultyTags.STUDENT_ID, studentId))
+                            .andBeingOneOfTypes(
                                     StudentEnrolledInFaculty.class.getName(),
                                     StudentSubscribedToCourse.class.getName(),
                                     StudentUnsubscribedFromCourse.class.getName()
-                            ).withTags(Tag.of("studentId", studentId))
+                            )
             );
         }
+
     }
 
 }
 ----
 <1> The `@EventCriteriaBuilder` annotation marks the method as a criteria builder for the given entity. It gives you more flexibility than just using `tagKey` property on the `@EventSourcedEntity` annotation.
 <2> Thanks to the `SubscriptionId`, which is composed of `courseId` and `studentId`, we know the values of those tags we needed.
-<3> As you may see at the highest level that we combine `EventCriteria` with `either`. But, when we define tags through `withTags`, it means that a certain type of event requires all of them (there is an OR relation between event types, an AND relation between tags and OR between criteria).
-Hence, if we do `.withTags(Tag.of("courseId", courseId), Tag.of("studentId", studentId))` we will only receive subscription events of the given student for one given course.
+<3> As you may see at the highest level that we combine `EventCriteria` with `either`. But, when we define tags through `havingTags`, it means that a certain type of event requires all of them (there is an OR relation between event types, an AND relation between tags and OR between criteria).
+Hence, if we do `.havingTags(Tag.of("courseId", courseId), Tag.of("studentId", studentId))` we will only receive subscription events of the given student for one given course.
 This is not what we want here.
 So, we split `StudentSubscribedToCourse` and `StudentUnsubscribedFromCourse` events into two separate criteria (one for student and one for course), because we need to load all events of those types for either `courseId` or `studentId`.
 
@@ -514,7 +516,7 @@ Our colleague Milan from AxonIQ (with our ex-colleague Sara) discuss those scena
 [NOTE]
 ====
 Keep in mind it's beneficial to define events types in the criteria.
-Technically you can just use `EventCriteria.match().eventsOfTypes(...)` and load all events for the given tag.
+Technically you can just use `EventCriteria.havingTags(Tag.of("courseId", courseId), Tag.of("studentId", studentId))` and load all events for the given tags.
 But in this case, you load more than needed, and it's possible to clash with other changes, which cause events that do not influence these certain business rules.
 ====
 
