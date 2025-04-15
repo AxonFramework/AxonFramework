@@ -40,7 +40,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Default implementation of the {@link ComponentRegistry} allowing for reuse of {@link Component},
  * {@link ComponentDecorator}, {@link ConfigurationEnhancer}, and {@link Module} registration for the
- * {@code NewConfigurer} and {@link Module} implementations alike.
+ * {@link ApplicationConfigurer} and {@link Module} implementations alike.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
