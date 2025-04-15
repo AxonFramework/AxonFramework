@@ -19,8 +19,8 @@ package org.axonframework.eventsourcing.annotation;
 import jakarta.annotation.Nonnull;
 
 /**
- * Definition for a constructor-based {@link EventSourcedEntityFactory} for an {@link EventSourcedEntity} annotated class.
- * This is the default implementation of the {@link EventSourcedEntityFactoryDefinition} for the
+ * Definition for a constructor-based {@link EventSourcedEntityFactory} for an {@link EventSourcedEntity} annotated
+ * class. This is the default implementation of the {@link EventSourcedEntityFactoryDefinition} for the
  * {@link EventSourcedEntity} annotation.
  * <p>
  * The {@link ConstructorBasedEventSourcedEntityFactory} that is constructed through this class scans the
@@ -34,8 +34,10 @@ public class ConstructorBasedEventSourcedEntityFactoryDefinition
         implements EventSourcedEntityFactoryDefinition<Object, Object> {
 
     @Override
-    public EventSourcedEntityFactory<Object, Object> createFactory(@Nonnull Class<Object> entityType,
-                                                                   @Nonnull Class<Object> idType) {
+    public EventSourcedEntityFactory<Object, Object> createFactory(
+            @Nonnull Class<Object> entityType,
+            @Nonnull Class<Object> idType
+    ) {
         return new ConstructorBasedEventSourcedEntityFactory();
     }
 }

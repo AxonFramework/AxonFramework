@@ -148,9 +148,9 @@ class AnnotatedEventSourcedEntityBuilderTest {
     static class CustomCriteriaResolverDefinition implements CriteriaResolverDefinition {
 
         @Override
-        public <E, ID> CriteriaResolver<ID> construct(@Nonnull Class<E> entityType,
-                                                      @Nonnull Class<ID> idType,
-                                                      @Nonnull MessageTypeResolver messageTypeResolver) {
+        public <E, ID> CriteriaResolver<ID> createEventCriteriaResolver(@Nonnull Class<E> entityType,
+                                                                        @Nonnull Class<ID> idType,
+                                                                        @Nonnull MessageTypeResolver messageTypeResolver) {
             assertInstanceOf(ClassBasedMessageTypeResolver.class, messageTypeResolver);
             return new CustomCriteriaResolver<>();
         }

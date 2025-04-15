@@ -31,9 +31,11 @@ import org.axonframework.messaging.MessageTypeResolver;
 public class AnnotationBasedEventCriteriaResolverDefinition implements CriteriaResolverDefinition {
 
     @Override
-    public <E, ID> CriteriaResolver<ID> construct(@Nonnull Class<E> entityType,
-                                                  @Nonnull Class<ID> idType,
-                                                  @Nonnull MessageTypeResolver messageTypeResolver) {
+    public <E, ID> CriteriaResolver<ID> createEventCriteriaResolver(
+            @Nonnull Class<E> entityType,
+            @Nonnull Class<ID> idType,
+            @Nonnull MessageTypeResolver messageTypeResolver
+    ) {
         return new AnnotationBasedEventCriteriaResolver<>(entityType, idType, messageTypeResolver);
     }
 }

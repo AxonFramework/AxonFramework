@@ -39,12 +39,12 @@ public interface CriteriaResolverDefinition {
      * @param idType              The identifier type the resolver is for.
      * @param messageTypeResolver The message type resolver to use for resolving the type of the message.
      * @param <E>                 The type of the entity to create.
-     * @param <ID>                The type of the identifier of the entity to create.
+     * @param <I>                The type of the identifier of the entity to create.
      * @return A {@link CriteriaResolver} for the given {@code entityType} and {@code idType}.
      */
-    <E, ID> CriteriaResolver<ID> construct(
+    <E, I> CriteriaResolver<I> createEventCriteriaResolver(
             @Nonnull Class<E> entityType,
-            @Nonnull Class<ID> idType,
+            @Nonnull Class<I> idType,
             @Nonnull MessageTypeResolver messageTypeResolver
     );
 }

@@ -81,7 +81,7 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
     @Override
     public ComponentFactory<AsyncRepository<I, E>> repository() {
         return c -> {
-            CriteriaResolver<I> criteriaResolver = criteriaResolverDefinition.construct(
+            CriteriaResolver<I> criteriaResolver = criteriaResolverDefinition.createEventCriteriaResolver(
                     entityType,
                     idType,
                     c.getComponent(MessageTypeResolver.class)
