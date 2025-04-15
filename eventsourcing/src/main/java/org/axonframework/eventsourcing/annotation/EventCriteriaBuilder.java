@@ -28,12 +28,13 @@ import java.lang.annotation.Target;
  * Annotation to indicate that a method can be used to resolve the {@link EventCriteria} based on the
  * {@link TargetEntityId} when loading an {@link EventSourcedEntity}.
  * <p>
- * The method should be:
- * <ul>
- *     <li>A static method</li>
- *     <li>Accept a single parameter of the type of the {@link TargetEntityId} of the {@link EventSourcedEntity}</li>
- *     <li>Return an {@link EventCriteria} instance</li>
- * </ul>
+ * The method should be a static method that returns an {@link EventCriteria} instance. The first argument should be the
+ * identifier of the entity to load. If you need to resolve multiple identifier types, you can use the
+ * {@link EventCriteriaBuilder} annotation on multiple methods.
+ * <p>
+ * You can define any component from the {@link org.axonframework.configuration.NewConfiguration} as a parameter to the
+ * method to be able to resolve the {@link EventCriteria}. You can also inject the entire configuration as a parameter
+ * by declaring it as such. Note that the first parameter must be the identifier, and cannot be a component.
  *
  * @author Mitchell Herrijgers
  * @see TargetEntityId

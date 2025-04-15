@@ -17,8 +17,8 @@
 package org.axonframework.eventsourcing.annotation;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.messaging.MessageTypeResolver;
 
 /**
  * Defines how an {@link AnnotationBasedEventCriteriaResolver} should be constructed for an {@link EventSourcedEntity}
@@ -34,8 +34,8 @@ public class AnnotationBasedEventCriteriaResolverDefinition implements CriteriaR
     public <E, ID> CriteriaResolver<ID> createEventCriteriaResolver(
             @Nonnull Class<E> entityType,
             @Nonnull Class<ID> idType,
-            @Nonnull MessageTypeResolver messageTypeResolver
+            @Nonnull NewConfiguration configuration
     ) {
-        return new AnnotationBasedEventCriteriaResolver<>(entityType, idType, messageTypeResolver);
+        return new AnnotationBasedEventCriteriaResolver<>(entityType, idType, configuration);
     }
 }

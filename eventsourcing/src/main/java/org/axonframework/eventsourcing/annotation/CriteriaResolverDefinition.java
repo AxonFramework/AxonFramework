@@ -17,13 +17,13 @@
 package org.axonframework.eventsourcing.annotation;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.messaging.MessageTypeResolver;
 
 /**
  * Defines how a {@link CriteriaResolver} should be constructed for an {@link EventSourcedEntity} annotated class. The
- * definition receives the {@code entityType} and {@code idType} to create a resolver for the given types. In addition,
- * it receives a {@link MessageTypeResolver} to resolve the type of the message that is being processed when necessary.
+ * definition receives the {@code entityType} and {@code idType} to create the resolver for. In addition, it receives
+ * the {@link NewConfiguration} to resolve any component dependencies that are necessary for creating the resolver.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -35,16 +35,16 @@ public interface CriteriaResolverDefinition {
      * Constructs a {@link CriteriaResolver} for the given {@code entityType} and {@code idType}. The
      * {@code messageTypeResolver} can be used to resolve the type of the message that is being processed.
      *
-     * @param entityType          The entity type the resolver is for.
-     * @param idType              The identifier type the resolver is for.
-     * @param messageTypeResolver The message type resolver to use for resolving the type of the message.
-     * @param <E>                 The type of the entity to create.
-     * @param <I>                The type of the identifier of the entity to create.
+     * @param entityType    The entity type the resolver is for.
+     * @param idType        The identifier type the resolver is for.
+     * @param configuration The configuration to use for creating the resolver.
+     * @param <E>           The type of the entity to create.
+     * @param <I>           The type of the identifier of the entity to create.
      * @return A {@link CriteriaResolver} for the given {@code entityType} and {@code idType}.
      */
     <E, I> CriteriaResolver<I> createEventCriteriaResolver(
             @Nonnull Class<E> entityType,
             @Nonnull Class<I> idType,
-            @Nonnull MessageTypeResolver messageTypeResolver
+            @Nonnull NewConfiguration configuration
     );
 }

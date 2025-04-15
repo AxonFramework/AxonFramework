@@ -16,23 +16,42 @@
 
 package org.axonframework.eventsourcing.annotation;
 
+import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.junit.jupiter.api.*;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class AnnotationBasedEventCriteriaResolverTest {
 
-    private final MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
+    private static final NewConfiguration configuration = mock(NewConfiguration.class);
+    private static final MessageTypeResolver messageTypeResolver = (clazz) -> new MessageType(null, "MyMessageType", "0.0.5");
+    private static final EventSink eventSink = mock(EventSink.class);
+    private static final CommandGateway commandGateway = mock(CommandGateway.class);
+
+
+    @BeforeEach
+    void setUp() {
+        when(configuration.getOptionalComponent(MessageTypeResolver.class)).thenReturn(
+                Optional.of(messageTypeResolver)
+        );
+        when(configuration.getOptionalComponent(EventSink.class)).thenReturn(Optional.of(eventSink));
+        when(configuration.getOptionalComponent(CommandGateway.class)).thenReturn(Optional.of(commandGateway));
+    }
 
     @Test
     void resolvedRightBuilderMethodForDifferentIdTypes() {
         var resolver = new AnnotationBasedEventCriteriaResolver<>(FunctionalEventSourcedEntity.class,
                                                                   Object.class,
-                                                                  messageTypeResolver);
+                                                                  configuration);
 
         var criteriaString = resolver.resolve("id");
         assertEquals(EventCriteria.havingTags("aggregateIdentifierOfString", "id"), criteriaString);
@@ -45,7 +64,7 @@ class AnnotationBasedEventCriteriaResolverTest {
     void throwsWhenEventCriteriaBuilderReturnsNull() {
         var resolver = new AnnotationBasedEventCriteriaResolver<>(FunctionalEventSourcedEntity.class,
                                                                   Object.class,
-                                                                  messageTypeResolver);
+                                                                  configuration);
 
         var exception = Assertions.assertThrows(
                 IllegalArgumentException.class,
@@ -61,7 +80,7 @@ class AnnotationBasedEventCriteriaResolverTest {
     void usesTagKeyPropertyIfNoEventCriteriaBuilderMatches() {
         var resolver = new AnnotationBasedEventCriteriaResolver<>(FunctionalEventSourcedEntity.class,
                                                                   Object.class,
-                                                                  messageTypeResolver);
+                                                                  configuration);
 
         var criteria = resolver.resolve(0.0);
         assertEquals(EventCriteria.havingTags("fallbackTagKey", "0.0"), criteria);
@@ -90,7 +109,7 @@ class AnnotationBasedEventCriteriaResolverTest {
     void usesSimpleClassNameAsTagNameIfNoTagKeyPropertyIsSet() {
         var resolver = new AnnotationBasedEventCriteriaResolver<>(DefaultEventSourcedEntity.class,
                                                                   Object.class,
-                                                                  messageTypeResolver);
+                                                                  configuration);
 
         var criteria = resolver.resolve("id");
         assertEquals(EventCriteria.havingTags("DefaultEventSourcedEntity", "id"), criteria);
@@ -98,6 +117,29 @@ class AnnotationBasedEventCriteriaResolverTest {
 
     @EventSourcedEntity()
     static class DefaultEventSourcedEntity {
+    }
+
+    @Test
+    void canInjectManyParameters() {
+        var resolver = new AnnotationBasedEventCriteriaResolver<>(EntityWithManyInjectionParameters.class,
+                                                                  Object.class,
+                                                                  configuration);
+
+        var criteria = resolver.resolve("id");
+        assertEquals(EventCriteria.havingTags("aggregateIdentifier", "id"), criteria);
+    }
+
+    @EventSourcedEntity
+    static class EntityWithManyInjectionParameters {
+
+        @EventCriteriaBuilder
+        public static EventCriteria buildCriteria(String id, MessageTypeResolver messageTypeResolver, EventSink eventSink, CommandGateway commandGateway, NewConfiguration configuration) {
+            assertSame(AnnotationBasedEventCriteriaResolverTest.messageTypeResolver, messageTypeResolver);
+            assertSame(AnnotationBasedEventCriteriaResolverTest.eventSink, eventSink);
+            assertSame(AnnotationBasedEventCriteriaResolverTest.commandGateway, commandGateway);
+            assertSame(AnnotationBasedEventCriteriaResolverTest.configuration, configuration);
+            return EventCriteria.havingTags("aggregateIdentifier", id);
+        }
     }
 
     @Nested
@@ -109,7 +151,7 @@ class AnnotationBasedEventCriteriaResolverTest {
                     IllegalArgumentException.class,
                     () -> new AnnotationBasedEventCriteriaResolver<>(EntityWithNonStaticEventCriteriaBuilder.class,
                                                                    Object.class,
-                                                                   messageTypeResolver));
+                                                                   configuration));
             assertEquals(
                     "Method annotated with @EventCriteriaBuilder must be static. Violating method: buildCriteria(java.lang.String)",
                     exception.getMessage()
@@ -131,9 +173,9 @@ class AnnotationBasedEventCriteriaResolverTest {
                     IllegalArgumentException.class,
                     () -> new AnnotationBasedEventCriteriaResolver<>(EntityWithZeroArgEventCriteriaBuilder.class,
                                                                      Object.class,
-                                                                     messageTypeResolver));
+                                                                     configuration));
             assertEquals(
-                    "No ID type found in @EventCriteriaBuilder method. Offending method: buildCriteria()",
+                    "Method annotated with @EventCriteriaBuilder must have at least one parameter which is the identifier. Violating method: buildCriteria()",
                     exception.getMessage()
             );
         }
@@ -154,7 +196,7 @@ class AnnotationBasedEventCriteriaResolverTest {
                     IllegalArgumentException.class,
                     () -> new AnnotationBasedEventCriteriaResolver<>(EntityWithVoidReturnValue.class,
                                                                      Object.class,
-                                                                     messageTypeResolver));
+                                                                     configuration));
             assertEquals(
                     "Method annotated with @EventCriteriaBuilder must return an EventCriteria. Violating method: buildCriteria(java.lang.String)",
                     exception.getMessage()
@@ -175,7 +217,7 @@ class AnnotationBasedEventCriteriaResolverTest {
         void eventCriteriaBuilderWithPrivateBuilderWorks() {
             var resolver = new AnnotationBasedEventCriteriaResolver<>(EntityWithPrivateEventCriteriaBuilder.class,
                                                                       Object.class,
-                                                                      messageTypeResolver);
+                                                                      configuration);
             var criteria = resolver.resolve("id");
             assertEquals(EventCriteria.havingTags("aggregateIdentifier", "id"), criteria);
         }
@@ -195,7 +237,7 @@ class AnnotationBasedEventCriteriaResolverTest {
                     IllegalArgumentException.class,
                     () -> new AnnotationBasedEventCriteriaResolver<>(NonEventSourcedEntity.class,
                                                                      Object.class,
-                                                                     messageTypeResolver));
+                                                                     configuration));
             assertEquals(
                     "The given class is not an @EventSourcedEntity",
                     exception.getMessage()
@@ -212,7 +254,7 @@ class AnnotationBasedEventCriteriaResolverTest {
                     IllegalArgumentException.class,
                     () -> new AnnotationBasedEventCriteriaResolver<>(EntityWithDuplicatedParameterType.class,
                                                                      Object.class,
-                                                                     messageTypeResolver));
+                                                                     configuration));
             assertEquals(
                     "Multiple @EventCriteriaBuilder methods found with the same parameter type: buildCriteriaOne(java.lang.String), buildCriteriaTwo(java.lang.String)",
                     exception.getMessage()
@@ -239,7 +281,7 @@ class AnnotationBasedEventCriteriaResolverTest {
             var resolver = new AnnotationBasedEventCriteriaResolver<>(
                     EntityWithInjectedMessageTypeResolver.class,
                     Object.class,
-                    (clazz) -> new MessageType(null, "MyMessageType", "0.0.5")
+                    configuration
             );
 
             var criteria = resolver.resolve("id");
@@ -263,9 +305,9 @@ class AnnotationBasedEventCriteriaResolverTest {
                     IllegalArgumentException.class,
                     () -> new AnnotationBasedEventCriteriaResolver<>(EntityWithUnknownInjectionParameter.class,
                                                                      Object.class,
-                                                                     messageTypeResolver));
+                                                                     configuration));
             assertEquals(
-                    "Found injection parameter of class java.lang.Integer. You can only inject one identifier and a MessageTypeResolver, and we already found identifier type java.lang.String. Offending method: buildCriteria(java.lang.String,java.lang.Integer)",
+                    "Method annotated with @EventCriteriaBuilder declared a parameter which is not a component: java.lang.Integer. Violating method: buildCriteria(java.lang.String,java.lang.Integer)",
                     exception.getMessage()
             );
         }
@@ -275,30 +317,6 @@ class AnnotationBasedEventCriteriaResolverTest {
 
             @EventCriteriaBuilder
             public static EventCriteria buildCriteria(String id, Integer integer) {
-                return EventCriteria.havingTags("aggregateIdentifier", id);
-            }
-        }
-
-        @Test
-        void throwsOnDoubleInjectedMessageTypeResolver() {
-            var exception = Assertions.assertThrows(
-                    IllegalArgumentException.class,
-                    () -> new AnnotationBasedEventCriteriaResolver<>(EntityWithDoubleMessageTypeResolver.class,
-                                                                     Object.class,
-                                                                     messageTypeResolver));
-            assertEquals(
-                    "Can not inject multiple MessageTypeResolvers in an @EventCriteriaBuilder method. Please remove one of the arguments. Offending method: buildCriteria(java.lang.String,org.axonframework.messaging.MessageTypeResolver,org.axonframework.messaging.MessageTypeResolver)",
-                    exception.getMessage()
-            );
-        }
-
-        @EventSourcedEntity
-        static class EntityWithDoubleMessageTypeResolver {
-            @EventCriteriaBuilder
-            public static EventCriteria buildCriteria(String id,
-                                                      MessageTypeResolver messageTypeResolver,
-                                                      MessageTypeResolver messageTypeResolver2
-            ) {
                 return EventCriteria.havingTags("aggregateIdentifier", id);
             }
         }

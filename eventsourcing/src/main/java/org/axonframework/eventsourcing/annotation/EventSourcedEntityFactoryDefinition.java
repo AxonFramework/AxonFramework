@@ -17,10 +17,13 @@
 package org.axonframework.eventsourcing.annotation;
 
 import jakarta.annotation.Nonnull;
+import org.axonframework.configuration.NewConfiguration;
 
 /**
  * Defines how an {@link EventSourcedEntityFactory} should be constructed for an {@link EventSourcedEntity} annotated
- * class. The definition received the {@code entityType} and {@code idType} to create a factory for the given types.
+ * class. The definition receives the {@code entityType} and {@code idType} to create the factory for. In addition, it
+ * receives * the {@link NewConfiguration} to resolve any component dependencies that are necessary for creating the
+ * factory.
  *
  * @param <E>  The type of the entity to create.
  * @param <ID> The type of the identifier of the entity to create.
@@ -33,9 +36,12 @@ public interface EventSourcedEntityFactoryDefinition<E, ID> {
     /**
      * Creates a new {@link EventSourcedEntityFactory} for the given {@code entityType} and {@code idType}.
      *
-     * @param entityType The type of the entity to create.
-     * @param idType     The identifier type of the entity to create.
+     * @param entityType    The type of the entity to create.
+     * @param idType        The identifier type of the entity to create.
+     * @param configuration The configuration to use for creating the factory.
      * @return A new {@link EventSourcedEntityFactory} for the given {@code entityType} and {@code idType}.
      */
-    EventSourcedEntityFactory<ID, E> createFactory(@Nonnull Class<E> entityType, @Nonnull Class<ID> idType);
+    EventSourcedEntityFactory<ID, E> createFactory(@Nonnull Class<E> entityType,
+                                                   @Nonnull Class<ID> idType,
+                                                   @Nonnull NewConfiguration configuration);
 }

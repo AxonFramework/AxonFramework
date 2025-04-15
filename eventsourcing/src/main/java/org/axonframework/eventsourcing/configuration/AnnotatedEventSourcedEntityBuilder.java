@@ -28,7 +28,6 @@ import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
-import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.repository.AsyncRepository;
 
 import java.util.Map;
@@ -81,15 +80,10 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
     @Override
     public ComponentFactory<AsyncRepository<I, E>> repository() {
         return c -> {
-            CriteriaResolver<I> criteriaResolver = criteriaResolverDefinition.createEventCriteriaResolver(
-                    entityType,
-                    idType,
-                    c.getComponent(MessageTypeResolver.class)
-            );
-            EventSourcedEntityFactory<I, E> entityFactory = entityFactoryDefinition.createFactory(
-                    entityType,
-                    idType
-            );
+            CriteriaResolver<I> criteriaResolver = criteriaResolverDefinition
+                    .createEventCriteriaResolver(entityType, idType, c);
+            EventSourcedEntityFactory<I, E> entityFactory = entityFactoryDefinition
+                    .createFactory(entityType, idType, c);
             return new AsyncEventSourcingRepository<>(
                     idType,
                     entityType,

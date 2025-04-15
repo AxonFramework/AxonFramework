@@ -21,10 +21,10 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.configuration.NewConfiguration;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.Tag;
-import org.axonframework.messaging.MessageTypeResolver;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -45,7 +46,7 @@ import java.util.stream.Collectors;
  *         By defining a static method in the entity class annotated with {@link EventCriteriaBuilder} which returns an
  *         {@link EventCriteria} and accepts the {@code id} as a parameter. This method should be static and return an
  *         {@link EventCriteria}. Multiple methods can be defined with different id types, and the first matching method
- *         will be used.
+ *         will be used. You can also inject components from the {@link NewConfiguration} as parameters to the method.
  *     </li>
  *     <li>
  *         If no matching {@link EventCriteriaBuilder} is found, the {@link EventSourcedEntity#tagKey()} will be used as the tag key, and the {@link Object#toString()} of the id will be used as value.
@@ -67,7 +68,7 @@ import java.util.stream.Collectors;
  */
 public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaResolver<ID>, DescribableComponent {
 
-    private final MessageTypeResolver messageTypeResolver;
+    private final NewConfiguration configuration;
     private final Class<ID> idType;
     private final Class<E> entityType;
     private final String tagKey;
@@ -81,17 +82,17 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
      * of the methods is invalid as defined in the Javadoc of {@link EventCriteriaBuilder}, an
      * {@link IllegalArgumentException} will be thrown.
      *
-     * @param entityType The entity type to resolve criteria for.
-     * @param idType     The identifier type to resolve criteria for.
-     * @param messageTypeResolver The message type resolver to use for resolving the message type.
+     * @param entityType    The entity type to resolve criteria for.
+     * @param idType        The identifier type to resolve criteria for.
+     * @param configuration The configuration to use for resolving the criteria.
      */
     public AnnotationBasedEventCriteriaResolver(@Nonnull Class<E> entityType,
                                                 @Nonnull Class<ID> idType,
-                                                @Nonnull MessageTypeResolver messageTypeResolver) {
+                                                @Nonnull NewConfiguration configuration) {
         this.entityType = Objects.requireNonNull(entityType, "The entity type cannot be null.");
         this.idType = Objects.requireNonNull(idType, "The id type cannot be null.");
-        this.messageTypeResolver = Objects.requireNonNull(messageTypeResolver,
-                                                          "The message type resolver cannot be null.");
+        this.configuration = Objects.requireNonNull(configuration,
+                                                    "The message type resolver cannot be null.");
 
         Map<String, Object> attributes = AnnotationUtils
                 .findAnnotationAttributes(entityType, EventSourcedEntity.class)
@@ -124,12 +125,15 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
                                                                          m -> m.getValue().getFirst()));
     }
 
-    private static class WrappedEventCriteriaBuilderMethod {
+    /**
+     * Wraps a {@code method} that is annotated with {@link EventCriteriaBuilder} and returns an {@link EventCriteria}.
+     * Validates that the method is valid, and retrieves the components from the configuration that are requested.
+     */
+    private class WrappedEventCriteriaBuilderMethod {
 
         private final Method method;
-        private int messageTypeResolverIndex = -1;
-        private int identifierIndex = -1;
-        private Class<?> identifierType;
+        private final Class<?> identifierType;
+        private final Supplier<?>[] optionalArgumentSuppliers;
 
         private WrappedEventCriteriaBuilderMethod(Method method) {
             if (!EventCriteria.class.isAssignableFrom(method.getReturnType())) {
@@ -142,41 +146,44 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
                         "Method annotated with @EventCriteriaBuilder must be static. Violating method: %s".formatted(
                                 ReflectionUtils.toDiscernibleSignature(method)));
             }
-            this.method = ReflectionUtils.ensureAccessible(method);
-            for (int i = 0; i < method.getParameterCount(); i++) {
-                Class<?> parameterType = method.getParameterTypes()[i];
-                if (parameterType.isAssignableFrom(MessageTypeResolver.class)) {
-                    if (messageTypeResolverIndex != -1) {
-                        throw new IllegalArgumentException(
-                                "Can not inject multiple MessageTypeResolvers in an @EventCriteriaBuilder method. Please remove one of the arguments. Offending method: %s".formatted(
-                                        ReflectionUtils.toDiscernibleSignature(method)));
-                    }
-                    messageTypeResolverIndex = i;
-                } else {
-                    // Must be the ID type
-                    if (identifierIndex != -1) {
-                        throw new IllegalArgumentException(
-                                "Found injection parameter of class %s. You can only inject one identifier and a MessageTypeResolver, and we already found identifier type %s. Offending method: %s".formatted(
-                                        method.getParameterTypes()[i].getName(),
-                                        identifierType.getName(),
-                                        ReflectionUtils.toDiscernibleSignature(method)));
-                    }
-                    identifierIndex = i;
-                    identifierType = parameterType;
-                }
-            }
-            if (identifierIndex == -1) {
+            if (method.getParameterCount() == 0) {
                 throw new IllegalArgumentException(
-                        "No ID type found in @EventCriteriaBuilder method. Offending method: %s".formatted(
+                        "Method annotated with @EventCriteriaBuilder must have at least one parameter which is the identifier. Violating method: %s".formatted(
                                 ReflectionUtils.toDiscernibleSignature(method)));
+            }
+            this.method = ReflectionUtils.ensureAccessible(method);
+            // Let's determine the identifier and create the argument suppliers
+            this.identifierType = method.getParameterTypes()[0];
+            int optionalParameterCount = method.getParameterCount() - 1;
+            this.optionalArgumentSuppliers = new Supplier[optionalParameterCount];
+
+            // And other arguments which can come from the configuration
+            for (int i = 0; i < optionalParameterCount; i++) {
+                Class<?> parameterType = method.getParameterTypes()[i + 1];
+
+                // The whole configuration can be passed in
+                if (parameterType == NewConfiguration.class) {
+                    optionalArgumentSuppliers[i] = () -> configuration;
+                    continue;
+                }
+                // Or a specific component of the configuration
+                Optional<?> component = configuration.getOptionalComponent(parameterType);
+                if (component.isEmpty()) {
+                    throw new IllegalArgumentException(
+                            "Method annotated with @EventCriteriaBuilder declared a parameter which is not a component: %s. Violating method: %s".formatted(
+                                    parameterType.getName(),
+                                    ReflectionUtils.toDiscernibleSignature(method)
+                            ));
+                }
+                optionalArgumentSuppliers[i] = component::get;
             }
         }
 
-        public Object resolve(Object id, MessageTypeResolver messageTypeResolver) {
+        public Object resolve(Object id) {
             Object[] args = new Object[method.getParameterCount()];
-            args[identifierIndex] = id;
-            if (messageTypeResolverIndex != -1) {
-                args[messageTypeResolverIndex] = messageTypeResolver;
+            args[0] = id;
+            for (int i = 0; i < optionalArgumentSuppliers.length; i++) {
+                args[i + 1] = optionalArgumentSuppliers[i].get();
             }
             try {
                 Object result = method.invoke(null, args);
@@ -208,7 +215,7 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
                 .filter(c -> c.isInstance(id))
                 .findFirst()
                 .map(builderMap::get)
-                .map(m -> m.resolve(id, messageTypeResolver));
+                .map(m -> m.resolve(id));
         if (builderResult.isPresent()) {
             return (EventCriteria) builderResult.get();
         }
