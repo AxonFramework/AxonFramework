@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.springboot.util;
 
 import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
@@ -64,7 +64,7 @@ public class DeadLetterQueueProviderConfigurerModule implements ConfigurerModule
     }
 
     @Override
-    public void configureModule(@Nonnull Configurer configurer) {
+    public void configureModule(@Nonnull LegacyConfigurer configurer) {
         configurer.eventProcessing().registerDeadLetterQueueProvider(
                 processingGroup -> dlqEnabled(processingGroup)
                         ? deadLetterQueueProvider.apply(processingGroup)

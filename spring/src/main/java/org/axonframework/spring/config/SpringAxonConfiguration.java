@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.spring.event.AxonStartedEvent;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Factory Bean implementation that creates an Axon {@link Configuration} for a {@link Configurer}. This allows a {@code
+ * Factory Bean implementation that creates an Axon {@link Configuration} for a {@link LegacyConfigurer}. This allows a {@code
  * Configuration} bean to be available in an Application Context that already defines a {@code Configurer}.
  * <p>
  * This factory bean will also ensure the {@code Configuration's} lifecycle is attached to the Spring Application
@@ -53,7 +53,7 @@ public class SpringAxonConfiguration implements FactoryBean<Configuration>, Smar
             - 1024 // this puts us next to the regular, start and non-graceful stop of web servers...
             - 1024; // we place ourselves healthily below that, starting before web servers and stopping after.
 
-    private final Configurer configurer;
+    private final LegacyConfigurer configurer;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final AtomicReference<Configuration> configuration = new AtomicReference<>();
     private ApplicationContext applicationContext;
@@ -63,7 +63,7 @@ public class SpringAxonConfiguration implements FactoryBean<Configuration>, Smar
      *
      * @param configurer The configurer to get the {@link Configuration} from.
      */
-    public SpringAxonConfiguration(Configurer configurer) {
+    public SpringAxonConfiguration(LegacyConfigurer configurer) {
         this.configurer = configurer;
     }
 

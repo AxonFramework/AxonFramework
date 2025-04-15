@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.queryhandling;
 
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
@@ -35,7 +35,7 @@ class ProjectorTest {
     void queryHandlerAndEventHandlerCleanlyShutdown() {
         UserSummaryProjection userSummaryProjection = new UserSummaryProjection();
 
-        Configurer configurer = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES);
+        LegacyConfigurer configurer = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES);
         configurer.configureCommandBus(c -> new SimpleCommandBus())
                   .configureQueryBus(c -> SimpleQueryBus.builder().build())
                   .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())

@@ -23,7 +23,7 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.configuration.LifecycleRegistry;
@@ -90,7 +90,7 @@ class AxonAutoConfigurationTest {
                 .withPropertyValues("axon.axonserver.enabled=false")
                 .run(applicationContext -> {
                     assertNotNull(applicationContext);
-                    assertNotNull(applicationContext.getBean(Configurer.class));
+                    assertNotNull(applicationContext.getBean(LegacyConfigurer.class));
                     assertNotNull(applicationContext.getBean(Snapshotter.class));
 
                     assertNotNull(applicationContext.getBean(CommandBus.class));

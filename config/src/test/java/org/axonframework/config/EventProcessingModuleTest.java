@@ -102,7 +102,7 @@ class EventProcessingModuleTest {
     private EventStore eventStoreOne;
     private EventStore eventStoreTwo;
 
-    private Configurer configurer;
+    private LegacyConfigurer configurer;
 
     @BeforeEach
     void setUp() {
@@ -203,9 +203,9 @@ class EventProcessingModuleTest {
 
     @Test
     void assigningATrackingProcessorFailsWhenUsingSimpleEventBus() {
-        Configurer configurer = DefaultConfigurer.defaultConfiguration()
-                                                 .configureEventBus(c -> SimpleEventBus.builder().build())
-                                                 .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
+        LegacyConfigurer configurer = DefaultConfigurer.defaultConfiguration()
+                                                       .configureEventBus(c -> SimpleEventBus.builder().build())
+                                                       .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
                                                                           .registerEventHandler(c -> new TrackingEventHandler())
                                                                           .registerTrackingEventProcessor("tracking"));
 

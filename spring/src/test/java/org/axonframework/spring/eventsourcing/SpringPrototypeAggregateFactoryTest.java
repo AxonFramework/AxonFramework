@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.eventsourcing;
 
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.eventhandling.DomainEventMessage;
@@ -107,7 +107,7 @@ class SpringPrototypeAggregateFactoryTest {
         }
 
         @Bean
-        public SpringAxonConfiguration springAxonConfiguration(Configurer configurer) {
+        public SpringAxonConfiguration springAxonConfiguration(LegacyConfigurer configurer) {
             return new SpringAxonConfiguration(configurer);
         }
 

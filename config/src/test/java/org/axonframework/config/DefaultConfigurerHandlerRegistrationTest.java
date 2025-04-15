@@ -35,8 +35,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the correct registration of command, query and overall message handling beans, through the
- * {@link Configurer#registerCommandHandler(Function)}, {@link Configurer#registerQueryHandler(Function)} and
- * {@link Configurer#registerMessageHandler(Function)} methods.
+ * {@link LegacyConfigurer#registerCommandHandler(Function)}, {@link LegacyConfigurer#registerQueryHandler(Function)} and
+ * {@link LegacyConfigurer#registerMessageHandler(Function)} methods.
  *
  * @author Steven van Beelen
  */
@@ -45,7 +45,7 @@ class DefaultConfigurerHandlerRegistrationTest {
     private static final String COMMAND_HANDLING_RESPONSE = "some-command-handling-response";
     private static final String QUERY_HANDLING_RESPONSE = "some-query-handling-response";
 
-    private Configurer baseConfigurer;
+    private LegacyConfigurer baseConfigurer;
 
     @BeforeEach
     void setUp() {

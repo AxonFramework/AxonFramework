@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.Message;
@@ -61,7 +61,7 @@ public class MessageHandlerConfigurer implements ConfigurerModule, ApplicationCo
     }
 
     @Override
-    public void configureModule(@Nonnull Configurer configurer) {
+    public void configureModule(@Nonnull LegacyConfigurer configurer) {
         switch (type) {
             case EVENT:
                 handlerBeans.forEach(handler -> configurer.registerEventHandler(c -> applicationContext.getBean(handler)));

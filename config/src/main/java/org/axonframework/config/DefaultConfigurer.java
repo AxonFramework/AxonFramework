@@ -150,7 +150,7 @@ import static org.axonframework.util.HandlerTypeResolver.*;
  * @deprecated In favor of using the {@link org.axonframework.configuration.ApplicationConfigurer} with additional modules.
  */
 @Deprecated
-public class DefaultConfigurer implements Configurer {
+public class DefaultConfigurer implements LegacyConfigurer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -250,7 +250,7 @@ public class DefaultConfigurer implements Configurer {
      *
      * @return Configurer instance for further configuration.
      */
-    public static Configurer defaultConfiguration() {
+    public static LegacyConfigurer defaultConfiguration() {
         return defaultConfiguration(true);
     }
 
@@ -267,7 +267,7 @@ public class DefaultConfigurer implements Configurer {
      *                                    application container, such as Spring or CDI.
      * @return Configurer instance for further configuration.
      */
-    public static Configurer defaultConfiguration(boolean autoLocateConfigurerModules) {
+    public static LegacyConfigurer defaultConfiguration(boolean autoLocateConfigurerModules) {
         DefaultConfigurer configurer = new DefaultConfigurer();
         if (autoLocateConfigurerModules) {
             ServiceLoader<ConfigurerModule> configurerModuleLoader =
@@ -290,8 +290,8 @@ public class DefaultConfigurer implements Configurer {
      * @param transactionManager    TransactionManager to be used for accessing the entity manager.
      * @return A Configurer instance for further configuration.
      */
-    public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider,
-                                              TransactionManager transactionManager) {
+    public static LegacyConfigurer jpaConfiguration(EntityManagerProvider entityManagerProvider,
+                                                    TransactionManager transactionManager) {
         return new DefaultConfigurer()
                 .registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
                 .registerComponent(TransactionManager.class, c -> transactionManager)
@@ -331,7 +331,7 @@ public class DefaultConfigurer implements Configurer {
      * @param entityManagerProvider The instance that provides access to the JPA EntityManager.
      * @return A Configurer instance for further configuration.
      */
-    public static Configurer jpaConfiguration(EntityManagerProvider entityManagerProvider) {
+    public static LegacyConfigurer jpaConfiguration(EntityManagerProvider entityManagerProvider) {
         return jpaConfiguration(entityManagerProvider, NoTransactionManager.INSTANCE);
     }
 
@@ -790,42 +790,42 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer registerEventUpcaster(@Nonnull Function<Configuration, EventUpcaster> upcasterBuilder) {
+    public LegacyConfigurer registerEventUpcaster(@Nonnull Function<Configuration, EventUpcaster> upcasterBuilder) {
         upcasters.add(new Component<>(config, "upcaster", upcasterBuilder));
         return this;
     }
 
     @Override
-    public Configurer configureMessageMonitor(
+    public LegacyConfigurer configureMessageMonitor(
             @Nonnull Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> builder) {
         messageMonitorFactoryBuilder.add((conf, type, name) -> builder.apply(conf).apply(type, name));
         return this;
     }
 
     @Override
-    public Configurer configureMessageMonitor(@Nonnull Class<?> componentType,
-                                              @Nonnull MessageMonitorFactory messageMonitorFactory) {
+    public LegacyConfigurer configureMessageMonitor(@Nonnull Class<?> componentType,
+                                                    @Nonnull MessageMonitorFactory messageMonitorFactory) {
         messageMonitorFactoryBuilder.add(componentType, messageMonitorFactory);
         return this;
     }
 
     @Override
-    public Configurer configureMessageMonitor(@Nonnull Class<?> componentType,
-                                              @Nonnull String componentName,
-                                              @Nonnull MessageMonitorFactory messageMonitorFactory) {
+    public LegacyConfigurer configureMessageMonitor(@Nonnull Class<?> componentType,
+                                                    @Nonnull String componentName,
+                                                    @Nonnull MessageMonitorFactory messageMonitorFactory) {
         messageMonitorFactoryBuilder.add(componentType, componentName, messageMonitorFactory);
         return this;
     }
 
     @Override
-    public Configurer configureCorrelationDataProviders(
+    public LegacyConfigurer configureCorrelationDataProviders(
             @Nonnull Function<Configuration, List<CorrelationDataProvider>> correlationDataProviderBuilder) {
         correlationProviders.update(correlationDataProviderBuilder);
         return this;
     }
 
     @Override
-    public Configurer registerModule(@Nonnull ModuleConfiguration module) {
+    public LegacyConfigurer registerModule(@Nonnull ModuleConfiguration module) {
         logger.debug("Registering module [{}]", module.getClass().getSimpleName());
         if (initialized) {
             module.initialize(config);
@@ -835,15 +835,15 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public <C> Configurer registerComponent(@Nonnull Class<C> componentType,
-                                            @Nonnull Function<Configuration, ? extends C> componentBuilder) {
+    public <C> LegacyConfigurer registerComponent(@Nonnull Class<C> componentType,
+                                                  @Nonnull Function<Configuration, ? extends C> componentBuilder) {
         logger.debug("Registering component [{}]", componentType.getSimpleName());
         components.put(componentType, new Component<>(config, componentType.getSimpleName(), componentBuilder));
         return this;
     }
 
     @Override
-    public Configurer registerCommandHandler(@Nonnull Function<Configuration, Object> commandHandlerBuilder) {
+    public LegacyConfigurer registerCommandHandler(@Nonnull Function<Configuration, Object> commandHandlerBuilder) {
         messageHandlerRegistrars.add(new Component<>(
                 () -> config,
                 "CommandHandlerRegistrar",
@@ -869,7 +869,7 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer registerQueryHandler(@Nonnull Function<Configuration, Object> queryHandlerBuilder) {
+    public LegacyConfigurer registerQueryHandler(@Nonnull Function<Configuration, Object> queryHandlerBuilder) {
         messageHandlerRegistrars.add(new Component<>(
                 () -> config,
                 "QueryHandlerRegistrar",
@@ -887,7 +887,7 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer registerMessageHandler(@Nonnull Function<Configuration, Object> messageHandlerBuilder) {
+    public LegacyConfigurer registerMessageHandler(@Nonnull Function<Configuration, Object> messageHandlerBuilder) {
         Component<Object> messageHandler = new Component<>(() -> config, "", messageHandlerBuilder);
         Class<?> handlerClass = messageHandler.get().getClass();
         if (isCommandHandler(handlerClass)) {
@@ -903,7 +903,7 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer configureEmbeddedEventStore(
+    public LegacyConfigurer configureEmbeddedEventStore(
             @Nonnull Function<Configuration, EventStorageEngine> storageEngineBuilder) {
         return configureEventStore(c -> {
             MessageMonitor<Message<?>> monitor =
@@ -918,32 +918,32 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer configureEventSerializer(@Nonnull Function<Configuration, Serializer> eventSerializerBuilder) {
+    public LegacyConfigurer configureEventSerializer(@Nonnull Function<Configuration, Serializer> eventSerializerBuilder) {
         eventSerializer.update(eventSerializerBuilder);
         return this;
     }
 
     @Override
-    public Configurer configureMessageSerializer(
+    public LegacyConfigurer configureMessageSerializer(
             @Nonnull Function<Configuration, Serializer> messageSerializerBuilder) {
         messageSerializer.update(messageSerializerBuilder);
         return this;
     }
 
     @Override
-    public <A> Configurer configureAggregate(@Nonnull AggregateConfiguration<A> aggregateConfiguration) {
+    public <A> LegacyConfigurer configureAggregate(@Nonnull AggregateConfiguration<A> aggregateConfiguration) {
         return registerModule(aggregateConfiguration);
     }
 
     @Override
-    public Configurer registerHandlerDefinition(
+    public LegacyConfigurer registerHandlerDefinition(
             @Nonnull BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass) {
         this.handlerDefinition.update(c -> clazz -> handlerDefinitionClass.apply(c, clazz));
         return this;
     }
 
     @Override
-    public Configurer registerHandlerEnhancerDefinition(
+    public LegacyConfigurer registerHandlerEnhancerDefinition(
             Function<Configuration, HandlerEnhancerDefinition> handlerEnhancerBuilder
     ) {
         this.handlerEnhancerDefinitions.add(
@@ -953,7 +953,7 @@ public class DefaultConfigurer implements Configurer {
     }
 
     @Override
-    public Configurer configureLifecyclePhaseTimeout(long timeout, TimeUnit timeUnit) {
+    public LegacyConfigurer configureLifecyclePhaseTimeout(long timeout, TimeUnit timeUnit) {
         assertStrictPositive(timeout, "The lifecycle phase timeout should be strictly positive");
         assertNonNull(timeUnit, "The lifecycle phase time unit should not be null");
         this.lifecyclePhaseTimeout = timeout;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.lifecycle.Lifecycle;
@@ -88,7 +88,7 @@ public class InfraConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public SpringAxonConfiguration springAxonConfiguration(Configurer configurer) {
+    public SpringAxonConfiguration springAxonConfiguration(LegacyConfigurer configurer) {
         return new SpringAxonConfiguration(configurer);
     }
 
@@ -108,7 +108,7 @@ public class InfraConfiguration {
     }
 
     @Bean
-    public InitializingBean lifecycleInitializer(Configurer configurer,
+    public InitializingBean lifecycleInitializer(LegacyConfigurer configurer,
                                                  List<Lifecycle> lifecycleBeans) {
         return () -> configurer.onInitialize(
                 config -> lifecycleBeans.forEach(bean -> bean.registerLifecycleHandlers(config.lifecycleRegistry()))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.spring.event.AxonStartedEvent;
 import org.junit.jupiter.api.*;
 import org.springframework.context.ApplicationContext;
@@ -30,7 +30,7 @@ class SpringAxonConfigurationTest {
 
     @Test
     void axonStartedEventIsPublished() {
-        Configurer configurer = mock(Configurer.class);
+        LegacyConfigurer configurer = mock(LegacyConfigurer.class);
         ApplicationContext context = mock(ApplicationContext.class);
         Configuration configuration = mock(Configuration.class);
         when(configurer.buildConfiguration()).thenReturn(configuration);
@@ -47,7 +47,7 @@ class SpringAxonConfigurationTest {
         int webServerGracefulShutdownLifecyclePhase = SmartLifecycle.DEFAULT_PHASE - 1024;
         int webServerDefaultLifecyclePhase = webServerGracefulShutdownLifecyclePhase - 1024;
 
-        SpringAxonConfiguration springAxonConfiguration = new SpringAxonConfiguration(mock(Configurer.class));
+        SpringAxonConfiguration springAxonConfiguration = new SpringAxonConfiguration(mock(LegacyConfigurer.class));
 
         assertTrue(springAxonConfiguration.getPhase() < webServerDefaultLifecyclePhase);
     }

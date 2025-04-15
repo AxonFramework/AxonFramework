@@ -145,7 +145,7 @@ class DefaultConfigurerTest {
 
     @Test
     void defaultConfigurationWithTrackingProcessorConfigurationInMainConfig() {
-        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        LegacyConfigurer configurer = DefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing().registerEventHandler(c -> (EventMessageHandler) event -> null);
         Configuration config = configurer.registerComponent(TrackingEventProcessorConfiguration.class,
                                                             c -> TrackingEventProcessorConfiguration.forParallelProcessing(
@@ -167,7 +167,7 @@ class DefaultConfigurerTest {
 
     @Test
     void defaultConfigurationWithTrackingProcessorExplicitlyConfigured() {
-        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        LegacyConfigurer configurer = DefaultConfigurer.defaultConfiguration();
         String processorName = "myProcessor";
         configurer.eventProcessing().registerTrackingEventProcessor(processorName,
                                                                     Configuration::eventStore,
@@ -191,7 +191,7 @@ class DefaultConfigurerTest {
 
     @Test
     void defaultConfigurationWithTrackingProcessorAutoStartDisabledDoesNotComplainAtShutdown() {
-        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        LegacyConfigurer configurer = DefaultConfigurer.defaultConfiguration();
         String processorName = "myProcessor";
         configurer.eventProcessing().registerTrackingEventProcessor(processorName,
                                                                     Configuration::eventStore,
@@ -213,7 +213,7 @@ class DefaultConfigurerTest {
 
     @Test
     void defaultConfigurationWithTrackingProcessorAutoStartDisabled() {
-        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        LegacyConfigurer configurer = DefaultConfigurer.defaultConfiguration();
         String processorName = "myProcessor";
         configurer.eventProcessing().registerTrackingEventProcessor(processorName,
                                                                     Configuration::eventStore,
@@ -613,7 +613,7 @@ class DefaultConfigurerTest {
 
     @Test
     void whenStubAggregateRegisteredWithRegisterMessageHandler_thenRightThingsCalled() {
-        Configurer configurer = spy(DefaultConfigurer.defaultConfiguration());
+        LegacyConfigurer configurer = spy(DefaultConfigurer.defaultConfiguration());
         configurer.registerMessageHandler(c -> new StubAggregate());
 
         verify(configurer, times(1)).registerCommandHandler(any());
@@ -623,7 +623,7 @@ class DefaultConfigurerTest {
 
     @Test
     void whenQueryHandlerRegisteredWithRegisterMessageHandler_thenRightThingsCalled() {
-        Configurer configurer = spy(DefaultConfigurer.defaultConfiguration());
+        LegacyConfigurer configurer = spy(DefaultConfigurer.defaultConfiguration());
         configurer.registerMessageHandler(c -> new StubQueryHandler());
 
         verify(configurer, never()).registerCommandHandler(any());
