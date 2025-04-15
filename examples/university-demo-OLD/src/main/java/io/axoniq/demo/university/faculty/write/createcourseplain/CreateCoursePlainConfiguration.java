@@ -8,6 +8,7 @@ import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 
@@ -28,7 +29,7 @@ public class CreateCoursePlainConfiguration {
                 .entity(stateEntity)
                 .commandHandlers()
                 .commandHandler(new QualifiedName(CreateCourse.class),
-                        c -> new CreateCourseCommandHandler(c.getComponent(EventSink.class)));
+                        c -> new CreateCourseCommandHandler(c.getComponent(EventSink.class), c.getComponent(MessageTypeResolver.class)));
 
         return configurer.registerStatefulCommandHandlingModule(commandHandlingModule);
     }

@@ -12,6 +12,7 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotation.EventCriteriaBuilder;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
@@ -32,11 +33,10 @@ class SubscribeStudentToCourseCommandHandler {
     void handle(
             SubscribeStudentToCourse command,
             @InjectEntity State state,
-            EventSink eventSink,
-            ProcessingContext processingContext
+            EventAppender eventAppender
     ) {
         var events = decide(command, state);
-        eventSink.publish(processingContext, toMessages(events));
+        eventAppender.append(events);
     }
 
     private List<StudentSubscribedToCourse> decide(SubscribeStudentToCourse command, State state) {

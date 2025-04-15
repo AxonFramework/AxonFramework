@@ -6,6 +6,7 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotation.InjectEntity;
@@ -22,11 +23,10 @@ class SubscribeStudentToCourseCommandHandler {
             SubscribeStudentToCourse command,
             @InjectEntity(idProperty = FacultyTags.COURSE_ID) Course course,
             @InjectEntity(idProperty = FacultyTags.STUDENT_ID) Student student,
-            EventSink eventSink,
-            ProcessingContext processingContext
+            EventAppender eventAppender
     ) {
         var events = decide(command, course, student);
-        eventSink.publish(processingContext, toMessages(events));
+        eventAppender.append(events);
     }
 
     private List<StudentSubscribedToCourse> decide(SubscribeStudentToCourse command, Course course, Student student) {
@@ -37,19 +37,6 @@ class SubscribeStudentToCourseCommandHandler {
         assertStudentNotAlreadySubscribed(course, student);
 
         return List.of(new StudentSubscribedToCourse(command.studentId().raw(), command.courseId().raw()));
-    }
-
-    private static List<EventMessage<?>> toMessages(List<StudentSubscribedToCourse> events) {
-        return events.stream()
-                     .map(SubscribeStudentToCourseCommandHandler::toMessage)
-                     .collect(Collectors.toList());
-    }
-
-    private static EventMessage<?> toMessage(Object payload) {
-        return new GenericEventMessage<>(
-                new MessageType(payload.getClass()),
-                payload
-        );
     }
 
     private void assertStudentEnrolledFaculty(Student student) {
