@@ -41,7 +41,7 @@ import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.SnapshotterSpanFactory;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
@@ -272,12 +272,14 @@ public class AxonAutoConfiguration implements BeanClassLoaderAware {
     @Bean(name = "eventBus")
     @ConditionalOnMissingBean(EventBus.class)
     @ConditionalOnBean(EventStorageEngine.class)
-    public EmbeddedEventStore eventStore(EventStorageEngine storageEngine, LegacyConfiguration configuration) {
-        return EmbeddedEventStore.builder()
-                                 .storageEngine(storageEngine)
-                                 .messageMonitor(configuration.messageMonitor(LegacyEventStore.class, "eventStore"))
-                                 .spanFactory(configuration.getComponent(EventBusSpanFactory.class))
-                                 .build();
+    public LegacyEmbeddedEventStore eventStore(EventStorageEngine storageEngine, LegacyConfiguration configuration) {
+        return LegacyEmbeddedEventStore.builder()
+                                       .storageEngine(storageEngine)
+                                       .messageMonitor(configuration.messageMonitor(
+                                               LegacyEventStore.class, "eventStore"
+                                       ))
+                                       .spanFactory(configuration.getComponent(EventBusSpanFactory.class))
+                                       .build();
     }
 
     @ConditionalOnMissingBean

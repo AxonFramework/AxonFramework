@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.conflictresolution;
 
 import org.axonframework.modelling.command.ConflictingModificationException;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.junit.jupiter.api.*;
@@ -36,7 +36,7 @@ class DefaultConflictResolverTest {
 
     @BeforeEach
     void setUp() {
-        eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
+        eventStore = spy(LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
         eventStore.publish(IntStream.range(0, 10).mapToObj(
                 sequenceNumber -> createEvent(AGGREGATE, sequenceNumber, PAYLOAD + sequenceNumber)).collect(toList()));
     }

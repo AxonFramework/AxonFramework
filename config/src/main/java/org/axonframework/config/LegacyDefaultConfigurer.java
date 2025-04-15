@@ -50,7 +50,7 @@ import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.SnapshotterSpanFactory;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
@@ -917,11 +917,12 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     ) {
         return configureEventStore(c -> {
             MessageMonitor<Message<?>> monitor =
-                    messageMonitorFactoryComponent.get().apply(EmbeddedEventStore.class, "eventStore");
-            EmbeddedEventStore eventStore = EmbeddedEventStore.builder()
-                                                              .storageEngine(storageEngineBuilder.apply(c))
-                                                              .messageMonitor(monitor)
-                                                              .build();
+                    messageMonitorFactoryComponent.get()
+                                                  .apply(LegacyEmbeddedEventStore.class, "eventStore");
+            LegacyEmbeddedEventStore eventStore = LegacyEmbeddedEventStore.builder()
+                                                                          .storageEngine(storageEngineBuilder.apply(c))
+                                                                          .messageMonitor(monitor)
+                                                                          .build();
             c.onShutdown(eventStore::shutDown);
             return eventStore;
         });

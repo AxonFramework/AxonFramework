@@ -22,7 +22,7 @@ import org.axonframework.config.ModuleConfiguration;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.spring.config.SpringAggregateLookup;
@@ -88,10 +88,10 @@ class SpringPrototypeAggregateFactoryTest {
 
         // Wired to ensure an EventStore is present for the aggregate to allow event sourcing.
         @Bean
-        public EmbeddedEventStore eventStore() {
-            return EmbeddedEventStore.builder()
-                                     .storageEngine(new InMemoryEventStorageEngine())
-                                     .build();
+        public LegacyEmbeddedEventStore eventStore() {
+            return LegacyEmbeddedEventStore.builder()
+                                           .storageEngine(new InMemoryEventStorageEngine())
+                                           .build();
         }
 
         /**

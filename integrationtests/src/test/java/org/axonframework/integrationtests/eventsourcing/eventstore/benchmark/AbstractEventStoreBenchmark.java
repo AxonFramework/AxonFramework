@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -60,7 +60,7 @@ public abstract class AbstractEventStoreBenchmark {
     private static final DecimalFormat decimalFormat = new DecimalFormat("0.00");
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final EmbeddedEventStore eventStore;
+    private final LegacyEmbeddedEventStore eventStore;
     private final EventProcessor eventProcessor;
     private final EventStorageEngine storageEngine;
     private final int threadCount, batchSize, batchCount;
@@ -74,9 +74,9 @@ public abstract class AbstractEventStoreBenchmark {
 
     protected AbstractEventStoreBenchmark(EventStorageEngine storageEngine, int threadCount, int batchSize,
                                           int batchCount) {
-        this.eventStore = EmbeddedEventStore.builder()
-                                            .storageEngine(this.storageEngine = storageEngine)
-                                            .build();
+        this.eventStore = LegacyEmbeddedEventStore.builder()
+                                                  .storageEngine(this.storageEngine = storageEngine)
+                                                  .build();
         this.threadCount = threadCount;
         this.batchSize = batchSize;
         this.batchCount = batchCount;

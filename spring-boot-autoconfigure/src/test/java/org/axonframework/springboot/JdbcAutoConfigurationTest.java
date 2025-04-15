@@ -30,7 +30,7 @@ import org.axonframework.eventhandling.deadletter.jdbc.JdbcSequencedDeadLetterQu
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.TokenSchema;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
@@ -82,7 +82,7 @@ public class JdbcAutoConfigurationTest {
         testContext.run(context -> {
             assertThat(context).hasSingleBean(JdbcEventStorageEngine.class);
             assertThat(context).getBean(EventStorageEngine.class).isInstanceOf(JdbcEventStorageEngine.class);
-            assertThat(context).getBean(LegacyEventStore.class).isInstanceOf(EmbeddedEventStore.class);
+            assertThat(context).getBean(LegacyEventStore.class).isInstanceOf(LegacyEmbeddedEventStore.class);
             assertThat(context).getBean(TokenStore.class).isInstanceOf(JdbcTokenStore.class);
             assertThat(context).getBean(SagaStore.class).isInstanceOf(JdbcSagaStore.class);
             assertThat(context).getBean(TokenStore.class)

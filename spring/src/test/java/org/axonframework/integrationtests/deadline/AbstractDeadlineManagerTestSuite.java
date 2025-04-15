@@ -30,7 +30,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.GenericMessage;
@@ -111,12 +111,13 @@ public abstract class AbstractDeadlineManagerTestSuite {
     @BeforeEach
     void setUp() {
         spanFactory = new TestSpanFactory();
-        LegacyEventStore eventStore = spy(EmbeddedEventStore.builder()
-                                                            .storageEngine(new InMemoryEventStorageEngine())
-                                                            .spanFactory(DefaultEventBusSpanFactory
-                                                                           .builder()
-                                                                           .spanFactory(spanFactory).build())
-                                                            .build());
+        LegacyEventStore eventStore =
+                spy(LegacyEmbeddedEventStore.builder()
+                                            .storageEngine(new InMemoryEventStorageEngine())
+                                            .spanFactory(DefaultEventBusSpanFactory.builder()
+                                                                                   .spanFactory(spanFactory)
+                                                                                   .build())
+                                            .build());
         List<CorrelationDataProvider> correlationDataProviders = new ArrayList<>();
         correlationDataProviders.add(new MessageOriginProvider());
         correlationDataProviders.add(new SimpleCorrelationDataProvider(CUSTOM_CORRELATION_DATA_KEY));
@@ -457,8 +458,9 @@ public abstract class AbstractDeadlineManagerTestSuite {
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         //noinspection resource
         configuration.deadlineManager().registerHandlerInterceptor((uow, chain) -> {
-            uow.transformMessage(deadlineMessage -> asDeadlineMessage(deadlineMessage.getDeadlineName(), new DeadlinePayload(FAKE_IDENTIFIER),
-                                       deadlineMessage.getTimestamp()));
+            uow.transformMessage(deadlineMessage -> asDeadlineMessage(deadlineMessage.getDeadlineName(),
+                                                                      new DeadlinePayload(FAKE_IDENTIFIER),
+                                                                      deadlineMessage.getTimestamp()));
             return chain.proceedSync();
         });
         configuration.eventStore().publish(testEventMessage);
@@ -473,9 +475,12 @@ public abstract class AbstractDeadlineManagerTestSuite {
         EventMessage<Object> testEventMessage =
                 asEventMessage(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE));
         //noinspection resource
-        configuration.deadlineManager().registerDispatchInterceptor(messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(),
-                                                         new DeadlinePayload(FAKE_IDENTIFIER),
-                                                         m.getTimestamp()));
+        configuration.deadlineManager()
+                     .registerDispatchInterceptor(
+                             messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(),
+                                                                     new DeadlinePayload(FAKE_IDENTIFIER),
+                                                                     m.getTimestamp())
+                     );
         configuration.eventStore().publish(testEventMessage);
 
         assertPublishedEvents(new SagaStartingEvent(IDENTIFIER, DO_NOT_CANCEL_BEFORE_DEADLINE),

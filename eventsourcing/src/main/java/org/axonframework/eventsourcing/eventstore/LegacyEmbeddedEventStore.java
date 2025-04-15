@@ -74,12 +74,12 @@ import static org.axonframework.common.BuilderUtils.assertPositive;
  * @author Rene de Waele
  * @since 3.0
  */
-@Deprecated // TODO Replace for SimpleEventStore once fully integrated
-public class EmbeddedEventStore extends AbstractLegacyEventStore implements Lifecycle {
+@Deprecated
+public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore implements Lifecycle {
 
-    private static final Logger logger = LoggerFactory.getLogger(EmbeddedEventStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(LegacyEmbeddedEventStore.class);
 
-    private static final ThreadGroup THREAD_GROUP = new ThreadGroup(EmbeddedEventStore.class.getSimpleName());
+    private static final ThreadGroup THREAD_GROUP = new ThreadGroup(LegacyEmbeddedEventStore.class.getSimpleName());
     private static final String OPTIMIZE_EVENT_CONSUMPTION_SYSTEM_PROPERTY = "optimize-event-consumption";
 
     private final Lock consumerLock = new ReentrantLock();
@@ -94,14 +94,14 @@ public class EmbeddedEventStore extends AbstractLegacyEventStore implements Life
     private volatile Node oldest;
 
     /**
-     * Instantiate a {@link EmbeddedEventStore} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link LegacyEmbeddedEventStore} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the {@link EventStorageEngine} is not {@code null}, and will throw an {@link
      * AxonConfigurationException} if it is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link EmbeddedEventStore} instance
+     * @param builder the {@link Builder} used to instantiate a {@link LegacyEmbeddedEventStore} instance
      */
-    protected EmbeddedEventStore(Builder builder) {
+    protected LegacyEmbeddedEventStore(Builder builder) {
         super(builder);
         this.threadFactory = builder.threadFactory;
         this.optimizeEventConsumption = builder.optimizeEventConsumption;
@@ -112,7 +112,7 @@ public class EmbeddedEventStore extends AbstractLegacyEventStore implements Life
     }
 
     /**
-     * Instantiate a Builder to be able to create an {@link EmbeddedEventStore}.
+     * Instantiate a Builder to be able to create an {@link LegacyEmbeddedEventStore}.
      * <p>
      * The following configurable fields have defaults:
      * <ul>
@@ -123,12 +123,12 @@ public class EmbeddedEventStore extends AbstractLegacyEventStore implements Life
      * <li>The {@code cleanupDelay} is defaulted to {@code 10000}.</li>
      * <li>The {@link TimeUnit} is defaulted to {@link TimeUnit#MILLISECONDS}.</li>
      * <li>The {@link ThreadFactory} is defaulted to {@link AxonThreadFactory} with {@link ThreadGroup} {@link
-     * EmbeddedEventStore#THREAD_GROUP}.</li>
+     * LegacyEmbeddedEventStore#THREAD_GROUP}.</li>
      * <li>The {@code optimizeEventConsumption} is defaulted to {@code true}.</li>
      * </ul>
      * The {@link EventStorageEngine} is a <b>hard requirement</b> and as such should be provided.
      *
-     * @return a Builder to be able to create a {@link EmbeddedEventStore}
+     * @return a Builder to be able to create a {@link LegacyEmbeddedEventStore}
      */
     public static Builder builder() {
         return new Builder();
@@ -479,7 +479,7 @@ public class EmbeddedEventStore extends AbstractLegacyEventStore implements Life
     }
 
     /**
-     * Builder class to instantiate an {@link EmbeddedEventStore}.
+     * Builder class to instantiate an {@link LegacyEmbeddedEventStore}.
      * <p>
      * The following configurable fields have defaults:
      * <ul>
@@ -490,7 +490,7 @@ public class EmbeddedEventStore extends AbstractLegacyEventStore implements Life
      * <li>The {@code cleanupDelay} is defaulted to {@code 10000}.</li>
      * <li>The {@link TimeUnit} is defaulted to {@link TimeUnit#MILLISECONDS}.</li>
      * <li>The {@link ThreadFactory} is defaulted to {@link AxonThreadFactory} with {@link ThreadGroup} {@link
-     * EmbeddedEventStore#THREAD_GROUP}.</li>
+     * LegacyEmbeddedEventStore#THREAD_GROUP}.</li>
      * <li>The {@code optimizeEventConsumption} is defaulted to {@code true}.</li>
      * </ul>
      * The {@link EventStorageEngine} is a <b>hard requirement</b> and as such should be provided.
@@ -597,7 +597,7 @@ public class EmbeddedEventStore extends AbstractLegacyEventStore implements Life
 
         /**
          * Sets the {@link ThreadFactory} used to create threads for consuming, producing and cleaning up. Defaults to a
-         * {@link AxonThreadFactory} with {@link ThreadGroup} {@link EmbeddedEventStore#THREAD_GROUP}.
+         * {@link AxonThreadFactory} with {@link ThreadGroup} {@link LegacyEmbeddedEventStore#THREAD_GROUP}.
          *
          * @param threadFactory a {@link ThreadFactory} used to create threads for consuming, producing and cleaning up
          * @return the current Builder instance, for fluent interfacing
@@ -627,12 +627,12 @@ public class EmbeddedEventStore extends AbstractLegacyEventStore implements Life
         }
 
         /**
-         * Initializes a {@link EmbeddedEventStore} as specified through this Builder.
+         * Initializes a {@link LegacyEmbeddedEventStore} as specified through this Builder.
          *
-         * @return a {@link EmbeddedEventStore} as specified through this Builder
+         * @return a {@link LegacyEmbeddedEventStore} as specified through this Builder
          */
-        public EmbeddedEventStore build() {
-            return new EmbeddedEventStore(this);
+        public LegacyEmbeddedEventStore build() {
+            return new LegacyEmbeddedEventStore(this);
         }
 
         /**
