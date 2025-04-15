@@ -91,8 +91,7 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
                                                 @Nonnull NewConfiguration configuration) {
         this.entityType = Objects.requireNonNull(entityType, "The entity type cannot be null.");
         this.idType = Objects.requireNonNull(idType, "The id type cannot be null.");
-        this.configuration = Objects.requireNonNull(configuration,
-                                                    "The message type resolver cannot be null.");
+        this.configuration = Objects.requireNonNull(configuration, "The configuration cannot be null.");
 
         Map<String, Object> attributes = AnnotationUtils
                 .findAnnotationAttributes(entityType, EventSourcedEntity.class)
@@ -133,7 +132,7 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
 
         private final Method method;
         private final Class<?> identifierType;
-        private final Supplier<?>[] optionalArgumentSuppliers;
+        private final Object[] optionalArgumentSuppliers;
 
         private WrappedEventCriteriaBuilderMethod(Method method) {
             if (!EventCriteria.class.isAssignableFrom(method.getReturnType())) {
@@ -163,7 +162,7 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
 
                 // The whole configuration can be passed in
                 if (parameterType == NewConfiguration.class) {
-                    optionalArgumentSuppliers[i] = () -> configuration;
+                    optionalArgumentSuppliers[i] = configuration;
                     continue;
                 }
                 // Or a specific component of the configuration
@@ -175,16 +174,14 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
                                     ReflectionUtils.toDiscernibleSignature(method)
                             ));
                 }
-                optionalArgumentSuppliers[i] = component::get;
+                optionalArgumentSuppliers[i] = component.get();
             }
         }
 
         public Object resolve(Object id) {
             Object[] args = new Object[method.getParameterCount()];
             args[0] = id;
-            for (int i = 0; i < optionalArgumentSuppliers.length; i++) {
-                args[i + 1] = optionalArgumentSuppliers[i].get();
-            }
+            System.arraycopy(optionalArgumentSuppliers, 0, args, 1, optionalArgumentSuppliers.length);
             try {
                 Object result = method.invoke(null, args);
                 if (!(result instanceof EventCriteria)) {
