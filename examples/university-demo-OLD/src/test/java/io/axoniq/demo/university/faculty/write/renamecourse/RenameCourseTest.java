@@ -26,7 +26,7 @@ class RenameCourseTest {
                .when()
                .command(new RenameCourse(courseId, "Event Sourcing in Practice"))
                .then()
-               .exception(RuntimeException.class)
+               .exception(RuntimeException.class, "Course with given id does not exist")
                .noEvents();
     }
 
