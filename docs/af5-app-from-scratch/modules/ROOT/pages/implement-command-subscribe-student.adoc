@@ -421,9 +421,10 @@ class SubscribeStudentToCourseCommandHandler {
 ----
 <1> Same as with a student, we store the `courseId`, along with the `capacity`, from the `CourseCreated` event.
 <2> We update the `capacity` on `CourseCapacityChanged` event.
-<3> In this case, we're going to evolve the State on every StudentSubscribedToCourse event related to the course or the student whose IDs are in the command.
-How we instruct the store to load those events, we will discuss in the next paragraph.
-For now, you need to be aware of that you may receive events about different student and different course as well, because we have one event handler per event type -> we handle there all `StudentSubscribedToCourse/Unsubscribed` for given course (different students) to know how much capacity left and all for given student (different courses) to know how many courses the student is subscribed to.
+<3> In this case, we're going to evolve the State on every StudentSubscribed event related to the course or the student whose IDs are in the command. How we instruct the store to load those events will be discussed in the next paragraph.
+For now, you need to be aware that you may receive events about different students and different courses. This happens because we have one event handler per event type. The handler processes all `StudentSubscribed`/`StudentUnsubscribed` events for:
+* A given course (involving different students) to track how much capacity remains.
+* A given student (involving different courses) to track how many courses the student is subscribed to.
 <4> If the `StudentSubscribedToCourse` event is related to the course, we increase the number of students subscribed to the course.
 <5> If the `StudentSubscribedToCourse` event is related to the student, we increase the number of courses the student is subscribed to.
 <6> If the `StudentSubscribedToCourse` event is related to the course and the student, we set the `alreadySubscribed` flag to true.
@@ -454,8 +455,8 @@ Since Axon Framework 5, we can load events that are relevant for the given comma
 You may think about it as follows: before, an event could have just one tag—the aggregateId. Now we can have multiple tags for any given event!
 ====
 
-Here the situation is a bit more complicated, because we need to load events for two different entities - `Student` and `Course`.
-In a system based on Aggregates, you may load both and limit your accessibility - the risk of optimistic concurrency is higher, or implement a complex saga to orchestrate changes between those two entities - then you also need to duplicate the events and deal with eventual consistency.
+Here the situation is a bit more complicated, because we need to load events for two different entities - `Student` and `Course`. In a system based on Aggregates, you have two options.
+You may load both entities and limit your accessibility, but this increases the risk of optimistic concurrency. Alternatively, you could implement a complex saga to orchestrate changes between those two entities. With this approach, you would need to duplicate the events and deal with eventual consistency.
 Whereas in the domain experts' language, `StudentSubscribedToCourse` is just one fact, which influences rules around both `Student` and `Course`.
 
 As long as we're in a single bounded context and have all events in one storage, we can define our custom `EventCriteria` to shape our `State`, mixing properties from both `Student` and `Course`!
