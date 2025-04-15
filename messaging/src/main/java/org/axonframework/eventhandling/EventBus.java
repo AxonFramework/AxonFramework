@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import javax.annotation.Nonnull;
  * @see SimpleEventBus
  * @since 0.1
  */
-@Deprecated // TODO - Remove in favor of EventSink.
+@Deprecated // TODO #3392 - Replace for actual EventSink implementation.
 public interface EventBus extends SubscribableMessageSource<EventMessage<?>>,
                                   MessageDispatchInterceptorSupport<EventMessage<?>> {
 

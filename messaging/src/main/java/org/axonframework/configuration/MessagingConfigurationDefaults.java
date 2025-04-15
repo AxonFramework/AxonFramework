@@ -51,7 +51,6 @@ import java.util.Objects;
  *     <li>Registers a {@link org.axonframework.commandhandling.gateway.DefaultCommandGateway} for class {@link org.axonframework.commandhandling.gateway.CommandGateway}</li>
  *     <li>Registers a {@link org.axonframework.commandhandling.SimpleCommandBus} for class {@link CommandBus}</li>
  *     <li>Registers a {@link org.axonframework.eventhandling.gateway.DefaultEventGateway} for class {@link org.axonframework.eventhandling.gateway.EventGateway}</li>
- *     <li>Registers a TODO for class {@link EventSink}</li>
  *     <li>Registers a {@link org.axonframework.eventhandling.SimpleEventBus} for class {@link org.axonframework.eventhandling.EventBus}</li>
  *     <li>Registers a {@link org.axonframework.queryhandling.DefaultQueryGateway} for class {@link org.axonframework.queryhandling.QueryGateway}</li>
  *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryBus} for class {@link QueryBus}</li>
@@ -123,6 +122,7 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                              .build();
     }
 
+    // TODO #3392 - Replace for actual EventSink implementation.
     private static EventSink defaultEventSink(Configuration config) {
         EventBus eventBus = config.getComponent(EventBus.class);
         return (events) -> {
