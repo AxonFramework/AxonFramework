@@ -63,13 +63,13 @@ class SagaConfigurerTest {
     void defaultConfiguration(
             @Mock ListenerInvocationErrorHandler listenerInvocationErrorHandler,
             @Mock SagaStore store) {
-        Configuration configuration = DefaultConfigurer.defaultConfiguration()
-                                                       .eventProcessing(ep -> ep.registerSaga(Object.class))
-                                                       .registerComponent(ListenerInvocationErrorHandler.class,
+        Configuration configuration = LegacyDefaultConfigurer.defaultConfiguration()
+                                                             .eventProcessing(ep -> ep.registerSaga(Object.class))
+                                                             .registerComponent(ListenerInvocationErrorHandler.class,
                                                                           c -> listenerInvocationErrorHandler)
-                                                       .registerComponent(SagaStore.class, c -> store)
+                                                             .registerComponent(SagaStore.class, c -> store)
 
-                                                       .buildConfiguration();
+                                                             .buildConfiguration();
         SagaConfiguration<Object> sagaConfiguration = configuration.eventProcessingConfiguration().sagaConfiguration(
                 Object.class);
 
@@ -92,9 +92,9 @@ class SagaConfigurerTest {
                                                                  .configureSagaManager(c -> manager));
         eventProcessingModule.assignProcessingGroup("ObjectProcessor", processingGroup)
                              .assignHandlerTypesMatching(processingGroup, clazz -> clazz.equals(Object.class));
-        Configuration configuration = DefaultConfigurer.defaultConfiguration()
-                                                       .registerModule(eventProcessingModule)
-                                                       .buildConfiguration();
+        Configuration configuration = LegacyDefaultConfigurer.defaultConfiguration()
+                                                             .registerModule(eventProcessingModule)
+                                                             .buildConfiguration();
 
         SagaConfiguration<Object> sagaConfiguration = configuration.eventProcessingConfiguration().sagaConfiguration(
                 Object.class);
@@ -118,10 +118,10 @@ class SagaConfigurerTest {
                 .registerSaga(TestSaga.class)
                 .registerSaga(TestSaga.class, sc -> sc.configureSagaStore(c -> sagaStore))
                 .registerSubscribingEventProcessor("testsaga", c -> eventStore);
-        Configuration configuration = DefaultConfigurer.defaultConfiguration()
-                                                       .configureEventStore(c -> eventStore)
-                                                       .registerModule(eventProcessingModule)
-                                                       .buildConfiguration();
+        Configuration configuration = LegacyDefaultConfigurer.defaultConfiguration()
+                                                             .configureEventStore(c -> eventStore)
+                                                             .registerModule(eventProcessingModule)
+                                                             .buildConfiguration();
         configuration.start();
         TestEvent testEvent = new TestEvent();
         eventStore.publish(EventTestUtils.asEventMessage(testEvent));

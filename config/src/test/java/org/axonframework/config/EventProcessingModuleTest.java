@@ -106,7 +106,7 @@ class EventProcessingModuleTest {
 
     @BeforeEach
     void setUp() {
-        configurer = DefaultConfigurer.defaultConfiguration();
+        configurer = LegacyDefaultConfigurer.defaultConfiguration();
 
         eventStoreOne = spy(EmbeddedEventStore.builder()
                                               .storageEngine(new InMemoryEventStorageEngine())
@@ -183,11 +183,11 @@ class EventProcessingModuleTest {
 
     @Test
     void processorsDefaultToSubscribingWhenUsingSimpleEventBus() {
-        Configuration configuration = DefaultConfigurer.defaultConfiguration()
-                                                       .configureEventBus(c -> SimpleEventBus.builder().build())
-                                                       .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
+        Configuration configuration = LegacyDefaultConfigurer.defaultConfiguration()
+                                                             .configureEventBus(c -> SimpleEventBus.builder().build())
+                                                             .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
                                                                                 .registerEventHandler(c -> new TrackingEventHandler()))
-                                                       .start();
+                                                             .start();
 
         EventProcessingConfiguration processingConfig = configuration.eventProcessingConfiguration();
 
@@ -203,9 +203,9 @@ class EventProcessingModuleTest {
 
     @Test
     void assigningATrackingProcessorFailsWhenUsingSimpleEventBus() {
-        LegacyConfigurer configurer = DefaultConfigurer.defaultConfiguration()
-                                                       .configureEventBus(c -> SimpleEventBus.builder().build())
-                                                       .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
+        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration()
+                                                             .configureEventBus(c -> SimpleEventBus.builder().build())
+                                                             .eventProcessing(ep -> ep.registerEventHandler(c -> new SubscribingEventHandler())
                                                                           .registerEventHandler(c -> new TrackingEventHandler())
                                                                           .registerTrackingEventProcessor("tracking"));
 

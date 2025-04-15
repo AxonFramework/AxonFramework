@@ -33,7 +33,7 @@ import org.axonframework.common.AxonThreadFactory;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.EventBus;
@@ -307,7 +307,7 @@ class AxonServerAutoConfigurationTest {
                        assertThat(context).getBean("persistentStreamProcessorsConfigurerModule").isNotNull();
                        ConfigurerModule configurerModule =
                                context.getBean("persistentStreamProcessorsConfigurerModule", ConfigurerModule.class);
-                       LegacyConfigurer defaultConfigurer = DefaultConfigurer.defaultConfiguration();
+                       LegacyConfigurer defaultConfigurer = LegacyDefaultConfigurer.defaultConfiguration();
                        configurerModule.configureModule(defaultConfigurer);
                        Configuration configuration = defaultConfigurer.buildConfiguration();
                        SequencingPolicy<? super EventMessage<?>> sequencingPolicy =
@@ -326,7 +326,7 @@ class AxonServerAutoConfigurationTest {
                        assertThat(context).getBean("persistentStreamProcessorsConfigurerModule").isNotNull();
                        ConfigurerModule configurerModule =
                                context.getBean("persistentStreamProcessorsConfigurerModule", ConfigurerModule.class);
-                       LegacyConfigurer defaultConfigurer = DefaultConfigurer.defaultConfiguration();
+                       LegacyConfigurer defaultConfigurer = LegacyDefaultConfigurer.defaultConfiguration();
                        configurerModule.configureModule(defaultConfigurer);
                        Configuration configuration = defaultConfigurer.buildConfiguration();
                        assertThat(

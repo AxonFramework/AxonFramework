@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.eventsourcing.conflictresolution;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.Configuration;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.conflictresolution.ConflictResolver;
 import org.axonframework.eventsourcing.conflictresolution.Conflicts;
@@ -46,10 +46,10 @@ class ConflictResolutionIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        Configuration configuration = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
-                                                       .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                       .configureAggregate(StubAggregate.class)
-                                                       .buildConfiguration();
+        Configuration configuration = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
+                                                             .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                             .configureAggregate(StubAggregate.class)
+                                                             .buildConfiguration();
         configuration.start();
         commandGateway = configuration.commandGateway();
     }

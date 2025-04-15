@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.eventsourcing;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.Configuration;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
@@ -44,12 +44,12 @@ class NestedUnitOfWorkTest {
     @Test
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void stagedEventsLoadInCorrectOrder() {
-        Configuration config = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
-                                                .configureAggregate(TestAggregate.class)
-                                                .registerCommandHandler(x -> new Handler())
-                                                .configureEmbeddedEventStore(x -> new InMemoryEventStorageEngine())
-                                                .registerComponent(List.class, c -> new CopyOnWriteArrayList<>())
-                                                .buildConfiguration();
+        Configuration config = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
+                                                      .configureAggregate(TestAggregate.class)
+                                                      .registerCommandHandler(x -> new Handler())
+                                                      .configureEmbeddedEventStore(x -> new InMemoryEventStorageEngine())
+                                                      .registerComponent(List.class, c -> new CopyOnWriteArrayList<>())
+                                                      .buildConfiguration();
 
         config.start();
         CommandGateway gw = config.commandGateway();

@@ -20,7 +20,7 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonNonTransientException;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.LegacyConfigurer;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
@@ -121,7 +121,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         correlationDataProviders.add(new MessageOriginProvider());
         correlationDataProviders.add(new SimpleCorrelationDataProvider(CUSTOM_CORRELATION_DATA_KEY));
 
-        LegacyConfigurer configurer = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES);
+        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES);
         configurer.eventProcessing()
                   .usingSubscribingEventProcessors()
                   .registerSaga(MySaga.class);

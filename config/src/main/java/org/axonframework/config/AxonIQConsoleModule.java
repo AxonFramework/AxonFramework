@@ -73,7 +73,7 @@ public class AxonIQConsoleModule implements ModuleConfiguration {
         MavenArtifactVersionResolver resolver =
                 new MavenArtifactVersionResolver("io.axoniq.console",
                                                  "console-framework-client",
-                                                 DefaultConfigurer.class.getClassLoader());
+                                                 LegacyDefaultConfigurer.class.getClassLoader());
         String version;
         try {
             version = resolver.get();

@@ -21,7 +21,7 @@ import org.axonframework.axonserver.connector.event.StubServer;
 import org.axonframework.axonserver.connector.util.TcpUtil;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.LegacyConfigurer;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,8 +52,8 @@ class EventProcessorInfoConfigurationTest {
 
     @Test
     void noActionShouldBeTakenWhenThereIsNoEventProcessingConfiguration() {
-        LegacyConfigurer configurer = DefaultConfigurer.defaultConfiguration()
-                                                       .registerComponent(AxonServerConfiguration.class,
+        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration()
+                                                             .registerComponent(AxonServerConfiguration.class,
                                                                     c -> AxonServerConfiguration.builder()
                                                                                                 .servers("localhost:" + port)
                                                                                                 .connectTimeout(1000)

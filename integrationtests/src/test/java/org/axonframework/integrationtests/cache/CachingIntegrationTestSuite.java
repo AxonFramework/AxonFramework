@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.cache;
 import org.axonframework.common.FutureUtils;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.config.Configuration;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.config.SagaConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
@@ -105,9 +105,9 @@ public abstract class CachingIntegrationTestSuite {
         TrackingEventProcessorConfiguration tepConfig =
                 TrackingEventProcessorConfiguration.forParallelProcessing(4)
                                                    .andEventAvailabilityTimeout(10, TimeUnit.MILLISECONDS);
-        config = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
-                                  .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                  .eventProcessing(
+        config = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
+                                        .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                        .eventProcessing(
                                           procConfig -> procConfig
                                                   .usingTrackingEventProcessors()
                                                   .registerTrackingEventProcessorConfiguration(
@@ -115,7 +115,7 @@ public abstract class CachingIntegrationTestSuite {
                                                   )
                                                   .registerSaga(CachedSaga.class, sagaConfigurer)
                                   )
-                                  .start();
+                                        .start();
         sagaProcessor = config.eventProcessingConfiguration()
                               .eventProcessor("CachedSagaProcessor", StreamingEventProcessor.class)
                               .orElseThrow(() -> new IllegalStateException("CachedSagaProcessor is not present"));

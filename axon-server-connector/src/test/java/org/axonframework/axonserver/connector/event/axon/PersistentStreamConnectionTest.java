@@ -30,7 +30,7 @@ import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.config.LegacyConfigurer;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
@@ -74,7 +74,7 @@ class PersistentStreamConnectionTest {
     @BeforeEach
     void setup() {
         System.setProperty("disable-axoniq-console-message", "true");
-        LegacyConfigurer configurer = DefaultConfigurer.defaultConfiguration();
+        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
         AxonServerConnectionManager mockAxonServerConnectionManager = mock(AxonServerConnectionManager.class);
         AxonServerConnection mockAxonServerConnection = mock(AxonServerConnection.class);
         EventChannel mockEventChannel = mock(EventChannel.class);

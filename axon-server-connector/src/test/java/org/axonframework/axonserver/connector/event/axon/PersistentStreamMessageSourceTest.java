@@ -18,7 +18,7 @@ package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
 import org.axonframework.config.Configuration;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.common.Registration;
 import org.junit.jupiter.api.*;
@@ -48,7 +48,7 @@ class PersistentStreamMessageSourceTest {
     private static ScheduledExecutorService TEST_SCHEDULER;
     private static ExecutorService CONCURRENT_TEST_EXECUTOR;
     private static final int THREAD_COUNT = 10;
-    private static final Configuration DEFAULT_CONFIGURATION = DefaultConfigurer
+    private static final Configuration DEFAULT_CONFIGURATION = LegacyDefaultConfigurer
             .defaultConfiguration()
             .buildConfiguration();
 

@@ -50,14 +50,14 @@ import javax.annotation.Nonnull;
 /**
  * Entry point of the Axon Configuration API.
  * <p>
- * Using {@link DefaultConfigurer#defaultConfiguration()}, you will get a Configurer instance with default components
+ * Using {@link LegacyDefaultConfigurer#defaultConfiguration()}, you will get a Configurer instance with default components
  * configured. You will need to register your Aggregates (using {@link #configureAggregate(AggregateConfiguration)} and
  * provide a repository implementation for each of them, or if you wish to use event sourcing, register your aggregates
  * through {@link #configureAggregate(Class)} and configure an Event Store ({@link #configureEventStore(Function)} or
  * {@link #configureEmbeddedEventStore(Function)}).
  *
  * @author Allard Buijze
- * @see DefaultConfigurer
+ * @see LegacyDefaultConfigurer
  * @since 3.0
  * @deprecated In favor of the {@link ComponentRegistry}.
  */

@@ -22,7 +22,7 @@ import org.axonframework.axonserver.connector.event.axon.EventProcessorInfoConfi
 import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.utils.TestSerializer;
 import org.axonframework.config.Configuration;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.junit.jupiter.api.*;
@@ -38,9 +38,9 @@ class ServerConnectorConfigurerModuleTest {
 
     @Test
     void axonServerConfiguredInDefaultConfiguration() {
-        Configuration testSubject = DefaultConfigurer.defaultConfiguration()
-                                                     .configureSerializer(c -> TestSerializer.xStreamSerializer())
-                                                     .buildConfiguration();
+        Configuration testSubject = LegacyDefaultConfigurer.defaultConfiguration()
+                                                           .configureSerializer(c -> TestSerializer.xStreamSerializer())
+                                                           .buildConfiguration();
 
         AxonServerConfiguration resultAxonServerConfig = testSubject.getComponent(AxonServerConfiguration.class);
 
@@ -69,9 +69,9 @@ class ServerConnectorConfigurerModuleTest {
 
     @Test
     void queryUpdateEmitterIsTakenFromConfiguration() {
-        Configuration configuration = DefaultConfigurer.defaultConfiguration()
-                                                       .configureSerializer(c -> TestSerializer.xStreamSerializer())
-                                                       .buildConfiguration();
+        Configuration configuration = LegacyDefaultConfigurer.defaultConfiguration()
+                                                             .configureSerializer(c -> TestSerializer.xStreamSerializer())
+                                                             .buildConfiguration();
 
         assertTrue(configuration.queryBus() instanceof AxonServerQueryBus);
         assertSame(configuration.queryBus().queryUpdateEmitter(), configuration.queryUpdateEmitter());

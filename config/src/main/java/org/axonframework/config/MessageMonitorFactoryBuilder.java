@@ -30,7 +30,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Class used by {@link DefaultConfigurer} to maintain the configuration for Message Monitors and create the function
+ * Class used by {@link LegacyDefaultConfigurer} to maintain the configuration for Message Monitors and create the function
  * used in the {@link Component}.
  */
 class MessageMonitorFactoryBuilder {

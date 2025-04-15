@@ -150,7 +150,7 @@ import static org.axonframework.util.HandlerTypeResolver.*;
  * @deprecated In favor of using the {@link org.axonframework.configuration.ApplicationConfigurer} with additional modules.
  */
 @Deprecated
-public class DefaultConfigurer implements LegacyConfigurer {
+public class LegacyDefaultConfigurer implements LegacyConfigurer {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -198,7 +198,7 @@ public class DefaultConfigurer implements LegacyConfigurer {
     /**
      * Initialize the Configurer.
      */
-    protected DefaultConfigurer() {
+    protected LegacyDefaultConfigurer() {
         components.put(ParameterResolverFactory.class,
                        new Component<>(config, "parameterResolverFactory", this::defaultParameterResolverFactory));
         components.put(Serializer.class, new Component<>(config, "serializer", this::defaultSerializer));
@@ -268,7 +268,7 @@ public class DefaultConfigurer implements LegacyConfigurer {
      * @return Configurer instance for further configuration.
      */
     public static LegacyConfigurer defaultConfiguration(boolean autoLocateConfigurerModules) {
-        DefaultConfigurer configurer = new DefaultConfigurer();
+        LegacyDefaultConfigurer configurer = new LegacyDefaultConfigurer();
         if (autoLocateConfigurerModules) {
             ServiceLoader<ConfigurerModule> configurerModuleLoader =
                     ServiceLoader.load(ConfigurerModule.class, configurer.getClass().getClassLoader());
@@ -292,7 +292,7 @@ public class DefaultConfigurer implements LegacyConfigurer {
      */
     public static LegacyConfigurer jpaConfiguration(EntityManagerProvider entityManagerProvider,
                                                     TransactionManager transactionManager) {
-        return new DefaultConfigurer()
+        return new LegacyDefaultConfigurer()
                 .registerComponent(EntityManagerProvider.class, c -> entityManagerProvider)
                 .registerComponent(TransactionManager.class, c -> transactionManager)
                 .configureEmbeddedEventStore(
@@ -326,7 +326,7 @@ public class DefaultConfigurer implements LegacyConfigurer {
      * <br>
      * This configuration should be used with an entity manager running without JTA transaction. If you are using a
      * entity manager in JTA mode, please provide the corresponding {@link TransactionManager} in the
-     * {@link DefaultConfigurer#jpaConfiguration(EntityManagerProvider, TransactionManager)} method.
+     * {@link LegacyDefaultConfigurer#jpaConfiguration(EntityManagerProvider, TransactionManager)} method.
      *
      * @param entityManagerProvider The instance that provides access to the JPA EntityManager.
      * @return A Configurer instance for further configuration.

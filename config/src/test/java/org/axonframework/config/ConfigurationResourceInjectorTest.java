@@ -32,9 +32,9 @@ public class ConfigurationResourceInjectorTest {
 
     @BeforeEach
     void setUp() {
-        configuration = DefaultConfigurer.defaultConfiguration()
-                                         .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                         .buildConfiguration();
+        configuration = LegacyDefaultConfigurer.defaultConfiguration()
+                                               .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                               .buildConfiguration();
         testSubject = new ConfigurationResourceInjector(configuration);
     }
 

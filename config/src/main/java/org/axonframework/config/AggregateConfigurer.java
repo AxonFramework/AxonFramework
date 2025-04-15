@@ -191,7 +191,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * proper JPA Entity.
      * <p>
      * The EntityManagerProvider is expected to have been registered with the Configurer (which would be the case when
-     * using {@link DefaultConfigurer#jpaConfiguration(EntityManagerProvider)}. If that is not the case, consider using
+     * using {@link LegacyDefaultConfigurer#jpaConfiguration(EntityManagerProvider)}. If that is not the case, consider using
      * {@link #jpaMappedConfiguration(Class, EntityManagerProvider)} instead.
      *
      * @param aggregateType The type of Aggregate to configure

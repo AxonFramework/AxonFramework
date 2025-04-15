@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.AggregateConfigurer;
 import org.axonframework.config.Configuration;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -78,13 +78,13 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
                                            return MyAggregate.class;
                                        }
                                    });
-        configuration = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
-                                         .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                         .configureAggregate(aggregateConfigurer)
-                                         .registerCommandHandler(c -> new MyCommandHandler(
+        configuration = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
+                                               .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                               .configureAggregate(aggregateConfigurer)
+                                               .registerCommandHandler(c -> new MyCommandHandler(
                                                  c.repository(MyAggregate.class), c.commandGateway()
                                          ))
-                                         .buildConfiguration();
+                                               .buildConfiguration();
         configuration.start();
 
         command = new MyCommand("outer", aggregateIdentifier,

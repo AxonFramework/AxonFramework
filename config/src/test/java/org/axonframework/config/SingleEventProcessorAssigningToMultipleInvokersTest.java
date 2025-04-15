@@ -32,7 +32,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
 
     @Test
     void multipleAssignmentsToTrackingProcessor() {
-        LegacyConfigurer configurer = DefaultConfigurer.defaultConfiguration();
+        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .registerEventHandler(config -> new EventHandler1())
                   .registerSaga(Saga1.class, sc -> sc.configureSagaStore(c -> new InMemorySagaStore()))
@@ -58,7 +58,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
 
     @Test
     void multipleAssignmentsToSubscribingProcessor() {
-        LegacyConfigurer configurer = DefaultConfigurer.defaultConfiguration();
+        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .usingSubscribingEventProcessors()
                   .registerEventHandler(config -> new EventHandler1())
@@ -86,7 +86,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
 
     @Test
     void multipleAssignmentsWithProvidedProcessorName() {
-        LegacyConfigurer configurer = DefaultConfigurer.defaultConfiguration();
+        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .assignHandlerTypesMatching("processor1", clazz -> clazz.equals(Saga3.class))
                   .assignHandlerTypesMatching("processor1", clazz -> clazz.equals(Saga1.class))
@@ -121,7 +121,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
 
     @Test
     void processorGroupAssignment() {
-        LegacyConfigurer configurer = DefaultConfigurer.defaultConfiguration();
+        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .registerEventProcessor("myProcessor", (name, conf, eventHandlerInvoker) ->
                           SubscribingEventProcessor.builder()
@@ -146,7 +146,7 @@ class SingleEventProcessorAssigningToMultipleInvokersTest {
 
     @Test
     void processorGroupAssignmentByRule() {
-        LegacyConfigurer configurer = DefaultConfigurer.defaultConfiguration();
+        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
         configurer.eventProcessing()
                   .assignHandlerTypesMatching("myProcessor", clazz -> clazz.equals(Saga3.class))
                   .registerSaga(Saga1.class)

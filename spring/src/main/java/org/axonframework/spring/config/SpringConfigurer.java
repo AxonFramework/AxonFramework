@@ -18,7 +18,7 @@ package org.axonframework.spring.config;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.config.Configuration;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.config.LegacyConfigurer;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -33,7 +33,7 @@ import java.util.Optional;
  * @author Allard Buijze
  * @since 4.6.0
  */
-public class SpringConfigurer extends DefaultConfigurer {
+public class SpringConfigurer extends LegacyDefaultConfigurer {
 
     private final ComponentLocator locator;
 

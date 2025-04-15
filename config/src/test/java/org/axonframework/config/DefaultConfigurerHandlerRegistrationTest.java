@@ -49,8 +49,8 @@ class DefaultConfigurerHandlerRegistrationTest {
 
     @BeforeEach
     void setUp() {
-        baseConfigurer = DefaultConfigurer.defaultConfiguration()
-                                          .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine());
+        baseConfigurer = LegacyDefaultConfigurer.defaultConfiguration()
+                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine());
         // Set to SEP to simplify event handler registration without an actual EventStore.
         baseConfigurer.eventProcessing().usingSubscribingEventProcessors();
     }

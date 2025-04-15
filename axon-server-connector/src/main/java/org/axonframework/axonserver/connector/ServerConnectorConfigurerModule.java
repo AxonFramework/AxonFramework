@@ -26,6 +26,7 @@ import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.Configuration;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.config.TagsConfiguration;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -41,7 +42,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 
 /**
- * Configurer module which is auto-loadable by the {@link org.axonframework.config.DefaultConfigurer} that sets sensible
+ * Configurer module which is auto-loadable by the {@link LegacyDefaultConfigurer} that sets sensible
  * default to use when the AxonServer connector is available on the classpath.
  *
  * @author Allard Buijze

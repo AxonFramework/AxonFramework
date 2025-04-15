@@ -18,7 +18,7 @@ package org.axonframework.axonserver.connector;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.config.Configuration;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -40,15 +40,15 @@ public class ServerConnectorRunner {
     private static final Logger logger = LoggerFactory.getLogger(ServerConnectorRunner.class);
 
     public static void main(String[] args) {
-        Configuration configuration = DefaultConfigurer.defaultConfiguration()
-                                                       .registerComponent(AxonServerConfiguration.class,
+        Configuration configuration = LegacyDefaultConfigurer.defaultConfiguration()
+                                                             .registerComponent(AxonServerConfiguration.class,
                                                                           c -> AxonServerConfiguration.builder()
                                                                                                       .servers(
                                                                                                               "localhost")
                                                                                                       .build())
-                                                       .configureAggregate(MyAggregate.class)
-                                                       .eventProcessing(ep -> ep.registerEventHandler(c -> new MyEventHandler()))
-                                                       .start();
+                                                             .configureAggregate(MyAggregate.class)
+                                                             .eventProcessing(ep -> ep.registerEventHandler(c -> new MyEventHandler()))
+                                                             .start();
 
         try {
             logger.info("Sending command");
