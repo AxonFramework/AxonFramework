@@ -38,10 +38,10 @@ Thanks to Axon Framework 5 support dynamic boundaries, each slice can have its o
 Any slice can be implemented differently. Thanks to the architecture of Axon Framework, what really matters are messages (Commands, Events and Queries) that shape the API.
 
 ### Write Slices
-Contains commands that represent user intentions, defines business rules through aggregates, produces domain events, and enforces invariants (e.g., SubscribeStudent command → StudentSubscribed event, with SubscriptionsPerStudentNotExceedMax rule).
+Contains commands that represent user intentions, define business rules through aggregates, produce domain events, and enforce invariants (e.g., SubscribeStudent command → StudentSubscribed event, with SubscriptionsPerStudentNotExceedMax rule).
 
 ### Read Slices [FOR THE FUTURE MILESTONES]
-Implements queries and read models optimized for specific use cases, with projectors that transform events into queryable state (e.g., GetSubscriptionsByStudentId query → StudentSubscriptionsReadModel).
+Implement queries and read models optimized for specific use cases, with projectors that transform events into queryable state (e.g., GetSubscriptionsByStudentId query → StudentSubscriptionsReadModel).
 
 ### Automation Slices [FOR THE FUTURE MILESTONES]
 Processes events to trigger subsequent actions, implementing system policies and workflows that connect different modules (e.g., WhenStudentSubscribedThenSendEmailNotification).

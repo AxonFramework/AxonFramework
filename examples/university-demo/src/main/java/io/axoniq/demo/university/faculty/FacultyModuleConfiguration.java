@@ -1,5 +1,6 @@
 package io.axoniq.demo.university.faculty;
 
+import io.axoniq.demo.university.faculty.write.changecoursecapacity.ChangeCourseCapacityConfiguration;
 import io.axoniq.demo.university.faculty.write.createcourse.CreateCourseConfiguration;
 import io.axoniq.demo.university.faculty.write.createcourseplain.CreateCoursePlainConfiguration;
 import io.axoniq.demo.university.faculty.write.renamecourse.RenameCourseConfiguration;
@@ -14,6 +15,7 @@ public class FacultyModuleConfiguration {
         configurer = CreateCourseConfiguration.configure(configurer);
         configurer = CreateCoursePlainConfiguration.configure(configurer);
         configurer = RenameCourseConfiguration.configure(configurer);
+        configurer = ChangeCourseCapacityConfiguration.configure(configurer);
         configurer = SubscribeStudentConfiguration.configure(configurer);
         configurer = SubscribeStudentMultiEntityConfiguration.configure(configurer);
         configurer = UnsubscribeStudentConfiguration.configure(configurer);
