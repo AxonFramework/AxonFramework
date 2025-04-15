@@ -28,13 +28,13 @@ Whether you're new to Axon Framework or upgrading from version 4,
 this tutorial will help you understand these new concepts through practical examples.
 
 == About this tutorial
-This tutorial will guide you through creating a "University Registration Application" using Axon Framework 5.
+This tutorial will guide you through creating a "Axon University Registration Application" using Axon Framework 5.
 We will implement features using Vertical Slice Architecture using "Test First" approach.
 
 You can either:
 
 * Follow the steps in the tutorial to build the project from scratch
-* Check out our link:https://github.com/AxonIQ/university-demo/[University Demo repository on GitHub,role=external,window=_blank] for the complete code
+* Check out our link:https://github.com/AxonIQ/university-demo/[Axon University Demo repository on GitHub,role=external,window=_blank] for the complete code
 
 
 == Your feedback matters!

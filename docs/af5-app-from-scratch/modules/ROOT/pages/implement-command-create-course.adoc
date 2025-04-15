@@ -82,7 +82,7 @@ public record CourseCreated(
 ----
 
 <1> The `@EventTag` annotation is crucial—it allows Axon to tag events as connected to specific business entities, which enables efficient retrieval later.
-If you are used to Aggregate approach before, note that the Tag identifies the aggregate. But, thanks to Dynamic Consistency Boundary, you now can have one event assigned to many business entities (instead of one, as before!).
+If you are used to Aggregate approach before, note that the Tag identifies the aggregate. Now, thanks to Dynamic Consistency Boundary, you now can have one event assigned to many business entities (instead of one, as before!).
 The EventStore in Axon Framework 5 always stores your events along with assigned tags, so you can query them later based on those tags and types.
 For the `Tag` value the `toString()` method will be used, so you need to override it in your typed identifier.
 
