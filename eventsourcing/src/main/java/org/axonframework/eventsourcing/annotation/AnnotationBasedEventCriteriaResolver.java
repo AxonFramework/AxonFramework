@@ -154,7 +154,7 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
             // Let's determine the identifier and create the argument suppliers
             this.identifierType = method.getParameterTypes()[0];
             int optionalParameterCount = method.getParameterCount() - 1;
-            this.optionalArgumentSuppliers = new Supplier[optionalParameterCount];
+            this.optionalArgumentSuppliers = new Object[optionalParameterCount];
 
             // And other arguments which can come from the configuration
             for (int i = 0; i < optionalParameterCount; i++) {
