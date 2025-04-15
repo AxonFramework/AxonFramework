@@ -752,16 +752,26 @@ class AxonServerQueryBusTest {
 
     @Test
     void subscriptionQueryRequestsPermitsBasedOnBufferSize() {
-        when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt())).thenReturn(new SimpleSubscriptionQueryResult("result"));
-        testSubject.subscriptionQuery(new GenericSubscriptionQueryMessage<Object, Object, Object>("test", "test", instanceOf(Object.class), instanceOf(Object.class)), 124);
+        SubscriptionQueryMessage<Object, Object, Object> testQuery = new GenericSubscriptionQueryMessage<>(
+                new MessageType("test"), "test", instanceOf(Object.class), instanceOf(Object.class)
+        );
+        when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt()))
+                .thenReturn(new SimpleSubscriptionQueryResult("result"));
+
+        testSubject.subscriptionQuery(testQuery, 124);
 
         verify(mockQueryChannel).subscriptionQuery(any(), any(), eq(124), eq(15));
     }
 
     @Test
     void subscriptionQueryUpdateBufferSizeIsNEverLowerThan32() {
-        when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt())).thenReturn(new SimpleSubscriptionQueryResult("result"));
-        testSubject.subscriptionQuery(new GenericSubscriptionQueryMessage<>("test", "test", instanceOf(String.class), instanceOf(String.class)), 31);
+        SubscriptionQueryMessage<String, String, String> testQuery = new GenericSubscriptionQueryMessage<>(
+                new MessageType("test"), "test", instanceOf(String.class), instanceOf(String.class)
+        );
+        when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt()))
+                .thenReturn(new SimpleSubscriptionQueryResult("result"));
+
+        testSubject.subscriptionQuery(testQuery, 31);
 
         verify(mockQueryChannel).subscriptionQuery(any(), any(), eq(32), eq(4));
     }
