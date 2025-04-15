@@ -9,8 +9,10 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.StatefulCommandHandler;
@@ -21,9 +23,11 @@ import java.util.stream.Collectors;
 class CreateCourseCommandHandler implements StatefulCommandHandler {
 
     private final EventSink eventSink;
+    private final MessageTypeResolver messageTypeResolver;
 
-    CreateCourseCommandHandler(EventSink eventSink) {
+    CreateCourseCommandHandler(EventSink eventSink, MessageTypeResolver messageTypeResolver) {
         this.eventSink = eventSink;
+        this.messageTypeResolver = messageTypeResolver;
     }
 
     @Override
@@ -33,13 +37,13 @@ class CreateCourseCommandHandler implements StatefulCommandHandler {
             @Nonnull StateManager state,
             @Nonnull ProcessingContext context
     ) {
+        var eventAppender = EventAppender.forContext(context, eventSink, messageTypeResolver);
         var payload = (CreateCourse) command.getPayload();
         var decideFuture = state
                 .loadEntity(State.class, payload.courseId(), context)
                 .thenApply(entity -> decide(payload, entity))
-                .thenAccept(events -> eventSink.publish(context,
-                                                        toMessages(events))) // todo: how to create stream from CompletableFuture<Void>
-                .thenApply(r -> new GenericCommandResultMessage<>(new MessageType(CommandResult.class),
+                .thenAccept(eventAppender::append)
+                .thenApply(r -> new GenericCommandResultMessage<>(messageTypeResolver.resolve(CommandResult.class),
                                                                   new CommandResult(payload.courseId().raw())));
         return MessageStream.fromFuture(decideFuture);
     }
@@ -49,19 +53,6 @@ class CreateCourseCommandHandler implements StatefulCommandHandler {
             return List.of();
         }
         return List.of(new CourseCreated(command.courseId().raw(), command.name(), command.capacity()));
-    }
-
-    private static List<EventMessage<?>> toMessages(List<CourseCreated> events) {
-        return events.stream()
-                     .map(CreateCourseCommandHandler::toMessage)
-                     .collect(Collectors.toList());
-    }
-
-    private static EventMessage<?> toMessage(Object payload) {
-        return new GenericEventMessage<>(
-                new MessageType(payload.getClass()),
-                payload
-        );
     }
 
     static final class State {

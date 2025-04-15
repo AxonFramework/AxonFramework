@@ -5,12 +5,11 @@ import io.axoniq.demo.university.faculty.events.CourseCreated;
 import io.axoniq.demo.university.faculty.events.CourseRenamed;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotation.InjectEntity;
 
 import java.util.List;
@@ -22,11 +21,10 @@ class RenameCourseCommandHandler {
     void handle(
             RenameCourse command,
             @InjectEntity State state,
-            EventSink eventSink,
-            ProcessingContext processingContext
+            EventAppender eventAppender
     ) {
         var events = decide(command, state);
-        eventSink.publish(processingContext, toMessages(events));
+        eventAppender.append(events);
     }
 
     private List<CourseRenamed> decide(RenameCourse command, State state) {
@@ -37,19 +35,6 @@ class RenameCourseCommandHandler {
             return List.of();
         }
         return List.of(new CourseRenamed(command.courseId().raw(), command.name()));
-    }
-
-    private static List<EventMessage<?>> toMessages(List<CourseRenamed> events) {
-        return events.stream()
-                     .map(RenameCourseCommandHandler::toMessage)
-                     .collect(Collectors.toList());
-    }
-
-    private static EventMessage<?> toMessage(Object payload) {
-        return new GenericEventMessage<>(
-                new MessageType(payload.getClass()),
-                payload
-        );
     }
 
     @EventSourcedEntity(tagKey = FacultyTags.COURSE_ID)
