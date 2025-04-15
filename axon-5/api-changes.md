@@ -35,7 +35,7 @@ Major API Changes
   contains a `Configurer` with a base set of operations. This `Configurer` can either take `Components` or `Modules`.
   The former typically represents an infrastructure component (e.g. the `CommandBus`) whereas modules are themselves
   configurers for a specific module of an application. For an exhaustive list of all the operations that have been
-  removed, moved, or altered, see the [Configurer and Configuration](#configurer-and-configuration) section.
+  removed, moved, or altered, see the [Configurer and Configuration](#applicationconfigurer-and-configuration) section.
 
 ## Unit of Work
 
@@ -145,7 +145,7 @@ TODO - provide description once the `MessageStream` generics discussion has been
 
 TODO - Start filling adjusted operation once the `MessageStream` generics discussion has been finalized.
 
-## Configurer and Configuration
+## ApplicationConfigurer and Configuration
 
 The configuration API of Axon Framework has seen a big adjustment. You can essentially say it has been turned upside
 down. We have done so, because the `axon-configuration` module enforced a dependency on all other modules of Axon
@@ -390,7 +390,6 @@ This section contains two tables:
 | org.axonframework.commandhandling.CommandHandler             | org.axonframework.commandhandling.annotation.CommandHandler  | No                             |
 | org.axonframework.eventhandling.EventHandler                 | org.axonframework.eventhandling.annotation.EventHandler      | No                             |
 | org.axonframework.queryhandling.QueryHandler                 | org.axonframework.queryhandling.annotation.QueryHandler      | No                             |
-| org.axonframework.config.Configurer                          | org.axonframework.configuration.Configurer                   | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.Configuration                       | org.axonframework.configuration.Configuration                | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.Component                           | org.axonframework.configuration.Component                    | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.ConfigurerModule                    | org.axonframework.configuration.ConfigurationEnhancer        | Yes. Moved to `axon-messaging` |
@@ -401,15 +400,16 @@ This section contains two tables:
 
 ### Removed
 
-| Class                                                           | Why                                                                                       |
-|-----------------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| org.axonframework.messaging.unitofwork.AbstractUnitOfWork       | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
-| org.axonframework.messaging.unitofwork.BatchingUnitOfWork       | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
-| org.axonframework.messaging.unitofwork.CurrentUnitOfWork        | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
-| org.axonframework.messaging.unitofwork.DefaultUnitOfWork        | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
-| org.axonframework.messaging.unitofwork.ExecutionResult          | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
-| org.axonframework.messaging.unitofwork.MessageProcessingContext | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work)) |
-| org.axonframework.eventsourcing.eventstore.AbstractEventStore   | Made obsolete through the rewrite of the `EventStore`.                                    |
+| Class                                                           | Why                                                                                                                                            |
+|-----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| org.axonframework.config.Configurer                             | Made obsolete through introduction of several `ApplicationConfigurer` instances (see [Configuration](#applicationconfigurer-and-configuration) |
+| org.axonframework.messaging.unitofwork.AbstractUnitOfWork       | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.messaging.unitofwork.BatchingUnitOfWork       | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.messaging.unitofwork.CurrentUnitOfWork        | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.messaging.unitofwork.DefaultUnitOfWork        | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.messaging.unitofwork.ExecutionResult          | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.messaging.unitofwork.MessageProcessingContext | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
+| org.axonframework.eventsourcing.eventstore.AbstractEventStore   | Made obsolete through the rewrite of the `EventStore`.                                                                                         |
 
 Method signature changes
 ========================
@@ -441,23 +441,18 @@ This section contains three subsections, called:
 | All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
 | All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
 
-#### Methods
-
-| Method                         | What                                                                   | Why                                     |
-|--------------------------------|------------------------------------------------------------------------|-----------------------------------------|
-| `Configurer#registerComponent` | Replaced `Function<Configuration, ? extends C>` for `ComponentBuilder` | Added functional interface for clarity. |
-| `Configurer#registerModule`    | Replaced `ModuleConfiguration` for `ModuleBuilder`                     | Added functional interface for clarity. |
-
 ### Moved/renamed methods and constructors
 
-| Constructor / Method                              | To where                                         |
-|---------------------------------------------------|--------------------------------------------------|
-| `Configurer#configureCommandBus`                  | `MessagingConfigurer#registerCommandBus`         | 
-| `Configurer#configureEventBus`                    | `MessagingConfigurer#registerEventSink`          | 
-| `Configurer#configureQueryBus`                    | `MessagingConfigurer#registerQueryBus`           | 
-| `Configurer#configureQueryUpdateEmitter`          | `MessagingConfigurer#registerQueryUpdateEmitter` | 
-| `ConfigurerModule#configureModule`                | `ConfigurerEnhancer#enhance`                     | 
-| `ConfigurerModule#configureLifecyclePhaseTimeout` | `RootConfigurer#registerLifecyclePhaseTimeout`   | 
+| Constructor / Method                                                 | To where                                                   |
+|----------------------------------------------------------------------|------------------------------------------------------------|
+| `Configurer#configureCommandBus`                                     | `MessagingConfigurer#registerCommandBus`                   | 
+| `Configurer#configureEventBus`                                       | `MessagingConfigurer#registerEventSink`                    | 
+| `Configurer#configureQueryBus`                                       | `MessagingConfigurer#registerQueryBus`                     | 
+| `Configurer#configureQueryUpdateEmitter`                             | `MessagingConfigurer#registerQueryUpdateEmitter`           | 
+| `ConfigurerModule#configureModule`                                   | `ConfigurationEnhancer#enhance`                            | 
+| `ConfigurerModule#configureLifecyclePhaseTimeout`                    | `LifecycleRegistry#registerLifecyclePhaseTimeout`          | 
+| `Configurer#registerComponent(Function<Configuration, ? extends C>)` | `ComponentRegistry#registerComponent(ComponentFactory<C>)` | 
+| `Configurer#registerModule(ModuleConfiguration)`                     | `ComponentRegistry#registerComponent(Module)`              | 
 
 ### Removed methods and constructors
 
