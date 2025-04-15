@@ -23,7 +23,7 @@ import org.axonframework.messaging.MessageTypeResolver;
 /**
  * Defines how a {@link CriteriaResolver} should be constructed for an {@link EventSourcedEntity} annotated class. The
  * definition receives the {@code entityType} and {@code idType} to create a resolver for the given types. In addition,
- * it receives a {@link MessageTypeResolver} to resolve the type of the message that is being processed.
+ * it receives a {@link MessageTypeResolver} to resolve the type of the message that is being processed when necessary.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0

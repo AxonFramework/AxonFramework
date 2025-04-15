@@ -98,7 +98,7 @@ public @interface EventSourcedEntity {
      * definition can be provided to override the default behavior of the
      * {@link ConstructorBasedEventSourcedEntityFactory}.
      *
-     * @return The definition to construct a {@link EventSourcedEntityFactory}.
+     * @return The definition to construct an {@link EventSourcedEntityFactory}.
      */
     Class<? extends EventSourcedEntityFactoryDefinition> entityFactoryDefinition() default ConstructorBasedEventSourcedEntityFactoryDefinition.class;
 }

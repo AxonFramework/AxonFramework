@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.annotation;
 import jakarta.annotation.Nonnull;
 
 /**
- * Definition a constructor-based {@link EventSourcedEntityFactory} for an {@link EventSourcedEntity} annotated class.
+ * Definition for a constructor-based {@link EventSourcedEntityFactory} for an {@link EventSourcedEntity} annotated class.
  * This is the default implementation of the {@link EventSourcedEntityFactoryDefinition} for the
  * {@link EventSourcedEntity} annotation.
  * <p>
