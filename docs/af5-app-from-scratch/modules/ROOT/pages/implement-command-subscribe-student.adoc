@@ -26,10 +26,12 @@ Let's define them as Java records, as before.
 package io.axoniq.demo.university.faculty.events;
 
 import org.axonframework.eventsourcing.annotations.EventTag;
+import io.axoniq.demo.university.faculty.shared.ids.StudentId;
+import io.axoniq.demo.university.faculty.shared.ids.CourseId;
 
 public record StudentEnrolledInFaculty(
         @EventTag // <1>
-        String studentId,
+        StudentId studentId,
         String firstName,
         String lastName
 ) {
@@ -45,12 +47,14 @@ public record StudentEnrolledInFaculty(
 package io.axoniq.demo.university.faculty.events;
 
 import org.axonframework.eventsourcing.annotations.EventTag;
+import io.axoniq.demo.university.faculty.shared.ids.StudentId;
+import io.axoniq.demo.university.faculty.shared.ids.CourseId;
 
 public record StudentSubscribedToCourse(
         @EventTag // <1>
-        String studentId,
+        StudentId studentId,
         @EventTag // <1>
-        String courseId
+        CourseId courseId
 ) {
 }
 ----
@@ -67,8 +71,8 @@ Last, but not least, we define the `SubscribeStudentToCourse` command.
 ----
 package io.axoniq.demo.university.faculty.write.createcourse;
 
-import io.axoniq.demo.university.faculty.write.StudentId;
-import io.axoniq.demo.university.faculty.write.CourseId;
+import io.axoniq.demo.university.faculty.shared.ids.StudentId;
+import io.axoniq.demo.university.faculty.shared.ids.CourseId;
 
 public record SubscribeStudentToCourse(StudentId studentId, CourseId courseId) {
 }
@@ -120,12 +124,12 @@ class SubscribeStudentToCourseTest {
         var studentId = StudentId.random();
 
         fixture.given()
-               .event(new CourseCreated(courseId.raw(), "Event Sourcing in Practice", 2))
-               .event(new StudentEnrolledInFaculty(studentId.raw(), "Mateusz", "Nowak"))
+               .event(new CourseCreated(courseId, "Event Sourcing in Practice", 2))
+               .event(new StudentEnrolledInFaculty(studentId, "Mateusz", "Nowak"))
                .when()
                .command(new SubscribeStudentToCourse(studentId, courseId))
                .then()
-               .events(new StudentSubscribedToCourse(studentId.raw(), courseId.raw()));
+               .events(new StudentSubscribedToCourse(studentId, courseId));
     }
 
     @Test
@@ -134,9 +138,9 @@ class SubscribeStudentToCourseTest {
         var studentId = StudentId.random();
 
         fixture.given()
-               .event(new StudentEnrolledInFaculty(studentId.raw(), "Allard", "Buijze"))
-               .event(new CourseCreated(courseId.raw(), "Axon Framework 5: Be a PRO", 2))
-               .event(new StudentSubscribedToCourse(studentId.raw(), courseId.raw()))
+               .event(new StudentEnrolledInFaculty(studentId, "Allard", "Buijze"))
+               .event(new CourseCreated(courseId, "Axon Framework 5: Be a PRO", 2))
+               .event(new StudentSubscribedToCourse(studentId, courseId))
                .when()
                .command(new SubscribeStudentToCourse(studentId, courseId))
                .then()
@@ -151,12 +155,12 @@ class SubscribeStudentToCourseTest {
         var student3Id = StudentId.random();
 
         fixture.given()
-               .event(new StudentEnrolledInFaculty(student1Id.raw(), "Mateusz", "Nowak"))
-               .event(new StudentEnrolledInFaculty(student2Id.raw(), "Steven", "van Beelen"))
-               .event(new StudentEnrolledInFaculty(student3Id.raw(), "Mitchell", "Herrijgers"))
-               .event(new CourseCreated(courseId.raw(), "Event Sourcing Masterclass", 2))
-               .event(new StudentSubscribedToCourse(student1Id.raw(), courseId.raw()))
-               .event(new StudentSubscribedToCourse(student2Id.raw(), courseId.raw()))
+               .event(new StudentEnrolledInFaculty(student1Id, "Mateusz", "Nowak"))
+               .event(new StudentEnrolledInFaculty(student2Id, "Steven", "van Beelen"))
+               .event(new StudentEnrolledInFaculty(student3Id, "Mitchell", "Herrijgers"))
+               .event(new CourseCreated(courseId, "Event Sourcing Masterclass", 2))
+               .event(new StudentSubscribedToCourse(student1Id, courseId))
+               .event(new StudentSubscribedToCourse(student2Id, courseId))
                .when()
                .command(new SubscribeStudentToCourse(student3Id, courseId))
                .then()
@@ -172,16 +176,16 @@ class SubscribeStudentToCourseTest {
         var targetCourseId = CourseId.random();
 
         fixture.given()
-                .event(new StudentEnrolledInFaculty(studentId.raw(), "Milan", "Savic"))
-                .event(new CourseCreated(targetCourseId.raw(), "Programming", 10))
-                .event(new CourseCreated(course1Id.raw(), "Course 1", 10))
-                .event(new CourseCreated(course2Id.raw(), "Course 2", 10))
-                .event(new CourseCreated(course3Id.raw(), "Course 3", 10))
-                .event(new StudentSubscribedToCourse(studentId.raw(), course1Id.raw()))
-                .event(new StudentSubscribedToCourse(studentId.raw(), course2Id.raw()))
-                .event(new StudentSubscribedToCourse(studentId.raw(), course3Id.raw()))
+                .event(new StudentEnrolledInFaculty(studentId, "Milan", "Savic"))
+                .event(new CourseCreated(targetCourseId, "Programming", 10))
+                .event(new CourseCreated(course1Id, "Course 1", 10))
+                .event(new CourseCreated(course2Id, "Course 2", 10))
+                .event(new CourseCreated(course3Id, "Course 3", 10))
+                .event(new StudentSubscribedToCourse(studentId, course1Id))
+                .event(new StudentSubscribedToCourse(studentId, course2Id))
+                .event(new StudentSubscribedToCourse(studentId, course3Id))
                 .when()
-                .command(new io.axoniq.demo.university.faculty.write.subscribestudentmulti.SubscribeStudentToCourse(studentId, targetCourseId))
+                .command(new SubscribeStudentToCourse(studentId, targetCourseId))
                 .then()
                 .noEvents()
                 .exceptionSatisfies(thrown -> assertThat(thrown)
@@ -221,7 +225,7 @@ class SubscribeStudentToCourseCommandHandler {
 
     private List<StudentSubscribedToCourse> decide(SubscribeStudentToCourse command, State state) {
         // todo: check business rules
-        return List.of(new StudentSubscribedToCourse(command.studentId().raw(), command.courseId().raw()));
+        return List.of(new StudentSubscribedToCourse(command.studentId(), command.courseId()));
     }
 
     private static List<EventMessage<?>> toMessages(List<StudentSubscribedToCourse> events) {
@@ -268,8 +272,8 @@ We're going to use the `SubscriptionId` class and define it as an `TargetEntityI
 ----
 package io.axoniq.demo.university.faculty.write.subscribestudent;
 
-import io.axoniq.demo.university.faculty.write.CourseId;
-import io.axoniq.demo.university.faculty.write.StudentId;
+import io.axoniq.demo.university.faculty.shared.ids.CourseId;
+import io.axoniq.demo.university.faculty.shared.ids.StudentId;
 
 record SubscriptionId(CourseId courseId, StudentId studentId) {
 
@@ -282,8 +286,8 @@ record SubscriptionId(CourseId courseId, StudentId studentId) {
 ----
 package io.axoniq.demo.university.faculty.write.createcourse;
 
-import io.axoniq.demo.university.faculty.write.StudentId;
-import io.axoniq.demo.university.faculty.write.CourseId;
+import io.axoniq.demo.university.faculty.shared.ids.StudentId;
+import io.axoniq.demo.university.faculty.shared.ids.CourseId;
 
 public record SubscribeStudentToCourse(StudentId studentId, CourseId courseId) {
 
@@ -489,8 +493,8 @@ class SubscribeStudentToCourseCommandHandler {
 
         @EventCriteriaBuilder // <1>
         private static EventCriteria resolveCriteria(SubscriptionId id) { // <2>
-            var courseId = id.courseId().raw();
-            var studentId = id.studentId().raw();
+            var courseId = id.courseId().toString();
+            var studentId = id.studentId().toString();
 
             return EventCriteria.either(
                     EventCriteria.match()

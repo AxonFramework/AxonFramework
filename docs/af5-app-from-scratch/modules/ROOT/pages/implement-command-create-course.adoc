@@ -35,7 +35,7 @@ Following our Vertical Slice Architecture, we'll place each message in its appro
 ----
 package io.axoniq.demo.university.faculty.write.createcourse;
 
-import io.axoniq.demo.university.faculty.write.CourseId;
+import io.axoniq.demo.university.faculty.shared.ids.CourseId;
 import org.axonframework.modelling.annotation.TargetEntityId;
 
 public record CreateCourse(
@@ -51,7 +51,16 @@ You may notice that for the `courseId` field we use `CourseId` value object.
 It's not necessary, but it's a convention.
 This class provides type safety and domain semantics for course identifiers.
 Thanks to that, you won't mix CourseId with other identifiers in the system like StudentId.
-The class may be as simple as `public record CourseId(String raw) {}`.
+The class may be as simple as:
+[source,java]
+----
+public record CourseId(String raw) {
+    @Override
+    public String toString() { // will be used as a tag value
+        return raw;
+    }
+}
+----
 In the repository, we have also some additional helpful methods that you may find in the repository, but for now this is enough.
 ====
 
@@ -66,7 +75,7 @@ import org.axonframework.eventsourcing.annotations.EventTag;
 
 public record CourseCreated(
     @EventTag
-    String courseId, // <1>
+    CourseId courseId, // <1>
     String name,
     int capacity
 ) {}
@@ -75,9 +84,9 @@ public record CourseCreated(
 <1> The `@EventTag` annotation is crucial—it allows Axon to tag events as connected to specific business entities, which enables efficient retrieval later.
 If you are used to Aggregate approach before, note that the Tag identifies the aggregate. But, thanks to Dynamic Consistency Boundary, you now can have one event assigned to many business entities (instead of one, as before!).
 The EventStore in Axon Framework 5 always stores your events along with assigned tags, so you can query them later based on those tags and types.
+For the `Tag` value the `toString()` method will be used, so you need to override it in your typed identifier.
 
-Unlike commands, we use simple strings for identifiers in events to avoid potential deserialization issues if Value Object rules change.
-If you want to use the Value Objects in your events, you may probably need custom deserializers for them to avoid `{"courseId": {"raw": "some-id"}}` in case of JSON.
+Please remember that if you want to use the Value Objects in your events (like for the `courseId`), you need to configure custom deserializers for them to avoid `{"courseId": {"raw": "some-id"}}` in case of JSON.
 
 [NOTE]
 ====
@@ -112,7 +121,7 @@ Axon Framework's test fixture allows you to execute test cases against a provide
 It may be your module/component configuration, or even the whole application!
 
 Do you remember the configurer that we used while bootstrapping the application?
-Now it's time to use it in order to initialize our test fixture.
+Now it's time to use it to initialize our test fixture.
 We need to have access to application components in tests to verify their behavior, which the configuration provides.
 
 [source,java]
@@ -177,7 +186,7 @@ import java.util.UUID;class CreateCourseTest {
                .when()
                .command(new CreateCourse(courseId, courseName, capacity)) // <2>
                .then()
-               .events(new CourseCreated(courseId.raw(), courseName, capacity)); // <3>
+               .events(new CourseCreated(courseId, courseName, capacity)); // <3>
     }
 
 }
@@ -223,7 +232,7 @@ class CreateCourseCommandHandler {
             EventSink eventSink,  // <3>
             ProcessingContext processingContext  // <4>
     ) {
-        var event = new CourseCreated(command.courseId().raw(), command.name(), command.capacity());  // <5>
+        var event = new CourseCreated(command.courseId(), command.name(), command.capacity());  // <5>
         var message = toMessage(event); // <6>
         eventSink.publish(processingContext, message); // <7>
     }
@@ -321,7 +330,7 @@ class CreateCourseTest {
         var capacity = 3;
 
         fixture.given()
-               .event(new CourseCreated(courseId.raw(), courseName, capacity)) // <1>
+               .event(new CourseCreated(courseId, courseName, capacity)) // <1>
                .when()
                .command(new CreateCourse(courseId, courseName, capacity)) // <2>
                .then()
@@ -371,7 +380,7 @@ class CreateCourseCommandHandler {
         private boolean created = false; // <2>
 
         @EventSourcingHandler // <3>
-        public void apply(CourseCreated event) {
+        public void evolve(CourseCreated event) {
             this.created = true;
         }
     }
@@ -386,7 +395,7 @@ class CreateCourseCommandHandler {
         if(state.created) { // <5>
             return;
         }
-        var event = new CourseCreated(command.courseId().raw(), command.name(), command.capacity());
+        var event = new CourseCreated(command.courseId(), command.name(), command.capacity());
         eventSink.publish(processingContext, toMessage(event));
     }
 
