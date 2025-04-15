@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandHandler;
+import org.axonframework.eventsourcing.AggregateDeletedException;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -30,6 +31,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
+import static org.axonframework.modelling.command.AggregateLifecycle.markDeleted;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -194,6 +196,14 @@ class FixtureTest_CreationPolicy {
                 .when(new AlwaysCreateWithoutResultCommand(AGGREGATE_ID, PUBLISH_EVENTS))
                 .expectEvents(new AlwaysCreatedEvent(AGGREGATE_ID))
                 .expectSuccessfulHandlerExecution();
+    }
+
+    @Test
+    void markedDeletedAggregateDoesNotAllowForCreateIfMissingButRethrowsAggregateDeletedException() {
+        fixture.given(new CreatedEvent(AGGREGATE_ID), new MarkedDeleted(AGGREGATE_ID))
+               .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_EVENTS))
+               .expectNoEvents()
+               .expectException(AggregateDeletedException.class);
     }
 
     private static class CreateCommand {
@@ -424,8 +434,21 @@ class FixtureTest_CreationPolicy {
         }
     }
 
+    private static class MarkedDeleted {
+
+        private final ComplexAggregateId id;
+
+        private MarkedDeleted(ComplexAggregateId id) {
+            this.id = id;
+        }
+
+        public ComplexAggregateId id() {
+            return id;
+        }
+    }
+
     @SuppressWarnings("unused")
-    public static class TestAggregate {
+    public static class TestAggregate implements TestAggregateInterface {
 
         @AggregateIdentifier
         private ComplexAggregateId id;
@@ -443,16 +466,14 @@ class FixtureTest_CreationPolicy {
             apply(new CreatedEvent(command.getId()));
         }
 
-        @CommandHandler
-        @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
+        @Override
         public void handle(CreateOrUpdateCommand command) {
             if (command.shouldPublishEvent()) {
                 apply(new CreatedOrUpdatedEvent(command.getId()));
             }
         }
 
-        @CommandHandler
-        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        @Override
         public void handle(AlwaysCreateWithoutResultCommand command) {
             if (command.shouldPublishEvent()) {
                 apply(new AlwaysCreatedEvent(command.getId()));
@@ -498,6 +519,22 @@ class FixtureTest_CreationPolicy {
         public void on(AlwaysCreatedEvent event) {
             this.id = event.getId();
         }
+
+        @EventSourcingHandler
+        public void on(MarkedDeleted event) {
+            markDeleted();
+        }
+    }
+
+    public interface TestAggregateInterface {
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.CREATE_IF_MISSING)
+        void handle(CreateOrUpdateCommand command);
+
+        @CommandHandler
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        void handle(AlwaysCreateWithoutResultCommand command);
     }
 
     public static class TestAggregateWithPrivateNoArgConstructor {

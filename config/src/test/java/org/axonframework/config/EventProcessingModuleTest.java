@@ -55,6 +55,7 @@ import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.StreamableMessageSource;
+import org.axonframework.messaging.SubscribableMessageSource;
 import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
@@ -63,13 +64,11 @@ import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.tracing.TestSpanFactory;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.*;
+import org.mockito.*;
+import org.mockito.junit.jupiter.*;
 
-import javax.annotation.Nonnull;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -83,18 +82,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import static org.axonframework.common.ReflectionUtils.getFieldValue;
 import static org.axonframework.utils.AssertUtils.assertWithin;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link EventProcessingModule}.
@@ -353,6 +346,28 @@ class EventProcessingModuleTest {
                      ((SimpleEventHandlerInvoker) defaultInvoker.delegates().get(0)).getSequencingPolicy());
         assertEquals(fullConcurrencyPolicy,
                      ((SimpleEventHandlerInvoker) specialInvoker.delegates().get(0)).getSequencingPolicy());
+    }
+
+    @Test
+    void createSubscribingEventProcessorIfSubscribableMessageSourceDefinitionBuilderPresent(
+            @Mock EventProcessingConfigurer.SubscribableMessageSourceDefinitionBuilder mockBuilder,
+            @Mock SubscribableMessageSourceDefinition<EventMessage<?>> definition,
+            @Mock SubscribableMessageSource source) {
+        when(mockBuilder.build("pooled-streaming")).thenReturn(definition);
+        when(mockBuilder.build("tracking")).thenReturn(definition);
+        when(definition.create(any())).thenReturn(source);
+
+        configurer.eventProcessing()
+                  .registerEventHandler(config -> new PooledStreamingEventHandler())
+                  .registerEventHandler(config -> new TrackingEventHandler())
+                  .usingSubscribingEventProcessors(mockBuilder);
+        Configuration config = configurer.start();
+
+        Map<String, EventProcessor> processorMap = config.eventProcessingConfiguration().eventProcessors();
+
+        processorMap.forEach((c, processor) -> assertInstanceOf(SubscribingEventProcessor.class, processor));
+        assertEquals(2, processorMap.size());
+        verify(mockBuilder, times(2)).build(anyString());
     }
 
     @Test
@@ -987,7 +1002,8 @@ class EventProcessingModuleTest {
         assertEquals(PropagatingErrorHandler.INSTANCE, getField(AbstractEventProcessor.class, "errorHandler", result));
         assertEquals(testTokenStore, getField("tokenStore", result));
         assertEquals(NoTransactionManager.INSTANCE, getField("transactionManager", result));
-        assertEquals(config.getComponent(EventProcessorSpanFactory.class), getField(AbstractEventProcessor.class, "spanFactory", result));
+        assertEquals(config.getComponent(EventProcessorSpanFactory.class),
+                     getField(AbstractEventProcessor.class, "spanFactory", result));
     }
 
     @Test

@@ -684,6 +684,22 @@ class AxonServerQueryBusTest {
     }
 
     @Test
+    void subscriptionQueryRequestsPermitsBasedOnBufferSize() {
+        when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt())).thenReturn(new SimpleSubscriptionQueryResult("result"));
+        testSubject.subscriptionQuery(new GenericSubscriptionQueryMessage<Object, Object, Object>("test", "test", instanceOf(Object.class), instanceOf(Object.class)), 124);
+
+        verify(mockQueryChannel).subscriptionQuery(any(), any(), eq(124), eq(15));
+    }
+
+    @Test
+    void subscriptionQueryUpdateBufferSizeIsNEverLowerThan32() {
+        when(mockQueryChannel.subscriptionQuery(any(), any(), anyInt(), anyInt())).thenReturn(new SimpleSubscriptionQueryResult("result"));
+        testSubject.subscriptionQuery(new GenericSubscriptionQueryMessage<>("test", "test", instanceOf(String.class), instanceOf(String.class)), 31);
+
+        verify(mockQueryChannel).subscriptionQuery(any(), any(), eq(32), eq(4));
+    }
+
+    @Test
     void disconnectCancelsQueriesInProgressIfAwaitDurationIsSurpassed() {
         AxonServerQueryBus queryInProgressTestSubject =
                 AxonServerQueryBus.builder()
