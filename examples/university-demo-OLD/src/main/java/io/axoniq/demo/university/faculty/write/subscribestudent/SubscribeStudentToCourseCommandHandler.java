@@ -10,7 +10,6 @@ import io.axoniq.demo.university.faculty.write.CourseId;
 import io.axoniq.demo.university.faculty.write.StudentId;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -19,7 +18,6 @@ import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotation.InjectEntity;
 
 import java.util.List;
