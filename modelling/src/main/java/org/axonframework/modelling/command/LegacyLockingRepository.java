@@ -59,15 +59,15 @@ import static org.axonframework.common.ObjectUtils.sameInstanceSupplier;
  * @deprecated In favor of the {@link org.axonframework.modelling.repository.AccessSerializingRepository}.
  */
 @Deprecated(since = "5.0.0")
-public abstract class LockingRepository<T, A extends Aggregate<T>> extends
+public abstract class LegacyLockingRepository<T, A extends Aggregate<T>> extends
         AbstractLegacyRepository<T, LockAwareAggregate<T, A>> {
 
-    private static final Logger logger = LoggerFactory.getLogger(LockingRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(LegacyLockingRepository.class);
 
     private final LockFactory lockFactory;
 
     /**
-     * Instantiate a {@link LockingRepository} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link LegacyLockingRepository} based on the fields contained in the {@link Builder}.
      * <p>
      * A goal of the provided Builder is to create an {@link AggregateModel} specifying generic {@code T} as the
      * aggregate type to be stored. The {@link SpanFactory} is defaulted to a
@@ -80,9 +80,9 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      * Additionally, will assert that the {@link LockFactory} is not {@code null}, resulting in an
      * AxonConfigurationException if this is the case.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link LockingRepository} instance
+     * @param builder the {@link Builder} used to instantiate a {@link LegacyLockingRepository} instance
      */
-    protected LockingRepository(Builder<T> builder) {
+    protected LegacyLockingRepository(Builder<T> builder) {
         super(builder);
         this.lockFactory = builder.lockFactory;
     }
@@ -253,7 +253,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
     protected abstract A doLoadWithLock(String aggregateIdentifier, Long expectedVersion);
 
     /**
-     * Abstract Builder class to instantiate {@link LockingRepository} implementations.
+     * Abstract Builder class to instantiate {@link LegacyLockingRepository} implementations.
      * <p>
      * The {@link LockFactory} is defaulted to a pessimistic locking strategy, implemented in the
      * {@link PessimisticLockFactory}. The {@link SpanFactory} is defaulted to a

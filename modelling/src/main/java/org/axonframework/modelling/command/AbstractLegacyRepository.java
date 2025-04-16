@@ -51,11 +51,11 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * aggregate is persisted. All uncommitted events on an aggregate are dispatched when the aggregate is saved.
  * <p>
  * Note that this repository implementation does not take care of any locking. The underlying persistence is expected to
- * deal with concurrency. Alternatively, consider using the {@link LockingRepository}.
+ * deal with concurrency. Alternatively, consider using the {@link LegacyLockingRepository}.
  *
  * @param <T> The type of aggregate this repository stores
  * @author Allard Buijze
- * @see LockingRepository
+ * @see LegacyLockingRepository
  * @since 0.1
  * @deprecated This instance will be removed.
  */

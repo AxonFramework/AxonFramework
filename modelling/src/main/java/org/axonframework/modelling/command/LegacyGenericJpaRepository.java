@@ -64,7 +64,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @deprecated In favor of the {@link org.axonframework.modelling.SimpleRepository}.
  */
 @Deprecated(since = "5.0.0")
-public class LegacyGenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggregate<T>> {
+public class LegacyGenericJpaRepository<T> extends LegacyLockingRepository<T, AnnotatedAggregate<T>> {
 
     private final EntityManagerProvider entityManagerProvider;
     private final EventBus eventBus;
@@ -211,7 +211,7 @@ public class LegacyGenericJpaRepository<T> extends LockingRepository<T, Annotate
      *
      * @param <T> a generic specifying the Aggregate type contained in this {@link LegacyRepository} implementation
      */
-    public static class Builder<T> extends LockingRepository.Builder<T> {
+    public static class Builder<T> extends LegacyLockingRepository.Builder<T> {
 
         private EntityManagerProvider entityManagerProvider;
         private EventBus eventBus;

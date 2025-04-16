@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link LockingRepository}.
+ * Test class validating the {@link LegacyLockingRepository}.
  *
  * @author Allard Buijze
  */
@@ -271,7 +271,8 @@ class LockingRepositoryTest {
         return LegacyDefaultUnitOfWork.startAndGet(MESSAGE);
     }
 
-    private static class InMemoryLockingRepository extends LockingRepository<StubAggregate, Aggregate<StubAggregate>> {
+    private static class InMemoryLockingRepository extends
+            LegacyLockingRepository<StubAggregate, Aggregate<StubAggregate>> {
 
         private final EventBus eventBus;
         private final AggregateModel<StubAggregate> aggregateModel;
@@ -322,7 +323,7 @@ class LockingRepositoryTest {
             return saveCount;
         }
 
-        private static class Builder extends LockingRepository.Builder<StubAggregate> {
+        private static class Builder extends LegacyLockingRepository.Builder<StubAggregate> {
 
             private EventBus eventBus;
 
