@@ -34,7 +34,7 @@ import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.modelling.saga.repository.NoResourceInjector;
 import org.axonframework.monitoring.MessageMonitor;
@@ -265,13 +265,13 @@ public interface LegacyConfiguration extends LifecycleOperations {
     }
 
     /**
-     * Returns the {@link Repository} configured for the given {@code aggregateType}.
+     * Returns the {@link LegacyRepository} configured for the given {@code aggregateType}.
      *
-     * @param aggregateType the aggregate type to find the {@link Repository} for
+     * @param aggregateType the aggregate type to find the {@link LegacyRepository} for
      * @param <A>           the aggregate type
-     * @return the {@link Repository} from which aggregates of the given {@code aggregateType} can be loaded
+     * @return the {@link LegacyRepository} from which aggregates of the given {@code aggregateType} can be loaded
      */
-    default <A> Repository<A> repository(@Nonnull Class<A> aggregateType) {
+    default <A> LegacyRepository<A> repository(@Nonnull Class<A> aggregateType) {
         return aggregateConfiguration(aggregateType).repository();
     }
 

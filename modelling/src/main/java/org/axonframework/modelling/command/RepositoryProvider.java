@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,5 +34,5 @@ public interface RepositoryProvider {
      * @param <T>           type of the aggregate
      * @return repository given for aggregate type
      */
-    <T> Repository<T> repositoryFor(@Nonnull Class<T> aggregateType);
+    <T> LegacyRepository<T> repositoryFor(@Nonnull Class<T> aggregateType);
 }

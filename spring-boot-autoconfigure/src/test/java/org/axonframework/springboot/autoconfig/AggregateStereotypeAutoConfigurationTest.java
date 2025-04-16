@@ -37,7 +37,7 @@ import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.GenericJpaRepository;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.spring.stereotype.Aggregate;
@@ -113,7 +113,7 @@ class AggregateStereotypeAutoConfigurationTest {
     }
 
     /**
-     * By configuring a custom {@link Repository} through the {@link Aggregate} stereotype, you remove the bean
+     * By configuring a custom {@link LegacyRepository} through the {@link Aggregate} stereotype, you remove the bean
      * definitions of the {@link SnapshotTriggerDefinition}, {@link Cache}, and the {@link LockFactory}. This holds as
      * the framework directly configures these components on the {@code Repository}. This test also asserts that the
      * {@link SnapshotFilter} is <b>not</b> invoked, since the {@code SnapshotTriggerDefinition} is no longer defined on
@@ -128,8 +128,8 @@ class AggregateStereotypeAutoConfigurationTest {
             String aggregateId = commandGateway.sendAndWait(new CreateCustomRepoTestAggregate(), String.class);
 
             //noinspection unchecked
-            Repository<TestContext.CustomRepoTestAggregate> testRepository =
-                    context.getBean("testRepository", Repository.class);
+            LegacyRepository<TestContext.CustomRepoTestAggregate> testRepository =
+                    context.getBean("testRepository", LegacyRepository.class);
             verify(testRepository).newInstance(any());
 
             SnapshotTriggerDefinition snapshotTriggerDefinition =
@@ -173,8 +173,8 @@ class AggregateStereotypeAutoConfigurationTest {
     @Test
     void aggregateWithEntityManagerAnnotationIsAutoconfiguredWitExistingJpaRepository() {
         String beanName = "org.axonframework.springboot.autoconfig.AggregateStereotypeAutoConfigurationTest$TestContext$SimpleStateStoredAggregate";
-        Repository<?> mockRepo = mock(Repository.class);
-        testApplicationContext.withBean(beanName + "Repository", Repository.class, () -> mockRepo)
+        LegacyRepository<?> mockRepo = mock(LegacyRepository.class);
+        testApplicationContext.withBean(beanName + "Repository", LegacyRepository.class, () -> mockRepo)
                               .run(context -> {
                                   assertTrue(context.containsBean(beanName + "Repository"));
                                   Object actual = context.getBean(beanName + "Repository");
@@ -374,7 +374,7 @@ class AggregateStereotypeAutoConfigurationTest {
         }
 
         @Bean
-        public Repository<CustomRepoTestAggregate> testRepository(LegacyEventStore eventStore) {
+        public LegacyRepository<CustomRepoTestAggregate> testRepository(LegacyEventStore eventStore) {
             return spy(EventSourcingRepository.builder(CustomRepoTestAggregate.class)
                                               .eventStore(eventStore)
                                               .build());

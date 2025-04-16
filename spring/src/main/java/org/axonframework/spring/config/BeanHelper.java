@@ -17,7 +17,7 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 
 /**
  * Helper class to simplify the creation of bean definitions for components configured in Axon Configuration.
@@ -28,15 +28,15 @@ import org.axonframework.modelling.command.Repository;
 public abstract class BeanHelper {
 
     /**
-     * Retrieves the {@link Repository} for given {@code aggregateType} from given {@code configuration}.
+     * Retrieves the {@link LegacyRepository} for given {@code aggregateType} from given {@code configuration}.
      *
      * @param aggregateType The type to find the repository for.
-     * @param configuration The configuration from which to retrieve the {@link Repository}.
+     * @param configuration The configuration from which to retrieve the {@link LegacyRepository}.
      * @param <T>           The type of aggregate.
-     * @return The {@link Repository} instance for the aggregate.
+     * @return The {@link LegacyRepository} instance for the aggregate.
      * @throws IllegalArgumentException if the given {@code aggregateType} has not been configured.
      */
-    public static <T> Repository<T> repository(Class<T> aggregateType, LegacyConfiguration configuration) {
+    public static <T> LegacyRepository<T> repository(Class<T> aggregateType, LegacyConfiguration configuration) {
         return configuration.repository(aggregateType);
     }
 

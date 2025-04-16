@@ -18,7 +18,7 @@ package org.axonframework.config;
 
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.saga.AbstractSagaManager;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -48,7 +48,7 @@ class ConfigurationScopeAwareProviderTest {
     private AggregateConfiguration<Object> aggregateConfiguration;
 
     @Mock
-    private Repository<Object> aggregateRepository;
+    private LegacyRepository<Object> aggregateRepository;
 
     @Mock
     private SagaConfiguration<Object> sagaConfiguration;

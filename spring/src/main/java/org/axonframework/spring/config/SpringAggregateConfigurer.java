@@ -22,15 +22,15 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.config.AggregateConfigurer;
+import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
-import org.axonframework.config.ConfigurerModule;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.GenericJpaRepository;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -75,9 +75,9 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
     }
 
     /**
-     * Sets the bean name of the {@link Repository} to configure for this Aggregate.
+     * Sets the bean name of the {@link LegacyRepository} to configure for this Aggregate.
      *
-     * @param aggregateRepository The bean name of the {@link Repository} for this Aggregate.
+     * @param aggregateRepository The bean name of the {@link LegacyRepository} for this Aggregate.
      */
     public void setRepository(String aggregateRepository) {
         this.aggregateRepository = aggregateRepository;
@@ -124,8 +124,8 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
     }
 
     /**
-     * Sets the bean name of the {@link Cache} to use for this Aggregate. Will be ignored if a {@link Repository} is
-     * also configured.
+     * Sets the bean name of the {@link Cache} to use for this Aggregate. Will be ignored if a {@link LegacyRepository}
+     * is also configured.
      *
      * @param cache The bean name of the {@link Cache} to use for this Aggregate.
      */
@@ -134,8 +134,8 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
     }
 
     /**
-     * Sets the bean name of the {@link LockFactory} to use for this Aggregate. Will be ignored if a {@link Repository}
-     * is also configured.
+     * Sets the bean name of the {@link LockFactory} to use for this Aggregate. Will be ignored if a
+     * {@link LegacyRepository} is also configured.
      *
      * @param lockFactory The bean name of the {@link LockFactory} to use for this Aggregate.
      */
@@ -144,8 +144,8 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
     }
 
     /**
-     * Sets the bean name of the {@link AggregateFactory} to use for this Aggregate. Will be ignored if a {@link
-     * Repository} is also configured.
+     * Sets the bean name of the {@link AggregateFactory} to use for this Aggregate. Will be ignored if a
+     * {@link LegacyRepository} is also configured.
      *
      * @param aggregateFactory The bean name of the AggregateFactory to use for this Aggregate.
      */
@@ -165,7 +165,7 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
         if (aggregateRepository != null) {
             //noinspection unchecked
             aggregateConfigurer.configureRepository(
-                    c -> applicationContext.getBean(aggregateRepository, Repository.class)
+                    c -> applicationContext.getBean(aggregateRepository, LegacyRepository.class)
             );
         } else if (isEntityManagerAnnotationPresent(aggregateType)) {
             aggregateConfigurer.configureRepository(c -> GenericJpaRepository.builder(aggregateType)

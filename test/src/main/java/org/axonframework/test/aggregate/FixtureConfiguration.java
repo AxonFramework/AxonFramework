@@ -17,9 +17,9 @@
 package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
@@ -36,7 +36,7 @@ import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.CommandTargetResolver;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.matchers.FieldFilter;
@@ -49,15 +49,14 @@ import java.util.function.Supplier;
  * Interface describing the operations available on a test fixture in the configuration stage. This stage allows a test
  * case to prepare the fixture for test execution.
  * <p/>
- * The fixture is initialized using a Command Handler that expects an {@code @CommandHandler} aggregate. If you
- * have implemented your own command handler (either using annotations, or by implementing the {@link MessageHandler}
- * interface), you must register the command handler using {@link #registerAnnotatedCommandHandler(Object)} or {@link
- * #registerCommandHandler(Class, MessageHandler)}, respectively. A typical command
- * handler will require a repository. The test fixture initializes an Event Sourcing Repository, which can be obtained
- * using {@link #getRepository()}. Alternatively, you can register your own repository using the {@link
- * #registerRepository(Repository)} method. Registering the repository
- * will cause the fixture to configure the correct {@link EventBus} and {@link LegacyEventStore} implementations required by
- * the test.
+ * The fixture is initialized using a Command Handler that expects an {@code @CommandHandler} aggregate. If you have
+ * implemented your own command handler (either using annotations, or by implementing the {@link MessageHandler}
+ * interface), you must register the command handler using {@link #registerAnnotatedCommandHandler(Object)} or
+ * {@link #registerCommandHandler(Class, MessageHandler)}, respectively. A typical command handler will require a
+ * repository. The test fixture initializes an Event Sourcing Repository, which can be obtained using
+ * {@link #getRepository()}. Alternatively, you can register your own repository using the
+ * {@link #registerRepository(LegacyRepository)} method. Registering the repository will cause the fixture to configure
+ * the correct {@link EventBus} and {@link LegacyEventStore} implementations required by the test.
  * <p/>
  * Typical usage example:<br/> <code>
  * <pre>
@@ -84,8 +83,8 @@ import java.util.function.Supplier;
  * If you use {@code @CommandHandler} annotations on the aggregate, you do not need to configure any additional command
  * handlers. In that case, no configuration is required:
  * <p/>
- * Providing the "given" events using the {@link #given(Object...)} or {@link
- * #given(java.util.List) given(List&lt;DomainEvent&gt;)} methods must be the last operation in the configuration
+ * Providing the "given" events using the {@link #given(Object...)} or
+ * {@link #given(java.util.List) given(List&lt;DomainEvent&gt;)} methods must be the last operation in the configuration
  * stage. To indicate that no "given" events are available, just call {@code given()} with no parameters.
  * <p/>
  * Besides setting configuration, you can also use the FixtureConfiguration to get access to the configured components.
@@ -107,9 +106,9 @@ public interface FixtureConfiguration<T> {
     FixtureConfiguration<T> withSubtypes(Class<? extends T>... subtypes);
 
     /**
-     * Configures the fixture for state stored aggregates.
-     * This will register an in-memory {@link org.axonframework.modelling.command.Repository} with this fixture.
-     * Should be used before calling {@link FixtureConfiguration#givenState(Supplier)} or {@link FixtureConfiguration#givenCommands(List)} (Supplier)}.
+     * Configures the fixture for state stored aggregates. This will register an in-memory {@link LegacyRepository} with
+     * this fixture. Should be used before calling {@link FixtureConfiguration#givenState(Supplier)} or
+     * {@link FixtureConfiguration#givenCommands(List)} (Supplier)}.
      *
      * @return the current FixtureConfiguration, for fluent interfacing
      */
@@ -126,7 +125,7 @@ public interface FixtureConfiguration<T> {
      * @param repository The repository to use in the test case
      * @return the current FixtureConfiguration, for fluent interfacing
      */
-    FixtureConfiguration<T> registerRepository(Repository<T> repository);
+    FixtureConfiguration<T> registerRepository(LegacyRepository<T> repository);
 
     /**
      * Registers repository provider with the fixture. If an aggregate being tested spawns new aggregates, this
@@ -143,7 +142,7 @@ public interface FixtureConfiguration<T> {
      * constructor to create new instances.
      * <p/>
      * Should not be used in combination with {@link
-     * #registerRepository(Repository)}, as that will overwrite any aggregate factory previously registered.
+     * #registerRepository(LegacyRepository)}, as that will overwrite any aggregate factory previously registered.
      *
      * @param aggregateFactory The Aggregate Factory to create empty aggregates with
      * @return the current FixtureConfiguration, for fluent interfacing
@@ -432,7 +431,7 @@ public interface FixtureConfiguration<T> {
      *
      * @return the repository used by this fixture
      */
-    Repository<T> getRepository();
+    LegacyRepository<T> getRepository();
 
     /**
      * Use this method to indicate a specific moment as the initial current time "known" by the fixture at the start of

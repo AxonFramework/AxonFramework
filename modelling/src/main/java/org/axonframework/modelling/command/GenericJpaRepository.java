@@ -27,7 +27,6 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
-import org.axonframework.tracing.SpanFactory;
 
 import java.util.Optional;
 import java.util.Set;
@@ -210,7 +209,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * Additionally, the {@link EntityManagerProvider} and {@link EventBus}  are <b>hard requirements</b> and as such
      * should be provided.
      *
-     * @param <T> a generic specifying the Aggregate type contained in this {@link Repository} implementation
+     * @param <T> a generic specifying the Aggregate type contained in this {@link LegacyRepository} implementation
      */
     public static class Builder<T> extends LockingRepository.Builder<T> {
 
@@ -223,8 +222,8 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
          *
-         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link Repository} will
-         *                      store
+         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link LegacyRepository}
+         *                      will store
          */
         protected Builder(Class<T> aggregateType) {
             super(aggregateType);
@@ -325,7 +324,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         }
 
         /**
-         * Disables sequence number generation within this {@link Repository} implementation.
+         * Disables sequence number generation within this {@link LegacyRepository} implementation.
          * <p>
          * Disabling this feature allows reuse of Aggregate identifiers <b>after</b> removal of the Aggregate instance
          * referred to with said identifier. This opportunity arises from the fact that events published within an

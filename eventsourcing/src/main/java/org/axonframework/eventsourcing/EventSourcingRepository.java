@@ -28,9 +28,9 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateNotFoundException;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.LockAwareAggregate;
 import org.axonframework.modelling.command.LockingRepository;
-import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
@@ -235,7 +235,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * <p>
      * Additionally, the {@link LegacyEventStore} is a <b>hard requirement</b> and as such should be provided.
      *
-     * @param <T> a generic specifying the Aggregate type contained in this {@link Repository} implementation
+     * @param <T> a generic specifying the Aggregate type contained in this {@link LegacyRepository} implementation
      */
     public static class Builder<T> extends LockingRepository.Builder<T> {
 
@@ -249,8 +249,8 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
          *
-         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link Repository} will
-         *                      store
+         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link LegacyRepository}
+         *                      will store
          */
         protected Builder(Class<T> aggregateType) {
             super(aggregateType);

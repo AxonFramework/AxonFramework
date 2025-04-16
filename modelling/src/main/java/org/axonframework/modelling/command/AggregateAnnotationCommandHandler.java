@@ -78,7 +78,7 @@ import static org.axonframework.modelling.command.AggregateCreationPolicy.NEVER;
  */
 public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComponent {
 
-    private final Repository<T> repository;
+    private final LegacyRepository<T> repository;
     private final CommandTargetResolver commandTargetResolver;
     // TODO replace these MessageHandlers for MessageHandlingMembers, as the latter dictate the use of annotations
     private final List<MessageHandler<CommandMessage<?>, CommandResultMessage<?>>> handlers;
@@ -91,11 +91,11 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      * Instantiate a Builder to be able to create a {@code AggregateAnnotationCommandHandler}.
      * <p>
      * The {@link CommandTargetResolver} is defaulted to a {@link AnnotationCommandTargetResolver}. The
-     * {@link Repository} is a <b>hard requirement</b> and as such should be provided. Next to that, this Builder's goal
-     * is to provide an {@link AggregateModel} (describing the structure of a given aggregate). To instantiate this
-     * AggregateModel, either an {@link AggregateModel} can be provided directly or an {@code aggregateType} of type
-     * {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the
-     * AggregateModel <b>or</b> the {@code aggregateType} should be provided.
+     * {@link LegacyRepository} is a <b>hard requirement</b> and as such should be provided. Next to that, this
+     * Builder's goal is to provide an {@link AggregateModel} (describing the structure of a given aggregate). To
+     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel.
+     * Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided.
      *
      * @param <T> the type of aggregate this {@code AggregateAnnotationCommandHandler} handles commands for
      * @return a Builder to be able to create a {@code AggregateAnnotationCommandHandler}
@@ -107,13 +107,13 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
     /**
      * Instantiate a {@code AggregateAnnotationCommandHandler} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link Repository} and {@link CommandTargetResolver} are not {@code null}, and will throw an
-     * {@link AxonConfigurationException} if either of them is {@code null}. Next to that, the provided Builder's goal
-     * is to create an {@link AggregateModel} (describing the structure of a given aggregate). To instantiate this
-     * AggregateModel, either an {@link AggregateModel} can be provided directly or an {@code aggregateType} of type
-     * {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the
-     * AggregateModel <b>or</b> the {@code aggregateType} should be provided. An AxonConfigurationException is thrown if
-     * this criteria is not met.
+     * Will assert that the {@link LegacyRepository} and {@link CommandTargetResolver} are not {@code null}, and will
+     * throw an {@link AxonConfigurationException} if either of them is {@code null}. Next to that, the provided
+     * Builder's goal is to create an {@link AggregateModel} (describing the structure of a given aggregate). To
+     * instantiate this AggregateModel, either an {@link AggregateModel} can be provided directly or an
+     * {@code aggregateType} of type {@link Class} can be used. The latter will internally resolve to an AggregateModel.
+     * Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
+     * AxonConfigurationException is thrown if this criteria is not met.
      *
      * @param builder the {@link Builder} used to instantiate a {@code AggregateAnnotationCommandHandler} instance
      */
@@ -274,10 +274,10 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      * Builder class to instantiate a {@link AggregateAnnotationCommandHandler}.
      * <p>
      * The {@link CommandTargetResolver} is defaulted to an {@link AnnotationCommandTargetResolver} The
-     * {@link Repository} is a <b>hard requirement</b> and as such should be provided. Next to that, this Builder's goal
-     * is to provide an {@link AggregateModel} (describing the structure of a given aggregate). To instantiate this
-     * AggregateModel, either an AggregateModel can be provided directly or an {@code aggregateType} of type
-     * {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the
+     * {@link LegacyRepository} is a <b>hard requirement</b> and as such should be provided. Next to that, this
+     * Builder's goal is to provide an {@link AggregateModel} (describing the structure of a given aggregate). To
+     * instantiate this AggregateModel, either an AggregateModel can be provided directly or an {@code aggregateType} of
+     * type {@link Class} can be used. The latter will internally resolve to an AggregateModel. Thus, either the
      * AggregateModel
      * <b>or</b> the {@code aggregateType} should be provided.
      *
@@ -285,7 +285,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
      */
     public static class Builder<T> {
 
-        private Repository<T> repository;
+        private LegacyRepository<T> repository;
         private CommandTargetResolver commandTargetResolver = AnnotationCommandTargetResolver.builder().build();
         private Class<T> aggregateType;
         private ParameterResolverFactory parameterResolverFactory;
@@ -295,14 +295,14 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
         private MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
         /**
-         * Sets the {@link Repository} used to add and load Aggregate instances of generic type {@code T} upon handling
-         * commands for it.
+         * Sets the {@link LegacyRepository} used to add and load Aggregate instances of generic type {@code T} upon
+         * handling commands for it.
          *
-         * @param repository a {@link Repository} used to add and load Aggregate instances of generic type {@code T}
-         *                   upon handling commands for it
+         * @param repository a {@link LegacyRepository} used to add and load Aggregate instances of generic type
+         *                   {@code T} upon handling commands for it
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> repository(Repository<T> repository) {
+        public Builder<T> repository(LegacyRepository<T> repository) {
             assertNonNull(repository, "Repository may not be null");
             this.repository = repository;
             return this;
@@ -370,7 +370,7 @@ public class AggregateAnnotationCommandHandler<T> implements CommandHandlingComp
          * should be provided to correctly instantiate an {@link AggregateAnnotationCommandHandler}.
          *
          * @param aggregateModel the {@link AggregateModel} of generic type {@code T} of the aggregate this
-         *                       {@link Repository} will store
+         *                       {@link LegacyRepository} will store
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> aggregateModel(AggregateModel<T> aggregateModel) {

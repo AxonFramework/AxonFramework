@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,9 +63,9 @@ public abstract class AggregateLifecycle extends Scope {
     }
 
     /**
-     * Creates a new aggregate instance. In order for new aggregate to be created, a {@link Repository} should be
-     * available to the current aggregate. {@link Repository} of an aggregate to be created is exposed to the current
-     * aggregate via {@link RepositoryProvider}.
+     * Creates a new aggregate instance. In order for new aggregate to be created, a {@link LegacyRepository} should be
+     * available to the current aggregate. {@link LegacyRepository} of an aggregate to be created is exposed to the
+     * current aggregate via {@link RepositoryProvider}.
      *
      * @param <T>           type of new aggregate to be created
      * @param aggregateType type of new aggregate to be created
@@ -165,9 +165,9 @@ public abstract class AggregateLifecycle extends Scope {
     protected abstract <T> ApplyMore doApply(T payload, MetaData metaData);
 
     /**
-     * Creates a new aggregate instance. In order for new aggregate to be created, a {@link Repository} should be
-     * available to the current aggregate. {@link Repository} of an aggregate to be created is exposed to the current
-     * aggregate via {@link RepositoryProvider}.
+     * Creates a new aggregate instance. In order for new aggregate to be created, a {@link LegacyRepository} should be
+     * available to the current aggregate. {@link LegacyRepository} of an aggregate to be created is exposed to the
+     * current aggregate via {@link RepositoryProvider}.
      *
      * @param <T>           type of new aggregate to be created
      * @param aggregateType type of new aggregate to be created

@@ -18,6 +18,7 @@ package org.axonframework.test.aggregate;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.messaging.Message;
+import org.axonframework.modelling.command.LegacyRepository;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -150,7 +151,7 @@ public interface TestExecutor<T> {
      * You should use this when-phase operation whenever you do not use the
      * {@link CommandHandler} annotation on the aggregate's methods, nor have
      * {@link org.axonframework.test.aggregate.FixtureConfiguration#registerAnnotatedCommandHandler(Object) registered
-     * an external command handler} invoking the {@link org.axonframework.modelling.command.Repository}.
+     * an external command handler} invoking the {@link LegacyRepository}.
      *
      * @param aggregateFactory A callable operation expecting an aggregate instance of type {@code T} to be returned.
      *                         This typically is an aggregate constructor invocation.
@@ -168,10 +169,10 @@ public interface TestExecutor<T> {
      * You should use this when-phase operation whenever you do not use the
      * {@link CommandHandler} annotation on the aggregate's methods, nor have
      * {@link org.axonframework.test.aggregate.FixtureConfiguration#registerAnnotatedCommandHandler(Object) registered
-     * an external command handler} invoking the {@link org.axonframework.modelling.command.Repository}.
+     * an external command handler} invoking the {@link LegacyRepository}.
      *
      * @param aggregateIdentifier The identifier of the aggregate to
-     *                            {@link org.axonframework.modelling.command.Repository#load(String)}.
+     *                            {@link LegacyRepository#load(String)}.
      * @param aggregateConsumer   A lambda providing an aggregate instance of type {@code T} based on the given
      *                            {@code aggregateIdentifier}.
      * @return a {@link ResultValidator} that can be used to validate the resulting actions of executing the given

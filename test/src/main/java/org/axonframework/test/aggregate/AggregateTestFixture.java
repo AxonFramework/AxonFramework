@@ -71,7 +71,7 @@ import org.axonframework.modelling.command.AggregateNotFoundException;
 import org.axonframework.modelling.command.AggregateScopeDescriptor;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.ConflictingAggregateVersionException;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
@@ -183,7 +183,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public FixtureConfiguration<T> registerRepository(Repository<T> repository) {
+    public FixtureConfiguration<T> registerRepository(LegacyRepository<T> repository) {
         this.repository = new IdentifierValidatingRepository<>(repository);
         resources.add(repository);
         return this;
@@ -786,7 +786,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public Repository<T> getRepository() {
+    public LegacyRepository<T> getRepository() {
         ensureRepositoryConfiguration();
         return repository;
     }
@@ -820,13 +820,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
     }
 
-    private static class IdentifierValidatingRepository<T> implements Repository<T> {
+    private static class IdentifierValidatingRepository<T> implements LegacyRepository<T> {
 
-        private final Repository<T> delegate;
+        private final LegacyRepository<T> delegate;
         private Aggregate<T> aggregate;
         private boolean rolledBack;
 
-        public IdentifierValidatingRepository(Repository<T> delegate) {
+        public IdentifierValidatingRepository(LegacyRepository<T> delegate) {
             this.delegate = delegate;
         }
 
@@ -891,7 +891,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
     }
 
-    private static class InMemoryRepository<T> implements Repository<T> {
+    private static class InMemoryRepository<T> implements LegacyRepository<T> {
 
         private final EventBus eventBus;
         private final RepositoryProvider repositoryProvider;
@@ -1087,12 +1087,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private class DefaultRepositoryProvider implements RepositoryProvider {
 
         @Override
-        public <R> Repository<R> repositoryFor(@Nonnull Class<R> aggregateType) {
+        public <R> LegacyRepository<R> repositoryFor(@Nonnull Class<R> aggregateType) {
             return new CreationalRepository<>(aggregateType, this);
         }
     }
 
-    private class CreationalRepository<R> implements Repository<R> {
+    private class CreationalRepository<R> implements LegacyRepository<R> {
 
         private final Class<R> aggregateType;
         private final RepositoryProvider repositoryProvider;
