@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,17 @@
 
 package org.axonframework.commandhandling.gateway;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Message;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * CommandResult that wraps a completable future providing the Message that represents the result
+ * A {@link CommandResult} that wraps a completable future providing the {@link Message} that represents the result.
+ *
+ * @author Allard Buijze
+ * @since 0.6
  */
 public class FutureCommandResult implements CommandResult {
 
@@ -33,8 +38,8 @@ public class FutureCommandResult implements CommandResult {
      *
      * @param result The completable future that provides the result message when available
      */
-    public FutureCommandResult(CompletableFuture<? extends Message<?>> result) {
-        this.completableFuture = result;
+    public FutureCommandResult(@Nonnull CompletableFuture<? extends Message<?>> result) {
+        this.completableFuture = Objects.requireNonNull(result, "The result may not be null.");
     }
 
     @Override

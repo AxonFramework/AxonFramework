@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,44 +26,46 @@ import java.util.function.BiConsumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import static java.util.Objects.requireNonNull;
+
+/**
+ * A {@link CommandGateway} implementation that deserializes the result of command handling.
+ *
+ * @author Allard Buijze
+ * @since 5.0.0
+ */
 public class ResultDeserializingCommandGateway implements CommandGateway {
 
     private final CommandGateway delegate;
     private final Serializer serializer;
 
-    public ResultDeserializingCommandGateway(CommandGateway delegate, Serializer serializer) {
-        this.delegate = delegate;
-        this.serializer = serializer;
+    /**
+     * @param delegate   The delegate command gateway to wrap within this command gateway.
+     * @param serializer The serializer to use while deserializing command results.
+     */
+    public ResultDeserializingCommandGateway(@Nonnull CommandGateway delegate,
+                                             @Nonnull Serializer serializer) {
+        this.delegate = requireNonNull(delegate, "The delegate must not be null.");
+        this.serializer = requireNonNull(serializer, "The serializer must not be null.");
     }
 
     @Override
-    public CommandResult send(@Nonnull Object command, @Nullable ProcessingContext processingContext) {
-        return new SerializingCommandResult(serializer, delegate.send(command, processingContext));
+    public CommandResult send(@Nonnull Object command,
+                              @Nullable ProcessingContext context) {
+        return new SerializingCommandResult(serializer, delegate.send(command, context));
     }
 
     @Override
     public CommandResult send(@Nonnull Object command,
                               @Nonnull MetaData metaData,
-                              @Nullable ProcessingContext processingContext) {
-        return new SerializingCommandResult(serializer, delegate.send(command, metaData, processingContext));
+                              @Nullable ProcessingContext context) {
+        return new SerializingCommandResult(serializer, delegate.send(command, metaData, context));
     }
 
-    private static class SerializingCommandResult implements CommandResult {
-
-        private final Serializer serializer;
-        private final CommandResult delegate;
-
-        public SerializingCommandResult(Serializer serializer, CommandResult delegate) {
-            this.serializer = serializer;
-            this.delegate = delegate;
-        }
-
-        @Override
-        public <R> CompletableFuture<R> resultAs(Class<R> type) {
-            return delegate.getResultMessage()
-                           .thenApply(Message::getPayload)
-                           .thenApply(payload -> serializer.convert(payload, type));
-        }
+    private record SerializingCommandResult(
+            Serializer serializer,
+            CommandResult delegate
+    ) implements CommandResult {
 
         @Override
         public CompletableFuture<? extends Message<?>> getResultMessage() {
@@ -71,12 +73,20 @@ public class ResultDeserializingCommandGateway implements CommandGateway {
         }
 
         @Override
-        public <R> CommandResult onSuccess(Class<R> returnType, BiConsumer<R, Message<?>> handler) {
+        public <R> CompletableFuture<R> resultAs(@Nonnull Class<R> type) {
+            return delegate.getResultMessage()
+                           .thenApply(Message::getPayload)
+                           .thenApply(payload -> serializer.convert(payload, type));
+        }
+
+        @Override
+        public <R> CommandResult onSuccess(@Nonnull Class<R> resultType,
+                                           @Nonnull BiConsumer<R, Message<?>> successHandler) {
             delegate.getResultMessage()
                     .whenComplete((message, e) -> {
                         if (e == null) {
-                            handler.accept(serializer.convert(message.getPayload(), returnType),
-                                           message);
+                            requireNonNull(successHandler, "The success handler must not be null.")
+                                    .accept(serializer.convert(message.getPayload(), resultType), message);
                         }
                     });
             return this;

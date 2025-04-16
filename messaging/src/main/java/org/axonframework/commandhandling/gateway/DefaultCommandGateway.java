@@ -20,11 +20,9 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -33,12 +31,6 @@ import javax.annotation.Nullable;
 
 /**
  * Default implementation of the {@link CommandGateway} interface.
- * <p>
- * It allows configuration of a {@link RetryScheduler} and
- * {@link MessageDispatchInterceptor CommandDispatchInterceptors}. The {@code RetryScheduler} allows for commands to be
- * automatically retried when a non-transient exception occurs. The {@code CommandDispatchInterceptors} can intercept
- * and alter command dispatched on this specific gateway. Typically, this would be used to add gateway-specific metadata
- * to the command.
  *
  * @author Allard Buijze
  * @since 2.0.0
@@ -49,8 +41,9 @@ public class DefaultCommandGateway implements CommandGateway {
     private final MessageTypeResolver messageTypeResolver;
 
     /**
-     * Initialize the {@link DefaultCommandGateway} to send commands through given {@code commandBus}. The
-     * {@link org.axonframework.messaging.QualifiedName names} for
+     * Initialize the {@code DefaultCommandGateway} to send commands through given {@code commandBus}.
+     * <p>
+     * The {@link org.axonframework.messaging.QualifiedName names} for
      * {@link org.axonframework.commandhandling.CommandMessage CommandMessages} are resolved through the given
      * {@code nameResolver}.
      *
@@ -68,9 +61,9 @@ public class DefaultCommandGateway implements CommandGateway {
 
     @Override
     public CommandResult send(@Nonnull Object command,
-                              @Nullable ProcessingContext processingContext) {
+                              @Nullable ProcessingContext context) {
         return new FutureCommandResult(
-                commandBus.dispatch(asCommandMessage(command, MetaData.emptyInstance()), processingContext)
+                commandBus.dispatch(asCommandMessage(command, MetaData.emptyInstance()), context)
                           .thenCompose(
                                   msg -> msg instanceof ResultMessage<?> resultMessage && resultMessage.isExceptional()
                                           ? CompletableFuture.failedFuture(resultMessage.exceptionResult())
@@ -82,9 +75,9 @@ public class DefaultCommandGateway implements CommandGateway {
     @Override
     public CommandResult send(@Nonnull Object command,
                               @Nonnull MetaData metaData,
-                              @Nullable ProcessingContext processingContext) {
+                              @Nullable ProcessingContext context) {
         return new FutureCommandResult(
-                commandBus.dispatch(asCommandMessage(command, metaData), processingContext)
+                commandBus.dispatch(asCommandMessage(command, metaData), context)
                           .thenCompose(
                                   msg -> msg instanceof ResultMessage<?> resultMessage && resultMessage.isExceptional()
                                           ? CompletableFuture.failedFuture(resultMessage.exceptionResult())
