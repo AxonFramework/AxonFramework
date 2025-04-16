@@ -50,7 +50,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Allard Buijze
  */
-class EventSourcingRepositoryTest {
+class LegacyEventSourcingRepositoryTest {
 
     private LegacyEventStore mockEventStore;
     private LegacyEventSourcingRepository<TestAggregate> testSubject;
