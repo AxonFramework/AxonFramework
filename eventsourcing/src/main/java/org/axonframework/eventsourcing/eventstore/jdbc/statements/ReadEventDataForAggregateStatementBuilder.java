@@ -17,15 +17,15 @@
 package org.axonframework.eventsourcing.eventstore.jdbc.statements;
 
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
-import org.axonframework.eventsourcing.eventstore.jdbc.OldJdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- * Contract which defines how to build a PreparedStatement for use on {@link OldJdbcEventStorageEngine#fetchDomainEvents(String,
- * long, int)}
+ * Contract which defines how to build a PreparedStatement for use on
+ * {@link LegacyJdbcEventStorageEngine#fetchDomainEvents(String, long, int)}
  *
  * @author Lucas Campos
  * @since 4.3

@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.eventstore.jdbc.statements;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
-import org.axonframework.eventsourcing.eventstore.jdbc.OldJdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 
 import java.sql.Connection;
@@ -27,8 +27,8 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Contract which defines how to build a PreparedStatement for use on {@link OldJdbcEventStorageEngine#appendEvents(List,
- * Serializer)}
+ * Contract which defines how to build a PreparedStatement for use on
+ * {@link LegacyJdbcEventStorageEngine#appendEvents(List, Serializer)}
  *
  * @author Lucas Campos
  * @since 4.3
@@ -37,7 +37,7 @@ import java.util.List;
 public interface AppendEventsStatementBuilder {
 
     /**
-     * Build a statement to be used at {@link OldJdbcEventStorageEngine#appendEvents(List, Serializer)}
+     * Build a statement to be used at {@link LegacyJdbcEventStorageEngine#appendEvents(List, Serializer)}
      *
      * @param connection      The connection to the database.
      * @param schema          The EventSchema to be used.

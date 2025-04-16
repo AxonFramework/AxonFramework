@@ -27,7 +27,7 @@ import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.jpa.OldJpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
@@ -78,11 +78,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * into the cache, exposing it to subsequent UOWs. The state of the aggregate in any UOW is not guaranteed to be
  * up-to-date. Depending on how UOWs are nested, it may be 'behind' by several events;
  * <p/>
- * Any subsequent UOW (after an aggregate was added to the cache) works on potentially stale data. This manifests
- * itself
- * primarily by events being assigned duplicate sequence numbers. The {@link OldJpaEventStorageEngine}
- * detects this and throws an
- * exception noting that an 'identical' entity has already been persisted.
+ * Any subsequent UOW (after an aggregate was added to the cache) works on potentially stale data. This manifests itself
+ * primarily by events being assigned duplicate sequence numbers. The {@link LegacyJpaEventStorageEngine} detects this
+ * and throws an exception noting that an 'identical' entity has already been persisted.
  * <p/>
  * <p/>
  * <h2>Possible solutions and workarounds contemplated include:</h2>
@@ -159,30 +157,30 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
     @Test
     void withCache() throws Exception {
         repository = CachingEventSourcingRepository.builder(TestAggregate.class)
-                .aggregateFactory(aggregateFactory)
-                .eventStore(eventStore)
-                .cache(realCache)
-                .build();
+                                                   .aggregateFactory(aggregateFactory)
+                                                   .eventStore(eventStore)
+                                                   .cache(realCache)
+                                                   .build();
         executeComplexScenario("ComplexWithCache");
     }
 
     @Test
     void minimalScenarioWithoutCache() throws Exception {
         repository = CachingEventSourcingRepository.builder(TestAggregate.class)
-                .aggregateFactory(aggregateFactory)
-                .eventStore(eventStore)
-                .cache(NoCache.INSTANCE)
-                .build();
+                                                   .aggregateFactory(aggregateFactory)
+                                                   .eventStore(eventStore)
+                                                   .cache(NoCache.INSTANCE)
+                                                   .build();
         testMinimalScenario("MinimalScenarioWithoutCache");
     }
 
     @Test
     void minimalScenarioWithCache() throws Exception {
         repository = CachingEventSourcingRepository.builder(TestAggregate.class)
-                .aggregateFactory(aggregateFactory)
-                .eventStore(eventStore)
-                .cache(realCache)
-                .build();
+                                                   .aggregateFactory(aggregateFactory)
+                                                   .eventStore(eventStore)
+                                                   .cache(realCache)
+                                                   .build();
         testMinimalScenario("MinimalScenarioWithCache");
     }
 
@@ -262,7 +260,8 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         assertFalse(verify.tokens.contains("UOW10"));
         assertEquals(7, verify.tokens.size());
         for (int i = 0; i < verify.tokens.size(); i++) {
-            assertTrue(events.get(i).startsWith(i + " "), "Expected event with sequence number " + i + " but got :" + events.get(i));
+            assertTrue(events.get(i).startsWith(i + " "),
+                       "Expected event with sequence number " + i + " but got :" + events.get(i));
         }
     }
 

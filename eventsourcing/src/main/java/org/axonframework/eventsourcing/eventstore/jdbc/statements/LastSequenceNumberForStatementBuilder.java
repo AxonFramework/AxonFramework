@@ -17,14 +17,15 @@
 package org.axonframework.eventsourcing.eventstore.jdbc.statements;
 
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
-import org.axonframework.eventsourcing.eventstore.jdbc.OldJdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- * Contract which defines how to build a PreparedStatement for use on {@link OldJdbcEventStorageEngine#lastSequenceNumberFor(String)}
+ * Contract which defines how to build a PreparedStatement for use on
+ * {@link LegacyJdbcEventStorageEngine#lastSequenceNumberFor(String)}
  *
  * @author Lucas Campos
  * @since 4.3
@@ -33,7 +34,7 @@ import java.sql.SQLException;
 public interface LastSequenceNumberForStatementBuilder {
 
     /**
-     * Creates a statement to be used at {@link OldJdbcEventStorageEngine#lastSequenceNumberFor(String)}
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#lastSequenceNumberFor(String)}
      *
      * @param connection          The connection to the database.
      * @param schema              The EventSchema to be used

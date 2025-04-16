@@ -46,7 +46,7 @@ class MysqlJdbcEventStorageEngineTest {
             .withUsername("admin")
             .withPassword("some-password");
 
-    private OldJdbcEventStorageEngine testSubject;
+    private LegacyJdbcEventStorageEngine testSubject;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -71,15 +71,15 @@ class MysqlJdbcEventStorageEngineTest {
     }
 
     @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
-    private OldJdbcEventStorageEngine createEngine(MysqlDataSource dataSource) throws SQLException {
-        OldJdbcEventStorageEngine engine =
-                OldJdbcEventStorageEngine.builder()
-                                         .snapshotSerializer(TestSerializer.xStreamSerializer())
-                                         .persistenceExceptionResolver(new SQLErrorCodesResolver(dataSource))
-                                         .eventSerializer(TestSerializer.xStreamSerializer())
-                                         .connectionProvider(dataSource::getConnection)
-                                         .transactionManager(NoTransactionManager.INSTANCE)
-                                         .build();
+    private LegacyJdbcEventStorageEngine createEngine(MysqlDataSource dataSource) throws SQLException {
+        LegacyJdbcEventStorageEngine engine =
+                LegacyJdbcEventStorageEngine.builder()
+                                            .snapshotSerializer(TestSerializer.xStreamSerializer())
+                                            .persistenceExceptionResolver(new SQLErrorCodesResolver(dataSource))
+                                            .eventSerializer(TestSerializer.xStreamSerializer())
+                                            .connectionProvider(dataSource::getConnection)
+                                            .transactionManager(NoTransactionManager.INSTANCE)
+                                            .build();
 
         try {
             Connection connection = dataSource.getConnection();
