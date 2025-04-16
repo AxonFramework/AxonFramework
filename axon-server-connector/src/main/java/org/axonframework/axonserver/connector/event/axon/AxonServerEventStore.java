@@ -92,7 +92,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @since 4.0
  * @deprecated In favor of the {@link org.axonframework.axonserver.connector.event.LegacyAxonServerEventStorageEngine}.
  */
-@Deprecated
+@Deprecated(since = "5.0.0")
 public class AxonServerEventStore extends AbstractLegacyEventStore {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());

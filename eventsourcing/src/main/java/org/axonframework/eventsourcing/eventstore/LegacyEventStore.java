@@ -36,7 +36,7 @@ import javax.annotation.Nonnull;
  * @author Rene de Waele
  * @deprecated In favor of the {@link EventStore}.
  */
-@Deprecated
+@Deprecated(since = "5.0.0")
 public interface LegacyEventStore
         extends EventBus, StreamableMessageSource<TrackedEventMessage<?>>, DomainEventSequenceAware {
 
