@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.metrics;
 
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfigurer;
 import org.junit.jupiter.api.*;
 
 import static org.mockito.Mockito.*;
@@ -34,7 +34,7 @@ class MetricsConfigurerModuleTest {
 
     @Test
     void configureModuleCallsGlobalMetricRegistry() {
-        Configurer configurerMock = mock(Configurer.class);
+        LegacyConfigurer configurerMock = mock(LegacyConfigurer.class);
 
         metricsConfigurerModule.configureModule(configurerMock);
 

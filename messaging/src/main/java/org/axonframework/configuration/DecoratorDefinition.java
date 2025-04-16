@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Defines the structure of a decorator for {@link Component components} in the {@link NewConfiguration} of the
+ * Defines the structure of a decorator for {@link Component components} in the {@link Configuration} of the
  * application or one of its {@link Module Modules}.
  * <p>
  * Decorators can wrap or replace the implementation of defined components based on their type and optionally their

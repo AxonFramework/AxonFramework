@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.gateway;
 
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -28,21 +28,21 @@ import java.lang.reflect.Parameter;
 /**
  * {@link ParameterResolverFactory} that ensures the {@link EventAppender} is resolved in the context of the current
  * {@link ProcessingContext}. For any message handler that declares this parameter, it will call
- * {@link EventAppender#forContext(ProcessingContext, NewConfiguration)} to create the appender.
+ * {@link EventAppender#forContext(ProcessingContext, Configuration)} to create the appender.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
 public class EventAppenderParameterResolverFactory implements ParameterResolverFactory {
 
-    private final NewConfiguration configuration;
+    private final Configuration configuration;
 
     /**
      * Creates a new {@link ParameterResolverFactory} that resolves arguments of type {@link EventAppender}.
      *
-     * @param configuration The {@link NewConfiguration} to use for the construction of the appender.
+     * @param configuration The {@link Configuration} to use for the construction of the appender.
      */
-    public EventAppenderParameterResolverFactory(NewConfiguration configuration) {
+    public EventAppenderParameterResolverFactory(Configuration configuration) {
         this.configuration = configuration;
     }
 

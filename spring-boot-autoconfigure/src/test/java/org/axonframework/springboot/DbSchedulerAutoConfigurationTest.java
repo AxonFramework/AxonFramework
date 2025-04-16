@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.springboot;
 
 import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.task.Task;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.dbscheduler.DbSchedulerDeadlineManager;
@@ -164,8 +164,9 @@ class DbSchedulerAutoConfigurationTest {
         @Bean
         public DeadlineManager deadlineManager(
                 Scheduler scheduler,
-                Configuration configuration,
-                @Qualifier("eventSerializer") Serializer serializer) {
+                LegacyConfiguration configuration,
+                @Qualifier("eventSerializer") Serializer serializer
+        ) {
             ScopeAwareProvider scopeAwareProvider = new ConfigurationScopeAwareProvider(configuration);
             return DbSchedulerDeadlineManager.builder()
                                              .scheduler(scheduler)

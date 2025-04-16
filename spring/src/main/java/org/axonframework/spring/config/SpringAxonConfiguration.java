@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.spring.config;
 
-import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.spring.event.AxonStartedEvent;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Factory Bean implementation that creates an Axon {@link Configuration} for a {@link Configurer}. This allows a {@code
+ * Factory Bean implementation that creates an Axon {@link LegacyConfiguration} for a {@link LegacyConfigurer}. This allows a {@code
  * Configuration} bean to be available in an Application Context that already defines a {@code Configurer}.
  * <p>
  * This factory bean will also ensure the {@code Configuration's} lifecycle is attached to the Spring Application
@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Allard Buijze
  * @since 4.6.0
  */
-public class SpringAxonConfiguration implements FactoryBean<Configuration>, SmartLifecycle {
+public class SpringAxonConfiguration implements FactoryBean<LegacyConfiguration>, SmartLifecycle {
 
     /**
      * The {@link SmartLifecycle#getPhase()} value of this is set to be safely lower than the typical
@@ -53,24 +53,24 @@ public class SpringAxonConfiguration implements FactoryBean<Configuration>, Smar
             - 1024 // this puts us next to the regular, start and non-graceful stop of web servers...
             - 1024; // we place ourselves healthily below that, starting before web servers and stopping after.
 
-    private final Configurer configurer;
+    private final LegacyConfigurer configurer;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
-    private final AtomicReference<Configuration> configuration = new AtomicReference<>();
+    private final AtomicReference<LegacyConfiguration> configuration = new AtomicReference<>();
     private ApplicationContext applicationContext;
 
     /**
-     * Initialize this {@link Configuration} instance.
+     * Initialize this {@link LegacyConfiguration} instance.
      *
-     * @param configurer The configurer to get the {@link Configuration} from.
+     * @param configurer The configurer to get the {@link LegacyConfiguration} from.
      */
-    public SpringAxonConfiguration(Configurer configurer) {
+    public SpringAxonConfiguration(LegacyConfigurer configurer) {
         this.configurer = configurer;
     }
 
     @NonNull
     @Override
-    public Configuration getObject() {
-        Configuration c = configuration.get();
+    public LegacyConfiguration getObject() {
+        LegacyConfiguration c = configuration.get();
         if (c != null) {
             return c;
         }
@@ -80,7 +80,7 @@ public class SpringAxonConfiguration implements FactoryBean<Configuration>, Smar
 
     @Override
     public Class<?> getObjectType() {
-        return Configuration.class;
+        return LegacyConfiguration.class;
     }
 
     @Override
@@ -93,7 +93,7 @@ public class SpringAxonConfiguration implements FactoryBean<Configuration>, Smar
 
     @Override
     public void stop() {
-        Configuration c = this.configuration.get();
+        LegacyConfiguration c = this.configuration.get();
         if (isRunning.compareAndSet(true, false) && c != null) {
             c.shutdown();
         }

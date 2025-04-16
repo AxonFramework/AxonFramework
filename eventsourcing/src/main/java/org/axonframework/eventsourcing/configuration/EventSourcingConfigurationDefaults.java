@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.ComponentRegistry;
 import org.axonframework.configuration.ConfigurationEnhancer;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
@@ -79,24 +79,24 @@ class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
         }
     }
 
-    private static TagResolver defaultTagResolver(NewConfiguration configuration) {
+    private static TagResolver defaultTagResolver(Configuration configuration) {
         return new AnnotationBasedTagResolver();
     }
 
-    private static AsyncEventStorageEngine defaultEventStorageEngine(NewConfiguration config) {
+    private static AsyncEventStorageEngine defaultEventStorageEngine(Configuration config) {
         return new AsyncInMemoryEventStorageEngine();
     }
 
-    private static AsyncEventStore defaultEventStore(NewConfiguration config) {
+    private static AsyncEventStore defaultEventStore(Configuration config) {
         return new SimpleEventStore(config.getComponent(AsyncEventStorageEngine.class),
                                     config.getComponent(TagResolver.class));
     }
 
-    private static EventSink defaultEventSink(NewConfiguration config) {
+    private static EventSink defaultEventSink(Configuration config) {
         return config.getComponent(AsyncEventStore.class);
     }
 
-    private static Snapshotter defaultSnapshotter(NewConfiguration config) {
+    private static Snapshotter defaultSnapshotter(Configuration config) {
         return (aggregateType, aggregateIdentifier) -> {
             // TODO #3105 - Replace this Snapshotter for the new Snapshotter
         };

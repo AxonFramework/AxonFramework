@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.connector.event.PersistentStream;
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.SubscribableMessageSourceDefinition;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.SubscribableMessageSource;
@@ -28,7 +28,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Definition of a {@link PersistentStreamMessageSource}.
  * <p>
  * Used to create {@code PersistentStreamMessageSource} instances with a specific Axon
- * {@link Configuration configuration}.
+ * {@link LegacyConfiguration configuration}.
  *
  * @author Marc Gathier
  * @since 4.10.0
@@ -69,7 +69,7 @@ public class PersistentStreamMessageSourceDefinition implements SubscribableMess
     }
 
     @Override
-    public SubscribableMessageSource<EventMessage<?>> create(Configuration configuration) {
+    public SubscribableMessageSource<EventMessage<?>> create(LegacyConfiguration configuration) {
         return messageSourceFactory.build(name,
                                           persistentStreamProperties,
                                           scheduler,

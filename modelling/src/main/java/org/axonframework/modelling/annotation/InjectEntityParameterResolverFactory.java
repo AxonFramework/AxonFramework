@@ -17,7 +17,7 @@
 package org.axonframework.modelling.annotation;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.StateManager;
@@ -42,21 +42,21 @@ import static org.axonframework.common.ConstructorUtils.getConstructorFunctionWi
  */
 public class InjectEntityParameterResolverFactory implements ParameterResolverFactory {
 
-    private final NewConfiguration configuration;
+    private final Configuration configuration;
 
     /**
      * Initialize the factory with the given {@code configuration}. The {@code configuration} should
      * contain a {@link org.axonframework.modelling.StateManager} to load entities from.
      * <p>
-     * This constructor depends on the {@link NewConfiguration} instead of the {@link StateManager} to prevent
+     * This constructor depends on the {@link Configuration} instead of the {@link StateManager} to prevent
      * circular dependencies during creation of message handlers. For example, if the repository uses an annotation-based
      * event state applier, it would construct methods, which would then require the {@link StateManager} to be
      * created during the construction of the parameter resolvers. This would lead to a circular dependency.
      *
-     * @param configuration The {@link NewConfiguration} to use for loading entities.
+     * @param configuration The {@link Configuration} to use for loading entities.
      */
-    public InjectEntityParameterResolverFactory(@Nonnull NewConfiguration configuration) {
-        this.configuration = requireNonNull(configuration, "The NewConfiguration is required");
+    public InjectEntityParameterResolverFactory(@Nonnull Configuration configuration) {
+        this.configuration = requireNonNull(configuration, "The Configuration is required");
     }
 
     @Override

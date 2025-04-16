@@ -51,7 +51,6 @@ import java.util.Objects;
  *     <li>Registers a {@link org.axonframework.commandhandling.gateway.DefaultCommandGateway} for class {@link org.axonframework.commandhandling.gateway.CommandGateway}</li>
  *     <li>Registers a {@link org.axonframework.commandhandling.SimpleCommandBus} for class {@link CommandBus}</li>
  *     <li>Registers a {@link org.axonframework.eventhandling.gateway.DefaultEventGateway} for class {@link org.axonframework.eventhandling.gateway.EventGateway}</li>
- *     <li>Registers a TODO for class {@link EventSink}</li>
  *     <li>Registers a {@link org.axonframework.eventhandling.SimpleEventBus} for class {@link org.axonframework.eventhandling.EventBus}</li>
  *     <li>Registers a {@link org.axonframework.queryhandling.DefaultQueryGateway} for class {@link org.axonframework.queryhandling.QueryGateway}</li>
  *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryBus} for class {@link QueryBus}</li>
@@ -100,30 +99,31 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         }
     }
 
-    private static MessageTypeResolver defaultMessageTypeResolver(NewConfiguration config) {
+    private static MessageTypeResolver defaultMessageTypeResolver(Configuration config) {
         return new ClassBasedMessageTypeResolver();
     }
 
-    private static CommandBus defaultCommandBus(NewConfiguration config) {
+    private static CommandBus defaultCommandBus(Configuration config) {
         CommandBusBuilder commandBusBuilder = CommandBusBuilder.forSimpleCommandBus();
         config.getOptionalComponent(TransactionManager.class)
               .ifPresent(commandBusBuilder::withTransactions);
         return commandBusBuilder.build();
     }
 
-    private static CommandGateway defaultCommandGateway(NewConfiguration config) {
+    private static CommandGateway defaultCommandGateway(Configuration config) {
         return new DefaultCommandGateway(
                 config.getComponent(CommandBus.class),
                 config.getComponent(MessageTypeResolver.class)
         );
     }
 
-    private static EventBus defaultEventBus(NewConfiguration config) {
+    private static EventBus defaultEventBus(Configuration config) {
         return SimpleEventBus.builder()
                              .build();
     }
 
-    private static EventSink defaultEventSink(NewConfiguration config) {
+    // TODO #3392 - Replace for actual EventSink implementation.
+    private static EventSink defaultEventSink(Configuration config) {
         EventBus eventBus = config.getComponent(EventBus.class);
         return (events) -> {
             eventBus.publish(events);
@@ -131,20 +131,20 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
         };
     }
 
-    private static EventGateway defaultEventGateway(NewConfiguration config) {
+    private static EventGateway defaultEventGateway(Configuration config) {
         return new DefaultEventGateway(
                 config.getComponent(EventSink.class),
                 config.getComponent(MessageTypeResolver.class)
         );
     }
 
-    private static QueryGateway defaultQueryGateway(NewConfiguration config) {
+    private static QueryGateway defaultQueryGateway(Configuration config) {
         return DefaultQueryGateway.builder()
                                   .queryBus(config.getComponent(QueryBus.class))
                                   .build();
     }
 
-    private static QueryBus defaultQueryBus(NewConfiguration config) {
+    private static QueryBus defaultQueryBus(Configuration config) {
         return SimpleQueryBus.builder()
                              .transactionManager(config.getComponent(
                                      TransactionManager.class,
@@ -158,7 +158,7 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
                              .build();
     }
 
-    private static QueryUpdateEmitter defaultQueryUpdateEmitter(NewConfiguration config) {
+    private static QueryUpdateEmitter defaultQueryUpdateEmitter(Configuration config) {
         return SimpleQueryUpdateEmitter.builder().build();
     }
 }

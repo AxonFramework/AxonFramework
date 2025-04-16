@@ -18,9 +18,9 @@ package org.axonframework.integrationtests.deadline;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.common.AxonNonTransientException;
-import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.config.LegacyConfigurer;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineMessage;
 import org.axonframework.deadline.GenericDeadlineMessage;
@@ -102,7 +102,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
     private static final boolean DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES = false;
     private static final String CUSTOM_CORRELATION_DATA_KEY = "custom-correlation-data";
 
-    protected Configuration configuration;
+    protected LegacyConfiguration configuration;
     protected TestSpanFactory spanFactory;
     private List<Message<?>> publishedMessages;
     private DeadlineManager deadlineManager;
@@ -121,7 +121,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         correlationDataProviders.add(new MessageOriginProvider());
         correlationDataProviders.add(new SimpleCorrelationDataProvider(CUSTOM_CORRELATION_DATA_KEY));
 
-        Configurer configurer = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES);
+        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES);
         configurer.eventProcessing()
                   .usingSubscribingEventProcessors()
                   .registerSaga(MySaga.class);
@@ -139,7 +139,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         configuration.eventBus().subscribe(events -> publishedMessages.addAll(events));
     }
 
-    private DeadlineManager buildAndSpyDeadlineManager(Configuration configuration) {
+    private DeadlineManager buildAndSpyDeadlineManager(LegacyConfiguration configuration) {
         DeadlineManager builtManager = buildDeadlineManager(configuration);
         //noinspection resource
         builtManager.registerHandlerInterceptor(
@@ -158,10 +158,10 @@ public abstract class AbstractDeadlineManagerTestSuite {
     /**
      * Build the {@link DeadlineManager} to be tested.
      *
-     * @param configuration the {@link Configuration} used to set up this test class
+     * @param configuration the {@link LegacyConfiguration} used to set up this test class
      * @return a {@link DeadlineManager} to be tested
      */
-    public abstract DeadlineManager buildDeadlineManager(Configuration configuration);
+    public abstract DeadlineManager buildDeadlineManager(LegacyConfiguration configuration);
 
     @Test
     void deadlineOnAggregate() {

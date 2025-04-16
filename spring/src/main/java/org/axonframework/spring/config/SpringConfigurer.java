@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.config.Configuration;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.config.LegacyDefaultConfigurer;
+import org.axonframework.config.LegacyConfigurer;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 
@@ -26,18 +27,18 @@ import java.util.Arrays;
 import java.util.Optional;
 
 /**
- * A {@link org.axonframework.config.Configurer} implementation that considers the Spring Application context as a
+ * A {@link LegacyConfigurer} implementation that considers the Spring Application context as a
  * source for components.
  *
  * @author Allard Buijze
  * @since 4.6.0
  */
-public class SpringConfigurer extends DefaultConfigurer {
+public class SpringConfigurer extends LegacyDefaultConfigurer {
 
     private final ComponentLocator locator;
 
     /**
-     * Initialize this {@link org.axonframework.config.Configurer} using given {@code beanFactory} to locate
+     * Initialize this {@link LegacyConfigurer} using given {@code beanFactory} to locate
      * components.
      *
      * @param beanFactory The Bean Factory to find components in.
@@ -47,7 +48,7 @@ public class SpringConfigurer extends DefaultConfigurer {
     }
 
     @Override
-    protected <T> Optional<T> defaultComponent(Class<T> type, Configuration config) {
+    protected <T> Optional<T> defaultComponent(Class<T> type, LegacyConfiguration config) {
         return locator.findBean(type);
     }
 

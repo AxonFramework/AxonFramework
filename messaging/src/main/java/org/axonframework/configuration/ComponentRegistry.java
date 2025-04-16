@@ -36,9 +36,9 @@ public interface ComponentRegistry extends DescribableComponent {
 
     /**
      * Registers a {@link Component} that should be made available to other {@link Component components} or
-     * {@link Module modules} in the {@link NewConfiguration} that this {@code Configurer} will result in.
+     * {@link Module modules} in the {@link Configuration} that this {@code Configurer} will result in.
      * <p>
-     * The given {@code factory} function gets the {@link NewConfiguration configuration} as input, and is expected to
+     * The given {@code factory} function gets the {@link Configuration configuration} as input, and is expected to
      * provide the component as output. The component will be registered under an {@link Identifier} based on the given
      * {@code type}.
      *
@@ -58,9 +58,9 @@ public interface ComponentRegistry extends DescribableComponent {
 
     /**
      * Registers a {@link Component} that should be made available to other {@link Component components} or
-     * {@link Module modules} in the {@link NewConfiguration} that this {@code Configurer} will result in.
+     * {@link Module modules} in the {@link Configuration} that this {@code Configurer} will result in.
      * <p>
-     * The given {@code factory} function gets the {@link NewConfiguration configuration} as input, and is expected to
+     * The given {@code factory} function gets the {@link Configuration configuration} as input, and is expected to
      * provide the component as output. The component will be registered under an {@link Identifier} based on the given
      * {@code type} and {@code name} combination.
      *
@@ -187,7 +187,7 @@ public interface ComponentRegistry extends DescribableComponent {
      * <p>
      * An enhancer's {@link ConfigurationEnhancer#enhance(ComponentRegistry)} method is invoked during the
      * initialization phase when all components have been defined. This is right before the {@code ComponentRegistry}
-     * creates its {@link NewConfiguration}.
+     * creates its {@link Configuration}.
      * <p>
      * When multiple enhancers have been provided, their {@link ConfigurationEnhancer#order()} dictates the enhancement
      * order. For enhancer with the same order, the order of execution is undefined.

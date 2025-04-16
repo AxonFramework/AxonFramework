@@ -48,7 +48,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
     @Test
     void defaultComponents() {
-        NewConfiguration result = testSubject.build();
+        Configuration result = testSubject.build();
 
         Optional<MessageTypeResolver> messageTypeResolver = result.getOptionalComponent(MessageTypeResolver.class);
         assertTrue(messageTypeResolver.isPresent());
@@ -90,8 +90,8 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     void registerCommandBusOverridesDefault() {
         CommandBus expected = new SimpleCommandBus();
 
-        NewConfiguration result = testSubject.registerCommandBus(c -> expected)
-                                             .build();
+        Configuration result = testSubject.registerCommandBus(c -> expected)
+                                          .build();
 
         assertEquals(expected, result.getComponent(CommandBus.class));
     }
@@ -100,8 +100,8 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     void registerEventSinkOverridesDefault() {
         EventSink expected = (events) -> null;
 
-        NewConfiguration result = testSubject.registerEventSink(c -> expected)
-                                             .build();
+        Configuration result = testSubject.registerEventSink(c -> expected)
+                                          .build();
 
         assertEquals(expected, result.getComponent(EventSink.class));
     }
@@ -110,8 +110,8 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     void registerQueryBusOverridesDefault() {
         QueryBus expected = SimpleQueryBus.builder().build();
 
-        NewConfiguration result = testSubject.registerQueryBus(c -> expected)
-                                             .build();
+        Configuration result = testSubject.registerQueryBus(c -> expected)
+                                          .build();
 
         assertEquals(expected, result.getComponent(QueryBus.class));
     }
@@ -120,8 +120,8 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     void registerQueryUpdateEmitterOverridesDefault() {
         QueryUpdateEmitter expected = SimpleQueryUpdateEmitter.builder().build();
 
-        NewConfiguration result = testSubject.registerQueryUpdateEmitter(c -> expected)
-                                             .build();
+        Configuration result = testSubject.registerQueryUpdateEmitter(c -> expected)
+                                          .build();
 
         assertEquals(expected, result.getComponent(QueryUpdateEmitter.class));
     }

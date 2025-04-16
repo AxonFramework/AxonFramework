@@ -18,7 +18,7 @@ package org.axonframework.modelling;
 
 import org.axonframework.configuration.DefaultComponentRegistry;
 import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.junit.jupiter.api.*;
 
 import static org.mockito.Mockito.*;
@@ -37,8 +37,8 @@ class HierarchicalStateManagerConfigurationEnhancerTest {
         child.registerComponent(StateManager.class, c -> childStateManager);
 
         // Build both in a nested way
-        NewConfiguration parentConfiguration = parent.build(mock(LifecycleRegistry.class));
-        NewConfiguration childConfiguration = child.buildNested(parentConfiguration, mock(LifecycleRegistry.class));
+        Configuration parentConfiguration = parent.build(mock(LifecycleRegistry.class));
+        Configuration childConfiguration = child.buildNested(parentConfiguration, mock(LifecycleRegistry.class));
 
         // And assert that the child configuration has a HierarchicalStateManager
         StateManager parentManager = parentConfiguration.getComponent(StateManager.class);

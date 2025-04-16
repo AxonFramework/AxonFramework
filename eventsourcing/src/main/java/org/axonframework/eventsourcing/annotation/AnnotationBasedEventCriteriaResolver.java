@@ -21,7 +21,7 @@ import org.axonframework.common.ReflectionUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.Tag;
@@ -33,7 +33,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -46,13 +45,15 @@ import java.util.stream.Collectors;
  *         By defining a static method in the entity class annotated with {@link EventCriteriaBuilder} which returns an
  *         {@link EventCriteria} and accepts the {@code id} as a parameter. This method should be static and return an
  *         {@link EventCriteria}. Multiple methods can be defined with different id types, and the first matching method
- *         will be used. You can also inject components from the {@link NewConfiguration} as parameters to the method.
+ *         will be used. You can also inject components from the {@link Configuration} as parameters to the method.
  *     </li>
  *     <li>
- *         If no matching {@link EventCriteriaBuilder} is found, the {@link EventSourcedEntity#tagKey()} will be used as the tag key, and the {@link Object#toString()} of the id will be used as value.
+ *         If no matching {@link EventCriteriaBuilder} is found, the {@link EventSourcedEntity#tagKey()} will be used
+ *         as the tag key, and the {@link Object#toString()} of the id will be used as value.
  *     </li>
  *     <li>
- *         If the {@link EventSourcedEntity#tagKey()} is empty, the {@link Class#getSimpleName()} of the entity will be used as tag key, and the {@link Object#toString()} of the id will be used as value.
+ *         If the {@link EventSourcedEntity#tagKey()} is empty, the {@link Class#getSimpleName()} of the entity will
+ *         be used as tag key, and the {@link Object#toString()} of the id will be used as value.
  *     </li>
  * </ol>
  * <p>
@@ -68,7 +69,7 @@ import java.util.stream.Collectors;
  */
 public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaResolver<ID>, DescribableComponent {
 
-    private final NewConfiguration configuration;
+    private final Configuration configuration;
     private final Class<ID> idType;
     private final Class<E> entityType;
     private final String tagKey;
@@ -88,7 +89,7 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
      */
     public AnnotationBasedEventCriteriaResolver(@Nonnull Class<E> entityType,
                                                 @Nonnull Class<ID> idType,
-                                                @Nonnull NewConfiguration configuration) {
+                                                @Nonnull Configuration configuration) {
         this.entityType = Objects.requireNonNull(entityType, "The entity type cannot be null.");
         this.idType = Objects.requireNonNull(idType, "The id type cannot be null.");
         this.configuration = Objects.requireNonNull(configuration, "The configuration cannot be null.");
@@ -161,7 +162,7 @@ public class AnnotationBasedEventCriteriaResolver<E, ID> implements CriteriaReso
                 Class<?> parameterType = method.getParameterTypes()[i + 1];
 
                 // The whole configuration can be passed in
-                if (parameterType == NewConfiguration.class) {
+                if (parameterType == Configuration.class) {
                     optionalArgumentSuppliers[i] = configuration;
                     continue;
                 }

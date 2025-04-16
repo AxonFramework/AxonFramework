@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessor;
@@ -76,14 +76,14 @@ public class GlobalMetricRegistry {
 
     /**
      * Registers the {@link MeterRegistry} with the given {@code configurer} via
-     * {@link Configurer#configureMessageMonitor(Function)}. Components registered by the {@link Configurer} will be
+     * {@link LegacyConfigurer#configureMessageMonitor(Function)}. Components registered by the {@link LegacyConfigurer} will be
      * added by invocation of {@link #registerComponent(Class, String)}.
      *
-     * @param configurer the application's {@link Configurer}
-     * @return the {@link Configurer}, with the new registration applied, for chaining
+     * @param configurer the application's {@link LegacyConfigurer}
+     * @return the {@link LegacyConfigurer}, with the new registration applied, for chaining
      */
     @SuppressWarnings("unchecked")
-    public Configurer registerWithConfigurer(Configurer configurer) {
+    public LegacyConfigurer registerWithConfigurer(LegacyConfigurer configurer) {
         return configurer.configureMessageMonitor(
                 configuration
                         -> (componentType, componentName)
@@ -93,14 +93,14 @@ public class GlobalMetricRegistry {
 
     /**
      * Registers the {@link MeterRegistry} with the given {@code configurer} via
-     * {@link Configurer#configureMessageMonitor(Function)}. Components registered by the {@link Configurer} will be
+     * {@link LegacyConfigurer#configureMessageMonitor(Function)}. Components registered by the {@link LegacyConfigurer} will be
      * added by invocation of {@link #registerComponentWithDefaultTags(Class, String)}.
      *
-     * @param configurer the application's {@link Configurer}
-     * @return the {@link Configurer}, with the new registration applied using {@link Tag}s, for chaining
+     * @param configurer the application's {@link LegacyConfigurer}
+     * @return the {@link LegacyConfigurer}, with the new registration applied using {@link Tag}s, for chaining
      */
     @SuppressWarnings("unchecked")
-    public Configurer registerWithConfigurerWithDefaultTags(Configurer configurer) {
+    public LegacyConfigurer registerWithConfigurerWithDefaultTags(LegacyConfigurer configurer) {
         return configurer.configureMessageMonitor(
                 configuration
                         -> (componentType, componentName)

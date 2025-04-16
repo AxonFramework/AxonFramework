@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public class AxonIQConsoleModule implements ModuleConfiguration {
                     "################################################################################################\n";
 
     @Override
-    public void initialize(Configuration config) {
+    public void initialize(LegacyConfiguration config) {
         maybeLogConsoleIsAvailable();
     }
 
@@ -73,7 +73,7 @@ public class AxonIQConsoleModule implements ModuleConfiguration {
         MavenArtifactVersionResolver resolver =
                 new MavenArtifactVersionResolver("io.axoniq.console",
                                                  "console-framework-client",
-                                                 DefaultConfigurer.class.getClassLoader());
+                                                 LegacyDefaultConfigurer.class.getClassLoader());
         String version;
         try {
             version = resolver.get();

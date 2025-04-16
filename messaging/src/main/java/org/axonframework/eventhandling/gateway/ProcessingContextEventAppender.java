@@ -19,7 +19,7 @@ package org.axonframework.eventhandling.gateway;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -32,12 +32,12 @@ import java.util.stream.Collectors;
 /**
  * Component that publishes events to an {@link EventSink} in the context of a {@link ProcessingContext}. The events
  * will be published in the context this appender was created for. You can construct one through the
- * {@link EventAppender#forContext(ProcessingContext, NewConfiguration)} method.
+ * {@link EventAppender#forContext(ProcessingContext, Configuration)} method.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-class ProcessingContextEventAppender implements EventAppender, DescribableComponent {
+public class ProcessingContextEventAppender implements EventAppender, DescribableComponent {
 
     private final ProcessingContext processingContext;
     private final EventSink eventSink;

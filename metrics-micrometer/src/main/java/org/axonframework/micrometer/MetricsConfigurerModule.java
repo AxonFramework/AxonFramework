@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.micrometer;
 
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 
 import javax.annotation.Nonnull;
@@ -24,7 +24,7 @@ import javax.annotation.Nonnull;
 /**
  * Implementation of the {@link ConfigurerModule} which uses the
  * {@link GlobalMetricRegistry} to register several Metrics Modules to the given
- * {@link org.axonframework.config.Configurer}.
+ * {@link LegacyConfigurer}.
  *
  * @author Steven van Beelen
  * @author Marijn van Zelst
@@ -46,7 +46,7 @@ public class MetricsConfigurerModule implements ConfigurerModule {
     }
 
     @Override
-    public void configureModule(@Nonnull Configurer configurer) {
+    public void configureModule(@Nonnull LegacyConfigurer configurer) {
         if (useDimensions) {
             globalMetricRegistry.registerWithConfigurerWithDefaultTags(configurer);
         } else {

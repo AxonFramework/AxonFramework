@@ -64,7 +64,7 @@ class DecoratedComponent<C, D extends C> extends AbstractComponent<C, D> {
     }
 
     @Override
-    public D doResolve(@Nonnull NewConfiguration configuration) {
+    public D doResolve(@Nonnull Configuration configuration) {
         D existingInstance = instanceReference.get();
         if (existingInstance != null) {
             return existingInstance;
@@ -85,7 +85,7 @@ class DecoratedComponent<C, D extends C> extends AbstractComponent<C, D> {
     }
 
     @Override
-    public void initLifecycle(@Nonnull NewConfiguration configuration, @Nonnull LifecycleRegistry lifecycleRegistry) {
+    public void initLifecycle(@Nonnull Configuration configuration, @Nonnull LifecycleRegistry lifecycleRegistry) {
         delegate.initLifecycle(configuration, lifecycleRegistry);
         super.initLifecycle(configuration, lifecycleRegistry);
     }

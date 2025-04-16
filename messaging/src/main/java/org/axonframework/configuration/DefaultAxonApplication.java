@@ -25,12 +25,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -127,10 +125,10 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
 
     private class AxonConfigurationImpl implements AxonConfiguration {
 
-        private final NewConfiguration config;
+        private final Configuration config;
         private final AtomicReference<LifecycleState> lifecycleState = new AtomicReference<>(LifecycleState.DOWN);
 
-        private AxonConfigurationImpl(NewConfiguration config) {
+        private AxonConfigurationImpl(Configuration config) {
             this.config = config;
         }
 
@@ -251,7 +249,7 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
         }
 
         @Override
-        public NewConfiguration getParent() {
+        public Configuration getParent() {
             return null;
         }
 
@@ -279,12 +277,12 @@ class DefaultAxonApplication implements ApplicationConfigurer, LifecycleRegistry
         }
 
         @Override
-        public List<NewConfiguration> getModuleConfigurations() {
+        public List<Configuration> getModuleConfigurations() {
             return config.getModuleConfigurations();
         }
 
         @Override
-        public Optional<NewConfiguration> getModuleConfiguration(@Nonnull String name) {
+        public Optional<Configuration> getModuleConfiguration(@Nonnull String name) {
             return config.getModuleConfiguration(name);
         }
 

@@ -18,7 +18,7 @@ package org.axonframework.test.fixture;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandResultMessage;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.Message;
 import org.axonframework.test.aggregate.Reporter;
 import org.axonframework.test.matchers.PayloadMatcher;
@@ -36,7 +36,7 @@ class AxonTestThenCommand
     private final Message<?> actualResult;
 
     public AxonTestThenCommand(
-            NewConfiguration configuration,
+            Configuration configuration,
             AxonTestFixture.Customization customization,
             RecordingCommandBus commandBus,
             RecordingEventSink eventSink,

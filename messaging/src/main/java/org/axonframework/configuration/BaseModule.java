@@ -52,7 +52,7 @@ public abstract class BaseModule<S extends BaseModule<S>> implements Module {
     }
 
     @Override
-    public NewConfiguration build(@Nonnull NewConfiguration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
+    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
         return postProcessConfiguration(componentRegistry.buildNested(parent, lifecycleRegistry));
     }
 
@@ -65,7 +65,7 @@ public abstract class BaseModule<S extends BaseModule<S>> implements Module {
      * @param moduleConfiguration The configuration for this module.
      */
     @SuppressWarnings("unused")
-    protected NewConfiguration postProcessConfiguration(NewConfiguration moduleConfiguration) {
+    protected Configuration postProcessConfiguration(Configuration moduleConfiguration) {
         return moduleConfiguration;
     }
 

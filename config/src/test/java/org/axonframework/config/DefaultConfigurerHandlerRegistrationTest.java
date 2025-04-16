@@ -35,8 +35,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class validating the correct registration of command, query and overall message handling beans, through the
- * {@link Configurer#registerCommandHandler(Function)}, {@link Configurer#registerQueryHandler(Function)} and
- * {@link Configurer#registerMessageHandler(Function)} methods.
+ * {@link LegacyConfigurer#registerCommandHandler(Function)}, {@link LegacyConfigurer#registerQueryHandler(Function)}
+ * and {@link LegacyConfigurer#registerMessageHandler(Function)} methods.
  *
  * @author Steven van Beelen
  */
@@ -45,12 +45,12 @@ class DefaultConfigurerHandlerRegistrationTest {
     private static final String COMMAND_HANDLING_RESPONSE = "some-command-handling-response";
     private static final String QUERY_HANDLING_RESPONSE = "some-query-handling-response";
 
-    private Configurer baseConfigurer;
+    private LegacyConfigurer baseConfigurer;
 
     @BeforeEach
     void setUp() {
-        baseConfigurer = DefaultConfigurer.defaultConfiguration()
-                                          .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine());
+        baseConfigurer = LegacyDefaultConfigurer.defaultConfiguration()
+                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine());
         // Set to SEP to simplify event handler registration without an actual EventStore.
         baseConfigurer.eventProcessing().usingSubscribingEventProcessors();
     }
@@ -59,10 +59,12 @@ class DefaultConfigurerHandlerRegistrationTest {
     void registerCommandHandler() {
         AtomicBoolean handled = new AtomicBoolean(false);
 
-        Configuration config = baseConfigurer.registerCommandHandler(c -> new CommandHandlingComponent(handled))
-                                             .start();
+        LegacyConfiguration config = baseConfigurer.registerCommandHandler(c -> new CommandHandlingComponent(handled))
+                                                   .start();
 
-        CompletableFuture<String> result = config.commandGateway().send(new SomeCommand(), ProcessingContext.NONE, String.class);
+        CompletableFuture<String> result = config.commandGateway().send(new SomeCommand(),
+                                                                        ProcessingContext.NONE,
+                                                                        String.class);
 
         assertEquals(COMMAND_HANDLING_RESPONSE, result.join());
         assertTrue(handled.get());
@@ -72,8 +74,8 @@ class DefaultConfigurerHandlerRegistrationTest {
     void registerQueryHandler() {
         AtomicBoolean handled = new AtomicBoolean(false);
 
-        Configuration config = baseConfigurer.registerQueryHandler(c -> new QueryHandlingComponent(handled))
-                                             .start();
+        LegacyConfiguration config = baseConfigurer.registerQueryHandler(c -> new QueryHandlingComponent(handled))
+                                                   .start();
 
         CompletableFuture<String> result = config.queryGateway().query(new SomeQuery(), String.class);
 
@@ -87,11 +89,13 @@ class DefaultConfigurerHandlerRegistrationTest {
         AtomicReference<MessageHandlingComponent> eventHandled = new AtomicReference<>();
         AtomicReference<MessageHandlingComponent> queryHandled = new AtomicReference<>();
 
-        Configuration config = baseConfigurer.registerMessageHandler(
+        LegacyConfiguration config = baseConfigurer.registerMessageHandler(
                 c -> new MessageHandlingComponent(commandHandled, eventHandled, queryHandled)
         ).start();
 
-        CompletableFuture<String> commandHandlingResult = config.commandGateway().send(new SomeCommand(), ProcessingContext.NONE, String.class);
+        CompletableFuture<String> commandHandlingResult = config.commandGateway().send(new SomeCommand(),
+                                                                                       ProcessingContext.NONE,
+                                                                                       String.class);
         config.eventGateway().publish(new SomeEvent());
         CompletableFuture<String> queryHandling = config.queryGateway().query(new SomeQuery(), String.class);
 
@@ -110,28 +114,30 @@ class DefaultConfigurerHandlerRegistrationTest {
         AtomicBoolean handled = new AtomicBoolean(false);
         AtomicBoolean firstEnhancerInvoked = new AtomicBoolean(false);
         AtomicBoolean secondEnhancerInvoked = new AtomicBoolean(false);
-        Configuration config = baseConfigurer.registerCommandHandler(c -> new CommandHandlingComponent(handled))
-                                             .registerHandlerEnhancerDefinition(c -> new HandlerEnhancerDefinition() {
-                                                 @Override
-                                                 public <T> MessageHandlingMember<T> wrapHandler(
-                                                         @Nonnull MessageHandlingMember<T> original
-                                                 ) {
-                                                     firstEnhancerInvoked.set(true);
-                                                     return original;
-                                                 }
-                                             })
-                                             .registerHandlerEnhancerDefinition(c -> new HandlerEnhancerDefinition() {
-                                                 @Override
-                                                 public <T> MessageHandlingMember<T> wrapHandler(
-                                                         @Nonnull MessageHandlingMember<T> original
-                                                 ) {
-                                                     secondEnhancerInvoked.set(true);
-                                                     return original;
-                                                 }
-                                             })
-                                             .start();
+        LegacyConfiguration config = baseConfigurer.registerCommandHandler(c -> new CommandHandlingComponent(handled))
+                                                   .registerHandlerEnhancerDefinition(c -> new HandlerEnhancerDefinition() {
+                                                       @Override
+                                                       public <T> MessageHandlingMember<T> wrapHandler(
+                                                               @Nonnull MessageHandlingMember<T> original
+                                                       ) {
+                                                           firstEnhancerInvoked.set(true);
+                                                           return original;
+                                                       }
+                                                   })
+                                                   .registerHandlerEnhancerDefinition(c -> new HandlerEnhancerDefinition() {
+                                                       @Override
+                                                       public <T> MessageHandlingMember<T> wrapHandler(
+                                                               @Nonnull MessageHandlingMember<T> original
+                                                       ) {
+                                                           secondEnhancerInvoked.set(true);
+                                                           return original;
+                                                       }
+                                                   })
+                                                   .start();
 
-        CompletableFuture<String> result = config.commandGateway().send(new SomeCommand(), ProcessingContext.NONE, String.class);
+        CompletableFuture<String> result = config.commandGateway().send(new SomeCommand(),
+                                                                        ProcessingContext.NONE,
+                                                                        String.class);
 
         assertEquals(COMMAND_HANDLING_RESPONSE, result.join());
         assertTrue(handled.get());

@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentFactory;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EntityEvolver;
@@ -121,7 +121,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
         );
     }
 
-    private EntityEvolver<E> constructEntityEvolver(NewConfiguration config) {
+    private EntityEvolver<E> constructEntityEvolver(Configuration config) {
         if (entityEvolver != null) {
             if (entityEvolverPerName.size() > 1) {
                 logger.warn("Ignoring separate Event Sourcing Handlers since an EntityEvolver has been given!");
@@ -131,7 +131,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
         return new SimpleEventSourcedComponent<>(buildAndCollectEntityEvolvers(config));
     }
 
-    private Map<QualifiedName, EntityEvolver<E>> buildAndCollectEntityEvolvers(NewConfiguration config) {
+    private Map<QualifiedName, EntityEvolver<E>> buildAndCollectEntityEvolvers(Configuration config) {
         return entityEvolverPerName.entrySet()
                                    .stream()
                                    .collect(Collectors.toMap(

@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.gateway;
 
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -30,13 +30,13 @@ import javax.annotation.Nonnull;
 /**
  * Component that publishes events to an {@link EventSink} in the context of a {@link ProcessingContext}. The events
  * will be published in the context this appender was created for. You can construct one through the
- * {@link #forContext(ProcessingContext, NewConfiguration)}.
+ * {@link #forContext(ProcessingContext, Configuration)}.
  * <p>
  * When using annotation-based {@link org.axonframework.messaging.annotation.MessageHandler @MessageHandler-methods} and
  * you have declared an argument of type {@link EventAppender}, the appender will automatically be injected by the
  * {@link EventAppenderParameterResolverFactory}.
  * <p>
- * As this component is {@link ProcessingContext}-scoped, it is not retrievable from the {@link NewConfiguration}.
+ * As this component is {@link ProcessingContext}-scoped, it is not retrievable from the {@link Configuration}.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0
@@ -49,19 +49,19 @@ public interface EventAppender {
     Context.ResourceKey<ProcessingContextEventAppender> RESOURCE_KEY = Context.ResourceKey.withLabel("EventAppender");
 
     /**
-     * Creates an appender for the given {@link ProcessingContext} and {@link NewConfiguration}. You can use this
-     * appender only for the context it was created for. There is no harm in using this method more than once, as the
-     * same appender will be returned.
+     * Creates an appender for the given {@link ProcessingContext} and {@link Configuration}. You can use this appender
+     * only for the context it was created for. There is no harm in using this method more than once, as the same
+     * appender will be returned.
      *
      * @param context       The {@link ProcessingContext} to create the appender for.
-     * @param configuration The {@link NewConfiguration} to use for the appender.
+     * @param configuration The {@link Configuration} to use for the appender.
      * @return The created appender.
      */
     static EventAppender forContext(
             @Nonnull ProcessingContext context,
-            @Nonnull NewConfiguration configuration
+            @Nonnull Configuration configuration
     ) {
-        Objects.requireNonNull(configuration, "NewConfiguration may not be null");
+        Objects.requireNonNull(configuration, "The configuration must not be null.");
         return forContext(
                 context,
                 configuration.getComponent(EventSink.class),

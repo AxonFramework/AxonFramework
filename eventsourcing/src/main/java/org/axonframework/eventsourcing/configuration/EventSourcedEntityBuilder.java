@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentFactory;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EntityEvolver;
@@ -104,7 +105,7 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          * <p>
          * The resulting {@link EventSourcedEntityFactory} from the component factory receives the entity type {@code E}
          * and the identifier of type {@code I} and expects an event sourced entity instance of type {@code E} as a
-         * result. The {@link org.axonframework.configuration.NewConfiguration} in the component factory allows the
+         * result. The {@link Configuration} in the component factory allows the
          * entity factory to use other components that have been registered.
          *
          * @param entityFactory A factory method constructing the entity of type {@code E} based on the entity's type

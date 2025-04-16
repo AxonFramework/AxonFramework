@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public interface LifecycleOperations {
      * The behavior for handlers that are registered when the Configuration is already started is undefined.
      *
      * @param startHandler the handler to execute when the configuration is started
-     * @see Configuration#start()
+     * @see LegacyConfiguration#start()
      */
     default void onStart(Runnable startHandler) {
         onStart(0, startHandler);
@@ -52,11 +52,11 @@ public interface LifecycleOperations {
      * <p>
      * The behavior for handlers that are registered when the Configuration is already started is undefined.
      *
-     * @param phase        defines a {@code phase} in which the start handler will be invoked during {@link
-     *                     Configuration#start()}. When starting the configuration the given handlers are started in
-     *                     ascending order based on their {@code phase}
+     * @param phase        defines a {@code phase} in which the start handler will be invoked during
+     *                     {@link LegacyConfiguration#start()}. When starting the configuration the given handlers are
+     *                     started in ascending order based on their {@code phase}
      * @param startHandler the handler to execute when the configuration is started
-     * @see Configuration#start()
+     * @see LegacyConfiguration#start()
      */
     default void onStart(int phase, Runnable startHandler) {
         onStart(phase, () -> {
@@ -77,11 +77,11 @@ public interface LifecycleOperations {
      * <p>
      * The behavior for handlers that are registered when the Configuration is already started is undefined.
      *
-     * @param phase        defines a {@code phase} in which the start handler will be invoked during {@link
-     *                     Configuration#start()}. When starting the configuration the given handlers are started in
-     *                     ascending order based on their {@code phase}
+     * @param phase        defines a {@code phase} in which the start handler will be invoked during
+     *                     {@link LegacyConfiguration#start()}. When starting the configuration the given handlers are
+     *                     started in ascending order based on their {@code phase}
      * @param startHandler the handler to be executed asynchronously when the configuration is started
-     * @see Configuration#start()
+     * @see LegacyConfiguration#start()
      */
     void onStart(int phase, LifecycleHandler startHandler);
 
@@ -92,7 +92,7 @@ public interface LifecycleOperations {
      * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
      *
      * @param shutdownHandler the handler to execute when the Configuration is shut down
-     * @see Configuration#shutdown()
+     * @see LegacyConfiguration#shutdown()
      */
     default void onShutdown(Runnable shutdownHandler) {
         onShutdown(0, shutdownHandler);
@@ -104,11 +104,11 @@ public interface LifecycleOperations {
      * <p>
      * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
      *
-     * @param phase           defines a phase in which the shutdown handler will be invoked during {@link
-     *                        Configuration#shutdown()}. When shutting down the configuration the given handlers are
-     *                        executing in descending order based on their {@code phase}
+     * @param phase           defines a phase in which the shutdown handler will be invoked during
+     *                        {@link LegacyConfiguration#shutdown()}. When shutting down the configuration the given
+     *                        handlers are executing in descending order based on their {@code phase}
      * @param shutdownHandler the handler to execute when the Configuration is shut down
-     * @see Configuration#shutdown()
+     * @see LegacyConfiguration#shutdown()
      */
     default void onShutdown(int phase, Runnable shutdownHandler) {
         onShutdown(phase, () -> {
@@ -129,11 +129,11 @@ public interface LifecycleOperations {
      * <p>
      * The behavior for handlers that are registered when the Configuration is already shut down is undefined.
      *
-     * @param phase           defines a phase in which the shutdown handler will be invoked during {@link
-     *                        Configuration#shutdown()}. When shutting down the configuration the given handlers are
-     *                        executing in descending order based on their {@code phase}
+     * @param phase           defines a phase in which the shutdown handler will be invoked during
+     *                        {@link LegacyConfiguration#shutdown()}. When shutting down the configuration the given
+     *                        handlers are executing in descending order based on their {@code phase}
      * @param shutdownHandler the handler to be executed asynchronously when the Configuration is shut down
-     * @see Configuration#shutdown()
+     * @see LegacyConfiguration#shutdown()
      */
     void onShutdown(int phase, LifecycleHandler shutdownHandler);
 }

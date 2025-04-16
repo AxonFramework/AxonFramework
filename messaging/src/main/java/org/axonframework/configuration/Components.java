@@ -35,7 +35,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Wrapper around a {@link Map} of {@link Component Components} stored per {@link Component.Identifier}.
  * <p>
- * Provides a cleaner interface to the {@link ComponentRegistry} and {@link NewConfiguration} when interacting with the
+ * Provides a cleaner interface to the {@link ComponentRegistry} and {@link Configuration} when interacting with the
  * configured {@code Components}.
  *
  * @author Steven van Beelen

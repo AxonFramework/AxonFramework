@@ -38,7 +38,7 @@ import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.ReflectionUtils.invokeAndGetMethodValue;
 
 /**
- * Utility class used to resolve {@link LifecycleHandler}s to be registered to the {@link NewConfiguration}.
+ * Utility class used to resolve {@link LifecycleHandler}s to be registered to the {@link Configuration}.
  * <p>
  * A {@link StartHandler} annotated lifecycle handler will be registered through
  * {@link LifecycleRegistry#onStart(int, LifecycleHandler)}, whilst a {@link ShutdownHandler} annotated lifecycle
@@ -66,7 +66,7 @@ public abstract class LifecycleHandlerInspector {
      * {@link LifecycleRegistry#onShutdown(int, LifecycleHandler)} methods. If the given {@code component} is
      * {@code null} it will be ignored.
      *
-     * @param lifecycleRegistry the {@link NewConfiguration} to register resolved lifecycle handlers to
+     * @param lifecycleRegistry the {@link Configuration} to register resolved lifecycle handlers to
      * @param component         the object to resolve lifecycle handlers for
      */
     public static void registerLifecycleHandlers(@Nonnull LifecycleRegistry lifecycleRegistry,

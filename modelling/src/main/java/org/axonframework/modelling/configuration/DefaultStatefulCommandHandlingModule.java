@@ -22,7 +22,7 @@ import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.configuration.BaseModule;
 import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.HierarchicalStateManagerConfigurationEnhancer;
@@ -123,7 +123,7 @@ class DefaultStatefulCommandHandlingModule
         ));
     }
 
-    private SimpleStateManager stateManagerFactory(NewConfiguration config) {
+    private SimpleStateManager stateManagerFactory(Configuration config) {
         SimpleStateManager.Builder managerBuilder = SimpleStateManager.builder("StateManager[" + moduleName + "]");
         for (String repositoryName : entityBuilders.keySet()) {
             //noinspection unchecked
@@ -150,7 +150,7 @@ class DefaultStatefulCommandHandlingModule
     }
 
     @Override
-    public NewConfiguration build(@Nonnull NewConfiguration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
+    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
         lifecycleRegistry.onStart(
                 Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,
                 (c) -> {

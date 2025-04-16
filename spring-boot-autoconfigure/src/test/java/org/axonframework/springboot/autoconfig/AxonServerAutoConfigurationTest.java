@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,10 @@ import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.common.AxonThreadFactory;
-import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.eventhandling.EventBus;
@@ -262,7 +262,7 @@ class AxonServerAutoConfigurationTest {
                                "defaultEventProcessorBuilder",
                                eventProcessingModule);
 
-                       Configuration config = getField("configuration", eventProcessingModule);
+                       LegacyConfiguration config = getField("configuration", eventProcessingModule);
                        Object processor = defaultEventProcessorBuilder.build("processingGroupName",
                                                                              config,
                                                                              new MultiEventHandlerInvoker(
@@ -307,9 +307,9 @@ class AxonServerAutoConfigurationTest {
                        assertThat(context).getBean("persistentStreamProcessorsConfigurerModule").isNotNull();
                        ConfigurerModule configurerModule =
                                context.getBean("persistentStreamProcessorsConfigurerModule", ConfigurerModule.class);
-                       Configurer defaultConfigurer = DefaultConfigurer.defaultConfiguration();
+                       LegacyConfigurer defaultConfigurer = LegacyDefaultConfigurer.defaultConfiguration();
                        configurerModule.configureModule(defaultConfigurer);
-                       Configuration configuration = defaultConfigurer.buildConfiguration();
+                       LegacyConfiguration configuration = defaultConfigurer.buildConfiguration();
                        SequencingPolicy<? super EventMessage<?>> sequencingPolicy =
                                configuration.eventProcessingConfiguration().sequencingPolicy("payments");
                        assertThat(sequencingPolicy).isNotNull();
@@ -326,9 +326,9 @@ class AxonServerAutoConfigurationTest {
                        assertThat(context).getBean("persistentStreamProcessorsConfigurerModule").isNotNull();
                        ConfigurerModule configurerModule =
                                context.getBean("persistentStreamProcessorsConfigurerModule", ConfigurerModule.class);
-                       Configurer defaultConfigurer = DefaultConfigurer.defaultConfiguration();
+                       LegacyConfigurer defaultConfigurer = LegacyDefaultConfigurer.defaultConfiguration();
                        configurerModule.configureModule(defaultConfigurer);
-                       Configuration configuration = defaultConfigurer.buildConfiguration();
+                       LegacyConfiguration configuration = defaultConfigurer.buildConfiguration();
                        assertThat(
                                configuration.eventProcessingConfiguration().sequencingPolicy("payments")
                        ).isInstanceOf(DEFAULT_SEQUENCING_POLICY_CLASS);

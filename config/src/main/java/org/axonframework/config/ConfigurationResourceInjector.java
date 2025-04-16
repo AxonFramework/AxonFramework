@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,14 +25,14 @@ import java.util.Optional;
  */
 public class ConfigurationResourceInjector extends AbstractResourceInjector {
 
-    private final Configuration configuration;
+    private final LegacyConfiguration configuration;
 
     /**
      * Initializes the ResourceInjector to inject the resources found in the given {@code configuration}.
      *
      * @param configuration the Configuration to find injectable resources in
      */
-    public ConfigurationResourceInjector(Configuration configuration) {
+    public ConfigurationResourceInjector(LegacyConfiguration configuration) {
         this.configuration = configuration;
     }
 

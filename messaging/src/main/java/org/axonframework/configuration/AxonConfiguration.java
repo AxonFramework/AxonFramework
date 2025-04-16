@@ -26,7 +26,7 @@ package org.axonframework.configuration;
  * @author Steven van Beelen
  * @since 5.0.0
  */
-public interface AxonConfiguration extends NewConfiguration {
+public interface AxonConfiguration extends Configuration {
 
     /**
      * All components defined in this {@code AxonConfiguration} will be started.

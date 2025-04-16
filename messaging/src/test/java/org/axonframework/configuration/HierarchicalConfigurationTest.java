@@ -28,12 +28,12 @@ class HierarchicalConfigurationTest {
 
     @Test
     void childLifecycleHandlersReceiveModuleConfigurationInsteadOfParent() {
-        var parentConfiguration = mock(NewConfiguration.class);
-        var childConfiguration = mock(NewConfiguration.class);
+        var parentConfiguration = mock(Configuration.class);
+        var childConfiguration = mock(Configuration.class);
         var lifecycleRegistry = new StubLifecycleRegistry();
         var startHandlerCalled = new AtomicBoolean();
         var shutdownHandlerCalled = new AtomicBoolean();
-        NewConfiguration newConfiguration = HierarchicalConfiguration.build(
+        Configuration configuration = HierarchicalConfiguration.build(
                 lifecycleRegistry,
                 (childLifecycleRegistry) -> {
                     assertNotSame(lifecycleRegistry, childLifecycleRegistry);
@@ -48,7 +48,7 @@ class HierarchicalConfigurationTest {
                     return childConfiguration;
                 }
         );
-        assertSame(childConfiguration, newConfiguration);
+        assertSame(childConfiguration, configuration);
 
         assertEquals(1, lifecycleRegistry.getStartHandlers().size());
         assertEquals(1, lifecycleRegistry.getStartHandlers().get(42).size());

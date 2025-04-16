@@ -19,8 +19,8 @@ package org.axonframework.springboot.autoconfig;
 import com.thoughtworks.xstream.XStream;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.config.EventProcessingModule;
 import org.axonframework.config.ProcessingGroup;
@@ -113,7 +113,7 @@ class InfraConfigurationTest {
             assertThat(context).getBean("secondUpcasterChain")
                                .isInstanceOf(EventUpcasterChain.class);
 
-            EventUpcasterChain result = context.getBean("springAxonConfiguration", Configuration.class)
+            EventUpcasterChain result = context.getBean("springAxonConfiguration", LegacyConfiguration.class)
                                                .upcasterChain();
             assertThat(result).isNotNull();
 
@@ -348,13 +348,13 @@ class InfraConfigurationTest {
 
         static class CustomSpringAxonConfiguration extends SpringAxonConfiguration {
 
-            public CustomSpringAxonConfiguration(Configurer configurer) {
+            public CustomSpringAxonConfiguration(LegacyConfigurer configurer) {
                 super(configurer);
             }
         }
 
         @Bean
-        public CustomSpringAxonConfiguration customSpringAxonConfiguration(Configurer configurer) {
+        public CustomSpringAxonConfiguration customSpringAxonConfiguration(LegacyConfigurer configurer) {
             return new CustomSpringAxonConfiguration(configurer);
         }
 
@@ -433,7 +433,7 @@ class InfraConfigurationTest {
         }
 
         @Override
-        public void configureModule(@Nonnull Configurer configurer) {
+        public void configureModule(@Nonnull LegacyConfigurer configurer) {
             initOrder.add(this);
         }
 

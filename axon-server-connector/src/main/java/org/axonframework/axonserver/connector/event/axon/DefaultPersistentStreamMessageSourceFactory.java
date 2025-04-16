@@ -17,7 +17,7 @@
 package org.axonframework.axonserver.connector.event.axon;
 
 import io.axoniq.axonserver.connector.event.PersistentStreamProperties;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +58,7 @@ public class DefaultPersistentStreamMessageSourceFactory implements PersistentSt
                                                ScheduledExecutorService scheduler,
                                                int batchSize,
                                                String context,
-                                               Configuration configuration
+                                               LegacyConfiguration configuration
     ) {
         if (!usedNames.add(name)) {
             logger.warn(

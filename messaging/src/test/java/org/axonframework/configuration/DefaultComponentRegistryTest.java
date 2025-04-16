@@ -56,7 +56,7 @@ class DefaultComponentRegistryTest {
         TestComponent testComponent = TEST_COMPONENT;
         testSubject.registerComponent(TestComponent.class, c -> testComponent);
 
-        NewConfiguration config = testSubject.build(mock());
+        Configuration config = testSubject.build(mock());
 
         assertEquals(testComponent, config.getComponent(TestComponent.class));
     }
@@ -66,7 +66,7 @@ class DefaultComponentRegistryTest {
         TestComponent testComponent = TEST_COMPONENT;
         testSubject.registerComponent(TestComponent.class, c -> testComponent);
 
-        NewConfiguration config = testSubject.build(mock());
+        Configuration config = testSubject.build(mock());
 
         Optional<TestComponent> result = config.getOptionalComponent(TestComponent.class);
 
@@ -90,7 +90,7 @@ class DefaultComponentRegistryTest {
         testSubject.registerComponent(TestComponent.class, testNameOne, c -> testComponentOne)
                    .registerComponent(TestComponent.class, testNameTwo, c -> testComponentTwo);
 
-        NewConfiguration config = testSubject.build(mock());
+        Configuration config = testSubject.build(mock());
 
         assertEquals(testComponentOne, config.getComponent(TestComponent.class, testNameOne));
         assertEquals(testComponentTwo, config.getComponent(TestComponent.class, testNameTwo));
@@ -104,7 +104,7 @@ class DefaultComponentRegistryTest {
             return TEST_COMPONENT;
         });
 
-        NewConfiguration config = testSubject.build(mock());
+        Configuration config = testSubject.build(mock());
 
         assertEquals(0, invocationCounter.get());
         config.getComponent(TestComponent.class, "name");
@@ -120,7 +120,7 @@ class DefaultComponentRegistryTest {
         testSubject.registerComponent(TestComponent.class, c -> testComponent)
                    .registerComponent(TestComponent.class, c -> expectedComponent);
 
-        NewConfiguration config = testSubject.build(mock());
+        Configuration config = testSubject.build(mock());
 
         assertNotEquals(testComponent, config.getComponent(TestComponent.class));
         assertEquals(expectedComponent, config.getComponent(TestComponent.class));
@@ -133,7 +133,7 @@ class DefaultComponentRegistryTest {
         testSubject.registerComponent(TestComponent.class, "name", c -> testComponent)
                    .registerComponent(TestComponent.class, "name", c -> expectedComponent);
 
-        NewConfiguration config = testSubject.build(mock());
+        Configuration config = testSubject.build(mock());
 
         assertNotEquals(testComponent, config.getComponent(TestComponent.class, "name"));
         assertEquals(expectedComponent, config.getComponent(TestComponent.class, "name"));
@@ -146,7 +146,7 @@ class DefaultComponentRegistryTest {
         TestComponent registeredComponent = TEST_COMPONENT;
         testSubject.registerComponent(TestComponent.class, "id", c -> registeredComponent);
 
-        NewConfiguration config = testSubject.build(mock());
+        Configuration config = testSubject.build(mock());
 
         TestComponent result = config.getComponent(TestComponent.class, "id", () -> {
             invoked.set(true);
@@ -179,7 +179,7 @@ class DefaultComponentRegistryTest {
                            )
                    )
                    .registerComponent(String.class, "parent", c -> "parent");
-        NewConfiguration actual = testSubject.build(mock());
+        Configuration actual = testSubject.build(mock());
 
         assertEquals("parent", actual.getComponent(String.class, "parent"));
         assertThrows(ComponentNotFoundException.class, () -> actual.getComponent(String.class, "child"));
@@ -315,7 +315,7 @@ class DefaultComponentRegistryTest {
                                cr -> cr.registerComponent(TestComponent.class, c -> TEST_COMPONENT)
                        ));
 
-            NewConfiguration result = testSubject.build(mock());
+            Configuration result = testSubject.build(mock());
 
             result.describeTo(testDescriptor);
 

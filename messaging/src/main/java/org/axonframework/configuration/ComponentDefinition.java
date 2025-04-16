@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Defines the structure of a {@link Component} that is available in the {@link NewConfiguration} of the application or
+ * Defines the structure of a {@link Component} that is available in the {@link Configuration} of the application or
  * one of its {@link Module Modules}.
  * <p>
  * Components are identified by a combination of their declared type and a name. The declared type is generally an
@@ -138,7 +138,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @param handler The start handler to execute on the component.
      * @return A {@code ComponentDefinition} with the start handler defined.
      */
-    default ComponentDefinition<C> onStart(int phase, @Nonnull BiConsumer<NewConfiguration, C> handler) {
+    default ComponentDefinition<C> onStart(int phase, @Nonnull BiConsumer<Configuration, C> handler) {
         return onStart(phase, (config, component) -> {
             Objects.requireNonNull(handler, "The start handler cannot be null.")
                    .accept(config, component);
@@ -180,7 +180,7 @@ public sealed interface ComponentDefinition<C> permits ComponentDefinition.Compo
      * @param handler The action to execute on the component.
      * @return A {@code ComponentDefinition} with the shutdown handler defined.
      */
-    default ComponentDefinition<C> onShutdown(int phase, @Nonnull BiConsumer<NewConfiguration, C> handler) {
+    default ComponentDefinition<C> onShutdown(int phase, @Nonnull BiConsumer<Configuration, C> handler) {
         return onShutdown(phase, (config, component) -> {
             Objects.requireNonNull(handler, "The shutdown handler cannot be null.")
                    .accept(config, component);

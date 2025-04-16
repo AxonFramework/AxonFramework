@@ -31,8 +31,7 @@ import java.util.function.Supplier;
  * @author Steven van Beelen
  * @since 3.0.0
  */
-// TODO rename to Configuration once the old Configuration is removed
-public interface NewConfiguration extends DescribableComponent {
+public interface Configuration extends DescribableComponent {
 
     /**
      * Returns the component declared under the given {@code type} or throws a {@link NullPointerException} if it does
@@ -133,7 +132,7 @@ public interface NewConfiguration extends DescribableComponent {
      * @return The resulting {@code Configuration} from each
      * {@link ComponentRegistry#registerModule(Module) registered module} with this {@code Configuration}.
      */
-    List<NewConfiguration> getModuleConfigurations();
+    List<Configuration> getModuleConfigurations();
 
     /**
      * Returns the {@code Configuration} from the {@link Module} with the given {@code name}.
@@ -145,7 +144,7 @@ public interface NewConfiguration extends DescribableComponent {
      * @return An {@code Optional} with the {@code Configuration} for a {@link Module} with the given {@code name} or an
      * empty optional if no module exists with that name.
      */
-    Optional<NewConfiguration> getModuleConfiguration(@Nonnull String name);
+    Optional<Configuration> getModuleConfiguration(@Nonnull String name);
 
     /**
      * Returns the parent configuration of this configuration, if the parent configuration exists. Components can use
@@ -155,5 +154,5 @@ public interface NewConfiguration extends DescribableComponent {
      * @return The parent configuration of this configuration, or {@code null} if no parent configuration exists.
      */
     @Nullable
-    NewConfiguration getParent();
+    Configuration getParent();
 }

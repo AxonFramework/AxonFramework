@@ -18,7 +18,7 @@ package org.axonframework.messaging.configuration.reflection;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.Priority;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.annotation.FixedValueParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -31,7 +31,7 @@ import static org.axonframework.common.Priority.LOW;
 
 /**
  * A {@code ParameterResolverFactory} implementation that resolves parameters from available components in the
- * {@link NewConfiguration} instance it was configured with.
+ * {@link Configuration} instance it was configured with.
  * <p>
  * This implementation is usually autoconfigured when using the Configuration API.
  *
@@ -41,14 +41,14 @@ import static org.axonframework.common.Priority.LOW;
 @Priority(LOW)
 public class ConfigurationParameterResolverFactory implements ParameterResolverFactory {
 
-    private final NewConfiguration configuration;
+    private final Configuration configuration;
 
     /**
      * Initialize an instance using given {@code configuration} to supply the value to resolve parameters with.
      *
      * @param configuration The configuration to look for component with.
      */
-    public ConfigurationParameterResolverFactory(@Nonnull NewConfiguration configuration) {
+    public ConfigurationParameterResolverFactory(@Nonnull Configuration configuration) {
         this.configuration = Objects.requireNonNull(configuration, "The configuration cannot be null.");
     }
 

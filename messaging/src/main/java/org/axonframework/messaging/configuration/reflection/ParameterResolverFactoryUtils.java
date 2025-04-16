@@ -18,7 +18,7 @@ package org.axonframework.messaging.configuration.reflection;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 
@@ -39,10 +39,10 @@ public class ParameterResolverFactoryUtils {
      *
      * @param componentRegistry The {@link ComponentRegistry} to register the {@link ParameterResolverFactory} to.
      * @param factory           The {@link Function} that creates the {@link ParameterResolverFactory} based on the
-     *                          {@link NewConfiguration}.
+     *                          {@link Configuration}.
      */
     public static void registerToComponentRegistry(@Nonnull ComponentRegistry componentRegistry,
-                                                   @Nonnull Function<NewConfiguration, ParameterResolverFactory> factory
+                                                   @Nonnull Function<Configuration, ParameterResolverFactory> factory
     ) {
         Objects.requireNonNull(componentRegistry, "ComponentRegistry cannot be null");
         registerToComponentRegistry(componentRegistry, 0, factory);
@@ -55,11 +55,11 @@ public class ParameterResolverFactoryUtils {
      * @param componentRegistry The {@link ComponentRegistry} to register the {@link ParameterResolverFactory} to.
      * @param order             The order in which the {@link ParameterResolverFactory} should be registered.
      * @param factory           The {@link Function} that creates the {@link ParameterResolverFactory} based on the
-     *                          {@link NewConfiguration}.
+     *                          {@link Configuration}.
      */
     public static void registerToComponentRegistry(@Nonnull ComponentRegistry componentRegistry,
                                                    int order,
-                                                   @Nonnull Function<NewConfiguration, ParameterResolverFactory> factory
+                                                   @Nonnull Function<Configuration, ParameterResolverFactory> factory
     ) {
         Objects.requireNonNull(componentRegistry, "ComponentRegistry cannot be null");
         Objects.requireNonNull(factory, "Factory cannot be null");

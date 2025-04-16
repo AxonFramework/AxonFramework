@@ -23,7 +23,7 @@ import org.axonframework.messaging.configuration.reflection.ParameterResolverFac
 
 /**
  * Configuration enhancer that registers the {@link EventAppenderParameterResolverFactory} to the
- * {@link ComponentRegistry} of the {@link org.axonframework.configuration.NewConfiguration}.
+ * {@link ComponentRegistry} of the {@link org.axonframework.configuration.Configuration}.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0

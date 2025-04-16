@@ -86,7 +86,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Set<Class<? extends A>> subtypes = new HashSet<>();
     private final List<Registration> registrations = new ArrayList<>();
 
-    private Configuration parent;
+    private LegacyConfiguration parent;
 
     /**
      * Creates a default configuration as described in {@link #defaultConfiguration(Class)}. This constructor is
@@ -191,8 +191,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * proper JPA Entity.
      * <p>
      * The EntityManagerProvider is expected to have been registered with the Configurer (which would be the case when
-     * using {@link DefaultConfigurer#jpaConfiguration(EntityManagerProvider)}. If that is not the case, consider using
-     * {@link #jpaMappedConfiguration(Class, EntityManagerProvider)} instead.
+     * using {@link LegacyDefaultConfigurer#jpaConfiguration(EntityManagerProvider)}. If that is not the case, consider
+     * using {@link #jpaMappedConfiguration(Class, EntityManagerProvider)} instead.
      *
      * @param aggregateType The type of Aggregate to configure
      * @param <A>           The type of Aggregate to configure
@@ -262,7 +262,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @param repositoryBuilder The builder function for the repository
      * @return this configurer instance for chaining
      */
-    public AggregateConfigurer<A> configureRepository(Function<Configuration, Repository<A>> repositoryBuilder) {
+    public AggregateConfigurer<A> configureRepository(Function<LegacyConfiguration, Repository<A>> repositoryBuilder) {
         repository.update(repositoryBuilder);
         return this;
     }
@@ -274,7 +274,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @return this configurer instance for chaining
      */
     public AggregateConfigurer<A> configureAggregateFactory(
-            Function<Configuration, AggregateFactory<A>> aggregateFactoryBuilder) {
+            Function<LegacyConfiguration, AggregateFactory<A>> aggregateFactoryBuilder
+    ) {
         aggregateFactory.update(aggregateFactoryBuilder);
         return this;
     }
@@ -292,7 +293,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @return This configurer instance for chaining.
      */
     public AggregateConfigurer<A> configureCreationPolicyAggregateFactory(
-            Function<Configuration, CreationPolicyAggregateFactory<A>> creationPolicyAggregateFactoryBuilder
+            Function<LegacyConfiguration, CreationPolicyAggregateFactory<A>> creationPolicyAggregateFactoryBuilder
     ) {
         creationPolicyAggregateFactory.update(creationPolicyAggregateFactoryBuilder);
         return this;
@@ -303,10 +304,11 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * to the {@link PessimisticLockFactory} for the {@link EventSourcingRepository} and {@link NullLockFactory} for a
      * {@link GenericJpaRepository}.
      *
-     * @param lockFactory a {@link Function} building the {@link LockFactory} to use based on the {@link Configuration}
+     * @param lockFactory a {@link Function} building the {@link LockFactory} to use based on the
+     *                    {@link LegacyConfiguration}
      * @return this configurer instance for chaining
      */
-    public AggregateConfigurer<A> configureLockFactory(Function<Configuration, LockFactory> lockFactory) {
+    public AggregateConfigurer<A> configureLockFactory(Function<LegacyConfiguration, LockFactory> lockFactory) {
         this.lockFactory.update(lockFactory);
         return this;
     }
@@ -318,7 +320,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @return this configurer instance for chaining
      */
     public AggregateConfigurer<A> configureCommandHandler(
-            Function<Configuration, AggregateAnnotationCommandHandler<A>> aggregateCommandHandlerBuilder) {
+            Function<LegacyConfiguration, AggregateAnnotationCommandHandler<A>> aggregateCommandHandlerBuilder
+    ) {
         commandHandler.update(aggregateCommandHandlerBuilder);
         return this;
     }
@@ -331,7 +334,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @return this configurer instance for chaining
      */
     public AggregateConfigurer<A> configureCommandTargetResolver(
-            Function<Configuration, CommandTargetResolver> commandTargetResolverBuilder) {
+            Function<LegacyConfiguration, CommandTargetResolver> commandTargetResolverBuilder
+    ) {
         commandTargetResolver.update(commandTargetResolverBuilder);
         return this;
     }
@@ -345,7 +349,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @return this configurer instance for chaining
      */
     public AggregateConfigurer<A> configureSnapshotTrigger(
-            Function<Configuration, SnapshotTriggerDefinition> snapshotTriggerDefinition) {
+            Function<LegacyConfiguration, SnapshotTriggerDefinition> snapshotTriggerDefinition
+    ) {
         this.snapshotTriggerDefinition.update(snapshotTriggerDefinition);
         return this;
     }
@@ -357,7 +362,9 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @param snapshotFilter the function creating the {@link SnapshotFilter}
      * @return this configurer instance for chaining
      */
-    public AggregateConfigurer<A> configureSnapshotFilter(Function<Configuration, SnapshotFilter> snapshotFilter) {
+    public AggregateConfigurer<A> configureSnapshotFilter(
+            Function<LegacyConfiguration, SnapshotFilter> snapshotFilter
+    ) {
         this.snapshotFilter.update(snapshotFilter);
         return this;
     }
@@ -373,7 +380,8 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @see EventSourcingRepository.Builder#eventStreamFilter(Predicate)
      */
     public AggregateConfigurer<A> configureEventStreamFilter(
-            Function<Configuration, Predicate<? super DomainEventMessage<?>>> filterBuilder) {
+            Function<LegacyConfiguration, Predicate<? super DomainEventMessage<?>>> filterBuilder
+    ) {
         this.eventStreamFilter.update(filterBuilder);
         return this;
     }
@@ -385,7 +393,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @param cache the function that defines the Cache to use
      * @return this configurer instance for chaining
      */
-    public AggregateConfigurer<A> configureCache(Function<Configuration, Cache> cache) {
+    public AggregateConfigurer<A> configureCache(Function<LegacyConfiguration, Cache> cache) {
         this.cache.update(cache);
         return this;
     }
@@ -413,13 +421,14 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @see EventSourcingRepository.Builder#filterByAggregateType()
      */
     public AggregateConfigurer<A> configureFilterEventsByType(
-            Function<Configuration, Boolean> filterConfigurationPredicate) {
+            Function<LegacyConfiguration, Boolean> filterConfigurationPredicate
+    ) {
         this.filterEventsByType.update(filterConfigurationPredicate);
         return this;
     }
 
     @Override
-    public void initialize(Configuration config) {
+    public void initialize(LegacyConfiguration config) {
         parent = config;
         parent.onStart(
                 Phase.LOCAL_MESSAGE_HANDLER_REGISTRATIONS,

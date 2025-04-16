@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.config.AggregateConfigurer;
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
@@ -40,7 +41,7 @@ import javax.annotation.Nonnull;
 
 /**
  * A {@link ConfigurerModule} implementation that will configure an Aggregate with the Axon {@link
- * org.axonframework.config.Configuration}.
+ * LegacyConfiguration}.
  *
  * @param <T> The type of Aggregate to configure
  *
@@ -153,7 +154,7 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
     }
 
     @Override
-    public void configureModule(@Nonnull Configurer configurer) {
+    public void configureModule(@Nonnull LegacyConfigurer configurer) {
         AggregateConfigurer<T> aggregateConfigurer = AggregateConfigurer.defaultConfiguration(aggregateType)
                                                                         .withSubtypes(subTypes);
         if (snapshotFilter != null) {

@@ -18,9 +18,8 @@ package org.axonframework.modelling.configuration;
 
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.configuration.ComponentFactory;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.StatefulCommandHandler;
@@ -67,12 +66,12 @@ class StatefulCommandHandlingModuleTest {
                                        .persister(c -> (id, entity, context) -> CompletableFuture.completedFuture(null));
         String statefulCommandHandlingComponentName = "StatefulCommandHandlingComponent[test-subject]";
 
-        NewConfiguration resultConfig = setupPhase.entities()
-                                                  .entity(entityBuilder)
-                                                  .commandHandlers()
-                                                  .build()
-                                                  .build(ModellingConfigurer.create().build(),
-                                                         new StubLifecycleRegistry());
+        Configuration resultConfig = setupPhase.entities()
+                                               .entity(entityBuilder)
+                                               .commandHandlers()
+                                               .build()
+                                               .build(ModellingConfigurer.create().build(),
+                                                      new StubLifecycleRegistry());
 
         //noinspection rawtypes
         Optional<AsyncRepository> optionalRepository =
@@ -98,11 +97,11 @@ class StatefulCommandHandlingModuleTest {
         };
 
 
-        NewConfiguration resultConfig = setupPhase
-                .commandHandlers()
-                .annotatedCommandHandlingComponent(c -> myCommandHandlingObject)
-                .build()
-                .build(ModellingConfigurer.create().build(), new StubLifecycleRegistry());
+        Configuration resultConfig =
+                setupPhase.commandHandlers()
+                          .annotatedCommandHandlingComponent(c -> myCommandHandlingObject)
+                          .build()
+                          .build(ModellingConfigurer.create().build(), new StubLifecycleRegistry());
 
         Optional<StatefulCommandHandlingComponent> optionalHandlingComponent = resultConfig.getOptionalComponent(
                 StatefulCommandHandlingComponent.class, "StatefulCommandHandlingComponent[test-subject]");

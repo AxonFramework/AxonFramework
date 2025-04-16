@@ -18,7 +18,7 @@ package org.axonframework.messaging.annotation;
 
 import org.axonframework.configuration.DefaultComponentRegistry;
 import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.reflection.ClasspathParameterResolverConfigurationEnhancer;
 import org.junit.jupiter.api.*;
 
@@ -34,7 +34,7 @@ class ClasspathParameterResolverConfigurationEnhancerTest {
         componentRegistry.disableEnhancerScanning()
                          .registerEnhancer(new ClasspathParameterResolverConfigurationEnhancer());
 
-        NewConfiguration configuration = componentRegistry.build(mock(LifecycleRegistry.class));
+        Configuration configuration = componentRegistry.build(mock(LifecycleRegistry.class));
 
         ParameterResolverFactory factory = configuration.getComponent(ParameterResolverFactory.class);
         assertInstanceOf(MultiParameterResolverFactory.class, factory);

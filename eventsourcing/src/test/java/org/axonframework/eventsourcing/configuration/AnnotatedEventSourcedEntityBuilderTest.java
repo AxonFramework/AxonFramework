@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
@@ -45,7 +45,7 @@ import static org.mockito.Mockito.*;
  */
 class AnnotatedEventSourcedEntityBuilderTest {
 
-    private NewConfiguration parentConfiguration;
+    private Configuration parentConfiguration;
 
     @BeforeEach
     void setUp() {
@@ -148,8 +148,8 @@ class AnnotatedEventSourcedEntityBuilderTest {
         @Override
         public <E, ID> CriteriaResolver<ID> createEventCriteriaResolver(@Nonnull Class<E> entityType,
                                                                         @Nonnull Class<ID> idType,
-                                                                        @Nonnull NewConfiguration configuration) {
-            assertInstanceOf(NewConfiguration.class, configuration);
+                                                                        @Nonnull Configuration configuration) {
+            assertInstanceOf(Configuration.class, configuration);
             return new CustomCriteriaResolver<>();
         }
     }
@@ -174,7 +174,7 @@ class AnnotatedEventSourcedEntityBuilderTest {
         public EventSourcedEntityFactory<CourseId, CustomEntityFactoryCourse> createFactory(
                 @Nonnull Class<CustomEntityFactoryCourse> entityType,
                 @Nonnull Class<CourseId> idType,
-                @Nonnull NewConfiguration configuration
+                @Nonnull Configuration configuration
         ) {
             return new CustomEventSourcedEntityFactory();
         }

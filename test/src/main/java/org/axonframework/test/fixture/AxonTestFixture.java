@@ -19,7 +19,7 @@ package org.axonframework.test.fixture;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.configuration.ApplicationConfigurer;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.test.FixtureExecutionException;
@@ -29,8 +29,6 @@ import org.axonframework.test.matchers.IgnoreField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 /**
@@ -46,13 +44,13 @@ import java.util.function.UnaryOperator;
  */
 public class AxonTestFixture implements AxonTestPhase.Setup {
 
-    private final NewConfiguration configuration;
+    private final Configuration configuration;
     private final Customization customization;
     private final MessageTypeResolver messageTypeResolver;
     private final RecordingCommandBus commandBus;
     private final RecordingEventSink eventSink;
 
-    AxonTestFixture(@Nonnull NewConfiguration configuration,
+    AxonTestFixture(@Nonnull Configuration configuration,
                     @Nonnull UnaryOperator<Customization> customization) {
         this.customization = customization.apply(new Customization());
         this.configuration = configuration;

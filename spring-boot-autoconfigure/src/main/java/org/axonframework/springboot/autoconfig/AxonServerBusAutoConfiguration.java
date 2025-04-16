@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
 import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
 import org.axonframework.common.transaction.TransactionManager;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
@@ -83,7 +84,7 @@ public class AxonServerBusAutoConfiguration {
     @ConditionalOnMissingBean(QueryBus.class)
     public AxonServerQueryBus queryBus(AxonServerConnectionManager axonServerConnectionManager,
                                        AxonServerConfiguration axonServerConfiguration,
-                                       org.axonframework.config.Configuration axonConfiguration,
+                                       LegacyConfiguration axonConfiguration,
                                        TransactionManager txManager,
                                        @Qualifier("messageSerializer") Serializer messageSerializer,
                                        Serializer genericSerializer,
@@ -124,7 +125,7 @@ public class AxonServerBusAutoConfiguration {
     @ConditionalOnMissingBean
     @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
     public EventStore eventStore(AxonServerConfiguration axonServerConfiguration,
-                                 org.axonframework.config.Configuration configuration,
+                                 LegacyConfiguration configuration,
                                  AxonServerConnectionManager axonServerConnectionManager,
                                  Serializer snapshotSerializer,
                                  @Qualifier("eventSerializer") Serializer eventSerializer) {
@@ -148,7 +149,7 @@ public class AxonServerBusAutoConfiguration {
                                                                    AxonServerConnectionManager axonServerConnectionManager,
                                                                    Serializer snapshotSerializer,
                                                                    @Qualifier("eventSerializer") Serializer eventSerializer,
-                                                                   org.axonframework.config.Configuration config) {
+                                                                   LegacyConfiguration config) {
         return AxonServerEventStoreFactory.builder()
                                           .configuration(axonServerConfig)
                                           .connectionManager(axonServerConnectionManager)

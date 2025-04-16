@@ -19,7 +19,7 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 
 /**
- * A {@code RuntimeException} dedicated when a {@link Component} cannot be found in the {@link NewConfiguration}.
+ * A {@code RuntimeException} dedicated when a {@link Component} cannot be found in the {@link Configuration}.
  *
  * @author Steven van Beelen
  * @author Mitchell Herrijgers

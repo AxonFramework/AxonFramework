@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Class used by {@link DefaultConfigurer} to maintain the configuration for Message Monitors and create the function
- * used in the {@link Component}.
+ * Class used by {@link LegacyDefaultConfigurer} to maintain the configuration for Message Monitors and create the
+ * function used in the {@link Component}.
  */
 class MessageMonitorFactoryBuilder {
 
@@ -46,7 +46,8 @@ class MessageMonitorFactoryBuilder {
     private MessageMonitorFactory defaultFactory = (configuration, type, name) -> NoOpMessageMonitor.instance();
     private boolean built = false;
 
-    MessageMonitorFactoryBuilder add(Class<?> componentType, String componentName, MessageMonitorFactory messageMonitorFactory) {
+    MessageMonitorFactoryBuilder add(Class<?> componentType, String componentName,
+                                     MessageMonitorFactory messageMonitorFactory) {
         assertNotBuilt();
         Assert.notNull(componentType, () -> "componentType may not be null");
         Assert.notNull(componentName, () -> "componentName may not be null");
@@ -72,7 +73,7 @@ class MessageMonitorFactoryBuilder {
         return this;
     }
 
-    BiFunction<Class<?>, String, MessageMonitor<Message<?>>> build(Configuration configuration) {
+    BiFunction<Class<?>, String, MessageMonitor<Message<?>>> build(LegacyConfiguration configuration) {
         assertNotBuilt();
         built = true;
         return (type, name) -> {

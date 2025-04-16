@@ -31,12 +31,13 @@ public interface ModuleConfiguration {
 
     /**
      * Initialize the module configuration using the given global {@code config}. Any specific start up or shut down
-     * processes should be added here by using the provided {@code config} and invoke {@link Configuration#onStart(int,
-     * LifecycleHandler)} and {@link Configuration#onShutdown(int, LifecycleHandler)} respectively.
+     * processes should be added here by using the provided {@code config} and invoke
+     * {@link LegacyConfiguration#onStart(int, LifecycleHandler)} and
+     * {@link LegacyConfiguration#onShutdown(int, LifecycleHandler)} respectively.
      *
      * @param config the global configuration, providing access to generic components
      */
-    void initialize(Configuration config);
+    void initialize(LegacyConfiguration config);
 
     /**
      * Returns the actual module configuration instance. Usually, it is the instance itself. However, in case of module

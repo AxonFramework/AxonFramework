@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.axonframework.axonserver.connector.event.axon;
 
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.async.SequencingPolicy;
@@ -27,7 +27,7 @@ import java.util.function.Function;
 import static java.lang.String.format;
 
 /**
- * A provider of {@link SequencingPolicy SequencingPolicies} for a given {@link Configuration}.
+ * A provider of {@link SequencingPolicy SequencingPolicies} for a given {@link LegacyConfiguration}.
  * <p>
  * The provided {@code SequencingPolicy} for a given {@code Configuration} returns a sequencing key for an event to
  * identify which sequence/stream the event belongs to. The policy is <b>only</b> used for when a dead letter queue is
@@ -37,7 +37,7 @@ import static java.lang.String.format;
  * @since 4.10.0
  */
 public class PersistentStreamSequencingPolicyProvider
-        implements Function<Configuration, SequencingPolicy<? super EventMessage<?>>> {
+        implements Function<LegacyConfiguration, SequencingPolicy<? super EventMessage<?>>> {
 
     /**
      * A {@link String} constant representing the "sequential per aggregate" sequencing policy. This means all events
@@ -94,7 +94,7 @@ public class PersistentStreamSequencingPolicyProvider
     }
 
     @Override
-    public SequencingPolicy<EventMessage<?>> apply(Configuration configuration) {
+    public SequencingPolicy<EventMessage<?>> apply(LegacyConfiguration configuration) {
         return this::sequencingIdentifier;
     }
 

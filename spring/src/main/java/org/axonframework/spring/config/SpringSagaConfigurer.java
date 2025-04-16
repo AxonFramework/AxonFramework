@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.config;
 
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.springframework.beans.BeansException;
@@ -57,7 +57,7 @@ public class SpringSagaConfigurer implements ConfigurerModule, ApplicationContex
     }
 
     @Override
-    public void configureModule(Configurer configurer) {
+    public void configureModule(LegacyConfigurer configurer) {
         configurer.eventProcessing()
                   .registerSaga(sagaType,
                                 sagaConfigurer -> {

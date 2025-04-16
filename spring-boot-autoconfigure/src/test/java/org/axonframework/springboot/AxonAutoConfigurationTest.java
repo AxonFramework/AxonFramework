@@ -23,7 +23,8 @@ import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.EventProcessingConfiguration;
 import org.axonframework.config.EventProcessingConfigurer;
 import org.axonframework.configuration.LifecycleRegistry;
@@ -90,7 +91,7 @@ class AxonAutoConfigurationTest {
                 .withPropertyValues("axon.axonserver.enabled=false")
                 .run(applicationContext -> {
                     assertNotNull(applicationContext);
-                    assertNotNull(applicationContext.getBean(Configurer.class));
+                    assertNotNull(applicationContext.getBean(LegacyConfigurer.class));
                     assertNotNull(applicationContext.getBean(Snapshotter.class));
 
                     assertNotNull(applicationContext.getBean(CommandBus.class));
@@ -112,7 +113,7 @@ class AxonAutoConfigurationTest {
                     assertNotNull(applicationContext.getBean(EventProcessingConfiguration.class));
 
                     assertEquals(2,
-                                 applicationContext.getBean(org.axonframework.config.Configuration.class)
+                                 applicationContext.getBean(LegacyConfiguration.class)
                                                    .correlationDataProviders().size());
 
                     Context.SomeComponent someComponent = applicationContext.getBean(Context.SomeComponent.class);
@@ -140,7 +141,7 @@ class AxonAutoConfigurationTest {
 
         AxonConfigurationException actual = assertThrows(AxonConfigurationException.class, () -> {
             applicationContextRunner
-                    .run(ctx -> ctx.getBean(org.axonframework.config.Configuration.class).commandGateway());
+                    .run(ctx -> ctx.getBean(LegacyConfiguration.class).commandGateway());
         });
         assertTrue(actual.getMessage().contains("CommandGateway"));
         assertTrue(actual.getMessage().contains("gatewayOne"));
@@ -190,7 +191,7 @@ class AxonAutoConfigurationTest {
 
         AxonConfigurationException actual = assertThrows(AxonConfigurationException.class, () -> {
             applicationContextRunner
-                    .run(ctx -> ctx.getBean(org.axonframework.config.Configuration.class).commandGateway());
+                    .run(ctx -> ctx.getBean(LegacyConfiguration.class).commandGateway());
         });
         assertTrue(actual.getMessage().contains("CommandGateway"));
         assertTrue(actual.getMessage().contains("gatewayOne"));
@@ -315,7 +316,7 @@ class AxonAutoConfigurationTest {
 
             private final List<String> invocations = new ArrayList<>();
 
-            public SomeComponent(org.axonframework.config.Configuration axonConfig) {
+            public SomeComponent(LegacyConfiguration axonConfig) {
                 // just to see if wiring the configuration causes circular dependencies.
             }
 

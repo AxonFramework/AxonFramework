@@ -50,19 +50,19 @@ import javax.annotation.Nonnull;
 /**
  * Entry point of the Axon Configuration API.
  * <p>
- * Using {@link DefaultConfigurer#defaultConfiguration()}, you will get a Configurer instance with default components
- * configured. You will need to register your Aggregates (using {@link #configureAggregate(AggregateConfiguration)} and
- * provide a repository implementation for each of them, or if you wish to use event sourcing, register your aggregates
- * through {@link #configureAggregate(Class)} and configure an Event Store ({@link #configureEventStore(Function)} or
- * {@link #configureEmbeddedEventStore(Function)}).
+ * Using {@link LegacyDefaultConfigurer#defaultConfiguration()}, you will get a Configurer instance with default
+ * components configured. You will need to register your Aggregates (using
+ * {@link #configureAggregate(AggregateConfiguration)} and provide a repository implementation for each of them, or if
+ * you wish to use event sourcing, register your aggregates through {@link #configureAggregate(Class)} and configure an
+ * Event Store ({@link #configureEventStore(Function)} or {@link #configureEmbeddedEventStore(Function)}).
  *
  * @author Allard Buijze
- * @see DefaultConfigurer
+ * @see LegacyDefaultConfigurer
  * @since 3.0
  * @deprecated In favor of the {@link ComponentRegistry}.
  */
 @Deprecated
-public interface Configurer extends LifecycleOperations {
+public interface LegacyConfigurer extends LifecycleOperations {
 
     /**
      * Registers an upcaster to be used to upcast Events to a newer version
@@ -70,7 +70,7 @@ public interface Configurer extends LifecycleOperations {
      * @param upcasterBuilder The function that returns an EventUpcaster based on the configuration
      * @return the current instance of the Configurer, for chaining purposes
      */
-    Configurer registerEventUpcaster(@Nonnull Function<Configuration, EventUpcaster> upcasterBuilder);
+    LegacyConfigurer registerEventUpcaster(@Nonnull Function<LegacyConfiguration, EventUpcaster> upcasterBuilder);
 
     /**
      * Configures the Message Monitor to use for the Message processing components in this configuration, unless more
@@ -81,8 +81,9 @@ public interface Configurer extends LifecycleOperations {
      * @param messageMonitorFactoryBuilder The MessageMonitor builder function
      * @return the current instance of the Configurer, for chaining purposes
      */
-    Configurer configureMessageMonitor(
-            @Nonnull Function<Configuration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryBuilder);
+    LegacyConfigurer configureMessageMonitor(
+            @Nonnull Function<LegacyConfiguration, BiFunction<Class<?>, String, MessageMonitor<Message<?>>>> messageMonitorFactoryBuilder
+    );
 
     /**
      * Configures the builder function to create the Message Monitor for the Message processing components in this
@@ -104,8 +105,8 @@ public interface Configurer extends LifecycleOperations {
      * @param messageMonitorBuilder The builder function to use
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureMessageMonitor(@Nonnull Class<?> componentType,
-                                               @Nonnull Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
+    default LegacyConfigurer configureMessageMonitor(@Nonnull Class<?> componentType,
+                                                     @Nonnull Function<LegacyConfiguration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
         return configureMessageMonitor(componentType,
                                        (configuration, type, name) -> messageMonitorBuilder.apply(configuration));
     }
@@ -129,8 +130,8 @@ public interface Configurer extends LifecycleOperations {
      * @param messageMonitorFactory The factory to use
      * @return the current instance of the Configurer, for chaining purposes
      */
-    Configurer configureMessageMonitor(@Nonnull Class<?> componentType,
-                                       @Nonnull MessageMonitorFactory messageMonitorFactory);
+    LegacyConfigurer configureMessageMonitor(@Nonnull Class<?> componentType,
+                                             @Nonnull MessageMonitorFactory messageMonitorFactory);
 
     /**
      * Configures the builder function to create the Message Monitor for the Message processing components in this
@@ -152,8 +153,8 @@ public interface Configurer extends LifecycleOperations {
      * @param messageMonitorBuilder The builder function to use
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureMessageMonitor(@Nonnull Class<?> componentType, @Nonnull String componentName,
-                                               @Nonnull Function<Configuration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
+    default LegacyConfigurer configureMessageMonitor(@Nonnull Class<?> componentType, @Nonnull String componentName,
+                                                     @Nonnull Function<LegacyConfiguration, MessageMonitor<Message<?>>> messageMonitorBuilder) {
         return configureMessageMonitor(componentType,
                                        componentName,
                                        (configuration, type, name) -> messageMonitorBuilder.apply(configuration));
@@ -179,8 +180,8 @@ public interface Configurer extends LifecycleOperations {
      * @param messageMonitorFactory The factory to use
      * @return the current instance of the Configurer, for chaining purposes
      */
-    Configurer configureMessageMonitor(@Nonnull Class<?> componentType, @Nonnull String componentName,
-                                       @Nonnull MessageMonitorFactory messageMonitorFactory);
+    LegacyConfigurer configureMessageMonitor(@Nonnull Class<?> componentType, @Nonnull String componentName,
+                                             @Nonnull MessageMonitorFactory messageMonitorFactory);
 
     /**
      * Configures the CorrelationDataProviders that Message processing components should use to attach correlation data
@@ -190,8 +191,9 @@ public interface Configurer extends LifecycleOperations {
      * @param correlationDataProviderBuilder the builder function returning the CorrelationDataProvider list
      * @return the current instance of the Configurer, for chaining purposes
      */
-    Configurer configureCorrelationDataProviders(
-            @Nonnull Function<Configuration, List<CorrelationDataProvider>> correlationDataProviderBuilder);
+    LegacyConfigurer configureCorrelationDataProviders(
+            @Nonnull Function<LegacyConfiguration, List<CorrelationDataProvider>> correlationDataProviderBuilder
+    );
 
     /**
      * Registers an Axon module with this configuration. The module is initialized when the configuration is created and
@@ -203,7 +205,7 @@ public interface Configurer extends LifecycleOperations {
      * @return the current instance of the Configurer, for chaining purposes
      * @see SagaConfiguration
      */
-    Configurer registerModule(@Nonnull ModuleConfiguration module);
+    LegacyConfigurer registerModule(@Nonnull ModuleConfiguration module);
 
     /**
      * Registers a component which should be made available to other components or modules in this Configuration. The
@@ -216,49 +218,47 @@ public interface Configurer extends LifecycleOperations {
      * @param <C>              The type of component
      * @return the current instance of the Configurer, for chaining purposes
      */
-    <C> Configurer registerComponent(@Nonnull Class<C> componentType,
-                                     @Nonnull Function<Configuration, ? extends C> componentBuilder);
+    <C> LegacyConfigurer registerComponent(@Nonnull Class<C> componentType,
+                                           @Nonnull Function<LegacyConfiguration, ? extends C> componentBuilder);
 
     /**
-     * Registers a command handler bean with this {@link Configurer}. The bean may be of any type. The actual command
-     * handler methods will be detected based on the annotations present on the bean's methods. Message handling
+     * Registers a command handler bean with this {@link LegacyConfigurer}. The bean may be of any type. The actual
+     * command handler methods will be detected based on the annotations present on the bean's methods. Message handling
      * functions annotated with {@link CommandHandler} will be taken into account.
      * <p>
-     * The builder function receives the {@link Configuration} as input, and is expected to return a fully initialized
-     * instance of the command handler bean.
+     * The builder function receives the {@link LegacyConfiguration} as input, and is expected to return a fully
+     * initialized instance of the command handler bean.
      *
      * @param commandHandlerBuilder the builder function of the command handler bean
-     * @return the current instance of the {@link Configurer}, for chaining purposes
+     * @return the current instance of the {@link LegacyConfigurer}, for chaining purposes
      */
-    Configurer registerCommandHandler(@Nonnull Function<Configuration, Object> commandHandlerBuilder);
+    LegacyConfigurer registerCommandHandler(@Nonnull Function<LegacyConfiguration, Object> commandHandlerBuilder);
 
     /**
-     * Registers a query handler bean with this {@link Configurer}. The bean may be of any type. The actual query
+     * Registers a query handler bean with this {@link LegacyConfigurer}. The bean may be of any type. The actual query
      * handler methods will be detected based on the annotations present on the bean's methods. Message handling
      * functions annotated with {@link QueryHandler} will be taken into account.
      * <p>
-     * The builder function receives the {@link Configuration} as input, and is expected to return a fully initialized
-     * instance of the query handler bean.
+     * The builder function receives the {@link LegacyConfiguration} as input, and is expected to return a fully
+     * initialized instance of the query handler bean.
      *
      * @param queryHandlerBuilder the builder function of the query handler bean
-     * @return the current instance of the {@link Configurer}, for chaining purposes
+     * @return the current instance of the {@link LegacyConfigurer}, for chaining purposes
      */
-    Configurer registerQueryHandler(@Nonnull Function<Configuration, Object> queryHandlerBuilder);
+    LegacyConfigurer registerQueryHandler(@Nonnull Function<LegacyConfiguration, Object> queryHandlerBuilder);
 
     /**
      * Registers a message handler bean with this configuration. The bean may be of any type. The actual message handler
      * methods will be detected based on the annotations present on the bean's methods. Message handling functions
-     * annotated with {@link CommandHandler}, {@link
-     * EventHandler} and {@link QueryHandler} will be
-     * taken into account.
+     * annotated with {@link CommandHandler}, {@link EventHandler} and {@link QueryHandler} will be taken into account.
      * <p>
-     * The builder function receives the {@link Configuration} as input, and is expected to return a fully initialized
-     * instance of the message handler bean.
+     * The builder function receives the {@link LegacyConfiguration} as input, and is expected to return a fully
+     * initialized instance of the message handler bean.
      *
      * @param messageHandlerBuilder the builder function of the message handler bean
-     * @return the current instance of the {@link Configurer}, for chaining purposes
+     * @return the current instance of the {@link LegacyConfigurer}, for chaining purposes
      */
-    Configurer registerMessageHandler(@Nonnull Function<Configuration, Object> messageHandlerBuilder);
+    LegacyConfigurer registerMessageHandler(@Nonnull Function<LegacyConfiguration, Object> messageHandlerBuilder);
 
     /**
      * Configures an Embedded Event Store which uses the given Event Storage Engine to store its events. The builder
@@ -268,7 +268,9 @@ public interface Configurer extends LifecycleOperations {
      * @param storageEngineBuilder The builder function for the {@link EventStorageEngine}
      * @return the current instance of the Configurer, for chaining purposes
      */
-    Configurer configureEmbeddedEventStore(@Nonnull Function<Configuration, EventStorageEngine> storageEngineBuilder);
+    LegacyConfigurer configureEmbeddedEventStore(
+            @Nonnull Function<LegacyConfiguration, EventStorageEngine> storageEngineBuilder
+    );
 
     /**
      * Configures the given Event Store to use in this configuration. The builder receives the Configuration as input
@@ -277,14 +279,13 @@ public interface Configurer extends LifecycleOperations {
      * @param eventStoreBuilder The builder function for the {@link EventStore}
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureEventStore(@Nonnull Function<Configuration, EventStore> eventStoreBuilder) {
+    default LegacyConfigurer configureEventStore(@Nonnull Function<LegacyConfiguration, EventStore> eventStoreBuilder) {
         return registerComponent(EventBus.class, eventStoreBuilder);
     }
 
     /**
-     * Configures the given Event Bus to use in this configuration. The builder receives the Configuration as input
-     * and is expected to return a fully initialized {@link EventBus}
-     * instance.
+     * Configures the given Event Bus to use in this configuration. The builder receives the Configuration as input and
+     * is expected to return a fully initialized {@link EventBus} instance.
      * <p>
      * Note that this builder should not be used when an Event Store is configured. Since Axon 3, the Event Store will
      * act as Event Bus implementation as well.
@@ -292,31 +293,29 @@ public interface Configurer extends LifecycleOperations {
      * @param eventBusBuilder The builder function for the {@link EventBus}
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureEventBus(@Nonnull Function<Configuration, EventBus> eventBusBuilder) {
+    default LegacyConfigurer configureEventBus(@Nonnull Function<LegacyConfiguration, EventBus> eventBusBuilder) {
         return registerComponent(EventBus.class, eventBusBuilder);
     }
 
     /**
      * Configures the given Command Bus to use in this configuration. The builder receives the Configuration as input
-     * and is expected to return a fully initialized {@link CommandBus}
-     * instance.
+     * and is expected to return a fully initialized {@link CommandBus} instance.
      *
      * @param commandBusBuilder The builder function for the {@link CommandBus}
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureCommandBus(@Nonnull Function<Configuration, CommandBus> commandBusBuilder) {
+    default LegacyConfigurer configureCommandBus(@Nonnull Function<LegacyConfiguration, CommandBus> commandBusBuilder) {
         return registerComponent(CommandBus.class, commandBusBuilder);
     }
 
     /**
-     * Configures the given Query Bus to use in this configuration. The builder receives the Configuration as input
-     * and is expected to return a fully initialized {@link QueryBus}
-     * instance.
+     * Configures the given Query Bus to use in this configuration. The builder receives the Configuration as input and
+     * is expected to return a fully initialized {@link QueryBus} instance.
      *
      * @param queryBusBuilder The builder function for the {@link QueryBus}
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureQueryBus(@Nonnull Function<Configuration, QueryBus> queryBusBuilder) {
+    default LegacyConfigurer configureQueryBus(@Nonnull Function<LegacyConfiguration, QueryBus> queryBusBuilder) {
         return registerComponent(QueryBus.class, queryBusBuilder);
     }
 
@@ -327,20 +326,20 @@ public interface Configurer extends LifecycleOperations {
      * @param queryUpdateEmitterBuilder The builder function for the {@link QueryUpdateEmitter}
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureQueryUpdateEmitter(
-            @Nonnull Function<Configuration, QueryUpdateEmitter> queryUpdateEmitterBuilder) {
+    default LegacyConfigurer configureQueryUpdateEmitter(
+            @Nonnull Function<LegacyConfiguration, QueryUpdateEmitter> queryUpdateEmitterBuilder
+    ) {
         return registerComponent(QueryUpdateEmitter.class, queryUpdateEmitterBuilder);
     }
 
     /**
-     * Configures the given Serializer to use in this configuration. The builder receives the Configuration as input
-     * and is expected to return a fully initialized {@link Serializer}
-     * instance.
+     * Configures the given Serializer to use in this configuration. The builder receives the Configuration as input and
+     * is expected to return a fully initialized {@link Serializer} instance.
      *
      * @param serializerBuilder The builder function for the {@link Serializer}
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureSerializer(@Nonnull Function<Configuration, Serializer> serializerBuilder) {
+    default LegacyConfigurer configureSerializer(@Nonnull Function<LegacyConfiguration, Serializer> serializerBuilder) {
         return registerComponent(Serializer.class, serializerBuilder);
     }
 
@@ -353,7 +352,9 @@ public interface Configurer extends LifecycleOperations {
      * @param eventSerializerBuilder The builder function for the {@link org.axonframework.serialization.Serializer}.
      * @return The current instance of the Configurer, for chaining purposes.
      */
-    Configurer configureEventSerializer(@Nonnull Function<Configuration, Serializer> eventSerializerBuilder);
+    LegacyConfigurer configureEventSerializer(
+            @Nonnull Function<LegacyConfiguration, Serializer> eventSerializerBuilder
+    );
 
     /**
      * Configures the given event Serializer to use in this configuration. The builder receives the Configuration as
@@ -364,18 +365,20 @@ public interface Configurer extends LifecycleOperations {
      * @param messageSerializerBuilder The builder function for the {@link org.axonframework.serialization.Serializer}.
      * @return The current instance of the Configurer, for chaining purposes.
      */
-    Configurer configureMessageSerializer(@Nonnull Function<Configuration, Serializer> messageSerializerBuilder);
+    LegacyConfigurer configureMessageSerializer(
+            @Nonnull Function<LegacyConfiguration, Serializer> messageSerializerBuilder
+    );
 
     /**
      * Configures the given Transaction Manager to use in this configuration. The builder receives the Configuration as
-     * input and is expected to return a fully initialized {@link TransactionManager}
-     * instance.
+     * input and is expected to return a fully initialized {@link TransactionManager} instance.
      *
      * @param transactionManagerBuilder The builder function for the {@link TransactionManager}
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureTransactionManager(
-            @Nonnull Function<Configuration, TransactionManager> transactionManagerBuilder) {
+    default LegacyConfigurer configureTransactionManager(
+            @Nonnull Function<LegacyConfiguration, TransactionManager> transactionManagerBuilder
+    ) {
         return registerComponent(TransactionManager.class, transactionManagerBuilder);
     }
 
@@ -386,8 +389,9 @@ public interface Configurer extends LifecycleOperations {
      * @param resourceInjectorBuilder The builder function for the {@link ResourceInjector}
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureResourceInjector(
-            @Nonnull Function<Configuration, ResourceInjector> resourceInjectorBuilder) {
+    default LegacyConfigurer configureResourceInjector(
+            @Nonnull Function<LegacyConfiguration, ResourceInjector> resourceInjectorBuilder
+    ) {
         return registerComponent(ResourceInjector.class, resourceInjectorBuilder);
     }
 
@@ -398,7 +402,7 @@ public interface Configurer extends LifecycleOperations {
      * @param tagsBuilder The builder function for the {@link TagsConfiguration}
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureTags(@Nonnull Function<Configuration, TagsConfiguration> tagsBuilder) {
+    default LegacyConfigurer configureTags(@Nonnull Function<LegacyConfiguration, TagsConfiguration> tagsBuilder) {
         return registerComponent(TagsConfiguration.class, tagsBuilder);
     }
 
@@ -411,7 +415,7 @@ public interface Configurer extends LifecycleOperations {
      * @return the current instance of the Configurer, for chaining purposes
      * @see AggregateConfigurer
      */
-    <A> Configurer configureAggregate(@Nonnull AggregateConfiguration<A> aggregateConfiguration);
+    <A> LegacyConfigurer configureAggregate(@Nonnull AggregateConfiguration<A> aggregateConfiguration);
 
     /**
      * Configures an Aggregate using default settings. This means the aggregate is expected to be Event Sourced if an
@@ -422,19 +426,20 @@ public interface Configurer extends LifecycleOperations {
      * @param <A>       The type of aggregate
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default <A> Configurer configureAggregate(@Nonnull Class<A> aggregate) {
+    default <A> LegacyConfigurer configureAggregate(@Nonnull Class<A> aggregate) {
         return configureAggregate(AggregateConfigurer.defaultConfiguration(aggregate));
     }
 
     /**
      * Registers the definition of a Handler class. Defaults to annotation based recognition of handler methods.
      *
-     * @param handlerDefinitionClass A function providing the definition based on the current Configuration as well
-     *                               as the class being inspected.
+     * @param handlerDefinitionClass A function providing the definition based on the current Configuration as well as
+     *                               the class being inspected.
      * @return the current instance of the Configurer, for chaining purposes
      */
-    Configurer registerHandlerDefinition(
-            @Nonnull BiFunction<Configuration, Class, HandlerDefinition> handlerDefinitionClass);
+    LegacyConfigurer registerHandlerDefinition(
+            @Nonnull BiFunction<LegacyConfiguration, Class, HandlerDefinition> handlerDefinitionClass
+    );
 
     /**
      * Registers a builder function for a {@link HandlerEnhancerDefinition} used during constructing of the default
@@ -445,55 +450,58 @@ public interface Configurer extends LifecycleOperations {
      * type used in the {@link #registerHandlerDefinition(BiFunction)} method's lambda.
      *
      * @param handlerEnhancerBuilder A lambda constructing a {@link HandlerEnhancerDefinition} based on the
-     *                               {@link Configuration}.
-     * @return The current instance of the {@link Configurer}, for chaining purposes.
+     *                               {@link LegacyConfiguration}.
+     * @return The current instance of the {@link LegacyConfigurer}, for chaining purposes.
      */
-    Configurer registerHandlerEnhancerDefinition(
-            Function<Configuration, HandlerEnhancerDefinition> handlerEnhancerBuilder
+    LegacyConfigurer registerHandlerEnhancerDefinition(
+            Function<LegacyConfiguration, HandlerEnhancerDefinition> handlerEnhancerBuilder
     );
 
     /**
-     * Registers a {@link Snapshotter} instance with this {@link Configurer}. Defaults to a {@link
-     * org.axonframework.eventsourcing.AggregateSnapshotter} implementation.
+     * Registers a {@link Snapshotter} instance with this {@link LegacyConfigurer}. Defaults to a
+     * {@link org.axonframework.eventsourcing.AggregateSnapshotter} implementation.
      *
      * @param snapshotterBuilder the builder function for the {@link Snapshotter}
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureSnapshotter(@Nonnull Function<Configuration, Snapshotter> snapshotterBuilder) {
+    default LegacyConfigurer configureSnapshotter(
+            @Nonnull Function<LegacyConfiguration, Snapshotter> snapshotterBuilder
+    ) {
         return registerComponent(Snapshotter.class, snapshotterBuilder);
     }
 
     /**
-     * Registers a {@link DeadlineManager} instance with this {@link Configurer}. Defaults to a {@link
-     * org.axonframework.deadline.SimpleDeadlineManager} implementation.
+     * Registers a {@link DeadlineManager} instance with this {@link LegacyConfigurer}. Defaults to a
+     * {@link org.axonframework.deadline.SimpleDeadlineManager} implementation.
      *
      * @param deadlineManagerBuilder a builder function for the {@link DeadlineManager}
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureDeadlineManager(
-            @Nonnull Function<Configuration, DeadlineManager> deadlineManagerBuilder) {
+    default LegacyConfigurer configureDeadlineManager(
+            @Nonnull Function<LegacyConfiguration, DeadlineManager> deadlineManagerBuilder
+    ) {
         return registerComponent(DeadlineManager.class, deadlineManagerBuilder);
     }
 
     /**
-     * Registers a {@link SpanFactory} instance with this {@link Configurer}. Defaults to a
+     * Registers a {@link SpanFactory} instance with this {@link LegacyConfigurer}. Defaults to a
      * {@link org.axonframework.tracing.NoOpSpanFactory} implementation.
      *
      * @param spanFactory a builder function for the {@link SpanFactory}
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default Configurer configureSpanFactory(
-            @Nonnull Function<Configuration, SpanFactory> spanFactory) {
+    default LegacyConfigurer configureSpanFactory(
+            @Nonnull Function<LegacyConfiguration, SpanFactory> spanFactory
+    ) {
         return registerComponent(SpanFactory.class, spanFactory);
     }
 
     /**
-     * Retrieve the {@link EventProcessingConfigurer} registered as a module with this Configurer. If there aren't
-     * any, it will create an {@link EventProcessingModule} and register it as a module. If there are multiple,
-     * an {@link AxonConfigurationException} is thrown.
+     * Retrieve the {@link EventProcessingConfigurer} registered as a module with this Configurer. If there aren't any,
+     * it will create an {@link EventProcessingModule} and register it as a module. If there are multiple, an
+     * {@link AxonConfigurationException} is thrown.
      *
      * @return an instance of Event Processing Configurer
-     *
      * @throws AxonConfigurationException thrown if there are multiple {@link EventProcessingConfigurer}s
      */
     EventProcessingConfigurer eventProcessing() throws AxonConfigurationException;
@@ -503,16 +511,15 @@ public interface Configurer extends LifecycleOperations {
      * given consumer for configuration. If there aren't any pre-registered instances of
      * {@link EventProcessingConfigurer}, it will create an {@link EventProcessingModule} and register it as a module.
      * If there are multiple, an {@link AxonConfigurationException} is thrown.
-     *
+     * <p>
      * This method is identical to using {@link #eventProcessing()}, except that this variant allows for easier fluent
      * interfacing.
      *
      * @param eventProcessingConfigurer a consumer to configure the
      * @return an instance of Event Processing Configurer
-     *
      * @throws AxonConfigurationException thrown if there are multiple {@link EventProcessingConfigurer}s
      */
-    default Configurer eventProcessing(@Nonnull Consumer<EventProcessingConfigurer> eventProcessingConfigurer)
+    default LegacyConfigurer eventProcessing(@Nonnull Consumer<EventProcessingConfigurer> eventProcessingConfigurer)
             throws AxonConfigurationException {
         eventProcessingConfigurer.accept(eventProcessing());
         return this;
@@ -524,7 +531,7 @@ public interface Configurer extends LifecycleOperations {
      * @param eventHandlerBuilder a {@link Function} that builds an Event Handler instance.
      * @return the current instance of the Configurer, for chaining purposes.
      */
-    default Configurer registerEventHandler(@Nonnull Function<Configuration, Object> eventHandlerBuilder) {
+    default LegacyConfigurer registerEventHandler(@Nonnull Function<LegacyConfiguration, Object> eventHandlerBuilder) {
         eventProcessing().registerEventHandler(eventHandlerBuilder);
         return this;
     }
@@ -545,27 +552,27 @@ public interface Configurer extends LifecycleOperations {
      * @see org.axonframework.lifecycle.Phase
      * @see LifecycleHandler
      */
-    default Configurer configureLifecyclePhaseTimeout(long timeout, TimeUnit timeUnit) {
+    default LegacyConfigurer configureLifecyclePhaseTimeout(long timeout, TimeUnit timeUnit) {
         return this;
     }
 
     /**
-     * Register an initialization handler which should be invoked prior to starting this {@link Configurer}.
+     * Register an initialization handler which should be invoked prior to starting this {@link LegacyConfigurer}.
      *
-     * @param initHandler a {@link Consumer} of the configuration, to be ran upon initialization of the {@link
-     *                    Configuration}
+     * @param initHandler a {@link Consumer} of the configuration, to be ran upon initialization of the
+     *                    {@link LegacyConfiguration}
      */
-    default void onInitialize(@Nonnull Consumer<Configuration> initHandler) {
+    default void onInitialize(@Nonnull Consumer<LegacyConfiguration> initHandler) {
         registerModule(initHandler::accept);
     }
 
     /**
-     * Returns the completely initialized Configuration built using this configurer. It is not recommended to change
-     * any configuration on this Configurer once this method is called.
+     * Returns the completely initialized Configuration built using this configurer. It is not recommended to change any
+     * configuration on this Configurer once this method is called.
      *
      * @return the fully initialized Configuration
      */
-    Configuration buildConfiguration();
+    LegacyConfiguration buildConfiguration();
 
     /**
      * Builds the configuration and starts it immediately. It is not recommended to change any configuration on this
@@ -573,8 +580,8 @@ public interface Configurer extends LifecycleOperations {
      *
      * @return The started configuration
      */
-    default Configuration start() {
-        Configuration configuration = buildConfiguration();
+    default LegacyConfiguration start() {
+        LegacyConfiguration configuration = buildConfiguration();
         configuration.start();
         return configuration;
     }

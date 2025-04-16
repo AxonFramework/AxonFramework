@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.spring.config;
 
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.modelling.command.Repository;
 import org.junit.jupiter.api.*;
 
@@ -31,7 +31,7 @@ class BeanHelperTest {
     @SuppressWarnings({"rawtypes", "unchecked"})
     @Test
     void verifyRetrievesRepositoryFromConfiguration() {
-        Configuration configuration = mock(Configuration.class);
+        LegacyConfiguration configuration = mock(LegacyConfiguration.class);
         Repository mockRepository = mock(Repository.class);
         when(configuration.repository(any())).thenReturn(mockRepository);
 

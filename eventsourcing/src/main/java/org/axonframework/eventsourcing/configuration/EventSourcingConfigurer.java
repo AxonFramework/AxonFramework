@@ -28,7 +28,7 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
@@ -117,7 +117,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     /**
      * Registers the given {@link TagResolver} factory in this {@code Configurer}.
      * <p>
-     * The {@code eventStorageEngineFactory} receives the {@link NewConfiguration} as input and is expected to return a
+     * The {@code eventStorageEngineFactory} receives the {@link Configuration} as input and is expected to return a
      * {@link TagResolver} instance.
      *
      * @param tagResolverFactory The factory building the {@link TagResolver}.
@@ -131,7 +131,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     /**
      * Registers the given {@link AsyncEventStorageEngine} factory in this {@code Configurer}.
      * <p>
-     * The {@code eventStorageEngineFactory} receives the {@link NewConfiguration} as input and is expected to return a
+     * The {@code eventStorageEngineFactory} receives the {@link Configuration} as input and is expected to return a
      * {@link AsyncEventStorageEngine} instance.
      *
      * @param eventStorageEngineFactory The factory building the {@link AsyncEventStorageEngine}.
@@ -149,7 +149,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     /**
      * Registers the given {@link AsyncEventStore} factory in this {@code Configurer}.
      * <p>
-     * The {@code eventStoreFactory} receives the {@link NewConfiguration} as input and is expected to return a
+     * The {@code eventStoreFactory} receives the {@link Configuration} as input and is expected to return a
      * {@link AsyncEventStore} instance.
      *
      * @param eventStoreFactory The factory building the {@link AsyncEventStore}.
@@ -163,7 +163,7 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     /**
      * Registers the given {@link Snapshotter} factory in this {@code Configurer}.
      * <p>
-     * The {@code snapshotterFactory} receives the {@link NewConfiguration} as input and is expected to return a
+     * The {@code snapshotterFactory} receives the {@link Configuration} as input and is expected to return a
      * {@link Snapshotter} instance.
      *
      * @param snapshotterFactory The factory building the {@link Snapshotter}.

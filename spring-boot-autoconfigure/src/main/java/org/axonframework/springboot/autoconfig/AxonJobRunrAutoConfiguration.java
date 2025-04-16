@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.springboot.autoconfig;
 
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
@@ -27,7 +27,6 @@ import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventhandling.scheduling.jobrunr.JobRunrEventScheduler;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.tracing.SpanFactory;
 import org.jobrunr.scheduling.JobScheduler;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -67,10 +66,11 @@ public class AxonJobRunrAutoConfiguration {
     @ConditionalOnMissingBean
     public DeadlineManager deadlineManager(
             JobScheduler jobScheduler,
-            Configuration configuration,
+            LegacyConfiguration configuration,
             @Qualifier("eventSerializer") Serializer serializer,
             TransactionManager transactionManager,
-            DeadlineManagerSpanFactory spanFactory) {
+            DeadlineManagerSpanFactory spanFactory
+    ) {
         ScopeAwareProvider scopeAwareProvider = new ConfigurationScopeAwareProvider(configuration);
         return JobRunrDeadlineManager.builder()
                                      .jobScheduler(jobScheduler)

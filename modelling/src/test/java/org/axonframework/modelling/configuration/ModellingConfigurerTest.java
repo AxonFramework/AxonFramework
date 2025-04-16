@@ -18,7 +18,7 @@ package org.axonframework.modelling.configuration;
 
 import org.axonframework.configuration.ApplicationConfigurerTestSuite;
 import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.junit.jupiter.api.*;
@@ -53,7 +53,7 @@ class ModellingConfigurerTest extends ApplicationConfigurerTestSuite<ModellingCo
                                                      (command, stateManager, context) -> MessageStream.empty().cast()
                                              ));
 
-        List<NewConfiguration> moduleConfigurations =
+        List<Configuration> moduleConfigurations =
                 testSubject.registerStatefulCommandHandlingModule(statefulCommandHandlingModule)
                            .build()
                            .getModuleConfigurations();

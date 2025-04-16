@@ -39,10 +39,10 @@ import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.invokeAndGetMethodValue;
 
 /**
- * Utility class used to resolve {@link LifecycleHandler}s to be registered to the {@link Configuration}. A {@link
- * StartHandler} annotated lifecycle handler will be registered through {@link Configuration#onStart(int,
- * LifecycleHandler)}, whilst a {@link ShutdownHandler} annotated lifecycle handler will be registered through {@link
- * Configuration#onShutdown(int, LifecycleHandler)}.
+ * Utility class used to resolve {@link LifecycleHandler}s to be registered to the {@link LegacyConfiguration}. A
+ * {@link StartHandler} annotated lifecycle handler will be registered through
+ * {@link LegacyConfiguration#onStart(int, LifecycleHandler)}, whilst a {@link ShutdownHandler} annotated lifecycle
+ * handler will be registered through {@link LegacyConfiguration#onShutdown(int, LifecycleHandler)}.
  *
  * @author Steven van Beelen
  * @see ShutdownHandler
@@ -63,17 +63,17 @@ public abstract class LifecycleHandlerInspector {
     /**
      * Register any lifecycle handlers found on given {@code component} with given {@code configuration}.
      * <p>
-     * If given {@code component} implements {@link Lifecycle}, will allow it to register lifecycle handlers with
-     * the configuration. Otherwise, will resolve {@link StartHandler} and {@link ShutdownHandler} annotated lifecycle
+     * If given {@code component} implements {@link Lifecycle}, will allow it to register lifecycle handlers with the
+     * configuration. Otherwise, will resolve {@link StartHandler} and {@link ShutdownHandler} annotated lifecycle
      * handlers in the given {@code component}. If present, they will be registered on the given {@code configuration}
-     * through the {@link Configuration#onStart(int, LifecycleHandler)} and
-     * {@link Configuration#onShutdown(int, LifecycleHandler)} methods. If the given {@code component} is {@code null}
-     * it will be ignored.
+     * through the {@link LegacyConfiguration#onStart(int, LifecycleHandler)} and
+     * {@link LegacyConfiguration#onShutdown(int, LifecycleHandler)} methods. If the given {@code component} is
+     * {@code null} it will be ignored.
      *
-     * @param configuration the {@link Configuration} to register resolved lifecycle handlers to
+     * @param configuration the {@link LegacyConfiguration} to register resolved lifecycle handlers to
      * @param component     the object to resolve lifecycle handlers for
      */
-    public static void registerLifecycleHandlers(Configuration configuration, Object component) {
+    public static void registerLifecycleHandlers(LegacyConfiguration configuration, Object component) {
         if (component == null) {
             logger.debug("Ignoring [null] component for inspection as it wont participate in the lifecycle");
             return;
@@ -102,12 +102,12 @@ public abstract class LifecycleHandlerInspector {
                 }
             });
         } else {
-            registerLifecycleHandlers(configuration, component, StartHandler.class, Configuration::onStart);
-            registerLifecycleHandlers(configuration, component, ShutdownHandler.class, Configuration::onShutdown);
+            registerLifecycleHandlers(configuration, component, StartHandler.class, LegacyConfiguration::onStart);
+            registerLifecycleHandlers(configuration, component, ShutdownHandler.class, LegacyConfiguration::onShutdown);
         }
     }
 
-    private static void registerLifecycleHandlers(Configuration configuration,
+    private static void registerLifecycleHandlers(LegacyConfiguration configuration,
                                                   Object component,
                                                   Class<? extends Annotation> lifecycleAnnotation,
                                                   LifecycleRegistration registrationMethod) {
@@ -155,8 +155,8 @@ public abstract class LifecycleHandlerInspector {
             Object result = invokeAndGetMethodValue(lifecycleHandler, lifecycleComponent);
 
             return result instanceof CompletableFuture
-                   ? (CompletableFuture<?>) result
-                   : FutureUtils.emptyCompletedFuture();
+                    ? (CompletableFuture<?>) result
+                    : FutureUtils.emptyCompletedFuture();
         } catch (Exception e) {
             CompletableFuture<Void> exceptionallyCompletedFuture = new CompletableFuture<>();
             exceptionallyCompletedFuture.completeExceptionally(
@@ -168,11 +168,11 @@ public abstract class LifecycleHandlerInspector {
 
     /**
      * Functional interface towards the registration of a {@code lifecycleHandler} on the given {@code phase} to the
-     * {@link Configuration}.
+     * {@link LegacyConfiguration}.
      */
     @FunctionalInterface
     private interface LifecycleRegistration {
 
-        void registerLifecycleHandler(Configuration configuration, int phase, LifecycleHandler lifecycleHandler);
+        void registerLifecycleHandler(LegacyConfiguration configuration, int phase, LifecycleHandler lifecycleHandler);
     }
 }

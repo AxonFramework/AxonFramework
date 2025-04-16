@@ -40,7 +40,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Default implementation of the {@link ComponentRegistry} allowing for reuse of {@link Component},
  * {@link ComponentDecorator}, {@link ConfigurationEnhancer}, and {@link Module} registration for the
- * {@code NewConfigurer} and {@link Module} implementations alike.
+ * {@link ApplicationConfigurer} and {@link Module} implementations alike.
  *
  * @author Allard Buijze
  * @author Steven van Beelen
@@ -56,7 +56,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     private final Map<String, Module> modules = new ConcurrentHashMap<>();
 
     private final AtomicBoolean initialized = new AtomicBoolean(false);
-    private final Map<String, NewConfiguration> moduleConfigurations = new ConcurrentHashMap<>();
+    private final Map<String, Configuration> moduleConfigurations = new ConcurrentHashMap<>();
 
     private OverridePolicy overridePolicy = OverridePolicy.WARN;
     private boolean enhancerScanning = true;
@@ -125,19 +125,19 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     /**
-     * Builds the {@link NewConfiguration} from this {@code ComponentRegistry} as a root configuration.
+     * Builds the {@link Configuration} from this {@code ComponentRegistry} as a root configuration.
      * <p>
      * The given {@code lifecycleRegistry} is used to register components' lifecycle methods.
      *
      * @param lifecycleRegistry The registry where lifecycle handlers are registered.
      * @return A fully initialized configuration exposing all configured components.
      */
-    public NewConfiguration build(@Nonnull LifecycleRegistry lifecycleRegistry) {
+    public Configuration build(@Nonnull LifecycleRegistry lifecycleRegistry) {
         return doBuild(null, lifecycleRegistry);
     }
 
     /**
-     * Builds the {@link NewConfiguration} from this {@code ComponentRegistry} as a nested configuration under the given
+     * Builds the {@link Configuration} from this {@code ComponentRegistry} as a nested configuration under the given
      * {@code parent}.
      * <p>
      * Components registered in the {@code parent} are available to components registered in this registry, but not vice
@@ -147,13 +147,13 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      * @param lifecycleRegistry The registry where lifecycle handlers are registered.
      * @return A fully initialized configuration exposing all configured components.
      */
-    public NewConfiguration buildNested(@Nonnull NewConfiguration parent,
-                                        @Nonnull LifecycleRegistry lifecycleRegistry) {
+    public Configuration buildNested(@Nonnull Configuration parent,
+                                     @Nonnull LifecycleRegistry lifecycleRegistry) {
         return doBuild(requireNonNull(parent), requireNonNull(lifecycleRegistry));
     }
 
-    private NewConfiguration doBuild(@Nullable NewConfiguration optionalParent,
-                                     @Nonnull LifecycleRegistry lifecycleRegistry) {
+    private Configuration doBuild(@Nullable Configuration optionalParent,
+                                  @Nonnull LifecycleRegistry lifecycleRegistry) {
         if (initialized.getAndSet(true)) {
             throw new IllegalStateException("Component registry has already been initialized.");
         }
@@ -162,7 +162,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         }
         invokeEnhancers();
         decorateComponents();
-        NewConfiguration config = new LocalConfiguration(optionalParent);
+        Configuration config = new LocalConfiguration(optionalParent);
         buildModules(config, lifecycleRegistry);
         initializeComponents(config, lifecycleRegistry);
 
@@ -194,10 +194,10 @@ public class DefaultComponentRegistry implements ComponentRegistry {
     }
 
     /**
-     * Ensure all registered {@link Module Modules} are built too. Store their {@link NewConfiguration} results for
-     * exposure on {@link NewConfiguration#getModuleConfigurations()}.
+     * Ensure all registered {@link Module Modules} are built too. Store their {@link Configuration} results for
+     * exposure on {@link Configuration#getModuleConfigurations()}.
      */
-    private void buildModules(NewConfiguration config, LifecycleRegistry lifecycleRegistry) {
+    private void buildModules(Configuration config, LifecycleRegistry lifecycleRegistry) {
         for (Module module : modules.values()) {
             var builtModule = HierarchicalConfiguration.build(
                     lifecycleRegistry, (childLifecycleRegistry) -> module.build(config, childLifecycleRegistry)
@@ -212,7 +212,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
      *
      * @param lifecycleRegistry The registry where components may register their lifecycle actions.
      */
-    private void initializeComponents(NewConfiguration config, LifecycleRegistry lifecycleRegistry) {
+    private void initializeComponents(Configuration config, LifecycleRegistry lifecycleRegistry) {
         components.postProcessComponents(c -> c.initLifecycle(config, lifecycleRegistry));
     }
 
@@ -253,9 +253,9 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         descriptor.describeProperty("modules", modules.values());
     }
 
-    private class LocalConfiguration implements NewConfiguration {
+    private class LocalConfiguration implements Configuration {
 
-        private final NewConfiguration parent;
+        private final Configuration parent;
 
         /**
          * Construct a {@code LocalConfiguration} using the given {@code parent} configuration.
@@ -266,12 +266,12 @@ public class DefaultComponentRegistry implements ComponentRegistry {
          *
          * @param parent The parent life cycle supporting configuration to fall back on when necessary.
          */
-        public LocalConfiguration(@Nullable NewConfiguration parent) {
+        public LocalConfiguration(@Nullable Configuration parent) {
             this.parent = parent;
         }
 
         @Override
-        public NewConfiguration getParent() {
+        public Configuration getParent() {
             return parent;
         }
 
@@ -307,7 +307,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
         }
 
         @Override
-        public List<NewConfiguration> getModuleConfigurations() {
+        public List<Configuration> getModuleConfigurations() {
             return List.copyOf(moduleConfigurations.values());
         }
 
@@ -319,7 +319,7 @@ public class DefaultComponentRegistry implements ComponentRegistry {
 
 
         @Override
-        public Optional<NewConfiguration> getModuleConfiguration(@Nonnull String name) {
+        public Optional<Configuration> getModuleConfiguration(@Nonnull String name) {
             Assert.nonEmpty(name, "The name must not be null.");
             return Optional.ofNullable(moduleConfigurations.get(name));
         }

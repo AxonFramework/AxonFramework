@@ -18,8 +18,8 @@ package org.axonframework.integrationtests.eventsourcing.conflictresolution;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.config.Configuration;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.conflictresolution.ConflictResolver;
 import org.axonframework.eventsourcing.conflictresolution.Conflicts;
@@ -46,10 +46,11 @@ class ConflictResolutionIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        Configuration configuration = DefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
-                                                       .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
-                                                       .configureAggregate(StubAggregate.class)
-                                                       .buildConfiguration();
+        LegacyConfiguration configuration =
+                LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
+                                       .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                       .configureAggregate(StubAggregate.class)
+                                       .buildConfiguration();
         configuration.start();
         commandGateway = configuration.commandGateway();
     }
@@ -124,10 +125,10 @@ class ConflictResolutionIntegrationTest {
         protected void on(CreatedEvent event) {
             this.aggregateId = event.getAggregateId();
         }
-
     }
 
     public static class UpdatedEvent {
+
         private final String update;
 
         public UpdatedEvent(String update) {
@@ -140,6 +141,7 @@ class ConflictResolutionIntegrationTest {
     }
 
     public static class CreatedEvent {
+
         private final String aggregateId;
 
         public CreatedEvent(String aggregateId) {
@@ -152,6 +154,7 @@ class ConflictResolutionIntegrationTest {
     }
 
     public static class CreateCommand {
+
         @TargetAggregateIdentifier
         private final String aggregateId;
 
@@ -165,6 +168,7 @@ class ConflictResolutionIntegrationTest {
     }
 
     public static class UpdateCommand {
+
         @TargetAggregateIdentifier
         private final String aggregateId;
         private final String update;

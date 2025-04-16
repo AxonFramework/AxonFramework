@@ -41,7 +41,6 @@ import static org.axonframework.messaging.configuration.reflection.ParameterReso
  *     <li>Registers a {@link org.axonframework.commandhandling.gateway.DefaultCommandGateway} as the {@link org.axonframework.commandhandling.gateway.CommandGateway}</li>
  *     <li>Registers a {@link org.axonframework.commandhandling.SimpleCommandBus} as the {@link CommandBus}</li>
  *     <li>Registers a {@link org.axonframework.eventhandling.gateway.DefaultEventGateway} as the {@link org.axonframework.eventhandling.gateway.EventGateway}</li>
- *     <li>Registers a TODO as the {@link EventSink}</li>
  *     <li>Registers a {@link org.axonframework.eventhandling.SimpleEventBus} as the {@link org.axonframework.eventhandling.EventBus}</li>
  *     <li>Registers a {@link org.axonframework.queryhandling.DefaultQueryGateway} as the {@link org.axonframework.queryhandling.QueryGateway}</li>
  *     <li>Registers a {@link org.axonframework.queryhandling.SimpleQueryBus} as the {@link QueryBus}</li>
@@ -109,7 +108,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     /**
      * Registers the given {@link CommandBus} factory in this {@code Configurer}.
      * <p>
-     * The {@code commandBusFactory} receives the {@link NewConfiguration} as input and is expected to return a
+     * The {@code commandBusFactory} receives the {@link Configuration} as input and is expected to return a
      * {@link CommandBus} instance.
      *
      * @param commandBusFactory The factory building the {@link CommandBus}.
@@ -123,7 +122,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     /**
      * Registers the given {@link EventSink} factory in this {@code Configurer}.
      * <p>
-     * The {@code eventSinkFactory} receives the {@link NewConfiguration} as input and is expected to return a
+     * The {@code eventSinkFactory} receives the {@link Configuration} as input and is expected to return a
      * {@link EventSink} instance.
      *
      * @param eventSinkFactory The factory building the {@link EventSink}.
@@ -137,7 +136,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     /**
      * Registers the given {@link QueryBus} factory in this {@code Configurer}.
      * <p>
-     * The {@code queryBusFactory} receives the {@link NewConfiguration} as input and is expected to return a
+     * The {@code queryBusFactory} receives the {@link Configuration} as input and is expected to return a
      * {@link QueryBus} instance.
      *
      * @param queryBusFactory The factory building the {@link QueryBus}.
@@ -151,7 +150,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     /**
      * Registers the given {@link ParameterResolverFactory} factory in this {@code Configurer}.
      * <p>
-     * The {@code parameterResolverFactoryFactory} receives the {@link NewConfiguration} as input and is expected to
+     * The {@code parameterResolverFactoryFactory} receives the {@link Configuration} as input and is expected to
      * return a {@link ParameterResolverFactory} instance.
      *
      * @param parameterResolverFactoryFactory The factory building the {@link ParameterResolverFactory}.
@@ -170,7 +169,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     /**
      * Registers the given {@link QueryUpdateEmitter} factory in this {@code Configurer}.
      * <p>
-     * The {@code queryUpdateEmitterFactory} receives the {@link NewConfiguration} as input and is expected to return a
+     * The {@code queryUpdateEmitterFactory} receives the {@link Configuration} as input and is expected to return a
      * {@link QueryUpdateEmitter} instance.
      *
      * @param queryUpdateEmitterFactory The factory building the {@link QueryUpdateEmitter}.

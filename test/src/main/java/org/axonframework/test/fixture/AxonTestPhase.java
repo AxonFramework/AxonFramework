@@ -19,6 +19,7 @@ package org.axonframework.test.fixture;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MetaData;
 
@@ -49,7 +50,7 @@ import java.util.function.Predicate;
  * is executed in its own separate {@link org.axonframework.messaging.unitofwork.AsyncUnitOfWork} that is committed immediately after execution. In the When phase, a single Unit of Work is started
  * and committed after the command is executed. The Then phase only validates the results.
  * <p>
- * The test phases operates on components defined in {@link org.axonframework.configuration.NewConfiguration} that you pass to the fixture during its construction.
+ * The test phases operates on components defined in {@link Configuration} that you pass to the fixture during its construction.
  * <p>
  * Typical usage example:<br/>
  * <pre>

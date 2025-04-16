@@ -16,8 +16,8 @@
 
 package org.axonframework.springboot.autoconfig;
 
-import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
 import org.axonframework.messaging.timeout.HandlerTimeoutHandlerEnhancerDefinition;
 import org.axonframework.messaging.timeout.TaskTimeoutSettings;
@@ -65,7 +65,7 @@ public class AxonTimeoutAutoConfiguration {
         }
 
         @Override
-        public void configureModule(@NotNull Configurer configurer) {
+        public void configureModule(@NotNull LegacyConfigurer configurer) {
             configurer.eventProcessing()
                       .registerDefaultHandlerInterceptor((c, name) -> {
                           TaskTimeoutSettings settings = getSettingsForProcessor(name);
@@ -78,7 +78,7 @@ public class AxonTimeoutAutoConfiguration {
                       });
             // Cannot use the configurer.onInitialize, as it creates a circular creation dependency
             configurer.onStart(Integer.MIN_VALUE, () -> {
-                Configuration c = configurer.buildConfiguration();
+                LegacyConfiguration c = configurer.buildConfiguration();
                 // TODO #3103 - Revisit this section to adjust it to configurer logic instead of configuration logic.
 //                c.commandBus().registerHandlerInterceptor(new UnitOfWorkTimeoutInterceptor(
 //                        c.commandBus().getClass().getSimpleName(),

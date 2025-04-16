@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,10 @@ import org.axonframework.axonserver.connector.query.AxonServerQueryBus;
 import org.axonframework.axonserver.connector.query.QueryPriorityCalculator;
 import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.Configuration;
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfiguration;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.ConfigurerModule;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.config.TagsConfiguration;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
@@ -41,7 +42,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 
 /**
- * Configurer module which is auto-loadable by the {@link org.axonframework.config.DefaultConfigurer} that sets sensible
+ * Configurer module which is auto-loadable by the {@link LegacyDefaultConfigurer} that sets sensible
  * default to use when the AxonServer connector is available on the classpath.
  *
  * @author Allard Buijze
@@ -52,7 +53,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
     private static final Logger logger = LoggerFactory.getLogger(ServerConnectorConfigurerModule.class);
 
     @Override
-    public void configureModule(@Nonnull Configurer configurer) {
+    public void configureModule(@Nonnull LegacyConfigurer configurer) {
         configurer.registerComponent(AxonServerConfiguration.class, c -> new AxonServerConfiguration());
         configurer.registerComponent(AxonServerConnectionManager.class, this::buildAxonServerConnectionManager);
         configurer.registerComponent(ManagedChannelCustomizer.class, c -> ManagedChannelCustomizer.identity());
@@ -69,7 +70,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
         configurer.registerComponent(AxonServerEventStoreFactory.class, this::buildEventStoreFactory);
     }
 
-    private AxonServerConnectionManager buildAxonServerConnectionManager(Configuration c) {
+    private AxonServerConnectionManager buildAxonServerConnectionManager(LegacyConfiguration c) {
         AxonServerConfiguration axonServerConfiguration = c.getComponent(AxonServerConfiguration.class);
         return AxonServerConnectionManager.builder()
                                           .routingServers(axonServerConfiguration.getServers())
@@ -81,7 +82,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                           .build();
     }
 
-    private AxonServerEventStore buildEventStore(Configuration c) {
+    private AxonServerEventStore buildEventStore(LegacyConfiguration c) {
         return AxonServerEventStore.builder()
                                    .configuration(c.getComponent(AxonServerConfiguration.class))
                                    .platformConnectionManager(c.getComponent(AxonServerConnectionManager.class))
@@ -94,7 +95,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                    .build();
     }
 
-    private QueryBus buildQueryBus(Configuration c) {
+    private QueryBus buildQueryBus(LegacyConfiguration c) {
         SimpleQueryBus localSegment =
                 SimpleQueryBus.builder()
                               .transactionManager(
@@ -125,7 +126,7 @@ public class ServerConnectorConfigurerModule implements ConfigurerModule {
                                  .build();
     }
 
-    private AxonServerEventStoreFactory buildEventStoreFactory(Configuration config) {
+    private AxonServerEventStoreFactory buildEventStoreFactory(LegacyConfiguration config) {
         return AxonServerEventStoreFactory.builder()
                                           .configuration(config.getComponent(AxonServerConfiguration.class))
                                           .connectionManager(

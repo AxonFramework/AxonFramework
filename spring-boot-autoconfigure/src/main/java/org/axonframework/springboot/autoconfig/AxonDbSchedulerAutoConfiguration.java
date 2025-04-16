@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.springboot.autoconfig;
 import com.github.kagkarlsson.scheduler.Scheduler;
 import com.github.kagkarlsson.scheduler.task.Task;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.ConfigurationScopeAwareProvider;
 import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.deadline.DeadlineManagerSpanFactory;
@@ -32,7 +32,6 @@ import org.axonframework.eventhandling.scheduling.dbscheduler.DbSchedulerEventSc
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.util.ConditionalOnMissingQualifiedBean;
-import org.axonframework.tracing.SpanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -94,10 +93,11 @@ public class AxonDbSchedulerAutoConfiguration {
     @ConditionalOnMissingBean
     public DeadlineManager deadlineManager(
             Scheduler scheduler,
-            Configuration configuration,
+            LegacyConfiguration configuration,
             @Qualifier("eventSerializer") Serializer serializer,
             TransactionManager transactionManager,
-            DeadlineManagerSpanFactory spanFactory) {
+            DeadlineManagerSpanFactory spanFactory
+    ) {
         ScopeAwareProvider scopeAwareProvider = new ConfigurationScopeAwareProvider(configuration);
         return DbSchedulerDeadlineManager.builder()
                                          .scheduler(scheduler)

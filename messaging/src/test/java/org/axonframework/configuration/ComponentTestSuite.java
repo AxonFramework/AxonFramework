@@ -41,7 +41,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
     protected Identifier<String> identifier;
     protected ComponentFactory<String> factory;
 
-    protected NewConfiguration configuration;
+    protected Configuration configuration;
     protected LifecycleRegistry lifecycleRegistry;
 
     @BeforeEach
@@ -49,7 +49,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
         identifier = new Identifier<>(String.class, "id");
         factory = c -> TEST_COMPONENT;
 
-        configuration = mock(NewConfiguration.class);
+        configuration = mock(Configuration.class);
         // wrap the mock to allow default methods to be taken into account
         lifecycleRegistry = mock();
     }
@@ -82,7 +82,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
      * @param handler     The start-up handler to trigger in the specified {@code phase} for the given
      *                    {@code testSubject}.
      */
-    abstract void registerStartHandler(D testSubject, int phase, BiConsumer<NewConfiguration, String> handler);
+    abstract void registerStartHandler(D testSubject, int phase, BiConsumer<Configuration, String> handler);
 
     /**
      * Registers a shutdown {@code handler} with the given {@code testSubject} in the specified {@code phase}.
@@ -92,7 +92,7 @@ abstract class ComponentTestSuite<D extends Component<String>> {
      * @param handler     The shutdown handler to trigger in the specified {@code phase} for the given
      *                    {@code testSubject}.
      */
-    abstract void registerShutdownHandler(D testSubject, int phase, BiConsumer<NewConfiguration, String> handler);
+    abstract void registerShutdownHandler(D testSubject, int phase, BiConsumer<Configuration, String> handler);
 
     @Test
     void resolveThrowsNullPointerExceptionForNullConfiguration() {

@@ -48,7 +48,7 @@ class InstantiatedComponentDefinition<C> extends AbstractComponent<C, C> {
     }
 
     @Override
-    public C doResolve(@Nonnull NewConfiguration configuration) {
+    public C doResolve(@Nonnull Configuration configuration) {
         return instance;
     }
 

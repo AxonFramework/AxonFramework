@@ -53,13 +53,13 @@ public interface ApplicationConfigurer {
     ApplicationConfigurer lifecycleRegistry(@Nonnull Consumer<LifecycleRegistry> lifecycleRegistrar);
 
     /**
-     * Returns the completely initialized {@link NewConfiguration} instance of type {@code C} built using this
+     * Returns the completely initialized {@link Configuration} instance of type {@code C} built using this
      * {@code Configurer} implementation.
      * <p>
      * It is not recommended to change any configuration on {@code this ApplicationConfigurer} once this method is
      * called.
      *
-     * @return The fully initialized {@link NewConfiguration} instance of type {@code C}.
+     * @return The fully initialized {@link Configuration} instance of type {@code C}.
      */
     AxonConfiguration build();
 

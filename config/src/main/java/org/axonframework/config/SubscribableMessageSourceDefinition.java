@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ public interface SubscribableMessageSourceDefinition<M extends Message<?>> {
     /**
      * Creates a {@link SubscribableMessageSource} based on this definition and the provided configuration.
      *
-     * @param configuration The Axon {@link Configuration} to base the {@link SubscribableMessageSource} on.
+     * @param configuration The Axon {@link LegacyConfiguration} to base the {@link SubscribableMessageSource} on.
      * @return A {@link SubscribableMessageSource} based on this definition and the provided configuration.
      */
-    SubscribableMessageSource<M> create(Configuration configuration);
+    SubscribableMessageSource<M> create(LegacyConfiguration configuration);
 }

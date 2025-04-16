@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@ import io.axoniq.axonserver.grpc.event.EventWithToken;
 import io.axoniq.axonserver.grpc.streams.PersistentStreamEvent;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
-import org.axonframework.config.Configurer;
-import org.axonframework.config.DefaultConfigurer;
+import org.axonframework.config.LegacyConfigurer;
+import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.junit.jupiter.api.*;
@@ -74,7 +74,7 @@ class PersistentStreamConnectionTest {
     @BeforeEach
     void setup() {
         System.setProperty("disable-axoniq-console-message", "true");
-        Configurer configurer = DefaultConfigurer.defaultConfiguration();
+        LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration();
         AxonServerConnectionManager mockAxonServerConnectionManager = mock(AxonServerConnectionManager.class);
         AxonServerConnection mockAxonServerConnection = mock(AxonServerConnection.class);
         EventChannel mockEventChannel = mock(EventChannel.class);

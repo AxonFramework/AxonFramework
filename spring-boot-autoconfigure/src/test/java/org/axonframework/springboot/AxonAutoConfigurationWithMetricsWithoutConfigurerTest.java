@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.springboot;
 import com.codahale.metrics.MetricRegistry;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStoreFactory;
-import org.axonframework.config.Configurer;
+import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.MessageMonitorFactory;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.metrics.GlobalMetricRegistry;
@@ -108,7 +108,7 @@ class AxonAutoConfigurationWithMetricsWithoutConfigurerTest {
     public static class Context {
 
         @Autowired
-        public void configure(Configurer configurer) {
+        public void configure(LegacyConfigurer configurer) {
             configurer.configureMessageMonitor(EventBus.class, mockMessageMonitorFactory());
         }
 

@@ -20,7 +20,7 @@ import com.thoughtworks.xstream.XStream;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.config.Configuration;
+import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.annotation.EventHandler;
@@ -329,7 +329,7 @@ class InterceptorConfigurationTest {
         public MyCommandHandlerInterceptor mySecondCommandHandlerInterceptor(
                 @Qualifier("commandHandlerInterceptorInvocations") CountDownLatch commandHandlerInterceptorInvocations,
                 @Qualifier("commandHandlingInterceptingOutcome") Queue<String> commandHandlingInterceptingOutcome,
-                Configuration configuration
+                LegacyConfiguration configuration
         ) {
             return new MyCommandHandlerInterceptor("Order-0",
                                                    commandHandlerInterceptorInvocations,
@@ -341,7 +341,7 @@ class InterceptorConfigurationTest {
         public MyCommandHandlerInterceptor myThirdCommandHandlerInterceptor(
                 @Qualifier("commandHandlerInterceptorInvocations") CountDownLatch commandHandlerInterceptorInvocations,
                 @Qualifier("commandHandlingInterceptingOutcome") Queue<String> commandHandlingInterceptingOutcome,
-                Configuration configuration
+                LegacyConfiguration configuration
         ) {
             return new MyCommandHandlerInterceptor("Unordered",
                                                    commandHandlerInterceptorInvocations,
@@ -354,7 +354,7 @@ class InterceptorConfigurationTest {
         public MyQueryHandlerInterceptor mySecondQueryHandlerInterceptor(
                 @Qualifier("queryHandlerInterceptorInvocations") CountDownLatch queryHandlerInterceptorInvocations,
                 @Qualifier("queryHandlingInterceptingOutcome") Queue<String> queryHandlingInterceptingOutcome,
-                Configuration configuration
+                LegacyConfiguration configuration
         ) {
             return new MyQueryHandlerInterceptor("Order-0",
                                                  queryHandlerInterceptorInvocations,
@@ -366,7 +366,7 @@ class InterceptorConfigurationTest {
         public MyQueryHandlerInterceptor myThirdQueryHandlerInterceptor(
                 @Qualifier("queryHandlerInterceptorInvocations") CountDownLatch queryHandlerInterceptorInvocations,
                 @Qualifier("queryHandlingInterceptingOutcome") Queue<String> queryHandlingInterceptingOutcome,
-                Configuration configuration
+                LegacyConfiguration configuration
         ) {
             return new MyQueryHandlerInterceptor("Unordered",
                                                  queryHandlerInterceptorInvocations,
@@ -379,7 +379,7 @@ class InterceptorConfigurationTest {
         public MyEventHandlerInterceptor mySecondEventHandlerInterceptor(
                 @Qualifier("eventHandlerInterceptorInvocations") CountDownLatch eventHandlerInterceptorInvocations,
                 @Qualifier("eventHandlingInterceptingOutcome") Queue<String> eventHandlingInterceptingOutcome,
-                Configuration configuration
+                LegacyConfiguration configuration
         ) {
             return new MyEventHandlerInterceptor("Order-0",
                                                  eventHandlerInterceptorInvocations,
@@ -391,7 +391,7 @@ class InterceptorConfigurationTest {
         public MyEventHandlerInterceptor myThirdEventHandlerInterceptor(
                 @Qualifier("eventHandlerInterceptorInvocations") CountDownLatch eventHandlerInterceptorInvocations,
                 @Qualifier("eventHandlingInterceptingOutcome") Queue<String> eventHandlingInterceptingOutcome,
-                Configuration configuration
+                LegacyConfiguration configuration
         ) {
             return new MyEventHandlerInterceptor("Unordered",
                                                  eventHandlerInterceptorInvocations,
@@ -424,7 +424,7 @@ class InterceptorConfigurationTest {
         public MyCommandDispatchInterceptor mySecondCommandDispatchInterceptor(
                 @Qualifier("commandDispatchInterceptorInvocations") CountDownLatch commandDispatchInterceptorInvocations,
                 @Qualifier("commandDispatchingInterceptingOutcome") Queue<String> commandDispatchingInterceptingOutcome,
-                Configuration configuration
+                LegacyConfiguration configuration
         ) {
             return new MyCommandDispatchInterceptor("Order-0",
                                                     commandDispatchInterceptorInvocations,
@@ -436,7 +436,7 @@ class InterceptorConfigurationTest {
         public MyCommandDispatchInterceptor myThirdCommandDispatchInterceptor(
                 @Qualifier("commandDispatchInterceptorInvocations") CountDownLatch commandDispatchInterceptorInvocations,
                 @Qualifier("commandDispatchingInterceptingOutcome") Queue<String> commandDispatchingInterceptingOutcome,
-                Configuration configuration
+                LegacyConfiguration configuration
         ) {
             return new MyCommandDispatchInterceptor("Unordered",
                                                     commandDispatchInterceptorInvocations,
@@ -449,7 +449,7 @@ class InterceptorConfigurationTest {
         public MyQueryDispatchInterceptor mySecondQueryDispatchInterceptor(
                 @Qualifier("queryDispatchInterceptorInvocations") CountDownLatch queryDispatchInterceptorInvocations,
                 @Qualifier("queryDispatchingInterceptingOutcome") Queue<String> queryDispatchingInterceptingOutcome,
-                Configuration configuration
+                LegacyConfiguration configuration
         ) {
             return new MyQueryDispatchInterceptor("Order-0",
                                                   queryDispatchInterceptorInvocations,
@@ -461,7 +461,7 @@ class InterceptorConfigurationTest {
         public MyQueryDispatchInterceptor myThirdQueryDispatchInterceptor(
                 @Qualifier("queryDispatchInterceptorInvocations") CountDownLatch queryDispatchInterceptorInvocations,
                 @Qualifier("queryDispatchingInterceptingOutcome") Queue<String> queryDispatchingInterceptingOutcome,
-                Configuration configuration
+                LegacyConfiguration configuration
         ) {
             return new MyQueryDispatchInterceptor("Unordered",
                                                   queryDispatchInterceptorInvocations,
@@ -474,7 +474,7 @@ class InterceptorConfigurationTest {
         public MyEventDispatchInterceptor mySecondEventDispatchInterceptor(
                 @Qualifier("eventDispatchInterceptorInvocations") CountDownLatch eventDispatchInterceptorInvocations,
                 @Qualifier("eventDispatchingInterceptingOutcome") Queue<String> eventDispatchingInterceptingOutcome,
-                Configuration configuration
+                LegacyConfiguration configuration
         ) {
             return new MyEventDispatchInterceptor("Order-0",
                                                   eventDispatchInterceptorInvocations,
@@ -486,7 +486,7 @@ class InterceptorConfigurationTest {
         public MyEventDispatchInterceptor myThirdEventDispatchInterceptor(
                 @Qualifier("eventDispatchInterceptorInvocations") CountDownLatch eventDispatchInterceptorInvocations,
                 @Qualifier("eventDispatchingInterceptingOutcome") Queue<String> eventDispatchingInterceptingOutcome,
-                Configuration configuration
+                LegacyConfiguration configuration
         ) {
             return new MyEventDispatchInterceptor("Unordered",
                                                   eventDispatchInterceptorInvocations,
@@ -512,7 +512,7 @@ class InterceptorConfigurationTest {
         public static class MyCommandHandlerInterceptor extends MyHandlerInterceptor<CommandMessage<?>> {
 
             public MyCommandHandlerInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
-                                               Configuration configuration) {
+                                               LegacyConfiguration configuration) {
                 super(name, invocation, handlingOutcome, configuration);
             }
         }
@@ -520,7 +520,7 @@ class InterceptorConfigurationTest {
         public static class MyQueryHandlerInterceptor extends MyHandlerInterceptor<QueryMessage<?, ?>> {
 
             public MyQueryHandlerInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
-                                             Configuration configuration) {
+                                             LegacyConfiguration configuration) {
                 super(name, invocation, handlingOutcome, configuration);
             }
         }
@@ -528,7 +528,7 @@ class InterceptorConfigurationTest {
         public static class MyEventHandlerInterceptor extends MyHandlerInterceptor<EventMessage<?>> {
 
             public MyEventHandlerInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
-                                             Configuration configuration) {
+                                             LegacyConfiguration configuration) {
                 super(name, invocation, handlingOutcome, configuration);
             }
         }
@@ -536,7 +536,7 @@ class InterceptorConfigurationTest {
         public static class MyCommandDispatchInterceptor extends MyDispatchInterceptor<CommandMessage<?>> {
 
             public MyCommandDispatchInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
-                                                Configuration configuration) {
+                                                LegacyConfiguration configuration) {
                 super(name, invocation, handlingOutcome, configuration);
             }
         }
@@ -544,7 +544,7 @@ class InterceptorConfigurationTest {
         public static class MyQueryDispatchInterceptor extends MyDispatchInterceptor<QueryMessage<?, ?>> {
 
             public MyQueryDispatchInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
-                                              Configuration configuration) {
+                                              LegacyConfiguration configuration) {
                 super(name, invocation, handlingOutcome, configuration);
             }
         }
@@ -552,7 +552,7 @@ class InterceptorConfigurationTest {
         public static class MyEventDispatchInterceptor extends MyDispatchInterceptor<EventMessage<?>> {
 
             public MyEventDispatchInterceptor(String name, CountDownLatch invocation, Queue<String> handlingOutcome,
-                                              Configuration configuration) {
+                                              LegacyConfiguration configuration) {
                 super(name, invocation, handlingOutcome, configuration);
             }
         }
@@ -562,13 +562,13 @@ class InterceptorConfigurationTest {
             private final String name;
             private final CountDownLatch invocation;
             private final Queue<String> handlingOutcome;
-            private final Configuration axonConfiguration;
+            private final LegacyConfiguration axonConfiguration;
 
             public MyHandlerInterceptor(
                     String name,
                     CountDownLatch invocation,
                     Queue<String> handlingOutcome,
-                    Configuration axonConfiguration
+                    LegacyConfiguration axonConfiguration
             ) {
                 this.name = name;
                 this.invocation = invocation;
@@ -591,13 +591,13 @@ class InterceptorConfigurationTest {
             private final String name;
             private final CountDownLatch invocation;
             private final Queue<String> handlingOutcome;
-            private final Configuration axonConfiguration;
+            private final LegacyConfiguration axonConfiguration;
 
             public MyDispatchInterceptor(
                     String name,
                     CountDownLatch invocation,
                     Queue<String> handlingOutcome,
-                    Configuration axonConfiguration
+                    LegacyConfiguration axonConfiguration
             ) {
                 this.name = name;
                 this.invocation = invocation;

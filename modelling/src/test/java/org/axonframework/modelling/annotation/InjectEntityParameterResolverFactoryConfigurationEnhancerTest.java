@@ -18,9 +18,7 @@ package org.axonframework.modelling.annotation;
 
 import org.axonframework.configuration.DefaultComponentRegistry;
 import org.axonframework.configuration.LifecycleRegistry;
-import org.axonframework.configuration.NewConfiguration;
-import org.axonframework.eventhandling.ConcludesBatchParameterResolverFactory;
-import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -36,7 +34,7 @@ class InjectEntityParameterResolverFactoryConfigurationEnhancerTest {
         componentRegistry.disableEnhancerScanning()
                          .registerEnhancer(new InjectEntityParameterResolverFactoryConfigurationEnhancer());
 
-        NewConfiguration build = componentRegistry.build(Mockito.mock(LifecycleRegistry.class));
+        Configuration build = componentRegistry.build(Mockito.mock(LifecycleRegistry.class));
 
         ParameterResolverFactory factory = build.getComponent(ParameterResolverFactory.class);
         assertInstanceOf(InjectEntityParameterResolverFactory.class, factory);
