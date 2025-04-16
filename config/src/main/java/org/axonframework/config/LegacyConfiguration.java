@@ -62,7 +62,7 @@ import javax.annotation.Nonnull;
  * @since 3.0
  * @deprecated In favor of {@link Configuration}.
  */
-@Deprecated
+@Deprecated(since = "5.0.0")
 public interface LegacyConfiguration extends LifecycleOperations {
 
     /**
