@@ -82,11 +82,11 @@ public class ResultDeserializingCommandGateway implements CommandGateway {
         @Override
         public <R> CommandResult onSuccess(@Nonnull Class<R> resultType,
                                            @Nonnull BiConsumer<R, Message<?>> successHandler) {
+            requireNonNull(successHandler, "The success handler must not be null.");
             delegate.getResultMessage()
                     .whenComplete((message, e) -> {
                         if (e == null) {
-                            requireNonNull(successHandler, "The success handler must not be null.")
-                                    .accept(serializer.convert(message.getPayload(), resultType), message);
+                            successHandler.accept(serializer.convert(message.getPayload(), resultType), message);
                         }
                     });
             return this;

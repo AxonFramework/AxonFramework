@@ -72,10 +72,9 @@ public class SimpleCommandHandlingComponent implements
     @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull QualifiedName name,
                                                     @Nonnull CommandHandler commandHandler) {
-        commandHandlers.put(
-                requireNonNull(name, "The name of the command handler may not be null"),
-                requireNonNull(commandHandler, "The command handler may not be null")
-        );
+        requireNonNull(name, "The name of the command handler may not be null");
+        requireNonNull(commandHandler, "The command handler may not be null");
+        commandHandlers.put(name, commandHandler);
         return this;
     }
 

@@ -48,9 +48,9 @@ public interface CommandResult {
      * @return The result of command handling, cast to the given {@code type}, within a {@code CompletableFuture}.
      */
     default <R> CompletableFuture<R> resultAs(@Nonnull Class<R> type) {
+        requireNonNull(type, "The result type must not be null");
         return getResultMessage().thenApply(Message::getPayload)
-                                 .thenApply(payload -> requireNonNull(type, "The result type must not be null")
-                                         .cast(payload));
+                                 .thenApply(type::cast);
     }
 
     /**
@@ -64,9 +64,10 @@ public interface CommandResult {
      * successfully.
      */
     default CommandResult onSuccess(@Nonnull Consumer<Message<?>> successHandler) {
+        requireNonNull(successHandler, "The success handler must not be null.");
         getResultMessage().whenComplete((r, e) -> {
             if (e == null) {
-                requireNonNull(successHandler, "The success handler must not be null.").accept(r);
+                successHandler.accept(r);
             }
         });
         return this;
@@ -87,11 +88,11 @@ public interface CommandResult {
      */
     default <R> CommandResult onSuccess(@Nonnull Class<R> resultType,
                                         @Nonnull BiConsumer<R, Message<?>> successHandler) {
+        requireNonNull(resultType, "The result type must not be null.");
+        requireNonNull(successHandler, "The success handler must not be null.");
         getResultMessage().whenComplete((r, e) -> {
             if (e == null) {
-                requireNonNull(successHandler, "The success handler must not be null.")
-                        .accept(requireNonNull(resultType, "The result type must not be null.")
-                                        .cast(r.getPayload()), r);
+                successHandler.accept(resultType.cast(r.getPayload()), r);
             }
         });
         return this;
@@ -112,11 +113,8 @@ public interface CommandResult {
      */
     default <R> CommandResult onSuccess(@Nonnull Class<R> resultType,
                                         @Nonnull Consumer<R> successHandler) {
-        return onSuccess(
-                resultType,
-                (result, message) -> requireNonNull(successHandler, "The success handler must not be null.")
-                        .accept(result)
-        );
+        requireNonNull(successHandler, "The success handler must not be null.");
+        return onSuccess(resultType, (result, message) -> successHandler.accept(result));
     }
 
     /**
@@ -129,9 +127,10 @@ public interface CommandResult {
      * error.
      */
     default CommandResult onError(@Nonnull Consumer<Throwable> errorHandler) {
+        requireNonNull(errorHandler, "The error handler must not be null.");
         getResultMessage().whenComplete((r, e) -> {
             if (e != null) {
-                requireNonNull(errorHandler, "The error handler must not be null.").accept(e);
+                errorHandler.accept(e);
             }
         });
         return this;
