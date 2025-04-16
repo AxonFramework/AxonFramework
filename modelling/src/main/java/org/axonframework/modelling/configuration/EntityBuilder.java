@@ -17,13 +17,13 @@
 package org.axonframework.modelling.configuration;
 
 import org.axonframework.configuration.ComponentFactory;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 
 /**
  * Interface describing a mechanism to build entities.
  * <p>
  * Implementations of this interface provide a clear path to set all the required components to derive the
- * {@link #entityName()} and {@link #repository()}. The resulting entity {@link AsyncRepository} is registered with the
+ * {@link #entityName()} and {@link #repository()}. The resulting entity {@link Repository} is registered with the
  * {@link org.axonframework.configuration.ApplicationConfigurer} this builder falls under.
  *
  * @param <I> The type of identifier used to identify the entity that's being built.
@@ -46,7 +46,7 @@ public interface EntityBuilder<I, E> {
     String entityName();
 
     /**
-     * The factory to construct the {@link AsyncRepository} providing access to the entity that's being built.
+     * The factory to construct the {@link Repository} providing access to the entity that's being built.
      * <p>
      * The factory is used as is when
      * {@link org.axonframework.configuration.ApplicationConfigurer#registerComponent(Class, String, ComponentFactory)
@@ -54,7 +54,7 @@ public interface EntityBuilder<I, E> {
      * {@link Class} used is {@code AsyncRepository} and the name used is the result of the {@link #entityName()}
      * method.
      *
-     * @return The factory to construct the {@link AsyncRepository} providing access to the entity that's being built.
+     * @return The factory to construct the {@link Repository} providing access to the entity that's being built.
      */
-    ComponentFactory<AsyncRepository<I, E>> repository();
+    ComponentFactory<Repository<I, E>> repository();
 }

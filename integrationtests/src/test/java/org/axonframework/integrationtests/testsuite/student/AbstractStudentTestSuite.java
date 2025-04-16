@@ -35,7 +35,7 @@ import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 
 import java.util.function.Consumer;
@@ -63,8 +63,8 @@ public abstract class AbstractStudentTestSuite {
     private EventSourcedEntityBuilder<String, Student> studentEntity;
 
     protected CommandGateway commandGateway;
-    protected AsyncRepository<String, Student> studentRepository;
-    protected AsyncRepository<String, Course> courseRepository;
+    protected Repository<String, Student> studentRepository;
+    protected Repository<String, Course> courseRepository;
 
     @BeforeEach
     void setUp() {
@@ -109,9 +109,9 @@ public abstract class AbstractStudentTestSuite {
 
         Configuration moduleConfig = configuration.getModuleConfigurations().getFirst();
         //noinspection unchecked
-        studentRepository = moduleConfig.getComponent(AsyncRepository.class, studentEntity.entityName());
+        studentRepository = moduleConfig.getComponent(Repository.class, studentEntity.entityName());
         //noinspection unchecked
-        courseRepository = moduleConfig.getComponent(AsyncRepository.class, courseEntity.entityName());
+        courseRepository = moduleConfig.getComponent(Repository.class, courseEntity.entityName());
     }
 
     /**

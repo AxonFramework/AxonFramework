@@ -18,6 +18,7 @@ package org.axonframework.modelling.command;
 
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.modelling.repository.Repository;
 
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
@@ -35,7 +36,7 @@ import javax.annotation.Nullable;
  * @param <T> The type of aggregate this repository stores.
  * @author Allard Buijze
  * @since 0.1
- * @deprecated In favor of the {@link org.axonframework.modelling.repository.AsyncRepository}.
+ * @deprecated In favor of the {@link Repository}.
  */
 @Deprecated(since = "5.0.0")
 public interface LegacyRepository<T> extends ScopeAware {

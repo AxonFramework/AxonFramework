@@ -33,7 +33,7 @@ import javax.annotation.Nonnull;
 
 /**
  * Repository implementation that ensures safe concurrent access to entities stored in it. It delegates the actual
- * loading of entities to another {@link AsyncRepository}, but attempts to pass loaded elements to waiting components
+ * loading of entities to another {@link Repository}, but attempts to pass loaded elements to waiting components
  * immediately, to avoid avoidable load operations on the underlying repository.
  *
  * @param <ID> The type of identifier used to identify entities stored by this repository.
@@ -42,14 +42,14 @@ import javax.annotation.Nonnull;
  * @since 5.0.0
  */
 public class AccessSerializingRepository<ID, T>
-        implements AsyncRepository.LifecycleManagement<ID, T>, DescribableComponent {
+        implements Repository.LifecycleManagement<ID, T>, DescribableComponent {
 
     private static final Logger logger = LoggerFactory.getLogger(AccessSerializingRepository.class);
 
     private final ResourceKey<ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>>> workingEntitiesKey =
             ResourceKey.withLabel("workingEntities");
 
-    private final AsyncRepository.LifecycleManagement<ID, T> delegate;
+    private final Repository.LifecycleManagement<ID, T> delegate;
     private final ConcurrentMap<ID, CompletableFuture<ManagedEntity<ID, T>>> inProgress;
 
     /**
@@ -57,7 +57,7 @@ public class AccessSerializingRepository<ID, T>
      *
      * @param delegate The repository implementation to delegate loading of the entities to
      */
-    public AccessSerializingRepository(AsyncRepository.LifecycleManagement<ID, T> delegate) {
+    public AccessSerializingRepository(Repository.LifecycleManagement<ID, T> delegate) {
         this.delegate = delegate;
         this.inProgress = new ConcurrentHashMap<>();
     }

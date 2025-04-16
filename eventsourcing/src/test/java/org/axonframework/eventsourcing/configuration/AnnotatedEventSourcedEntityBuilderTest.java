@@ -19,14 +19,14 @@ package org.axonframework.eventsourcing.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 
 import java.lang.annotation.ElementType;
@@ -85,10 +85,10 @@ class AnnotatedEventSourcedEntityBuilderTest {
         EventSourcedEntityBuilder<CourseId, Course> testSubject =
                 EventSourcedEntityBuilder.annotatedEntity(CourseId.class, Course.class);
 
-        AsyncRepository<CourseId, Course> result = testSubject.repository()
-                                                              .build(parentConfiguration);
+        Repository<CourseId, Course> result = testSubject.repository()
+                                                         .build(parentConfiguration);
 
-        assertInstanceOf(AsyncEventSourcingRepository.class, result);
+        assertInstanceOf(EventSourcingRepository.class, result);
     }
 
     @Test
@@ -97,10 +97,10 @@ class AnnotatedEventSourcedEntityBuilderTest {
         EventSourcedEntityBuilder<CourseId, CustomCriteriaResolverCourse> testSubject =
                 EventSourcedEntityBuilder.annotatedEntity(CourseId.class, CustomCriteriaResolverCourse.class);
 
-        AsyncRepository<CourseId, CustomCriteriaResolverCourse> result = testSubject.repository()
-                                                                                    .build(parentConfiguration);
+        Repository<CourseId, CustomCriteriaResolverCourse> result = testSubject.repository()
+                                                                               .build(parentConfiguration);
 
-        assertInstanceOf(AsyncEventSourcingRepository.class, result);
+        assertInstanceOf(EventSourcingRepository.class, result);
         result.describeTo(componentDescriptor);
         verify(componentDescriptor).describeProperty(eq("criteriaResolver"), isA(CustomCriteriaResolver.class));
     }
@@ -111,22 +111,22 @@ class AnnotatedEventSourcedEntityBuilderTest {
         EventSourcedEntityBuilder<CourseId, CustomEntityFactoryCourse> testSubject =
                 EventSourcedEntityBuilder.annotatedEntity(CourseId.class, CustomEntityFactoryCourse.class);
 
-        AsyncRepository<CourseId, CustomEntityFactoryCourse> result = testSubject.repository()
-                                                                                 .build(parentConfiguration);
+        Repository<CourseId, CustomEntityFactoryCourse> result = testSubject.repository()
+                                                                            .build(parentConfiguration);
 
-        assertInstanceOf(AsyncEventSourcingRepository.class, result);
+        assertInstanceOf(EventSourcingRepository.class, result);
         result.describeTo(componentDescriptor);
         verify(componentDescriptor).describeProperty(eq("entityFactory"), isA(CustomEventSourcedEntityFactory.class));
     }
 
     @Test
     void metaAnnotatedEventSourcedEntityConstructsAnEventSourcingRepository() {
-        AsyncRepository<CourseId, MetaAnnotatedCourse> result =
+        Repository<CourseId, MetaAnnotatedCourse> result =
                 EventSourcedEntityBuilder.annotatedEntity(CourseId.class, MetaAnnotatedCourse.class)
                                          .repository()
                                          .build(parentConfiguration);
 
-        assertInstanceOf(AsyncEventSourcingRepository.class, result);
+        assertInstanceOf(EventSourcingRepository.class, result);
     }
 
     record CourseId() {

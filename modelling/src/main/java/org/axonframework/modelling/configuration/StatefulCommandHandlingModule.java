@@ -27,6 +27,7 @@ import org.axonframework.configuration.ModuleBuilder;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.StatefulCommandHandler;
+import org.axonframework.modelling.repository.Repository;
 
 import java.util.function.Consumer;
 
@@ -267,7 +268,7 @@ public interface StatefulCommandHandlingModule extends
          * <p>
          * The {@link EntityBuilder#repository()} from the {@code entityBuilder} will be registered with the
          * {@link org.axonframework.configuration.ApplicationConfigurer} this module is part of. To retrieve the
-         * resulting {@link org.axonframework.modelling.repository.AsyncRepository}, use the {@code AsyncRepository} and
+         * resulting {@link Repository}, use the {@code AsyncRepository} and
          * {@link EntityBuilder#entityName()} on the
          * {@link Configuration#getComponent(Class, String)} method respectively.
          *

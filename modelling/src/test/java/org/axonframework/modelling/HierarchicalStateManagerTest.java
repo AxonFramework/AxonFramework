@@ -18,7 +18,7 @@ package org.axonframework.modelling;
 
 import org.axonframework.common.FutureUtils;
 import org.axonframework.messaging.StubProcessingContext;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -103,8 +103,8 @@ class HierarchicalStateManagerTest {
         Assertions.assertTrue(booleanIds.contains(Integer.class));
     }
 
-    private AsyncRepository<?, ?> createMockForTypes(Class<?> entityType, Class<?> idType) {
-        AsyncRepository mock = Mockito.mock(AsyncRepository.LifecycleManagement.class);
+    private Repository<?, ?> createMockForTypes(Class<?> entityType, Class<?> idType) {
+        Repository mock = Mockito.mock(Repository.LifecycleManagement.class);
         Mockito.when(mock.idType()).thenReturn(idType);
         Mockito.when(mock.entityType()).thenReturn(entityType);
         return mock;

@@ -18,7 +18,7 @@ package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 import org.axonframework.modelling.repository.ManagedEntity;
 
 import java.util.Set;
@@ -91,14 +91,14 @@ public interface StateManager {
     Set<Class<?>> registeredIdsFor(@Nonnull Class<?> entityType);
 
     /**
-     * Returns the {@link AsyncRepository} for the given {@code type}. Returns {@code null} if no repository is
+     * Returns the {@link Repository} for the given {@code type}. Returns {@code null} if no repository is
      * registered for the given type and id.
      *
      * @param <I>        The type of the identifier of the entity.
      * @param <T>        The type of the entity.
      * @param entityType The type of the entity.
      * @param idType     The type of the identifier of the entity.
-     * @return The {@link AsyncRepository} for the given {@code idType} and {@code entityType}.
+     * @return The {@link Repository} for the given {@code idType} and {@code entityType}.
      */
-    <I, T> AsyncRepository<I, T> repository(@Nonnull Class<T> entityType, @Nonnull Class<I> idType);
+    <I, T> Repository<I, T> repository(@Nonnull Class<T> entityType, @Nonnull Class<I> idType);
 }

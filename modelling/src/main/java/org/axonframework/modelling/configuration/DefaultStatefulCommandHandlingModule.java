@@ -31,7 +31,7 @@ import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -119,7 +119,7 @@ class DefaultStatefulCommandHandlingModule
 
     private void registerRepositories() {
         entityBuilders.forEach((name, entityBuilder) -> componentRegistry(
-                cr -> cr.registerComponent(AsyncRepository.class, name, entityBuilder.repository())
+                cr -> cr.registerComponent(Repository.class, name, entityBuilder.repository())
         ));
     }
 
@@ -127,7 +127,7 @@ class DefaultStatefulCommandHandlingModule
         SimpleStateManager.Builder managerBuilder = SimpleStateManager.builder("StateManager[" + moduleName + "]");
         for (String repositoryName : entityBuilders.keySet()) {
             //noinspection unchecked
-            managerBuilder.register(config.getComponent(AsyncRepository.class, repositoryName));
+            managerBuilder.register(config.getComponent(Repository.class, repositoryName));
         }
         return managerBuilder.build();
     }

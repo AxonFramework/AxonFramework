@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 
 import java.lang.annotation.ElementType;
@@ -30,7 +30,7 @@ import java.lang.annotation.Target;
  * annotation-based entity through the
  * {@link org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder#annotatedEntity(Class, Class)}.
  * <p>
- * While loading the entity from the {@link AsyncEventSourcingRepository}, the provided {@code id} needs to be
+ * While loading the entity from the {@link EventSourcingRepository}, the provided {@code id} needs to be
  * translated to an {@link EventCriteria} instance to load the correct events. Unless overridden, this translation is
  * done by the {@link AnnotationBasedEventCriteriaResolver}. So, {@link EventCriteria} will be resolved in the following
  * order:
@@ -62,7 +62,7 @@ import java.lang.annotation.Target;
  * no-arg constructor of the entity class, or a 1-arg constructor with the id as parameter.
  *
  * @author Mitchell Herrijgers
- * @see AsyncEventSourcingRepository
+ * @see EventSourcingRepository
  * @see CriteriaResolver
  * @see AnnotationBasedEventCriteriaResolver
  * @see EventCriteriaBuilder

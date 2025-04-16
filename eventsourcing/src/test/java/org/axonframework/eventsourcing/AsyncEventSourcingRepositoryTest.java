@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link AsyncEventSourcingRepository}.
+ * Test class validating the {@link EventSourcingRepository}.
  *
  * @author Allard Buijze
  */
@@ -56,7 +56,7 @@ class AsyncEventSourcingRepositoryTest {
     private EventStore eventStore;
     private EventStoreTransaction eventStoreTransaction;
 
-    private AsyncEventSourcingRepository<String, String> testSubject;
+    private EventSourcingRepository<String, String> testSubject;
 
     @BeforeEach
     void setUp() {
@@ -64,7 +64,7 @@ class AsyncEventSourcingRepositoryTest {
         eventStoreTransaction = mock();
         when(eventStore.transaction(any())).thenReturn(eventStoreTransaction);
 
-        testSubject = new AsyncEventSourcingRepository<>(
+        testSubject = new EventSourcingRepository<>(
                 String.class,
                 String.class,
                 eventStore,

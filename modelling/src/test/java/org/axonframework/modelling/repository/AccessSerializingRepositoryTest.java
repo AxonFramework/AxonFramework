@@ -41,7 +41,7 @@ class AccessSerializingRepositoryTest {
 
     private static final String AGGREGATE_ID = "aggregateId";
 
-    private AsyncRepository.LifecycleManagement<String, String> delegate;
+    private Repository.LifecycleManagement<String, String> delegate;
 
     private AccessSerializingRepository<String, String> testSubject;
 

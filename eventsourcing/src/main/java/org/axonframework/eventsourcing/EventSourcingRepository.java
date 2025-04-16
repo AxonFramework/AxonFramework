@@ -25,7 +25,7 @@ import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 import org.axonframework.modelling.repository.ManagedEntity;
 
 import java.util.Map;
@@ -39,7 +39,7 @@ import java.util.function.UnaryOperator;
 import static java.util.Objects.requireNonNull;
 
 /**
- * {@link AsyncRepository} implementation that loads entities based on their historic event streams, provided by an
+ * {@link Repository} implementation that loads entities based on their historic event streams, provided by an
  * {@link EventStore}.
  *
  * @param <I> The type of identifier used to identify the event sourced entity.
@@ -48,7 +48,7 @@ import static java.util.Objects.requireNonNull;
  * @author Steven van Beelen
  * @since 0.1
  */
-public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.LifecycleManagement<I, E> {
+public class EventSourcingRepository<I, E> implements Repository.LifecycleManagement<I, E> {
 
     private final ResourceKey<Map<I, CompletableFuture<EventSourcedEntity<I, E>>>> managedEntitiesKey =
             ResourceKey.withLabel("managedEntities");
@@ -76,12 +76,12 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
      *                         event stream.
      * @param entityEvolver    The function used to evolve the state of loaded entities based on events.
      */
-    public AsyncEventSourcingRepository(@Nonnull Class<I> idType,
-                                        @Nonnull Class<E> entityType,
-                                        @Nonnull EventStore eventStore,
-                                        @Nonnull EventSourcedEntityFactory<I, E> entityFactory,
-                                        @Nonnull CriteriaResolver<I> criteriaResolver,
-                                        @Nonnull EntityEvolver<E> entityEvolver) {
+    public EventSourcingRepository(@Nonnull Class<I> idType,
+                                   @Nonnull Class<E> entityType,
+                                   @Nonnull EventStore eventStore,
+                                   @Nonnull EventSourcedEntityFactory<I, E> entityFactory,
+                                   @Nonnull CriteriaResolver<I> criteriaResolver,
+                                   @Nonnull EntityEvolver<E> entityEvolver) {
         this.idType = requireNonNull(idType, "The id type must not be null.");
         this.entityType = requireNonNull(entityType, "The entity type must not be null.");
         this.eventStore = requireNonNull(eventStore, "The event store must not be null.");
@@ -213,7 +213,7 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
         }
 
         private static <ID, T> EventSourcedEntity<ID, T> mapToEventSourcedEntity(ManagedEntity<ID, T> entity) {
-            return entity instanceof AsyncEventSourcingRepository.EventSourcedEntity<ID, T> eventSourcedEntity
+            return entity instanceof EventSourcingRepository.EventSourcedEntity<ID, T> eventSourcedEntity
                     ? eventSourcedEntity
                     : new EventSourcedEntity<>(entity.identifier(), entity.entity());
         }
