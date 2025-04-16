@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Field or method level annotation that marks a field or method providing the routing key that a command
- * targets.
+ * Field or method level annotation that marks a field or method providing the routing key that a command targets.
  * <p/>
  * If placed on a method, that method must contain no parameters. The return value will be used as the Routing Key.
  * <p/>

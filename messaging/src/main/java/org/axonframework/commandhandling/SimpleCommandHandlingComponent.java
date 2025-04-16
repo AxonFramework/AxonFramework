@@ -89,7 +89,9 @@ public class SimpleCommandHandlingComponent implements
     @Override
     public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                           @Nonnull ProcessingContext context) {
-        QualifiedName qualifiedName = command.type().qualifiedName();
+        QualifiedName qualifiedName = requireNonNull(command, "The command message cannot be null.")
+                .type()
+                .qualifiedName();
         Optional<CommandHandlingComponent> optionalSubHandler =
                 subComponents.stream()
                              .filter(subComponent -> subComponent.supportedCommands().contains(qualifiedName))
