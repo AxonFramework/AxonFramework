@@ -31,7 +31,6 @@
         <module>metrics-micrometer</module>
         <module>migration</module>
         <module>modelling</module>
-        <module>reactorless-test</module>
         <module>spring</module>
         <module>spring-boot-autoconfigure</module>
         <module>spring-boot-starter</module>
