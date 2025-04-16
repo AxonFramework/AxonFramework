@@ -22,10 +22,10 @@ import jakarta.annotation.Nonnull;
  * Functional interface towards creating a new instance of an entity of the given {@code entityType} and the given
  * {@code id}.
  *
- * @since 5.0.0
- * @author Mitchell Herrijgers
  * @param <ID> The type of the identifier of the entity to create.
  * @param <E>  The type of the entity to create.
+ * @author Mitchell Herrijgers
+ * @since 5.0.0
  */
 @FunctionalInterface
 public interface EventSourcedEntityFactory<ID, E> {
