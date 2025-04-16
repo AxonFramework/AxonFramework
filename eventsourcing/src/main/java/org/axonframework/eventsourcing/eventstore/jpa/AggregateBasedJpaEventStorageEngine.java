@@ -37,10 +37,10 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
 import org.axonframework.eventsourcing.eventstore.EventCriterion;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils;
 import org.axonframework.eventsourcing.eventstore.LegacyResources;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
@@ -78,7 +78,8 @@ import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEve
 
 
 /**
- * EventStorageEngine implementation that uses JPA to store and fetch events.
+ * An {@link EventStorageEngine} implementation that uses JPA to store and fetch events from an aggregate-based event
+ * storage solution.
  * <p>
  * By default, the payload of events is stored as a serialized blob of bytes. Other columns are used to store meta-data
  * that allow quick finding of DomainEvents for a specific aggregate in the correct order.
@@ -86,9 +87,9 @@ import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEve
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class LegacyJpaEventStorageEngine implements EventStorageEngine {
+public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
 
-    private static final Logger logger = LoggerFactory.getLogger(LegacyJpaEventStorageEngine.class);
+    private static final Logger logger = LoggerFactory.getLogger(AggregateBasedJpaEventStorageEngine.class);
     private static final String DOMAIN_EVENT_ENTRY_ENTITY_NAME = DomainEventEntry.class.getSimpleName();
 
     private final EntityManagerProvider entityManagerProvider;
@@ -100,7 +101,17 @@ public class LegacyJpaEventStorageEngine implements EventStorageEngine {
     private final BatchingEventStorageOperations batchingOperations;
     private final GapAwareTrackingTokenOperations tokenOperations;
 
-    public LegacyJpaEventStorageEngine(
+    /**
+     * Constructs an {@code AggregateBasedJpaEventStorageEngine} with the given parameters.
+     *
+     * @param entityManagerProvider The {@link jakarta.persistence.EntityManager} provided for this storage solution.
+     * @param transactionManager    The transaction manager, ensuring all operations to the storage solution occur
+     *                              transactionally.
+     * @param eventSerializer       The event serializer, de-/serializing events.
+     * @param configurationOverride A unary operator that can customize the {@code AggregateBasedJpaEventStorageEngine}
+     *                              under construction.
+     */
+    public AggregateBasedJpaEventStorageEngine(
             @Nonnull EntityManagerProvider entityManagerProvider,
             @Nonnull TransactionManager transactionManager,
             @Nonnull Serializer eventSerializer,
@@ -295,7 +306,7 @@ public class LegacyJpaEventStorageEngine implements EventStorageEngine {
         return MessageStream.fromStream(
                 events,
                 this::convertToDomainEventMessage,
-                LegacyJpaEventStorageEngine::domainEventContext
+                AggregateBasedJpaEventStorageEngine::domainEventContext
         );
     }
 
@@ -317,7 +328,7 @@ public class LegacyJpaEventStorageEngine implements EventStorageEngine {
         return MessageStream.fromStream(
                 events,
                 this::convertToTrackedEventMessage,
-                LegacyJpaEventStorageEngine::trackedEventContext
+                AggregateBasedJpaEventStorageEngine::trackedEventContext
         );
     }
 

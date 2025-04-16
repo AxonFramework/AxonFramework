@@ -59,7 +59,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  *
  * @author Rene de Waele
  * @since 3.0
- * @deprecated In favor of the {@link LegacyJpaEventStorageEngine}.
+ * @deprecated In favor of the {@link AggregateBasedJpaEventStorageEngine}.
  */
 @Deprecated(since = "5.0.0")
 public class OldJpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
