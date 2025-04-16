@@ -90,8 +90,9 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @author Allard Buijze
  * @since 4.0
+ * @deprecated In favor of the {@link org.axonframework.axonserver.connector.event.LegacyAxonServerEventStorageEngine}.
  */
-@Deprecated // TODO 3101 - Reimplement with different interfaces
+@Deprecated
 public class AxonServerEventStore extends AbstractLegacyEventStore {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
