@@ -56,7 +56,9 @@ import static org.axonframework.common.ObjectUtils.sameInstanceSupplier;
  * @param <T> The type that this aggregate stores
  * @author Allard Buijze
  * @since 0.3
+ * @deprecated In favor of the {@link org.axonframework.modelling.repository.AccessSerializingRepository}.
  */
+@Deprecated(since = "5.0.0")
 public abstract class LockingRepository<T, A extends Aggregate<T>> extends
         AbstractRepository<T, LockAwareAggregate<T, A>> {
 

@@ -57,7 +57,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Allard Buijze
  * @see LockingRepository
  * @since 0.1
+ * @deprecated This instance will be removed.
  */
+@Deprecated(since = "5.0.0")
 public abstract class AbstractRepository<T, A extends Aggregate<T>> implements Repository<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractRepository.class);

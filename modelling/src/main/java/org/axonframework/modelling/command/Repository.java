@@ -35,8 +35,9 @@ import javax.annotation.Nullable;
  * @param <T> The type of aggregate this repository stores.
  * @author Allard Buijze
  * @since 0.1
- * TODO remove in favor of the AsyncRepository once the time is right
+ * @deprecated In favor of the {@link org.axonframework.modelling.repository.AsyncRepository}.
  */
+@Deprecated(since = "5.0.0")
 public interface Repository<T> extends ScopeAware {
 
     /**

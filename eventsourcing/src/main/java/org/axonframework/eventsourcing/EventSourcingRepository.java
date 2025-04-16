@@ -51,7 +51,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @author Allard Buijze
  * @see LegacyEventStore
  * @since 0.1
+ * @deprecated In favor of the {@link AsyncEventSourcingRepository}.
  */
+@Deprecated(since = "5.0.0")
 public class EventSourcingRepository<T> extends LockingRepository<T, EventSourcedAggregate<T>> {
 
     private final LegacyEventStore eventStore;

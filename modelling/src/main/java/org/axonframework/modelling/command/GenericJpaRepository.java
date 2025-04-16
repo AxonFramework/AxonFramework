@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @param <T> The type of aggregate the repository provides access to
  * @author Allard Buijze
  * @since 0.7
+ * @deprecated In favor of the {@link org.axonframework.modelling.SimpleRepository}.
  */
+@Deprecated(since = "5.0.0")
 public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggregate<T>> {
 
     private final EntityManagerProvider entityManagerProvider;
