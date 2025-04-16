@@ -10,7 +10,7 @@
 
     <properties>
         <assertj.version>3.27.3</assertj.version>
-        <axon.version>5.0.0-SNAPSHOT</axon.version>
+        <axon.version>5.0.0-M1</axon.version>
         <hamcrest.version>3.0</hamcrest.version>
         <junit.version>5.12.1</junit.version>
         <log4j.version>2.24.3</log4j.version>
