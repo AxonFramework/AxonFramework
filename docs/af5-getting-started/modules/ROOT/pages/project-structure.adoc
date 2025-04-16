@@ -1,6 +1,6 @@
 = Project Structure
 
-// We might need some text here
+For our sample application, we will create a modular-monolith maven project following the link:https://www.baeldung.com/java-vertical-slice-architecture[Vertical Slice Architecture].
 
 == Create new Axon Framework project with Maven
 
