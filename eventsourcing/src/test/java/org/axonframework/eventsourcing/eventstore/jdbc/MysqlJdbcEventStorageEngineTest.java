@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ class MysqlJdbcEventStorageEngineTest {
             .withUsername("admin")
             .withPassword("some-password");
 
-    private JdbcEventStorageEngine testSubject;
+    private LegacyJdbcEventStorageEngine testSubject;
 
     @BeforeEach
     void setUp() throws SQLException {
@@ -71,15 +71,15 @@ class MysqlJdbcEventStorageEngineTest {
     }
 
     @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
-    private JdbcEventStorageEngine createEngine(MysqlDataSource dataSource) throws SQLException {
-        JdbcEventStorageEngine engine =
-                JdbcEventStorageEngine.builder()
-                                      .snapshotSerializer(TestSerializer.xStreamSerializer())
-                                      .persistenceExceptionResolver(new SQLErrorCodesResolver(dataSource))
-                                      .eventSerializer(TestSerializer.xStreamSerializer())
-                                      .connectionProvider(dataSource::getConnection)
-                                      .transactionManager(NoTransactionManager.INSTANCE)
-                                      .build();
+    private LegacyJdbcEventStorageEngine createEngine(MysqlDataSource dataSource) throws SQLException {
+        LegacyJdbcEventStorageEngine engine =
+                LegacyJdbcEventStorageEngine.builder()
+                                            .snapshotSerializer(TestSerializer.xStreamSerializer())
+                                            .persistenceExceptionResolver(new SQLErrorCodesResolver(dataSource))
+                                            .eventSerializer(TestSerializer.xStreamSerializer())
+                                            .connectionProvider(dataSource::getConnection)
+                                            .transactionManager(NoTransactionManager.INSTANCE)
+                                            .build();
 
         try {
             Connection connection = dataSource.getConnection();

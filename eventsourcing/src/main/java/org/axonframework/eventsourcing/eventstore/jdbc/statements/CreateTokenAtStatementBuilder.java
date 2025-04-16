@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore.jdbc.statements;
 
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
-import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -25,7 +25,8 @@ import java.sql.SQLException;
 import java.time.Instant;
 
 /**
- * Contract which defines how to build a PreparedStatement for use on {@link JdbcEventStorageEngine#createTokenAt(Instant)}
+ * Contract which defines how to build a PreparedStatement for use on
+ * {@link LegacyJdbcEventStorageEngine#createTokenAt(Instant)}
  *
  * @author Lucas Campos
  * @since 4.3
@@ -34,7 +35,7 @@ import java.time.Instant;
 public interface CreateTokenAtStatementBuilder {
 
     /**
-     * Creates a statement to be used at {@link JdbcEventStorageEngine#createTokenAt(Instant)}.
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#createTokenAt(Instant)}.
      *
      * @param connection The connection to the database.
      * @param schema     The EventSchema to be used

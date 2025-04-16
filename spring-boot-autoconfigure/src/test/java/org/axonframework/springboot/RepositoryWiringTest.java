@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import com.thoughtworks.xstream.XStream;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.spring.stereotype.Aggregate;
@@ -167,8 +167,8 @@ class RepositoryWiringTest {
     static class DefaultContext {
 
         @Bean
-        public EventStorageEngine eventStorageEngine() {
-            return new InMemoryEventStorageEngine();
+        public LegacyEventStorageEngine eventStorageEngine() {
+            return new LegacyInMemoryEventStorageEngine();
         }
 
         @Bean

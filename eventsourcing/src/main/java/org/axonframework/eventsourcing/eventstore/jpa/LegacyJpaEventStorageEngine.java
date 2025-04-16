@@ -16,66 +16,40 @@
 
 package org.axonframework.eventsourcing.eventstore.jpa;
 
-import jakarta.annotation.Nonnull;
+import jakarta.persistence.EntityManager;
 import org.axonframework.common.Assert;
-import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.DomainEventData;
 import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventhandling.EventData;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GapAwareTrackingToken;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
-import org.axonframework.eventhandling.GenericTrackedEventMessage;
-import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
-import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
-import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
-import org.axonframework.eventsourcing.eventstore.EventCriterion;
-import org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils;
-import org.axonframework.eventsourcing.eventstore.LegacyResources;
-import org.axonframework.eventsourcing.eventstore.SourcingCondition;
-import org.axonframework.eventsourcing.eventstore.StreamingCondition;
-import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
-import org.axonframework.messaging.Context;
-import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.MetaData;
+import org.axonframework.eventsourcing.eventstore.LegacyBatchingEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
+import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.serialization.Serializer;
+import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Spliterators;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import javax.annotation.Nonnull;
+import javax.sql.DataSource;
 
-import static java.util.Objects.requireNonNull;
-import static org.axonframework.common.BuilderUtils.assertPositive;
+import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertThat;
-import static org.axonframework.common.ObjectUtils.getOrDefault;
-import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEventStorageEngineUtils.*;
-
 
 /**
  * EventStorageEngine implementation that uses JPA to store and fetch events.
@@ -83,271 +57,214 @@ import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEve
  * By default, the payload of events is stored as a serialized blob of bytes. Other columns are used to store meta-data
  * that allow quick finding of DomainEvents for a specific aggregate in the correct order.
  *
- * @author Mateusz Nowak
- * @since 5.0.0
+ * @author Rene de Waele
+ * @since 3.0
+ * @deprecated In favor of the {@link AggregateBasedJpaEventStorageEngine}.
  */
-public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
+@Deprecated(since = "5.0.0")
+public class LegacyJpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(LegacyJpaEventStorageEngine.class);
-    private static final String DOMAIN_EVENT_ENTRY_ENTITY_NAME = DomainEventEntry.class.getSimpleName();
+
+    private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
+    private static final long DEFAULT_LOWEST_GLOBAL_SEQUENCE = 1;
+    private static final int DEFAULT_GAP_TIMEOUT = 60000;
+    private static final int DEFAULT_GAP_CLEANING_THRESHOLD = 250;
 
     private final EntityManagerProvider entityManagerProvider;
     private final TransactionManager transactionManager;
-    private final Serializer eventSerializer;
-    private final PersistenceExceptionResolver persistenceExceptionResolver;
+    private final boolean explicitFlush;
+    private final int maxGapOffset;
+    private final long lowestGlobalSequence;
+    private int gapTimeout;
+    private int gapCleaningThreshold;
 
     private final LegacyJpaEventStorageOperations legacyJpaOperations;
-    private final BatchingEventStorageOperations batchingOperations;
     private final GapAwareTrackingTokenOperations tokenOperations;
 
-    public LegacyJpaEventStorageEngine(
-            @Nonnull EntityManagerProvider entityManagerProvider,
-            @Nonnull TransactionManager transactionManager,
-            @Nonnull Serializer eventSerializer,
-            @Nonnull UnaryOperator<Customization> configurationOverride
-    ) {
-        this.entityManagerProvider = requireNonNull(entityManagerProvider, "entityManagerProvider may not be null");
-        this.transactionManager = requireNonNull(transactionManager, "transactionManager may not be null");
-        this.eventSerializer = requireNonNull(eventSerializer, "eventSerializer may not be null");
+    /**
+     * Instantiate a {@link LegacyJpaEventStorageEngine} based on the fields contained in the {@link Builder}.
+     * <p>
+     * Will assert that the event and snapshot {@link Serializer}, the {@link EntityManagerProvider} and
+     * {@link TransactionManager} are not {@code null}, and will throw an {@link AxonConfigurationException} if any of
+     * them is {@code null}.
+     *
+     * @param builder the {@link Builder} used to instantiate a {@link LegacyJpaEventStorageEngine} instance
+     */
+    protected LegacyJpaEventStorageEngine(Builder builder) {
+        super(builder);
+        this.entityManagerProvider = builder.entityManagerProvider;
+        this.transactionManager = builder.transactionManager;
+        this.explicitFlush = builder.explicitFlush;
+        this.maxGapOffset = builder.maxGapOffset;
+        this.lowestGlobalSequence = builder.lowestGlobalSequence;
+        this.gapTimeout = builder.gapTimeout;
+        this.gapCleaningThreshold = builder.gapCleaningThreshold;
 
-        var customization = requireNonNull(configurationOverride, "configurationOverride may not be null")
-                .apply(Customization.withDefaultValues());
-
-        this.legacyJpaOperations = new LegacyJpaEventStorageOperations(transactionManager,
-                                                                       entityManagerProvider,
-                                                                       DOMAIN_EVENT_ENTRY_ENTITY_NAME,
-                                                                       "unused");
-        this.tokenOperations = new GapAwareTrackingTokenOperations(
-                customization.tokenGapsHandling().timeout(),
-                logger
-        );
-        this.batchingOperations = new BatchingEventStorageOperations(
+        this.legacyJpaOperations = new LegacyJpaEventStorageOperations(
                 transactionManager,
-                legacyJpaOperations,
-                tokenOperations,
-                customization.batchSize(),
-                customization.finalAggregateBatchPredicate(),
-                true,
-                customization.tokenGapsHandling().cleaningThreshold(),
-                customization.lowestGlobalSequence(),
-                customization.tokenGapsHandling().maxOffset()
+                entityManagerProvider,
+                domainEventEntryEntityName(),
+                snapshotEventEntryEntityName()
         );
-        this.persistenceExceptionResolver = customization.persistenceExceptionResolver();
+        this.tokenOperations = new GapAwareTrackingTokenOperations(gapTimeout, logger);
+    }
+
+    /**
+     * Instantiate a Builder to be able to create a {@link LegacyJpaEventStorageEngine}.
+     * <p>
+     * The following configurable fields have defaults:
+     * <ul>
+     * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}.</li>
+     * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link SQLErrorCodesResolver}, <b>if</b> the
+     * {@link DataSource} is provided</li>
+     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} instance.</li>
+     * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
+     * <li>The {@code explicitFlush} defaults to {@code true}.</li>
+     * <li>The {@code maxGapOffset} defaults to an  integer of size {@code 10000}.</li>
+     * <li>The {@code lowestGlobalSequence} defaults to a long of size {@code 1}.</li>
+     * <li>The {@code gapTimeout} defaults to an integer of size {@code 60000} (1 minute).</li>
+     * <li>The {@code gapCleaningThreshold} defaults to an integer of size {@code 250}.</li>
+     * </ul>
+     * <p>
+     * The event and snapshot {@link Serializer}, the {@link EntityManagerProvider} and {@link TransactionManager} are
+     * <b>hard requirements</b> and as such should be provided.
+     *
+     * @return a Builder to be able to create a {@link LegacyJpaEventStorageEngine}
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Converts an {@link EventMessage} to a {@link DomainEventMessage}. If the message already is a
+     * {@link DomainEventMessage} it will be returned as is. Otherwise, a new {@link GenericDomainEventMessage} is made
+     * with {@code null} type, {@code aggregateIdentifier} equal to {@code messageIdentifier} and sequence number of
+     * 0L.
+     * <p>
+     * Doing so allows using the {@link DomainEventEntry} to store both a {@link GenericEventMessage} and a
+     * {@link GenericDomainEventMessage}.
+     *
+     * @param event the input event message
+     * @param <T>   the type of payload in the message
+     * @return the message converted to a domain event message
+     */
+    protected static <T> DomainEventMessage<T> asDomainEventMessage(EventMessage<T> event) {
+        return event instanceof DomainEventMessage<?>
+                ? (DomainEventMessage<T>) event
+                : new GenericDomainEventMessage<>(null, event.getIdentifier(), 0L, event, event::getTimestamp);
+    }
+
+    /**
+     * Returns a batch of event data as object entries in the event storage with a greater than the given {@code token}.
+     * Size of event is decided by {@link #batchSize()}.
+     *
+     * @param token Object describing the global index of the last processed event.
+     * @return A batch of event messages as object stored since the given tracking token.
+     */
+    protected List<Object[]> fetchEvents(GapAwareTrackingToken token) {
+        return legacyJpaOperations.fetchEvents(token, batchSize());
     }
 
     @Override
-    public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
-                                                             @Nonnull List<TaggedEventMessage<?>> events) {
-        try {
-            assertValidTags(events);
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+    protected List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
+        Assert.isTrue(
+                lastToken == null || lastToken instanceof GapAwareTrackingToken,
+                () -> String.format("Token [%s] is of the wrong type. Expected [%s]",
+                                    lastToken, GapAwareTrackingToken.class.getSimpleName())
+        );
 
+        GapAwareTrackingToken previousToken = cleanedToken((GapAwareTrackingToken) lastToken);
+
+        List<Object[]> entries = transactionManager.fetchInTransaction(() -> fetchEvents(previousToken));
+        return legacyJpaOperations.entriesToEvents(
+                previousToken, entries, tokenOperations.gapTimeoutThreshold(), lowestGlobalSequence, maxGapOffset
+        );
+    }
+
+    private GapAwareTrackingToken cleanedToken(GapAwareTrackingToken lastToken) {
+        if (lastToken != null && lastToken.getGaps().size() > gapCleaningThreshold) {
+            return tokenOperations.withGapsCleaned(lastToken, indexToTimestamp(lastToken));
+        }
+        return lastToken;
+    }
+
+    private List<Object[]> indexToTimestamp(GapAwareTrackingToken lastToken) {
+        return transactionManager.fetchInTransaction(() -> legacyJpaOperations.indexAndTimestampBetweenGaps(lastToken));
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected List<? extends DomainEventData<?>> fetchDomainEvents(String aggregateIdentifier, long firstSequenceNumber,
+                                                                   int batchSize) {
+        return transactionManager.fetchInTransaction(
+                () -> legacyJpaOperations.fetchDomainEvents(aggregateIdentifier, firstSequenceNumber, batchSize)
+        );
+    }
+
+    @Override
+    protected Stream<? extends DomainEventData<?>> readSnapshotData(String aggregateIdentifier) {
+        return transactionManager.fetchInTransaction(
+                () -> legacyJpaOperations.readSnapshotData(aggregateIdentifier).stream()
+        );
+    }
+
+    @Override
+    protected void appendEvents(List<? extends EventMessage<?>> events, Serializer serializer) {
         if (events.isEmpty()) {
-            return CompletableFuture.completedFuture(EmptyAppendTransaction.INSTANCE);
+            return;
         }
-
-        return CompletableFuture.completedFuture(new AppendTransaction() {
-
-            private final AtomicBoolean txFinished = new AtomicBoolean(false);
-            private final AggregateBasedConsistencyMarker preCommitConsistencyMarker = AggregateBasedConsistencyMarker.from(
-                    condition);
-
-            @Override
-            public CompletableFuture<ConsistencyMarker> commit() {
-                if (txFinished.getAndSet(true)) {
-                    return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
+        transactionManager.executeInTransaction(() -> {
+            try {
+                events.stream().map(event -> createEventEntity(event, serializer)).forEach(entityManager()::persist);
+                if (explicitFlush) {
+                    entityManager().flush();
                 }
-
-                var aggregateSequencer = AggregateSequencer.with(preCommitConsistencyMarker);
-
-                CompletableFuture<Void> txResult = new CompletableFuture<>();
-                var tx = transactionManager.startTransaction();
-                try {
-                    entityManagerPersistEvents(aggregateSequencer, events);
-                    tx.commit();
-                    txResult.complete(null);
-                } catch (Exception e) {
-                    tx.rollback();
-                    txResult.completeExceptionally(e);
-                }
-
-                var afterCommitConsistencyMarker = aggregateSequencer.forwarded();
-                return txResult
-                        .exceptionallyCompose(e -> CompletableFuture.failedFuture(translateConflictException(e)))
-                        .thenApply(r -> afterCommitConsistencyMarker);
-            }
-
-            private Throwable translateConflictException(Throwable e) {
-                Predicate<Throwable> isConflictException = (t) -> persistenceExceptionResolver != null
-                        && t instanceof Exception ex
-                        && persistenceExceptionResolver.isDuplicateKeyViolation(ex);
-                return LegacyAggregateBasedEventStorageEngineUtils
-                        .translateConflictException(preCommitConsistencyMarker, e, isConflictException);
-            }
-
-            @Override
-            public void rollback() {
-                txFinished.set(true);
+            } catch (Exception e) {
+                handlePersistenceException(e, events.get(0));
             }
         });
     }
 
-    private void entityManagerPersistEvents(
-            AggregateSequencer aggregateSequencer,
-            List<TaggedEventMessage<?>> events
-    ) {
-        var entityManager = entityManagerProvider.getEntityManager();
-        events.stream()
-              .map(taggedEvent -> toDomainEventMessage(taggedEvent, aggregateSequencer))
-              .map(domainEventMessage -> new DomainEventEntry(domainEventMessage, eventSerializer))
-              .forEach(entityManager::persist);
-    }
-
-    private static DomainEventMessage<?> toDomainEventMessage(
-            TaggedEventMessage<?> taggedEvent,
-            AggregateSequencer aggregateSequencer
-    ) {
-        var aggregateIdentifier = resolveAggregateIdentifier(taggedEvent.tags());
-        var aggregateType = resolveAggregateType(taggedEvent.tags());
-        var event = taggedEvent.event();
-        var isAggregateEvent =
-                aggregateIdentifier != null && aggregateType != null && !taggedEvent.tags().isEmpty();
-        if (isAggregateEvent) {
-            var nextSequence = aggregateSequencer.incrementAndGetSequenceOf(aggregateIdentifier);
-            return new GenericDomainEventMessage<>(
-                    aggregateType,
-                    aggregateIdentifier,
-                    nextSequence,
-                    event.getIdentifier(),
-                    event.type(),
-                    event.getPayload(),
-                    event.getMetaData(),
-                    event.getTimestamp()
-            );
-        } else {
-            // returns non-aggregate event, so the sequence is always 0
-            return new GenericDomainEventMessage<>(null,
-                                                   event.getIdentifier(),
-                                                   0L,
-                                                   event,
-                                                   event::getTimestamp);
+    @Override
+    protected void storeSnapshot(DomainEventMessage<?> snapshot, Serializer serializer) {
+        try {
+            entityManager().merge(createSnapshotEntity(snapshot, serializer));
+            deleteSnapshots(snapshot.getAggregateIdentifier(), snapshot.getSequenceNumber());
+            if (explicitFlush) {
+                entityManager().flush();
+            }
+        } catch (Exception e) {
+            handlePersistenceException(e, snapshot);
         }
     }
 
-    private GenericDomainEventMessage<?> convertToDomainEventMessage(DomainEventData<?> event) {
-        return new GenericDomainEventMessage<>(
-                event.getType(),
-                event.getAggregateIdentifier(),
-                event.getSequenceNumber(),
-                convertToEventMessage(event),
-                event.getTimestamp()
-        );
-    }
-
-    private GenericEventMessage<?> convertToEventMessage(EventData<?> event) {
-        var payload = event.getPayload();
-        var revision = payload.getType().getRevision();
-        var payloadClass = eventSerializer.classForType(payload.getType());
-        var messageType = revision == null
-                ? new MessageType(payloadClass)
-                : new MessageType(payloadClass, revision);
-        var metadata = event.getMetaData();
-        MetaData metaData = eventSerializer.convert(metadata.getData(), MetaData.class);
-        return new GenericEventMessage<>(
-                event.getEventIdentifier(),
-                messageType,
-                payload.getData(),
-                metaData,
-                event.getTimestamp()
-        );
+    @Override
+    public Optional<Long> lastSequenceNumberFor(@Nonnull String aggregateIdentifier) {
+        return legacyJpaOperations.lastSequenceNumberFor(aggregateIdentifier);
     }
 
     @Override
-    public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
-        var allCriteriaStream = condition
-                .criteria()
-                .flatten()
-                .stream()
-                .map(criteria -> this.eventsForCriterion(condition, criteria))
-                .reduce(MessageStream.empty().cast(), MessageStream::concatWith);
-
-        var consistencyMarker = new AtomicReference<ConsistencyMarker>();
-        return allCriteriaStream.map(e -> {
-            var newMarker = consistencyMarker
-                    .accumulateAndGet(
-                            e.getResource(ConsistencyMarker.RESOURCE_KEY),
-                            (m1, m2) -> m1 == null ? m2 : m1.upperBound(m2)
-                    );
-            return e.withResource(ConsistencyMarker.RESOURCE_KEY, newMarker);
-        });
-    }
-
-    private MessageStream<EventMessage<?>> eventsForCriterion(SourcingCondition condition,
-                                                              EventCriterion criterion) {
-        var aggregateIdentifier = resolveAggregateIdentifier(criterion.tags());
-        var events = batchingOperations.readEventData(
-                aggregateIdentifier,
-                condition.start(),
-                condition.end()
-        );
-        return MessageStream.fromStream(
-                events,
-                this::convertToDomainEventMessage,
-                LegacyJpaEventStorageEngine::domainEventContext
-        );
-    }
-
-    private static Context domainEventContext(DomainEventData<?> event) {
-        return Context.with(LegacyResources.AGGREGATE_IDENTIFIER_KEY, event.getAggregateIdentifier())
-                      .withResource(LegacyResources.AGGREGATE_TYPE_KEY, event.getType())
-                      .withResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY, event.getSequenceNumber())
-                      .withResource(
-                              ConsistencyMarker.RESOURCE_KEY,
-                              new AggregateBasedConsistencyMarker(event.getAggregateIdentifier(),
-                                                                  event.getSequenceNumber())
-                      );
+    public TrackingToken createTailToken() {
+        return legacyJpaOperations.minGlobalIndex()
+                                  .flatMap(this::gapAwareTrackingTokenOn)
+                                  .orElse(null);
     }
 
     @Override
-    public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
-        var trackingToken = tokenOperations.assertGapAwareTrackingToken(condition.position());
-        var events = batchingOperations.readEventData(trackingToken);
-        return MessageStream.fromStream(
-                events,
-                this::convertToTrackedEventMessage,
-                LegacyJpaEventStorageEngine::trackedEventContext
-        );
-    }
-
-    private TrackedEventMessage<?> convertToTrackedEventMessage(TrackedEventData<?> event) {
-        var trackingToken = event.trackingToken();
-        if (event instanceof TrackedDomainEventData<?> trackedDomainEventData) {
-            var domainEventMessage = convertToDomainEventMessage(trackedDomainEventData);
-            return new GenericTrackedDomainEventMessage<>(trackingToken, domainEventMessage);
-        }
-        return new GenericTrackedEventMessage<>(trackingToken, convertToEventMessage(event));
-    }
-
-    private static Context trackedEventContext(TrackedEventData<?> trackedEventData) {
-        var context = Context.empty();
-        if (trackedEventData instanceof TrackedDomainEventData<?> trackedDomainEventData
-                && trackedDomainEventData.getAggregateIdentifier() != null
-                && trackedDomainEventData.getType() != null
-        ) {
-            context = domainEventContext(trackedDomainEventData);
-        }
-        var trackingToken = trackedEventData.trackingToken();
-        return context.withResource(TrackingToken.RESOURCE_KEY, trackingToken);
+    public TrackingToken createHeadToken() {
+        return legacyJpaOperations.maxGlobalIndex()
+                                  .flatMap(this::gapAwareTrackingTokenOn)
+                                  .orElse(null);
     }
 
     @Override
-    public CompletableFuture<TrackingToken> tailToken() {
-        var token = legacyJpaOperations.minGlobalIndex()
-                                       .flatMap(this::gapAwareTrackingTokenOn)
-                                       .orElse(null);
-        return CompletableFuture.completedFuture(token);
+    public TrackingToken createTokenAt(@Nonnull Instant dateTime) {
+        return legacyJpaOperations.globalIndexAt(dateTime)
+                                  .flatMap(this::gapAwareTrackingTokenOn)
+                                  .or(() -> legacyJpaOperations.maxGlobalIndex()
+                                                               .flatMap(this::gapAwareTrackingTokenOn))
+                                  .orElse(null);
     }
 
     private Optional<TrackingToken> gapAwareTrackingTokenOn(Long globalIndex) {
@@ -356,269 +273,315 @@ public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
                 : Optional.of(GapAwareTrackingToken.newInstance(globalIndex, Collections.emptySet()));
     }
 
-    @Override
-    public CompletableFuture<TrackingToken> headToken() {
-        var headToken = legacyJpaOperations.maxGlobalIndex()
-                                           .flatMap(this::gapAwareTrackingTokenOn)
-                                           .orElse(null);
-        return CompletableFuture.completedFuture(headToken);
+    /**
+     * Deletes all snapshots from the underlying storage with given {@code aggregateIdentifier}.
+     *
+     * @param aggregateIdentifier the identifier of the aggregate to delete snapshots for
+     * @param sequenceNumber      The sequence number from which value snapshots should be kept
+     */
+    protected void deleteSnapshots(String aggregateIdentifier, long sequenceNumber) {
+        legacyJpaOperations.deleteSnapshots(aggregateIdentifier, sequenceNumber);
     }
 
-    @Override
-    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
-        var token = legacyJpaOperations.globalIndexAt(at)
-                                       .flatMap(this::gapAwareTrackingTokenOn)
-                                       .or(() -> legacyJpaOperations.maxGlobalIndex()
-                                                                    .flatMap(this::gapAwareTrackingTokenOn))
-                                       .orElse(null);
-        return CompletableFuture.completedFuture(token);
+    /**
+     * Returns a Jpa event entity for given {@code eventMessage}. Use the given {@code serializer} to serialize the
+     * payload and metadata of the event.
+     *
+     * @param eventMessage the event message to store
+     * @param serializer   the serializer to serialize the payload and metadata
+     * @return the Jpa entity to be inserted
+     */
+    protected Object createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
+        return new DomainEventEntry(asDomainEventMessage(eventMessage), serializer);
     }
 
-    @Override
-    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-        descriptor.describeProperty("entityManagerProvider", entityManagerProvider);
-        descriptor.describeProperty("transactionManager", transactionManager);
-        descriptor.describeProperty("eventSerializer", eventSerializer);
-        descriptor.describeProperty("persistenceExceptionResolver", persistenceExceptionResolver);
-        descriptor.describeProperty("legacyJpaOperations", legacyJpaOperations);
-        descriptor.describeProperty("tokenOperations", tokenOperations);
-        descriptor.describeProperty("batchingOperations", batchingOperations);
+    /**
+     * Returns a Jpa snapshot entity for given {@code snapshot} of an aggregate. Use the given {@code serializer} to
+     * serialize the payload and metadata of the snapshot event.
+     *
+     * @param snapshot   the domain event message containing a snapshot of the aggregate
+     * @param serializer the serializer to serialize the payload and metadata
+     * @return the Jpa entity to be inserted
+     */
+    protected Object createSnapshotEntity(DomainEventMessage<?> snapshot, Serializer serializer) {
+        return new SnapshotEventEntry(snapshot, serializer);
     }
 
-    private record BatchingEventStorageOperations(TransactionManager transactionManager,
-                                                  LegacyJpaEventStorageOperations legacyJpaOperations,
-                                                  GapAwareTrackingTokenOperations tokenOperations,
-                                                  int batchSize,
-                                                  Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate,
-                                                  boolean fetchForAggregateUntilEmpty,
-                                                  int gapCleaningThreshold,
-                                                  long lowestGlobalSequence,
-                                                  int maxGapOffset
-    ) {
+    /**
+     * Returns the name of the Jpa event entity. Defaults to 'DomainEventEntry'.
+     *
+     * @return the name of the Jpa event entity
+     */
+    protected String domainEventEntryEntityName() {
+        return DomainEventEntry.class.getSimpleName();
+    }
+
+    /**
+     * Returns the name of the Snapshot event entity. Defaults to 'SnapshotEventEntry'.
+     *
+     * @return the name of the Jpa snapshot entity
+     */
+    protected String snapshotEventEntryEntityName() {
+        return SnapshotEventEntry.class.getSimpleName();
+    }
+
+    /**
+     * Provides an {@link EntityManager} instance for storing and fetching event data.
+     *
+     * @return a provided entity manager
+     */
+    protected EntityManager entityManager() {
+        return entityManagerProvider.getEntityManager();
+    }
+
+    /**
+     * Sets the amount of time until a 'gap' in a TrackingToken may be considered timed out. This setting will affect
+     * the cleaning process of gaps. Gaps that have timed out will be removed from Tracking Tokens to improve
+     * performance of reading events. Defaults to 60000 (1 minute).
+     *
+     * @param gapTimeout The amount of time, in milliseconds until a gap may be considered timed out.
+     */
+    public void setGapTimeout(int gapTimeout) {
+        this.gapTimeout = gapTimeout;
+    }
+
+    /**
+     * Sets the threshold of number of gaps in a token before an attempt to clean gaps up is taken. Defaults to 250.
+     *
+     * @param gapCleaningThreshold The number of gaps before triggering a cleanup.
+     */
+    public void setGapCleaningThreshold(int gapCleaningThreshold) {
+        this.gapCleaningThreshold = gapCleaningThreshold;
+    }
+
+    /**
+     * Builder class to instantiate a {@link LegacyJpaEventStorageEngine}.
+     * <p>
+     * The following configurable fields have defaults:
+     * <ul>
+     * <li>The {@link EventUpcaster} defaults to an {@link org.axonframework.serialization.upcasting.event.NoOpEventUpcaster}.</li>
+     * <li>The {@link PersistenceExceptionResolver} is defaulted to a {@link SQLErrorCodesResolver}, <b>if</b> the
+     * {@link DataSource} is provided</li>
+     * <li>The {@code snapshotFilter} defaults to a {@link SnapshotFilter#allowAll()} instance.</li>
+     * <li>The {@code batchSize} defaults to an integer of size {@code 100}.</li>
+     * <li>The {@code explicitFlush} defaults to {@code true}.</li>
+     * <li>The {@code maxGapOffset} defaults to an  integer of size {@code 10000}.</li>
+     * <li>The {@code lowestGlobalSequence} defaults to a long of size {@code 1}.</li>
+     * <li>The {@code gapTimeout} defaults to an integer of size {@code 60000} (1 minute).</li>
+     * <li>The {@code gapCleaningThreshold} defaults to an integer of size {@code 250}.</li>
+     * </ul>
+     * <p>
+     * The event and snapshot {@link Serializer}, the {@link EntityManagerProvider} and {@link TransactionManager} are
+     * <b>hard requirements</b> and as such should be provided.
+     */
+    public static class Builder extends LegacyBatchingEventStorageEngine.Builder {
+
+        private EntityManagerProvider entityManagerProvider;
+        private TransactionManager transactionManager;
+        private boolean explicitFlush = true;
+        private int maxGapOffset = DEFAULT_MAX_GAP_OFFSET;
+        private long lowestGlobalSequence = DEFAULT_LOWEST_GLOBAL_SEQUENCE;
+        private int gapTimeout = DEFAULT_GAP_TIMEOUT;
+        private int gapCleaningThreshold = DEFAULT_GAP_CLEANING_THRESHOLD;
+
+        @Override
+        public LegacyJpaEventStorageEngine.Builder snapshotSerializer(Serializer snapshotSerializer) {
+            super.snapshotSerializer(snapshotSerializer);
+            return this;
+        }
+
+        @Override
+        public LegacyJpaEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
+            super.upcasterChain(upcasterChain);
+            return this;
+        }
+
+        @Override
+        public LegacyJpaEventStorageEngine.Builder persistenceExceptionResolver(
+                PersistenceExceptionResolver persistenceExceptionResolver
+        ) {
+            super.persistenceExceptionResolver(persistenceExceptionResolver);
+            return this;
+        }
+
+        @Override
+        public LegacyJpaEventStorageEngine.Builder eventSerializer(Serializer eventSerializer) {
+            super.eventSerializer(eventSerializer);
+            return this;
+        }
 
         /**
-         * The batch optimization is intended to *not* retrieve a second batch of events to cover for potential gaps in
-         * the first batch. This optimization is desirable for aggregate event streams, as these close once the end is
-         * reached. For token-based event reading the stream does not necessarily close once reaching the end, thus the
-         * optimization will block further event retrieval.
+         * {@inheritDoc}
+         * <p>
+         * The JpaEventStorageEngine defaults to using any batch smaller than the batch size as the final batch.
          */
-        private static final boolean BATCH_OPTIMIZATION_DISABLED = false;
+        @Override
+        public LegacyJpaEventStorageEngine.Builder finalAggregateBatchPredicate(
+                Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate) {
+            super.finalAggregateBatchPredicate(finalAggregateBatchPredicate);
+            return this;
+        }
 
-        private BatchingEventStorageOperations(
-                TransactionManager transactionManager,
-                LegacyJpaEventStorageOperations legacyJpaOperations,
-                GapAwareTrackingTokenOperations tokenOperations,
-                int batchSize,
-                Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate,
-                boolean fetchForAggregateUntilEmpty,
-                int gapCleaningThreshold,
-                long lowestGlobalSequence,
-                int maxGapOffset
-        ) {
+        @Override
+        public LegacyJpaEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
+            super.snapshotFilter(snapshotFilter);
+            return this;
+        }
+
+        @Override
+        public LegacyJpaEventStorageEngine.Builder batchSize(int batchSize) {
+            super.batchSize(batchSize);
+            return this;
+        }
+
+        /**
+         * Sets the {@link PersistenceExceptionResolver} as a {@link SQLErrorCodesResolver}, using the provided
+         * {@link DataSource} to resolve the error codes. <b>Note</b> that the provided DataSource sole purpose in this
+         * {@link LegacyEventStorageEngine} implementation is to be used for instantiating the
+         * PersistenceExceptionResolver.
+         *
+         * @param dataSource the {@link DataSource} used to instantiate a
+         *                   {@link SQLErrorCodesResolver#SQLErrorCodesResolver(DataSource)} as the
+         *                   {@link PersistenceExceptionResolver}
+         * @return the current Builder instance, for fluent interfacing
+         * @throws SQLException if creation of the {@link SQLErrorCodesResolver} fails
+         */
+        public Builder dataSource(DataSource dataSource) throws SQLException {
+            persistenceExceptionResolver(new SQLErrorCodesResolver(dataSource));
+            return this;
+        }
+
+        /**
+         * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the underlying
+         * database for this {@link LegacyEventStorageEngine} implementation.
+         *
+         * @param entityManagerProvider a {@link EntityManagerProvider} which provides the {@link EntityManager} used to
+         *                              access the underlying database
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder entityManagerProvider(EntityManagerProvider entityManagerProvider) {
+            assertNonNull(entityManagerProvider, "EntityManagerProvider may not be null");
+            this.entityManagerProvider = entityManagerProvider;
+            return this;
+        }
+
+        /**
+         * Sets the {@link TransactionManager} used to manage transaction around fetching event data. Required by
+         * certain databases for reading blob data.
+         *
+         * @param transactionManager a {@link TransactionManager} used to manage transaction around fetching event data
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder transactionManager(TransactionManager transactionManager) {
+            assertNonNull(transactionManager, "TransactionManager may not be null");
             this.transactionManager = transactionManager;
-            this.legacyJpaOperations = legacyJpaOperations;
-            this.tokenOperations = tokenOperations;
-            this.batchSize = batchSize;
-            this.finalAggregateBatchPredicate = getOrDefault(finalAggregateBatchPredicate,
-                                                             this::defaultFinalAggregateBatchPredicate);
-            this.fetchForAggregateUntilEmpty = fetchForAggregateUntilEmpty;
-            this.gapCleaningThreshold = gapCleaningThreshold;
-            this.lowestGlobalSequence = lowestGlobalSequence;
+            return this;
+        }
+
+        /**
+         * Sets the {@code explicitFlush} field specifying whether to explicitly call {@link EntityManager#flush()}
+         * after inserting the Events published in this Unit of Work. If {@code false}, this instance relies on the
+         * TransactionManager to flush data. Note that the {@code persistenceExceptionResolver} may not be able to
+         * translate exceptions anymore. {@code false} should only be used to optimize performance for batch operations.
+         * In other cases, {@code true} is recommended, which is also the default.
+         *
+         * @param explicitFlush a {@code boolean} specifying whether to explicitly call {@link EntityManager#flush()}
+         *                      after inserting the Events published in this Unit of Work
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder explicitFlush(boolean explicitFlush) {
+            this.explicitFlush = explicitFlush;
+            return this;
+        }
+
+        /**
+         * Sets the {@code maxGapOffset} specifying the maximum distance in sequence numbers between a missing event and
+         * the event with the highest known index. If the gap is bigger it is assumed that the missing event will not be
+         * committed to the store anymore. This event storage engine will no longer look for those events the next time
+         * a batch is fetched. Defaults to an integer of {@code 10000}
+         * ({@link LegacyJpaEventStorageEngine#DEFAULT_MAX_GAP_OFFSET}.
+         *
+         * @param maxGapOffset an {@code int} specifying the maximum distance in sequence numbers between a missing
+         *                     event and the event with the highest known index
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder maxGapOffset(int maxGapOffset) {
+            assertPositive(maxGapOffset, "maxGapOffset");
             this.maxGapOffset = maxGapOffset;
+            return this;
         }
 
-        Stream<? extends DomainEventData<?>> readEventData(String identifier, long firstSequenceNumber,
-                                                           long lastSequenceNumber) {
-            EventStreamSpliterator<? extends DomainEventData<?>> spliterator = new EventStreamSpliterator<>(
-                    lastItem -> transactionManager.fetchInTransaction(
-                            () -> legacyJpaOperations.fetchDomainEvents(
-                                    identifier,
-                                    lastItem == null ? firstSequenceNumber : lastItem.getSequenceNumber() + 1,
-                                    lastSequenceNumber,
-                                    batchSize)
-                    )
-                    , finalAggregateBatchPredicate);
-            return StreamSupport.stream(spliterator, false);
-        }
-
-        Stream<? extends TrackedEventData<?>> readEventData(TrackingToken trackingToken) {
-            EventStreamSpliterator<? extends TrackedEventData<?>> spliterator = new EventStreamSpliterator<>(
-                    lastItem -> fetchTrackedEvents(lastItem == null ? trackingToken : lastItem.trackingToken(),
-                                                   batchSize),
-                    batch -> BATCH_OPTIMIZATION_DISABLED
-            );
-            return StreamSupport.stream(spliterator, false);
-        }
-
-        private List<? extends TrackedEventData<?>> fetchTrackedEvents(TrackingToken lastToken, int batchSize) {
-            Assert.isTrue(
-                    lastToken == null || lastToken instanceof GapAwareTrackingToken,
-                    () -> String.format("Token [%s] is of the wrong type. Expected [%s]",
-                                        lastToken, GapAwareTrackingToken.class.getSimpleName())
-            );
-
-            GapAwareTrackingToken previousToken = cleanedToken((GapAwareTrackingToken) lastToken);
-
-            List<Object[]> entries = transactionManager.fetchInTransaction(() -> legacyJpaOperations.fetchEvents(
-                    previousToken,
-                    batchSize));
-            return legacyJpaOperations.entriesToEvents(
-                    previousToken, entries, tokenOperations.gapTimeoutThreshold(), lowestGlobalSequence, maxGapOffset
-            );
-        }
-
-        private GapAwareTrackingToken cleanedToken(GapAwareTrackingToken lastToken) {
-            if (lastToken != null && lastToken.getGaps().size() > gapCleaningThreshold) {
-                return tokenOperations.withGapsCleaned(lastToken, indexAndTimestampBetweenGaps(lastToken));
-            }
-            return lastToken;
-        }
-
-        private List<Object[]> indexAndTimestampBetweenGaps(GapAwareTrackingToken lastToken) {
-            return transactionManager.fetchInTransaction(() -> legacyJpaOperations.indexAndTimestampBetweenGaps(
-                    lastToken));
-        }
-
-
-        private boolean defaultFinalAggregateBatchPredicate(List<? extends DomainEventData<?>> recentBatch) {
-            return fetchForAggregateUntilEmpty() ? recentBatch.isEmpty() : recentBatch.size() < batchSize;
-        }
-
-        private static class EventStreamSpliterator<T> extends Spliterators.AbstractSpliterator<T> {
-
-            private final Function<T, List<? extends T>> fetchFunction;
-            private final Predicate<List<? extends T>> finalBatchPredicate;
-
-            private Iterator<? extends T> iterator;
-            private T lastItem;
-            private boolean lastBatchFound;
-
-            private EventStreamSpliterator(Function<T, List<? extends T>> fetchFunction,
-                                           Predicate<List<? extends T>> finalBatchPredicate) {
-                super(Long.MAX_VALUE, NONNULL | ORDERED | DISTINCT | CONCURRENT);
-                this.fetchFunction = fetchFunction;
-                this.finalBatchPredicate = finalBatchPredicate;
-            }
-
-            @Override
-            public boolean tryAdvance(Consumer<? super T> action) {
-                requireNonNull(action);
-                if (iterator == null || !iterator.hasNext()) {
-                    if (lastBatchFound) {
-                        return false;
-                    }
-                    List<? extends T> items = fetchFunction.apply(lastItem);
-                    lastBatchFound = finalBatchPredicate.test(items);
-                    iterator = items.iterator();
-                }
-                if (!iterator.hasNext()) {
-                    return false;
-                }
-
-                action.accept(lastItem = iterator.next());
-                return true;
-            }
-        }
-    }
-
-
-    public record Customization(
-            PersistenceExceptionResolver persistenceExceptionResolver,
-            int batchSize,
-            Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate,
-            long lowestGlobalSequence,
-            TokenGapsHandlingConfig tokenGapsHandling
-    ) {
-
-        private static final int DEFAULT_BATCH_SIZE = 100;
-        private static final long DEFAULT_LOWEST_GLOBAL_SEQUENCE = 1;
-
-        public Customization {
-            assertThat(batchSize, size -> size > 0, "The batchSize must be a positive number");
+        /**
+         * Sets the {@code lowestGlobalSequence} specifying the first expected auto generated sequence number. For most
+         * data stores this is 1 unless the table has contained entries before. Defaults to a {@code long} of {@code 1}
+         * ({@link LegacyJpaEventStorageEngine#DEFAULT_LOWEST_GLOBAL_SEQUENCE}).
+         *
+         * @param lowestGlobalSequence a {@code long} specifying the first expected auto generated sequence number
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder lowestGlobalSequence(long lowestGlobalSequence) {
             assertThat(lowestGlobalSequence,
                        number -> number > 0,
                        "The lowestGlobalSequence must be a positive number");
+            this.lowestGlobalSequence = lowestGlobalSequence;
+            return this;
         }
 
-        public record TokenGapsHandlingConfig(int maxOffset, int timeout, int cleaningThreshold) {
-
-            private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
-            private static final int DEFAULT_GAP_TIMEOUT = 60000;
-            private static final int DEFAULT_GAP_CLEANING_THRESHOLD = 250;
-
-            public TokenGapsHandlingConfig {
-                assertPositive(maxOffset, "maxOffset");
-                assertPositive(timeout, "timeout");
-                assertPositive(cleaningThreshold, "cleaningThreshold");
-            }
-
-            static TokenGapsHandlingConfig withDefaultValues() {
-                return new TokenGapsHandlingConfig(DEFAULT_MAX_GAP_OFFSET,
-                                                   DEFAULT_GAP_TIMEOUT,
-                                                   DEFAULT_GAP_CLEANING_THRESHOLD);
-            }
+        /**
+         * Sets the amount of time until a 'gap' in a TrackingToken may be considered timed out. This setting will
+         * affect the cleaning process of gaps. Gaps that have timed out will be removed from Tracking Tokens to improve
+         * performance of reading events. Defaults to an  integer of {@code 60000}
+         * ({@link LegacyJpaEventStorageEngine#DEFAULT_GAP_TIMEOUT}), thus 1 minute.
+         *
+         * @param gapTimeout an {@code int} specifying the amount of time in milliseconds until a 'gap' in a
+         *                   TrackingToken may be considered timed out
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder gapTimeout(int gapTimeout) {
+            assertPositive(gapTimeout, "gapTimeout");
+            this.gapTimeout = gapTimeout;
+            return this;
         }
 
-        public static Customization withDefaultValues() {
-            return new Customization(
-                    null,
-                    DEFAULT_BATCH_SIZE,
-                    null,
-                    DEFAULT_LOWEST_GLOBAL_SEQUENCE,
-                    TokenGapsHandlingConfig.withDefaultValues()
-            );
+        /**
+         * Sets the threshold of number of gaps in a token before an attempt to clean gaps up is taken. Defaults to an
+         * integer of {@code 250} ({@link LegacyJpaEventStorageEngine#DEFAULT_GAP_CLEANING_THRESHOLD}).
+         *
+         * @param gapCleaningThreshold an {@code int} specifying the threshold of number of gaps in a token before an
+         *                             attempt to clean gaps up is taken
+         * @return the current Builder instance, for fluent interfacing
+         */
+        public Builder gapCleaningThreshold(int gapCleaningThreshold) {
+            assertPositive(gapCleaningThreshold, "gapCleaningThreshold");
+            this.gapCleaningThreshold = gapCleaningThreshold;
+            return this;
         }
 
-        public Customization persistenceExceptionResolver(PersistenceExceptionResolver persistenceExceptionResolver) {
-            return new Customization(
-                    persistenceExceptionResolver,
-                    batchSize,
-                    finalAggregateBatchPredicate,
-                    lowestGlobalSequence,
-                    tokenGapsHandling
-            );
+        private void assertPositive(int num, final String numberDescription) {
+            assertThat(num, number -> number > 0, "The " + numberDescription + " must be a positive number");
         }
 
-        public Customization batchSize(int batchSize) {
-            return new Customization(
-                    persistenceExceptionResolver,
-                    batchSize,
-                    finalAggregateBatchPredicate,
-                    lowestGlobalSequence,
-                    tokenGapsHandling
-            );
+        /**
+         * Initializes a {@link LegacyJpaEventStorageEngine} as specified through this Builder.
+         *
+         * @return a {@link LegacyJpaEventStorageEngine} as specified through this Builder
+         */
+        public LegacyJpaEventStorageEngine build() {
+            return new LegacyJpaEventStorageEngine(this);
         }
 
-        public Customization finalAggregateBatchPredicate(
-                Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate
-        ) {
-            return new Customization(
-                    persistenceExceptionResolver,
-                    batchSize,
-                    finalAggregateBatchPredicate,
-                    lowestGlobalSequence,
-                    tokenGapsHandling
-            );
-        }
-
-        public Customization lowestGlobalSequence(long lowestGlobalSequence) {
-            return new Customization(
-                    persistenceExceptionResolver,
-                    batchSize,
-                    finalAggregateBatchPredicate,
-                    lowestGlobalSequence,
-                    tokenGapsHandling
-            );
-        }
-
-        public Customization tokenGapsHandling(UnaryOperator<TokenGapsHandlingConfig> configurationOverride) {
-            return new Customization(
-                    persistenceExceptionResolver,
-                    batchSize,
-                    finalAggregateBatchPredicate,
-                    lowestGlobalSequence,
-                    tokenGapsHandling
-            );
+        /**
+         * Validates whether the fields contained in this Builder are set accordingly.
+         *
+         * @throws AxonConfigurationException if one field is asserted to be incorrect according to the Builder's
+         *                                    specifications
+         */
+        @Override
+        protected void validate() throws AxonConfigurationException {
+            super.validate();
+            assertNonNull(entityManagerProvider,
+                          "The EntityManagerProvider is a hard requirement and should be provided");
+            assertNonNull(transactionManager, "The TransactionManager is a hard requirement and should be provided");
         }
     }
 }

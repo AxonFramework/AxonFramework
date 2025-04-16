@@ -26,7 +26,8 @@ import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
@@ -79,7 +80,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p/>
  * Any subsequent UOW (after an aggregate was added to the cache) works on potentially stale data. This manifests
  * itself
- * primarily by events being assigned duplicate sequence numbers. The {@link org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine}
+ * primarily by events being assigned duplicate sequence numbers. The {@link LegacyJpaEventStorageEngine}
  * detects this and throws an
  * exception noting that an 'identical' entity has already been persisted.
  * <p/>
@@ -123,7 +124,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
                         .build()));
 
 
-        eventStore = LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
+        eventStore = LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine()).build();
         SimpleEventHandlerInvoker eventHandlerInvoker =
                 SimpleEventHandlerInvoker.builder()
                                          .eventHandlers(new LoggingEventHandler(events))

@@ -17,7 +17,7 @@
 package org.axonframework.springboot;
 
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.springboot.utils.GrpcServerStub;
 import org.axonframework.springboot.utils.TcpUtils;
@@ -62,7 +62,8 @@ class JpaEventStoreAutoConfigurationWithAxonServerTest {
             Map<String, LegacyEventStore> eventStores = context.getBeansOfType(LegacyEventStore.class);
             assertTrue(eventStores.containsKey("eventStore"));
             assertEquals(AxonServerEventStore.class, eventStores.get("eventStore").getClass());
-            Map<String, EventStorageEngine> eventStorageEngineBeans = context.getBeansOfType(EventStorageEngine.class);
+            Map<String, LegacyEventStorageEngine> eventStorageEngineBeans =
+                    context.getBeansOfType(LegacyEventStorageEngine.class);
             assertTrue(eventStorageEngineBeans.isEmpty());
         });
     }

@@ -25,6 +25,7 @@ import io.axoniq.axonserver.grpc.event.Event;
 import io.grpc.Status;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.event.AggregateBasedAxonServerEventStorageEngine;
 import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
@@ -43,10 +44,10 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.EventStreamUtils;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -90,7 +91,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @author Allard Buijze
  * @since 4.0
- * @deprecated In favor of the {@link org.axonframework.axonserver.connector.event.LegacyAxonServerEventStorageEngine}.
+ * @deprecated In favor of the {@link AggregateBasedAxonServerEventStorageEngine}.
  */
 @Deprecated(since = "5.0.0")
 public class AxonServerEventStore extends AbstractLegacyEventStore {
@@ -100,7 +101,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
     /**
      * Instantiate a Builder to be able to create a {@link AxonServerEventStore}.
      * <p>
-     * The main goal of this Builder is to instantiate an AxonServer specific {@link EventStorageEngine}. The properties
+     * The main goal of this Builder is to instantiate an AxonServer specific {@link LegacyEventStorageEngine}. The properties
      * which may be provided through this Builder are thus all used to end up with that EventStorageEngine
      * implementation. An EventStorageEngine may be provided directly however, although we encourage the usage of the
      * {@link Builder#configuration} and {@link Builder#axonServerConnectionManager} functions to let it be created.
@@ -121,7 +122,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
     /**
      * Instantiate a {@link AxonServerEventStore} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link EventStorageEngine} is set. If not, the {@link AxonServerConfiguration} and {@link
+     * Will assert that the {@link LegacyEventStorageEngine} is set. If not, the {@link AxonServerConfiguration} and {@link
      * AxonServerConnectionManager} should minimally be provided to create an AxonServer specific EventStorageEngine
      * implementation. If either of these {@code null} assertions fail, an {@link AxonConfigurationException} will be
      * thrown.
@@ -176,7 +177,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
     /**
      * Builder class to instantiate a {@link AxonServerEventStore}.
      * <p>
-     * The main goal of this Builder is to instantiate an AxonServer specific {@link EventStorageEngine}. The properties
+     * The main goal of this Builder is to instantiate an AxonServer specific {@link LegacyEventStorageEngine}. The properties
      * which may be provided through this Builder are thus all used to end up with that EventStorageEngine
      * implementation. An EventStorageEngine may be provided directly however, although we encourage the usage of the
      * {@link Builder#configuration} and {@link Builder#axonServerConnectionManager} functions to let it be created.
@@ -199,7 +200,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
         private String defaultContext;
 
         @Override
-        public Builder storageEngine(EventStorageEngine storageEngine) {
+        public Builder storageEngine(LegacyEventStorageEngine storageEngine) {
             super.storageEngine(storageEngine);
             return this;
         }
@@ -220,7 +221,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
          * Sets the {@link AxonServerConfiguration} describing the servers to connect with and how to manage flow
          * control.
          * <p>
-         * This object is used by the AxonServer {@link EventStorageEngine} implementation which this Builder will
+         * This object is used by the AxonServer {@link LegacyEventStorageEngine} implementation which this Builder will
          * create if it is not provided. We suggest to use these, instead of the {@link Builder#storageEngine()}
          * function to set the EventStorageEngine.
          *
@@ -237,7 +238,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
         /**
          * Sets the {@link AxonServerConnectionManager} managing the connections to the AxonServer platform.
          * <p>
-         * This object is used by the AxonServer {@link EventStorageEngine} implementation which this Builder will
+         * This object is used by the AxonServer {@link LegacyEventStorageEngine} implementation which this Builder will
          * create if it is not provided. We suggest to use these, instead of the {@link Builder#storageEngine()}
          * function to set the EventStorageEngine.
          *
@@ -255,7 +256,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
          * Sets the {@link Serializer} used to serialize and deserialize snapshots. Defaults to a {@link
          * XStreamSerializer}.
          * <p>
-         * This object is used by the AxonServer {@link EventStorageEngine} implementation which this Builder will
+         * This object is used by the AxonServer {@link LegacyEventStorageEngine} implementation which this Builder will
          * create if it is not provided. We suggest to use these, instead of the {@link Builder#storageEngine()}
          * function to set the EventStorageEngine.
          *
@@ -272,7 +273,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
          * Sets the {@link Serializer} used to serialize and deserialize the Event Message's payload and Meta Data with.
          * Defaults to a {@link XStreamSerializer}.
          * <p>
-         * This object is used by the AxonServer {@link EventStorageEngine} implementation which this Builder will
+         * This object is used by the AxonServer {@link LegacyEventStorageEngine} implementation which this Builder will
          * create if it is not provided. We suggest to use these, instead of the {@link Builder#storageEngine()}
          * function to set the EventStorageEngine.
          *
@@ -302,7 +303,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
          * snapshots are used. Note that {@link SnapshotFilter} instances can be combined and should return {@code true}
          * if they handle a snapshot they wish to ignore.
          * <p>
-         * This object is used by the AxonServer {@link EventStorageEngine} implementation.
+         * This object is used by the AxonServer {@link LegacyEventStorageEngine} implementation.
          *
          * @param snapshotFilter the {@link SnapshotFilter} to use
          * @return the current Builder instance, for fluent interfacing
@@ -317,7 +318,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
          * Sets the {@link EventUpcaster} used to deserialize events of older revisions. Defaults to a {@link
          * NoOpEventUpcaster}.
          * <p>
-         * This object is used by the AxonServer {@link EventStorageEngine} implementation which this Builder will
+         * This object is used by the AxonServer {@link LegacyEventStorageEngine} implementation which this Builder will
          * create if it is not provided. We suggest to use these, instead of the {@link Builder#storageEngine()}
          * function to set the EventStorageEngine.
          *
@@ -374,7 +375,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
         }
     }
 
-    static class AxonIQEventStorageEngine extends AbstractEventStorageEngine {
+    static class AxonIQEventStorageEngine extends AbstractLegacyEventStorageEngine {
 
         private static final int ALLOW_SNAPSHOTS_MAGIC_VALUE = -42;
         private final String APPEND_EVENT_TRANSACTION = this + "/APPEND_EVENT_TRANSACTION";
@@ -677,7 +678,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
             return this.eventSerializer;
         }
 
-        private static class Builder extends AbstractEventStorageEngine.Builder {
+        private static class Builder extends AbstractLegacyEventStorageEngine.Builder {
 
             private boolean snapshotFilterSet;
             private AxonServerConfiguration configuration;

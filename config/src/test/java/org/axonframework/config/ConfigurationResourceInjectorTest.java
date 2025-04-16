@@ -20,7 +20,7 @@ import jakarta.inject.Inject;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,7 +33,7 @@ public class ConfigurationResourceInjectorTest {
     @BeforeEach
     void setUp() {
         configuration = LegacyDefaultConfigurer.defaultConfiguration()
-                                               .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                               .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                .buildConfiguration();
         testSubject = new ConfigurationResourceInjector(configuration);
     }

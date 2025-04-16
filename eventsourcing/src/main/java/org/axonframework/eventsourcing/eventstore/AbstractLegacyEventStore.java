@@ -36,7 +36,7 @@ import javax.annotation.Nonnull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Abstract implementation of an {@link LegacyEventStore} that uses a {@link EventStorageEngine} to store and load events.
+ * Abstract implementation of an {@link LegacyEventStore} that uses a {@link LegacyEventStorageEngine} to store and load events.
  *
  * @author Rene de Waele
  * @since 3.0
@@ -47,12 +47,12 @@ public abstract class AbstractLegacyEventStore extends AbstractEventBus implemen
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractLegacyEventStore.class);
 
-    private final EventStorageEngine storageEngine;
+    private final LegacyEventStorageEngine storageEngine;
 
     /**
      * Instantiate an {@link AbstractLegacyEventStore} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link EventStorageEngine} is not {@code null}, and will throw an
+     * Will assert that the {@link LegacyEventStorageEngine} is not {@code null}, and will throw an
      * {@link AxonConfigurationException} if it is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link AbstractLegacyEventStore} instance
@@ -148,11 +148,11 @@ public abstract class AbstractLegacyEventStore extends AbstractEventBus implemen
     }
 
     /**
-     * Returns the {@link EventStorageEngine} used by the event store.
+     * Returns the {@link LegacyEventStorageEngine} used by the event store.
      *
      * @return The event storage engine used by this event store
      */
-    protected EventStorageEngine storageEngine() {
+    protected LegacyEventStorageEngine storageEngine() {
         return storageEngine;
     }
 
@@ -188,12 +188,12 @@ public abstract class AbstractLegacyEventStore extends AbstractEventBus implemen
      * The {@link MessageMonitor} is defaulted to an {@link NoOpMessageMonitor} and the
      * {@link org.axonframework.eventhandling.EventBusSpanFactory} defaults to a
      * {@link org.axonframework.eventhandling.DefaultEventBusSpanFactory} backed by a {@link NoOpSpanFactory}. The
-     * {@link EventStorageEngine} is a
+     * {@link LegacyEventStorageEngine} is a
      * <b>hard requirement</b> and as such should be provided.
      */
     public abstract static class Builder extends AbstractEventBus.Builder {
 
-        protected EventStorageEngine storageEngine;
+        protected LegacyEventStorageEngine storageEngine;
 
         @Override
         public Builder messageMonitor(@Nonnull MessageMonitor<? super EventMessage<?>> messageMonitor) {
@@ -202,12 +202,12 @@ public abstract class AbstractLegacyEventStore extends AbstractEventBus implemen
         }
 
         /**
-         * Sets the {@link EventStorageEngine} used to store and load events.
+         * Sets the {@link LegacyEventStorageEngine} used to store and load events.
          *
-         * @param storageEngine the {@link EventStorageEngine} used to store and load events
+         * @param storageEngine the {@link LegacyEventStorageEngine} used to store and load events
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder storageEngine(EventStorageEngine storageEngine) {
+        public Builder storageEngine(LegacyEventStorageEngine storageEngine) {
             assertNonNull(storageEngine, "EventStorageEngine may not be null");
             this.storageEngine = storageEngine;
             return this;

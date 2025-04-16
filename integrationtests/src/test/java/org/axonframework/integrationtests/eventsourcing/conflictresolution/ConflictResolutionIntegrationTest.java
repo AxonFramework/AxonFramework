@@ -23,7 +23,7 @@ import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.conflictresolution.ConflictResolver;
 import org.axonframework.eventsourcing.conflictresolution.Conflicts;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.ConflictingAggregateVersionException;
@@ -48,7 +48,7 @@ class ConflictResolutionIntegrationTest {
     void setUp() {
         LegacyConfiguration configuration =
                 LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
-                                       .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                       .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                        .configureAggregate(StubAggregate.class)
                                        .buildConfiguration();
         configuration.start();

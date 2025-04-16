@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,13 +49,15 @@ import javax.annotation.Nonnull;
  * @author Rene de Waele
  * @author Allard Buijze
  * @since 3.0
+ * @deprecated This will be removed entirely for now.
  */
-public class SequenceEventStorageEngine implements EventStorageEngine {
+@Deprecated(since = "5.0.0")
+public class LegacySequenceEventStorageEngine implements LegacyEventStorageEngine {
 
-    private final EventStorageEngine historicStorage, activeStorage;
+    private final LegacyEventStorageEngine historicStorage, activeStorage;
 
     /**
-     * Initializes a new {@link SequenceEventStorageEngine} using given {@code historicStorage} and {@code
+     * Initializes a new {@link LegacySequenceEventStorageEngine} using given {@code historicStorage} and {@code
      * activeStorage}.
      *
      * @param historicStorage the event storage engine that contains historic events. This can be backed by a read-only
@@ -63,7 +65,8 @@ public class SequenceEventStorageEngine implements EventStorageEngine {
      * @param activeStorage   the event storage engine that contains 'new' events and to which new events and snapshots
      *                        will be written
      */
-    public SequenceEventStorageEngine(EventStorageEngine historicStorage, EventStorageEngine activeStorage) {
+    public LegacySequenceEventStorageEngine(LegacyEventStorageEngine historicStorage,
+                                            LegacyEventStorageEngine activeStorage) {
         this.historicStorage = historicStorage;
         this.activeStorage = activeStorage;
     }

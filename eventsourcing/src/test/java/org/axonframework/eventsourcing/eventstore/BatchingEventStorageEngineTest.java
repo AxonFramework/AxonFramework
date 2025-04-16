@@ -30,15 +30,15 @@ import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.createEv
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the specifics around a {@link BatchingEventStorageEngine}.
+ * Test class validating the specifics around a {@link LegacyBatchingEventStorageEngine}.
  *
  * @author Rene de Waele
  */
 @Transactional
-public abstract class BatchingEventStorageEngineTest<E extends BatchingEventStorageEngine, EB extends BatchingEventStorageEngine.Builder>
+public abstract class BatchingEventStorageEngineTest<E extends LegacyBatchingEventStorageEngine, EB extends LegacyBatchingEventStorageEngine.Builder>
         extends AbstractEventStorageEngineTest<E, EB> {
 
-    private BatchingEventStorageEngine testSubject;
+    private LegacyBatchingEventStorageEngine testSubject;
 
     @Test
     protected void loadLargeAmountOfEventsFromAggregateStream() {
@@ -67,7 +67,7 @@ public abstract class BatchingEventStorageEngineTest<E extends BatchingEventStor
         assertEquals(last.getIdentifier(), resultEventMessage.get().getIdentifier());
     }
 
-    protected void setTestSubject(BatchingEventStorageEngine testSubject) {
+    protected void setTestSubject(LegacyBatchingEventStorageEngine testSubject) {
         super.setTestSubject(this.testSubject = testSubject);
     }
 }

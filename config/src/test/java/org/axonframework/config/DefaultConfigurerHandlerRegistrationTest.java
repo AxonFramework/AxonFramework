@@ -18,7 +18,7 @@ package org.axonframework.config;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -50,7 +50,7 @@ class DefaultConfigurerHandlerRegistrationTest {
     @BeforeEach
     void setUp() {
         baseConfigurer = LegacyDefaultConfigurer.defaultConfiguration()
-                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine());
+                                                .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine());
         // Set to SEP to simplify event handler registration without an actual EventStore.
         baseConfigurer.eventProcessing().usingSubscribingEventProcessors();
     }

@@ -25,9 +25,9 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyBatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.eventsourcing.utils.EventStoreTestUtils;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
@@ -59,7 +59,7 @@ import javax.sql.DataSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration test class validating the insertion order of events for the {@link JpaEventStorageEngine}.
+ * Integration test class validating the insertion order of events for the {@link LegacyJpaEventStorageEngine}.
  *
  * @author Rene de Waele
  */
@@ -76,17 +76,17 @@ class JpaStorageEngineInsertionReadOrderTest {
     private PlatformTransactionManager tx;
     private TransactionTemplate txTemplate;
 
-    private BatchingEventStorageEngine testSubject;
+    private LegacyBatchingEventStorageEngine testSubject;
 
     @BeforeEach
     void setUp() {
         txTemplate = new TransactionTemplate(tx);
-        testSubject = JpaEventStorageEngine.builder()
-                                           .snapshotSerializer(serializer)
-                                           .eventSerializer(serializer)
-                                           .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
-                                           .transactionManager(new SpringTransactionManager(tx))
-                                           .build();
+        testSubject = LegacyJpaEventStorageEngine.builder()
+                                                 .snapshotSerializer(serializer)
+                                                 .eventSerializer(serializer)
+                                                 .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
+                                                 .transactionManager(new SpringTransactionManager(tx))
+                                                 .build();
     }
 
     @AfterEach

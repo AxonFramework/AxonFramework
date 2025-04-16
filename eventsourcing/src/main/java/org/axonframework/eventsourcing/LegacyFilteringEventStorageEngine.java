@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -38,10 +38,12 @@ import javax.annotation.Nonnull;
  *
  * @author Allard Buijze
  * @since 3.1
+ * @deprecated This class will be removed for now.
  */
-public class FilteringEventStorageEngine implements EventStorageEngine {
+@Deprecated(since = "5.0.0")
+public class LegacyFilteringEventStorageEngine implements LegacyEventStorageEngine {
 
-    private final EventStorageEngine delegate;
+    private final LegacyEventStorageEngine delegate;
     private final Predicate<? super EventMessage<?>> filter;
 
     /**
@@ -55,7 +57,7 @@ public class FilteringEventStorageEngine implements EventStorageEngine {
      * @param delegate the EventStorageEngine to store matching messages in
      * @param filter   the predicate that event messages must match against to be stored
      */
-    public FilteringEventStorageEngine(EventStorageEngine delegate, Predicate<? super EventMessage<?>> filter) {
+    public LegacyFilteringEventStorageEngine(LegacyEventStorageEngine delegate, Predicate<? super EventMessage<?>> filter) {
         this.delegate = delegate;
         this.filter = filter;
     }

@@ -28,7 +28,7 @@ import org.axonframework.eventhandling.EventMessageHandler;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.integrationtests.utils.EventTestUtils;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
@@ -54,7 +54,7 @@ class SubscribingEventProcessorTest {
         spanFactory = new TestSpanFactory();
         mockHandler = mock(EventMessageHandler.class);
         eventHandlerInvoker = SimpleEventHandlerInvoker.builder().eventHandlers(mockHandler).build();
-        eventBus = LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
+        eventBus = LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine()).build();
         transactionManager = new TestingTransactionManager();
         testSubject = SubscribingEventProcessor.builder()
                                                .name("test")

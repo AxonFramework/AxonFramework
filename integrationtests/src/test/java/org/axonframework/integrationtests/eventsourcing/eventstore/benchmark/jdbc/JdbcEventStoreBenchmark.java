@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.eventsourcing.eventstore.benchmark.jd
 
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.common.transaction.NoTransactionManager;
-import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.MySqlEventTableFactory;
 import org.axonframework.integrationtests.eventsourcing.eventstore.benchmark.AbstractEventStoreBenchmark;
 import org.springframework.context.ApplicationContext;
@@ -48,10 +48,12 @@ public class JdbcEventStoreBenchmark extends AbstractEventStoreBenchmark {
     }
 
     public JdbcEventStoreBenchmark(DataSource dataSource, PlatformTransactionManager transactionManager) {
-        super(JdbcEventStorageEngine.builder()
-                                    .connectionProvider(new UnitOfWorkAwareConnectionProviderWrapper(dataSource::getConnection))
-                                    .transactionManager(NoTransactionManager.INSTANCE)
-                                    .build());
+        super(LegacyJdbcEventStorageEngine.builder()
+                                          .connectionProvider(
+                                                  new UnitOfWorkAwareConnectionProviderWrapper(dataSource::getConnection)
+                                          )
+                                          .transactionManager(NoTransactionManager.INSTANCE)
+                                          .build());
         this.dataSource = dataSource;
         this.transactionManager = transactionManager;
     }
@@ -66,7 +68,7 @@ public class JdbcEventStoreBenchmark extends AbstractEventStoreBenchmark {
                     Connection connection = dataSource.getConnection();
                     connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
                     connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();
-                    ((JdbcEventStorageEngine) getStorageEngine()).createSchema(MySqlEventTableFactory.INSTANCE);
+                    ((LegacyJdbcEventStorageEngine) getStorageEngine()).createSchema(MySqlEventTableFactory.INSTANCE);
                 } catch (SQLException e) {
                     throw new IllegalStateException("Failed to drop or create event table", e);
                 }

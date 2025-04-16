@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
-  ~ Copyright (c) 2010-2023. Axon Framework
+  ~ Copyright (c) 2010-2025. Axon Framework
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
         <constructor-arg index="1" ref="transactionManager"/>
     </bean>
 
-    <bean id="eventStorageEngine" class="org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine">
+    <bean id="eventStorageEngine" class="org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine">
         <constructor-arg name="entityManagerProvider" ref="entityManagerProvider"/>
         <constructor-arg name="transactionManager" ref="axonTransactionManager"/>
     </bean>

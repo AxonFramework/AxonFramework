@@ -31,10 +31,10 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.TokenSchema;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
-import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.modelling.saga.repository.SagaStore;
@@ -80,8 +80,9 @@ public class JdbcAutoConfigurationTest {
     @Test
     void allJdbcComponentsAutoConfigured() {
         testContext.run(context -> {
-            assertThat(context).hasSingleBean(JdbcEventStorageEngine.class);
-            assertThat(context).getBean(EventStorageEngine.class).isInstanceOf(JdbcEventStorageEngine.class);
+            assertThat(context).hasSingleBean(LegacyJdbcEventStorageEngine.class);
+            assertThat(context).getBean(LegacyEventStorageEngine.class)
+                               .isInstanceOf(LegacyJdbcEventStorageEngine.class);
             assertThat(context).getBean(LegacyEventStore.class).isInstanceOf(LegacyEmbeddedEventStore.class);
             assertThat(context).getBean(TokenStore.class).isInstanceOf(JdbcTokenStore.class);
             assertThat(context).getBean(SagaStore.class).isInstanceOf(JdbcSagaStore.class);
@@ -123,8 +124,8 @@ public class JdbcAutoConfigurationTest {
         testContext.run(context -> {
             assertThat(context).hasSingleBean(EventSchema.class);
             EventSchema eventSchema = context.getBean(EventSchema.class);
-            assertThat(context).hasSingleBean(EventStorageEngine.class);
-            assertThat(context).getBean(EventStorageEngine.class).extracting("schema").isSameAs(eventSchema);
+            assertThat(context).hasSingleBean(LegacyEventStorageEngine.class);
+            assertThat(context).getBean(LegacyEventStorageEngine.class).extracting("schema").isSameAs(eventSchema);
         });
     }
 
@@ -136,15 +137,15 @@ public class JdbcAutoConfigurationTest {
 
         testContext.withBean(EventSchema.class, () -> eventSchema)
                    .run(context -> {
-                       assertThat(context).hasSingleBean(EventStorageEngine.class);
-                       assertThat(context).getBean(EventStorageEngine.class).extracting("schema").isSameAs(eventSchema);
+                       assertThat(context).hasSingleBean(LegacyEventStorageEngine.class);
+                       assertThat(context).getBean(LegacyEventStorageEngine.class).extracting("schema").isSameAs(eventSchema);
                    });
     }
 
     @Test
     void configurationOfEventBusPreventsEventStoreDefinition() {
         testContext.withUserConfiguration(ExplicitEventBusContext.class)
-                   .run(context -> assertThat(context).doesNotHaveBean(EventStorageEngine.class)
+                   .run(context -> assertThat(context).doesNotHaveBean(LegacyEventStorageEngine.class)
                                                       .doesNotHaveBean(LegacyEventStore.class));
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,158 +16,153 @@
 
 package org.axonframework.eventsourcing.eventstore;
 
-import org.axonframework.eventhandling.DomainEventMessage;
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
+import org.axonframework.messaging.MessageStream;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.util.concurrent.CompletableFuture;
 
 import static java.util.Arrays.asList;
 
 /**
- * Provides a mechanism to append as well as retrieve events from an underlying storage like a database. An event
- * storage engine can also be used to store and fetch aggregate snapshot events.
+ * Provides a mechanism to {@link #appendEvents(AppendCondition, TaggedEventMessage[])}  append} as well as retrieve
+ * {@link EventMessage events} from an underlying storage mechanism.
+ * <p>
+ * Retrieval can be done either through {@link #source(SourcingCondition) sourcing} or
+ * {@link #stream(StreamingCondition) streaming}. The former generates a <b>finite</b> stream intended to event source
+ * (for example) a model. The latter provides an <b>infinite</b> stream.
  *
+ * @author Allard Buijze
+ * @author Milan Savić
  * @author Rene de Waele
+ * @author Steven van Beelen
+ * @since 3.0
  */
-public interface EventStorageEngine {
+public interface EventStorageEngine extends DescribableComponent {
 
     /**
-     * Append one or more events to the event storage. Events will be appended in the order that they are offered in.
+     * Append one or more {@link EventMessage events} to the underlying storage solution.
      * <p>
-     * Note that all events should have a unique event identifier. When storing {@link DomainEventMessage domain events}
-     * events should also have a unique combination of aggregate id and sequence number.
+     * Events will be appended in the order that they are offered in, validating the given {@code condition} before
+     * being stored. Note that all events should have a unique event identifier. {@link Tag Tags} paired with the
+     * {@code events} will be stored as well.
      * <p>
-     * By default this method creates a list of the offered events and then invokes {@link #appendEvents(List)}.
+     * By default, this method creates a {@link List} of the offered events and then invokes
+     * {@link #appendEvents(AppendCondition, List)}.
      *
-     * @param events Events to append to the event storage
+     * @param condition The condition describing the transactional requirements for the append transaction
+     * @param events    One or more {@link EventMessage events} to append to the underlying storage solution.
+     * @return A {@link AppendTransaction transaction} instance that can be committed or rolled back.
      */
-    default void appendEvents(@Nonnull EventMessage<?>... events) {
-        appendEvents(asList(events));
+    default CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
+                                                              @Nonnull TaggedEventMessage<?>... events) {
+        return appendEvents(condition, asList(events));
     }
 
     /**
-     * Append a list of events to the event storage. Events will be appended in the order that they are offered in.
+     * Appends a {@link List} of {@link EventMessage events} to the underlying storage solution.
      * <p>
-     * Note that all events should have a unique event identifier. When storing {@link DomainEventMessage domain events}
-     * events should also have a unique combination of aggregate id and sequence number.
-     *
-     * @param events Events to append to the event storage
-     */
-    void appendEvents(@Nonnull List<? extends EventMessage<?>> events);
-
-    /**
-     * Store an event that contains a snapshot of an aggregate. If the event storage already contains a snapshot for the
-     * same aggregate, then it will be replaced with the given snapshot.
-     *
-     * @param snapshot The snapshot event of the aggregate that is to be stored
-     */
-    void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot);
-
-    /**
-     * Open an event stream containing all events stored since given tracking token. The returned stream is comprised of
-     * events from aggregates as well as other application events. Pass a {@code trackingToken} of {@code null} to open
-     * a stream containing all available events.
+     * Events will be appended in the order that they are offered in, validating the given {@code condition} before
+     * being stored. Note that all events should have a unique event identifier. {@link Tag Tags} paired with the
+     * {@code events} will be stored as well.
      * <p>
-     * If the value of the given {@code mayBlock} is {@code true} the returned stream is allowed to block while waiting
-     * for new event messages if the end of the stream is reached.
+     * Implementations may be able to detect conflicts during the append stage. In such case, the returned completable
+     * future will complete exceptionally, indicating such conflict. Other implementations may delay such checks until
+     * the {@link AppendTransaction#commit()} is called.
      *
-     * @param trackingToken Object describing the global index of the last processed event or {@code null} to create a
-     *                      stream of all events in the store
-     * @param mayBlock      If {@code true} the storage engine may optionally choose to block to wait for new event
-     *                      messages if the end of the stream is reached.
-     * @return A stream containing all tracked event messages stored since the given tracking token
+     * @param condition The condition describing the transactional requirements for the append transaction
+     * @param events    The {@link List} of {@link EventMessage events} to append to the underlying storage solution.
+     * @return A {@link AppendTransaction transaction} instance that can be committed or rolled back.
      */
-    Stream<? extends TrackedEventMessage<?>> readEvents(@Nullable TrackingToken trackingToken, boolean mayBlock);
+    CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
+                                                      @Nonnull List<TaggedEventMessage<?>> events);
 
     /**
-     * Get a {@link DomainEventStream} containing all events published by the aggregate with given {@code
-     * aggregateIdentifier}. By default calling this method is shorthand for an invocation of
-     * {@link #readEvents(String, long)} with a sequence number of 0.
+     * Creates a <b>finite</b> {@link MessageStream} of {@link EventMessage events} matching the given
+     * {@code condition}.
+     * <p>
+     * The {@code condition} dictates the sequence to load based on the {@link SourcingCondition#criteria()}.
+     * Additionally, an optional {@link SourcingCondition#start()} and {@link SourcingCondition#end()} position may be
+     * provided.
      * <p>
      * The returned stream is finite, i.e. it should not block to wait for further events if the end of the event stream
      * of the aggregate is reached.
      *
-     * @param aggregateIdentifier The identifier of the aggregate to return an event stream for
-     * @return A non-blocking DomainEventStream of the given aggregate
+     * @param condition The {@link SourcingCondition} dictating the {@link MessageStream stream} of
+     *                  {@link EventMessage events} to source.
+     * @return A <b>finite</b> {@link MessageStream} of {@link EventMessage events} matching the given
+     * {@code condition}.
      */
-    default DomainEventStream readEvents(@Nonnull String aggregateIdentifier) {
-        return readEvents(aggregateIdentifier, 0L);
-    }
+    MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition);
 
     /**
-     * Get a {@link DomainEventStream} containing all events published by the aggregate with given {@code
-     * aggregateIdentifier} starting with the first event having a sequence number that is equal or larger than the
-     * given {@code firstSequenceNumber}.
+     * Creates an <b>infinite</b> {@link MessageStream} of {@link EventMessage events} matching the given
+     * {@code condition}.
      * <p>
-     * The returned stream is finite, i.e. it should not block to wait for further
-     * events if the end of the event stream of the aggregate is reached.
+     * The {@code condition} may dictate the {@link StreamingCondition#position()} to start streaming from, as well as
+     * define {@link StreamingCondition#criteria() filter criteria} for the returned {@code MessageStream}.
      *
-     * @param aggregateIdentifier The identifier of the aggregate
-     * @param firstSequenceNumber The expected sequence number of the first event in the returned stream
-     * @return A non-blocking DomainEventStream of the given aggregate
+     * @param condition The {@link StreamingCondition} dictating the {@link StreamingCondition#position()} to start
+     *                  streaming from, as well as the {@link StreamingCondition#criteria() filter criteria} used for
+     *                  the returned {@link MessageStream}.
+     * @return An <b>infinite</b> {@link MessageStream} of {@link EventMessage events} matching the given
+     * {@code condition}.
      */
-    DomainEventStream readEvents(@Nonnull String aggregateIdentifier, long firstSequenceNumber);
+    MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition);
 
     /**
-     * Try to load a snapshot event of the aggregate with given {@code aggregateIdentifier}. If the storage engine has
-     * no snapshot event of the aggregate, an empty Optional is returned.
-     *
-     * @param aggregateIdentifier The identifier of the aggregate
-     * @return An optional with a snapshot of the aggregate
-     */
-    Optional<DomainEventMessage<?>> readSnapshot(@Nonnull String aggregateIdentifier);
-
-    /**
-     * Returns the last known sequence number for the given {@code aggregateIdentifier}.
+     * Creates a {@link TrackingToken} that is at the tail of an event stream.
      * <p>
-     * While it's recommended to use the sequence numbers from the {@link DomainEventStream}, there are cases where
-     * knowing the sequence number is required, without having read the actual events. In such case, this method is a
-     * viable alternative.
+     * In other words, a token that tracks events from the beginning of time.
      *
-     * @param aggregateIdentifier The identifier to find the last sequence number for
-     * @return an optional with the highest sequence number, or an empty optional if the aggregate identifier wasn't
-     * found
+     * @return A {@link CompletableFuture} of a {@link TrackingToken} at the tail of an event stream.
      */
-    default Optional<Long> lastSequenceNumberFor(@Nonnull String aggregateIdentifier) {
-        return readEvents(aggregateIdentifier).asStream().map(DomainEventMessage::getSequenceNumber)
-                                              .max(Long::compareTo);
-    }
+    CompletableFuture<TrackingToken> tailToken();
 
     /**
-     * Creates a token that is at the tail of an event stream - that tracks events from the beginning of time.
+     * Creates a {@link TrackingToken} that is at the head of an event stream.
+     * <p>
+     * In other words, a token that tracks all <b>new</b> events from this point forward.
      *
-     * @return a tracking token at the tail of an event stream, if event stream is empty {@code null} is returned
+     * @return A {@link CompletableFuture} of a {@link TrackingToken} at the head of an event stream.
      */
-    default TrackingToken createTailToken() {
-        return null;
-    }
+    CompletableFuture<TrackingToken> headToken();
 
     /**
-     * Creates a token that is at the head of an event stream - that tracks all new events.
+     * Creates a {@link TrackingToken} that tracks all {@link EventMessage events} after the given {@code at}.
+     * <p>
+     * If there is an event exactly at the given {@code at}, it will be tracked too.
      *
-     * @return a tracking token at the head of an event stream, if event stream is empty {@code null} is returned
+     * @param at The {@link Instant} determining how the {@link TrackingToken} should be created. A tracking token
+     *           should point to very first event before this {@link Instant}.
+     * @return A {@link CompletableFuture} of a {@link TrackingToken} at the given {@code at}, if there aren't events
+     * matching this criteria {@code null} is returned
      */
-    default TrackingToken createHeadToken() {
-        throw new UnsupportedOperationException("Creation of Head Token not supported by this EventStorageEngine");
-    }
+    CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at);
 
     /**
-     * Creates a token that tracks all events after given {@code dateTime}. If there is an event exactly at the given
-     * {@code dateTime}, it will be tracked too.
-     *
-     * @param dateTime The date and time for determining criteria how the tracking token should be created. A tracking
-     *                 token should point to very first event before this date and time.
-     * @return a tracking token at the given {@code dateTime}, if there aren't events matching this criteria {@code
-     * null} is returned
+     * Interface representing the transaction of an appendEvents invocation.
+     * <p>
+     * Events may only be visible to consumers after the invocation of {@link #commit()}.
      */
-    default TrackingToken createTokenAt(@Nonnull Instant dateTime) {
-        throw new UnsupportedOperationException("Creation of Time based Token not supported by this EventStorageEngine");
+    interface AppendTransaction {
+
+        /**
+         * Commit any underlying transactions to make the appended events visible to consumers.
+         *
+         * @return A {@code CompletableFuture} that completes with the new consistency marker for the transaction. If
+         * the transaction is empty (without events to append) then returned consistency marker is always
+         * {@link ConsistencyMarker#ORIGIN}
+         */
+        CompletableFuture<ConsistencyMarker> commit();
+
+        /**
+         * Rolls back any events that have been appended, permanently making them unavailable for consumers.
+         */
+        void rollback();
     }
 }

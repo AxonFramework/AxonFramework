@@ -42,7 +42,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class SimpleEventStore implements EventStore, StreamableEventSource<EventMessage<?>> {
 
-    private final AsyncEventStorageEngine eventStorageEngine;
+    private final EventStorageEngine eventStorageEngine;
     private final TagResolver tagResolver;
     private final ResourceKey<EventStoreTransaction> eventStoreTransactionKey;
 
@@ -51,13 +51,13 @@ public class SimpleEventStore implements EventStore, StreamableEventSource<Event
      * {@link #transaction(ProcessingContext) transactions} and
      * {@link #open(StreamingCondition) open event streams} with.
      *
-     * @param eventStorageEngine The {@link AsyncEventStorageEngine} used to start
+     * @param eventStorageEngine The {@link EventStorageEngine} used to start
      *                           {@link #transaction(ProcessingContext) transactions} and
      *                           {@link #open(StreamingCondition) open event streams} with.
      * @param tagResolver        The {@link TagResolver} used to resolve tags during appending events in the
      *                           {@link EventStoreTransaction}.
      */
-    public SimpleEventStore(@Nonnull AsyncEventStorageEngine eventStorageEngine,
+    public SimpleEventStore(@Nonnull EventStorageEngine eventStorageEngine,
                             @Nonnull TagResolver tagResolver) {
         this.eventStorageEngine = eventStorageEngine;
         this.tagResolver = tagResolver;

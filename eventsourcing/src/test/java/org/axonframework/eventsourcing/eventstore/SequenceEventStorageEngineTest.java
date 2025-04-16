@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -48,22 +48,22 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link SequenceEventStorageEngine}.
+ * Test class validating the {@link LegacySequenceEventStorageEngine}.
  *
  * @author Allard Buijze
  */
 class SequenceEventStorageEngineTest {
 
-    private EventStorageEngine activeStorage;
-    private EventStorageEngine historicStorage;
+    private LegacyEventStorageEngine activeStorage;
+    private LegacyEventStorageEngine historicStorage;
 
-    private SequenceEventStorageEngine testSubject;
+    private LegacySequenceEventStorageEngine testSubject;
 
     @BeforeEach
     void setUp() {
-        activeStorage = mock(EventStorageEngine.class, "activeStorage");
-        historicStorage = mock(EventStorageEngine.class, "historicStorage");
-        testSubject = new SequenceEventStorageEngine(historicStorage, activeStorage);
+        activeStorage = mock(LegacyEventStorageEngine.class, "activeStorage");
+        historicStorage = mock(LegacyEventStorageEngine.class, "historicStorage");
+        testSubject = new LegacySequenceEventStorageEngine(historicStorage, activeStorage);
 
         when(historicStorage.readSnapshot(anyString())).thenReturn(Optional.empty());
         when(activeStorage.readSnapshot(anyString())).thenReturn(Optional.empty());
@@ -291,10 +291,10 @@ class SequenceEventStorageEngineTest {
 
     @Test
     void streamFromPositionInActiveStorage() {
-        historicStorage = new InMemoryEventStorageEngine();
-        activeStorage = new InMemoryEventStorageEngine(1);
+        historicStorage = new LegacyInMemoryEventStorageEngine();
+        activeStorage = new LegacyInMemoryEventStorageEngine(1);
 
-        testSubject = new SequenceEventStorageEngine(historicStorage, activeStorage);
+        testSubject = new LegacySequenceEventStorageEngine(historicStorage, activeStorage);
 
         DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
                 "type", "aggregate", 0, new MessageType("event"), "test1"

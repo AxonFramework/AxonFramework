@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,9 @@ import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
-import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -45,12 +43,14 @@ import static org.axonframework.eventhandling.EventUtils.upcastAndDeserializeTra
 import static org.axonframework.eventsourcing.EventStreamUtils.upcastAndDeserializeDomainEvents;
 
 /**
- * Abstract {@link EventStorageEngine} implementation that takes care of event serialization and upcasting.
+ * Abstract {@link LegacyEventStorageEngine} implementation that takes care of event serialization and upcasting.
  *
  * @author Rene de Waele
  * @since 3.0
+ * @deprecated This class will be removed.
  */
-public abstract class AbstractEventStorageEngine implements EventStorageEngine {
+@Deprecated(since = "5.0.0")
+public abstract class AbstractLegacyEventStorageEngine implements LegacyEventStorageEngine {
 
     private final Serializer snapshotSerializer;
     protected final EventUpcaster upcasterChain;
@@ -59,14 +59,14 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     private final SnapshotFilter snapshotFilter;
 
     /**
-     * Instantiate a {@link AbstractEventStorageEngine} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link AbstractLegacyEventStorageEngine} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the event and snapshot {@link Serializer} are not {@code null}, and will throw an
      * {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link AbstractEventStorageEngine} instance
+     * @param builder the {@link Builder} used to instantiate a {@link AbstractLegacyEventStorageEngine} instance
      */
-    protected AbstractEventStorageEngine(Builder builder) {
+    protected AbstractLegacyEventStorageEngine(Builder builder) {
         builder.validate();
         this.snapshotSerializer = builder.snapshotSerializer.get();
         this.upcasterChain = builder.upcasterChain;
@@ -243,7 +243,7 @@ public abstract class AbstractEventStorageEngine implements EventStorageEngine {
     }
 
     /**
-     * Abstract Builder class to instantiate an {@link AbstractEventStorageEngine}.
+     * Abstract Builder class to instantiate an {@link AbstractLegacyEventStorageEngine}.
      * <p>
      * The {@link EventUpcaster} defaults to a {@link NoOpEventUpcaster} and the {@code snapshotFilter} defaults to a
      * {@link SnapshotFilter#allowAll()} instance.

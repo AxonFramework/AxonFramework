@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine.AppendTransaction;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.utils.AssertUtils;
@@ -43,11 +43,11 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Test suite validating the {@link SimpleEventStore} and {@link DefaultEventStoreTransaction} for different
- * implementations of the {@link AsyncEventStorageEngine}.
+ * implementations of the {@link EventStorageEngine}.
  *
  * @author Steven van Beelen
  */
-public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine> {
+public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     protected String TEST_DOMAIN_ID;
     protected String OTHER_DOMAIN_ID;
@@ -72,9 +72,9 @@ public abstract class StorageEngineTestSuite<ESE extends AsyncEventStorageEngine
     }
 
     /**
-     * Constructs the {@link AsyncEventStorageEngine} used in this test suite.
+     * Constructs the {@link EventStorageEngine} used in this test suite.
      *
-     * @return The {@link AsyncEventStorageEngine} used in this test suite.
+     * @return The {@link EventStorageEngine} used in this test suite.
      */
     protected abstract ESE buildStorageEngine() throws Exception;
 

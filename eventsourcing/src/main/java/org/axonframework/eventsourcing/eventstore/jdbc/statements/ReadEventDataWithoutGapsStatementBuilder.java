@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,15 @@ package org.axonframework.eventsourcing.eventstore.jdbc.statements;
 
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
-import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- * Contract which defines how to build a PreparedStatement for use on {@link JdbcEventStorageEngine#fetchTrackedEvents(TrackingToken,
- * int)}
+ * Contract which defines how to build a PreparedStatement for use on
+ * {@link LegacyJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}
  *
  * @author Lucas Campos
  * @since 4.3
@@ -35,7 +35,7 @@ import java.sql.SQLException;
 public interface ReadEventDataWithoutGapsStatementBuilder {
 
     /**
-     * Creates a statement to be used at {@link JdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}
      *
      * @param connection  The connection to the database.
      * @param schema      The EventSchema to be used

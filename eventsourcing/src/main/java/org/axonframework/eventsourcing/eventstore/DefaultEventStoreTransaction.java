@@ -39,14 +39,14 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * {@link AppendCondition} for {@link #appendEvent(EventMessage) appending}, taking into account several sourcing
  * invocation might have occurred in the same {@link ProcessingContext}. During
  * {@link #appendEvent(EventMessage) appending} it will pass along a collection of {@link EventMessage events} to an
- * {@link AsyncEventStorageEngine} is part of the prepare commit phase of the {@link ProcessingContext}.
+ * {@link EventStorageEngine} is part of the prepare commit phase of the {@link ProcessingContext}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
  */
 public class DefaultEventStoreTransaction implements EventStoreTransaction {
 
-    private final AsyncEventStorageEngine eventStorageEngine;
+    private final EventStorageEngine eventStorageEngine;
     private final ProcessingContext processingContext;
     private final TagResolver tagResolver;
     private final List<Consumer<EventMessage<?>>> callbacks;
@@ -59,14 +59,14 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
      * Constructs a {@code DefaultEventStoreTransaction} using the given {@code eventStorageEngine} to
      * {@link #appendEvent(EventMessage) append events} originating from the given {@code context}.
      *
-     * @param eventStorageEngine The {@link AsyncEventStorageEngine} used to
+     * @param eventStorageEngine The {@link EventStorageEngine} used to
      *                           {@link #appendEvent(EventMessage) append events} with.
      * @param processingContext  The {@link ProcessingContext} from which to
      *                           {@link #appendEvent(EventMessage) append events} and attach resources to.
      * @param tagResolver        The {@link TagResolver} used to resolve tags while
      *                           {@link #appendEvent(EventMessage) appending events}.
      */
-    public DefaultEventStoreTransaction(@Nonnull AsyncEventStorageEngine eventStorageEngine,
+    public DefaultEventStoreTransaction(@Nonnull EventStorageEngine eventStorageEngine,
                                         @Nonnull ProcessingContext processingContext,
                                         @Nonnull TagResolver tagResolver) {
         this.eventStorageEngine = eventStorageEngine;
@@ -163,7 +163,7 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
     }
 
     private CompletableFuture<ConsistencyMarker> doCommit(ProcessingContext commitContext,
-                                                          AsyncEventStorageEngine.AppendTransaction tx) {
+                                                          EventStorageEngine.AppendTransaction tx) {
         return tx.commit()
                  .whenComplete((position, exception) -> {
                      if (position != null) {

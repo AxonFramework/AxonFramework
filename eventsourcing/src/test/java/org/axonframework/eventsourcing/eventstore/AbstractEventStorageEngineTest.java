@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.AggregateStreamCreationException;
 import org.axonframework.modelling.command.ConcurrencyException;
@@ -35,18 +37,18 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Abstract test class used to create tests for the {@link org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine}
- * and {@link org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine}.
+ * Abstract test class used to create tests for the {@link LegacyJpaEventStorageEngine}
+ * and {@link LegacyJdbcEventStorageEngine}.
  * <p>
- * Methods are public so they can be overridden by {@link EventStorageEngine} implementation test cases in different
+ * Methods are public so they can be overridden by {@link LegacyEventStorageEngine} implementation test cases in different
  * repository, like the [Mongo Extension](https://github.com/AxonFramework/extension-mongo).
  *
  * @author Rene de Waele
  */
-public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStorageEngine, EB extends AbstractEventStorageEngine.Builder>
+public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEventStorageEngine, EB extends AbstractLegacyEventStorageEngine.Builder>
         extends EventStorageEngineTest {
 
-    private AbstractEventStorageEngine testSubject;
+    private AbstractLegacyEventStorageEngine testSubject;
 
     @Test
     public void uniqueKeyConstraintOnFirstEventIdentifierThrowsAggregateIdentifierAlreadyExistsException() {
@@ -148,7 +150,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
         assertFalse(testSubject.readSnapshot(AGGREGATE).isPresent());
     }
 
-    protected void setTestSubject(AbstractEventStorageEngine testSubject) {
+    protected void setTestSubject(AbstractLegacyEventStorageEngine testSubject) {
         super.setTestSubject(this.testSubject = testSubject);
     }
 

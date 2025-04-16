@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
@@ -57,7 +57,7 @@ class DefaultEventStoreTransactionTest {
             EventCriteria.havingTags(AGGREGATE_ID_TAG);
     private final Context.ResourceKey<EventStoreTransaction> testEventStoreTransactionKey =
             Context.ResourceKey.withLabel("eventStoreTransaction");
-    private final AsyncInMemoryEventStorageEngine eventStorageEngine = new AsyncInMemoryEventStorageEngine();
+    private final InMemoryEventStorageEngine eventStorageEngine = new InMemoryEventStorageEngine();
 
     @Nested
     class AppendEvent {

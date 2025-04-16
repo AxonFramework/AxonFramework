@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,17 @@
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStoreTest;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 
 /**
- * An {@link EmbeddedEventStoreTest} implementation using the {@link InMemoryEventStorageEngine} during testing.
+ * An {@link EmbeddedEventStoreTest} implementation using the {@link LegacyInMemoryEventStorageEngine} during testing.
  *
  * @author Steven van Beelen
  */
 class InMemoryEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
 
     @Override
-    public EventStorageEngine createStorageEngine() {
-        return new InMemoryEventStorageEngine();
+    public LegacyEventStorageEngine createStorageEngine() {
+        return new LegacyInMemoryEventStorageEngine();
     }
 }

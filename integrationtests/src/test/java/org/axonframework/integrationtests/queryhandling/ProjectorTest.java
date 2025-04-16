@@ -21,7 +21,7 @@ import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyConfigurer;
 import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventhandling.annotation.EventHandler;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.queryhandling.annotation.QueryHandler;
 import org.axonframework.queryhandling.SimpleQueryBus;
 import org.junit.jupiter.api.*;
@@ -38,7 +38,7 @@ class ProjectorTest {
         LegacyConfigurer configurer = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES);
         configurer.configureCommandBus(c -> new SimpleCommandBus())
                   .configureQueryBus(c -> SimpleQueryBus.builder().build())
-                  .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                  .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                   .registerQueryHandler(c -> userSummaryProjection);
 
         configurer.eventProcessing()

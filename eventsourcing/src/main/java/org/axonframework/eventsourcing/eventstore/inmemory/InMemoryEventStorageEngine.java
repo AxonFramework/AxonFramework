@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,198 +16,300 @@
 
 package org.axonframework.eventsourcing.eventstore.inmemory;
 
-import org.axonframework.eventhandling.DomainEventMessage;
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
-import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.DomainEventStream;
+import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.EventsCondition;
+import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.SourcingCondition;
+import org.axonframework.eventsourcing.eventstore.StreamingCondition;
+import org.axonframework.eventsourcing.eventstore.Tag;
+import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
+import org.axonframework.messaging.Context;
+import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.SimpleEntry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-import javax.annotation.Nonnull;
+import java.util.concurrent.locks.ReentrantLock;
 
-import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
+import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
 
 /**
- * Thread-safe event storage engine that stores events and snapshots in memory.
+ * Thread-safe {@link EventStorageEngine} implementation storing events in memory.
  *
+ * @author Allard Buijze
  * @author Rene de Waele
- * @since 3.0
- */ // TODO Replace for AsyncInMemoryEventStorageEngine once the latter is fully integrated
+ * @author Milan Savić
+ * @author Steven van Beelen
+ * @since 3.0.0
+ */
 public class InMemoryEventStorageEngine implements EventStorageEngine {
 
-    @SuppressWarnings("SortedCollectionWithNonComparableKeys")
-    private final NavigableMap<TrackingToken, TrackedEventMessage<?>> events = new ConcurrentSkipListMap<>();
-    private final Map<String, List<DomainEventMessage<?>>> snapshots = new ConcurrentHashMap<>();
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+
+    private final NavigableMap<Long, TaggedEventMessage<? extends EventMessage<?>>> eventStorage = new ConcurrentSkipListMap<>();
+    private final ReentrantLock appendLock = new ReentrantLock();
+
+    private final Set<MapBackedMessageStream> openStreams = new CopyOnWriteArraySet<>();
+
     private final long offset;
 
     /**
-     * Initializes an InMemoryEventStorageEngine. The engine will be empty, and there is no offset for the first token.
+     * Initializes an in-memory {@link EventStorageEngine}.
+     * <p>
+     * The engine will be empty, and there is no offset for the first token.
      */
     public InMemoryEventStorageEngine() {
         this(0L);
     }
 
     /**
-     * Initializes an InMemoryEventStorageEngine using given {@code offset} to initialize the tokens with.
+     * Initializes an in-memory {@link EventStorageEngine} using given {@code offset} to initialize the tokens.
      *
-     * @param offset The value to use for the token of the first event appended
+     * @param offset The value to use for the token of the first event appended.
      */
     public InMemoryEventStorageEngine(long offset) {
         this.offset = offset;
     }
 
     @Override
-    public void appendEvents(@Nonnull List<? extends EventMessage<?>> events) {
-        if (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().onPrepareCommit(uow -> storeEvents(events));
-        } else {
-            storeEvents(events);
+    public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
+                                                             @Nonnull List<TaggedEventMessage<?>> events) {
+        if (containsConflicts(condition)) {
+            // early failure, since we know conflicts already exist at insert-time
+            return CompletableFuture.failedFuture(conflictingEventsDetected(condition.consistencyMarker()));
         }
-    }
 
-    private void storeEvents(List<? extends EventMessage<?>> events) {
-        synchronized (this.events) {
-            GlobalSequenceTrackingToken trackingToken = nextTrackingToken();
-            this.events.putAll(
-                    IntStream.range(0, events.size())
-                             .mapToObj(i -> asTrackedEventMessage(
-                                     (EventMessage<?>) events.get(i), trackingToken.offsetBy(i)
-                             ))
-                             .collect(Collectors.toMap(TrackedEventMessage::trackingToken, Function.identity()))
-            );
-        }
-    }
+        return CompletableFuture.completedFuture(new AppendTransaction() {
 
-    @Override
-    public void storeSnapshot(@Nonnull DomainEventMessage<?> snapshot) {
-        snapshots.compute(snapshot.getAggregateIdentifier(), (aggregateId, snapshotsSoFar) -> {
-            if (snapshotsSoFar == null) {
-                CopyOnWriteArrayList<DomainEventMessage<?>> newSnapshots = new CopyOnWriteArrayList<>();
-                newSnapshots.add(snapshot);
-                return newSnapshots;
+            private final AtomicBoolean finished = new AtomicBoolean(false);
+
+            @Override
+            public CompletableFuture<ConsistencyMarker> commit() {
+                if (finished.getAndSet(true)) {
+                    return CompletableFuture.failedFuture(new IllegalStateException("Already committed or rolled back"));
+                }
+                appendLock.lock();
+                try {
+                    if (containsConflicts(condition)) {
+                        return CompletableFuture.failedFuture(conflictingEventsDetected(condition.consistencyMarker()));
+                    }
+                    Optional<ConsistencyMarker> newHead =
+                            events.stream()
+                                  .map(event -> {
+                                      long next = nextIndex();
+                                      eventStorage.put(next, event);
+
+                                      if (logger.isDebugEnabled()) {
+                                          logger.debug("Appended event [{}] with position [{}] and timestamp [{}].",
+                                                       event.event().getIdentifier(),
+                                                       next,
+                                                       event.event().getTimestamp());
+                                      }
+                                      return (ConsistencyMarker) new GlobalIndexConsistencyMarker(next);
+                                  })
+                                  .reduce(ConsistencyMarker::upperBound);
+
+                    openStreams.forEach(m -> m.callback.get().run());
+                    return CompletableFuture.completedFuture(newHead.orElse(ConsistencyMarker.ORIGIN));
+                } finally {
+                    appendLock.unlock();
+                }
             }
-            snapshotsSoFar.add(snapshot);
-            return snapshotsSoFar;
+
+            @Override
+            public void rollback() {
+                finished.set(true);
+            }
         });
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * This implementation produces non-blocking event streams.
-     */
-    @Override
-    public Stream<? extends TrackedEventMessage<?>> readEvents(TrackingToken trackingToken, boolean mayBlock) {
-        return StreamSupport.stream(new MapEntrySpliterator(events, trackingToken), false);
+    private long nextIndex() {
+        return eventStorage.isEmpty() ? 0 : eventStorage.lastKey() + 1;
     }
 
-    @Override
-    public DomainEventStream readEvents(@Nonnull String aggregateIdentifier, long firstSequenceNumber) {
-        AtomicReference<Long> sequenceNumber = new AtomicReference<>();
-        Stream<? extends DomainEventMessage<?>> stream =
-                events.values().stream().filter(event -> event instanceof DomainEventMessage<?>)
-                      .map(event -> (DomainEventMessage<?>) event)
-                      .filter(event -> aggregateIdentifier.equals(event.getAggregateIdentifier())
-                              && event.getSequenceNumber() >= firstSequenceNumber)
-                      .peek(event -> sequenceNumber.set(event.getSequenceNumber()));
-        return DomainEventStream.of(stream, sequenceNumber::get);
-    }
-
-    @Override
-    public Optional<DomainEventMessage<?>> readSnapshot(@Nonnull String aggregateIdentifier) {
-        return snapshots.getOrDefault(aggregateIdentifier, Collections.emptyList())
-                        .stream()
-                        .max(Comparator.comparingLong(DomainEventMessage::getSequenceNumber));
-    }
-
-    @Override
-    public TrackingToken createTailToken() {
-        if (events.size() == 0) {
-            return null;
+    private boolean containsConflicts(AppendCondition condition) {
+        if (Objects.equals(condition.consistencyMarker(), ConsistencyMarker.INFINITY)) {
+            return false;
         }
-        GlobalSequenceTrackingToken firstToken = (GlobalSequenceTrackingToken) events.firstKey();
-        return new GlobalSequenceTrackingToken(firstToken.getGlobalIndex() - 1);
+
+        return this.eventStorage.tailMap(GlobalIndexConsistencyMarker.position(condition.consistencyMarker()) + 1)
+                                .values()
+                                .stream()
+                                .map(event -> (TaggedEventMessage<?>) event)
+                                .anyMatch(taggedEvent -> condition.matches(taggedEvent.event().type().qualifiedName(), taggedEvent.tags()));
     }
 
     @Override
-    public TrackingToken createHeadToken() {
-        if (events.size() == 0) {
-            return null;
+    public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Start sourcing events with condition [{}].", condition);
         }
-        return events.lastKey();
+
+        return eventsToMessageStream(condition.start(),
+                                     eventStorage.isEmpty() ? -1 : Math.min(condition.end(), eventStorage.lastKey()),
+                                     condition);
     }
 
     @Override
-    public TrackingToken createTokenAt(@Nonnull Instant dateTime) {
-        return events.values()
-                     .stream()
-                     .filter(event -> event.getTimestamp().equals(dateTime) || event.getTimestamp().isAfter(dateTime))
-                     .min(Comparator.comparingLong(e -> ((GlobalSequenceTrackingToken) e.trackingToken())
-                             .getGlobalIndex()))
-                     .map(TrackedEventMessage::trackingToken)
-                     .map(tt -> (GlobalSequenceTrackingToken) tt)
-                     .map(tt -> new GlobalSequenceTrackingToken(tt.getGlobalIndex() - 1))
-                     .map(tt -> (TrackingToken) tt)
-                     .orElseGet(this::createHeadToken);
+    public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Start streaming events with condition [{}].", condition);
+        }
+
+        return eventsToMessageStream(condition.position().position().orElse(-1) + 1, Long.MAX_VALUE, condition);
     }
 
-    /**
-     * Returns the tracking token to use for the next event to be stored.
-     *
-     * @return the tracking token for the next event
-     */
-    protected GlobalSequenceTrackingToken nextTrackingToken() {
-        return events.isEmpty()
-                ? new GlobalSequenceTrackingToken(offset)
-                : ((GlobalSequenceTrackingToken) events.lastKey()).next();
+    private MessageStream<EventMessage<?>> eventsToMessageStream(long start, long end, EventsCondition condition) {
+        MapBackedMessageStream mapBackedMessageStream = new MapBackedMessageStream(start, end, condition);
+        openStreams.add(mapBackedMessageStream);
+        return mapBackedMessageStream;
     }
 
-    private static class MapEntrySpliterator extends Spliterators.AbstractSpliterator<TrackedEventMessage<?>> {
+    private static boolean match(TaggedEventMessage<?> taggedEvent, EventsCondition condition) {
+        QualifiedName qualifiedName = taggedEvent.event().type().qualifiedName();
+        return condition.matches(qualifiedName, taggedEvent.tags());
+    }
 
-        private final NavigableMap<TrackingToken, TrackedEventMessage<?>> source;
-        private volatile TrackingToken lastToken;
+    @Override
+    public CompletableFuture<TrackingToken> tailToken() {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Operation tailToken() is invoked.");
+        }
 
-        public MapEntrySpliterator(NavigableMap<TrackingToken, TrackedEventMessage<?>> source,
-                                   TrackingToken trackingToken) {
-            super(Long.MAX_VALUE, Spliterator.ORDERED);
-            this.source = source;
-            this.lastToken = trackingToken;
+        return CompletableFuture.completedFuture(
+                eventStorage.isEmpty()
+                        ? new GlobalSequenceTrackingToken(offset - 1)
+                        : new GlobalSequenceTrackingToken(eventStorage.firstKey() - 1)
+        );
+    }
+
+    @Override
+    public CompletableFuture<TrackingToken> headToken() {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Operation headToken() is invoked.");
+        }
+
+        return CompletableFuture.completedFuture(
+                eventStorage.isEmpty()
+                        ? new GlobalSequenceTrackingToken(offset - 1)
+                        : new GlobalSequenceTrackingToken(eventStorage.lastKey())
+        );
+    }
+
+    @Override
+    public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Operation tokenAt() is invoked with Instant [{}].", at);
+        }
+
+        return eventStorage.entrySet()
+                           .stream()
+                           .filter(positionToEventEntry -> {
+                               EventMessage<?> event = positionToEventEntry.getValue().event();
+                               Instant eventTimestamp = event.getTimestamp();
+                               logger.debug("instant [{}]", eventTimestamp);
+                               return eventTimestamp.equals(at) || eventTimestamp.isAfter(at);
+                           })
+                           .map(Map.Entry::getKey)
+                           .min(Comparator.comparingLong(Long::longValue))
+                           .map(position -> position - 1)
+                           .map(GlobalSequenceTrackingToken::new)
+                           .map(tt -> (TrackingToken) tt)
+                           .map(CompletableFuture::completedFuture)
+                           .orElseGet(this::headToken);
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("offset", offset);
+    }
+
+    private class MapBackedMessageStream implements MessageStream<EventMessage<?>> {
+
+        private final AtomicLong position;
+        private final AtomicReference<Runnable> callback;
+        private final long end;
+        private final EventsCondition condition;
+
+        public MapBackedMessageStream(long start, long end, EventsCondition condition) {
+            this.end = end;
+            this.condition = condition;
+            position = new AtomicLong(start);
+            callback = new AtomicReference<>(() -> {
+            });
         }
 
         @Override
-        public boolean tryAdvance(Consumer<? super TrackedEventMessage<?>> action) {
-            Map.Entry<TrackingToken, TrackedEventMessage<?>> next;
-            if (lastToken != null) {
-                next = source.higherEntry(lastToken);
-            } else {
-                next = source.firstEntry();
+        public Optional<Entry<EventMessage<?>>> next() {
+            long currentPosition = position.get();
+            while (currentPosition <= end
+                    && eventStorage.containsKey(currentPosition)
+                    && position.compareAndSet(currentPosition,
+                                              currentPosition + 1)) {
+                TaggedEventMessage<?> nextEvent = eventStorage.get(currentPosition);
+                if (match(nextEvent, condition)) {
+                    Context context = Context.empty();
+                    context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition));
+                    context = Tag.addToContext(context, nextEvent.tags());
+                    context = ConsistencyMarker.addToContext(context, new GlobalIndexConsistencyMarker(end));
+                    return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
+                }
+                currentPosition = position.get();
             }
-            if (next != null) {
-                lastToken = next.getKey();
-                action.accept(next.getValue());
+            return Optional.empty();
+        }
+
+        @Override
+        public void onAvailable(@Nonnull Runnable callback) {
+            this.callback.set(callback);
+            if (eventStorage.isEmpty() || eventStorage.containsKey(position.get())) {
+                callback.run();
             }
-            return next != null;
+        }
+
+        @Override
+        public Optional<Throwable> error() {
+            return Optional.empty();
+        }
+
+        @Override
+        public boolean isCompleted() {
+            long currentPosition = position.get();
+            return currentPosition > end;
+        }
+
+        @Override
+        public boolean hasNextAvailable() {
+            long currentPosition = position.get();
+            return currentPosition <= end && eventStorage.containsKey(currentPosition);
+        }
+
+        @Override
+        public void close() {
+            position.set(end + 1);
         }
     }
 }

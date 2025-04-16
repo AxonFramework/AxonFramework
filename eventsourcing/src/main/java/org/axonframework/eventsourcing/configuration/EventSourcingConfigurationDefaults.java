@@ -19,16 +19,16 @@ package org.axonframework.eventsourcing.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.ComponentRegistry;
-import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.Configuration;
+import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
-import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 
 import java.util.Objects;
 
@@ -37,11 +37,11 @@ import java.util.Objects;
  * <p>
  * Will only register the following components <b>if</b> there is no component registered for the given class yet:
  * <ul>
- *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver} for class {@link org.axonframework.eventsourcing.eventstore.TagResolver}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine} for class {@link org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventStore}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventSink}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.AggregateSnapshotter} for class {@link org.axonframework.eventsourcing.Snapshotter}</li>
+ *     <li>Registers a {@link AnnotationBasedTagResolver} for class {@link TagResolver}</li>
+ *     <li>Registers a {@link InMemoryEventStorageEngine} for class {@link EventStorageEngine}</li>
+ *     <li>Registers a {@link SimpleEventStore} for class {@link EventStore}</li>
+ *     <li>Registers a {@link SimpleEventStore} for class {@link EventSink}</li>
+ *     <li>Registers a {@link org.axonframework.eventsourcing.AggregateSnapshotter} for class {@link Snapshotter}</li>
  * </ul>
  *
  * @author Steven van Beelen
@@ -61,7 +61,7 @@ class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
 
         registerIfNotPresent(registry, TagResolver.class,
                              EventSourcingConfigurationDefaults::defaultTagResolver);
-        registerIfNotPresent(registry, AsyncEventStorageEngine.class,
+        registerIfNotPresent(registry, EventStorageEngine.class,
                              EventSourcingConfigurationDefaults::defaultEventStorageEngine);
         registerIfNotPresent(registry, EventStore.class,
                              EventSourcingConfigurationDefaults::defaultEventStore);
@@ -83,12 +83,12 @@ class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
         return new AnnotationBasedTagResolver();
     }
 
-    private static AsyncEventStorageEngine defaultEventStorageEngine(Configuration config) {
-        return new AsyncInMemoryEventStorageEngine();
+    private static EventStorageEngine defaultEventStorageEngine(Configuration config) {
+        return new InMemoryEventStorageEngine();
     }
 
     private static EventStore defaultEventStore(Configuration config) {
-        return new SimpleEventStore(config.getComponent(AsyncEventStorageEngine.class),
+        return new SimpleEventStore(config.getComponent(EventStorageEngine.class),
                                     config.getComponent(TagResolver.class));
     }
 

@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.spring.config.SpringAggregateLookup;
 import org.axonframework.spring.config.SpringAxonConfiguration;
@@ -90,7 +90,7 @@ class SpringPrototypeAggregateFactoryTest {
         @Bean
         public LegacyEmbeddedEventStore eventStore() {
             return LegacyEmbeddedEventStore.builder()
-                                           .storageEngine(new InMemoryEventStorageEngine())
+                                           .storageEngine(new LegacyInMemoryEventStorageEngine())
                                            .build();
         }
 

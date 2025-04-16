@@ -53,9 +53,9 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
-import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.GenericMessage;
@@ -129,7 +129,7 @@ class DefaultConfigurerTest {
     void defaultConfigurationWithEventSourcing() throws Exception {
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.defaultConfiguration()
-                                       .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                       .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                        .configureCommandBus(c -> new SimpleCommandBus(c.getComponent(
                                                Executor.class,
                                                Executors::newSingleThreadExecutor)
@@ -154,7 +154,7 @@ class DefaultConfigurerTest {
                                                        TrackingEventProcessorConfiguration.class,
                                                        c -> TrackingEventProcessorConfiguration.forParallelProcessing(2)
                                                )
-                                               .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                               .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                .start();
         try {
             TrackingEventProcessor processor = config.eventProcessingConfiguration()
@@ -181,7 +181,7 @@ class DefaultConfigurerTest {
                   .byDefaultAssignTo(processorName)
                   .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
                   .registerEventHandler(c -> (EventMessageHandler) event -> null);
-        LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+        LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                .start();
         try {
             TrackingEventProcessor processor = config.eventProcessingConfiguration().eventProcessor(processorName,
@@ -208,7 +208,7 @@ class DefaultConfigurerTest {
                   .byDefaultAssignTo(processorName)
                   .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
                   .registerEventHandler(c -> (EventMessageHandler) event -> null);
-        LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+        LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                .start();
 
         TrackingEventProcessor processor = config.eventProcessingConfiguration().eventProcessor(processorName,
@@ -233,7 +233,7 @@ class DefaultConfigurerTest {
                   .byDefaultAssignTo(processorName)
                   .registerDefaultSequencingPolicy(c -> new FullConcurrencyPolicy())
                   .registerEventHandler(c -> (EventMessageHandler) event -> null);
-        LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+        LegacyConfiguration config = configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                .start();
         try {
             TrackingEventProcessor processor = config.eventProcessingConfiguration().eventProcessor(processorName,
@@ -254,18 +254,18 @@ class DefaultConfigurerTest {
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.defaultConfiguration()
                                        .configureEmbeddedEventStore(
-                                               c -> JpaEventStorageEngine.builder()
-                                                                         .snapshotSerializer(c.serializer())
-                                                                         .upcasterChain(c.upcasterChain())
-                                                                         .persistenceExceptionResolver(c.getComponent(
-                                                                                 PersistenceExceptionResolver.class
-                                                                         ))
-                                                                         .entityManagerProvider(() -> entityManager)
-                                                                         .transactionManager(c.getComponent(
-                                                                                 TransactionManager.class
-                                                                         ))
-                                                                         .eventSerializer(c.serializer())
-                                                                         .build())
+                                               c -> LegacyJpaEventStorageEngine.builder()
+                                                                               .snapshotSerializer(c.serializer())
+                                                                               .upcasterChain(c.upcasterChain())
+                                                                               .persistenceExceptionResolver(c.getComponent(
+                                                                                       PersistenceExceptionResolver.class
+                                                                               ))
+                                                                               .entityManagerProvider(() -> entityManager)
+                                                                               .transactionManager(c.getComponent(
+                                                                                       TransactionManager.class
+                                                                               ))
+                                                                               .eventSerializer(c.serializer())
+                                                                               .build())
                                        .configureAggregate(
                                                defaultConfiguration(StubAggregate.class)
                                                        .configureCommandTargetResolver(
@@ -422,7 +422,7 @@ class DefaultConfigurerTest {
         MessageCollectingMonitor commandBusMonitor = new MessageCollectingMonitor();
 
         LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
-                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                             .configureAggregate(StubAggregate.class)
                                                             .configureMessageMonitor(c -> (t, n) -> defaultMonitor)
                                                             .configureMessageMonitor(
@@ -445,7 +445,7 @@ class DefaultConfigurerTest {
         LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
                                                             .configureAggregate(StubAggregate.class)
                                                             .configureAggregate(Object.class)
-                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                             .start();
 
         assertEquals(3, config.getModules().size());
@@ -469,7 +469,7 @@ class DefaultConfigurerTest {
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void defaultConfigurationWithCache() throws Exception {
         LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
-                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                             .configureCommandBus(c -> new SimpleCommandBus(Runnable::run))
                                                             .configureAggregate(defaultConfiguration(StubAggregate.class).configureCache(
                                                                     c -> new WeakReferenceCache()
@@ -520,7 +520,7 @@ class DefaultConfigurerTest {
                 });
 
         LegacyConfiguration result = LegacyDefaultConfigurer.defaultConfiguration()
-                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                             .configureSnapshotter(configuration -> expectedSnapshotter)
                                                             .configureAggregate(aggregateConfigurer)
                                                             .buildConfiguration();

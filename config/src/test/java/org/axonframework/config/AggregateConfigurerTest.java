@@ -31,7 +31,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.SnapshotEventEntry;
 import org.axonframework.eventsourcing.snapshotting.RevisionSnapshotFilter;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
@@ -106,7 +106,7 @@ public class AggregateConfigurerTest {
 
         LegacyConfiguration configuration = LegacyDefaultConfigurer.defaultConfiguration()
                                                                    .configureAggregate(aggregateConfigurer)
-                                                                   .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                                   .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                                    .buildConfiguration();
         configuration.start();
 
@@ -191,7 +191,7 @@ public class AggregateConfigurerTest {
 
         LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
                                                             .configureAggregate(aggregateConfigurer)
-                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                             .buildConfiguration();
         config.start();
 
@@ -213,7 +213,7 @@ public class AggregateConfigurerTest {
         TestSpanFactory testSpanFactory = new TestSpanFactory();
         LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
                                                             .configureAggregate(aggregateConfigurer)
-                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                             .configureSpanFactory(c -> testSpanFactory)
                                                             .buildConfiguration();
         config.start();
@@ -236,7 +236,7 @@ public class AggregateConfigurerTest {
 
         LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
                                                             .configureAggregate(aggregateConfigurer)
-                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                             .registerComponent(
                                                                     EntityManagerProvider.class,
                                                                     c -> new SimpleEntityManagerProvider(mock(
@@ -262,7 +262,7 @@ public class AggregateConfigurerTest {
         TestSpanFactory testSpanFactory = new TestSpanFactory();
         LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
                                                             .configureAggregate(aggregateConfigurer)
-                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                             .registerComponent(
                                                                     EntityManagerProvider.class,
                                                                     c -> new SimpleEntityManagerProvider(mock(
@@ -292,7 +292,7 @@ public class AggregateConfigurerTest {
 
         LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
                                                             .configureAggregate(aggregateConfigurer)
-                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                             .buildConfiguration();
         config.start();
 
@@ -315,7 +315,7 @@ public class AggregateConfigurerTest {
         TestSpanFactory testSpanFactory = new TestSpanFactory();
         LegacyConfiguration config = LegacyDefaultConfigurer.defaultConfiguration()
                                                             .configureAggregate(aggregateConfigurer)
-                                                            .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                            .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                             .configureSpanFactory(c -> testSpanFactory)
                                                             .buildConfiguration();
         config.start();
@@ -391,7 +391,7 @@ public class AggregateConfigurerTest {
 
         LegacyConfiguration testConfig = LegacyDefaultConfigurer.defaultConfiguration()
                                                                 .configureAggregate(testAggregateConfigurer)
-                                                                .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                                                .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                                 .start();
 
         CreationPolicyAggregateFactory<A> resultFactory = testAggregateConfigurer.creationPolicyAggregateFactory();

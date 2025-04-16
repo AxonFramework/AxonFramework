@@ -23,15 +23,15 @@ import org.axonframework.configuration.Component;
 import org.axonframework.configuration.ComponentDecorator;
 import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.ComponentRegistry;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
@@ -47,11 +47,11 @@ import java.util.function.Consumer;
  * <p>
  * This configurer registers the following defaults:
  * <ul>
- *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver} for class {@link org.axonframework.eventsourcing.eventstore.TagResolver}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine} for class {@link org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine}</li>
+ *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver} for class {@link TagResolver}</li>
+ *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine} for class {@link EventStorageEngine}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventStore}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventSink}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.AggregateSnapshotter} for class {@link org.axonframework.eventsourcing.Snapshotter}</li>
+ *     <li>Registers a {@link org.axonframework.eventsourcing.AggregateSnapshotter} for class {@link Snapshotter}</li>
  * </ul>
  * To replace or decorate any of these defaults, use their respective interfaces as the identifier. For example, to
  * adjust the {@code EventStore}, do
@@ -129,19 +129,19 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link AsyncEventStorageEngine} factory in this {@code Configurer}.
+     * Registers the given {@link EventStorageEngine} factory in this {@code Configurer}.
      * <p>
      * The {@code eventStorageEngineFactory} receives the {@link Configuration} as input and is expected to return a
-     * {@link AsyncEventStorageEngine} instance.
+     * {@link EventStorageEngine} instance.
      *
-     * @param eventStorageEngineFactory The factory building the {@link AsyncEventStorageEngine}.
+     * @param eventStorageEngineFactory The factory building the {@link EventStorageEngine}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
     public EventSourcingConfigurer registerEventStorageEngine(
-            @Nonnull ComponentFactory<AsyncEventStorageEngine> eventStorageEngineFactory
+            @Nonnull ComponentFactory<EventStorageEngine> eventStorageEngineFactory
     ) {
         delegate.componentRegistry(
-                cr -> cr.registerComponent(AsyncEventStorageEngine.class, eventStorageEngineFactory)
+                cr -> cr.registerComponent(EventStorageEngine.class, eventStorageEngineFactory)
         );
         return this;
     }

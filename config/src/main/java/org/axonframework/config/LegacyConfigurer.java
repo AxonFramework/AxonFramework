@@ -25,7 +25,7 @@ import org.axonframework.deadline.DeadlineManager;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.Snapshotter;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerDefinition;
@@ -262,14 +262,14 @@ public interface LegacyConfigurer extends LifecycleOperations {
 
     /**
      * Configures an Embedded Event Store which uses the given Event Storage Engine to store its events. The builder
-     * receives the Configuration as input and is expected to return a fully initialized {@link EventStorageEngine}
+     * receives the Configuration as input and is expected to return a fully initialized {@link LegacyEventStorageEngine}
      * instance.
      *
-     * @param storageEngineBuilder The builder function for the {@link EventStorageEngine}
+     * @param storageEngineBuilder The builder function for the {@link LegacyEventStorageEngine}
      * @return the current instance of the Configurer, for chaining purposes
      */
     LegacyConfigurer configureEmbeddedEventStore(
-            @Nonnull Function<LegacyConfiguration, EventStorageEngine> storageEngineBuilder
+            @Nonnull Function<LegacyConfiguration, LegacyEventStorageEngine> storageEngineBuilder
     );
 
     /**

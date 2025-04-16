@@ -54,7 +54,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertPositive;
 
 /**
- * Implementation of an {@link LegacyEventStore} that stores and fetches events using an {@link EventStorageEngine}. If
+ * Implementation of an {@link LegacyEventStore} that stores and fetches events using an {@link LegacyEventStorageEngine}. If
  * supported by its storage engine the embedded event store provides event tracking and replaying capabilities.
  * <p>
  * The event store can be tracked by multiple event processors simultaneously. To prevent that each event processor
@@ -97,7 +97,7 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore implement
     /**
      * Instantiate a {@link LegacyEmbeddedEventStore} based on the fields contained in the {@link Builder}.
      * <p>
-     * Will assert that the {@link EventStorageEngine} is not {@code null}, and will throw an {@link
+     * Will assert that the {@link LegacyEventStorageEngine} is not {@code null}, and will throw an {@link
      * AxonConfigurationException} if it is {@code null}.
      *
      * @param builder the {@link Builder} used to instantiate a {@link LegacyEmbeddedEventStore} instance
@@ -127,7 +127,7 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore implement
      * LegacyEmbeddedEventStore#THREAD_GROUP}.</li>
      * <li>The {@code optimizeEventConsumption} is defaulted to {@code true}.</li>
      * </ul>
-     * The {@link EventStorageEngine} is a <b>hard requirement</b> and as such should be provided.
+     * The {@link LegacyEventStorageEngine} is a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link LegacyEmbeddedEventStore}
      */
@@ -494,7 +494,7 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore implement
      * LegacyEmbeddedEventStore#THREAD_GROUP}.</li>
      * <li>The {@code optimizeEventConsumption} is defaulted to {@code true}.</li>
      * </ul>
-     * The {@link EventStorageEngine} is a <b>hard requirement</b> and as such should be provided.
+     * The {@link LegacyEventStorageEngine} is a <b>hard requirement</b> and as such should be provided.
      */
     public static class Builder extends AbstractLegacyEventStore.Builder {
 
@@ -514,7 +514,7 @@ public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore implement
         }
 
         @Override
-        public Builder storageEngine(EventStorageEngine storageEngine) {
+        public Builder storageEngine(LegacyEventStorageEngine storageEngine) {
             super.storageEngine(storageEngine);
             return this;
         }

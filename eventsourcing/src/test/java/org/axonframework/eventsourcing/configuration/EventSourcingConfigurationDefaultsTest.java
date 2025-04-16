@@ -23,12 +23,12 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
-import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 
@@ -62,8 +62,8 @@ class EventSourcingConfigurationDefaultsTest {
         Configuration resultConfig = configurer.build();
 
         assertInstanceOf(AnnotationBasedTagResolver.class, resultConfig.getComponent(TagResolver.class));
-        assertInstanceOf(AsyncInMemoryEventStorageEngine.class,
-                         resultConfig.getComponent(AsyncEventStorageEngine.class));
+        assertInstanceOf(InMemoryEventStorageEngine.class,
+                         resultConfig.getComponent(EventStorageEngine.class));
         EventStore eventStore = resultConfig.getComponent(EventStore.class);
         assertInstanceOf(SimpleEventStore.class, eventStore);
         EventSink eventSink = resultConfig.getComponent(EventSink.class);

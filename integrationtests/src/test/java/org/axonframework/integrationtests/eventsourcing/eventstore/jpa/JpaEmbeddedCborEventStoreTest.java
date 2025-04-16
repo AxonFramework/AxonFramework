@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStoreTest;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
@@ -49,7 +49,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import javax.sql.DataSource;
 
 /**
- * An {@link EmbeddedEventStoreTest} implementation using the {@link JpaEventStorageEngine} during testing.
+ * An {@link EmbeddedEventStoreTest} implementation using the {@link LegacyJpaEventStorageEngine} during testing.
  *
  * @author Steven van Beelen
  */
@@ -77,14 +77,14 @@ class JpaEmbeddedCborEventStoreTest extends EmbeddedEventStoreTest {
     }
 
     @Override
-    public EventStorageEngine createStorageEngine() {
+    public LegacyEventStorageEngine createStorageEngine() {
         Serializer testSerializer = TestSerializer.CBOR.getSerializer();
-        return JpaEventStorageEngine.builder()
-                                    .eventSerializer(testSerializer)
-                                    .snapshotSerializer(testSerializer)
-                                    .entityManagerProvider(entityManagerProvider)
-                                    .transactionManager(transactionManager)
-                                    .build();
+        return LegacyJpaEventStorageEngine.builder()
+                                          .eventSerializer(testSerializer)
+                                          .snapshotSerializer(testSerializer)
+                                          .entityManagerProvider(entityManagerProvider)
+                                          .transactionManager(transactionManager)
+                                          .build();
     }
 
     @Configuration

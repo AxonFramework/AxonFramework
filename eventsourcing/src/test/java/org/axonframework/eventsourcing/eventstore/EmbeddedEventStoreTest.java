@@ -58,7 +58,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Test suite validating the {@link LegacyEmbeddedEventStore}. Expects end users to make a concrete implementation
- * choosing an {@link EventStorageEngine} implementation to use during testing.
+ * choosing an {@link LegacyEventStorageEngine} implementation to use during testing.
  *
  * @author Rene de Waele
  * @author Steven van Beelen
@@ -72,7 +72,7 @@ public abstract class EmbeddedEventStoreTest {
 
     private LegacyEmbeddedEventStore testSubject;
     protected TransactionManager transactionManager;
-    private EventStorageEngine storageEngine;
+    private LegacyEventStorageEngine storageEngine;
     private ThreadFactory threadFactory;
     private TestSpanFactory spanFactory;
 
@@ -86,11 +86,11 @@ public abstract class EmbeddedEventStoreTest {
     }
 
     /**
-     * Create the {@link EventStorageEngine} used during testing.
+     * Create the {@link LegacyEventStorageEngine} used during testing.
      *
-     * @return The {@link EventStorageEngine} used during testing.
+     * @return The {@link LegacyEventStorageEngine} used during testing.
      */
-    public abstract EventStorageEngine createStorageEngine();
+    public abstract LegacyEventStorageEngine createStorageEngine();
 
     /**
      * Create and get the {@link TransactionManager} used during testing. Defaults to a

@@ -27,7 +27,7 @@ import org.axonframework.eventhandling.MultiSourceTrackingToken;
 import org.axonframework.eventhandling.MultiStreamableMessageSource;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -60,8 +60,8 @@ class MultiStreamableMessageSourceTest {
 
     @BeforeEach
     void setUp() {
-        eventStoreA = LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
-        eventStoreB = LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
+        eventStoreA = LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine()).build();
+        eventStoreB = LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine()).build();
 
         testSubject = MultiStreamableMessageSource.builder()
                                                   .addMessageSource("eventStoreA", eventStoreA)
@@ -362,7 +362,7 @@ class MultiStreamableMessageSourceTest {
                 Comparator.comparing((Map.Entry<String, TrackedEventMessage<?>> e) -> !e.getKey().equals("eventStoreA"))
                           .thenComparing(e -> e.getValue().getTimestamp());
 
-        LegacyEmbeddedEventStore eventStoreC = LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine())
+        LegacyEmbeddedEventStore eventStoreC = LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine())
                                                                        .build();
 
         MultiStreamableMessageSource prioritySourceTestSubject =
