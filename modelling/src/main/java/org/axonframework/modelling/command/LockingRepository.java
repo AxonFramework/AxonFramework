@@ -56,7 +56,9 @@ import static org.axonframework.common.ObjectUtils.sameInstanceSupplier;
  * @param <T> The type that this aggregate stores
  * @author Allard Buijze
  * @since 0.3
+ * @deprecated In favor of the {@link org.axonframework.modelling.repository.AccessSerializingRepository}.
  */
+@Deprecated(since = "5.0.0")
 public abstract class LockingRepository<T, A extends Aggregate<T>> extends
         AbstractRepository<T, LockAwareAggregate<T, A>> {
 
@@ -262,7 +264,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      * The latter will internally resolve to an AggregateModel. Thus, either the AggregateModel <b>or</b> the
      * {@code aggregateType} should be provided.
      *
-     * @param <T> a generic specifying the Aggregate type contained in this {@link Repository} implementation
+     * @param <T> a generic specifying the Aggregate type contained in this {@link LegacyRepository} implementation
      */
     protected static abstract class Builder<T> extends AbstractRepository.Builder<T> {
 
@@ -271,8 +273,8 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
          *
-         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link Repository} will
-         *                      store
+         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link LegacyRepository}
+         *                      will store
          */
         protected Builder(Class<T> aggregateType) {
             super(aggregateType);

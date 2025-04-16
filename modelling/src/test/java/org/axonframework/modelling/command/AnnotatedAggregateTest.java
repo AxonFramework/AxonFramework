@@ -47,7 +47,7 @@ public class AnnotatedAggregateTest {
     private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");
 
     private final String ID = "id";
-    private Repository<AggregateRoot> repository;
+    private LegacyRepository<AggregateRoot> repository;
     private EventBus eventBus;
     private StubSideEffect sideEffect;
 

@@ -37,7 +37,7 @@ import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 import org.axonframework.modelling.command.AggregateInvocationException;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.ApplyMore;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.RepositoryProvider;
 
 import java.util.LinkedList;
@@ -326,7 +326,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
                     "Since repository provider is not provided, we cannot spawn a new aggregate for %s",
                     aggregateType.getName()));
         }
-        Repository<R> repository = repositoryProvider.repositoryFor(aggregateType);
+        LegacyRepository<R> repository = repositoryProvider.repositoryFor(aggregateType);
         if (repository == null) {
             throw new IllegalStateException(format("There is no configured repository for %s",
                                                    aggregateType.getName()));

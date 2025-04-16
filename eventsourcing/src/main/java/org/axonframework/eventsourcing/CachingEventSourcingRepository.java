@@ -36,7 +36,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @param <T> The type of aggregate this repository stores
  * @author Allard Buijze
  * @since 0.3
+ * @deprecated In favor of an instance to be constructed still.
  */
+@Deprecated(since = "5.0.0")
 public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T> {
 
     private final LegacyEventStore eventStore;

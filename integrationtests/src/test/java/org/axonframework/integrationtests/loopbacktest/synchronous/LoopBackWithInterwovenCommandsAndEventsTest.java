@@ -35,7 +35,7 @@ import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateNotFoundException;
 import org.axonframework.modelling.command.AggregateRoot;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -103,7 +103,7 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
     @Test
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void orderInEventSourcedAggregate() {
-        Repository<MyAggregate> repository = configuration.repository(MyAggregate.class);
+        LegacyRepository<MyAggregate> repository = configuration.repository(MyAggregate.class);
         configuration.commandGateway().sendAndWait(command);
 
         CommandMessage<String> testCommand =
@@ -221,10 +221,10 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
      */
     public static class MyCommandHandler {
 
-        private final Repository<MyAggregate> repository;
+        private final LegacyRepository<MyAggregate> repository;
         private final CommandGateway commandGateway;
 
-        public MyCommandHandler(Repository<MyAggregate> repository, CommandGateway commandGateway) {
+        public MyCommandHandler(LegacyRepository<MyAggregate> repository, CommandGateway commandGateway) {
             this.repository = repository;
             this.commandGateway = commandGateway;
         }

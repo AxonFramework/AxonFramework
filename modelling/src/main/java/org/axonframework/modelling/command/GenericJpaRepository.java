@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
-import org.axonframework.tracing.SpanFactory;
 
 import java.util.Optional;
 import java.util.Set;
@@ -62,7 +61,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @param <T> The type of aggregate the repository provides access to
  * @author Allard Buijze
  * @since 0.7
+ * @deprecated In favor of the {@link org.axonframework.modelling.SimpleRepository}.
  */
+@Deprecated(since = "5.0.0")
 public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggregate<T>> {
 
     private final EntityManagerProvider entityManagerProvider;
@@ -208,7 +209,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * Additionally, the {@link EntityManagerProvider} and {@link EventBus}  are <b>hard requirements</b> and as such
      * should be provided.
      *
-     * @param <T> a generic specifying the Aggregate type contained in this {@link Repository} implementation
+     * @param <T> a generic specifying the Aggregate type contained in this {@link LegacyRepository} implementation
      */
     public static class Builder<T> extends LockingRepository.Builder<T> {
 
@@ -221,8 +222,8 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
          *
-         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link Repository} will
-         *                      store
+         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link LegacyRepository}
+         *                      will store
          */
         protected Builder(Class<T> aggregateType) {
             super(aggregateType);
@@ -323,7 +324,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         }
 
         /**
-         * Disables sequence number generation within this {@link Repository} implementation.
+         * Disables sequence number generation within this {@link LegacyRepository} implementation.
          * <p>
          * Disabling this feature allows reuse of Aggregate identifiers <b>after</b> removal of the Aggregate instance
          * referred to with said identifier. This opportunity arises from the fact that events published within an

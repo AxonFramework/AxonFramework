@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.spring.stereotype;
 import org.axonframework.modelling.command.AggregateRoot;
 import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
 import org.axonframework.modelling.command.CommandTargetResolver;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -51,7 +52,7 @@ public @interface Aggregate {
      * created, unless explicitly configured on the referenced repository.
      * <p>
      * Note that the use of {@link #repository()}, or provisioning a
-     * {@link org.axonframework.modelling.command.Repository} to the Spring context using the default naming scheme
+     * {@link LegacyRepository} to the Spring context using the default naming scheme
      * overrides this setting, as a Repository explicitly defines the snapshot trigger definition. The default name
      * corresponds to {@code "[aggregate-name]Repository"}, thus a {@code Trade} Aggregate would by default create/look
      * for a bean named {@code "tradeRepository"}.
@@ -89,22 +90,22 @@ public @interface Aggregate {
      * Sets the name of the bean providing the {@link org.axonframework.common.caching.Cache caching}. If none is
      * provided, no cache is created, unless explicitly configured on the referenced repository.
      * <p>
-     * Note that the use of {@link #repository()}, or adding a {@link org.axonframework.modelling.command.Repository}
-     * bean to the Spring context with the default naming scheme overrides this setting, as a Repository may explicitly
-     * define the cache. The default name corresponds to {@code "[aggregate-name]Repository"}, thus a {@code Trade}
-     * Aggregate would by default create/look for a bean named {@code "tradeRepository"}.
+     * Note that the use of {@link #repository()}, or adding a {@link LegacyRepository} bean to the Spring context with
+     * the default naming scheme overrides this setting, as a Repository may explicitly define the cache. The default
+     * name corresponds to {@code "[aggregate-name]Repository"}, thus a {@code Trade} Aggregate would by default
+     * create/look for a bean named {@code "tradeRepository"}.
      */
     String cache() default "";
 
     /**
      * Sets the name of the bean providing the {@link org.axonframework.common.lock.LockFactory}. If none is provided,
-     * the {@link org.axonframework.modelling.command.Repository} implementation's default is used, unless explicitly
-     * configured on the referenced repository.
+     * the {@link LegacyRepository} implementation's default is used, unless explicitly configured on the referenced
+     * repository.
      * <p>
-     * Note that the use of {@link #repository()}, or adding a {@link org.axonframework.modelling.command.Repository}
-     * bean to the Spring context with the default naming scheme overrides this setting, as a Repository explicitly defines
-     * the lock factory. The default name corresponds to {@code "[aggregate-name]Repository"}, thus a
-     * {@code Trade} Aggregate would by default create/look for a bean named {@code "tradeRepository"}.
+     * Note that the use of {@link #repository()}, or adding a {@link LegacyRepository} bean to the Spring context with
+     * the default naming scheme overrides this setting, as a Repository explicitly defines the lock factory. The
+     * default name corresponds to {@code "[aggregate-name]Repository"}, thus a {@code Trade} Aggregate would by default
+     * create/look for a bean named {@code "tradeRepository"}.
      */
     String lockFactory() default "";
 }

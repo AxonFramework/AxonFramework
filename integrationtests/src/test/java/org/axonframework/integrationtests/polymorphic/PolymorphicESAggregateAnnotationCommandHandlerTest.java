@@ -20,7 +20,7 @@ import jakarta.persistence.EntityManager;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.junit.jupiter.api.*;
 
@@ -38,12 +38,12 @@ import javax.annotation.Nonnull;
 public class PolymorphicESAggregateAnnotationCommandHandlerTest
         extends AbstractPolymorphicAggregateAnnotationCommandHandlerTestSuite {
 
-    private static final Map<Class<?>, Repository<?>> repositories = new HashMap<>();
+    private static final Map<Class<?>, LegacyRepository<?>> repositories = new HashMap<>();
 
     @Override
-    public <T> Repository<T> repository(Class<T> aggregateType,
-                                        Set<Class<? extends T>> subTypes,
-                                        EntityManager entityManager) {
+    public <T> LegacyRepository<T> repository(Class<T> aggregateType,
+                                              Set<Class<? extends T>> subTypes,
+                                              EntityManager entityManager) {
         EventSourcingRepository<T> repository = EventSourcingRepository
                 .builder(aggregateType)
                 .subtypes(subTypes)
@@ -52,9 +52,9 @@ public class PolymorphicESAggregateAnnotationCommandHandlerTest
                                                     .build())
                 .repositoryProvider(new RepositoryProvider() {
                     @Override
-                    public <R> Repository<R> repositoryFor(@Nonnull Class<R> aggregateType) {
+                    public <R> LegacyRepository<R> repositoryFor(@Nonnull Class<R> aggregateType) {
                         //noinspection unchecked
-                        return (Repository<R>) repositories.get(aggregateType);
+                        return (LegacyRepository<R>) repositories.get(aggregateType);
                     }
                 })
                 .build();

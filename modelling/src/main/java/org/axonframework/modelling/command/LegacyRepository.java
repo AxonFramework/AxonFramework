@@ -25,7 +25,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * The {@link Repository} provides an abstraction of the storage of aggregates.
+ * The {@link LegacyRepository} provides an abstraction of the storage of aggregates.
  * <p>
  * When interacting with the {@code Repository} the framework expects an active
  * {@link LegacyUnitOfWork} containing a
@@ -35,9 +35,10 @@ import javax.annotation.Nullable;
  * @param <T> The type of aggregate this repository stores.
  * @author Allard Buijze
  * @since 0.1
- * TODO remove in favor of the AsyncRepository once the time is right
+ * @deprecated In favor of the {@link org.axonframework.modelling.repository.AsyncRepository}.
  */
-public interface Repository<T> extends ScopeAware {
+@Deprecated(since = "5.0.0")
+public interface LegacyRepository<T> extends ScopeAware {
 
     /**
      * Load the aggregate with the given unique identifier. No version checks are done when loading an aggregate,

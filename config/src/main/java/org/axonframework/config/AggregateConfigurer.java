@@ -40,7 +40,7 @@ import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.CreationPolicyAggregateFactory;
 import org.axonframework.modelling.command.GenericJpaRepository;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
@@ -72,7 +72,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Class<A> aggregate;
 
     private final Component<AggregateAnnotationCommandHandler<A>> commandHandler;
-    private final Component<Repository<A>> repository;
+    private final Component<LegacyRepository<A>> repository;
     private final Component<Cache> cache;
     private final Component<AggregateFactory<A>> aggregateFactory;
     private final Component<CreationPolicyAggregateFactory<A>> creationPolicyAggregateFactory;
@@ -262,7 +262,9 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @param repositoryBuilder The builder function for the repository
      * @return this configurer instance for chaining
      */
-    public AggregateConfigurer<A> configureRepository(Function<LegacyConfiguration, Repository<A>> repositoryBuilder) {
+    public AggregateConfigurer<A> configureRepository(
+            Function<LegacyConfiguration, LegacyRepository<A>> repositoryBuilder
+    ) {
         repository.update(repositoryBuilder);
         return this;
     }
@@ -300,9 +302,9 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Defines the {@link LockFactory} to use in the {@link Repository} for the aggregate under configuration. Defaults
-     * to the {@link PessimisticLockFactory} for the {@link EventSourcingRepository} and {@link NullLockFactory} for a
-     * {@link GenericJpaRepository}.
+     * Defines the {@link LockFactory} to use in the {@link LegacyRepository} for the aggregate under configuration.
+     * Defaults to the {@link PessimisticLockFactory} for the {@link EventSourcingRepository} and
+     * {@link NullLockFactory} for a {@link GenericJpaRepository}.
      *
      * @param lockFactory a {@link Function} building the {@link LockFactory} to use based on the
      *                    {@link LegacyConfiguration}
@@ -444,7 +446,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     @Override
-    public Repository<A> repository() {
+    public LegacyRepository<A> repository() {
         return repository.get();
     }
 

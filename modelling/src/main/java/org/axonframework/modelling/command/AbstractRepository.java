@@ -47,18 +47,20 @@ import javax.annotation.Nonnull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Abstract implementation of the {@link Repository} that takes care of the dispatching of events when an aggregate is
- * persisted. All uncommitted events on an aggregate are dispatched when the aggregate is saved.
+ * Abstract implementation of the {@link LegacyRepository} that takes care of the dispatching of events when an
+ * aggregate is persisted. All uncommitted events on an aggregate are dispatched when the aggregate is saved.
  * <p>
- * Note that this repository implementation does not take care of any locking. The underlying persistence is expected
- * to deal with concurrency. Alternatively, consider using the {@link LockingRepository}.
+ * Note that this repository implementation does not take care of any locking. The underlying persistence is expected to
+ * deal with concurrency. Alternatively, consider using the {@link LockingRepository}.
  *
  * @param <T> The type of aggregate this repository stores
  * @author Allard Buijze
  * @see LockingRepository
  * @since 0.1
+ * @deprecated This instance will be removed.
  */
-public abstract class AbstractRepository<T, A extends Aggregate<T>> implements Repository<T> {
+@Deprecated(since = "5.0.0")
+public abstract class AbstractRepository<T, A extends Aggregate<T>> implements LegacyRepository<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractRepository.class);
 
@@ -434,7 +436,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * <p>
      * The {@link SpanFactory} defaults to a {@link NoOpSpanFactory}.
      *
-     * @param <T> a generic specifying the Aggregate type contained in this {@link Repository} implementation
+     * @param <T> a generic specifying the Aggregate type contained in this {@link LegacyRepository} implementation
      */
     public static abstract class Builder<T> {
 
@@ -450,8 +452,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
          *
-         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link Repository} will
-         *                      store
+         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link LegacyRepository}
+         *                      will store
          */
         protected Builder(Class<T> aggregateType) {
             this.aggregateType = aggregateType;
@@ -475,8 +477,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
          * Sets the {@link HandlerDefinition} used to create concrete handlers for the given {@code aggregateType}. Only
          * used if the {@code aggregateType} approach is selected to create an {@link AggregateModel}.
          *
-         * @param handlerDefinition a {@link HandlerDefinition} used to create concrete handlers for the given {@code
-         *                          aggregateType}.
+         * @param handlerDefinition a {@link HandlerDefinition} used to create concrete handlers for the given
+         *                          {@code aggregateType}.
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> handlerDefinition(@Nonnull HandlerDefinition handlerDefinition) {
@@ -487,10 +489,10 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
         /**
          * Sets the {@link AggregateModel} of generic type {@code T}, describing the structure of the aggregate this
-         * {@link Repository} will store.
+         * {@link LegacyRepository} will store.
          *
-         * @param aggregateModel the {@link AggregateModel} of generic type {@code T} of the aggregate this {@link
-         *                       Repository} will store
+         * @param aggregateModel the {@link AggregateModel} of generic type {@code T} of the aggregate this
+         *                       {@link LegacyRepository} will store
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder<T> aggregateModel(@Nonnull AggregateModel<T> aggregateModel) {
@@ -500,14 +502,15 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         }
 
         /**
-         * Sets the subtypes of the {@link #getAggregateType() aggregate type} represented by this {@link Repository}.
-         * Defining subtypes indicates this {@code Repository} supports polymorphic aggregate structure.
+         * Sets the subtypes of the {@link #getAggregateType() aggregate type} represented by this
+         * {@link LegacyRepository}. Defining subtypes indicates this {@code Repository} supports polymorphic aggregate
+         * structure.
          * <p>
          * Only used if the {@link #aggregateModel(AggregateModel) aggregate model} is not explicitly set. Defaults to
          * an empty {@link Set}.
          *
          * @param subtypes The subtypes of the {@link #getAggregateType() aggregate type} represented by this
-         *                 {@link Repository}.
+         *                 {@link LegacyRepository}.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder<T> subtypes(@Nonnull Set<Class<? extends T>> subtypes) {
@@ -517,13 +520,14 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         }
 
         /**
-         * Sets a subtype of the {@link #getAggregateType() aggregate type} represented by this {@link Repository}.
-         * Defining a subtype indicates this {@code Repository} supports a polymorphic aggregate structure.
+         * Sets a subtype of the {@link #getAggregateType() aggregate type} represented by this
+         * {@link LegacyRepository}. Defining a subtype indicates this {@code Repository} supports a polymorphic
+         * aggregate structure.
          * <p>
          * Only used if the {@link #aggregateModel(AggregateModel) aggregate model} is not explicitly set.
          *
          * @param subtype A subtypes of the {@link #getAggregateType() aggregate type} represented by this
-         *                {@link Repository}.
+         *                {@link LegacyRepository}.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder<T> subtype(@Nonnull Class<? extends T> subtype) {
@@ -533,8 +537,9 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         }
 
         /**
-         * Sets the {@link RepositorySpanFactory} implementation to use for providing tracing capabilities. Defaults to a
-         * {@link DefaultRepositorySpanFactory} backed by a {@link NoOpSpanFactory}, which provides no tracing capabilities.
+         * Sets the {@link RepositorySpanFactory} implementation to use for providing tracing capabilities. Defaults to
+         * a {@link DefaultRepositorySpanFactory} backed by a {@link NoOpSpanFactory}, which provides no tracing
+         * capabilities.
          *
          * @param spanFactory The {@link SpanFactory} implementation
          * @return The current Builder instance, for fluent interfacing.
@@ -547,10 +552,10 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
         /**
          * Instantiate the {@link AggregateModel} of generic type {@code T} describing the structure of the Aggregate
-         * this {@link Repository} will store.
+         * this {@link LegacyRepository} will store.
          *
-         * @return a {@link AggregateModel} of generic type {@code T} describing the Aggregate this {@link Repository}
-         * will store
+         * @return a {@link AggregateModel} of generic type {@code T} describing the Aggregate this
+         * {@link LegacyRepository} will store
          */
         protected AggregateModel<T> buildAggregateModel() {
             if (aggregateModel == null) {

@@ -34,7 +34,7 @@ import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.GenericJpaRepository;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -237,8 +237,8 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
         }
 
         @Bean("simpleRepository")
-        public Repository<JpaAggregate> simpleRepository(EntityManagerProvider entityManagerProvider,
-                                                         EventBus eventBus) {
+        public LegacyRepository<JpaAggregate> simpleRepository(EntityManagerProvider entityManagerProvider,
+                                                               EventBus eventBus) {
             return GenericJpaRepository.builder(JpaAggregate.class)
                                        .entityManagerProvider(entityManagerProvider)
                                        .eventBus(eventBus)
