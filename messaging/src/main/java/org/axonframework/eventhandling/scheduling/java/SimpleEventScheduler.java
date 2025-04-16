@@ -32,7 +32,7 @@ import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -242,7 +242,7 @@ public class SimpleEventScheduler implements EventScheduler, Lifecycle {
                 logger.debug("Triggered the publication of event [{}]", eventMessage.getPayloadType().getSimpleName());
             }
             try {
-                UnitOfWork<EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(null);
+                LegacyUnitOfWork<EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(null);
                 unitOfWork.attachTransaction(transactionManager);
                 unitOfWork.execute(() -> eventBus.publish(eventMessage));
             } finally {

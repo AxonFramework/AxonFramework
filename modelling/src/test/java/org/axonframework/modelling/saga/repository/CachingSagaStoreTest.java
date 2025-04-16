@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.AssociationValuesImpl;
 import org.axonframework.modelling.saga.Saga;
@@ -243,7 +243,7 @@ public abstract class CachingSagaStoreTest {
                      .mapToObj(i -> CompletableFuture.runAsync(
                              () -> {
                                  try {
-                                     UnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+                                     LegacyUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
                                      String sagaId = IdentifierFactory.getInstance().generateIdentifier();
                                      // Create instances
                                      Saga<StubSaga> saga = sagaRepository.createInstance(sagaId, StubSaga::new);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.AnnotatedSaga;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.ResourceInjector;
@@ -104,8 +104,8 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
 
     @Override
     public AnnotatedSaga<T> doLoad(String sagaIdentifier) {
-        UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
-        UnitOfWork<?> processRoot = unitOfWork.root();
+        LegacyUnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
+        LegacyUnitOfWork<?> processRoot = unitOfWork.root();
 
         AnnotatedSaga<T> loadedSaga = managedSagas.computeIfAbsent(sagaIdentifier, id -> {
             AnnotatedSaga<T> result = doLoadSaga(sagaIdentifier);
@@ -127,7 +127,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
     @Override
     public AnnotatedSaga<T> doCreateInstance(String sagaIdentifier, Supplier<T> sagaFactory) {
         try {
-            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get(), processRoot = unitOfWork.root();
+            LegacyUnitOfWork<?> unitOfWork = CurrentUnitOfWork.get(), processRoot = unitOfWork.root();
             T sagaRoot = sagaFactory.get();
             resourceInjector.injectResources(sagaRoot);
             AnnotatedSaga<T> saga =
@@ -161,7 +161,7 @@ public class AnnotatedSagaRepository<T> extends LockingSagaRepository<T> {
      * @param unitOfWork the unit of work to inspect for unsaved sagas
      * @return set of saga identifiers of unsaved sagas
      */
-    protected Set<String> unsavedSagaResource(UnitOfWork<?> unitOfWork) {
+    protected Set<String> unsavedSagaResource(LegacyUnitOfWork<?> unitOfWork) {
         return unitOfWork.getOrComputeResource(unsavedSagasResourceKey, i -> new HashSet<>());
     }
 

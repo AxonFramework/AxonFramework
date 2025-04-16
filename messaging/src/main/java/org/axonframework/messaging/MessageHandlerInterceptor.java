@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.messaging;
 
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 
 import javax.annotation.Nonnull;
 
@@ -49,8 +49,8 @@ public interface MessageHandlerInterceptor<T extends Message<?>> {
      * @throws Exception any exception that occurs while handling the message
      */
     @Deprecated
-    Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
-            throws Exception;
+    Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
+                  @Nonnull InterceptorChain interceptorChain) throws Exception;
 
     default <M extends T, R extends Message<?>> MessageStream<? extends R> interceptOnHandle(@Nonnull M message,
                                                                           @Nonnull ProcessingContext context,

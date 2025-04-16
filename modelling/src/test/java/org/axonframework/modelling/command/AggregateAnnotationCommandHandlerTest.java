@@ -31,7 +31,7 @@ import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
@@ -804,7 +804,7 @@ class AggregateAnnotationCommandHandlerTest {
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public void handle(CreateCommand createCommand,
                            MetaData metaData,
-                           UnitOfWork<CommandMessage<?>> unitOfWork,
+                           LegacyUnitOfWork<CommandMessage<?>> unitOfWork,
                            @MetaDataValue("notExist") String value) {
             this.setIdentifier(createCommand.getId());
             assertNotNull(metaData);

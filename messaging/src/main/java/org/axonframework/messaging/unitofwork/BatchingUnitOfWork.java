@@ -148,7 +148,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     }
 
     @Override
-    public UnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
+    public LegacyUnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
         processingContext.transformMessage(transformOperator);
         return this;
     }
@@ -179,7 +179,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     }
 
     @Override
-    protected void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler) {
+    protected void addHandler(Phase phase, Consumer<LegacyUnitOfWork<T>> handler) {
         processingContext.addHandler(phase, handler);
     }
 

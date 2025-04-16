@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.eventhandling.async;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -51,7 +51,7 @@ class AsynchronousEventProcessingStrategyTest {
         executor = mock(Executor.class);
         doAnswer(invocation -> {
             // since we need to pretend we run in another thread, we clear the Unit of Work first
-            UnitOfWork<?> currentUnitOfWork = null;
+            LegacyUnitOfWork<?> currentUnitOfWork = null;
             if (CurrentUnitOfWork.isStarted()) {
                 currentUnitOfWork = CurrentUnitOfWork.get();
                 CurrentUnitOfWork.clear(currentUnitOfWork);
@@ -118,7 +118,7 @@ class AsynchronousEventProcessingStrategyTest {
         EventMessage<?> message1 = createEvent("aggregate1", 1);
         EventMessage<?> message2 = createEvent("aggregate2", 1);
 
-        UnitOfWork<EventMessage<?>> uow = DefaultUnitOfWork.startAndGet(message1);
+        LegacyUnitOfWork<EventMessage<?>> uow = DefaultUnitOfWork.startAndGet(message1);
         uow.onPrepareCommit(u -> verify(executor, never()).execute(isA(Runnable.class)));
 
         testSubject.handle(Arrays.asList(message1, message2), mock(Consumer.class));

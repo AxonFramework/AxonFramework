@@ -29,7 +29,7 @@ import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -81,7 +81,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
                 .build();
         EventBus mockEventBus = mock(EventBus.class);
 
-        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyUnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         Aggregate<SimpleAggregateRoot> aggregate = repository.newInstance(SimpleAggregateRoot::new);
         uow.commit();
 
@@ -135,7 +135,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
         Thread t = new Thread(() -> {
             try {
                 awaitFor.await();
-                UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
+                LegacyUnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
                 Aggregate<SimpleAggregateRoot> aggregate = repository.load(aggregateIdentifier, null);
                 aggregate.execute(SimpleAggregateRoot::doOperation);
                 aggregate.execute(SimpleAggregateRoot::doOperation);

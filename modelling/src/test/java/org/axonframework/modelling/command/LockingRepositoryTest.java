@@ -27,7 +27,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.tracing.TestSpanFactory;
@@ -149,7 +149,7 @@ class LockingRepositoryTest {
      */
     @Test
     void storingAggregateWithoutSettingAggregateIdentifierDoesNotInvokeLockFactory() throws Exception {
-        UnitOfWork<?> uow = startAndGetUnitOfWork();
+        LegacyUnitOfWork<?> uow = startAndGetUnitOfWork();
         Aggregate<StubAggregate> result = testSubject.newInstance(
                 () -> new StubAggregate(null),
                 aggregate -> aggregate.execute(StubAggregate::doSomething)
@@ -267,7 +267,7 @@ class LockingRepositoryTest {
         verify(lock).release();
     }
 
-    private UnitOfWork<?> startAndGetUnitOfWork() {
+    private LegacyUnitOfWork<?> startAndGetUnitOfWork() {
         return DefaultUnitOfWork.startAndGet(MESSAGE);
     }
 

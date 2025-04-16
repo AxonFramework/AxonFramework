@@ -24,7 +24,7 @@ import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberCha
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.Saga;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
@@ -47,7 +47,7 @@ class AnnotatedSagaRepositoryTest {
     private AnnotatedSagaRepository<Object> testSubject;
     private SagaStore store;
 
-    private UnitOfWork<?> currentUnitOfWork;
+    private LegacyUnitOfWork<?> currentUnitOfWork;
 
     @BeforeEach
     void setUp() {
@@ -144,7 +144,7 @@ class AnnotatedSagaRepositoryTest {
         AssociationValue associationValue = new AssociationValue("test", "value");
 
         Thread otherProcess = new Thread(() -> {
-            UnitOfWork<?> unitOfWork = DefaultUnitOfWork.startAndGet(null);
+            LegacyUnitOfWork<?> unitOfWork = DefaultUnitOfWork.startAndGet(null);
             testSubject.createInstance(sagaId, Object::new).getAssociationValues().add(associationValue);
             CurrentUnitOfWork.clear(unitOfWork);
         });

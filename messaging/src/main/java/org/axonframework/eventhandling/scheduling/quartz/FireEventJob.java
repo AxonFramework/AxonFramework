@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -85,7 +85,7 @@ public class FireEventJob implements Job {
             EventBus eventBus = (EventBus) schedulerContext.get(EVENT_BUS_KEY);
             TransactionManager txManager = (TransactionManager) schedulerContext.get(TRANSACTION_MANAGER_KEY);
 
-            UnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
+            LegacyUnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
             if (txManager != null) {
                 unitOfWork.attachTransaction(txManager);
             }

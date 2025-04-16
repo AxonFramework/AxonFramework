@@ -64,7 +64,7 @@ import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
@@ -1718,7 +1718,7 @@ class EventProcessingModuleTest {
     private static class StubInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
 
         @Override
-        public Object handle(@Nonnull UnitOfWork<? extends EventMessage<?>> unitOfWork,
+        public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
                              @Nonnull InterceptorChain interceptorChain)
                 throws Exception {
             return interceptorChain.proceedSync();
@@ -1730,7 +1730,7 @@ class EventProcessingModuleTest {
     private static class SubscribingEventHandler {
 
         @EventHandler
-        public void handle(Integer event, UnitOfWork<?> unitOfWork) {
+        public void handle(Integer event, LegacyUnitOfWork<?> unitOfWork) {
             throw new IllegalStateException();
         }
 
@@ -1750,7 +1750,7 @@ class EventProcessingModuleTest {
         }
 
         @EventHandler
-        public void handle(Integer event, UnitOfWork<?> unitOfWork) {
+        public void handle(Integer event, LegacyUnitOfWork<?> unitOfWork) {
             throw new IllegalStateException();
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.common.Assert;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.UnitOfWork.Phase;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork.Phase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +43,7 @@ public class MessageProcessingContext<T extends Message<?>> {
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     private static final Deque EMPTY = new LinkedList<>();
 
-    private final EnumMap<Phase, Deque<Consumer<UnitOfWork<T>>>> handlers = new EnumMap<>(Phase.class);
+    private final EnumMap<Phase, Deque<Consumer<LegacyUnitOfWork<T>>>> handlers = new EnumMap<>(Phase.class);
     private T message;
     private ExecutionResult executionResult;
 
@@ -63,11 +63,11 @@ public class MessageProcessingContext<T extends Message<?>> {
      * @param phase         The phase for which attached handlers should be invoked
      */
     @SuppressWarnings("unchecked")
-    public void notifyHandlers(UnitOfWork<T> unitOfWork, Phase phase) {
+    public void notifyHandlers(LegacyUnitOfWork<T> unitOfWork, Phase phase) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Notifying handlers for phase {}", phase.toString());
         }
-        Deque<Consumer<UnitOfWork<T>>> l = handlers.getOrDefault(phase, EMPTY);
+        Deque<Consumer<LegacyUnitOfWork<T>>> l = handlers.getOrDefault(phase, EMPTY);
         while (!l.isEmpty()) {
             try {
                 l.remove().accept(unitOfWork);
@@ -88,11 +88,11 @@ public class MessageProcessingContext<T extends Message<?>> {
      * @param phase   The phase of the unit of work to attach the handler to
      * @param handler The handler to invoke in the given phase
      */
-    public void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler) {
+    public void addHandler(Phase phase, Consumer<LegacyUnitOfWork<T>> handler) {
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Adding handler {} for phase {}", handler.getClass().getName(), phase.toString());
         }
-        final Deque<Consumer<UnitOfWork<T>>> consumers = handlers.computeIfAbsent(phase, p -> new ArrayDeque<>());
+        final Deque<Consumer<LegacyUnitOfWork<T>>> consumers = handlers.computeIfAbsent(phase, p -> new ArrayDeque<>());
         if (phase.isReverseCallbackOrder()) {
             consumers.addFirst(handler);
         } else {

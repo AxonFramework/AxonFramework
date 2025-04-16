@@ -29,7 +29,7 @@ import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.OldJpaEventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.ehcache.CacheManager;
@@ -204,7 +204,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
                                          .build();
         eventProcessor.start();
 
-        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyUnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         repository.newInstance(() -> new TestAggregate(id));
         uow.commit();
 
@@ -250,7 +250,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         eventProcessor.start();
 
         // First command: Create Aggregate
-        UnitOfWork<?> uow1 = DefaultUnitOfWork.startAndGet(null);
+        LegacyUnitOfWork<?> uow1 = DefaultUnitOfWork.startAndGet(null);
         repository.newInstance(() -> new TestAggregate(id));
         uow1.commit();
 
@@ -267,7 +267,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
     }
 
     private TestAggregate loadAggregate(String id) {
-        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyUnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
         Aggregate<TestAggregate> verify = repository.load(id);
         uow.rollback();
         return verify.invoke(Function.identity());
@@ -387,7 +387,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
             if (previousToken == null && payload instanceof AggregateCreatedEvent) {
                 AggregateCreatedEvent created = (AggregateCreatedEvent) payload;
 
-                UnitOfWork<EventMessage<?>> nested = DefaultUnitOfWork.startAndGet(event);
+                LegacyUnitOfWork<EventMessage<?>> nested = DefaultUnitOfWork.startAndGet(event);
                 nested.execute(() -> {
                     Aggregate<TestAggregate> aggregate = repository.load(created.id);
                     aggregate.execute(r -> r.update(token));
@@ -397,7 +397,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
             if (previousToken != null && payload instanceof AggregateUpdatedEvent) {
                 AggregateUpdatedEvent updated = (AggregateUpdatedEvent) payload;
                 if (updated.token.equals(previousToken)) {
-                    UnitOfWork<EventMessage<?>> nested = DefaultUnitOfWork.startAndGet(event);
+                    LegacyUnitOfWork<EventMessage<?>> nested = DefaultUnitOfWork.startAndGet(event);
                     if (commit) {
                         nested.execute(() -> {
                             Aggregate<TestAggregate> aggregate = repository.load(updated.id);

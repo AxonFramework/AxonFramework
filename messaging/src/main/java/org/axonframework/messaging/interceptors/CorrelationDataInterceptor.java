@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.correlation.CorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -63,7 +63,7 @@ public class CorrelationDataInterceptor<T extends Message<?>> implements Message
     }
 
     @Override
-    public Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
+    public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork, @Nonnull InterceptorChain interceptorChain)
             throws Exception {
         correlationDataProviders.forEach(unitOfWork::registerCorrelationDataProvider);
         return interceptorChain.proceedSync();

@@ -24,7 +24,7 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ReflectionUtils;
@@ -45,7 +45,7 @@ class LoggingInterceptorTest {
     private LoggingInterceptor<Message<?>> testSubject;
     private ExtendedLogger mockLogger;
     private InterceptorChain interceptorChain;
-    private UnitOfWork<Message<?>> unitOfWork;
+    private LegacyUnitOfWork<Message<?>> unitOfWork;
 
     @BeforeEach
     void setUp() throws Exception {

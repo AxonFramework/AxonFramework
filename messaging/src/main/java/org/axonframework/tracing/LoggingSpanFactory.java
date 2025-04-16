@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.axonframework.tracing;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +32,7 @@ import java.util.function.Supplier;
  * information to info level, with the following identifying prefix: {@code {spanId}{spanName}}.
  * <p>
  * When traces are related to a message, the message type and identifier are logged as well. If a message is dispatched
- * while currently handling a message in the {@link org.axonframework.messaging.unitofwork.UnitOfWork}, it will log the
+ * while currently handling a message in the {@link LegacyUnitOfWork}, it will log the
  * information regarding the message being handled as well.
  *
  * @author Mitchell Herrijgers

@@ -50,7 +50,7 @@ import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.tracing.NoOpSpanFactory;
@@ -360,7 +360,7 @@ public class DbSchedulerDeadlineManager extends AbstractDeadlineManager implemen
         Span span = spanFactory.createExecuteSpan(deadlineName, deadlineId, deadlineMessage)
                                .start();
         try (SpanScope ignored = span.makeCurrent()) {
-            UnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(deadlineMessage);
+            LegacyUnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
             InterceptorChain chain = new DefaultInterceptorChain<>(

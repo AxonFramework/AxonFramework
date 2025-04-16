@@ -18,19 +18,19 @@ package org.axonframework.messaging.timeout;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.slf4j.Logger;
 
 import java.util.concurrent.ScheduledExecutorService;
 import javax.annotation.Nonnull;
 
 /**
- * Message handler interceptor that sets a timeout on the processing of the current {@link UnitOfWork}. If the timeout
- * is reached, the thread is interrupted and the transaction will be rolled back automatically.
+ * Message handler interceptor that sets a timeout on the processing of the current {@link LegacyUnitOfWork}. If the
+ * timeout is reached, the thread is interrupted and the transaction will be rolled back automatically.
  * <p>
  * Note: Due to interceptor ordering, this interceptor may not be the first in the chain. We are unable to work around
  * this, and as such the timeout measuring starts from the moment this interceptor is invoked, and ends measuring when
- * the commit of the {@link UnitOfWork} is completed.
+ * the commit of the {@link LegacyUnitOfWork} is completed.
  *
  * @author Mitchell Herrijgers
  * @since 4.11.0
@@ -101,9 +101,9 @@ public class UnitOfWorkTimeoutInterceptor implements MessageHandlerInterceptor<M
     }
 
     @Override
-    public Object handle(@Nonnull UnitOfWork<? extends Message<?>> unitOfWork,
+    public Object handle(@Nonnull LegacyUnitOfWork<? extends Message<?>> unitOfWork,
                          @Nonnull InterceptorChain interceptorChain) throws Exception {
-        UnitOfWork<?> root = unitOfWork.root();
+        LegacyUnitOfWork<?> root = unitOfWork.root();
         if (!root.resources().containsKey(TRANSACTION_TIME_LIMIT_RESOURCE_KEY)) {
             AxonTimeLimitedTask taskTimeout = new AxonTimeLimitedTask(
                     "UnitOfWork of " + componentName,

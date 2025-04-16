@@ -64,7 +64,7 @@ import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFac
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateNotFoundException;
@@ -561,7 +561,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     /**
      * Handles the given {@code deadlineMessage} in the aggregate described by the given {@code aggregateDescriptor}.
-     * Deadline message is handled in the scope of a {@link UnitOfWork}. If handling the deadline results in an
+     * Deadline message is handled in the scope of a {@link LegacyUnitOfWork}. If handling the deadline results in an
      * exception, the exception will be wrapped in a {@link FixtureExecutionException}.
      *
      * @param aggregateDescriptor A {@link ScopeDescriptor} describing the aggregate under test
@@ -664,7 +664,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private void detectIllegalStateChanges(MatchAllFieldFilter fieldFilter, Aggregate<T> workingAggregate) {
         logger.debug("Starting separate Unit of Work for the purpose of checking illegal state changes in Aggregate");
         if (aggregateIdentifier != null && workingAggregate != null && reportIllegalStateChange) {
-            UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
+            LegacyUnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
             try {
                 Aggregate<T> aggregate2 = repository.delegate.load(aggregateIdentifier);
                 if (workingAggregate.isDeleted()) {

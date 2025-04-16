@@ -34,7 +34,7 @@ import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
@@ -511,7 +511,7 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     private <Q, R> ResultMessage<CompletableFuture<QueryResponseMessage<R>>> interceptAndInvoke(
-            UnitOfWork<QueryMessage<Q, R>> uow,
+            LegacyUnitOfWork<QueryMessage<Q, R>> uow,
             MessageHandler<? super QueryMessage<?, R>, ? extends QueryResponseMessage<?>> handler
     ) {
         return uow.executeWithResult(() -> {

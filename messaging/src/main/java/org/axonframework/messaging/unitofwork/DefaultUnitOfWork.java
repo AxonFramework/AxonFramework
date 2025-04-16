@@ -118,7 +118,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     }
 
     @Override
-    protected void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler) {
+    protected void addHandler(Phase phase, Consumer<LegacyUnitOfWork<T>> handler) {
         Assert.state(!phase.isBefore(phase()), () -> "Cannot register a listener for phase: " + phase
                 + " because the Unit of Work is already in a later phase: " + phase());
         processingContext.addHandler(phase, handler);
@@ -130,7 +130,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     }
 
     @Override
-    public UnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
+    public LegacyUnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
         processingContext.transformMessage(transformOperator);
         return this;
     }

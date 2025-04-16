@@ -23,7 +23,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.saga.SagaScopeDescriptor;
 import org.junit.jupiter.api.*;
@@ -206,7 +206,7 @@ class AbstractRepositoryTest {
     @Test
     void checkedExceptionFromConstructorDoesNotAttemptToStoreAggregate() {
         // committing the unit of work does not throw an exception
-        UnitOfWork<?> uow = CurrentUnitOfWork.get();
+        LegacyUnitOfWork<?> uow = CurrentUnitOfWork.get();
         uow.executeWithResult(() -> testSubject.newInstance(() -> {
             throw new Exception("Throwing checked exception");
         }), RuntimeException.class::isInstance);

@@ -29,7 +29,7 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.queryhandling.QueryGateway;
 import org.axonframework.queryhandling.QueryMessage;
 import org.axonframework.queryhandling.annotation.QueryHandler;
@@ -577,7 +577,7 @@ class InterceptorConfigurationTest {
             }
 
             @Override
-            public Object handle(UnitOfWork<? extends T> unitOfWork,
+            public Object handle(LegacyUnitOfWork<? extends T> unitOfWork,
                                  InterceptorChain interceptorChain) throws Exception {
                 invocation.countDown();
                 axonConfiguration.tags();
@@ -691,7 +691,7 @@ class InterceptorConfigurationTest {
 
             @NotNull
             @Override
-            public Object handle(UnitOfWork<?> unitOfWork,
+            public Object handle(LegacyUnitOfWork<?> unitOfWork,
                                  InterceptorChain interceptorChain) throws Exception {
                 if (unitOfWork.getMessage() instanceof CommandMessage) {
                     commandInvocation.countDown();
@@ -745,7 +745,7 @@ class InterceptorConfigurationTest {
         public static class MyCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
 
             @Override
-            public Object handle(@NotNull UnitOfWork<? extends CommandMessage<?>> unitOfWork,
+            public Object handle(@NotNull LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWork,
                                  @NotNull InterceptorChain interceptorChain) throws Exception {
                 return interceptorChain.proceedSync();
             }

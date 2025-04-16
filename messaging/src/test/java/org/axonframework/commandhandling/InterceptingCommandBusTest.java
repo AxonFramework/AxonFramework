@@ -27,7 +27,7 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.utils.MockException;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -272,7 +272,8 @@ class InterceptingCommandBusTest {
         }
 
         @Override
-        public Object handle(@Nonnull UnitOfWork<? extends M> unitOfWork, @Nonnull InterceptorChain interceptorChain) {
+        public Object handle(@Nonnull LegacyUnitOfWork<? extends M> unitOfWork,
+                             @Nonnull InterceptorChain interceptorChain) {
             throw new UnsupportedOperationException();
         }
 

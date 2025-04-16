@@ -31,7 +31,7 @@ import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.invocation.*;
@@ -410,7 +410,7 @@ public abstract class EmbeddedEventStoreTest {
         DefaultUnitOfWork<Message<?>> innerUoW = DefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events.subList(4, events.size()));
 
-        Consumer<UnitOfWork<Message<?>>> assertCorrectEventCount =
+        Consumer<LegacyUnitOfWork<Message<?>>> assertCorrectEventCount =
                 uow -> assertEquals(10, testSubject.readEvents(aggregateId).asStream().count());
 
         innerUoW.onPrepareCommit(assertCorrectEventCount);

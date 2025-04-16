@@ -24,7 +24,7 @@ import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
@@ -87,7 +87,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
 
     @Override
     protected LockAwareAggregate<T, A> doCreateNew(Callable<T> factoryMethod) throws Exception {
-        UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
+        LegacyUnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
         A aggregate = doCreateNewForLock(factoryMethod);
         final String aggregateIdentifier = aggregate.identifierAsString();
 

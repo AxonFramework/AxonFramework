@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -45,12 +45,12 @@ class CurrentUnitOfWorkParameterResolverFactoryTest {
     }
 
     @SuppressWarnings({"unused", "WeakerAccess"})
-    public void someMethod(UnitOfWork unitOfWork) {
+    public void someMethod(LegacyUnitOfWork unitOfWork) {
     }
 
     @Test
     void createInstance() throws Exception {
-        Method someMethod = getClass().getMethod("someMethod", UnitOfWork.class);
+        Method someMethod = getClass().getMethod("someMethod", LegacyUnitOfWork.class);
 
         assertNull(testSubject.createInstance(method, method.getParameters(), 0));
         assertSame(testSubject, testSubject.createInstance(someMethod, someMethod.getParameters(), 0));

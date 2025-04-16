@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.common.BuilderUtils.assertNonNull;
-import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
+import static org.axonframework.messaging.unitofwork.LegacyUnitOfWork.Phase.*;
 
 /**
  * Base class for the Event Bus. In case events are published while a Unit of Work is active the Unit of Work root
@@ -126,7 +126,7 @@ public abstract class AbstractEventBus implements EventBus {
                                                                          .collect(Collectors.toList());
 
         if (CurrentUnitOfWork.isStarted()) {
-            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
+            LegacyUnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
             Assert.state(!unitOfWork.phase().isAfter(PREPARE_COMMIT),
                          () -> "It is not allowed to publish events when the current Unit of Work has already been " +
                                  "committed. Please start a new Unit of Work before publishing events.");
@@ -155,7 +155,7 @@ public abstract class AbstractEventBus implements EventBus {
         }
     }
 
-    private List<EventMessage<?>> eventsQueue(UnitOfWork<?> unitOfWork) {
+    private List<EventMessage<?>> eventsQueue(LegacyUnitOfWork<?> unitOfWork) {
         return unitOfWork.getOrComputeResource(eventsKey, r -> {
             Span commitSpan = spanFactory.createCommitEventsSpan();
             List<EventMessage<?>> eventQueue = new ArrayList<>();
@@ -219,7 +219,7 @@ public abstract class AbstractEventBus implements EventBus {
         return messages;
     }
 
-    private void addStagedMessages(UnitOfWork<?> unitOfWork, List<EventMessage<?>> messages) {
+    private void addStagedMessages(LegacyUnitOfWork<?> unitOfWork, List<EventMessage<?>> messages) {
         unitOfWork.parent().ifPresent(parent -> addStagedMessages(parent, messages));
         if (unitOfWork.isRolledBack()) {
             // staged messages are irrelevant if the UoW has been rolled back

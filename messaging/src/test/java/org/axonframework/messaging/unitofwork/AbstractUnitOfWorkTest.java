@@ -43,7 +43,7 @@ import static org.mockito.Mockito.*;
 class AbstractUnitOfWorkTest {
 
     private List<PhaseTransition> phaseTransitions;
-    private UnitOfWork<?> subject;
+    private LegacyUnitOfWork<?> subject;
 
     @SuppressWarnings({"unchecked"})
     @BeforeEach
@@ -63,12 +63,14 @@ class AbstractUnitOfWorkTest {
         registerListeners(subject);
     }
 
-    private void registerListeners(UnitOfWork<?> unitOfWork) {
-        unitOfWork.onPrepareCommit(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.PREPARE_COMMIT)));
-        unitOfWork.onCommit(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.COMMIT)));
-        unitOfWork.afterCommit(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.AFTER_COMMIT)));
-        unitOfWork.onRollback(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.ROLLBACK)));
-        unitOfWork.onCleanup(u -> phaseTransitions.add(new PhaseTransition(u, UnitOfWork.Phase.CLEANUP)));
+    private void registerListeners(LegacyUnitOfWork<?> unitOfWork) {
+        unitOfWork.onPrepareCommit(
+                u -> phaseTransitions.add(new PhaseTransition(u, LegacyUnitOfWork.Phase.PREPARE_COMMIT))
+        );
+        unitOfWork.onCommit(u -> phaseTransitions.add(new PhaseTransition(u, LegacyUnitOfWork.Phase.COMMIT)));
+        unitOfWork.afterCommit(u -> phaseTransitions.add(new PhaseTransition(u, LegacyUnitOfWork.Phase.AFTER_COMMIT)));
+        unitOfWork.onRollback(u -> phaseTransitions.add(new PhaseTransition(u, LegacyUnitOfWork.Phase.ROLLBACK)));
+        unitOfWork.onCleanup(u -> phaseTransitions.add(new PhaseTransition(u, LegacyUnitOfWork.Phase.CLEANUP)));
     }
 
     @AfterEach
@@ -203,10 +205,10 @@ class AbstractUnitOfWorkTest {
 
     private static class PhaseTransition {
 
-        private final UnitOfWork.Phase phase;
-        private final UnitOfWork<?> unitOfWork;
+        private final LegacyUnitOfWork.Phase phase;
+        private final LegacyUnitOfWork<?> unitOfWork;
 
-        public PhaseTransition(UnitOfWork<?> unitOfWork, UnitOfWork.Phase phase) {
+        public PhaseTransition(LegacyUnitOfWork<?> unitOfWork, LegacyUnitOfWork.Phase phase) {
             this.unitOfWork = unitOfWork;
             this.phase = phase;
         }

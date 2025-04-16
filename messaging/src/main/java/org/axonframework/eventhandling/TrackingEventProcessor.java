@@ -34,7 +34,7 @@ import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
@@ -485,7 +485,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 }
             }
 
-            UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(batch);
+            LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(batch);
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
             unitOfWork.resources().put(lastTokenResourceKey, finalLastToken);

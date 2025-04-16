@@ -26,7 +26,7 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.MetaDataValue;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -88,7 +88,7 @@ class EventProcessingModuleWithInterceptorsTest {
         static class MyInterceptor implements MessageHandlerInterceptor<EventMessage<?>> {
 
             @Override
-            public Object handle(@Nonnull UnitOfWork<? extends EventMessage<?>> unitOfWork,
+            public Object handle(@Nonnull LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
                                  @Nonnull InterceptorChain interceptorChain)
                     throws Exception {
                 unitOfWork.transformMessage(event -> event

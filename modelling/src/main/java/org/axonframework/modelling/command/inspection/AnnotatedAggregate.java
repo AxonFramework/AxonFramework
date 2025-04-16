@@ -31,7 +31,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 import org.axonframework.modelling.command.AggregateInvocationException;
@@ -428,7 +428,7 @@ public class AnnotatedAggregate<T> extends AggregateLifecycle implements Aggrega
         } else {
             //noinspection unchecked
             result = new DefaultInterceptorChain<>(
-                    (UnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
+                    (LegacyUnitOfWork<CommandMessage<?>>) CurrentUnitOfWork.get(),
                     interceptors,
                     m -> findHandlerAndHandleCommand(potentialHandlers, commandMessage)
             ).proceedSync();

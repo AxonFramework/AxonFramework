@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import org.axonframework.messaging.deadletter.Decisions;
 import org.axonframework.messaging.deadletter.EnqueueDecision;
 import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +88,7 @@ class DeadLetteredEventProcessingTask
         }
 
         AtomicReference<EnqueueDecision<EventMessage<?>>> decision = new AtomicReference<>();
-        UnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(letter.message());
+        LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(letter.message());
 
         unitOfWork.attachTransaction(transactionManager);
         unitOfWork.resources()
@@ -107,7 +107,7 @@ class DeadLetteredEventProcessingTask
     }
 
     private Object handleWithInterceptors(
-            UnitOfWork<? extends EventMessage<?>> unitOfWork
+            LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork
     ) throws Exception {
         new DefaultInterceptorChain<EventMessage<?>, Message<Void>>(
                 unitOfWork,

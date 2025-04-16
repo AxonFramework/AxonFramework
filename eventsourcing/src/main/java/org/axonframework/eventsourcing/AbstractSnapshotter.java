@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.tracing.NoOpSpanFactory;
 import org.axonframework.tracing.Span;
@@ -80,7 +80,7 @@ public abstract class AbstractSnapshotter implements Snapshotter {
 
     @Override
     public void scheduleSnapshot(@Nonnull Class<?> aggregateType, @Nonnull String aggregateIdentifier) {
-        if (CurrentUnitOfWork.isStarted() && CurrentUnitOfWork.get().phase().isBefore(UnitOfWork.Phase.COMMIT)) {
+        if (CurrentUnitOfWork.isStarted() && CurrentUnitOfWork.get().phase().isBefore(LegacyUnitOfWork.Phase.COMMIT)) {
             CurrentUnitOfWork.get().afterCommit(u -> doScheduleSnapshot(aggregateType, aggregateIdentifier));
         } else {
             doScheduleSnapshot(aggregateType, aggregateIdentifier);

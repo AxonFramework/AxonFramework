@@ -27,7 +27,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
@@ -54,7 +54,7 @@ class EventSourcingRepositoryTest {
 
     private LegacyEventStore mockEventStore;
     private EventSourcingRepository<TestAggregate> testSubject;
-    private UnitOfWork<?> unitOfWork;
+    private LegacyUnitOfWork<?> unitOfWork;
     private StubAggregateFactory stubAggregateFactory;
     private SnapshotTriggerDefinition triggerDefinition;
     private SnapshotTrigger snapshotTrigger;

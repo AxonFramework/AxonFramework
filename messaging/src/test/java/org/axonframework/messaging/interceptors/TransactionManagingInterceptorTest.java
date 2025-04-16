@@ -24,7 +24,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 
 import static org.mockito.Mockito.*;
@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
 class TransactionManagingInterceptorTest {
 
     private InterceptorChain interceptorChain;
-    private UnitOfWork<Message<?>> unitOfWork;
+    private LegacyUnitOfWork<Message<?>> unitOfWork;
     private TransactionManager transactionManager;
     private Transaction transaction;
     private TransactionManagingInterceptor<Message<?>> subject;
@@ -58,7 +58,7 @@ class TransactionManagingInterceptorTest {
 
     @Test
     void startTransaction() throws Exception {
-        UnitOfWork<Message<?>> unitOfWork = spy(this.unitOfWork);
+        LegacyUnitOfWork<Message<?>> unitOfWork = spy(this.unitOfWork);
 
         subject.handle(unitOfWork, interceptorChain);
         verify(transactionManager).startTransaction();

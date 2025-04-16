@@ -17,7 +17,7 @@
 package org.axonframework.messaging;
 
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 
 import static java.util.Arrays.asList;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  */
 class DefaultInterceptorChainTest {
 
-    private UnitOfWork<Message<?>> unitOfWork;
+    private LegacyUnitOfWork<Message<?>> unitOfWork;
     private MessageHandler<Message<?>, Message<Object>> mockHandler;
 
     @BeforeEach

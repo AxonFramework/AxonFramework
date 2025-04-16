@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.axonframework.tracing.NoOpSpanFactory;
@@ -92,7 +92,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     @Override
     public A newInstance(@Nonnull Callable<T> factoryMethod,
                          @Nonnull Consumer<Aggregate<T>> initMethod) throws Exception {
-        UnitOfWork<?> uow = currentUnitOfWork();
+        LegacyUnitOfWork<?> uow = currentUnitOfWork();
         AtomicReference<A> aggregateReference = new AtomicReference<>();
         // a constructor may apply events, and the persistence of an aggregate must take precedence over publishing its events.
         uow.onPrepareCommit(x -> {
@@ -143,7 +143,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
     public A load(@Nonnull String aggregateIdentifier, Long expectedVersion) {
         return spanFactory.createLoadSpan(aggregateIdentifier)
                           .runSupplier(() -> {
-                              UnitOfWork<?> uow = currentUnitOfWork();
+                              LegacyUnitOfWork<?> uow = currentUnitOfWork();
                               Map<String, A> aggregates = managedAggregates(uow);
                               A aggregate = aggregates.computeIfAbsent(
                                       aggregateIdentifier, s -> {
@@ -167,7 +167,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
 
     @Override
     public Aggregate<T> loadOrCreate(@Nonnull String aggregateIdentifier, @Nonnull Callable<T> factoryMethod) {
-        UnitOfWork<?> uow = currentUnitOfWork();
+        LegacyUnitOfWork<?> uow = currentUnitOfWork();
         Map<String, A> aggregates = managedAggregates(uow);
         A aggregate = aggregates.computeIfAbsent(
                 aggregateIdentifier,
@@ -192,8 +192,8 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
         return aggregate;
     }
 
-    private UnitOfWork<?> currentUnitOfWork() {
-        UnitOfWork<?> uow = CurrentUnitOfWork.get();
+    private LegacyUnitOfWork<?> currentUnitOfWork() {
+        LegacyUnitOfWork<?> uow = CurrentUnitOfWork.get();
         Class<?> messageType = uow.getMessage() != null ? uow.getMessage().getClass() : null;
         if (invalidMessageType(messageType)) {
             logger.warn("The active Unit of Work is expected to contain a CommandMessage or a DeadlineMessage, but instead contains a [{}]",
@@ -222,7 +222,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @param uow The unit of work to find the managed aggregates for
      * @return a map with the aggregates managed by this repository in the given unit of work
      */
-    protected Map<String, A> managedAggregates(UnitOfWork<?> uow) {
+    protected Map<String, A> managedAggregates(LegacyUnitOfWork<?> uow) {
         return uow.root().getOrComputeResource(aggregatesKey, s -> new HashMap<>());
     }
 
@@ -261,7 +261,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements R
      * @param aggregate The Aggregate to save or delete when the Unit of Work is committed
      */
     protected void prepareForCommit(A aggregate) {
-        if (UnitOfWork.Phase.STARTED.isBefore(CurrentUnitOfWork.get().phase())) {
+        if (LegacyUnitOfWork.Phase.STARTED.isBefore(CurrentUnitOfWork.get().phase())) {
             doCommit(aggregate);
         } else {
             CurrentUnitOfWork.get().onPrepareCommit(u -> {

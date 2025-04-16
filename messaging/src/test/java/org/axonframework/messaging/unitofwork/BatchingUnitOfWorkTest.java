@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
-import static org.axonframework.messaging.unitofwork.UnitOfWork.Phase.*;
+import static org.axonframework.messaging.unitofwork.LegacyUnitOfWork.Phase.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -126,7 +126,7 @@ class BatchingUnitOfWorkTest {
         assertEquals(2, cleanupCounter.get());
     }
 
-    private void registerListeners(UnitOfWork<?> unitOfWork) {
+    private void registerListeners(LegacyUnitOfWork<?> unitOfWork) {
         unitOfWork.onPrepareCommit(u -> transitions.add(new PhaseTransition(u.getMessage(), PREPARE_COMMIT)));
         unitOfWork.onCommit(u -> transitions.add(new PhaseTransition(u.getMessage(), COMMIT)));
         unitOfWork.afterCommit(u -> transitions.add(new PhaseTransition(u.getMessage(), AFTER_COMMIT)));
@@ -142,9 +142,9 @@ class BatchingUnitOfWorkTest {
         return "Result for: " + message.getPayload();
     }
 
-    private void validatePhaseTransitions(List<UnitOfWork.Phase> phases, List<Message<?>> messages) {
+    private void validatePhaseTransitions(List<LegacyUnitOfWork.Phase> phases, List<Message<?>> messages) {
         Iterator<PhaseTransition> iterator = transitions.iterator();
-        for (UnitOfWork.Phase phase : phases) {
+        for (LegacyUnitOfWork.Phase phase : phases) {
             Iterator<Message<?>> messageIterator = phase.isReverseCallbackOrder()
                     ? new LinkedList<>(messages).descendingIterator() : messages.iterator();
             messageIterator.forEachRemaining(message -> {
@@ -200,10 +200,10 @@ class BatchingUnitOfWorkTest {
 
     private static class PhaseTransition {
 
-        private final UnitOfWork.Phase phase;
+        private final LegacyUnitOfWork.Phase phase;
         private final Message<?> message;
 
-        public PhaseTransition(Message<?> message, UnitOfWork.Phase phase) {
+        public PhaseTransition(Message<?> message, LegacyUnitOfWork.Phase phase) {
             this.message = message;
             this.phase = phase;
         }

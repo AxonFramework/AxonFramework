@@ -43,7 +43,7 @@ import javax.annotation.Nonnull;
  * @deprecated In favor of the {@link ProcessingLifecycle}.
  */
 @Deprecated(since = "5.0.0")
-public interface UnitOfWork<T extends Message<?>> {
+public interface LegacyUnitOfWork<T extends Message<?>> {
 
     /**
      * Starts the current unit of work. The UnitOfWork instance is registered with the CurrentUnitOfWork.
@@ -111,7 +111,7 @@ public interface UnitOfWork<T extends Message<?>> {
      *
      * @param handler the handler to register with the Unit of Work
      */
-    void onPrepareCommit(Consumer<UnitOfWork<T>> handler);
+    void onPrepareCommit(Consumer<LegacyUnitOfWork<T>> handler);
 
     /**
      * Register given {@code handler} with the Unit of Work. The handler will be notified when the phase of the
@@ -119,7 +119,7 @@ public interface UnitOfWork<T extends Message<?>> {
      *
      * @param handler the handler to register with the Unit of Work
      */
-    void onCommit(Consumer<UnitOfWork<T>> handler);
+    void onCommit(Consumer<LegacyUnitOfWork<T>> handler);
 
     /**
      * Register given {@code handler} with the Unit of Work. The handler will be notified when the phase of the
@@ -127,7 +127,7 @@ public interface UnitOfWork<T extends Message<?>> {
      *
      * @param handler the handler to register with the Unit of Work
      */
-    void afterCommit(Consumer<UnitOfWork<T>> handler);
+    void afterCommit(Consumer<LegacyUnitOfWork<T>> handler);
 
     /**
      * Register given {@code handler} with the Unit of Work. The handler will be notified when the phase of the
@@ -136,7 +136,7 @@ public interface UnitOfWork<T extends Message<?>> {
      *
      * @param handler the handler to register with the Unit of Work
      */
-    void onRollback(Consumer<UnitOfWork<T>> handler);
+    void onRollback(Consumer<LegacyUnitOfWork<T>> handler);
 
     /**
      * Register given {@code handler} with the Unit of Work. The handler will be notified when the phase of the
@@ -144,7 +144,7 @@ public interface UnitOfWork<T extends Message<?>> {
      *
      * @param handler the handler to register with the Unit of Work
      */
-    void onCleanup(Consumer<UnitOfWork<T>> handler);
+    void onCleanup(Consumer<LegacyUnitOfWork<T>> handler);
 
     /**
      * Returns an optional for the parent of this Unit of Work. The optional holds the Unit of Work that was active when
@@ -153,7 +153,7 @@ public interface UnitOfWork<T extends Message<?>> {
      *
      * @return an optional parent Unit of Work
      */
-    Optional<UnitOfWork<?>> parent();
+    Optional<LegacyUnitOfWork<?>> parent();
 
     /**
      * Check that returns {@code true} if this Unit of Work has not got a parent.
@@ -170,9 +170,9 @@ public interface UnitOfWork<T extends Message<?>> {
      *
      * @return the root of this Unit of Work
      */
-    default UnitOfWork<?> root() {
+    default LegacyUnitOfWork<?> root() {
         //noinspection unchecked // cast is used to remove inspection error in IDE
-        return parent().map(UnitOfWork::root).orElse((UnitOfWork) this);
+        return parent().map(LegacyUnitOfWork::root).orElse((LegacyUnitOfWork) this);
     }
 
     /**
@@ -192,7 +192,7 @@ public interface UnitOfWork<T extends Message<?>> {
      * @param transformOperator The transform operator to apply to the stored message
      * @return this Unit of Work
      */
-    UnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator);
+    LegacyUnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator);
 
     /**
      * Get the correlation data contained in the {@link #getMessage() message} being processed by the Unit of Work.

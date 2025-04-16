@@ -20,6 +20,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.SerializedObjectHolder;
 import org.axonframework.serialization.Serializer;
@@ -30,7 +31,7 @@ import java.util.Map;
  * Generic implementation of the {@link Message} interface containing the {@link #getPayload() payload} and
  * {@link #getMetaData() metadata} in deserialized form.
  * <p>
- * If a {@link GenericMessage} is created while a {@link org.axonframework.messaging.unitofwork.UnitOfWork} is active it
+ * If a {@link GenericMessage} is created while a {@link LegacyUnitOfWork} is active it
  * copies over the correlation data of the {@code UnitOfWork} to the created message.
  *
  * @param <P> The type of {@link #getPayload() payload} contained in this {@link Message}.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType;
 import org.axonframework.messaging.responsetypes.OptionalResponseType;
 import org.axonframework.messaging.responsetypes.PublisherResponseType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
@@ -45,7 +45,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 
-import static java.lang.String.format;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
@@ -235,21 +234,21 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
     /**
      * Either runs the provided {@link Runnable} immediately or adds it to a {@link List} as a resource to the current
-     * {@link UnitOfWork} if {@link SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}. This is
-     * done to ensure any emitter calls made from a message handling function are executed in the
-     * {@link UnitOfWork.Phase#AFTER_COMMIT} phase.
+     * {@link LegacyUnitOfWork} if {@link SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}.
+     * This is done to ensure any emitter calls made from a message handling function are executed in the
+     * {@link LegacyUnitOfWork.Phase#AFTER_COMMIT} phase.
      * <p>
-     * The latter check requires the current UnitOfWork's phase to be {@link UnitOfWork.Phase#STARTED}. This is done to
-     * allow users to circumvent their {@code queryUpdateTask} being handled in the AFTER_COMMIT phase. They can do this
-     * by retrieving the current UnitOfWork and performing any of the {@link QueryUpdateEmitter} calls in a different
-     * phase.
+     * The latter check requires the current UnitOfWork's phase to be {@link LegacyUnitOfWork.Phase#STARTED}. This is
+     * done to allow users to circumvent their {@code queryUpdateTask} being handled in the AFTER_COMMIT phase. They can
+     * do this by retrieving the current UnitOfWork and performing any of the {@link QueryUpdateEmitter} calls in a
+     * different phase.
      *
      * @param queryUpdateTask a {@link Runnable} to be ran immediately or as a resource if
      *                        {@link SimpleQueryUpdateEmitter#inStartedPhaseOfUnitOfWork} returns {@code true}
      */
     private void runOnAfterCommitOrNow(Runnable queryUpdateTask) {
         if (inStartedPhaseOfUnitOfWork()) {
-            UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
+            LegacyUnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
             unitOfWork.getOrComputeResource(
                     this.toString() + QUERY_UPDATE_TASKS_RESOURCE_KEY,
                     resourceKey -> {
@@ -265,13 +264,13 @@ public class SimpleQueryUpdateEmitter implements QueryUpdateEmitter {
 
     /**
      * Return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if the phase is
-     * {@link UnitOfWork.Phase#STARTED}, otherwise {@code false}.
+     * {@link LegacyUnitOfWork.Phase#STARTED}, otherwise {@code false}.
      *
      * @return {@code true} if the {@link CurrentUnitOfWork#isStarted()} returns {@code true} and in if the phase is
-     * {@link UnitOfWork.Phase#STARTED}, otherwise {@code false}.
+     * {@link LegacyUnitOfWork.Phase#STARTED}, otherwise {@code false}.
      */
     private boolean inStartedPhaseOfUnitOfWork() {
-        return CurrentUnitOfWork.isStarted() && UnitOfWork.Phase.STARTED.equals(CurrentUnitOfWork.get().phase());
+        return CurrentUnitOfWork.isStarted() && LegacyUnitOfWork.Phase.STARTED.equals(CurrentUnitOfWork.get().phase());
     }
 
     @Override

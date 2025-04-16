@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -48,7 +48,7 @@ class ConflictResolutionTest {
 
     @AfterEach
     void tearDown() {
-        CurrentUnitOfWork.ifStarted(UnitOfWork::commit);
+        CurrentUnitOfWork.ifStarted(LegacyUnitOfWork::commit);
     }
 
     @Test
