@@ -35,8 +35,9 @@ import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
  *
  * @author Allard Buijze
  * @since 0.6
+ * @deprecated In favor of the {@link AsyncUnitOfWork}.
  */
-@Deprecated // TODO #3064 Remove once old AbstractUnitOfWork is removed
+@Deprecated(since = "5.0.0")
 public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<T> {
 
     private final MessageProcessingContext<T> processingContext;

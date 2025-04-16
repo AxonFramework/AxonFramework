@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,9 @@ import javax.annotation.Nonnull;
  *
  * @author Allard Buijze
  * @since 0.6
+ * @deprecated In favor of the {@link ProcessingLifecycle}.
  */
-@Deprecated // TODO #3064 Remove when AsyncUnitOfWork is fully integrated
+@Deprecated(since = "5.0.0")
 public interface UnitOfWork<T extends Message<?>> {
 
     /**
