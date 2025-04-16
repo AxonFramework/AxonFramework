@@ -48,7 +48,7 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link SequenceEventStorageEngine}.
+ * Test class validating the {@link LegacySequenceEventStorageEngine}.
  *
  * @author Allard Buijze
  */
@@ -57,13 +57,13 @@ class SequenceEventStorageEngineTest {
     private LegacyEventStorageEngine activeStorage;
     private LegacyEventStorageEngine historicStorage;
 
-    private SequenceEventStorageEngine testSubject;
+    private LegacySequenceEventStorageEngine testSubject;
 
     @BeforeEach
     void setUp() {
         activeStorage = mock(LegacyEventStorageEngine.class, "activeStorage");
         historicStorage = mock(LegacyEventStorageEngine.class, "historicStorage");
-        testSubject = new SequenceEventStorageEngine(historicStorage, activeStorage);
+        testSubject = new LegacySequenceEventStorageEngine(historicStorage, activeStorage);
 
         when(historicStorage.readSnapshot(anyString())).thenReturn(Optional.empty());
         when(activeStorage.readSnapshot(anyString())).thenReturn(Optional.empty());
@@ -294,7 +294,7 @@ class SequenceEventStorageEngineTest {
         historicStorage = new LegacyInMemoryEventStorageEngine();
         activeStorage = new LegacyInMemoryEventStorageEngine(1);
 
-        testSubject = new SequenceEventStorageEngine(historicStorage, activeStorage);
+        testSubject = new LegacySequenceEventStorageEngine(historicStorage, activeStorage);
 
         DomainEventMessage<String> event1 = new GenericDomainEventMessage<>(
                 "type", "aggregate", 0, new MessageType("event"), "test1"

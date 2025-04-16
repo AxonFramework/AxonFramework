@@ -50,12 +50,12 @@ import javax.annotation.Nonnull;
  * @author Allard Buijze
  * @since 3.0
  */
-public class SequenceEventStorageEngine implements LegacyEventStorageEngine {
+public class LegacySequenceEventStorageEngine implements LegacyEventStorageEngine {
 
     private final LegacyEventStorageEngine historicStorage, activeStorage;
 
     /**
-     * Initializes a new {@link SequenceEventStorageEngine} using given {@code historicStorage} and {@code
+     * Initializes a new {@link LegacySequenceEventStorageEngine} using given {@code historicStorage} and {@code
      * activeStorage}.
      *
      * @param historicStorage the event storage engine that contains historic events. This can be backed by a read-only
@@ -63,7 +63,8 @@ public class SequenceEventStorageEngine implements LegacyEventStorageEngine {
      * @param activeStorage   the event storage engine that contains 'new' events and to which new events and snapshots
      *                        will be written
      */
-    public SequenceEventStorageEngine(LegacyEventStorageEngine historicStorage, LegacyEventStorageEngine activeStorage) {
+    public LegacySequenceEventStorageEngine(LegacyEventStorageEngine historicStorage,
+                                            LegacyEventStorageEngine activeStorage) {
         this.historicStorage = historicStorage;
         this.activeStorage = activeStorage;
     }

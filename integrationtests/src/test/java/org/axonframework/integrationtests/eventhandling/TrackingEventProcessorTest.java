@@ -44,7 +44,7 @@ import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.eventsourcing.eventstore.SequenceEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacySequenceEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.integrationtests.utils.MockException;
 import org.axonframework.messaging.Message;
@@ -274,7 +274,8 @@ class TrackingEventProcessorTest {
     void sequenceEventStorageReceivesEachEventOnlyOnce() throws Exception {
         LegacyInMemoryEventStorageEngine historic = new LegacyInMemoryEventStorageEngine();
         LegacyInMemoryEventStorageEngine active = new LegacyInMemoryEventStorageEngine(2);
-        SequenceEventStorageEngine sequenceEventStorageEngine = new SequenceEventStorageEngine(historic, active);
+        LegacySequenceEventStorageEngine sequenceEventStorageEngine =
+                new LegacySequenceEventStorageEngine(historic, active);
 
         LegacyEmbeddedEventStore sequenceEventBus = LegacyEmbeddedEventStore.builder()
                                                                             .storageEngine(sequenceEventStorageEngine)
