@@ -100,7 +100,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CachingRepositoryWithNestedUnitOfWorkTest {
 
     private final List<String> events = new ArrayList<>();
-    private CachingEventSourcingRepository<TestAggregate> repository;
+    private LegacyCachingEventSourcingRepository<TestAggregate> repository;
     private Cache realCache;
     private AggregateFactory<TestAggregate> aggregateFactory;
     private LegacyEventStore eventStore;
@@ -146,41 +146,41 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
 
     @Test
     void withoutCache() throws Exception {
-        repository = CachingEventSourcingRepository.builder(TestAggregate.class)
-                                                   .aggregateFactory(aggregateFactory)
-                                                   .eventStore(eventStore)
-                                                   .cache(NoCache.INSTANCE)
-                                                   .build();
+        repository = LegacyCachingEventSourcingRepository.builder(TestAggregate.class)
+                                                         .aggregateFactory(aggregateFactory)
+                                                         .eventStore(eventStore)
+                                                         .cache(NoCache.INSTANCE)
+                                                         .build();
         executeComplexScenario("ComplexWithoutCache");
     }
 
     @Test
     void withCache() throws Exception {
-        repository = CachingEventSourcingRepository.builder(TestAggregate.class)
-                                                   .aggregateFactory(aggregateFactory)
-                                                   .eventStore(eventStore)
-                                                   .cache(realCache)
-                                                   .build();
+        repository = LegacyCachingEventSourcingRepository.builder(TestAggregate.class)
+                                                         .aggregateFactory(aggregateFactory)
+                                                         .eventStore(eventStore)
+                                                         .cache(realCache)
+                                                         .build();
         executeComplexScenario("ComplexWithCache");
     }
 
     @Test
     void minimalScenarioWithoutCache() throws Exception {
-        repository = CachingEventSourcingRepository.builder(TestAggregate.class)
-                                                   .aggregateFactory(aggregateFactory)
-                                                   .eventStore(eventStore)
-                                                   .cache(NoCache.INSTANCE)
-                                                   .build();
+        repository = LegacyCachingEventSourcingRepository.builder(TestAggregate.class)
+                                                         .aggregateFactory(aggregateFactory)
+                                                         .eventStore(eventStore)
+                                                         .cache(NoCache.INSTANCE)
+                                                         .build();
         testMinimalScenario("MinimalScenarioWithoutCache");
     }
 
     @Test
     void minimalScenarioWithCache() throws Exception {
-        repository = CachingEventSourcingRepository.builder(TestAggregate.class)
-                                                   .aggregateFactory(aggregateFactory)
-                                                   .eventStore(eventStore)
-                                                   .cache(realCache)
-                                                   .build();
+        repository = LegacyCachingEventSourcingRepository.builder(TestAggregate.class)
+                                                         .aggregateFactory(aggregateFactory)
+                                                         .eventStore(eventStore)
+                                                         .cache(realCache)
+                                                         .build();
         testMinimalScenario("MinimalScenarioWithCache");
     }
 

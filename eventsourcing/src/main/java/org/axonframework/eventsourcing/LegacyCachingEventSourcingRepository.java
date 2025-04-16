@@ -39,7 +39,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @deprecated In favor of an instance to be constructed still.
  */
 @Deprecated(since = "5.0.0")
-public class CachingEventSourcingRepository<T> extends LegacyEventSourcingRepository<T> {
+public class LegacyCachingEventSourcingRepository<T> extends LegacyEventSourcingRepository<T> {
 
     private final LegacyEventStore eventStore;
     private final RepositoryProvider repositoryProvider;
@@ -47,7 +47,7 @@ public class CachingEventSourcingRepository<T> extends LegacyEventSourcingReposi
     private final SnapshotTriggerDefinition snapshotTriggerDefinition;
 
     /**
-     * Instantiate a {@link CachingEventSourcingRepository} based on the fields contained in the
+     * Instantiate a {@link LegacyCachingEventSourcingRepository} based on the fields contained in the
      * {@link LegacyEventSourcingRepository.Builder}.
      * <p>
      * A goal of the provided Builder is to create an {@link AggregateModel} specifying generic {@code T} as the
@@ -65,9 +65,9 @@ public class CachingEventSourcingRepository<T> extends LegacyEventSourcingReposi
      * case.
      *
      * @param builder the {@link LegacyEventSourcingRepository.Builder} used to instantiate a
-     *                {@link CachingEventSourcingRepository} instance
+     *                {@link LegacyCachingEventSourcingRepository} instance
      */
-    protected CachingEventSourcingRepository(Builder<T> builder) {
+    protected LegacyCachingEventSourcingRepository(Builder<T> builder) {
         super(builder);
         assertNonNull(builder.cache, "The Cache is a hard requirement and should be provided");
         this.cache = builder.cache;

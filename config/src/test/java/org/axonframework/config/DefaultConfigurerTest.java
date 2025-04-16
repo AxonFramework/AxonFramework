@@ -46,7 +46,7 @@ import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
-import org.axonframework.eventsourcing.CachingEventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyCachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
@@ -482,7 +482,7 @@ class DefaultConfigurerTest {
                                                   ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
-        assertEquals(CachingEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
+        assertEquals(LegacyCachingEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
     }
 
     @Test

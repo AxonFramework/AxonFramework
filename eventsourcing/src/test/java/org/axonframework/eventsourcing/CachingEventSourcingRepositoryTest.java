@@ -54,7 +54,7 @@ import static org.mockito.Mockito.*;
  */
 class CachingEventSourcingRepositoryTest {
 
-    private CachingEventSourcingRepository<StubAggregate> testSubject;
+    private LegacyCachingEventSourcingRepository<StubAggregate> testSubject;
     private LegacyEventStore mockEventStore;
     private Cache cache;
     private org.ehcache.core.Ehcache ehCache;
@@ -78,11 +78,11 @@ class CachingEventSourcingRepositoryTest {
                                 .build());
         cache = spy(new EhCacheAdapter(ehCache));
 
-        testSubject = CachingEventSourcingRepository.builder(StubAggregate.class)
-                                                    .aggregateFactory(new StubAggregateFactory())
-                                                    .eventStore(mockEventStore)
-                                                    .cache(cache)
-                                                    .build();
+        testSubject = LegacyCachingEventSourcingRepository.builder(StubAggregate.class)
+                                                          .aggregateFactory(new StubAggregateFactory())
+                                                          .eventStore(mockEventStore)
+                                                          .cache(cache)
+                                                          .build();
     }
 
     @AfterEach

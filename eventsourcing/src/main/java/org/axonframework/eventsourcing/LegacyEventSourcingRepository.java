@@ -93,10 +93,10 @@ public class LegacyEventSourcingRepository<T> extends LegacyLockingRepository<T,
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link LegacyEventSourcingRepository} for aggregate type {@code T}. Can
-     * also be used to instantiate a {@link CachingEventSourcingRepository} for aggregate type {@code T}. This Builder
-     * will check whether a {@link Cache} is provided. If this holds, the {@link Builder#build()} function returns a
-     * CachingEventSourcingRepository instead of an EventSourcingRepository.
+     * Instantiate a Builder to be able to create a {@link LegacyEventSourcingRepository} for aggregate type {@code T}.
+     * Can also be used to instantiate a {@link LegacyCachingEventSourcingRepository} for aggregate type {@code T}. This
+     * Builder will check whether a {@link Cache} is provided. If this holds, the {@link Builder#build()} function
+     * returns a CachingEventSourcingRepository instead of an EventSourcingRepository.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link org.axonframework.common.lock.PessimisticLockFactory} and the
      * {@link SnapshotTriggerDefinition} to a {@link NoSnapshotTriggerDefinition} implementation. A goal of this Builder
@@ -216,8 +216,8 @@ public class LegacyEventSourcingRepository<T> extends LegacyLockingRepository<T,
 
     /**
      * Builder class to instantiate a {@link LegacyEventSourcingRepository}. Can also be used to instantiate a
-     * {@link CachingEventSourcingRepository}. This Builder will check whether a {@link Cache} is provided. If this
-     * holds, the {@link Builder#build()} function returns a CachingEventSourcingRepository instead of an
+     * {@link LegacyCachingEventSourcingRepository}. This Builder will check whether a {@link Cache} is provided. If
+     * this holds, the {@link Builder#build()} function returns a CachingEventSourcingRepository instead of an
      * EventSourcingRepository.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link org.axonframework.common.lock.PessimisticLockFactory},
@@ -275,9 +275,8 @@ public class LegacyEventSourcingRepository<T> extends LegacyLockingRepository<T,
         }
 
         /**
-         * {@inheritDoc}
-         * If this Builder is used to instantiate a {@link CachingEventSourcingRepository}, do note that an optimistic
-         * locking strategy is not compatible with a caching approach.
+         * {@inheritDoc} If this Builder is used to instantiate a {@link LegacyCachingEventSourcingRepository}, do note
+         * that an optimistic locking strategy is not compatible with a caching approach.
          */
         @Override
         public Builder<T> lockFactory(LockFactory lockFactory) {
@@ -391,19 +390,19 @@ public class LegacyEventSourcingRepository<T> extends LegacyLockingRepository<T,
         }
 
         /**
-         * Initializes a {@link LegacyEventSourcingRepository} or {@link CachingEventSourcingRepository} as specified
-         * through this Builder. Will return a CachingEventSourcingRepository if {@link #cache(Cache)} has been set.
-         * Otherwise builds a regular EventSourcingRepository
+         * Initializes a {@link LegacyEventSourcingRepository} or {@link LegacyCachingEventSourcingRepository} as
+         * specified through this Builder. Will return a CachingEventSourcingRepository if {@link #cache(Cache)} has
+         * been set. Otherwise builds a regular EventSourcingRepository
          *
          * @param <R> a generic extending {@link LegacyEventSourcingRepository}, so allowing both an
-         *            EventSourcingRepository and {@link CachingEventSourcingRepository} return type
-         * @return a {@link LegacyEventSourcingRepository} or {@link CachingEventSourcingRepository} (if
+         *            EventSourcingRepository and {@link LegacyCachingEventSourcingRepository} return type
+         * @return a {@link LegacyEventSourcingRepository} or {@link LegacyCachingEventSourcingRepository} (if
          * {@link #cache(Cache)} has been set) as specified through this Builder
          */
         @SuppressWarnings("unchecked")
         public <R extends LegacyEventSourcingRepository<T>> R build() {
             return cache != null
-                    ? (R) new CachingEventSourcingRepository<>(this)
+                    ? (R) new LegacyCachingEventSourcingRepository<>(this)
                     : (R) new LegacyEventSourcingRepository<>(this);
         }
 
