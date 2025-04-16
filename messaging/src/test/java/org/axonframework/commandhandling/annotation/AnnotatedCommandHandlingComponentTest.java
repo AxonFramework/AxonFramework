@@ -50,14 +50,13 @@ class AnnotatedCommandHandlingComponentTest {
 
     private static final MessageType TEST_TYPE = new MessageType("command");
 
-    private CommandBus commandBus;
     private MyCommandHandler annotatedCommandHandler;
 
     private AnnotatedCommandHandlingComponent<MyCommandHandler> testSubject;
 
     @BeforeEach
     void setUp() {
-        commandBus = mock(CommandBus.class);
+        CommandBus commandBus = mock(CommandBus.class);
         annotatedCommandHandler = new MyCommandHandler();
         ParameterResolverFactory parameterResolverFactory = ClasspathParameterResolverFactory.forClass(getClass());
 
@@ -69,7 +68,8 @@ class AnnotatedCommandHandlingComponentTest {
 
     @Test
     void handlerDispatchingVoidReturnType() {
-        CommandMessage<String> testCommand = new GenericCommandMessage<>(new MessageType(String.class), "myStringPayload");
+        CommandMessage<String> testCommand = new GenericCommandMessage<>(new MessageType(String.class),
+                                                                         "myStringPayload");
 
         Object result = testSubject.handle(testCommand, mock(ProcessingContext.class))
                                    .first()
@@ -120,7 +120,8 @@ class AnnotatedCommandHandlingComponentTest {
     @Test
     void handlerDispatchingThrowingException() {
         try {
-            testSubject.handle(new GenericCommandMessage<>(new MessageType(HashSet.class), new HashSet<>()), mock(ProcessingContext.class))
+            testSubject.handle(new GenericCommandMessage<>(new MessageType(HashSet.class), new HashSet<>()),
+                               mock(ProcessingContext.class))
                        .first()
                        .asCompletableFuture()
                        .join();
@@ -138,7 +139,8 @@ class AnnotatedCommandHandlingComponentTest {
         CommandMessage<Object> command = new GenericCommandMessage<>(TEST_TYPE, new LinkedList<>());
 
         var exception = assertThrows(CompletionException.class,
-                                     () -> testSubject.handle(command, mock(ProcessingContext.class)).first().asCompletableFuture().join());
+                                     () -> testSubject.handle(command, mock(ProcessingContext.class)).first()
+                                                      .asCompletableFuture().join());
         assertInstanceOf(NoHandlerForCommandException.class, exception.getCause());
     }
 
