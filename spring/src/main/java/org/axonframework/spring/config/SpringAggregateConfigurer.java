@@ -29,7 +29,7 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.CommandTargetResolver;
-import org.axonframework.modelling.command.GenericJpaRepository;
+import org.axonframework.modelling.command.LegacyGenericJpaRepository;
 import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.springframework.beans.BeansException;
@@ -168,17 +168,19 @@ public class SpringAggregateConfigurer<T> implements ConfigurerModule, Applicati
                     c -> applicationContext.getBean(aggregateRepository, LegacyRepository.class)
             );
         } else if (isEntityManagerAnnotationPresent(aggregateType)) {
-            aggregateConfigurer.configureRepository(c -> GenericJpaRepository.builder(aggregateType)
-                                                                             .parameterResolverFactory(c.parameterResolverFactory())
-                                                                             .handlerDefinition(c.handlerDefinition(aggregateType))
-                                                                             .lockFactory(c.getComponent(
-                                                                                     LockFactory.class, () -> NullLockFactory.INSTANCE
-                                                                             ))
-                                                                             .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
-                                                                             .eventBus(c.eventBus())
-                                                                             .repositoryProvider(c::repository)
-                                                                             .spanFactory(c.getComponent(RepositorySpanFactory.class))
-                                                                             .build());
+            aggregateConfigurer.configureRepository(
+                    c -> LegacyGenericJpaRepository.builder(aggregateType)
+                                                   .parameterResolverFactory(c.parameterResolverFactory())
+                                                   .handlerDefinition(c.handlerDefinition(aggregateType))
+                                                   .lockFactory(c.getComponent(
+                                                           LockFactory.class, () -> NullLockFactory.INSTANCE
+                                                   ))
+                                                   .entityManagerProvider(c.getComponent(EntityManagerProvider.class))
+                                                   .eventBus(c.eventBus())
+                                                   .repositoryProvider(c::repository)
+                                                   .spanFactory(c.getComponent(RepositorySpanFactory.class))
+                                                   .build()
+            );
         }
 
         if (snapshotTriggerDefinition != null) {

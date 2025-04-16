@@ -36,7 +36,7 @@ import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.CreationPolicy;
-import org.axonframework.modelling.command.GenericJpaRepository;
+import org.axonframework.modelling.command.LegacyGenericJpaRepository;
 import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
@@ -162,7 +162,7 @@ class AggregateStereotypeAutoConfigurationTest {
         testApplicationContext.run(context -> {
             assertTrue(context.containsBean(expectedRepositoryBeanName));
             Object actual = context.getBean(expectedRepositoryBeanName);
-            assertTrue(actual instanceof GenericJpaRepository, "Expected Jpa repository to have been configured");
+            assertTrue(actual instanceof LegacyGenericJpaRepository, "Expected Jpa repository to have been configured");
         });
     }
 

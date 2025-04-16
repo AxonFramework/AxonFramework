@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.polymorphic;
 
 import jakarta.persistence.EntityManager;
 import org.axonframework.eventhandling.EventBus;
-import org.axonframework.modelling.command.GenericJpaRepository;
+import org.axonframework.modelling.command.LegacyGenericJpaRepository;
 import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.junit.jupiter.api.*;
@@ -45,7 +45,7 @@ public class PolymorphicJpaAggregateAnnotationCommandHandlerTest
     public <T> LegacyRepository<T> repository(Class<T> aggregateType,
                                               Set<Class<? extends T>> subTypes,
                                               EntityManager entityManager) {
-        GenericJpaRepository<T> repository = GenericJpaRepository
+        LegacyGenericJpaRepository<T> repository = LegacyGenericJpaRepository
                 .builder(aggregateType)
                 .subtypes(subTypes)
                 .entityManagerProvider(() -> entityManager)

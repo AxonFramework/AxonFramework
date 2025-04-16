@@ -66,7 +66,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
-import org.axonframework.modelling.command.GenericJpaRepository;
+import org.axonframework.modelling.command.LegacyGenericJpaRepository;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
@@ -315,13 +315,14 @@ class DefaultConfigurerTest {
                                        .configureAggregate(
                                                defaultConfiguration(StubAggregate.class)
                                                        .configureRepository(
-                                                               c -> GenericJpaRepository.builder(StubAggregate.class)
-                                                                                        .entityManagerProvider(new SimpleEntityManagerProvider(
-                                                                                                entityManager
-                                                                                        ))
-                                                                                        .eventBus(c.eventBus())
-                                                                                        .parameterResolverFactory(c.parameterResolverFactory())
-                                                                                        .build()
+                                                               c -> LegacyGenericJpaRepository.builder(StubAggregate.class)
+                                                                                              .entityManagerProvider(new SimpleEntityManagerProvider(
+                                                                                                      entityManager
+                                                                                              ))
+                                                                                              .eventBus(c.eventBus())
+                                                                                              .parameterResolverFactory(
+                                                                                                      c.parameterResolverFactory())
+                                                                                              .build()
                                                        )
                                        )
                                        .configureSerializer(c -> TestSerializer.xStreamSerializer())
@@ -394,13 +395,13 @@ class DefaultConfigurerTest {
                                                Collections.emptyList())
                                        )
                                        .configureAggregate(defaultConfiguration(StubAggregate.class).configureRepository(
-                                               c -> GenericJpaRepository.builder(StubAggregate.class)
-                                                                        .entityManagerProvider(new SimpleEntityManagerProvider(
-                                                                                entityManager
-                                                                        ))
-                                                                        .eventBus(c.eventBus())
-                                                                        .parameterResolverFactory(c.parameterResolverFactory())
-                                                                        .build())
+                                               c -> LegacyGenericJpaRepository.builder(StubAggregate.class)
+                                                                              .entityManagerProvider(new SimpleEntityManagerProvider(
+                                                                                      entityManager
+                                                                              ))
+                                                                              .eventBus(c.eventBus())
+                                                                              .parameterResolverFactory(c.parameterResolverFactory())
+                                                                              .build())
                                        )
                                        .configureSerializer(c -> TestSerializer.xStreamSerializer())
                                        .buildConfiguration();

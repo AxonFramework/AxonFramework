@@ -49,14 +49,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link GenericJpaRepository}.
+ * Test class validating the {@link LegacyGenericJpaRepository}.
  *
  * @author Allard Buijze
  */
 class GenericJpaRepositoryTest {
 
     private EntityManager mockEntityManager;
-    private GenericJpaRepository<StubJpaAggregate> testSubject;
+    private LegacyGenericJpaRepository<StubJpaAggregate> testSubject;
     private String aggregateId;
     private StubJpaAggregate aggregate;
     private Function<String, ?> identifierConverter;
@@ -71,7 +71,8 @@ class GenericJpaRepositoryTest {
         identifierConverter = mock(Function.class);
         eventBus = SimpleEventBus.builder().build();
         when(identifierConverter.apply(anyString())).thenAnswer(i -> i.getArguments()[0]);
-        testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
+        testSubject =
+                LegacyGenericJpaRepository.builder(StubJpaAggregate.class)
                                           .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
                                           .eventBus(eventBus)
                                           .identifierConverter(identifierConverter)
@@ -137,11 +138,11 @@ class GenericJpaRepositoryTest {
     void aggregateCreatesSequenceNumbersForNewAggregatesWhenUsingDomainEventSequenceAwareEventBus() {
         DomainSequenceAwareEventBus testEventBus = new DomainSequenceAwareEventBus();
 
-        testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
-                                          .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
-                                          .eventBus(testEventBus)
-                                          .identifierConverter(identifierConverter)
-                                          .build();
+        testSubject = LegacyGenericJpaRepository.builder(StubJpaAggregate.class)
+                                                .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                                .eventBus(testEventBus)
+                                                .identifierConverter(identifierConverter)
+                                                .build();
 
         LegacyDefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
             Aggregate<StubJpaAggregate> agg =
@@ -180,11 +181,11 @@ class GenericJpaRepositoryTest {
     void aggregateDoesNotCreateSequenceNumbersWhenEventBusIsNotDomainEventSequenceAware() {
         SimpleEventBus testEventBus = spy(SimpleEventBus.builder().build());
 
-        testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
-                                          .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
-                                          .eventBus(testEventBus)
-                                          .identifierConverter(identifierConverter)
-                                          .build();
+        testSubject = LegacyGenericJpaRepository.builder(StubJpaAggregate.class)
+                                                .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                                .eventBus(testEventBus)
+                                                .identifierConverter(identifierConverter)
+                                                .build();
 
         LegacyDefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
             Aggregate<StubJpaAggregate> agg = testSubject.load(aggregateId);
@@ -214,12 +215,12 @@ class GenericJpaRepositoryTest {
         String expectedThirdPayload = "test3";
 
         DomainSequenceAwareEventBus testEventBus = new DomainSequenceAwareEventBus();
-        testSubject = GenericJpaRepository.builder(StubJpaAggregate.class)
-                                          .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
-                                          .eventBus(testEventBus)
-                                          .identifierConverter(identifierConverter)
-                                          .disableSequenceNumberGeneration()
-                                          .build();
+        testSubject = LegacyGenericJpaRepository.builder(StubJpaAggregate.class)
+                                                .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                                .eventBus(testEventBus)
+                                                .identifierConverter(identifierConverter)
+                                                .disableSequenceNumberGeneration()
+                                                .build();
 
         LegacyDefaultUnitOfWork.startAndGet(null)
                                .executeWithResult(() -> {
@@ -294,20 +295,20 @@ class GenericJpaRepositoryTest {
 
     @Test
     void buildWithNullSubtypesThrowsAxonConfigurationException() {
-        GenericJpaRepository.Builder<StubJpaAggregate> builderTestSubject =
-                GenericJpaRepository.builder(StubJpaAggregate.class)
-                                    .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
-                                    .eventBus(eventBus);
+        LegacyGenericJpaRepository.Builder<StubJpaAggregate> builderTestSubject =
+                LegacyGenericJpaRepository.builder(StubJpaAggregate.class)
+                                          .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                          .eventBus(eventBus);
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtypes(null));
     }
 
     @Test
     void buildWithNullSubtypeThrowsAxonConfigurationException() {
-        GenericJpaRepository.Builder<StubJpaAggregate> builderTestSubject =
-                GenericJpaRepository.builder(StubJpaAggregate.class)
-                                    .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
-                                    .eventBus(eventBus);
+        LegacyGenericJpaRepository.Builder<StubJpaAggregate> builderTestSubject =
+                LegacyGenericJpaRepository.builder(StubJpaAggregate.class)
+                                          .entityManagerProvider(new SimpleEntityManagerProvider(mockEntityManager))
+                                          .eventBus(eventBus);
 
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtype(null));
     }

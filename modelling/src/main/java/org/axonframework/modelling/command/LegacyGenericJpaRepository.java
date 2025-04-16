@@ -64,7 +64,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @deprecated In favor of the {@link org.axonframework.modelling.SimpleRepository}.
  */
 @Deprecated(since = "5.0.0")
-public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggregate<T>> {
+public class LegacyGenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggregate<T>> {
 
     private final EntityManagerProvider entityManagerProvider;
     private final EventBus eventBus;
@@ -75,7 +75,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
     private boolean forceFlushOnSave = true;
 
     /**
-     * Instantiate a Builder to be able to create a {@link GenericJpaRepository} for aggregate type {@code T}.
+     * Instantiate a Builder to be able to create a {@link LegacyGenericJpaRepository} for aggregate type {@code T}.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, the
      * {@code identifierConverter} to {@link Function#identity()}, the {@link RepositorySpanFactory} is defaulted to a
@@ -93,14 +93,14 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      *
      * @param <T>           The type of aggregate to build the repository for
      * @param aggregateType The type of aggregate to build the repository for
-     * @return a Builder to be able to create a {@link GenericJpaRepository}
+     * @return a Builder to be able to create a {@link LegacyGenericJpaRepository}
      */
     public static <T> Builder<T> builder(Class<T> aggregateType) {
         return new Builder<>(aggregateType);
     }
 
     /**
-     * Instantiate a {@link GenericJpaRepository} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link LegacyGenericJpaRepository} based on the fields contained in the {@link Builder}.
      * <p>
      * A goal of the provided Builder is to create an {@link AggregateModel} specifying generic {@code T} as the
      * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type.
@@ -113,9 +113,9 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
      * {@code identifierConverter} are not {@code null}, resulting in an AxonConfigurationException if for any of these
      * this is the case.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link GenericJpaRepository} instance
+     * @param builder the {@link Builder} used to instantiate a {@link LegacyGenericJpaRepository} instance
      */
-    protected GenericJpaRepository(Builder<T> builder) {
+    protected LegacyGenericJpaRepository(Builder<T> builder) {
         super(builder);
         this.entityManagerProvider = builder.entityManagerProvider;
         this.eventBus = builder.eventBus;
@@ -193,7 +193,7 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
     }
 
     /**
-     * Builder class to instantiate a {@link GenericJpaRepository} for aggregate type {@code T}.
+     * Builder class to instantiate a {@link LegacyGenericJpaRepository} for aggregate type {@code T}.
      * <p>
      * The {@link LockFactory} is defaulted to an {@link NullLockFactory}, thus providing no additional locking, the
      * {@code identifierConverter} to {@link Function#identity()}, the {@link RepositorySpanFactory} defaults to a
@@ -347,12 +347,12 @@ public class GenericJpaRepository<T> extends LockingRepository<T, AnnotatedAggre
         }
 
         /**
-         * Initializes a {@link GenericJpaRepository} as specified through this Builder.
+         * Initializes a {@link LegacyGenericJpaRepository} as specified through this Builder.
          *
-         * @return a {@link GenericJpaRepository} as specified through this Builder
+         * @return a {@link LegacyGenericJpaRepository} as specified through this Builder
          */
-        public GenericJpaRepository<T> build() {
-            return new GenericJpaRepository<>(this);
+        public LegacyGenericJpaRepository<T> build() {
+            return new LegacyGenericJpaRepository<>(this);
         }
 
         @Override

@@ -22,7 +22,7 @@ import jakarta.persistence.Id;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
-import org.axonframework.modelling.command.GenericJpaRepository;
+import org.axonframework.modelling.command.LegacyGenericJpaRepository;
 import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.axonframework.springboot.utils.TestSerializer;
@@ -149,7 +149,7 @@ class RepositoryWiringTest {
             LegacyRepository<StateStoredAggregateContext.StateStoredAggregate> repositoryFromHandler =
                     externalHandler.getRepository();
             assertNotNull(repositoryFromHandler);
-            assertEquals(repositoryFromHandler.getClass(), GenericJpaRepository.class);
+            assertEquals(repositoryFromHandler.getClass(), LegacyGenericJpaRepository.class);
             Object repositoryFromContext =
                     context.getBean(repositoryBeanName(StateStoredAggregateContext.StateStoredAggregate.class));
             assertNotNull(repositoryFromContext);
