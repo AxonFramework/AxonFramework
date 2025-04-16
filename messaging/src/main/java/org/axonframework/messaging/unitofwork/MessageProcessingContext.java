@@ -35,8 +35,9 @@ import java.util.function.Function;
  *
  * @author Rene de Waele
  * @since 3.0
+ * @deprecated This instance will be removed.
  */
-@Deprecated // TODO #3064 Remove when AsyncUnitOfWork is fully integrated
+@Deprecated(since ="5.0.0")
 public class MessageProcessingContext<T extends Message<?>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageProcessingContext.class);

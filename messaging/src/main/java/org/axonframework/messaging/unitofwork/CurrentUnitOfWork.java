@@ -30,8 +30,9 @@ import java.util.function.Function;
  *
  * @author Allard Buijze
  * @since 0.6
+ * @deprecated This instance will be removed.
  */
-@Deprecated // TODO #3064 Remove when AsyncUnitOfWork is fully integrated
+@Deprecated(since ="5.0.0")
 public abstract class CurrentUnitOfWork {
 
     private static final ThreadLocal<Deque<LegacyUnitOfWork<?>>> CURRENT = new ThreadLocal<>();
