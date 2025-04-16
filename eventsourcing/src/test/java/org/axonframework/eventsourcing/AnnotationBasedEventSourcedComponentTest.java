@@ -36,14 +36,14 @@ import java.time.ZoneId;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link AnnotationBasedEntityEvolver}.
+ * Test class validating the {@link AnnotationBasedEventSourcedComponent}.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-class AnnotationBasedEntityEvolverTest {
+class AnnotationBasedEventSourcedComponentTest {
 
-    private static final EntityEvolver<TestState> ENTITY_EVOLVER = new AnnotationBasedEntityEvolver<>(TestState.class);
+    private static final EntityEvolver<TestState> ENTITY_EVOLVER = new AnnotationBasedEventSourcedComponent<>(TestState.class);
 
     private final ProcessingContext processingContext = ProcessingContext.NONE;
 
@@ -162,12 +162,12 @@ class AnnotationBasedEntityEvolverTest {
         @Test
         void doNotHandleNotDeclaredEventType() {
             // given
-            var eventStateApplier = new AnnotationBasedEntityEvolver<>(HandlingJustStringState.class);
+            var eventSourcedComponent = new AnnotationBasedEventSourcedComponent<>(HandlingJustStringState.class);
             var state = new HandlingJustStringState();
             var event = domainEvent(0);
 
             // when
-            state = eventStateApplier.evolve(state, event, processingContext);
+            state = eventSourcedComponent.evolve(state, event, processingContext);
 
             // then
             assertEquals(0, state.handledCount);
@@ -208,7 +208,7 @@ class AnnotationBasedEntityEvolverTest {
             }
         }
 
-        private static final EntityEvolver<RecordState> ENTITY_EVOLVER = new AnnotationBasedEntityEvolver<>(
+        private static final EntityEvolver<RecordState> ENTITY_EVOLVER = new AnnotationBasedEventSourcedComponent<>(
                 RecordState.class);
 
         @Test
@@ -244,7 +244,7 @@ class AnnotationBasedEntityEvolverTest {
         @Test
         void throwsStateEvolvingExceptionOnExceptionInsideEventHandler() {
             // given
-            var testSubject = new AnnotationBasedEntityEvolver<>(ErrorThrowingState.class);
+            var testSubject = new AnnotationBasedEventSourcedComponent<>(ErrorThrowingState.class);
             var state = new ErrorThrowingState();
             var event = domainEvent(0);
 
@@ -252,7 +252,7 @@ class AnnotationBasedEntityEvolverTest {
             var exception = assertThrows(StateEvolvingException.class,
                                          () -> testSubject.evolve(state, event, processingContext));
             assertEquals(
-                    "Failed to apply event [event#0.0.1] in order to evolve [class org.axonframework.eventsourcing.AnnotationBasedEntityEvolverTest$ErrorThrowingState] state",
+                    "Failed to apply event [event#0.0.1] in order to evolve [class org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponentTest$ErrorThrowingState] state",
                     exception.getMessage()
             );
             assertInstanceOf(RuntimeException.class, exception.getCause());

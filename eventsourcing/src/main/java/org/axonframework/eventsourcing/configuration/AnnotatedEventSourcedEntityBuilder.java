@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.ConstructorUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.configuration.ComponentFactory;
-import org.axonframework.eventsourcing.AnnotationBasedEntityEvolver;
+import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
@@ -53,7 +53,7 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
     private final Class<E> entityType;
     private final EventSourcedEntityFactoryDefinition<E, I> entityFactoryDefinition;
     private final CriteriaResolverDefinition criteriaResolverDefinition;
-    private final AnnotationBasedEntityEvolver<E> entityEvolver;
+    private final AnnotationBasedEventSourcedComponent<E> entityEvolver;
 
     AnnotatedEventSourcedEntityBuilder(@Nonnull Class<I> idType,
                                        @Nonnull Class<E> entityType) {
@@ -69,7 +69,7 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
         //noinspection unchecked
         var criteriaResolverType = (Class<CriteriaResolverDefinition>) annotationAttributes.get("criteriaResolverDefinition");
         this.criteriaResolverDefinition = ConstructorUtils.getConstructorFunctionWithZeroArguments(criteriaResolverType).get();
-        this.entityEvolver = new AnnotationBasedEntityEvolver<>(entityType);
+        this.entityEvolver = new AnnotationBasedEventSourcedComponent<>(entityType);
     }
 
     @Override
