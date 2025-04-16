@@ -19,7 +19,6 @@ package org.axonframework.commandhandling;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.QualifiedName;
 
-import java.util.Objects;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -27,6 +26,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Interface describing a registry of {@link CommandHandler command handlers}.
  *
+ * @param <S> The type of the registry itself, used for fluent interfacing.
  * @author Allard Buijze
  * @author Gerard Klijs
  * @author Milan Savic
@@ -34,9 +34,22 @@ import static java.util.Objects.requireNonNull;
  * @author Sara Pellegrini
  * @author Steven van Beelen
  * @since 5.0.0
- * @param <S> the type of the registry itself, used for fluent interfacing.
  */
 public interface CommandHandlerRegistry<S extends CommandHandlerRegistry<S>> {
+
+    /**
+     * Subscribe the given {@code handler} for {@link CommandMessage commands} of the given {@code name}.
+     * <p>
+     * If a subscription already exists for the {@code name}, the behavior is undefined. Implementations may throw an
+     * exception to refuse duplicate subscription or alternatively decide whether the existing or new {@code handler}
+     * gets the subscription.
+     *
+     * @param name           The name the given {@code commandHandler} can handle.
+     * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given name.
+     * @return This registry for fluent interfacing.
+     */
+    S subscribe(@Nonnull QualifiedName name,
+                @Nonnull CommandHandler commandHandler);
 
     /**
      * Subscribe the given {@code handler} for {@link CommandMessage commands} of the given {@code names}.
@@ -57,20 +70,6 @@ public interface CommandHandlerRegistry<S extends CommandHandlerRegistry<S>> {
         //noinspection unchecked
         return (S) this;
     }
-
-    /**
-     * Subscribe the given {@code handler} for {@link CommandMessage commands} of the given {@code name}.
-     * <p>
-     * If a subscription already exists for the {@code name}, the behavior is undefined. Implementations may throw an
-     * exception to refuse duplicate subscription or alternatively decide whether the existing or new {@code handler}
-     * gets the subscription.
-     *
-     * @param name           The name the given {@code commandHandler} can handle.
-     * @param commandHandler The handler instance that handles {@link CommandMessage commands} for the given name.
-     * @return This registry for fluent interfacing.
-     */
-    S subscribe(@Nonnull QualifiedName name,
-                @Nonnull CommandHandler commandHandler);
 
 
     /**

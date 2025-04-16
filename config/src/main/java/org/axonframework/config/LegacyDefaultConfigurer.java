@@ -17,9 +17,9 @@
 package org.axonframework.config;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.commandhandling.InterceptingCommandBus;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComponent;
-import org.axonframework.commandhandling.config.CommandBusBuilder;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
@@ -467,20 +467,18 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
     protected CommandBus defaultCommandBus(LegacyConfiguration config) {
         return defaultComponent(CommandBus.class, config)
                 .orElseGet(() -> {
-                    CommandBusBuilder commandBusBuilder = CommandBusBuilder.forSimpleCommandBus();
                     TransactionManager txManager = config.getComponent(TransactionManager.class);
-                    if (txManager != null) {
-                        commandBusBuilder.withTransactions(txManager);
-                    }
+                    SimpleCommandBus commandBus = txManager != null
+                            ? new SimpleCommandBus(txManager)
+                            : new SimpleCommandBus();
                     if (!config.correlationDataProviders().isEmpty()) {
-                        CorrelationDataInterceptor<Message<?>> interceptor = new CorrelationDataInterceptor<>(config.correlationDataProviders());
-                        commandBusBuilder.withHandlerInterceptor(interceptor);
-                        //TODO - commandBusBuilder.withDispatchInterceptor(interceptor);
+                        CorrelationDataInterceptor<Message<?>> interceptor =
+                                new CorrelationDataInterceptor<>(config.correlationDataProviders());
+                        return new InterceptingCommandBus(commandBus, List.of(interceptor), List.of());
                     }
-                    return commandBusBuilder.build();
+                    return commandBus;
                 });
     }
-
 
     /**
      * Returns a {@link ConfigurationResourceInjector} that injects resources defined in the given

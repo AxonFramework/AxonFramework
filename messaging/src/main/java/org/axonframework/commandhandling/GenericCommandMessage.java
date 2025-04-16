@@ -72,9 +72,9 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
      * Unlike the other constructors, this constructor will not attempt to retrieve any correlation data from the Unit
      * of Work.
      *
-     * @param delegate    The {@link Message} containing {@link Message#getPayload() payload},
-     *                    {@link Message#type() qualifiedName}, {@link Message#getIdentifier() identifier} and
-     *                    {@link Message#getMetaData() metadata} for the {@link CommandMessage} to reconstruct.
+     * @param delegate The {@link Message} containing {@link Message#getPayload() payload},
+     *                 {@link Message#type() qualifiedName}, {@link Message#getIdentifier() identifier} and
+     *                 {@link Message#getMetaData() metadata} for the {@link CommandMessage} to reconstruct.
      */
     public GenericCommandMessage(@Nonnull Message<P> delegate) {
         super(delegate);
@@ -92,7 +92,6 @@ public class GenericCommandMessage<P> extends MessageDecorator<P> implements Com
 
     @Override
     public <C> CommandMessage<C> withConvertedPayload(@jakarta.annotation.Nonnull Function<P, C> conversion) {
-        // TODO - Once Message declares a convert method, use that
         Message<P> delegate = getDelegate();
         Message<C> transformed = new GenericMessage<>(delegate.getIdentifier(),
                                                       delegate.type(),

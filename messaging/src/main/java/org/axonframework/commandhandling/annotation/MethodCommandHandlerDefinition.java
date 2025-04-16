@@ -16,7 +16,6 @@
 
 package org.axonframework.commandhandling.annotation;
 
-import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.messaging.HandlerAttributes;
 import org.axonframework.messaging.Message;
@@ -36,7 +35,7 @@ import javax.annotation.Nonnull;
  * Implementation of a {@link HandlerEnhancerDefinition} that is used for {@link CommandHandler} annotated methods.
  *
  * @author Allard Buijze
- * @since 3.0
+ * @since 3.0.0
  */
 public class MethodCommandHandlerDefinition implements HandlerEnhancerDefinition {
 

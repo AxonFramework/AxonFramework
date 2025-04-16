@@ -23,7 +23,6 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
 import org.axonframework.utils.MockException;
@@ -61,14 +60,6 @@ class SimpleCommandBusTest {
         this.testSubject = new SimpleCommandBus(executor);
     }
 
-    @AfterEach
-    void tearDown() {
-        assertFalse(CurrentUnitOfWork.isStarted());
-        while (CurrentUnitOfWork.isStarted()) {
-            CurrentUnitOfWork.get().rollback();
-        }
-    }
-
     @Test
     void dispatchCommandHandlerSubscribed() throws Exception {
         testSubject.subscribe(COMMAND_NAME, new StubCommandHandler("Hi!"));
@@ -88,11 +79,11 @@ class SimpleCommandBusTest {
     }
 
     @Test
-    void dispatchCommandImplicitUnitOfWorkIsCommittedOnReturnValue() {
-        final AtomicReference<ProcessingContext> unitOfWork = new AtomicReference<>();
+    void dispatchCommandImplicitProcessingContextIsCommittedOnReturnValue() {
+        final AtomicReference<ProcessingContext> contextRef = new AtomicReference<>();
         testSubject.subscribe(COMMAND_NAME,
                               (message, processingContext) -> {
-                                  unitOfWork.set(processingContext);
+                                  contextRef.set(processingContext);
                                   return MessageStream.just(asCommandResultMessage(message));
                               });
         var actual = testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
@@ -100,19 +91,19 @@ class SimpleCommandBusTest {
         assertFalse(actual.isCompletedExceptionally());
         Message<?> actualResult = actual.join();
         assertEquals(PAYLOAD, actualResult.getPayload());
-        assertNotNull(unitOfWork.get());
+        assertNotNull(contextRef.get());
     }
 
     @Test
-    void dispatchCommandImplicitUnitOfWorkIsRolledBackOnException() {
-        final AtomicReference<ProcessingContext> unitOfWork = new AtomicReference<>();
+    void dispatchCommandImplicitProcessingContextIsRolledBackOnException() {
+        final AtomicReference<ProcessingContext> contextRef = new AtomicReference<>();
         testSubject.subscribe(COMMAND_NAME,
                               (message, processingContext) -> {
-                                  unitOfWork.set(processingContext);
+                                  contextRef.set(processingContext);
                                   throw new RuntimeException();
                               });
         testSubject.dispatch(TEST_COMMAND, ProcessingContext.NONE);
-        assertTrue(unitOfWork.get().isError());
+        assertTrue(contextRef.get().isError());
     }
 
     @Test

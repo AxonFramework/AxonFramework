@@ -50,8 +50,9 @@ import static java.util.Objects.requireNonNull;
  * Each annotated method is subscribed as a {@link org.axonframework.commandhandling.CommandHandler} at the
  * {@link CommandHandlingComponent} for the command type specified by the parameter of that method.
  *
+ * @param <T> The target type of this command handling component.
  * @author Allard Buijze
- * @since 0.5
+ * @since 0.5.0
  */
 public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComponent {
 
@@ -104,11 +105,11 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
         this.handlingComponent = SimpleCommandHandlingComponent.create(
                 "AnnotationCommandHandlerAdapter[%s]".formatted(annotatedCommandHandler.getClass().getName())
         );
-        this.target = requireNonNull(annotatedCommandHandler, "The Annotated Command Handler may not be null");
+        this.target = requireNonNull(annotatedCommandHandler, "The Annotated Command Handler may not be null.");
         this.model = AnnotatedHandlerInspector.inspectType((Class<T>) annotatedCommandHandler.getClass(),
                                                            parameterResolverFactory,
                                                            handlerDefinition);
-        this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver may not be null");
+        this.messageTypeResolver = requireNonNull(messageTypeResolver, "The MessageTypeResolver may not be null.");
 
         initializeHandlersBasedOnModel();
     }
@@ -123,9 +124,9 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
 
     private void registerHandler(MessageHandlingMember<? super T> handler) {
         QualifiedName qualifiedName = handler.unwrap(CommandMessageHandlingMember.class)
-                                      .map(CommandMessageHandlingMember::commandName)
-                                      .map(QualifiedName::new)
-                                      .orElseGet(() -> new QualifiedName(handler.payloadType()));
+                                             .map(CommandMessageHandlingMember::commandName)
+                                             .map(QualifiedName::new)
+                                             .orElseGet(() -> new QualifiedName(handler.payloadType()));
 
         MessageHandlerInterceptorMemberChain<T> interceptorChain = model.chainedInterceptor(target.getClass());
         handlingComponent.subscribe(qualifiedName, (command, ctx) ->
@@ -158,6 +159,6 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
 
     @Override
     public Set<QualifiedName> supportedCommands() {
-        return handlingComponent.supportedCommands();
+        return Set.copyOf(handlingComponent.supportedCommands());
     }
 }

@@ -382,21 +382,23 @@ This section contains two tables:
 
 ### Moved / Renamed
 
-| Axon 4                                                       | Axon 5                                                       | Module change?                 |
-|--------------------------------------------------------------|--------------------------------------------------------------|--------------------------------|
-| org.axonframework.common.caching.EhCache3Adapter             | org.axonframework.common.caching.EhCacheAdapter              | No                             |
-| org.axonframework.eventsourcing.MultiStreamableMessageSource | org.axonframework.eventhandling.MultiStreamableMessageSource | No                             |
-| org.axonframework.eventhandling.EventBus                     | org.axonframework.eventhandling.EventSink                    | No                             |
-| org.axonframework.commandhandling.CommandHandler             | org.axonframework.commandhandling.annotation.CommandHandler  | No                             |
-| org.axonframework.eventhandling.EventHandler                 | org.axonframework.eventhandling.annotation.EventHandler      | No                             |
-| org.axonframework.queryhandling.QueryHandler                 | org.axonframework.queryhandling.annotation.QueryHandler      | No                             |
-| org.axonframework.config.Configuration                       | org.axonframework.configuration.Configuration                | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.Component                           | org.axonframework.configuration.Component                    | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.ConfigurerModule                    | org.axonframework.configuration.ConfigurationEnhancer        | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.ModuleConfiguration                 | org.axonframework.configuration.Module                       | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.LifecycleHandler                    | org.axonframework.configuration.LifecycleHandler             | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.LifecycleHandlerInspector           | org.axonframework.configuration.LifecycleHandlerInspector    | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.LifecycleOperations                 | org.axonframework.configuration.LifecycleRegistry            | Yes. Moved to `axon-messaging` |
+| Axon 4                                                             | Axon 5                                                         | Module change?                 |
+|--------------------------------------------------------------------|----------------------------------------------------------------|--------------------------------|
+| org.axonframework.common.caching.EhCache3Adapter                   | org.axonframework.common.caching.EhCacheAdapter                | No                             |
+| org.axonframework.eventsourcing.MultiStreamableMessageSource       | org.axonframework.eventhandling.MultiStreamableMessageSource   | No                             |
+| org.axonframework.eventhandling.EventBus                           | org.axonframework.eventhandling.EventSink                      | No                             |
+| org.axonframework.commandhandling.CommandHandler                   | org.axonframework.commandhandling.annotation.CommandHandler    | No                             |
+| org.axonframework.eventhandling.EventHandler                       | org.axonframework.eventhandling.annotation.EventHandler        | No                             |
+| org.axonframework.queryhandling.QueryHandler                       | org.axonframework.queryhandling.annotation.QueryHandler        | No                             |
+| org.axonframework.config.Configuration                             | org.axonframework.configuration.Configuration                  | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.Component                                 | org.axonframework.configuration.Component                      | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.ConfigurerModule                          | org.axonframework.configuration.ConfigurationEnhancer          | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.ModuleConfiguration                       | org.axonframework.configuration.Module                         | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleHandler                          | org.axonframework.configuration.LifecycleHandler               | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleHandlerInspector                 | org.axonframework.configuration.LifecycleHandlerInspector      | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleOperations                       | org.axonframework.configuration.LifecycleRegistry              | Yes. Moved to `axon-messaging` |
+| org.axonframework.commandhandling.CommandCallback                  | org.axonframework.commandhandling.gateway.CommandResult        |                                |
+| org.axonframework.commandhandling.callbacks.FutureCallback         | org.axonframework.commandhandling.gateway.FutureCommandResult  |                                |
 
 ### Removed
 

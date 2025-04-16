@@ -28,22 +28,56 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Interface towards the Command Handling components of an application. This interface provides a friendlier API toward
- * the {@link org.axonframework.commandhandling.CommandBus}. The {@code CommandGateway} allows for components
- * dispatching commands to wait for the result.
+ * Interface towards the Command Handling components of an application.
+ * <p>
+ * This interface provides a friendlier API toward the {@link org.axonframework.commandhandling.CommandBus}. The
+ * {@code CommandGateway} allows for components dispatching commands to wait for the result.
  *
  * @author Allard Buijze
  * @see DefaultCommandGateway
- * @since 2.0
+ * @since 2.0.0
  */
 public interface CommandGateway {
 
     /**
      * Sends the given {@code command} and returns a {@link CompletableFuture} immediately, without waiting for the
-     * command to execute. The caller will therefore not receive any immediate feedback on the {@code command}'s
-     * execution. Instead, hooks <em>can</em> be added to the returned {@code CompletableFuture} to react on success or
-     * failure of command execution. Note that this operation expects the
-     * {@link org.axonframework.commandhandling.CommandBus} to use new threads for command execution.
+     * command to execute.
+     * <p>
+     * The caller will therefore not receive any immediate feedback on the {@code command's} execution. Instead, hooks
+     * <em>can</em> be added to the returned {@code CompletableFuture} to react on success or failure of command
+     * execution.
+     * <p>
+     * Note that this operation expects the {@link org.axonframework.commandhandling.CommandBus} to use new threads for
+     * command execution.
+     * <p/>
+     * The given {@code command} is wrapped as the payload of the {@link CommandMessage} that is eventually posted on
+     * the {@code CommandBus}, unless the {@code command} already implements {@link Message}. In that case, a
+     * {@code CommandMessage} is constructed from that message's payload and
+     * {@link org.axonframework.messaging.MetaData}.
+     *
+     * @param command      The command to dispatch.
+     * @param context      The processing context, if any, to dispatch the given {@code command} in.
+     * @param expectedType The expected result type.
+     * @param <R>          The generic type of the expected response.
+     * @return A {@link CompletableFuture} that will be resolved successfully or exceptionally based on the eventual
+     * command execution result.
+     */
+    default <R> CompletableFuture<R> send(@Nonnull Object command,
+                                          @Nullable ProcessingContext context,
+                                          @Nonnull Class<R> expectedType) {
+        return send(command, context).resultAs(expectedType);
+    }
+
+    /**
+     * Sends the given {@code command} and returns a {@link CompletableFuture} immediately, without waiting for the
+     * command to execute.
+     * <p>
+     * The caller will therefore not receive any immediate feedback on the {@code command's} execution. Instead, hooks
+     * <em>can</em> be added to the returned {@code CompletableFuture} to react on success or failure of command
+     * execution.
+     * <p>
+     * Note that this operation expects the {@link org.axonframework.commandhandling.CommandBus} to use new threads for
+     * command execution.
      * <p/>
      * The given {@code command} is wrapped as the payload of the {@link CommandMessage} that is eventually posted on
      * the {@code CommandBus}, unless the {@code command} already implements {@link Message}. In that case, a
@@ -51,40 +85,20 @@ public interface CommandGateway {
      * {@link org.axonframework.messaging.MetaData}.
      *
      * @param command The command to dispatch.
-     * @return A {@link CompletableFuture} which will be resolved successfully or exceptionally based on the eventual
-     * command execution result.
-     */
-    default <R> CompletableFuture<R> send(@Nonnull Object command,
-                                          @Nullable ProcessingContext processingContext,
-                                          Class<R> expectedType) {
-        return send(command, processingContext).resultAs(expectedType);
-    }
-
-    /**
-     * Sends the given {@code command} and returns a {@link CompletableFuture} immediately, without waiting for the
-     * command to execute. The caller will therefore not receive any immediate feedback on the {@code command}'s
-     * execution. Instead, hooks <em>can</em> be added to the returned {@code CompletableFuture} to react on success or
-     * failure of command execution. Note that this operation expects the
-     * {@link org.axonframework.commandhandling.CommandBus} to use new threads for command execution.
-     * <p/>
-     * The given {@code command} is wrapped as the payload of the {@link CommandMessage} that is eventually posted on
-     * the {@code CommandBus}, unless the {@code command} already implements {@link Message}. In that case, a
-     * {@code CommandMessage} is constructed from that message's payload and
-     * {@link org.axonframework.messaging.MetaData}.
-     *
-     * @param command           The command to dispatch.
-     * @param processingContext A processing context, if any, that is currently active
-     * @return A {@link CompletableFuture} which will be resolved successfully or exceptionally based on the eventual
+     * @param context The processing context, if any, to dispatch the given {@code command} in.
+     * @return A {@link CompletableFuture} that will be resolved successfully or exceptionally based on the eventual
      * command execution result.
      */
     CommandResult send(@Nonnull Object command,
-                       @Nullable ProcessingContext processingContext);
+                       @Nullable ProcessingContext context);
 
     /**
      * Sends the given {@code command} with the given {@code metaData} and returns a {@link CompletableFuture}
-     * immediately, without waiting for the command to execute. The caller will therefore not receive any immediate
-     * feedback on the {@code command}'s execution. Instead, hooks <em>can</em> be added to the returned
-     * {@code CompletableFuture} to react on success or failure of command execution.
+     * immediately, without waiting for the command to execute.
+     * <p>
+     * The caller will therefore not receive any immediate feedback on the {@code command}'s execution. Instead, hooks
+     * <em>can</em> be added to the returned {@code CompletableFuture} to react on success or failure of command
+     * execution.
      * <p>
      * Note that this operation expects the {@link org.axonframework.commandhandling.CommandBus} to use new threads for
      * command execution.
@@ -94,30 +108,31 @@ public interface CommandGateway {
      * implements {@link Message}. In that case, a {@code CommandMessage} is constructed from that message's payload and
      * {@link org.axonframework.messaging.MetaData}. The provided {@code metaData} is attached afterward in this case.
      *
-     * @param command           The command to dispatch.
-     * @param metaData          Meta-data that must be registered with the {@code command}.
-     * @param processingContext A processing context, if any, that is currently active
-     * @return A {@link CompletableFuture} which will be resolved successfully or exceptionally based on the eventual
+     * @param command  The command to dispatch.
+     * @param metaData Meta-data that must be registered with the {@code command}.
+     * @param context  The processing context, if any, to dispatch the given {@code command} in.
+     * @return A {@link CompletableFuture} that will be resolved successfully or exceptionally based on the eventual
      * command execution result.
      */
     CommandResult send(@Nonnull Object command,
                        @Nonnull MetaData metaData,
-                       @Nullable ProcessingContext processingContext);
+                       @Nullable ProcessingContext context);
 
     /**
-     * Send the given command and wait for the result. The payload of the resulting message is returned, or a
-     * {@link CommandExecutionException} is thrown when the command completed with an exception.
+     * Send the given command and waits for the result.
      * <p>
-     * Note that there is no timeout on the waiting for the result. Use {@link #send(Object, ProcessingContext)} for
-     * more flexibility around waiting and dealing with response metadata.
+     * The payload of the resulting message is returned, or a {@link CommandExecutionException} is thrown when the
+     * command completed with an exception.
      *
      * @param command The payload or Command Message to send
-     * @return the payload of the result message
-     * @throws CommandExecutionException when an exception occurs while handling the command
+     * @return The payload of the result message.
+     * @throws CommandExecutionException When an exception occurs while handling the command.
      */
     default Object sendAndWait(@Nonnull Object command) {
         try {
-            return send(command, ProcessingContext.NONE).getResultMessage().thenApply(Message::getPayload).get();
+            return send(command, ProcessingContext.NONE).getResultMessage()
+                                                        .thenApply(Message::getPayload)
+                                                        .get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new CommandExecutionException("Thread interrupted while waiting for result", e);
@@ -127,22 +142,22 @@ public interface CommandGateway {
     }
 
     /**
-     * Send the given command and wait for the result. The payload of the resulting message is returned, or a
-     * {@link CommandExecutionException} is thrown when the command completed with an exception.
+     * Send the given command and waits for the result.
      * <p>
-     * Note that there is no timeout on the waiting for the result. Use {@link #send(Object, ProcessingContext, Class)}
-     * for more flexibility around waiting or {@link #send(Object, ProcessingContext)} for more flexibility regarding
-     * the return type.
+     * The payload of the resulting message is returned, or a {@link CommandExecutionException} is thrown when the
+     * command completed with an exception.
      *
-     * @param command    The payload or Command Message to send
-     * @param returnType The class representing the expected response type
-     * @param <T>        The generic type of the expected response
-     * @return the payload of the result message
-     * @throws CommandExecutionException when an exception occurs while handling the command
+     * @param command    The command to dispatch.
+     * @param returnType The class representing the expected response type.
+     * @param <R>        The generic type of the expected response.
+     * @return The payload of the result message of type {@code R}.
+     * @throws CommandExecutionException When an exception occurs while handling the command.
      */
-    default <T> T sendAndWait(@Nonnull Object command, Class<T> returnType) {
+    default <R> R sendAndWait(@Nonnull Object command,
+                              @Nonnull Class<R> returnType) {
         try {
-            return send(command, ProcessingContext.NONE).resultAs(returnType).get();
+            return send(command, ProcessingContext.NONE).resultAs(returnType)
+                                                        .get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new CommandExecutionException("Thread interrupted while waiting for result", e);

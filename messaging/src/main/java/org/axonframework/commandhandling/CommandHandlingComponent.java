@@ -21,8 +21,8 @@ import org.axonframework.messaging.QualifiedName;
 import java.util.Set;
 
 /**
- * Interface describing a group of {@link CommandHandler CommandHandlers} belonging to a single component.
- * It specifies the {@link #supportedCommands() commands} it supports.
+ * Interface describing a group of {@link CommandHandler CommandHandlers} belonging to a single component. It specifies
+ * the {@link #supportedCommands() commands} it supports.
  *
  * @author Allard Buijze
  * @author Rene de Waele

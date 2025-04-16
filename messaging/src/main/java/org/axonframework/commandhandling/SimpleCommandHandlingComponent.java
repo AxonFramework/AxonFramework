@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.common.BuilderUtils;
+import org.axonframework.common.Assert;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
@@ -27,12 +27,10 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
-import static org.axonframework.common.BuilderUtils.assertNonEmpty;
 
 /**
  * A simple implementation of the {@link CommandHandlingComponent} interface, allowing for easy registration of
@@ -40,11 +38,11 @@ import static org.axonframework.common.BuilderUtils.assertNonEmpty;
  * <p>
  * Registered subcomponents are preferred over registered command handlers when handling a command.
  *
- * @since 5.0.0
  * @author Allard Buijze
  * @author Mitchell Herrijgers
  * @author Steven van Beelen
  * @author Mateusz Nowak
+ * @since 5.0.0
  */
 public class SimpleCommandHandlingComponent implements
         CommandHandlingComponent,
@@ -60,30 +58,29 @@ public class SimpleCommandHandlingComponent implements
      * subcomponents.
      *
      * @param name The name of the component, used for {@link DescribableComponent describing} the component.
+     * @return A simple {@link CommandHandlingComponent} instance with the given {@code name}.
      */
     public static SimpleCommandHandlingComponent create(@Nonnull String name) {
         return new SimpleCommandHandlingComponent(name);
     }
 
     private SimpleCommandHandlingComponent(@Nonnull String name) {
-        assertNonEmpty(name, "The name may not be null or empty");
+        Assert.nonEmpty(name, "The name may not be null or empty.");
         this.name = name;
     }
 
     @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull QualifiedName name,
                                                     @Nonnull CommandHandler commandHandler) {
-        commandHandlers.put(
-                requireNonNull(name, "The name of the command handler may not be null"),
-                requireNonNull(commandHandler, "The command handler may not be null")
-        );
+        requireNonNull(name, "The name of the command handler may not be null");
+        requireNonNull(commandHandler, "The command handler may not be null");
+        commandHandlers.put(name, commandHandler);
         return this;
     }
 
     @Override
     public SimpleCommandHandlingComponent subscribe(@Nonnull CommandHandlingComponent commandHandlingComponent) {
-        requireNonNull(commandHandlingComponent, "The command handling component may not be null");
-        subComponents.add(commandHandlingComponent);
+        subComponents.add(requireNonNull(commandHandlingComponent, "The command handling component may not be null"));
         return this;
     }
 
@@ -91,30 +88,25 @@ public class SimpleCommandHandlingComponent implements
     @Override
     public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                           @Nonnull ProcessingContext context) {
-        QualifiedName qualifiedName = command.type().qualifiedName();
-        // TODO #3103 - add interceptor knowledge
-        Optional<CommandHandlingComponent> optionalSubHandler = subComponents
-                .stream()
-                .filter(subComponent ->
-                                subComponent.supportedCommands().contains(qualifiedName)
-                )
-                .findFirst();
+        QualifiedName qualifiedName = requireNonNull(command, "The command message cannot be null.")
+                .type()
+                .qualifiedName();
+        Optional<CommandHandlingComponent> optionalSubHandler =
+                subComponents.stream()
+                             .filter(subComponent -> subComponent.supportedCommands().contains(qualifiedName))
+                             .findFirst();
 
         if (optionalSubHandler.isPresent()) {
             return optionalSubHandler.get().handle(command, context);
         }
 
-
         if (commandHandlers.containsKey(qualifiedName)) {
             return commandHandlers.get(qualifiedName).handle(command, context);
         }
-        return MessageStream.failed(new NoHandlerForCommandException(
-                "No handler was subscribed for command with qualified name [%s] on component [%s]. Registered handlers: [%s]".formatted(
-                        qualifiedName.fullName(),
-                        this.getClass().getName(),
-                        supportedCommands()
-                ))
-        );
+
+        String message = "No handler was subscribed for command with qualified name [%s] on component [%s]. Registered handlers: [%s]"
+                .formatted(qualifiedName.fullName(), this.getClass().getName(), supportedCommands());
+        return MessageStream.failed(new NoHandlerForCommandException(message));
     }
 
     @Override

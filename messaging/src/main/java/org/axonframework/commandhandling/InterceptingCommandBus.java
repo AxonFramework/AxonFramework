@@ -32,9 +32,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A {@code CommandBus} wrapper that supports both {@link MessageHandlerInterceptor MessageHandlerInterceptors} and
@@ -61,12 +62,18 @@ public class InterceptingCommandBus implements CommandBus {
      * @param handlerInterceptors  The interceptors to invoke before handling a command.
      * @param dispatchInterceptors The interceptors to invoke before dispatching a command.
      */
-    public InterceptingCommandBus(@Nonnull CommandBus delegate,
-                                  @Nonnull List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors,
-                                  @Nonnull List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors) {
-        this.delegate = Objects.requireNonNull(delegate, "Given CommandBus delegate cannot be null.");
-        this.handlerInterceptors = new LinkedList<>(handlerInterceptors);
-        this.dispatchInterceptors = new ArrayList<>(dispatchInterceptors);
+    public InterceptingCommandBus(
+            @Nonnull CommandBus delegate,
+            @Nonnull List<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors,
+            @Nonnull List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors
+    ) {
+        this.delegate = requireNonNull(delegate, "The command bus delegate must be null.");
+        this.handlerInterceptors = new LinkedList<>(
+                requireNonNull(handlerInterceptors, "The handler interceptors must not be null.")
+        );
+        this.dispatchInterceptors = new ArrayList<>(
+                requireNonNull(dispatchInterceptors, "The dispatch interceptors must not be null.")
+        );
 
         Iterator<MessageDispatchInterceptor<? super CommandMessage<?>>> di =
                 new LinkedList<>(dispatchInterceptors).descendingIterator();
@@ -81,7 +88,7 @@ public class InterceptingCommandBus implements CommandBus {
     @Override
     public InterceptingCommandBus subscribe(@Nonnull QualifiedName name,
                                             @Nonnull CommandHandler commandHandler) {
-        CommandHandler handler = Objects.requireNonNull(commandHandler, "Given handler cannot be null.");
+        CommandHandler handler = requireNonNull(commandHandler, "The command handler cannot be null.");
         Iterator<MessageHandlerInterceptor<? super CommandMessage<?>>> iter = handlerInterceptors.descendingIterator();
         CommandHandler interceptedHandler = handler;
         while (iter.hasNext()) {
@@ -94,7 +101,7 @@ public class InterceptingCommandBus implements CommandBus {
     @Override
     public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
                                                             @Nullable ProcessingContext processingContext) {
-        return dispatcher.apply(command, processingContext)
+        return dispatcher.apply(requireNonNull(command, "The command message cannot be null."), processingContext)
                          .first()
                          .asCompletableFuture()
                          .thenApply(Entry::message);
