@@ -175,7 +175,7 @@ You may even use different implementation styles / architectures inside certain 
 You will also see that in this tutorial.
 
 *Write Slices*
-Contains commands that represent user intentions, defines business rules through aggregates, produces domain events, and enforces invariants (for example `SubscribeStudentToCourse` command → `StudentSubscribedToCourse` event, with `SubscriptionsPerStudentNotExceedMax` rule).
+Contains commands that represent user intentions, define business rules through aggregates, produce domain events, and enforce invariants (e.g., `SubscribeStudent` command → `StudentSubscribed` event, with `SubscriptionsPerStudentNotExceedMax` rule).
 
 *Read Slices [FOR THE FUTURE MILESTONES]*
 Implements queries and read models optimized for specific use cases, with projectors that transform events into queryable state (for example `GetSubscriptionsByStudentId` query → `StudentSubscriptionsReadModel`).
