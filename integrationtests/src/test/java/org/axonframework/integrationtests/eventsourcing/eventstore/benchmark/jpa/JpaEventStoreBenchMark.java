@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.integrationtests.eventsourcing.eventstore.benchmark.AbstractEventStoreBenchmark;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -49,7 +49,7 @@ public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
 
     @Override
     protected void storeEvents(EventMessage<?>... events) {
-        UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
+        LegacyUnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
         Transaction transaction = transactionManager.startTransaction();
         unitOfWork.onCommit(u -> transaction.commit());
         unitOfWork.onRollback(u -> transaction.rollback());

@@ -26,7 +26,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -36,9 +36,10 @@ import javax.annotation.Nonnull;
 
 /**
  * Abstract implementation of the {@link DeadlineManager} to be implemented by concrete solutions for the
- * DeadlineManager. Provides functionality to perform a call to the DeadlineManager in the a {@link UnitOfWork} it's
- * 'prepare commit' phase. This #runOnPrepareCommitOrNow(Runnable) functionality is required, as the DeadlineManager
- * schedules a Message which needs to happen on order with the other messages published throughout the system.
+ * DeadlineManager. Provides functionality to perform a call to the DeadlineManager in the a {@link LegacyUnitOfWork}
+ * it's 'prepare commit' phase. This #runOnPrepareCommitOrNow(Runnable) functionality is required, as the
+ * DeadlineManager schedules a Message which needs to happen on order with the other messages published throughout the
+ * system.
  *
  * @author Steven van Beelen
  * @since 3.3
@@ -50,11 +51,12 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
     protected MessageTypeResolver messageTypeResolver = new ClassBasedMessageTypeResolver();
 
     /**
-     * Run a given {@code deadlineCall} immediately, or schedule it for the {@link UnitOfWork} it's 'prepare commit'
-     * phase if a UnitOfWork is active. This is required as the DeadlineManager schedule message which we want to happen
-     * on order with other message being handled.
+     * Run a given {@code deadlineCall} immediately, or schedule it for the {@link LegacyUnitOfWork} it's 'prepare
+     * commit' phase if a UnitOfWork is active. This is required as the DeadlineManager schedule message which we want
+     * to happen on order with other message being handled.
      *
-     * @param deadlineCall a {@link Runnable} to be executed now or on prepare commit if a {@link UnitOfWork} is active
+     * @param deadlineCall a {@link Runnable} to be executed now or on prepare commit if a {@link LegacyUnitOfWork} is
+     *                     active
      */
     protected void runOnPrepareCommitOrNow(Runnable deadlineCall) {
         if (CurrentUnitOfWork.isStarted()) {
@@ -89,8 +91,8 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
     }
 
     /**
-     * Provides a list of registered handler interceptors. Do note that this list is not modifiable, and that changes
-     * in the internal structure for handler interceptors will be reflected in this list.
+     * Provides a list of registered handler interceptors. Do note that this list is not modifiable, and that changes in
+     * the internal structure for handler interceptors will be reflected in this list.
      *
      * @return a list of handler interceptors
      */
@@ -141,5 +143,4 @@ public abstract class AbstractDeadlineManager implements DeadlineManager {
                 deadlineName, new GenericMessage<>(type, (P) messageOrPayload), () -> expiryTime
         );
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,11 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.GenericJpaRepository;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyGenericJpaRepository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -70,7 +70,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
     private final List<EventMessage> capturedEvents = new ArrayList<>();
     @Autowired
     @Qualifier("simpleRepository")
-    private GenericJpaRepository<JpaAggregate> repository;
+    private LegacyGenericJpaRepository<JpaAggregate> repository;
     @Autowired
     private EventBus eventBus;
     @PersistenceContext
@@ -101,7 +101,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
     @SuppressWarnings({"unchecked"})
     @Test
     void storeAndLoadNewAggregate() throws Exception {
-        UnitOfWork<?> uow = startAndGetUnitOfWork();
+        LegacyUnitOfWork<?> uow = startAndGetUnitOfWork();
         String originalId = repository.newInstance(() -> new JpaAggregate("Hello")).invoke(JpaAggregate::getIdentifier);
         uow.commit();
 
@@ -126,7 +126,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
         entityManager.flush();
         entityManager.clear();
 
-        UnitOfWork<?> uow = startAndGetUnitOfWork();
+        LegacyUnitOfWork<?> uow = startAndGetUnitOfWork();
         Aggregate<JpaAggregate> aggregate = repository.load(agg.getIdentifier());
         aggregate.execute(r -> r.setMessage("And again"));
         aggregate.execute(r -> r.setMessage("And more"));
@@ -145,7 +145,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
         entityManager.clear();
         Assertions.assertEquals((Long) 0L, agg.getVersion());
 
-        UnitOfWork<?> uow = startAndGetUnitOfWork();
+        LegacyUnitOfWork<?> uow = startAndGetUnitOfWork();
         Aggregate<JpaAggregate> aggregate = repository.load(agg.getIdentifier());
         aggregate.execute(r -> r.setMessage("And again"));
         aggregate.execute(r -> r.setMessage("And more"));
@@ -164,8 +164,8 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
         return null;
     }
 
-    private UnitOfWork<?> startAndGetUnitOfWork() {
-        return DefaultUnitOfWork.startAndGet(null);
+    private LegacyUnitOfWork<?> startAndGetUnitOfWork() {
+        return LegacyDefaultUnitOfWork.startAndGet(null);
     }
 
     @Configuration
@@ -237,12 +237,12 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
         }
 
         @Bean("simpleRepository")
-        public Repository<JpaAggregate> simpleRepository(EntityManagerProvider entityManagerProvider,
-                                                         EventBus eventBus) {
-            return GenericJpaRepository.builder(JpaAggregate.class)
-                                       .entityManagerProvider(entityManagerProvider)
-                                       .eventBus(eventBus)
-                                       .build();
+        public LegacyRepository<JpaAggregate> simpleRepository(EntityManagerProvider entityManagerProvider,
+                                                               EventBus eventBus) {
+            return LegacyGenericJpaRepository.builder(JpaAggregate.class)
+                                             .entityManagerProvider(entityManagerProvider)
+                                             .eventBus(eventBus)
+                                             .build();
         }
     }
 }

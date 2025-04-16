@@ -20,7 +20,7 @@ import org.axonframework.common.Assert;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.saga.AbstractSagaManager;
 
 import java.util.ArrayList;
@@ -70,7 +70,7 @@ public class ConfigurationScopeAwareProvider implements ScopeAwareProvider {
         return components;
     }
 
-    private List<Repository> retrieveAggregateRepositories() {
+    private List<LegacyRepository> retrieveAggregateRepositories() {
         return configuration.findModules(AggregateConfiguration.class).stream()
                             .map(AggregateConfiguration::repository)
                             .collect(toList());

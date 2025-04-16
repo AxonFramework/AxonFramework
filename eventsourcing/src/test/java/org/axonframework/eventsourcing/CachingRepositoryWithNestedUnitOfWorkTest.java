@@ -28,8 +28,8 @@ import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.ehcache.CacheManager;
@@ -78,11 +78,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * into the cache, exposing it to subsequent UOWs. The state of the aggregate in any UOW is not guaranteed to be
  * up-to-date. Depending on how UOWs are nested, it may be 'behind' by several events;
  * <p/>
- * Any subsequent UOW (after an aggregate was added to the cache) works on potentially stale data. This manifests
- * itself
- * primarily by events being assigned duplicate sequence numbers. The {@link LegacyJpaEventStorageEngine}
- * detects this and throws an
- * exception noting that an 'identical' entity has already been persisted.
+ * Any subsequent UOW (after an aggregate was added to the cache) works on potentially stale data. This manifests itself
+ * primarily by events being assigned duplicate sequence numbers. The {@link LegacyJpaEventStorageEngine} detects this
+ * and throws an exception noting that an 'identical' entity has already been persisted.
  * <p/>
  * <p/>
  * <h2>Possible solutions and workarounds contemplated include:</h2>
@@ -102,7 +100,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CachingRepositoryWithNestedUnitOfWorkTest {
 
     private final List<String> events = new ArrayList<>();
-    private CachingEventSourcingRepository<TestAggregate> repository;
+    private LegacyCachingEventSourcingRepository<TestAggregate> repository;
     private Cache realCache;
     private AggregateFactory<TestAggregate> aggregateFactory;
     private LegacyEventStore eventStore;
@@ -148,41 +146,41 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
 
     @Test
     void withoutCache() throws Exception {
-        repository = CachingEventSourcingRepository.builder(TestAggregate.class)
-                                                   .aggregateFactory(aggregateFactory)
-                                                   .eventStore(eventStore)
-                                                   .cache(NoCache.INSTANCE)
-                                                   .build();
+        repository = LegacyCachingEventSourcingRepository.builder(TestAggregate.class)
+                                                         .aggregateFactory(aggregateFactory)
+                                                         .eventStore(eventStore)
+                                                         .cache(NoCache.INSTANCE)
+                                                         .build();
         executeComplexScenario("ComplexWithoutCache");
     }
 
     @Test
     void withCache() throws Exception {
-        repository = CachingEventSourcingRepository.builder(TestAggregate.class)
-                .aggregateFactory(aggregateFactory)
-                .eventStore(eventStore)
-                .cache(realCache)
-                .build();
+        repository = LegacyCachingEventSourcingRepository.builder(TestAggregate.class)
+                                                         .aggregateFactory(aggregateFactory)
+                                                         .eventStore(eventStore)
+                                                         .cache(realCache)
+                                                         .build();
         executeComplexScenario("ComplexWithCache");
     }
 
     @Test
     void minimalScenarioWithoutCache() throws Exception {
-        repository = CachingEventSourcingRepository.builder(TestAggregate.class)
-                .aggregateFactory(aggregateFactory)
-                .eventStore(eventStore)
-                .cache(NoCache.INSTANCE)
-                .build();
+        repository = LegacyCachingEventSourcingRepository.builder(TestAggregate.class)
+                                                         .aggregateFactory(aggregateFactory)
+                                                         .eventStore(eventStore)
+                                                         .cache(NoCache.INSTANCE)
+                                                         .build();
         testMinimalScenario("MinimalScenarioWithoutCache");
     }
 
     @Test
     void minimalScenarioWithCache() throws Exception {
-        repository = CachingEventSourcingRepository.builder(TestAggregate.class)
-                .aggregateFactory(aggregateFactory)
-                .eventStore(eventStore)
-                .cache(realCache)
-                .build();
+        repository = LegacyCachingEventSourcingRepository.builder(TestAggregate.class)
+                                                         .aggregateFactory(aggregateFactory)
+                                                         .eventStore(eventStore)
+                                                         .cache(realCache)
+                                                         .build();
         testMinimalScenario("MinimalScenarioWithCache");
     }
 
@@ -204,7 +202,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
                                          .build();
         eventProcessor.start();
 
-        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyUnitOfWork<?> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         repository.newInstance(() -> new TestAggregate(id));
         uow.commit();
 
@@ -250,7 +248,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         eventProcessor.start();
 
         // First command: Create Aggregate
-        UnitOfWork<?> uow1 = DefaultUnitOfWork.startAndGet(null);
+        LegacyUnitOfWork<?> uow1 = LegacyDefaultUnitOfWork.startAndGet(null);
         repository.newInstance(() -> new TestAggregate(id));
         uow1.commit();
 
@@ -262,12 +260,13 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
         assertFalse(verify.tokens.contains("UOW10"));
         assertEquals(7, verify.tokens.size());
         for (int i = 0; i < verify.tokens.size(); i++) {
-            assertTrue(events.get(i).startsWith(i + " "), "Expected event with sequence number " + i + " but got :" + events.get(i));
+            assertTrue(events.get(i).startsWith(i + " "),
+                       "Expected event with sequence number " + i + " but got :" + events.get(i));
         }
     }
 
     private TestAggregate loadAggregate(String id) {
-        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyUnitOfWork<?> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         Aggregate<TestAggregate> verify = repository.load(id);
         uow.rollback();
         return verify.invoke(Function.identity());
@@ -387,7 +386,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
             if (previousToken == null && payload instanceof AggregateCreatedEvent) {
                 AggregateCreatedEvent created = (AggregateCreatedEvent) payload;
 
-                UnitOfWork<EventMessage<?>> nested = DefaultUnitOfWork.startAndGet(event);
+                LegacyUnitOfWork<EventMessage<?>> nested = LegacyDefaultUnitOfWork.startAndGet(event);
                 nested.execute(() -> {
                     Aggregate<TestAggregate> aggregate = repository.load(created.id);
                     aggregate.execute(r -> r.update(token));
@@ -397,7 +396,7 @@ class CachingRepositoryWithNestedUnitOfWorkTest {
             if (previousToken != null && payload instanceof AggregateUpdatedEvent) {
                 AggregateUpdatedEvent updated = (AggregateUpdatedEvent) payload;
                 if (updated.token.equals(previousToken)) {
-                    UnitOfWork<EventMessage<?>> nested = DefaultUnitOfWork.startAndGet(event);
+                    LegacyUnitOfWork<EventMessage<?>> nested = LegacyDefaultUnitOfWork.startAndGet(event);
                     if (commit) {
                         nested.execute(() -> {
                             Aggregate<TestAggregate> aggregate = repository.load(updated.id);

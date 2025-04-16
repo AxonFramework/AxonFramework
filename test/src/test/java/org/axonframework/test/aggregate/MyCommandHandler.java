@@ -21,17 +21,17 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 
 /**
  * @author Allard Buijze
  */
 class MyCommandHandler {
 
-    private Repository<StandardAggregate> repository;
+    private LegacyRepository<StandardAggregate> repository;
     private EventBus eventBus;
 
-    MyCommandHandler(Repository<StandardAggregate> repository, EventBus eventBus) {
+    MyCommandHandler(LegacyRepository<StandardAggregate> repository, EventBus eventBus) {
         this.repository = repository;
         this.eventBus = eventBus;
     }
@@ -78,7 +78,7 @@ class MyCommandHandler {
                   .execute(r -> r.delete(command.isAsIllegalChange()));
     }
 
-    public void setRepository(Repository<StandardAggregate> repository) {
+    public void setRepository(LegacyRepository<StandardAggregate> repository) {
         this.repository = repository;
     }
 }

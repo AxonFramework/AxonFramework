@@ -16,11 +16,11 @@
 
 package org.axonframework.modelling;
 
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 
 /**
- * Exception thrown by the {@link StateManager} when no {@link AsyncRepository} is registered for a given state type.
- * Can be resolved by registering a {@link AsyncRepository} for the given state type.
+ * Exception thrown by the {@link StateManager} when no {@link Repository} is registered for a given state type.
+ * Can be resolved by registering a {@link Repository} for the given state type.
  *
  * @author Mitchell Herrijgers
  * @since 5.0.0

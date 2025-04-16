@@ -51,7 +51,8 @@ import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.AnnotatedSagaManager;
 import org.axonframework.modelling.saga.ResourceInjector;
 import org.axonframework.modelling.saga.SagaRepository;
@@ -159,7 +160,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     protected void handleInSaga(EventMessage<?> event) {
         ensureSagaResourcesInitialized();
         TrackedEventMessage<?> trackedEventMessage = asTrackedEventMessage(event);
-        DefaultUnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(trackedEventMessage);
+        LegacyDefaultUnitOfWork<? extends EventMessage<?>> unitOfWork =
+                LegacyDefaultUnitOfWork.startAndGet(trackedEventMessage);
         ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> new DefaultInterceptorChain<>(
                 unitOfWork,
                 eventHandlerInterceptors,
@@ -185,7 +187,7 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
 
     /**
      * Handles the given {@code deadlineMessage} in the saga described by the given {@code sagaDescriptor}. Deadline
-     * message is handled in the scope of a {@link org.axonframework.messaging.unitofwork.UnitOfWork}. If handling the
+     * message is handled in the scope of a {@link LegacyUnitOfWork}. If handling the
      * deadline results in an exception, the exception will be wrapped in a {@link FixtureExecutionException}.
      *
      * @param sagaDescriptor  A {@link ScopeDescriptor} describing the saga under test

@@ -43,9 +43,10 @@ import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
  * @author Rene de Waele
  * @author Allard Buijze
  * @since 3.0
+ * @deprecated In favor of the {@link UnitOfWork}.
  */
-@Deprecated // TODO #3064 Remove once old AbstractUnitOfWork is removed
-public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<T> {
+@Deprecated(since = "5.0.0")
+public class LegacyBatchingUnitOfWork<T extends Message<?>> extends AbstractLegacyUnitOfWork<T> {
 
     private final List<MessageProcessingContext<T>> processingContexts;
     private MessageProcessingContext<T> processingContext;
@@ -56,7 +57,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
      * @param messages batch of messages to process
      */
     @SafeVarargs
-    public BatchingUnitOfWork(T... messages) {
+    public LegacyBatchingUnitOfWork(T... messages) {
         this(Arrays.asList(messages));
     }
 
@@ -65,7 +66,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
      *
      * @param messages batch of messages to process
      */
-    public BatchingUnitOfWork(List<T> messages) {
+    public LegacyBatchingUnitOfWork(List<T> messages) {
         Assert.isFalse(messages.isEmpty(), () -> "The list of Messages to process is empty");
         processingContexts = messages.stream().map(MessageProcessingContext::new).collect(Collectors.toList());
         processingContext = processingContexts.get(0);
@@ -147,7 +148,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     }
 
     @Override
-    public UnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
+    public LegacyUnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
         processingContext.transformMessage(transformOperator);
         return this;
     }
@@ -178,7 +179,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork
     }
 
     @Override
-    protected void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler) {
+    protected void addHandler(Phase phase, Consumer<LegacyUnitOfWork<T>> handler) {
         processingContext.addHandler(phase, handler);
     }
 

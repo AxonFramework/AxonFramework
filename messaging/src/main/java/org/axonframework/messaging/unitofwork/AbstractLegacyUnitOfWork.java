@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,15 @@ import java.util.function.Consumer;
  *
  * @author Allard Buijze
  * @since 3.0
+ * @deprecated This class will be removed.
  */
-@Deprecated // TODO #3064 Remove once old UnitOfWork is removed
-public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOfWork<T> {
+@Deprecated(since = "5.0.0")
+public abstract class AbstractLegacyUnitOfWork<T extends Message<?>> implements LegacyUnitOfWork<T> {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractUnitOfWork.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractLegacyUnitOfWork.class);
     private final Map<String, Object> resources = new HashMap<>();
     private final Collection<CorrelationDataProvider> correlationDataProviders = new LinkedHashSet<>();
-    private UnitOfWork<?> parentUnitOfWork;
+    private LegacyUnitOfWork<?> parentUnitOfWork;
     private Phase phase = Phase.NOT_STARTED;
     private boolean rolledBack;
 
@@ -111,8 +112,8 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
         }
     }
 
-    private void delegateAfterCommitToParent(UnitOfWork<?> uow) {
-        Optional<UnitOfWork<?>> parent = uow.parent();
+    private void delegateAfterCommitToParent(LegacyUnitOfWork<?> uow) {
+        Optional<LegacyUnitOfWork<?>> parent = uow.parent();
         if (parent.isPresent()) {
             parent.get().afterCommit(this::delegateAfterCommitToParent);
         } else {
@@ -140,7 +141,7 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
     }
 
     @Override
-    public Optional<UnitOfWork<?>> parent() {
+    public Optional<LegacyUnitOfWork<?>> parent() {
         return Optional.ofNullable(parentUnitOfWork);
     }
 
@@ -185,27 +186,27 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
     }
 
     @Override
-    public void onPrepareCommit(Consumer<UnitOfWork<T>> handler) {
+    public void onPrepareCommit(Consumer<LegacyUnitOfWork<T>> handler) {
         addHandler(Phase.PREPARE_COMMIT, handler);
     }
 
     @Override
-    public void onCommit(Consumer<UnitOfWork<T>> handler) {
+    public void onCommit(Consumer<LegacyUnitOfWork<T>> handler) {
         addHandler(Phase.COMMIT, handler);
     }
 
     @Override
-    public void afterCommit(Consumer<UnitOfWork<T>> handler) {
+    public void afterCommit(Consumer<LegacyUnitOfWork<T>> handler) {
         addHandler(Phase.AFTER_COMMIT, handler);
     }
 
     @Override
-    public void onRollback(Consumer<UnitOfWork<T>> handler) {
+    public void onRollback(Consumer<LegacyUnitOfWork<T>> handler) {
         addHandler(Phase.ROLLBACK, handler);
     }
 
     @Override
-    public void onCleanup(Consumer<UnitOfWork<T>> handler) {
+    public void onCleanup(Consumer<LegacyUnitOfWork<T>> handler) {
         addHandler(Phase.CLEANUP, handler);
     }
 
@@ -262,7 +263,7 @@ public abstract class AbstractUnitOfWork<T extends Message<?>> implements UnitOf
      * @param phase   the Phase of the Unit of Work at which to invoke the handler
      * @param handler the handler to add
      */
-    protected abstract void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler);
+    protected abstract void addHandler(Phase phase, Consumer<LegacyUnitOfWork<T>> handler);
 
     /**
      * Set the execution result of processing the current {@link #getMessage() Message}.

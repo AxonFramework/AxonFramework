@@ -21,8 +21,8 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -43,12 +43,12 @@ class ConflictResolutionTest {
         method = getClass().getDeclaredMethod("handle", String.class, ConflictResolver.class);
         subject = new ConflictResolution();
         conflictResolver = mock(ConflictResolver.class);
-        DefaultUnitOfWork.startAndGet(commandMessage);
+        LegacyDefaultUnitOfWork.startAndGet(commandMessage);
     }
 
     @AfterEach
     void tearDown() {
-        CurrentUnitOfWork.ifStarted(UnitOfWork::commit);
+        CurrentUnitOfWork.ifStarted(LegacyUnitOfWork::commit);
     }
 
     @Test

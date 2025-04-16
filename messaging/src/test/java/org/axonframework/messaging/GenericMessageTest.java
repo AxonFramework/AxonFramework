@@ -20,8 +20,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.correlation.ThrowingCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.json.JacksonSerializer;
@@ -44,11 +44,11 @@ class GenericMessageTest {
 
     private final Map<String, ?> correlationData = MetaData.from(Collections.singletonMap("foo", "bar"));
 
-    private UnitOfWork<?> unitOfWork;
+    private LegacyUnitOfWork<?> unitOfWork;
 
     @BeforeEach
     void setUp() {
-        unitOfWork = mock(UnitOfWork.class);
+        unitOfWork = mock(LegacyUnitOfWork.class);
         when(unitOfWork.getCorrelationData()).thenAnswer(invocation -> correlationData);
         CurrentUnitOfWork.set(unitOfWork);
     }
@@ -110,7 +110,7 @@ class GenericMessageTest {
 
     @Test
     void whenCorrelationDataProviderThrowsException_thenCatchException() {
-        unitOfWork = new DefaultUnitOfWork<>(
+        unitOfWork = new LegacyDefaultUnitOfWork<>(
                 new GenericEventMessage<>(new MessageType("event"), "Input 1")
         );
         CurrentUnitOfWork.set(unitOfWork);

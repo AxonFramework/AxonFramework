@@ -28,7 +28,7 @@ import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
@@ -57,9 +57,9 @@ class SpawningNewAggregateTest {
     private SimpleCommandBus commandBus;
 
     @Mock
-    private Repository<Aggregate1> aggregate1Repository;
+    private LegacyRepository<Aggregate1> aggregate1Repository;
     @Mock
-    private Repository<Aggregate2> aggregate2Repository;
+    private LegacyRepository<Aggregate2> aggregate2Repository;
     @Mock
     private RepositoryProvider repositoryProvider;
     @Mock

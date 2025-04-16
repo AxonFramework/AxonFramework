@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.configuration;
 
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EntityEvolver;
 import org.axonframework.eventsourcing.SimpleEventSourcedComponent;
@@ -26,7 +26,7 @@ import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 
 import java.util.Map;
@@ -122,10 +122,10 @@ class DefaultEventSourcedEntityBuilderTest {
 
     @Test
     void repositoryConstructsEventSourcingRepositoryForEntityFactoryCriteriaResolverAndEntityEvolver() {
-        AsyncRepository<CourseId, Course> result = testSubject.repository()
-                                                              .build(EventSourcingConfigurer.create().build());
+        Repository<CourseId, Course> result = testSubject.repository()
+                                                         .build(EventSourcingConfigurer.create().build());
 
-        assertInstanceOf(AsyncEventSourcingRepository.class, result);
+        assertInstanceOf(EventSourcingRepository.class, result);
         assertTrue(constructedEntityFactory.get());
         assertTrue(constructedCriteriaResolver.get());
         assertTrue(constructedEntityEvolver.get());
@@ -155,8 +155,8 @@ class DefaultEventSourcedEntityBuilderTest {
                                       (entity, payload) -> {
                                           invoked.set(true);
                                       });
-        AsyncRepository<CourseId, Course> result = testSubject.repository()
-                                                              .build(EventSourcingConfigurer.create().build());
+        Repository<CourseId, Course> result = testSubject.repository()
+                                                         .build(EventSourcingConfigurer.create().build());
         MockComponentDescriptor descriptor = new MockComponentDescriptor();
         result.describeTo(descriptor);
 
@@ -204,7 +204,7 @@ class DefaultEventSourcedEntityBuilderTest {
                                          .eventSourcingHandler(Long.class, (entity, payload) -> {
                                          });
 
-        AsyncRepository<CourseId, Course> result =
+        Repository<CourseId, Course> result =
                 separateEventSourcingHandlers.repository()
                                              .build(EventSourcingConfigurer.create().build());
         MockComponentDescriptor descriptor = new MockComponentDescriptor();

@@ -21,11 +21,11 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.modelling.command.Aggregate;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 
 class StubAggregateCommandHandler {
 
-    private Repository<StubAggregate> repository;
+    private LegacyRepository<StubAggregate> repository;
     private EventBus eventBus;
 
     @CommandHandler
@@ -63,7 +63,7 @@ class StubAggregateCommandHandler {
                   .execute(StubAggregate::causeTrouble);
     }
 
-    public void setRepository(Repository<StubAggregate> repository) {
+    public void setRepository(LegacyRepository<StubAggregate> repository) {
         this.repository = repository;
     }
 

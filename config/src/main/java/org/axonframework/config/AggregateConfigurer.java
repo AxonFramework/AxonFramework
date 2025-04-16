@@ -27,7 +27,7 @@ import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
@@ -39,8 +39,8 @@ import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AnnotationCommandTargetResolver;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.CreationPolicyAggregateFactory;
-import org.axonframework.modelling.command.GenericJpaRepository;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyGenericJpaRepository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.axonframework.modelling.command.inspection.AggregateMetaModelFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
@@ -72,7 +72,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     private final Class<A> aggregate;
 
     private final Component<AggregateAnnotationCommandHandler<A>> commandHandler;
-    private final Component<Repository<A>> repository;
+    private final Component<LegacyRepository<A>> repository;
     private final Component<Cache> cache;
     private final Component<AggregateFactory<A>> aggregateFactory;
     private final Component<CreationPolicyAggregateFactory<A>> creationPolicyAggregateFactory;
@@ -141,16 +141,16 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                   "Store to use, or configure a specific repository implementation for " +
                                   aggregate.toString());
 
-                    EventSourcingRepository.Builder<A> builder =
-                            EventSourcingRepository.builder(aggregate)
-                                                   .aggregateModel(metaModel.get())
-                                                   .lockFactory(lockFactory.get())
-                                                   .eventStore(c.eventStore())
-                                                   .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
-                                                   .aggregateFactory(aggregateFactory.get())
-                                                   .repositoryProvider(c::repository)
-                                                   .spanFactory(c.getComponent(RepositorySpanFactory.class))
-                                                   .cache(cache.get());
+                    LegacyEventSourcingRepository.Builder<A> builder =
+                            LegacyEventSourcingRepository.builder(aggregate)
+                                                         .aggregateModel(metaModel.get())
+                                                         .lockFactory(lockFactory.get())
+                                                         .eventStore(c.eventStore())
+                                                         .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
+                                                         .aggregateFactory(aggregateFactory.get())
+                                                         .repositoryProvider(c::repository)
+                                                         .spanFactory(c.getComponent(RepositorySpanFactory.class))
+                                                         .cache(cache.get());
                     if (eventStreamFilter.get() != null) {
                         builder = builder.eventStreamFilter(eventStreamFilter.get());
                     } else if (filterEventsByType.get()) {
@@ -214,14 +214,14 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                         aggregateType.getSimpleName()
                                 ));
                             });
-                    return GenericJpaRepository.builder(aggregateType)
-                                               .aggregateModel(configurer.metaModel.get())
-                                               .lockFactory(configurer.lockFactory.get())
-                                               .entityManagerProvider(entityManagerProvider)
-                                               .eventBus(c.eventBus())
-                                               .repositoryProvider(c::repository)
-                                               .spanFactory(c.getComponent(RepositorySpanFactory.class))
-                                               .build();
+                    return LegacyGenericJpaRepository.builder(aggregateType)
+                                                     .aggregateModel(configurer.metaModel.get())
+                                                     .lockFactory(configurer.lockFactory.get())
+                                                     .entityManagerProvider(entityManagerProvider)
+                                                     .eventBus(c.eventBus())
+                                                     .repositoryProvider(c::repository)
+                                                     .spanFactory(c.getComponent(RepositorySpanFactory.class))
+                                                     .build();
                 });
     }
 
@@ -240,14 +240,14 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         AggregateConfigurer<A> configurer = new AggregateConfigurer<>(aggregateType)
                 .configureLockFactory(config -> NullLockFactory.INSTANCE);
         return configurer.configureRepository(
-                c -> GenericJpaRepository.builder(aggregateType)
-                                         .aggregateModel(configurer.metaModel.get())
-                                         .lockFactory(configurer.lockFactory.get())
-                                         .entityManagerProvider(entityManagerProvider)
-                                         .eventBus(c.eventBus())
-                                         .repositoryProvider(c::repository)
-                                         .spanFactory(c.getComponent(RepositorySpanFactory.class))
-                                         .build()
+                c -> LegacyGenericJpaRepository.builder(aggregateType)
+                                               .aggregateModel(configurer.metaModel.get())
+                                               .lockFactory(configurer.lockFactory.get())
+                                               .entityManagerProvider(entityManagerProvider)
+                                               .eventBus(c.eventBus())
+                                               .repositoryProvider(c::repository)
+                                               .spanFactory(c.getComponent(RepositorySpanFactory.class))
+                                               .build()
         );
     }
 
@@ -262,7 +262,9 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      * @param repositoryBuilder The builder function for the repository
      * @return this configurer instance for chaining
      */
-    public AggregateConfigurer<A> configureRepository(Function<LegacyConfiguration, Repository<A>> repositoryBuilder) {
+    public AggregateConfigurer<A> configureRepository(
+            Function<LegacyConfiguration, LegacyRepository<A>> repositoryBuilder
+    ) {
         repository.update(repositoryBuilder);
         return this;
     }
@@ -300,9 +302,9 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     /**
-     * Defines the {@link LockFactory} to use in the {@link Repository} for the aggregate under configuration. Defaults
-     * to the {@link PessimisticLockFactory} for the {@link EventSourcingRepository} and {@link NullLockFactory} for a
-     * {@link GenericJpaRepository}.
+     * Defines the {@link LockFactory} to use in the {@link LegacyRepository} for the aggregate under configuration.
+     * Defaults to the {@link PessimisticLockFactory} for the {@link LegacyEventSourcingRepository} and
+     * {@link NullLockFactory} for a {@link LegacyGenericJpaRepository}.
      *
      * @param lockFactory a {@link Function} building the {@link LockFactory} to use based on the
      *                    {@link LegacyConfiguration}
@@ -377,7 +379,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      *
      * @param filterBuilder The function creating the filter.
      * @return this configurer instance for chaining
-     * @see EventSourcingRepository.Builder#eventStreamFilter(Predicate)
+     * @see LegacyEventSourcingRepository.Builder#eventStreamFilter(Predicate)
      */
     public AggregateConfigurer<A> configureEventStreamFilter(
             Function<LegacyConfiguration, Predicate<? super DomainEventMessage<?>>> filterBuilder
@@ -418,7 +420,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      *
      * @param filterConfigurationPredicate The function determining whether or not to filter events by Aggregate type.
      * @return this configurer instance for chaining
-     * @see EventSourcingRepository.Builder#filterByAggregateType()
+     * @see LegacyEventSourcingRepository.Builder#filterByAggregateType()
      */
     public AggregateConfigurer<A> configureFilterEventsByType(
             Function<LegacyConfiguration, Boolean> filterConfigurationPredicate
@@ -444,7 +446,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
     }
 
     @Override
-    public Repository<A> repository() {
+    public LegacyRepository<A> repository() {
         return repository.get();
     }
 

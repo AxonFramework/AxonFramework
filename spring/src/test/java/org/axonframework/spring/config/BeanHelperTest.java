@@ -17,7 +17,7 @@
 package org.axonframework.spring.config;
 
 import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.junit.jupiter.api.*;
 
 import java.util.Random;
@@ -32,10 +32,10 @@ class BeanHelperTest {
     @Test
     void verifyRetrievesRepositoryFromConfiguration() {
         LegacyConfiguration configuration = mock(LegacyConfiguration.class);
-        Repository mockRepository = mock(Repository.class);
+        LegacyRepository mockRepository = mock(LegacyRepository.class);
         when(configuration.repository(any())).thenReturn(mockRepository);
 
-        Repository<?> actual = BeanHelper.repository(Random.class, configuration);
+        LegacyRepository<?> actual = BeanHelper.repository(Random.class, configuration);
 
         verify(configuration).repository(Random.class);
         assertSame(mockRepository, actual);

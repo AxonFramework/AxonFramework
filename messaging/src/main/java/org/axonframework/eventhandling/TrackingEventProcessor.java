@@ -31,10 +31,10 @@ import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.StreamableMessageSource;
-import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.slf4j.Logger;
@@ -159,7 +159,8 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
         this.trackerStatusChangeListener = config.getEventTrackerStatusChangeListener();
 
         registerHandlerInterceptor((unitOfWork, interceptorChain) -> {
-            if (!(unitOfWork instanceof BatchingUnitOfWork) || ((BatchingUnitOfWork<?>) unitOfWork).isFirstMessage()) {
+            if (!(unitOfWork instanceof LegacyBatchingUnitOfWork)
+                    || ((LegacyBatchingUnitOfWork<?>) unitOfWork).isFirstMessage()) {
                 Instant startTime = now();
                 TrackingToken lastToken = unitOfWork.getResource(lastTokenResourceKey);
                 if (storeTokenBeforeProcessing) {
@@ -485,7 +486,7 @@ public class TrackingEventProcessor extends AbstractEventProcessor implements St
                 }
             }
 
-            UnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(batch);
+            LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = new LegacyBatchingUnitOfWork<>(batch);
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
             unitOfWork.resources().put(lastTokenResourceKey, finalLastToken);

@@ -24,7 +24,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.StateManager;
 import org.axonframework.modelling.command.StatefulCommandHandler;
 import org.axonframework.modelling.command.StatefulCommandHandlingComponent;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 import org.axonframework.utils.StubLifecycleRegistry;
 import org.junit.jupiter.api.*;
 
@@ -74,8 +74,8 @@ class StatefulCommandHandlingModuleTest {
                                                       new StubLifecycleRegistry());
 
         //noinspection rawtypes
-        Optional<AsyncRepository> optionalRepository =
-                resultConfig.getOptionalComponent(AsyncRepository.class, entityBuilder.entityName());
+        Optional<Repository> optionalRepository =
+                resultConfig.getOptionalComponent(Repository.class, entityBuilder.entityName());
         assertTrue(optionalRepository.isPresent());
 
         Optional<StateManager> optionalStateManager =

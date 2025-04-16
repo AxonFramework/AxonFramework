@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package org.axonframework.springboot;
 
 import org.axonframework.commandhandling.CommandBus;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
@@ -55,7 +56,7 @@ public class TracingProperties {
     private SagaManagerProperties sagaManager = new SagaManagerProperties();
 
     /**
-     * Properties describing the tracing settings for the {@link org.axonframework.modelling.command.Repository}.
+     * Properties describing the tracing settings for the {@link LegacyRepository}.
      */
     private RepositoryProperties repository = new RepositoryProperties();
 
@@ -173,10 +174,10 @@ public class TracingProperties {
 
     /**
      * Returns the properties describing the tracing settings for the
-     * {@link org.axonframework.modelling.command.Repository}.
+     * {@link LegacyRepository}.
      *
      * @return the properties describing the tracing settings for the
-     * {@link org.axonframework.modelling.command.Repository}.
+     * {@link LegacyRepository}.
      */
     public RepositoryProperties getRepository() {
         return repository;
@@ -184,10 +185,10 @@ public class TracingProperties {
 
     /**
      * Sets the properties describing the tracing settings for the
-     * {@link org.axonframework.modelling.command.Repository}.
+     * {@link LegacyRepository}.
      *
      * @param repository the properties describing the tracing settings for the
-     *                   {@link org.axonframework.modelling.command.Repository}.
+     *                   {@link LegacyRepository}.
      */
     public void setRepository(RepositoryProperties repository) {
         this.repository = repository;
@@ -566,7 +567,7 @@ public class TracingProperties {
 
     /**
      * Configuration properties for the behavior of creating tracing spans for the
-     * {@link org.axonframework.modelling.command.Repository}.
+     * {@link LegacyRepository}.
      *
      * @since 4.9.0
      */

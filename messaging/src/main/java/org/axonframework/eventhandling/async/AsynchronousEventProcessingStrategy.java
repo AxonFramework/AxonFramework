@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.axonframework.eventhandling.async;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventProcessingStrategy;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +67,7 @@ public class AsynchronousEventProcessingStrategy implements EventProcessingStrat
     public void handle(@Nonnull List<? extends EventMessage<?>> events,
                        @Nonnull Consumer<List<? extends EventMessage<?>>> processor) {
         if (CurrentUnitOfWork.isStarted()) {
-            UnitOfWork<?> unitOfWorkRoot = CurrentUnitOfWork.get().root();
+            LegacyUnitOfWork<?> unitOfWorkRoot = CurrentUnitOfWork.get().root();
             unitOfWorkRoot.getOrComputeResource(scheduledEventsKey, key -> {
                 List<EventMessage<?>> allEvents = new ArrayList<>();
                 unitOfWorkRoot.afterCommit(uow -> schedule(allEvents, processor));

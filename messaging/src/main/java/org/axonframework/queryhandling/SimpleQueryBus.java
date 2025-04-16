@@ -33,8 +33,8 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.interceptors.TransactionManagingInterceptor;
 import org.axonframework.messaging.responsetypes.ResponseType;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.queryhandling.registration.DuplicateQueryHandlerResolution;
@@ -202,7 +202,7 @@ public class SimpleQueryBus implements QueryBus {
             Iterator<MessageHandler<? super QueryMessage<?, ?>, ? extends QueryResponseMessage<?>>> handlerIterator = handlers.iterator();
             boolean invocationSuccess = false;
             while (!invocationSuccess && handlerIterator.hasNext()) {
-                DefaultUnitOfWork<QueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(interceptedQuery);
+                LegacyDefaultUnitOfWork<QueryMessage<Q, R>> uow = LegacyDefaultUnitOfWork.startAndGet(interceptedQuery);
                 ResultMessage<CompletableFuture<QueryResponseMessage<R>>> resultMessage =
                         interceptAndInvoke(uow, handlerIterator.next());
                 if (resultMessage.isExceptional()) {
@@ -444,7 +444,7 @@ public class SimpleQueryBus implements QueryBus {
     ) {
         long leftTimeout = getRemainingOfDeadline(deadline);
         ResultMessage<CompletableFuture<QueryResponseMessage<R>>> resultMessage =
-                interceptAndInvoke(DefaultUnitOfWork.startAndGet(interceptedQuery),
+                interceptAndInvoke(LegacyDefaultUnitOfWork.startAndGet(interceptedQuery),
                                    handler);
         QueryResponseMessage<R> response = null;
         if (resultMessage.isExceptional()) {
@@ -511,7 +511,7 @@ public class SimpleQueryBus implements QueryBus {
     }
 
     private <Q, R> ResultMessage<CompletableFuture<QueryResponseMessage<R>>> interceptAndInvoke(
-            UnitOfWork<QueryMessage<Q, R>> uow,
+            LegacyUnitOfWork<QueryMessage<Q, R>> uow,
             MessageHandler<? super QueryMessage<?, R>, ? extends QueryResponseMessage<?>> handler
     ) {
         return uow.executeWithResult(() -> {
@@ -586,7 +586,7 @@ public class SimpleQueryBus implements QueryBus {
             StreamingQueryMessage<Q, R> query,
             MessageHandler<? super StreamingQueryMessage<?, R>, ? extends QueryResponseMessage<?>> handler, Span span) {
         try (SpanScope unused = span.makeCurrent()) {
-            DefaultUnitOfWork<StreamingQueryMessage<Q, R>> uow = DefaultUnitOfWork.startAndGet(query);
+            LegacyDefaultUnitOfWork<StreamingQueryMessage<Q, R>> uow = LegacyDefaultUnitOfWork.startAndGet(query);
             return uow.executeWithResult(() -> {
                 Object queryResponse = new DefaultInterceptorChain<>(uow, handlerInterceptors, handler).proceedSync();
                 return Flux.from(query.getResponseType()

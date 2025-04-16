@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2010-2025. Axon Framework
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.axonframework.messaging.unitofwork;
 
 import org.axonframework.utils.MockException;
@@ -10,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating whether the {@link AsyncUnitOfWork} complies with the expectations of a
+ * Test class validating whether the {@link UnitOfWork} complies with the expectations of a
  * {@link ProcessingLifecycle} implementation.
  *
  * @author Gerard Klijs
@@ -18,22 +34,21 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Sara Pellegrini
  * @author Steven van Beelen
  */
-// TODO #3064 - Rename to UnitOfWorkTest once old version is removed.
-class AsyncUnitOfWorkTest extends ProcessingLifecycleTest<AsyncUnitOfWork> {
+class UnitOfWorkTest extends ProcessingLifecycleTest<UnitOfWork> {
 
     @Override
-    AsyncUnitOfWork createTestSubject() {
-        return new AsyncUnitOfWork();
+    UnitOfWork createTestSubject() {
+        return new UnitOfWork();
     }
 
     @Override
-    CompletableFuture<?> execute(AsyncUnitOfWork testSubject) {
+    CompletableFuture<?> execute(UnitOfWork testSubject) {
         return testSubject.execute();
     }
 
     @Test
     void executeWithResultReturnsResultAtCompletionOfUnitOfWork() {
-        AsyncUnitOfWork testSubject = createTestSubject();
+        UnitOfWork testSubject = createTestSubject();
         CompletableFuture<String> invocationResult = new CompletableFuture<>();
         CompletableFuture<String> actual = testSubject.executeWithResult(pc -> invocationResult);
 
@@ -50,7 +65,7 @@ class AsyncUnitOfWorkTest extends ProcessingLifecycleTest<AsyncUnitOfWork> {
 
     @Test
     void executeWithResultReturnsExceptionalResultAtCompletionOfUnitOfWork() {
-        AsyncUnitOfWork testSubject = createTestSubject();
+        UnitOfWork testSubject = createTestSubject();
         CompletableFuture<String> invocationResult = new CompletableFuture<>();
         CompletableFuture<String> actual = testSubject.executeWithResult(pc -> invocationResult);
 
@@ -70,7 +85,7 @@ class AsyncUnitOfWorkTest extends ProcessingLifecycleTest<AsyncUnitOfWork> {
 
     @Test
     void executeWithExtremeNumberOfPhaseHandlers() {
-        AsyncUnitOfWork testSubject = createTestSubject();
+        UnitOfWork testSubject = createTestSubject();
         AtomicInteger phaseNr = new AtomicInteger(-10000);
         testSubject.runOn(new CustomPhase(phaseNr.getAndIncrement()), p -> registerNextPhase(p, phaseNr));
 
@@ -82,7 +97,7 @@ class AsyncUnitOfWorkTest extends ProcessingLifecycleTest<AsyncUnitOfWork> {
 
     @Test
     void exceptionsThrownInInvocationAreReturnedInFuture() {
-        AsyncUnitOfWork testSubject = createTestSubject();
+        UnitOfWork testSubject = createTestSubject();
         CompletableFuture<Object> actual = testSubject.executeWithResult(c -> {
             throw new MockException("Simulating bad behavior");
         });

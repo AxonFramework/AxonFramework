@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 import org.axonframework.modelling.repository.ManagedEntity;
 
 import java.util.Map;
@@ -32,7 +32,7 @@ import java.util.function.UnaryOperator;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Simple implementation of an {@link AsyncRepository} that can load and persist entities of a given type. When an
+ * Simple implementation of an {@link Repository} that can load and persist entities of a given type. When an
  * entity is loaded, it is stored in the {@link ProcessingContext} to ensure that the same entity is returned when it is
  * loaded again in the same context.
  * <p>
@@ -48,7 +48,7 @@ import static java.util.Objects.requireNonNull;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class SimpleRepository<I, T> implements AsyncRepository.LifecycleManagement<I, T> {
+public class SimpleRepository<I, T> implements Repository.LifecycleManagement<I, T> {
 
     private final ResourceKey<Map<I, CompletableFuture<ManagedEntity<I, T>>>> managedEntitiesKey =
             ResourceKey.withLabel("SimpleRepository.ManagedEntities");
@@ -59,7 +59,7 @@ public class SimpleRepository<I, T> implements AsyncRepository.LifecycleManageme
     private final SimpleRepositoryEntityPersister<I, T> persister;
 
     /**
-     * Constructs a new simple {@link AsyncRepository} for entities of type {@code entityType} with identifiers of type
+     * Constructs a new simple {@link Repository} for entities of type {@code entityType} with identifiers of type
      * {@code idType}. The given {@code loader} is used to load entities and the given {@code persister} is used
      * to persist entities.
      *

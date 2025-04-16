@@ -22,8 +22,8 @@ import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.utils.MockException;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
@@ -97,7 +97,7 @@ class SagaManagerTest {
     @Test
     void sagasLoaded() throws Exception {
         EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
-        UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
+        LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(event);
         unitOfWork.executeWithResult(() -> {
             testSubject.handle(event, null, Segment.ROOT_SEGMENT);
             return null;
@@ -111,7 +111,7 @@ class SagaManagerTest {
     @Test
     void sagaIsTraced() {
         EventMessage<?> event = new GenericEventMessage<>(new MessageType("event"), new Object());
-        UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
+        LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(event);
         unitOfWork.executeWithResult(() -> {
             testSubject.handle(event, null, Segment.ROOT_SEGMENT);
             return null;
@@ -150,7 +150,7 @@ class SagaManagerTest {
         MockException toBeThrown = new MockException();
         doThrow(toBeThrown).when(mockSaga1).handleSync(event);
         doThrow(toBeThrown).when(mockErrorHandler).onError(toBeThrown, event, mockSaga1);
-        UnitOfWork<? extends EventMessage<?>> unitOfWork = new DefaultUnitOfWork<>(event);
+        LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(event);
         ResultMessage<Object> resultMessage = unitOfWork.executeWithResult(() -> {
             testSubject.handle(event, null, Segment.ROOT_SEGMENT);
             return null;

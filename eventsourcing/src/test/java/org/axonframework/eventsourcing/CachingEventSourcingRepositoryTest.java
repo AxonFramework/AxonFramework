@@ -27,8 +27,8 @@ import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventSt
 import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.eventsourcing.utils.StubAggregate;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.modelling.command.LockAwareAggregate;
@@ -54,7 +54,7 @@ import static org.mockito.Mockito.*;
  */
 class CachingEventSourcingRepositoryTest {
 
-    private CachingEventSourcingRepository<StubAggregate> testSubject;
+    private LegacyCachingEventSourcingRepository<StubAggregate> testSubject;
     private LegacyEventStore mockEventStore;
     private Cache cache;
     private org.ehcache.core.Ehcache ehCache;
@@ -78,11 +78,11 @@ class CachingEventSourcingRepositoryTest {
                                 .build());
         cache = spy(new EhCacheAdapter(ehCache));
 
-        testSubject = CachingEventSourcingRepository.builder(StubAggregate.class)
-                                                    .aggregateFactory(new StubAggregateFactory())
-                                                    .eventStore(mockEventStore)
-                                                    .cache(cache)
-                                                    .build();
+        testSubject = LegacyCachingEventSourcingRepository.builder(StubAggregate.class)
+                                                          .aggregateFactory(new StubAggregateFactory())
+                                                          .eventStore(mockEventStore)
+                                                          .cache(cache)
+                                                          .build();
     }
 
     @AfterEach
@@ -112,7 +112,7 @@ class CachingEventSourcingRepositoryTest {
         assertEquals(2, aggregate1.getWrappedAggregate().lastSequence());
         CurrentUnitOfWork.commit();
 
-        DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork.startAndGet(null);
         DomainEventStream events = mockEventStore.readEvents("aggregateId");
         List<EventMessage> eventList = new ArrayList<>();
         while (events.hasNext()) {
@@ -166,7 +166,7 @@ class CachingEventSourcingRepositoryTest {
 
     @Test
     void cacheClearedAfterRollbackOfAddedAggregate() throws Exception {
-        UnitOfWork<?> uow = startAndGetUnitOfWork();
+        LegacyUnitOfWork<?> uow = startAndGetUnitOfWork();
         uow.onCommit(c -> { throw new MockException();});
         try {
             testSubject.newInstance(() -> new StubAggregate("id1")).execute(StubAggregate::doSomething);
@@ -182,7 +182,7 @@ class CachingEventSourcingRepositoryTest {
 
         startAndGetUnitOfWork().executeWithResult(() -> testSubject.newInstance(() -> new StubAggregate("id1")));
 
-        UnitOfWork<?> uow = startAndGetUnitOfWork();
+        LegacyUnitOfWork<?> uow = startAndGetUnitOfWork();
         uow.onCommit(c -> {
             throw new MockException();
         });
@@ -200,7 +200,7 @@ class CachingEventSourcingRepositoryTest {
 
         startAndGetUnitOfWork().executeWithResult(() -> testSubject.newInstance(() -> new StubAggregate("id1")));
 
-        UnitOfWork<?> uow = startAndGetUnitOfWork();
+        LegacyUnitOfWork<?> uow = startAndGetUnitOfWork();
         uow.onCommit(c -> { throw new MockException();});
         try {
             testSubject.loadOrCreate("id1", () -> new StubAggregate("id1")).execute(StubAggregate::doSomething);
@@ -214,7 +214,7 @@ class CachingEventSourcingRepositoryTest {
     @Test
     void cacheClearedAfterRollbackOfCreatedAggregateUsingLoadOrCreate() throws Exception {
 
-        UnitOfWork<?> uow = startAndGetUnitOfWork();
+        LegacyUnitOfWork<?> uow = startAndGetUnitOfWork();
         uow.onCommit(c -> { throw new MockException();});
         try {
             testSubject.loadOrCreate("id1", () -> new StubAggregate("id1")).execute(StubAggregate::doSomething);
@@ -225,8 +225,8 @@ class CachingEventSourcingRepositoryTest {
         assertNull(cache.get("id1"));
     }
 
-    private UnitOfWork<?> startAndGetUnitOfWork() {
-        return DefaultUnitOfWork.startAndGet(null);
+    private LegacyUnitOfWork<?> startAndGetUnitOfWork() {
+        return LegacyDefaultUnitOfWork.startAndGet(null);
     }
 
     private static class StubAggregateFactory extends AbstractAggregateFactory<StubAggregate> {

@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.modelling.SimpleRepositoryEntityLoader;
 import org.axonframework.modelling.SimpleRepositoryEntityPersister;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 
 /**
  * An expansion on the {@link EntityBuilder}, specifically for state-based entities.
@@ -83,10 +83,10 @@ public interface StateBasedEntityBuilder<I, E> extends EntityBuilder<I, E> {
         /**
          * Registers the given {@code repository} as a factory method for the state-based entity being built.
          *
-         * @param repository A factory method constructing a {@link AsyncRepository}.
+         * @param repository A factory method constructing a {@link Repository}.
          * @return The parent {@link StateBasedEntityBuilder}, signaling the end of configuring a state-based entity.
          */
-        StateBasedEntityBuilder<I, E> repository(@Nonnull ComponentFactory<AsyncRepository<I, E>> repository);
+        StateBasedEntityBuilder<I, E> repository(@Nonnull ComponentFactory<Repository<I, E>> repository);
     }
 
     /**

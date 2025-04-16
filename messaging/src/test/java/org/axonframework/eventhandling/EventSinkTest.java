@@ -18,7 +18,7 @@ package org.axonframework.eventhandling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.junit.jupiter.api.*;
 
 import java.time.Duration;
@@ -55,7 +55,7 @@ class EventSinkTest {
         EventMessage<?> testEventZero = eventMessage(0);
         EventMessage<?> testEventOne = eventMessage(1);
 
-        AsyncUnitOfWork uow = new AsyncUnitOfWork();
+        UnitOfWork uow = new UnitOfWork();
         uow.runOnPreInvocation(processingContext -> testSubject.publish(processingContext,
                                                                         testEventZero, testEventOne))
            .runOnInvocation(processingContext -> assertNull(publishedEventsReference.get()))

@@ -20,8 +20,8 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -48,12 +48,12 @@ class AbstractEventBusTest {
 
     private static final MessageType TEST_EVENT_NAME = new MessageType("event");
 
-    private UnitOfWork<?> unitOfWork;
+    private LegacyUnitOfWork<?> unitOfWork;
     private StubPublishingEventBus testSubject;
 
     @BeforeEach
     void setUp() {
-        (unitOfWork = spy(new DefaultUnitOfWork<>(null))).start();
+        (unitOfWork = spy(new LegacyDefaultUnitOfWork<>(null))).start();
         testSubject = spy(StubPublishingEventBus.builder().build());
     }
 
@@ -135,7 +135,7 @@ class AbstractEventBusTest {
     @Test
     void publicationForbiddenDuringUowCommitPhase() {
         StubPublishingEventBus.builder()
-                              .publicationPhase(UnitOfWork.Phase.COMMIT)
+                              .publicationPhase(LegacyUnitOfWork.Phase.COMMIT)
                               .startNewUowBeforePublishing(false)
                               .build()
                               .publish(numberedEvent(5));
@@ -145,7 +145,7 @@ class AbstractEventBusTest {
 
     @Test
     void publicationForbiddenDuringRootUowCommitPhase() {
-        testSubject = spy(StubPublishingEventBus.builder().publicationPhase(UnitOfWork.Phase.COMMIT).build());
+        testSubject = spy(StubPublishingEventBus.builder().publicationPhase(LegacyUnitOfWork.Phase.COMMIT).build());
         testSubject.publish(numberedEvent(1));
 
         assertThrows(IllegalStateException.class, unitOfWork::commit);
@@ -208,7 +208,7 @@ class AbstractEventBusTest {
 
         private final List<EventMessage<?>> committedEvents = new ArrayList<>();
 
-        private final UnitOfWork.Phase publicationPhase;
+        private final LegacyUnitOfWork.Phase publicationPhase;
         private final boolean startNewUowBeforePublishing;
 
         private StubPublishingEventBus(Builder builder) {
@@ -223,21 +223,21 @@ class AbstractEventBusTest {
 
         @Override
         protected void prepareCommit(List<? extends EventMessage<?>> events) {
-            if (publicationPhase == UnitOfWork.Phase.PREPARE_COMMIT) {
+            if (publicationPhase == LegacyUnitOfWork.Phase.PREPARE_COMMIT) {
                 onEvents(events);
             }
         }
 
         @Override
         protected void commit(List<? extends EventMessage<?>> events) {
-            if (publicationPhase == UnitOfWork.Phase.COMMIT) {
+            if (publicationPhase == LegacyUnitOfWork.Phase.COMMIT) {
                 onEvents(events);
             }
         }
 
         @Override
         protected void afterCommit(List<? extends EventMessage<?>> events) {
-            if (publicationPhase == UnitOfWork.Phase.AFTER_COMMIT) {
+            if (publicationPhase == LegacyUnitOfWork.Phase.AFTER_COMMIT) {
                 onEvents(events);
             }
         }
@@ -250,7 +250,7 @@ class AbstractEventBusTest {
                 if (number > 0) {
                     EventMessage<Integer> nextEvent = numberedEvent(number - 1);
                     if (startNewUowBeforePublishing) {
-                        UnitOfWork<?> nestedUnitOfWork = DefaultUnitOfWork.startAndGet(null);
+                        LegacyUnitOfWork<?> nestedUnitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
                         try {
                             publish(nextEvent);
                         } finally {
@@ -271,11 +271,11 @@ class AbstractEventBusTest {
 
         private static class Builder extends AbstractEventBus.Builder {
 
-            private UnitOfWork.Phase publicationPhase = UnitOfWork.Phase.PREPARE_COMMIT;
+            private LegacyUnitOfWork.Phase publicationPhase = LegacyUnitOfWork.Phase.PREPARE_COMMIT;
             private boolean startNewUowBeforePublishing = true;
 
             @SuppressWarnings("SameParameterValue")
-            private Builder publicationPhase(UnitOfWork.Phase publicationPhase) {
+            private Builder publicationPhase(LegacyUnitOfWork.Phase publicationPhase) {
                 this.publicationPhase = publicationPhase;
                 return this;
             }

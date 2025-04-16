@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageHandlerInterceptor;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.annotation.Secured;
@@ -45,7 +45,7 @@ public class MessageAuthorizationHandlerInterceptor<T extends Message<?>> implem
     private static final Logger logger = LoggerFactory.getLogger(MessageAuthorizationHandlerInterceptor.class);
 
     @Override
-    public Object handle(@Nonnull UnitOfWork<? extends T> unitOfWork,
+    public Object handle(@Nonnull LegacyUnitOfWork<? extends T> unitOfWork,
                          @Nonnull InterceptorChain interceptorChain) throws Exception {
         T message = unitOfWork.getMessage();
         if (!AnnotationUtils.isAnnotationPresent(message.getPayloadType(), Secured.class)) {

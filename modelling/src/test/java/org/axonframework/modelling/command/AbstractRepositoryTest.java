@@ -22,8 +22,8 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.saga.SagaScopeDescriptor;
 import org.junit.jupiter.api.*;
@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link AbstractRepository}.
+ * Test class validating the {@link AbstractLegacyRepository}.
  *
  * @author Allard Buijze
  */
@@ -43,15 +43,15 @@ class AbstractRepositoryTest {
 
     private static final String AGGREGATE_ID = "some-identifier";
 
-    private AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>> testSubject;
+    private AbstractLegacyRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>> testSubject;
 
     private AnnotatedAggregate<JpaAggregate> spiedAggregate;
     private final Message<?> failureMessage = null;
 
     @BeforeEach
     void setUp() {
-        testSubject = new AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
-                new AbstractRepository.Builder<JpaAggregate>(JpaAggregate.class) {}) {
+        testSubject = new AbstractLegacyRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
+                new AbstractLegacyRepository.Builder<JpaAggregate>(JpaAggregate.class) {}) {
 
             @Override
             protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod)
@@ -88,7 +88,7 @@ class AbstractRepositoryTest {
             }
         };
 
-        DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork.startAndGet(null);
     }
 
     @AfterEach
@@ -113,9 +113,9 @@ class AbstractRepositoryTest {
     @Test
     void aggregateTypeVerification_WrongType() {
         //noinspection rawtypes
-        AbstractRepository anonymousTestSubject =
-                new AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
-                        new AbstractRepository.Builder<JpaAggregate>(JpaAggregate.class) {}) {
+        AbstractLegacyRepository anonymousTestSubject =
+                new AbstractLegacyRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
+                        new AbstractLegacyRepository.Builder<JpaAggregate>(JpaAggregate.class) {}) {
 
                     @Override
                     protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod)
@@ -206,7 +206,7 @@ class AbstractRepositoryTest {
     @Test
     void checkedExceptionFromConstructorDoesNotAttemptToStoreAggregate() {
         // committing the unit of work does not throw an exception
-        UnitOfWork<?> uow = CurrentUnitOfWork.get();
+        LegacyUnitOfWork<?> uow = CurrentUnitOfWork.get();
         uow.executeWithResult(() -> testSubject.newInstance(() -> {
             throw new Exception("Throwing checked exception");
         }), RuntimeException.class::isInstance);

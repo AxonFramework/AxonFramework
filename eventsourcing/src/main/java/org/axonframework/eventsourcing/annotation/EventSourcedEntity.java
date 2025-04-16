@@ -30,9 +30,10 @@ import java.lang.annotation.Target;
  * annotation-based entity through the
  * {@link org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder#annotatedEntity(Class, Class)}.
  * <p>
- * While loading the entity from the {@link EventSourcingRepository}, the provided {@code id} needs to be translated to
- * an {@link EventCriteria} instance to load the correct events. Unless overridden, this translation is done by the
- * {@link AnnotationBasedEventCriteriaResolver}. So, {@link EventCriteria} will be resolved in the following order:
+ * While loading the entity from the {@link EventSourcingRepository}, the provided {@code id} needs to be
+ * translated to an {@link EventCriteria} instance to load the correct events. Unless overridden, this translation is
+ * done by the {@link AnnotationBasedEventCriteriaResolver}. So, {@link EventCriteria} will be resolved in the following
+ * order:
  * <ol>
  *     <li>
  *         Using the custom {@link #criteriaResolverDefinition()}. The definition should return a {@link CriteriaResolver},

@@ -19,7 +19,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.junit.jupiter.api.*;
 
 import java.util.Collections;
@@ -37,7 +37,7 @@ class UnitOfWorkTimeoutInterceptorTest {
     void interruptsUnitOfWorkThatTakesTooLong() {
         UnitOfWorkTimeoutInterceptor testSubject = new UnitOfWorkTimeoutInterceptor("MyUnitOfWork", 100, 50, 10);
 
-        DefaultUnitOfWork<EventMessage<String>> uow = new DefaultUnitOfWork<>(
+        LegacyDefaultUnitOfWork<EventMessage<String>> uow = new LegacyDefaultUnitOfWork<>(
                 EventTestUtils.asEventMessage("test")
         );
         DefaultInterceptorChain<EventMessage<String>, Message<Void>> interceptorChain = new DefaultInterceptorChain<>(
@@ -59,7 +59,7 @@ class UnitOfWorkTimeoutInterceptorTest {
     void doesNotInterruptWorkWithinTime() {
         UnitOfWorkTimeoutInterceptor testSubject = new UnitOfWorkTimeoutInterceptor("MyUnitOfWork", 100, 50, 10);
 
-        DefaultUnitOfWork<EventMessage<String>> uow = new DefaultUnitOfWork<>(
+        LegacyDefaultUnitOfWork<EventMessage<String>> uow = new LegacyDefaultUnitOfWork<>(
                 EventTestUtils.asEventMessage("test")
         );
         DefaultInterceptorChain<EventMessage<String>, Message<Void>> interceptorChain = new DefaultInterceptorChain<>(

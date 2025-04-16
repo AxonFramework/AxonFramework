@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.common.jdbc;
 
 import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -49,11 +49,11 @@ public class UnitOfWorkAwareConnectionProviderWrapper implements ConnectionProvi
     @Override
     public Connection getConnection() throws SQLException {
         if (!CurrentUnitOfWork.isStarted() || CurrentUnitOfWork.get().phase()
-                                                               .isAfter(UnitOfWork.Phase.PREPARE_COMMIT)) {
+                                                               .isAfter(LegacyUnitOfWork.Phase.PREPARE_COMMIT)) {
             return delegate.getConnection();
         }
 
-        UnitOfWork<?> uow = CurrentUnitOfWork.get();
+        LegacyUnitOfWork<?> uow = CurrentUnitOfWork.get();
         Connection connection = uow.root().getResource(CONNECTION_RESOURCE_NAME);
         if (connection == null || connection.isClosed()) {
             final Connection delegateConnection = delegate.getConnection();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.config;
 
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 
 /**
  * Specialization of the Module Configuration for modules that define an Aggregate Configuration. This interface allows
@@ -35,7 +35,7 @@ public interface AggregateConfiguration<A> extends ModuleConfiguration {
      *
      * @return the repository to load aggregates
      */
-    Repository<A> repository();
+    LegacyRepository<A> repository();
 
     /**
      * Returns the type of Aggregate defined in this configuration.

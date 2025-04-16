@@ -16,8 +16,8 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 
 import static java.util.Arrays.asList;
@@ -30,13 +30,13 @@ import static org.mockito.Mockito.*;
  */
 class DefaultInterceptorChainTest {
 
-    private UnitOfWork<Message<?>> unitOfWork;
+    private LegacyUnitOfWork<Message<?>> unitOfWork;
     private MessageHandler<Message<?>, Message<Object>> mockHandler;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
     void setUp() throws Exception {
-        unitOfWork = new DefaultUnitOfWork<>(null);
+        unitOfWork = new LegacyDefaultUnitOfWork<>(null);
         mockHandler = mock(MessageHandler.class);
         when(mockHandler.handleSync(isA(Message.class))).thenReturn("Result");
     }

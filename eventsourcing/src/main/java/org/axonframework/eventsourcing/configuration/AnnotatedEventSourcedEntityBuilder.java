@@ -21,14 +21,14 @@ import org.axonframework.common.ConstructorUtils;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.eventsourcing.AnnotationBasedEntityEvolver;
-import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.annotation.CriteriaResolverDefinition;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntity;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactoryDefinition;
 import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 
 import java.util.Map;
 
@@ -78,13 +78,13 @@ class AnnotatedEventSourcedEntityBuilder<I, E> implements EventSourcedEntityBuil
     }
 
     @Override
-    public ComponentFactory<AsyncRepository<I, E>> repository() {
+    public ComponentFactory<Repository<I, E>> repository() {
         return c -> {
             CriteriaResolver<I> criteriaResolver = criteriaResolverDefinition
                     .createEventCriteriaResolver(entityType, idType, c);
             EventSourcedEntityFactory<I, E> entityFactory = entityFactoryDefinition
                     .createFactory(entityType, idType, c);
-            return new AsyncEventSourcingRepository<>(
+            return new EventSourcingRepository<>(
                     idType,
                     entityType,
                     c.getComponent(EventStore.class),

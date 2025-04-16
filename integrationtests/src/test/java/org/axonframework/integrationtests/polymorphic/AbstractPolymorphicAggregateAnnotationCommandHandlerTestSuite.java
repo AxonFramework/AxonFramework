@@ -30,11 +30,11 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AggregateModellingException;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
@@ -59,7 +59,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
 
     private CommandBus commandBus;
     private CommandGateway commandGateway;
-    private Repository<ParentAggregate> repository;
+    private LegacyRepository<ParentAggregate> repository;
     private EntityManager entityManager;
     private TransactionManager transactionManager;
 
@@ -93,18 +93,18 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
     }
 
     /**
-     * Constructs a polymorphic {@link Repository} for the given root {@code aggregateType}.
+     * Constructs a polymorphic {@link LegacyRepository} for the given root {@code aggregateType}.
      *
-     * @param aggregateType The root aggregate type for the polymorphic {@link Repository}.
+     * @param aggregateType The root aggregate type for the polymorphic {@link LegacyRepository}.
      * @param subTypes      The subtypes of the given {@code aggregateType}, making the model supported by the
-     *                      {@link Repository} polymorphic/
+     *                      {@link LegacyRepository} polymorphic/
      * @param entityManager The entity manager required for state-stored polymorphic aggregates.
      * @param <T>           The root type of the polymorphic aggregate.
-     * @return A polymorphic {@link Repository} for the given root {@code aggregateType}.
+     * @return A polymorphic {@link LegacyRepository} for the given root {@code aggregateType}.
      */
-    public abstract <T> Repository<T> repository(Class<T> aggregateType,
-                                                 Set<Class<? extends T>> subTypes,
-                                                 EntityManager entityManager);
+    public abstract <T> LegacyRepository<T> repository(Class<T> aggregateType,
+                                                       Set<Class<? extends T>> subTypes,
+                                                       EntityManager entityManager);
 
     @AfterEach
     void tearDown() {
@@ -211,7 +211,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
         AggregateModel<SimpleAggregate> model = new AnnotatedAggregateMetaModelFactory()
                 .createModel(SimpleAggregate.class);
 
-        Repository<SimpleAggregate> repository =
+        LegacyRepository<SimpleAggregate> repository =
                 repository(SimpleAggregate.class, Collections.emptySet(), entityManager);
 
         AggregateAnnotationCommandHandler<SimpleAggregate> ch =
@@ -230,7 +230,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
     }
 
     private void assertAggregateState(String aggregateId, String expectedState) {
-        DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         uow.attachTransaction(transactionManager);
         String state = uow.executeWithResult(() -> {
             AtomicReference<String> rv = new AtomicReference<>();

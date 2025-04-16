@@ -22,13 +22,13 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.TimestampParameterResolverFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
-import org.axonframework.modelling.command.GenericJpaRepository;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyGenericJpaRepository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.saga.SagaMethodMessageHandlerDefinition;
 import org.axonframework.test.FixtureExecutionException;
@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
 /**
- * Test class validating the following behavior around the fixture's {@link Repository}:
+ * Test class validating the following behavior around the fixture's {@link LegacyRepository}:
  * <ul>
  *     <li>The default {@code Repository} of the fixture can be wired in message handling methods.</li>
  *     <li>A registered {@code Repository} in the fixture can be wired in message handling methods.</li>
@@ -66,13 +66,13 @@ class FixtureRepositoryRegistrationTest {
     void fixturesDefaultRepositoryCanBeWiredAsMessageHandlingParameter() {
         testSubject.givenNoPriorActivity()
                    .when("some-command")
-                   .expectEvents("some-command_" + EventSourcingRepository.class.getSimpleName());
+                   .expectEvents("some-command_" + LegacyEventSourcingRepository.class.getSimpleName());
     }
 
     @Test
     @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
     void customRepositoryCanBeWiredAsMessageHandlingParameter() {
-        Repository<MyAggregate> testRepository =
+        LegacyRepository<MyAggregate> testRepository =
                 CustomRepository.builder()
                                 .eventStore(testSubject.getEventStore())
                                 .build();
@@ -85,17 +85,19 @@ class FixtureRepositoryRegistrationTest {
 
     @Test
     void registeringTheRepositoryProviderThrowsFixtureExecutionExceptionAfterRegisteringTheRepository() {
-        Repository<MyAggregate> testRepository =
-                GenericJpaRepository.builder(MyAggregate.class)
-                                    .entityManagerProvider(new SimpleEntityManagerProvider(mock(EntityManager.class)))
-                                    .eventBus(SimpleEventBus.builder().build())
-                                    .build();
+        LegacyRepository<MyAggregate> testRepository =
+                LegacyGenericJpaRepository.builder(MyAggregate.class)
+                                          .entityManagerProvider(
+                                                  new SimpleEntityManagerProvider(mock(EntityManager.class))
+                                          )
+                                          .eventBus(SimpleEventBus.builder().build())
+                                          .build();
         testSubject.registerRepository(testRepository);
 
         assertThrows(FixtureExecutionException.class,
                      () -> testSubject.registerRepositoryProvider(new RepositoryProvider() {
                          @Override
-                         public <T> Repository<T> repositoryFor(@NotNull Class<T> aggregateType) {
+                         public <T> LegacyRepository<T> repositoryFor(@NotNull Class<T> aggregateType) {
                              return null;
                          }
                      }));
@@ -108,7 +110,7 @@ class FixtureRepositoryRegistrationTest {
         assertThrows(FixtureExecutionException.class,
                      () -> testSubject.registerRepositoryProvider(new RepositoryProvider() {
                          @Override
-                         public <T> Repository<T> repositoryFor(@NotNull Class<T> aggregateType) {
+                         public <T> LegacyRepository<T> repositoryFor(@NotNull Class<T> aggregateType) {
                              return null;
                          }
                      }));
@@ -116,11 +118,13 @@ class FixtureRepositoryRegistrationTest {
 
     @Test
     void registeringParameterResolversThrowsFixtureExecutionExceptionAfterRegisteringTheRepository() {
-        Repository<MyAggregate> testRepository =
-                GenericJpaRepository.builder(MyAggregate.class)
-                                    .entityManagerProvider(new SimpleEntityManagerProvider(mock(EntityManager.class)))
-                                    .eventBus(SimpleEventBus.builder().build())
-                                    .build();
+        LegacyRepository<MyAggregate> testRepository =
+                LegacyGenericJpaRepository.builder(MyAggregate.class)
+                                          .entityManagerProvider(
+                                                  new SimpleEntityManagerProvider(mock(EntityManager.class))
+                                          )
+                                          .eventBus(SimpleEventBus.builder().build())
+                                          .build();
         testSubject.registerRepository(testRepository);
 
         assertThrows(FixtureExecutionException.class,
@@ -137,11 +141,13 @@ class FixtureRepositoryRegistrationTest {
 
     @Test
     void registeringHandlerDefinitionThrowsFixtureExecutionExceptionAfterRegisteringTheRepository() {
-        Repository<MyAggregate> testRepository =
-                GenericJpaRepository.builder(MyAggregate.class)
-                                    .entityManagerProvider(new SimpleEntityManagerProvider(mock(EntityManager.class)))
-                                    .eventBus(SimpleEventBus.builder().build())
-                                    .build();
+        LegacyRepository<MyAggregate> testRepository =
+                LegacyGenericJpaRepository.builder(MyAggregate.class)
+                                          .entityManagerProvider(
+                                                  new SimpleEntityManagerProvider(mock(EntityManager.class))
+                                          )
+                                          .eventBus(SimpleEventBus.builder().build())
+                                          .build();
         testSubject.registerRepository(testRepository);
 
         assertThrows(FixtureExecutionException.class,
@@ -158,11 +164,13 @@ class FixtureRepositoryRegistrationTest {
 
     @Test
     void registeringHandlerEnhancersThrowsFixtureExecutionExceptionAfterRegisteringTheRepository() {
-        Repository<MyAggregate> testRepository =
-                GenericJpaRepository.builder(MyAggregate.class)
-                                    .entityManagerProvider(new SimpleEntityManagerProvider(mock(EntityManager.class)))
-                                    .eventBus(SimpleEventBus.builder().build())
-                                    .build();
+        LegacyRepository<MyAggregate> testRepository =
+                LegacyGenericJpaRepository.builder(MyAggregate.class)
+                                          .entityManagerProvider(
+                                                  new SimpleEntityManagerProvider(mock(EntityManager.class))
+                                          )
+                                          .eventBus(SimpleEventBus.builder().build())
+                                          .build();
         testSubject.registerRepository(testRepository);
 
         assertThrows(FixtureExecutionException.class,
@@ -184,7 +192,7 @@ class FixtureRepositoryRegistrationTest {
 
         @CommandHandler
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
-        public void handle(String command, Repository<MyAggregate> repository) {
+        public void handle(String command, LegacyRepository<MyAggregate> repository) {
             apply(command + "_" + repository.getClass().getSimpleName());
         }
 
@@ -199,7 +207,7 @@ class FixtureRepositoryRegistrationTest {
         }
     }
 
-    private static class CustomRepository extends EventSourcingRepository<MyAggregate> {
+    private static class CustomRepository extends LegacyEventSourcingRepository<MyAggregate> {
 
         protected CustomRepository(Builder builder) {
             super(builder);
@@ -209,7 +217,7 @@ class FixtureRepositoryRegistrationTest {
             return new Builder(MyAggregate.class);
         }
 
-        private static class Builder extends EventSourcingRepository.Builder<MyAggregate> {
+        private static class Builder extends LegacyEventSourcingRepository.Builder<MyAggregate> {
 
             protected Builder(Class<MyAggregate> aggregateType) {
                 super(aggregateType);

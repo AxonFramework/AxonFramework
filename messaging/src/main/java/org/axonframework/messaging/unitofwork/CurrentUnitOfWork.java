@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,12 @@ import java.util.function.Function;
  *
  * @author Allard Buijze
  * @since 0.6
+ * @deprecated This instance will be removed.
  */
-@Deprecated // TODO #3064 Remove when AsyncUnitOfWork is fully integrated
+@Deprecated(since ="5.0.0")
 public abstract class CurrentUnitOfWork {
 
-    private static final ThreadLocal<Deque<UnitOfWork<?>>> CURRENT = new ThreadLocal<>();
+    private static final ThreadLocal<Deque<LegacyUnitOfWork<?>>> CURRENT = new ThreadLocal<>();
 
     /**
      * Indicates whether a unit of work has already been started. This method can be used by interceptors to prevent
@@ -53,7 +54,7 @@ public abstract class CurrentUnitOfWork {
      * @param consumer The consumer to invoke if a Unit of Work is active
      * @return {@code true} if a unit of work is active, {@code false} otherwise
      */
-    public static boolean ifStarted(Consumer<UnitOfWork<?>> consumer) {
+    public static boolean ifStarted(Consumer<LegacyUnitOfWork<?>> consumer) {
         if (isStarted()) {
             consumer.accept(get());
             return true;
@@ -71,7 +72,7 @@ public abstract class CurrentUnitOfWork {
      * @return an optional containing the result of the function, or an empty Optional when no Unit of Work was started
      * @throws NullPointerException when a Unit of Work is present and the function returns null
      */
-    public static <T> Optional<T> map(Function<UnitOfWork<?>, T> function) {
+    public static <T> Optional<T> map(Function<LegacyUnitOfWork<?>, T> function) {
         return isStarted() ? Optional.ofNullable(function.apply(get())) : Optional.empty();
     }
 
@@ -84,7 +85,7 @@ public abstract class CurrentUnitOfWork {
      * @return The UnitOfWork bound to the current thread.
      * @throws IllegalStateException if no UnitOfWork is active
      */
-    public static UnitOfWork<?> get() {
+    public static LegacyUnitOfWork<?> get() {
         if (isEmpty()) {
             throw new IllegalStateException("No UnitOfWork is currently started for this thread.");
         }
@@ -92,7 +93,7 @@ public abstract class CurrentUnitOfWork {
     }
 
     private static boolean isEmpty() {
-        Deque<UnitOfWork<?>> unitsOfWork = CURRENT.get();
+        Deque<LegacyUnitOfWork<?>> unitsOfWork = CURRENT.get();
         return unitsOfWork == null || unitsOfWork.isEmpty();
     }
 
@@ -100,7 +101,7 @@ public abstract class CurrentUnitOfWork {
      * Commits the current UnitOfWork. If no UnitOfWork was started, an {@link IllegalStateException} is thrown.
      *
      * @throws IllegalStateException if no UnitOfWork is currently started.
-     * @see UnitOfWork#commit()
+     * @see LegacyUnitOfWork#commit()
      */
     public static void commit() {
         get().commit();
@@ -112,7 +113,7 @@ public abstract class CurrentUnitOfWork {
      *
      * @param unitOfWork The UnitOfWork to bind to the current thread.
      */
-    public static void set(UnitOfWork<?> unitOfWork) {
+    public static void set(LegacyUnitOfWork<?> unitOfWork) {
         if (CURRENT.get() == null) {
             CURRENT.set(new LinkedList<>());
         }
@@ -127,7 +128,7 @@ public abstract class CurrentUnitOfWork {
      * @throws IllegalStateException when the given UnitOfWork was not the current active UnitOfWork. This exception
      *                               indicates a potentially wrong nesting of Units Of Work.
      */
-    public static void clear(UnitOfWork<?> unitOfWork) {
+    public static void clear(LegacyUnitOfWork<?> unitOfWork) {
         if (!isStarted()) {
             throw new IllegalStateException("Could not clear this UnitOfWork. There is no UnitOfWork active.");
         }
@@ -147,10 +148,10 @@ public abstract class CurrentUnitOfWork {
      *
      * @return a MetaData instance representing the current Unit of Work's correlation data, or an empty MetaData
      * instance if no Unit of Work is started.
-     * @see UnitOfWork#getCorrelationData()
+     * @see LegacyUnitOfWork#getCorrelationData()
      */
     public static MetaData correlationData() {
-        return CurrentUnitOfWork.map(UnitOfWork::getCorrelationData).orElse(MetaData.emptyInstance());
+        return CurrentUnitOfWork.map(LegacyUnitOfWork::getCorrelationData).orElse(MetaData.emptyInstance());
     }
 
     private CurrentUnitOfWork() {

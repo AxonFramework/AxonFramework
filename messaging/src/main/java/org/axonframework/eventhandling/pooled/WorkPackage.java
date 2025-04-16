@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,9 @@ import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -311,7 +311,7 @@ class WorkPackage {
                          segment.getSegmentId(), name, eventBatch.size());
             try {
                 processingEvents.set(true);
-                UnitOfWork<TrackedEventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventBatch);
+                LegacyUnitOfWork<TrackedEventMessage<?>> unitOfWork = new LegacyBatchingUnitOfWork<>(eventBatch);
                 unitOfWork.attachTransaction(transactionManager);
                 unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
                 unitOfWork.resources().put(lastTokenResourceKey, lastConsumedToken);
@@ -495,7 +495,8 @@ class WorkPackage {
     }
 
     /**
-     * Functional interface defining the processing of a batch of {@link EventMessage}s within a {@link UnitOfWork}.
+     * Functional interface defining the processing of a batch of {@link EventMessage}s within a
+     * {@link LegacyUnitOfWork}.
      */
     @FunctionalInterface
     interface BatchProcessor {
@@ -506,13 +507,13 @@ class WorkPackage {
          * {@code eventMessages} should be processed.
          *
          * @param eventMessages      the batch of {@link EventMessage}s that is to be processed
-         * @param unitOfWork         the {@link UnitOfWork} that has been prepared to process the {@code eventMessages}
+         * @param unitOfWork         the {@link LegacyUnitOfWork} that has been prepared to process the {@code eventMessages}
          * @param processingSegments the {@link Segment}s for which the {@code eventMessages} should be processed in the
          *                           given {@code unitOfWork}
          * @throws Exception when an exception occurred during processing of the batch of {@code eventMessages}
          */
         void processBatch(List<? extends EventMessage<?>> eventMessages,
-                          UnitOfWork<? extends EventMessage<?>> unitOfWork,
+                          LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
                           Collection<Segment> processingSegments) throws Exception;
     }
 

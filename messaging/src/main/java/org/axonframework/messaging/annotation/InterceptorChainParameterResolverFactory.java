@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.axonframework.common.Priority;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ResourceOverridingProcessingContext;
 
@@ -31,7 +32,7 @@ import java.util.function.Function;
 
 /**
  * Parameter resolver factory that adds support for resolving current {@link InterceptorChain}. This can function only
- * if there is an active {@link org.axonframework.messaging.unitofwork.UnitOfWork}.
+ * if there is an active {@link LegacyUnitOfWork}.
  *
  * @author Milan Savic
  * @since 3.3

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@ package org.axonframework.eventhandling;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.AbstractAnnotatedParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
-import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
  * Parameter resolver factory for boolean event handler parameters annotated with {@link ConcludesBatch}. If the event
- * is processed in the context of a {@link BatchingUnitOfWork} and is the last of the batch the resolver injects a
+ * is processed in the context of a {@link LegacyBatchingUnitOfWork} and is the last of the batch the resolver injects a
  * value of {@code true}. If the event is processed in another unit of work it is always assumed to be the last of a
  * batch.
  *
@@ -48,8 +48,8 @@ public class ConcludesBatchParameterResolverFactory extends AbstractAnnotatedPar
 
     @Override
     public Boolean resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
-        return CurrentUnitOfWork.map(unitOfWork -> !(unitOfWork instanceof BatchingUnitOfWork<?>) ||
-                ((BatchingUnitOfWork<?>) unitOfWork).isLastMessage(message)).orElse(true);
+        return CurrentUnitOfWork.map(unitOfWork -> !(unitOfWork instanceof LegacyBatchingUnitOfWork<?>) ||
+                ((LegacyBatchingUnitOfWork<?>) unitOfWork).isLastMessage(message)).orElse(true);
     }
 
     @Override

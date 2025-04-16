@@ -29,7 +29,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.utils.DelegateScheduledExecutorService;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -529,7 +529,7 @@ class WorkPackageTest {
 
         @Override
         public void processBatch(List<? extends EventMessage<?>> eventMessages,
-                                 UnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                 LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
                                  Collection<Segment> processingSegments) {
             if (batchProcessorPredicate.test(eventMessages)) {
                 unitOfWork.executeWithResult(() -> {

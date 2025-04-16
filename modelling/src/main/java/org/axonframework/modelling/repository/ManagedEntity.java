@@ -19,7 +19,7 @@ package org.axonframework.modelling.repository;
 import java.util.function.UnaryOperator;
 
 /**
- * A wrapper around an entity whose lifecycle is being managed by an {@link AsyncRepository}.
+ * A wrapper around an entity whose lifecycle is being managed by an {@link Repository}.
  *
  * @param <ID> The type of identifier of the entity.
  * @param <T>  The type of the entity.

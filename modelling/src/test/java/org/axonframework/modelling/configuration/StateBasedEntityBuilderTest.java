@@ -19,7 +19,7 @@ package org.axonframework.modelling.configuration;
 import org.axonframework.modelling.SimpleRepository;
 import org.axonframework.modelling.SimpleRepositoryEntityLoader;
 import org.axonframework.modelling.SimpleRepositoryEntityPersister;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CompletableFuture;
@@ -105,8 +105,8 @@ class StateBasedEntityBuilderTest {
 
     @Test
     void repositoryConstructsSimpleRepositoryForLoaderAndPersisterOperations() {
-        AsyncRepository<CourseId, Course> result = testSubject.repository()
-                                                              .build(ModellingConfigurer.create().build());
+        Repository<CourseId, Course> result = testSubject.repository()
+                                                         .build(ModellingConfigurer.create().build());
 
         assertInstanceOf(SimpleRepository.class, result);
         assertTrue(constructedLoader.get());
@@ -115,13 +115,13 @@ class StateBasedEntityBuilderTest {
 
     @Test
     void repositoryProvidesRegisteredRepository() {
-        AsyncRepository<CourseId, Course> testRepository =
+        Repository<CourseId, Course> testRepository =
                 new SimpleRepository<>(CourseId.class, Course.class, testLoader, testPersister);
 
-        AsyncRepository<CourseId, Course> result = StateBasedEntityBuilder.entity(CourseId.class, Course.class)
-                                                                          .repository(c -> testRepository)
-                                                                          .repository()
-                                                                          .build(ModellingConfigurer.create().build());
+        Repository<CourseId, Course> result = StateBasedEntityBuilder.entity(CourseId.class, Course.class)
+                                                                     .repository(c -> testRepository)
+                                                                     .repository()
+                                                                     .build(ModellingConfigurer.create().build());
 
         assertEquals(testRepository, result);
         assertFalse(constructedLoader.get());

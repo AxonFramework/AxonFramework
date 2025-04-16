@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -30,9 +30,9 @@ import java.lang.reflect.Parameter;
  * A {@link ParameterResolverFactory} constructing a {@link ParameterResolver} resolving the {@link DeadLetter} that is
  * being processed.
  * <p>
- * Expects the {@code DeadLetter} to reside under the {@link UnitOfWork#resources()} using the class
+ * Expects the {@code DeadLetter} to reside under the {@link LegacyUnitOfWork#resources()} using the class
  * {@link Class#getName() name} of the {@code DeadLetter} as the key. Hence, the {@code DeadLetter} processor is
- * required to add it to the resources before invoking the message handlers. If no {@link UnitOfWork} is active or there
+ * required to add it to the resources before invoking the message handlers. If no {@link LegacyUnitOfWork} is active or there
  * is no {@code DeadLetter} is present, the resolver will return {@code null}.
  * <p>
  * The parameter resolver matches for any type of {@link Message}.
@@ -52,7 +52,7 @@ public class DeadLetterParameterResolverFactory implements ParameterResolverFact
     /**
      * A {@link ParameterResolver} implementation resolving the current {@link DeadLetter}.
      * <p>
-     * Expects the {@code DeadLetter} to reside under the {@link UnitOfWork#resources()} using the class
+     * Expects the {@code DeadLetter} to reside under the {@link LegacyUnitOfWork#resources()} using the class
      * {@link Class#getName() name} of the {@code DeadLetter} as the key. Furthermore, this resolver matches for any
      * type of {@link Message}.
      */

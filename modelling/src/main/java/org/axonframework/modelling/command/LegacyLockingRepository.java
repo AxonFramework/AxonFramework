@@ -24,7 +24,7 @@ import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
@@ -56,16 +56,18 @@ import static org.axonframework.common.ObjectUtils.sameInstanceSupplier;
  * @param <T> The type that this aggregate stores
  * @author Allard Buijze
  * @since 0.3
+ * @deprecated In favor of the {@link org.axonframework.modelling.repository.AccessSerializingRepository}.
  */
-public abstract class LockingRepository<T, A extends Aggregate<T>> extends
-        AbstractRepository<T, LockAwareAggregate<T, A>> {
+@Deprecated(since = "5.0.0")
+public abstract class LegacyLockingRepository<T, A extends Aggregate<T>> extends
+        AbstractLegacyRepository<T, LockAwareAggregate<T, A>> {
 
-    private static final Logger logger = LoggerFactory.getLogger(LockingRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(LegacyLockingRepository.class);
 
     private final LockFactory lockFactory;
 
     /**
-     * Instantiate a {@link LockingRepository} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link LegacyLockingRepository} based on the fields contained in the {@link Builder}.
      * <p>
      * A goal of the provided Builder is to create an {@link AggregateModel} specifying generic {@code T} as the
      * aggregate type to be stored. The {@link SpanFactory} is defaulted to a
@@ -78,16 +80,16 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      * Additionally, will assert that the {@link LockFactory} is not {@code null}, resulting in an
      * AxonConfigurationException if this is the case.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link LockingRepository} instance
+     * @param builder the {@link Builder} used to instantiate a {@link LegacyLockingRepository} instance
      */
-    protected LockingRepository(Builder<T> builder) {
+    protected LegacyLockingRepository(Builder<T> builder) {
         super(builder);
         this.lockFactory = builder.lockFactory;
     }
 
     @Override
     protected LockAwareAggregate<T, A> doCreateNew(Callable<T> factoryMethod) throws Exception {
-        UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
+        LegacyUnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
         A aggregate = doCreateNewForLock(factoryMethod);
         final String aggregateIdentifier = aggregate.identifierAsString();
 
@@ -251,7 +253,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
     protected abstract A doLoadWithLock(String aggregateIdentifier, Long expectedVersion);
 
     /**
-     * Abstract Builder class to instantiate {@link LockingRepository} implementations.
+     * Abstract Builder class to instantiate {@link LegacyLockingRepository} implementations.
      * <p>
      * The {@link LockFactory} is defaulted to a pessimistic locking strategy, implemented in the
      * {@link PessimisticLockFactory}. The {@link SpanFactory} is defaulted to a
@@ -262,17 +264,17 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      * The latter will internally resolve to an AggregateModel. Thus, either the AggregateModel <b>or</b> the
      * {@code aggregateType} should be provided.
      *
-     * @param <T> a generic specifying the Aggregate type contained in this {@link Repository} implementation
+     * @param <T> a generic specifying the Aggregate type contained in this {@link LegacyRepository} implementation
      */
-    protected static abstract class Builder<T> extends AbstractRepository.Builder<T> {
+    protected static abstract class Builder<T> extends AbstractLegacyRepository.Builder<T> {
 
         private LockFactory lockFactory = PessimisticLockFactory.usingDefaults();
 
         /**
          * Creates a builder for a Repository for given {@code aggregateType}.
          *
-         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link Repository} will
-         *                      store
+         * @param aggregateType the {@code aggregateType} specifying the type of aggregate this {@link LegacyRepository}
+         *                      will store
          */
         protected Builder(Class<T> aggregateType) {
             super(aggregateType);

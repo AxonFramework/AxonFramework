@@ -26,8 +26,8 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.tracing.TestSpanFactory;
@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link LockingRepository}.
+ * Test class validating the {@link LegacyLockingRepository}.
  *
  * @author Allard Buijze
  */
@@ -149,7 +149,7 @@ class LockingRepositoryTest {
      */
     @Test
     void storingAggregateWithoutSettingAggregateIdentifierDoesNotInvokeLockFactory() throws Exception {
-        UnitOfWork<?> uow = startAndGetUnitOfWork();
+        LegacyUnitOfWork<?> uow = startAndGetUnitOfWork();
         Aggregate<StubAggregate> result = testSubject.newInstance(
                 () -> new StubAggregate(null),
                 aggregate -> aggregate.execute(StubAggregate::doSomething)
@@ -267,11 +267,12 @@ class LockingRepositoryTest {
         verify(lock).release();
     }
 
-    private UnitOfWork<?> startAndGetUnitOfWork() {
-        return DefaultUnitOfWork.startAndGet(MESSAGE);
+    private LegacyUnitOfWork<?> startAndGetUnitOfWork() {
+        return LegacyDefaultUnitOfWork.startAndGet(MESSAGE);
     }
 
-    private static class InMemoryLockingRepository extends LockingRepository<StubAggregate, Aggregate<StubAggregate>> {
+    private static class InMemoryLockingRepository extends
+            LegacyLockingRepository<StubAggregate, Aggregate<StubAggregate>> {
 
         private final EventBus eventBus;
         private final AggregateModel<StubAggregate> aggregateModel;
@@ -322,7 +323,7 @@ class LockingRepositoryTest {
             return saveCount;
         }
 
-        private static class Builder extends LockingRepository.Builder<StubAggregate> {
+        private static class Builder extends LegacyLockingRepository.Builder<StubAggregate> {
 
             private EventBus eventBus;
 

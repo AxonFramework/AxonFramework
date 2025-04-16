@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package org.axonframework.modelling.command;
 
 import org.axonframework.messaging.ScopeAware;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.modelling.repository.Repository;
 
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
@@ -24,19 +26,20 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * The {@link Repository} provides an abstraction of the storage of aggregates.
+ * The {@link LegacyRepository} provides an abstraction of the storage of aggregates.
  * <p>
  * When interacting with the {@code Repository} the framework expects an active
- * {@link org.axonframework.messaging.unitofwork.UnitOfWork} containing a
+ * {@link LegacyUnitOfWork} containing a
  * {@link org.axonframework.commandhandling.CommandMessage} implementation on the invoking thread to be present. If
  * there is no active {@code UnitOfWork} an {@link IllegalStateException} is thrown.
  *
  * @param <T> The type of aggregate this repository stores.
  * @author Allard Buijze
  * @since 0.1
- * TODO remove in favor of the AsyncRepository once the time is right
+ * @deprecated In favor of the {@link Repository}.
  */
-public interface Repository<T> extends ScopeAware {
+@Deprecated(since = "5.0.0")
+public interface LegacyRepository<T> extends ScopeAware {
 
     /**
      * Load the aggregate with the given unique identifier. No version checks are done when loading an aggregate,

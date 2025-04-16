@@ -18,7 +18,6 @@ package org.axonframework.commandhandling.annotation;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.annotation.MessageHandler;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -27,13 +26,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marker annotation to mark any method on an object as being a CommandHandler. Use the {@link
- * AnnotatedCommandHandlingComponent} to subscribe the annotated class to the command bus. This annotation can also be
- * placed directly on Aggregate members to have it handle the commands directly.
+ * Marker annotation to mark any method on an object as being a CommandHandler. Use the
+ * {@link AnnotatedCommandHandlingComponent} to subscribe the annotated class to the command bus. This annotation can
+ * also be placed directly on Aggregate members to have it handle the commands directly.
  * <p/>
  * The annotated method's first parameter is the command handled by that method. Optionally, the command handler may
- * specify a second parameter of type {@link UnitOfWork}. The active Unit of Work will be
- * passed if that parameter is supplied.
+ * specify a second parameter of type {@link org.axonframework.messaging.unitofwork.ProcessingContext}. The active
+ * processing context will be passed if that parameter is supplied.
  *
  * @author Allard Buijze
  * @since 0.5

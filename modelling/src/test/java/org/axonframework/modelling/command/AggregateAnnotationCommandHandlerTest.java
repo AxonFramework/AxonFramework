@@ -31,7 +31,7 @@ import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
@@ -71,7 +71,7 @@ class AggregateAnnotationCommandHandlerTest {
 
     private AggregateAnnotationCommandHandler<StubCommandAnnotatedAggregate> testSubject;
     private SimpleCommandBus commandBus;
-    private Repository<StubCommandAnnotatedAggregate> mockRepository;
+    private LegacyRepository<StubCommandAnnotatedAggregate> mockRepository;
     private AggregateModel<StubCommandAnnotatedAggregate> aggregateModel;
     private CreationPolicyAggregateFactory<StubCommandAnnotatedAggregate> creationPolicyFactory;
     private ArgumentCaptor<Callable<StubCommandAnnotatedAggregate>> newInstanceCallableFactoryCaptor;
@@ -80,7 +80,7 @@ class AggregateAnnotationCommandHandlerTest {
     void setUp() throws Exception {
         commandBus = new SimpleCommandBus();
         commandBus = spy(commandBus);
-        mockRepository = mock(Repository.class);
+        mockRepository = mock(LegacyRepository.class);
         newInstanceCallableFactoryCaptor = ArgumentCaptor.forClass(Callable.class);
         when(mockRepository.newInstance(newInstanceCallableFactoryCaptor.capture()))
                 .thenAnswer(invocation -> AnnotatedAggregate.initialize(
@@ -599,7 +599,7 @@ class AggregateAnnotationCommandHandlerTest {
 
     @Test
     void annotatedCollectionFieldMustContainGenericParameterWhenTypeIsNotExplicitlyDefined(
-            @Mock Repository<CollectionFieldWithoutGenerics> mockRepo
+            @Mock LegacyRepository<CollectionFieldWithoutGenerics> mockRepo
     ) {
         AggregateAnnotationCommandHandler.Builder<CollectionFieldWithoutGenerics> repoBuilder =
                 AggregateAnnotationCommandHandler.<CollectionFieldWithoutGenerics>builder()
@@ -682,7 +682,7 @@ class AggregateAnnotationCommandHandlerTest {
     void rejectsDuplicateRegistrations() {
         commandBus = new SimpleCommandBus();
         commandBus = spy(commandBus);
-        mockRepository = mock(Repository.class);
+        mockRepository = mock(LegacyRepository.class);
 
         testSubject = AggregateAnnotationCommandHandler.<StubCommandAnnotatedAggregate>builder()
                                                        .aggregateType(StubCommandAnnotatedAggregate.class)
@@ -740,7 +740,7 @@ class AggregateAnnotationCommandHandlerTest {
     void duplicateCommandHandlerSubscriptionExceptionIsNotThrownForPolymorphicAggregateWithRootCommandHandler() {
         commandBus = new SimpleCommandBus();
 
-        Repository<RootAggregate> repository = mock(Repository.class);
+        LegacyRepository<RootAggregate> repository = mock(LegacyRepository.class);
 
         Set<Class<? extends RootAggregate>> subtypes = new HashSet<>();
         subtypes.add(ChildAggregate.class);
@@ -804,7 +804,7 @@ class AggregateAnnotationCommandHandlerTest {
         @CreationPolicy(AggregateCreationPolicy.ALWAYS)
         public void handle(CreateCommand createCommand,
                            MetaData metaData,
-                           UnitOfWork<CommandMessage<?>> unitOfWork,
+                           LegacyUnitOfWork<CommandMessage<?>> unitOfWork,
                            @MetaDataValue("notExist") String value) {
             this.setIdentifier(createCommand.getId());
             assertNotNull(metaData);

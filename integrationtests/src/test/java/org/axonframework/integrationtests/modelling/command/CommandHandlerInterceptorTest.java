@@ -26,7 +26,7 @@ import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
@@ -41,7 +41,7 @@ import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.EntityId;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -64,10 +64,12 @@ class CommandHandlerInterceptorTest {
 
     @BeforeEach
     void setUp() {
-        eventStore = spy(LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine()).build());
-        Repository<MyAggregate> myAggregateRepository = EventSourcingRepository.builder(MyAggregate.class)
-                                                                               .eventStore(eventStore)
-                                                                               .build();
+        eventStore = spy(LegacyEmbeddedEventStore.builder()
+                                                 .storageEngine(new LegacyInMemoryEventStorageEngine())
+                                                 .build());
+        LegacyRepository<MyAggregate> myAggregateRepository = LegacyEventSourcingRepository.builder(MyAggregate.class)
+                                                                                           .eventStore(eventStore)
+                                                                                           .build();
         CommandBus commandBus = new SimpleCommandBus();
         MessageTypeResolver nameResolver = new ClassBasedMessageTypeResolver();
         commandGateway = new DefaultCommandGateway(commandBus, nameResolver);
@@ -190,18 +192,18 @@ class CommandHandlerInterceptorTest {
 
     @Test
     void interceptorWithNonVoidReturnType() {
-        EventSourcingRepository.Builder<MyAggregateWithInterceptorReturningNonVoid> builder =
-                EventSourcingRepository.builder(MyAggregateWithInterceptorReturningNonVoid.class)
-                                       .eventStore(eventStore);
+        LegacyEventSourcingRepository.Builder<MyAggregateWithInterceptorReturningNonVoid> builder =
+                LegacyEventSourcingRepository.builder(MyAggregateWithInterceptorReturningNonVoid.class)
+                                             .eventStore(eventStore);
 
         assertThrows(AxonConfigurationException.class, builder::build);
     }
 
     @Test
     void interceptorWithDeclaredChainAllowedToDeclareNonVoidReturnType() {
-        EventSourcingRepository.builder(MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid.class)
-                               .eventStore(eventStore)
-                               .build();
+        LegacyEventSourcingRepository.builder(MyAggregateWithDeclaredInterceptorChainInterceptorReturningNonVoid.class)
+                                     .eventStore(eventStore)
+                                     .build();
     }
 
     @SuppressWarnings("unchecked")

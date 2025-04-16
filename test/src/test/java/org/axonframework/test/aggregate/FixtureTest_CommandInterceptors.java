@@ -27,7 +27,7 @@ import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -147,7 +147,7 @@ class FixtureTest_CommandInterceptors {
     void registeredCommandHandlerInterceptorsAreInvoked() throws Exception {
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
         //noinspection unchecked
-        when(mockCommandHandlerInterceptor.handle(any(UnitOfWork.class), any(InterceptorChain.class)))
+        when(mockCommandHandlerInterceptor.handle(any(LegacyUnitOfWork.class), any(InterceptorChain.class)))
                 .thenAnswer(InvocationOnMock::getArguments);
         fixture.registerCommandHandlerInterceptor(mockCommandHandlerInterceptor);
 
@@ -159,11 +159,11 @@ class FixtureTest_CommandInterceptors {
                .when(expectedCommand, expectedMetaDataMap);
 
         //noinspection unchecked
-        ArgumentCaptor<UnitOfWork<? extends CommandMessage<?>>> unitOfWorkCaptor =
-                ArgumentCaptor.forClass(UnitOfWork.class);
+        ArgumentCaptor<LegacyUnitOfWork<? extends CommandMessage<?>>> unitOfWorkCaptor =
+                ArgumentCaptor.forClass(LegacyUnitOfWork.class);
         ArgumentCaptor<InterceptorChain> interceptorChainCaptor = ArgumentCaptor.forClass(InterceptorChain.class);
         verify(mockCommandHandlerInterceptor).handle(unitOfWorkCaptor.capture(), interceptorChainCaptor.capture());
-        UnitOfWork<? extends CommandMessage<?>> unitOfWorkResult = unitOfWorkCaptor.getValue();
+        LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWorkResult = unitOfWorkCaptor.getValue();
         Message<?> messageResult = unitOfWorkResult.getMessage();
         assertEquals(expectedCommand, messageResult.getPayload());
         assertEquals(expectedMetaDataMap, messageResult.getMetaData());
@@ -414,7 +414,7 @@ class FixtureTest_CommandInterceptors {
     private static class TestCommandHandlerInterceptor implements MessageHandlerInterceptor<CommandMessage<?>> {
 
         @Override
-        public Object handle(@Nonnull UnitOfWork<? extends CommandMessage<?>> unitOfWork,
+        public Object handle(@Nonnull LegacyUnitOfWork<? extends CommandMessage<?>> unitOfWork,
                              @Nonnull InterceptorChain interceptorChain) throws Exception {
             unitOfWork.registerCorrelationDataProvider(new SimpleCorrelationDataProvider(HANDLER_META_DATA_KEY));
             return interceptorChain.proceedSync();

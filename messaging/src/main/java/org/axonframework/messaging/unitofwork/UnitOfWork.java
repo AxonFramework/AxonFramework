@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,483 +16,465 @@
 
 package org.axonframework.messaging.unitofwork;
 
-import org.axonframework.common.transaction.Transaction;
-import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.correlation.CorrelationDataProvider;
+import jakarta.annotation.Nonnull;
+import org.axonframework.common.FutureUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.Optional;
+import java.util.Comparator;
+import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import javax.annotation.Nonnull;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
- * This class represents a Unit of Work that monitors the processing of a {@link Message}.
+ * This class represents a Unit of Work that monitors the processing of a task.
  * <p/>
- * Before processing begins a Unit of Work is bound to the active thread by registering it with the {@link
- * CurrentUnitOfWork}. After processing, the Unit of Work is deregistered from the {@link CurrentUnitOfWork}.
+ * As an implementation of the {@link ProcessingLifecycle}, steps can be attached in several
+ * {@link ProcessingContext.DefaultPhases phases} of the Unit of Work to ensure the task-to-process is taken care off
+ * correctly. Furthermore, the Unit of Work implements resource management through the {@link ProcessingContext},
+ * providing the possibility to carry along resources throughout the phases.
  * <p/>
- * Handlers can be notified about the state of the processing of the Message by registering with this Unit of Work.
+ * It is strongly recommended to interface with the {@code ProcessingLifecycle} and/or {@code ProcessingContext} instead
+ * of with the {@code UnitOfWork} directly.
  *
  * @author Allard Buijze
+ * @author Gerard Klijs
+ * @author Milan Savić
+ * @author Mitchell Herrijgers
+ * @author Sara Pellegrini
+ * @author Steven van Beelen
  * @since 0.6
  */
-@Deprecated // TODO #3064 Remove when AsyncUnitOfWork is fully integrated
-public interface UnitOfWork<T extends Message<?>> {
+public class UnitOfWork implements ProcessingLifecycle {
+
+    private static final Logger logger = LoggerFactory.getLogger(UnitOfWork.class);
+
+    private final String identifier;
+    private final UnitOfWorkProcessingContext context;
 
     /**
-     * Starts the current unit of work. The UnitOfWork instance is registered with the CurrentUnitOfWork.
+     * Constructs a {@code UnitOfWork} with a {@link UUID#randomUUID() random UUID String}. Will execute provided
+     * actions on the same thread invoking this Unit of Work.
      */
-    void start();
-
-    /**
-     * Commits the Unit of Work. This should be invoked after the Unit of Work Message has been processed. Handlers
-     * registered to the Unit of Work will be notified.
-     * <p/>
-     * After the commit (successful or not), any registered clean-up handlers ({@link #onCleanup(Consumer)}}) will be
-     * invoked and the Unit of Work is deregistered from the {@link CurrentUnitOfWork}.
-     * <p/>
-     * If the Unit of Work fails to commit, e.g. because an exception is raised by one of its handlers, the Unit of Work
-     * is rolled back.
-     *
-     * @throws IllegalStateException if the UnitOfWork wasn't started or if the Unit of Work is not the 'current' Unit
-     *                               of Work returned by {@link CurrentUnitOfWork#get()}.
-     */
-    void commit();
-
-    /**
-     * Initiates the rollback of this Unit of Work, invoking all registered rollback ({@link #onRollback(Consumer) and
-     * clean-up handlers {@link #onCleanup(Consumer)}} respectively. Finally, the Unit of Work is deregistered from the
-     * {@link CurrentUnitOfWork}.
-     * <p/>
-     * If the rollback is a result of an exception, consider using {@link #rollback(Throwable)} instead.
-     *
-     * @throws IllegalStateException if the Unit of Work is not in a compatible phase.
-     */
-    default void rollback() {
-        rollback(null);
+    public UnitOfWork() {
+        this(UUID.randomUUID().toString());
     }
 
     /**
-     * Initiates the rollback of this Unit of Work, invoking all registered rollback ({@link #onRollback(Consumer) and
-     * clean-up handlers {@link #onCleanup(Consumer)}} respectively. Finally, the Unit of Work is deregistered from the
-     * {@link CurrentUnitOfWork}.
+     * Constructs a {@code UnitOfWork} with the given {@code identifier}. Will execute provided actions on the same
+     * thread invoking this Unit of Work.
      *
-     * @param cause The cause of the rollback. May be {@code null}.
-     * @throws IllegalStateException if the Unit of Work is not in a compatible phase.
+     * @param identifier The identifier of this Unit of Work.
      */
-    void rollback(Throwable cause);
-
-    /**
-     * Indicates whether this UnitOfWork is started. It is started when the {@link #start()} method has been called, and
-     * if the UnitOfWork has not been committed or rolled back.
-     *
-     * @return {@code true} if this UnitOfWork is started, {@code false} otherwise.
-     */
-    default boolean isActive() {
-        return phase().isStarted();
+    public UnitOfWork(String identifier) {
+        this(identifier, Runnable::run);
     }
 
     /**
-     * Returns the current phase of the Unit of Work.
+     * Constructs a {@code UnitOfWork} with the given {@code identifier}, processing actions through the given
+     * {@code workScheduler}.
      *
-     * @return the Unit of Work phase
+     * @param identifier    The identifier of this Unit of Work.
+     * @param workScheduler The {@link Executor} used to process the steps attached to the phases in this Unit of Work
      */
-    Phase phase();
+    public UnitOfWork(String identifier, Executor workScheduler) {
+        this.identifier = identifier;
+        this.context = new UnitOfWorkProcessingContext(identifier, workScheduler);
+    }
 
-    /**
-     * Register given {@code handler} with the Unit of Work. The handler will be notified when the phase of the
-     * Unit of Work changes to {@link Phase#PREPARE_COMMIT}.
-     *
-     * @param handler the handler to register with the Unit of Work
-     */
-    void onPrepareCommit(Consumer<UnitOfWork<T>> handler);
+    @Override
+    public boolean isStarted() {
+        return context.isStarted();
+    }
 
-    /**
-     * Register given {@code handler} with the Unit of Work. The handler will be notified when the phase of the
-     * Unit of Work changes to {@link Phase#COMMIT}.
-     *
-     * @param handler the handler to register with the Unit of Work
-     */
-    void onCommit(Consumer<UnitOfWork<T>> handler);
+    @Override
+    public boolean isError() {
+        return context.isError();
+    }
 
-    /**
-     * Register given {@code handler} with the Unit of Work. The handler will be notified when the phase of the
-     * Unit of Work changes to {@link Phase#AFTER_COMMIT}.
-     *
-     * @param handler the handler to register with the Unit of Work
-     */
-    void afterCommit(Consumer<UnitOfWork<T>> handler);
+    @Override
+    public boolean isCommitted() {
+        return context.isCommitted();
+    }
 
-    /**
-     * Register given {@code handler} with the Unit of Work. The handler will be notified when the phase of the
-     * Unit of Work changes to {@link Phase#ROLLBACK}. On rollback, the cause for the rollback can obtained from the
-     * supplied
-     *
-     * @param handler the handler to register with the Unit of Work
-     */
-    void onRollback(Consumer<UnitOfWork<T>> handler);
+    @Override
+    public boolean isCompleted() {
+        return context.isCompleted();
+    }
 
-    /**
-     * Register given {@code handler} with the Unit of Work. The handler will be notified when the phase of the
-     * Unit of Work changes to {@link Phase#CLEANUP}.
-     *
-     * @param handler the handler to register with the Unit of Work
-     */
-    void onCleanup(Consumer<UnitOfWork<T>> handler);
+    @Override
+    public UnitOfWork on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
+        context.on(phase, action);
+        return this;
+    }
 
-    /**
-     * Returns an optional for the parent of this Unit of Work. The optional holds the Unit of Work that was active when
-     * this Unit of Work was started. In case no other Unit of Work was active when this Unit of Work was started the
-     * optional is empty, indicating that this is the Unit of Work root.
-     *
-     * @return an optional parent Unit of Work
-     */
-    Optional<UnitOfWork<?>> parent();
+    @Override
+    public ProcessingLifecycle onError(ErrorHandler action) {
+        return context.onError(action);
+    }
 
-    /**
-     * Check that returns {@code true} if this Unit of Work has not got a parent.
-     *
-     * @return {@code true} if this Unit of Work has no parent
-     */
-    default boolean isRoot() {
-        return !parent().isPresent();
+    @Override
+    public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
+        return context.whenComplete(action);
     }
 
     /**
-     * Returns the root of this Unit of Work. If this Unit of Work has no parent (see {@link #parent()}) it returns
-     * itself, otherwise it returns the root of its parent.
+     * Executes all the registered action in their respective
+     * {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle.Phase phases}.
      *
-     * @return the root of this Unit of Work
+     * @return A {@link CompletableFuture} that returns normally when this Unit Of Work has been committed or
+     * exceptionally with the exception that caused the Unit of Work to fail.
      */
-    default UnitOfWork<?> root() {
-        //noinspection unchecked // cast is used to remove inspection error in IDE
-        return parent().map(UnitOfWork::root).orElse((UnitOfWork) this);
+    public CompletableFuture<Void> execute() {
+        return context.commit();
     }
 
     /**
-     * Get the message that is being processed by the Unit of Work. A Unit of Work processes a single Message over its
-     * life cycle.
-     *
-     * @return the Message being processed by this Unit of Work
-     */
-    T getMessage();
-
-    /**
-     * Transform the Message being processed using the given operator and stores the result.
+     * Registers the given {@code action} for the {@link DefaultPhases#INVOCATION invocation Phase} and executes this
+     * Unit of Work right away.
      * <p>
-     * Implementations should take caution not to change the message type to a type incompatible with the current Unit
-     * of Work. For example, do not return a CommandMessage when transforming an EventMessage.
+     * The return value of the given {@code action} is returned when this Unit of Work is committed, disregarding
+     * intermittent results of actions registered in other
+     * {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle.Phase phases}.
      *
-     * @param transformOperator The transform operator to apply to the stored message
-     * @return this Unit of Work
+     * @param action The {@link Function} that's given the active {@link ProcessingContext} and returns a
+     *               {@link CompletableFuture} for chaining purposes and to carry the action's result.
+     * @param <R>    The type of return value returned by the {@code action}.
+     * @return A {@link CompletableFuture} that returns normally with the return value of the given {@code action} when
+     * the Unit Of Work has been committed. Or, an exceptionally completed future with the exception that caused this
+     * Unit of Work to fail.
      */
-    UnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator);
-
-    /**
-     * Get the correlation data contained in the {@link #getMessage() message} being processed by the Unit of Work.
-     * <p/>
-     * By default this correlation data will be copied to other {@link Message messages} created in the context of this
-     * Unit of Work, so long as these messages extend from {@link org.axonframework.messaging.GenericMessage}.
-     *
-     * @return The correlation data contained in the message processed by this Unit of Work
-     */
-    MetaData getCorrelationData();
-
-    /**
-     * Register given {@code correlationDataProvider} with this Unit of Work. Correlation data providers are used
-     * to provide meta data based on this Unit of Work's {@link #getMessage() Message} when {@link
-     * #getCorrelationData()} is invoked.
-     *
-     * @param correlationDataProvider the Correlation Data Provider to register
-     */
-    void registerCorrelationDataProvider(CorrelationDataProvider correlationDataProvider);
-
-    /**
-     * Returns a mutable map of resources registered with the Unit of Work.
-     *
-     * @return mapping of resources registered with this Unit of Work
-     */
-    Map<String, Object> resources();
-
-    /**
-     * Returns the resource attached under given {@code name}, or {@code null} if no such resource is
-     * available.
-     *
-     * @param name The name under which the resource was attached
-     * @param <R>  The type of resource
-     * @return The resource mapped to the given {@code name}, or {@code null} if no resource was found.
-     */
-    @SuppressWarnings("unchecked")
-    default <R> R getResource(String name) {
-        return (R) resources().get(name);
+    public <R> CompletableFuture<R> executeWithResult(Function<ProcessingContext, CompletableFuture<R>> action) {
+        CompletableFuture<R> result = new CompletableFuture<>();
+        onInvocation(processingContext -> safe(() -> action.apply(processingContext))
+                .whenComplete(FutureUtils.alsoComplete(result)));
+        return execute().thenCombine(result, (executeResult, invocationResult) -> invocationResult);
     }
 
     /**
-     * Returns the resource attached under given {@code name}. If there is no resource mapped to the given key yet
-     * the {@code mappingFunction} is invoked to provide the mapping.
+     * Wraps a given {@code action} in a try-catch block to ensure exceptions are exclusively returned as a failed
+     * {@link CompletableFuture}.
      *
-     * @param key             The name under which the resource was attached
-     * @param mappingFunction The function that provides the mapping if there is no mapped resource yet
-     * @param <R>             The type of resource
-     * @return The resource mapped to the given {@code key}, or the resource returned by the
-     * {@code mappingFunction} if no resource was found.
+     * @param action A {@link Callable} to execute within the try-catch block.
+     * @return A {@link CompletableFuture} wrapping both the successful and exceptional result of the given
+     * {@code action}.
      */
-    @SuppressWarnings("unchecked")
-    default <R> R getOrComputeResource(String key, Function<? super String, R> mappingFunction) {
-        return (R) resources().computeIfAbsent(key, mappingFunction);
-    }
-
-    /**
-     * Returns the resource attached under given {@code name}. If there is no resource mapped to the given key,
-     * the {@code defaultValue} is returned.
-     *
-     * @param key          The name under which the resource was attached
-     * @param defaultValue The value to return if no mapping is available
-     * @param <R>          The type of resource
-     * @return The resource mapped to the given {@code key}, or the resource returned by the
-     * {@code mappingFunction} if no resource was found.
-     */
-    @SuppressWarnings("unchecked")
-    default <R> R getOrDefaultResource(String key, R defaultValue) {
-        return (R) resources().getOrDefault(key, defaultValue);
-    }
-
-    /**
-     * Attach a transaction to this Unit of Work, using the given {@code transactionManager}. The transaction will be
-     * managed in the lifecycle of this Unit of Work. Failure to start a transaction will cause this Unit of Work
-     * to be rolled back.
-     *
-     * @param transactionManager The Transaction Manager to create, commit and/or rollback the transaction
-     */
-    default void attachTransaction(TransactionManager transactionManager) {
+    private <R> CompletableFuture<R> safe(Callable<CompletableFuture<R>> action) {
         try {
-            Transaction transaction = transactionManager.startTransaction();
-            onCommit(u -> transaction.commit());
-            onRollback(u -> transaction.rollback());
-        } catch (Throwable t) {
-            rollback(t);
-            throw t;
+            return action.call();
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
         }
     }
 
-    /**
-     * Execute the given {@code task} in the context of this Unit of Work. If the Unit of Work is not started yet
-     * it will be started.
-     * <p/>
-     * If the task executes successfully the Unit of Work is committed. If any exception is raised while executing the
-     * task, the Unit of Work is rolled back and the exception is thrown.
-     *
-     * @param task the task to execute
-     */
-    default void execute(Runnable task) {
-        execute(task, RollbackConfigurationType.ANY_THROWABLE);
+    @Override
+    public String toString() {
+        return "UnitOfWork{" + "identifier='" + identifier + '\'' + "phase='" + context.currentPhase.get() + '\'' + '}';
     }
 
-    /**
-     * Execute the given {@code task} in the context of this Unit of Work. If the Unit of Work is not started yet
-     * it will be started.
-     * <p/>
-     * If the task executes successfully the Unit of Work is committed. If an exception is raised while executing the
-     * task, the {@code rollbackConfiguration} determines if the Unit of Work should be rolled back or committed,
-     * and the exception is thrown.
-     *
-     * @param task                  the task to execute
-     * @param rollbackConfiguration configuration that determines whether or not to rollback the unit of work when task
-     *                              execution fails
-     */
-    default void execute(Runnable task, RollbackConfiguration rollbackConfiguration) {
-        ResultMessage<?> resultMessage = executeWithResult(() -> {
-            task.run();
-            return null;
-        }, rollbackConfiguration);
-        if (resultMessage.isExceptional()) {
-            throw (RuntimeException) resultMessage.exceptionResult();
-        }
-    }
+    private static class UnitOfWorkProcessingContext implements ProcessingContext {
 
-    /**
-     * Execute the given {@code task} in the context of this Unit of Work. If the Unit of Work is not started yet
-     * it will be started.
-     * <p/>
-     * If the task executes successfully the Unit of Work is committed and the result of the task is returned. If any
-     * exception is raised while executing the task, the Unit of Work is rolled back and the exception is thrown.
-     *
-     * @param <R>  the type of result that is returned after successful execution
-     * @param task the task to execute
-     * @return The result of the task wrapped in Result Message
-     */
-    default <R> ResultMessage<R> executeWithResult(Callable<R> task) {
-        return executeWithResult(task, RollbackConfigurationType.ANY_THROWABLE);
-    }
+        private final AtomicReference<Status> status = new AtomicReference<>(Status.NOT_STARTED);
+        private final AtomicReference<Phase> currentPhase = new AtomicReference<>(null);
 
-    /**
-     * Execute the given {@code task} in the context of this Unit of Work. If the Unit of Work is not started yet
-     * it will be started.
-     * <p/>
-     * If the task executes successfully the Unit of Work is committed and the result of the task is returned. If
-     * execution fails, the {@code rollbackConfiguration} determines if the Unit of Work should be rolled back or
-     * committed.
-     *
-     * @param <R>                   the type of result that is returned after successful execution
-     * @param task                  the task to execute
-     * @param rollbackConfiguration configuration that determines whether or not to rollback the unit of work when task
-     *                              execution fails
-     * @return The result of the task wrapped in Result Message
-     */
-    <R> ResultMessage<R> executeWithResult(Callable<R> task, @Nonnull RollbackConfiguration rollbackConfiguration);
+        private final ConcurrentNavigableMap<Phase, Queue<Function<ProcessingContext, CompletableFuture<?>>>> phaseActions =
+                new ConcurrentSkipListMap<>(Comparator.comparingInt(Phase::order));
+        private final Queue<Consumer<ProcessingContext>> completeHandlers = new ConcurrentLinkedQueue<>();
+        private final Queue<ErrorHandler> errorHandlers = new ConcurrentLinkedQueue<>();
+        private final AtomicReference<CauseAndPhase> errorCause = new AtomicReference<>();
 
-    /**
-     * Get the result of the task that was executed by this Unit of Work. If the Unit of Work has not been given a task
-     * to execute this method returns {@code null}.
-     * <p>
-     * Note that the value of the returned ExecutionResult's {@link ExecutionResult#isExceptionResult()} does not
-     * determine whether or not the UnitOfWork has been rolled back. To check whether or not the UnitOfWork was rolled
-     * back check {@link #isRolledBack}.
-     *
-     * @return The result of the task executed by this Unit of Work, or {@code null} if the Unit of Work has not
-     * been given a task to execute.
-     */
-    ExecutionResult getExecutionResult();
+        private final String identifier;
+        private final Executor workScheduler;
+        private final ConcurrentMap<ResourceKey<?>, Object> resources;
 
-    /**
-     * Check if the Unit of Work has been rolled back.
-     *
-     * @return {@code true} if the unit of work was rolled back, {@code false} otherwise.
-     */
-    boolean isRolledBack();
-
-    /**
-     * Check if the Unit of Work is the 'currently' active Unit of Work returned by {@link CurrentUnitOfWork#get()}.
-     *
-     * @return {@code true} if the Unit of Work is the currently active Unit of Work
-     */
-    default boolean isCurrent() {
-        return CurrentUnitOfWork.isStarted() && CurrentUnitOfWork.get() == this;
-    }
-
-    /**
-     * Enum indicating possible phases of the Unit of Work.
-     */
-    enum Phase {
-
-        /**
-         * Indicates that the unit of work has been created but has not been registered with the {@link
-         * CurrentUnitOfWork} yet.
-         */
-        NOT_STARTED(false, false, false),
-
-        /**
-         * Indicates that the Unit of Work has been registered with the {@link CurrentUnitOfWork} but has not been
-         * committed, because its Message has not been processed yet.
-         */
-        STARTED(true, false, false),
-
-        /**
-         * Indicates that the Unit of Work is preparing its commit. This means that {@link #commit()} has been invoked
-         * on the Unit of Work, indicating that the Message {@link #getMessage()} of the Unit of Work has been
-         * processed.
-         * <p/>
-         * All handlers registered to be notified before commit {@link #onPrepareCommit} will be invoked. If no
-         * exception is raised by any of the handlers the Unit of Work will go into the {@link #COMMIT} phase, otherwise
-         * it will be rolled back.
-         */
-        PREPARE_COMMIT(true, false, false),
-
-        /**
-         * Indicates that the Unit of Work has been committed and is passed the {@link #PREPARE_COMMIT} phase.
-         */
-        COMMIT(true, true, false),
-
-        /**
-         * Indicates that the Unit of Work is being rolled back. Generally this is because an exception was raised while
-         * processing the {@link #getMessage() message} or while the Unit of Work was being committed.
-         */
-        ROLLBACK(true, true, true),
-
-        /**
-         * Indicates that the Unit of Work is after a successful commit. In this phase the Unit of Work cannot be rolled
-         * back anymore.
-         */
-        AFTER_COMMIT(true, true, true),
-
-        /**
-         * Indicates that the Unit of Work is after a successful commit or after a rollback. Any resources tied to this
-         * Unit of Work should be released.
-         */
-        CLEANUP(false, true, true),
-
-        /**
-         * Indicates that the Unit of Work is at the end of its life cycle. This phase is final.
-         */
-        CLOSED(false, true, true);
-
-        private final boolean started;
-        private final boolean reverseCallbackOrder;
-        private final boolean suppressHandlerErrors;
-
-        Phase(boolean started, boolean reverseCallbackOrder, boolean suppressHandlerErrors) {
-            this.started = started;
-            this.reverseCallbackOrder = reverseCallbackOrder;
-            this.suppressHandlerErrors = suppressHandlerErrors;
+        private UnitOfWorkProcessingContext(String identifier, Executor workScheduler) {
+            this.identifier = identifier;
+            this.workScheduler = workScheduler;
+            this.resources = new ConcurrentHashMap<>();
         }
 
-        /**
-         * Check if a Unit of Work in this phase has been started, i.e. is registered with the {@link
-         * CurrentUnitOfWork}.
-         *
-         * @return {@code true} if the Unit of Work is started when in this phase, {@code false} otherwise
-         */
+        @Override
         public boolean isStarted() {
-            return started;
+            return status.get() != Status.NOT_STARTED;
+        }
+
+        @Override
+        public boolean isError() {
+            return status.get() == Status.COMPLETED_ERROR;
+        }
+
+        @Override
+        public boolean isCommitted() {
+            return status.get() == Status.COMPLETED;
+        }
+
+        @Override
+        public boolean isCompleted() {
+            Status currentStatus = status.get();
+            return currentStatus == Status.COMPLETED || currentStatus == Status.COMPLETED_ERROR;
+        }
+
+        @Override
+        public ProcessingLifecycle on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
+            var current = currentPhase.get();
+            if (current != null && phase.order() <= current.order()) {
+                throw new IllegalStateException(
+                        "Failed to register handler in phase " + phase + " (" + phase.order() + "). "
+                                + "ProcessingContext is already in phase " + current + " (" + current.order() + ")."
+                );
+            }
+            phaseActions.computeIfAbsent(phase, p -> new ConcurrentLinkedQueue<>())
+                        .add(safe(phase, action));
+            return this;
         }
 
         /**
-         * Check whether registered handlers for this phase should be invoked in the order of registration (first
-         * registered handler is invoked first) or in the reverse order of registration (last registered handler is
-         * invoked first).
+         * Wraps a given {@code action}, that is to be executed in the given {@code phase}, in a try-catch block to
+         * ensure exceptions are exclusively returned as a failed {@link CompletableFuture}.
          *
-         * @return {@code true} if the order of invoking handlers in this phase should be in the reverse order of
-         * registration, {@code false} otherwise.
+         * @param phase  The original phase instance the handler is registered under
+         * @param action The {@link Function} to perform safely. It's given the active {@link ProcessingContext} and
+         *               returns a {@link CompletableFuture} for chaining purposes and to carry the action's result.
+         * @return A {@link CompletableFuture} wrapping both the successful and exceptional result of the given
+         * {@code action}.
          */
-        public boolean isReverseCallbackOrder() {
-            return reverseCallbackOrder;
+        private Function<ProcessingContext, CompletableFuture<?>> safe(
+                Phase phase, Function<ProcessingContext, CompletableFuture<?>> action
+        ) {
+            return processingContext -> {
+                CompletableFuture<?> result;
+                try {
+                    result = action.apply(processingContext);
+                } catch (Exception e) {
+                    result = CompletableFuture.failedFuture(e);
+                }
+
+                return result.exceptionallyCompose(e -> {
+                    if (!errorCause.compareAndSet(null, new CauseAndPhase(phase, e))) {
+                        errorCause.get().cause().addSuppressed(e);
+                    }
+                    return CompletableFuture.failedFuture(e);
+                });
+            };
+        }
+
+        @Override
+        public ProcessingLifecycle onError(ErrorHandler action) {
+            ErrorHandler silentAction = failSilently(action);
+            this.errorHandlers.add(silentAction);
+            var currentStatus = status.get();
+
+            if (currentStatus == Status.COMPLETED_ERROR && errorHandlers.remove(silentAction)) {
+                // When in the COMPLETED_ERROR status, execute immediately.
+                // The removal attempt is to make sure that we aren't concurrently executing from the registering thread
+                // as well as the thread that completed the processing context.
+                CauseAndPhase causeAndPhase = errorCause.get();
+                silentAction.handle(this, causeAndPhase.phase(), causeAndPhase.cause());
+            }
+            return this;
+        }
+
+        private ErrorHandler failSilently(ErrorHandler action) {
+            return (context, phase, exception) -> {
+                try {
+                    action.handle(context, phase, exception);
+                } catch (Exception e) {
+                    logger.warn("An onError handler threw an exception.", e);
+                }
+            };
+        }
+
+        @Override
+        public ProcessingLifecycle whenComplete(Consumer<ProcessingContext> action) {
+            Consumer<ProcessingContext> silentAction = completeSilently(action);
+            this.completeHandlers.add(silentAction);
+            var currentStatus = status.get();
+
+            if (currentStatus == Status.COMPLETED && completeHandlers.remove(silentAction)) {
+                // When in the COMPLETED status, execute immediately.
+                // The removal attempt is to make sure that we aren't concurrently executing from the registering thread
+                // as well as the thread that completed the processing context.
+                silentAction.accept(this);
+            }
+            return this;
+        }
+
+        private Consumer<ProcessingContext> completeSilently(Consumer<ProcessingContext> action) {
+            return processingContext -> {
+                try {
+                    action.accept(processingContext);
+                } catch (Exception e) {
+                    logger.warn("A Completion handler threw an exception.", e);
+                }
+            };
+        }
+
+        private CompletableFuture<Void> commit() {
+            if (!status.compareAndSet(Status.NOT_STARTED, Status.STARTED)) {
+                throw new IllegalStateException(
+                        "Cannot switch [" + status.get() + "] to STARTED. "
+                                + "This ProcessingContext cannot be committed (again)."
+                );
+            }
+
+            return executeAllPhaseHandlers()
+                    .thenRun(this::runCompletionHandlers)
+                    .exceptionallyCompose(this::runErrorHandlers);
+        }
+
+        private CompletableFuture<Void> executeAllPhaseHandlers() {
+            if (phaseActions.isEmpty()) {
+                // We're done.
+                return FutureUtils.emptyCompletedFuture();
+            }
+
+            CompletableFuture<Void> nextPhaseResult = runNextPhase().toCompletableFuture();
+            // Avoid stack overflow due to recursion when executed in single thread.
+            while (!phaseActions.isEmpty() && nextPhaseResult.isDone()) {
+                if (nextPhaseResult.isCompletedExceptionally()) {
+                    return nextPhaseResult;
+                } else {
+                    nextPhaseResult = runNextPhase().toCompletableFuture();
+                }
+            }
+            return nextPhaseResult.thenCompose(result -> executeAllPhaseHandlers());
+        }
+
+        private void runCompletionHandlers() {
+            status.set(Status.COMPLETED);
+
+            while (!completeHandlers.isEmpty()) {
+                Consumer<ProcessingContext> nextCompletionHandler = completeHandlers.poll();
+                if (nextCompletionHandler != null) {
+                    workScheduler.execute(() -> nextCompletionHandler.accept(this));
+                }
+            }
+        }
+
+        private CompletionStage<Void> runErrorHandlers(Throwable e) {
+            status.set(Status.COMPLETED_ERROR);
+            CauseAndPhase recordedCause = errorCause.get();
+
+            while (!errorHandlers.isEmpty()) {
+                ErrorHandler nextErrorHandler = errorHandlers.poll();
+                if (nextErrorHandler != null) {
+                    workScheduler.execute(
+                            () -> nextErrorHandler.handle(this, recordedCause.phase(), recordedCause.cause())
+                    );
+                }
+            }
+            return CompletableFuture.failedFuture(e);
+        }
+
+        private CompletableFuture<Void> runNextPhase() {
+            if (phaseActions.isEmpty()) {
+                return FutureUtils.emptyCompletedFuture();
+            }
+            Phase current = phaseActions.firstKey();
+            currentPhase.set(current);
+
+            Queue<Function<ProcessingContext, CompletableFuture<?>>> actionQueue = phaseActions.remove(current);
+            if (actionQueue == null || actionQueue.isEmpty()) {
+                logger.debug("Skipping phase {} (with order [{}]), since no actions are registered.",
+                             current, current.order());
+                return FutureUtils.emptyCompletedFuture();
+            }
+            logger.debug("Calling {}# actions in phase {} (with order {}).",
+                         actionQueue.size(), current, current.order());
+
+            return actionQueue.stream()
+                              .map(handler -> FutureUtils.emptyCompletedFuture()
+                                                         .thenComposeAsync(result -> handler.apply(this), workScheduler)
+                                                         .thenAccept(FutureUtils::ignoreResult))
+                              .reduce(CompletableFuture::allOf)
+                              .orElseGet(FutureUtils::emptyCompletedFuture);
+        }
+
+        @Override
+        public boolean containsResource(@Nonnull ResourceKey<?> key) {
+            return resources.containsKey(key);
+        }
+
+        @Override
+        public <T> T getResource(@Nonnull ResourceKey<T> key) {
+            //noinspection unchecked
+            return (T) resources.get(key);
+        }
+
+        @Override
+        public <T> T putResource(@Nonnull ResourceKey<T> key,
+                                 @Nonnull T resource) {
+            //noinspection unchecked
+            return (T) resources.put(key, resource);
+        }
+
+        @Override
+        public <T> T updateResource(@Nonnull ResourceKey<T> key,
+                                    @Nonnull UnaryOperator<T> resourceUpdater) {
+            //noinspection unchecked
+            return (T) resources.compute(key, (k, v) -> resourceUpdater.apply((T) v));
+        }
+
+        @Override
+        public <T> T putResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                                         @Nonnull T resource) {
+            //noinspection unchecked
+            return (T) resources.putIfAbsent(key, resource);
+        }
+
+        @Override
+        public <T> T computeResourceIfAbsent(@Nonnull ResourceKey<T> key,
+                                             @Nonnull Supplier<T> resourceSupplier) {
+            //noinspection unchecked
+            return (T) resources.computeIfAbsent(key, t -> resourceSupplier.get());
+        }
+
+        @Override
+        public <T> T removeResource(@Nonnull ResourceKey<T> key) {
+            //noinspection unchecked
+            return (T) resources.remove(key);
+        }
+
+        @Override
+        public <T> boolean removeResource(@Nonnull ResourceKey<T> key,
+                                          @Nonnull T expectedResource) {
+            return resources.remove(key, expectedResource);
+        }
+
+        @Override
+        public String toString() {
+            return "UnitOfWorkProcessingContext{"
+                    + "identifier='" + identifier + '\'' + ", currentPhase=" + currentPhase.get()
+                    + '}';
+        }
+
+        private enum Status {
+            NOT_STARTED, STARTED, COMPLETED_ERROR, COMPLETED
         }
 
         /**
-         * Indicates whether the handlers triggered for this phase should have their exceptions suppressed. This is the
-         * case for phases where cleanup or post-error processing is done. Exceptions in those phases should not trigger
-         * exceptions, but to a best-effort attempt to clean up.
+         * Tuple combining the given {@code phase} and {@code cause} to be used during the invocation of registered
+         * {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle.ErrorHandler ErrorHandlers}.
          *
-         * @return {@code true} when errors should be suppressed, otherwise {@code false}
+         * @param phase The {@link org.axonframework.messaging.unitofwork.ProcessingLifecycle.Phase} in which the given
+         *              {@code cause} was thrown.
+         * @param cause The {@link Throwable} thrown in an action executed in the given {@code phase}.
          */
-        public boolean isSuppressHandlerErrors() {
-            return suppressHandlerErrors;
-        }
+        private record CauseAndPhase(Phase phase, Throwable cause) {
 
-        /**
-         * Check if this Phase comes before given other {@code phase}.
-         *
-         * @param phase The other Phase
-         *
-         * @return {@code true} if this comes before the given {@code phase}, {@code false} otherwise.
-         */
-        public boolean isBefore(Phase phase) {
-            return ordinal() < phase.ordinal();
-        }
-
-        /**
-         * Check if this Phase comes after given other {@code phase}.
-         *
-         * @param phase The other Phase
-         * @return {@code true} if this comes after the given {@code phase}, {@code false} otherwise.
-         */
-        public boolean isAfter(Phase phase) {
-            return ordinal() > phase.ordinal();
         }
     }
 }

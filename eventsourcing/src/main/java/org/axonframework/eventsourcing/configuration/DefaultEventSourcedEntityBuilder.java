@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
+import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.CriteriaResolver;
 import org.axonframework.eventsourcing.EntityEvolver;
 import org.axonframework.eventsourcing.PayloadBasedEntityEvolver;
@@ -27,7 +27,7 @@ import org.axonframework.eventsourcing.SimpleEventSourcedComponent;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,8 +110,8 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
     }
 
     @Override
-    public ComponentFactory<AsyncRepository<I, E>> repository() {
-        return config -> new AsyncEventSourcingRepository<>(
+    public ComponentFactory<Repository<I, E>> repository() {
+        return config -> new EventSourcingRepository<>(
                 idType,
                 entityType,
                 config.getComponent(EventStore.class),

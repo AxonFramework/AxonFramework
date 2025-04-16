@@ -18,7 +18,7 @@ package org.axonframework.modelling;
 
 import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CompletableFuture;
@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SimpleStateManagerTest {
 
-    private final AsyncRepository<String, Integer> repository = new SimpleRepository<>(
+    private final Repository<String, Integer> repository = new SimpleRepository<>(
             String.class,
             Integer.class,
             (id, context) -> CompletableFuture.completedFuture(Integer.parseInt(id)),

@@ -19,7 +19,7 @@ package org.axonframework.spring.config;
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.config.LegacyConfiguration;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.slf4j.Logger;
@@ -222,7 +222,7 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
             String repositoryName = lowerCaseFirstCharacterOf(aggregateType.getSimpleName()) + REPOSITORY_BEAN;
             if (registry.containsBean(repositoryName)) {
                 Class<?> type = registry.getType(repositoryName);
-                if (type == null || Repository.class.isAssignableFrom(type)) {
+                if (type == null || LegacyRepository.class.isAssignableFrom(type)) {
                     beanDefinitionBuilder.addPropertyValue(REPOSITORY, repositoryName);
                 }
             } else {
@@ -234,7 +234,7 @@ public class SpringAggregateLookup implements BeanDefinitionRegistryPostProcesso
                                              .setFactoryMethod("repository")
                                              .applyCustomizers(bd -> {
                                                  ResolvableType resolvableRepositoryType =
-                                                         forClassWithGenerics(Repository.class, aggregateType);
+                                                         forClassWithGenerics(LegacyRepository.class, aggregateType);
                                                  ((RootBeanDefinition) bd).setTargetType(resolvableRepositoryType);
                                              })
                                              .getBeanDefinition()

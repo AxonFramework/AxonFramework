@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.loopbacktest;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -25,7 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class MessagingCommandHandler {
 
-    private Repository<Message> messageRepository;
+    private LegacyRepository<Message> messageRepository;
 
     @CommandHandler
     public void handleIncomingMessage(String message) throws Exception {
@@ -33,7 +33,7 @@ public class MessagingCommandHandler {
     }
 
     @Autowired
-    public void setMessageRepository(Repository<Message> messageRepository) {
+    public void setMessageRepository(LegacyRepository<Message> messageRepository) {
         this.messageRepository = messageRepository;
     }
 }

@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -86,7 +86,7 @@ class LoggingSpanFactoryTest {
     @Test
     void internalSpanCanBeStartedAndEndedWithUnitOfWorkActive() {
         CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "My command");
-        DefaultUnitOfWork<CommandMessage<Object>> uow = new DefaultUnitOfWork<>(command);
+        LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = new LegacyDefaultUnitOfWork<>(command);
         uow.start();
         assertDoesNotThrow(() -> {
             Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace");
@@ -131,7 +131,7 @@ class LoggingSpanFactoryTest {
     @Test
     void dispatchSpanCanBeStartedAndEndedWhileUnitOfWorkActive() {
         CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "My command");
-        DefaultUnitOfWork<CommandMessage<Object>> uow = new DefaultUnitOfWork<>(command);
+        LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = new LegacyDefaultUnitOfWork<>(command);
         uow.start();
         assertDoesNotThrow(() -> {
             Span trace = LoggingSpanFactory.INSTANCE.createDispatchSpan(() -> "Trace", TEST_EVENT);
@@ -155,7 +155,7 @@ class LoggingSpanFactoryTest {
     @Test
     void internalSpanWithMessageCanBeStartedAndEndedWhileUnitOfWorkActive() {
         CommandMessage<Object> command = new GenericCommandMessage<>(TEST_COMMAND_TYPE, "My command");
-        DefaultUnitOfWork<CommandMessage<Object>> uow = new DefaultUnitOfWork<>(command);
+        LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = new LegacyDefaultUnitOfWork<>(command);
         uow.start();
         assertDoesNotThrow(() -> {
             Span trace = LoggingSpanFactory.INSTANCE.createInternalSpan(() -> "Trace", TEST_EVENT);

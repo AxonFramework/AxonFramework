@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -32,13 +32,15 @@ import java.lang.reflect.Parameter;
  *
  * @author Allard Buijze
  * @since 2.0
+ * @deprecated In favor of the {@link org.axonframework.messaging.unitofwork.ProcessingContextParameterResolverFactory}.
  */
 @Priority(Priority.FIRST)
+@Deprecated(since = "5.0.0")
 public class CurrentUnitOfWorkParameterResolverFactory implements ParameterResolverFactory, ParameterResolver {
 
     @Override
     public ParameterResolver createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
-        if (UnitOfWork.class.equals(parameters[parameterIndex].getType())) {
+        if (LegacyUnitOfWork.class.equals(parameters[parameterIndex].getType())) {
             return this;
         }
         return null;

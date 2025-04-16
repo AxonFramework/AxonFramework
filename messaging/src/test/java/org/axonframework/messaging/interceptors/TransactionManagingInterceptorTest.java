@@ -23,8 +23,8 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 
 import static org.mockito.Mockito.*;
@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
 class TransactionManagingInterceptorTest {
 
     private InterceptorChain interceptorChain;
-    private UnitOfWork<Message<?>> unitOfWork;
+    private LegacyUnitOfWork<Message<?>> unitOfWork;
     private TransactionManager transactionManager;
     private Transaction transaction;
     private TransactionManagingInterceptor<Message<?>> subject;
@@ -49,7 +49,7 @@ class TransactionManagingInterceptorTest {
         }
         interceptorChain = mock(InterceptorChain.class);
         Message<?> message = new GenericMessage<>(new MessageType("message"), new Object());
-        unitOfWork = DefaultUnitOfWork.startAndGet(message);
+        unitOfWork = LegacyDefaultUnitOfWork.startAndGet(message);
         transactionManager = mock(TransactionManager.class);
         transaction = mock(Transaction.class);
         when(transactionManager.startTransaction()).thenReturn(transaction);
@@ -58,7 +58,7 @@ class TransactionManagingInterceptorTest {
 
     @Test
     void startTransaction() throws Exception {
-        UnitOfWork<Message<?>> unitOfWork = spy(this.unitOfWork);
+        LegacyUnitOfWork<Message<?>> unitOfWork = spy(this.unitOfWork);
 
         subject.handle(unitOfWork, interceptorChain);
         verify(transactionManager).startTransaction();

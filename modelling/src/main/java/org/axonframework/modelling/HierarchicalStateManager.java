@@ -18,7 +18,7 @@ package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 import org.axonframework.modelling.repository.ManagedEntity;
 
 import java.util.HashSet;
@@ -63,7 +63,7 @@ public class HierarchicalStateManager implements StateManager {
                                                                            @Nonnull ProcessingContext context) {
         //noinspection unchecked
         Class<I> idClass = (Class<I>) id.getClass();
-        AsyncRepository<I, T> repository = repository(type, idClass);
+        Repository<I, T> repository = repository(type, idClass);
         if (repository != null) {
             return repository.load(id, context);
         }
@@ -87,8 +87,8 @@ public class HierarchicalStateManager implements StateManager {
     }
 
     @Override
-    public <I, T> AsyncRepository<I, T> repository(@Nonnull Class<T> entityType, @Nonnull Class<I> idType) {
-        AsyncRepository<I, T> childRepository = child.repository(entityType, idType);
+    public <I, T> Repository<I, T> repository(@Nonnull Class<T> entityType, @Nonnull Class<I> idType) {
+        Repository<I, T> childRepository = child.repository(entityType, idType);
         if (childRepository != null) {
             return childRepository;
         }

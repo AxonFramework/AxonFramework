@@ -20,14 +20,14 @@ import com.thoughtworks.xstream.XStream;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.spring.eventsourcing.SpringPrototypeAggregateFactory;
 import org.axonframework.springboot.autoconfig.context.Animal;
 import org.axonframework.springboot.autoconfig.context.Cat;
@@ -120,10 +120,11 @@ class AggregatePolymorphismAutoConfigurationTest {
 
         testApplicationContext.withUserConfiguration(PolymorphicAggregateContext.class)
                               .run(context -> {
-                                  assertThat(context).hasSingleBean(Repository.class);
-                                  assertThat(context).getBean(Repository.class)
-                                                     .isInstanceOf(EventSourcingRepository.class);
-                                  String[] namesForRepositoryBeans = context.getBeanNamesForType(Repository.class);
+                                  assertThat(context).hasSingleBean(LegacyRepository.class);
+                                  assertThat(context).getBean(LegacyRepository.class)
+                                                     .isInstanceOf(LegacyEventSourcingRepository.class);
+                                  String[] namesForRepositoryBeans =
+                                          context.getBeanNamesForType(LegacyRepository.class);
                                   assertThat(namesForRepositoryBeans.length).isEqualTo(1);
 
                                   assertThat(namesForRepositoryBeans[0]).isEqualTo(animalRepositoryBeanName);

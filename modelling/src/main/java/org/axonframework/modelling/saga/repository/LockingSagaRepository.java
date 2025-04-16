@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.Saga;
 import org.axonframework.modelling.saga.SagaRepository;
 
@@ -56,7 +56,7 @@ public abstract class LockingSagaRepository<T> implements SagaRepository<T> {
      * {@inheritDoc}
      * <p>
      * This implementation locks access to sagas with the given {@code sagaIdentifier} and releases the lock in the
-     * clean-up phase of the current {@link UnitOfWork}.
+     * clean-up phase of the current {@link LegacyUnitOfWork}.
      */
     @Override
     public Saga<T> load(String sagaIdentifier) {
@@ -68,7 +68,7 @@ public abstract class LockingSagaRepository<T> implements SagaRepository<T> {
      * {@inheritDoc}
      * <p>
      * This implementation locks access to sagas with the given {@code sagaIdentifier} and releases the lock in the
-     * clean-up phase of the current {@link UnitOfWork}.
+     * clean-up phase of the current {@link LegacyUnitOfWork}.
      */
     @Override
     public Saga<T> createInstance(String sagaIdentifier, Supplier<T> factoryMethod) {
@@ -77,7 +77,7 @@ public abstract class LockingSagaRepository<T> implements SagaRepository<T> {
     }
 
     private void lockSagaAccess(String sagaIdentifier) {
-        UnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
+        LegacyUnitOfWork<?> unitOfWork = CurrentUnitOfWork.get();
         Lock lock = lockFactory.obtainLock(sagaIdentifier);
         unitOfWork.root().onCleanup(u -> lock.release());
     }

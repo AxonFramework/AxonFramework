@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.AggregateMember;
 import org.axonframework.modelling.command.CommandHandlerInterceptor;
 import org.axonframework.modelling.command.TargetAggregateIdentifier;
@@ -162,7 +162,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
     void createdAggregateModelReturnsCommandHandlingFunctionFromParentAggregate() throws Exception {
         CommandMessage<MemberCommand> testMemberCommand =
                 new GenericCommandMessage<>(TEST_COMMAND_TYPE, MEMBER_COMMAND);
-        DefaultUnitOfWork.startAndGet(testMemberCommand);
+        LegacyDefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();
         AggregateModel<LeafAggregate> testModel =
@@ -180,7 +180,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
             throws Exception {
         CommandMessage<MemberCommand> testMemberCommand =
                 new GenericCommandMessage<>(TEST_COMMAND_TYPE, MEMBER_COMMAND);
-        DefaultUnitOfWork.startAndGet(testMemberCommand);
+        LegacyDefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();
         //noinspection unchecked
@@ -202,7 +202,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
 
         CommandMessage<MemberCommand> testMemberCommand =
                 new GenericCommandMessage<>(TEST_COMMAND_TYPE, MEMBER_COMMAND);
-        DefaultUnitOfWork.startAndGet(testMemberCommand);
+        LegacyDefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();
         AggregateModel<LeafAggregate> testModel =
@@ -220,7 +220,7 @@ class AnnotatedRootMessageHandlingMemberAggregateMetaModelFactoryTest {
         int expectedNumberOfMemberCommandInterceptorInvocations = 3;
         CommandMessage<MemberCommand> testMemberCommand =
                 new GenericCommandMessage<>(TEST_COMMAND_TYPE, MEMBER_COMMAND);
-        DefaultUnitOfWork.startAndGet(testMemberCommand);
+        LegacyDefaultUnitOfWork.startAndGet(testMemberCommand);
 
         LeafAggregate testAggregate = new LeafAggregate();
         //noinspection unchecked

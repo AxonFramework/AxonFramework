@@ -26,7 +26,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -47,7 +47,7 @@ public class AnnotatedAggregateTest {
     private static final MessageType TEST_COMMAND_TYPE = new MessageType("command");
 
     private final String ID = "id";
-    private Repository<AggregateRoot> repository;
+    private LegacyRepository<AggregateRoot> repository;
     private EventBus eventBus;
     private StubSideEffect sideEffect;
 
@@ -65,7 +65,7 @@ public class AnnotatedAggregateTest {
     void applyingMultipleEventsInAndThenPublishesWithRightState() {
         Command testPayload = new Command(ID, 2);
         CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, testPayload);
-        DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(testCommand);
+        LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = LegacyDefaultUnitOfWork.startAndGet(testCommand);
 
         Aggregate<AggregateRoot> aggregate =
                 uow.executeWithResult(() -> repository.newInstance(() -> {
@@ -87,7 +87,7 @@ public class AnnotatedAggregateTest {
     void applyingEventInHandlerPublishesInRightOrder() {
         Command testPayload = new Command(ID, 0);
         CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, testPayload);
-        DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(testCommand);
+        LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = LegacyDefaultUnitOfWork.startAndGet(testCommand);
 
         Aggregate<AggregateRoot> aggregate =
                 uow.executeWithResult(() -> repository.newInstance(() -> {
@@ -110,7 +110,7 @@ public class AnnotatedAggregateTest {
     void lastSequenceReturnsNullIfNoEventsHaveBeenPublishedYet() {
         final Command testPayload = new Command(ID, 0);
         CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, testPayload);
-        DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(testCommand);
+        LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = LegacyDefaultUnitOfWork.startAndGet(testCommand);
 
         AnnotatedAggregate<AggregateRoot> testSubject =
                 (AnnotatedAggregate<AggregateRoot>) uow.executeWithResult(
@@ -124,7 +124,7 @@ public class AnnotatedAggregateTest {
     void conditionalApplyingEventInHandlerPublishesInRightOrder(boolean applyConditional) {
         Command_2 testPayload = new Command_2(ID, 0, applyConditional);
         CommandMessage<Object> testCommand = new GenericCommandMessage<>(TEST_COMMAND_TYPE, testPayload);
-        DefaultUnitOfWork<CommandMessage<Object>> uow = DefaultUnitOfWork.startAndGet(testCommand);
+        LegacyDefaultUnitOfWork<CommandMessage<Object>> uow = LegacyDefaultUnitOfWork.startAndGet(testCommand);
 
         Aggregate<AggregateRoot> aggregate =
                 uow.executeWithResult(() -> repository.newInstance(() -> {
@@ -220,7 +220,7 @@ public class AnnotatedAggregateTest {
         }
     }
 
-    private static class StubRepository extends AbstractRepository<AggregateRoot, Aggregate<AggregateRoot>> {
+    private static class StubRepository extends AbstractLegacyRepository<AggregateRoot, Aggregate<AggregateRoot>> {
 
         private final EventBus eventBus;
 
@@ -260,7 +260,7 @@ public class AnnotatedAggregateTest {
 
         }
 
-        private static class Builder extends AbstractRepository.Builder<AggregateRoot> {
+        private static class Builder extends AbstractLegacyRepository.Builder<AggregateRoot> {
 
             private EventBus eventBus;
 

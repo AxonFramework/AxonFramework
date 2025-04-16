@@ -36,11 +36,11 @@ import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
-import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
@@ -62,16 +62,16 @@ import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateNotFoundException;
 import org.axonframework.modelling.command.AggregateScopeDescriptor;
 import org.axonframework.modelling.command.CommandTargetResolver;
 import org.axonframework.modelling.command.ConflictingAggregateVersionException;
-import org.axonframework.modelling.command.Repository;
+import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
@@ -183,7 +183,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public FixtureConfiguration<T> registerRepository(Repository<T> repository) {
+    public FixtureConfiguration<T> registerRepository(LegacyRepository<T> repository) {
         this.repository = new IdentifierValidatingRepository<>(repository);
         resources.add(repository);
         return this;
@@ -204,13 +204,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerAggregateFactory(AggregateFactory<T> aggregateFactory) {
-        return registerRepository(EventSourcingRepository.builder(aggregateFactory.getAggregateType())
-                                                         .aggregateFactory(aggregateFactory)
-                                                         .eventStore(eventStore)
-                                                         .parameterResolverFactory(getParameterResolverFactory())
-                                                         .handlerDefinition(getHandlerDefinition())
-                                                         .repositoryProvider(getRepositoryProvider())
-                                                         .build());
+        return registerRepository(LegacyEventSourcingRepository.builder(aggregateFactory.getAggregateType())
+                                                               .aggregateFactory(aggregateFactory)
+                                                               .eventStore(eventStore)
+                                                               .parameterResolverFactory(getParameterResolverFactory())
+                                                               .handlerDefinition(getHandlerDefinition())
+                                                               .repositoryProvider(getRepositoryProvider())
+                                                               .build());
     }
 
     @Override
@@ -366,7 +366,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         ensureRepositoryConfiguration();
-        DefaultUnitOfWork.startAndGet(null).execute(() -> {
+        LegacyDefaultUnitOfWork.startAndGet(null).execute(() -> {
             try {
                 repository.newInstance(aggregate::get);
             } catch (Exception e) {
@@ -516,7 +516,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public ResultValidator<T> whenConstructing(Callable<T> aggregateFactory) {
-        return when(validator -> DefaultUnitOfWork.startAndGet(null).execute(() -> {
+        return when(validator -> LegacyDefaultUnitOfWork.startAndGet(null).execute(() -> {
             try {
                 repository.newInstance(aggregateFactory);
             } catch (Exception | AssertionError e) {
@@ -528,7 +528,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public ResultValidator<T> whenInvoking(String aggregateId, Consumer<T> aggregateSupplier) {
-        return when(validator -> DefaultUnitOfWork.startAndGet(null).execute(() -> {
+        return when(validator -> LegacyDefaultUnitOfWork.startAndGet(null).execute(() -> {
             try {
                 repository.load(aggregateId)
                           .execute(aggregateSupplier);
@@ -561,7 +561,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     /**
      * Handles the given {@code deadlineMessage} in the aggregate described by the given {@code aggregateDescriptor}.
-     * Deadline message is handled in the scope of a {@link UnitOfWork}. If handling the deadline results in an
+     * Deadline message is handled in the scope of a {@link LegacyUnitOfWork}. If handling the deadline results in an
      * exception, the exception will be wrapped in a {@link FixtureExecutionException}.
      *
      * @param aggregateDescriptor A {@link ScopeDescriptor} describing the aggregate under test
@@ -624,16 +624,16 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                     getRepositoryProvider()));
         } else {
             AggregateModel<T> aggregateModel = aggregateModel();
-            this.registerRepository(EventSourcingRepository.builder(aggregateType)
-                                                           .aggregateModel(aggregateModel)
-                                                           .aggregateFactory(
-                                                                   new GenericAggregateFactory<>(aggregateModel)
-                                                           )
-                                                           .eventStore(eventStore)
-                                                           .parameterResolverFactory(getParameterResolverFactory())
-                                                           .handlerDefinition(getHandlerDefinition())
-                                                           .repositoryProvider(getRepositoryProvider())
-                                                           .build());
+            this.registerRepository(LegacyEventSourcingRepository.builder(aggregateType)
+                                                                 .aggregateModel(aggregateModel)
+                                                                 .aggregateFactory(
+                                                                         new GenericAggregateFactory<>(aggregateModel)
+                                                                 )
+                                                                 .eventStore(eventStore)
+                                                                 .parameterResolverFactory(getParameterResolverFactory())
+                                                                 .handlerDefinition(getHandlerDefinition())
+                                                                 .repositoryProvider(getRepositoryProvider())
+                                                                 .build());
         }
     }
 
@@ -664,7 +664,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private void detectIllegalStateChanges(MatchAllFieldFilter fieldFilter, Aggregate<T> workingAggregate) {
         logger.debug("Starting separate Unit of Work for the purpose of checking illegal state changes in Aggregate");
         if (aggregateIdentifier != null && workingAggregate != null && reportIllegalStateChange) {
-            UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
+            LegacyUnitOfWork<?> uow = LegacyDefaultUnitOfWork.startAndGet(null);
             try {
                 Aggregate<T> aggregate2 = repository.delegate.load(aggregateIdentifier);
                 if (workingAggregate.isDeleted()) {
@@ -786,7 +786,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     }
 
     @Override
-    public Repository<T> getRepository() {
+    public LegacyRepository<T> getRepository() {
         ensureRepositoryConfiguration();
         return repository;
     }
@@ -820,13 +820,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
     }
 
-    private static class IdentifierValidatingRepository<T> implements Repository<T> {
+    private static class IdentifierValidatingRepository<T> implements LegacyRepository<T> {
 
-        private final Repository<T> delegate;
+        private final LegacyRepository<T> delegate;
         private Aggregate<T> aggregate;
         private boolean rolledBack;
 
-        public IdentifierValidatingRepository(Repository<T> delegate) {
+        public IdentifierValidatingRepository(LegacyRepository<T> delegate) {
             this.delegate = delegate;
         }
 
@@ -891,7 +891,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
     }
 
-    private static class InMemoryRepository<T> implements Repository<T> {
+    private static class InMemoryRepository<T> implements LegacyRepository<T> {
 
         private final EventBus eventBus;
         private final RepositoryProvider repositoryProvider;
@@ -1087,12 +1087,12 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private class DefaultRepositoryProvider implements RepositoryProvider {
 
         @Override
-        public <R> Repository<R> repositoryFor(@Nonnull Class<R> aggregateType) {
+        public <R> LegacyRepository<R> repositoryFor(@Nonnull Class<R> aggregateType) {
             return new CreationalRepository<>(aggregateType, this);
         }
     }
 
-    private class CreationalRepository<R> implements Repository<R> {
+    private class CreationalRepository<R> implements LegacyRepository<R> {
 
         private final Class<R> aggregateType;
         private final RepositoryProvider repositoryProvider;

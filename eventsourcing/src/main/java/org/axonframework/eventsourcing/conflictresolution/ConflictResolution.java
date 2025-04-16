@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
@@ -31,7 +32,7 @@ import java.lang.reflect.Parameter;
  * ParameterResolverFactory that add support for the ConflictResolver parameter type in annotated handlers.
  * <p>
  * Conflict resolution can be initialized by passing a {@link ConflictResolver} to the static {@link
- * #initialize(ConflictResolver)} method. Note that a {@link org.axonframework.messaging.unitofwork.UnitOfWork} needs
+ * #initialize(ConflictResolver)} method. Note that a {@link LegacyUnitOfWork} needs
  * to be active before conflict resolution can be initialized.
  *
  * @author Rene de Waele

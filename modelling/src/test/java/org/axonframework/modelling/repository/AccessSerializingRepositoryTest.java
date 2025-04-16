@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling.repository;
 
-import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
@@ -41,7 +41,7 @@ class AccessSerializingRepositoryTest {
 
     private static final String AGGREGATE_ID = "aggregateId";
 
-    private AsyncRepository.LifecycleManagement<String, String> delegate;
+    private Repository.LifecycleManagement<String, String> delegate;
 
     private AccessSerializingRepository<String, String> testSubject;
 
@@ -62,8 +62,8 @@ class AccessSerializingRepositoryTest {
 
     @Test
     void concurrentAccessToSameIdentifierIsBlocked() {
-        AsyncUnitOfWork uow1 = new AsyncUnitOfWork();
-        AsyncUnitOfWork uow2 = new AsyncUnitOfWork();
+        UnitOfWork uow1 = new UnitOfWork();
+        UnitOfWork uow2 = new UnitOfWork();
         // Set blockers to allow both to run concurrently and block a wait moment at the repository
         CompletableFuture<Void> uowBlocker1 = new CompletableFuture<>();
         CompletableFuture<Void> uowBlocker2 = new CompletableFuture<>();
@@ -103,9 +103,9 @@ class AccessSerializingRepositoryTest {
 
     @Test
     void timeoutOnQueuedOperationMakesTheNextWaitForCompletionOfAllPreviousItems() {
-        AsyncUnitOfWork uow1 = new AsyncUnitOfWork("uow1");
-        AsyncUnitOfWork uow2 = new AsyncUnitOfWork("uow2");
-        AsyncUnitOfWork uow3 = new AsyncUnitOfWork("uow3");
+        UnitOfWork uow1 = new UnitOfWork("uow1");
+        UnitOfWork uow2 = new UnitOfWork("uow2");
+        UnitOfWork uow3 = new UnitOfWork("uow3");
         // Set blockers to allow both to run concurrently and block a wait moment at the repository
         CompletableFuture<Void> uowBlocker1 = new CompletableFuture<>();
         CompletableFuture<Void> uowBlocker3 = new CompletableFuture<>();

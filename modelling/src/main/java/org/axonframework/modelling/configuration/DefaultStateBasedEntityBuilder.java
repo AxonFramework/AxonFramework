@@ -21,7 +21,7 @@ import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.modelling.SimpleRepository;
 import org.axonframework.modelling.SimpleRepositoryEntityLoader;
 import org.axonframework.modelling.SimpleRepositoryEntityPersister;
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 
 import static java.util.Objects.requireNonNull;
 
@@ -42,7 +42,7 @@ class DefaultStateBasedEntityBuilder<I, E> implements
     private final Class<E> entityType;
     private ComponentFactory<SimpleRepositoryEntityLoader<I, E>> loaderFactory;
     private ComponentFactory<SimpleRepositoryEntityPersister<I, E>> persisterFactory;
-    private ComponentFactory<AsyncRepository<I, E>> repositoryFactory;
+    private ComponentFactory<Repository<I, E>> repositoryFactory;
 
     DefaultStateBasedEntityBuilder(@Nonnull Class<I> idType,
                                    @Nonnull Class<E> entityType) {
@@ -66,7 +66,7 @@ class DefaultStateBasedEntityBuilder<I, E> implements
 
     @Override
     public StateBasedEntityBuilder<I, E> repository(
-            @Nonnull ComponentFactory<AsyncRepository<I, E>> repository
+            @Nonnull ComponentFactory<Repository<I, E>> repository
     ) {
         repositoryFactory = requireNonNull(repository, "The repository factory cannot be null.");
         return this;
@@ -78,7 +78,7 @@ class DefaultStateBasedEntityBuilder<I, E> implements
     }
 
     @Override
-    public ComponentFactory<AsyncRepository<I, E>> repository() {
+    public ComponentFactory<Repository<I, E>> repository() {
         return repositoryFactory != null
                 ? repositoryFactory
                 : c -> new SimpleRepository<>(idType,

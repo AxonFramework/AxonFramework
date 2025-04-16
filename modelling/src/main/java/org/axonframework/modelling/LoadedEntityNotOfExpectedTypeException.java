@@ -16,10 +16,10 @@
 
 package org.axonframework.modelling;
 
-import org.axonframework.modelling.repository.AsyncRepository;
+import org.axonframework.modelling.repository.Repository;
 
 /**
- * Exception thrown by the {@link StateManager} when the loaded entity from the {@link AsyncRepository} is not
+ * Exception thrown by the {@link StateManager} when the loaded entity from the {@link Repository} is not
  * assignable to the expected type. This can happen when the entity is loaded from a repository that is not
  * parameterized correctly, or when a subclass of an entity was attempted to be loaded and the repository returns a less
  * specific type.

@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 
 /**
- * The {@link AsyncRepository} provides an abstraction for the storage of entities.
+ * The {@link Repository} provides an abstraction for the storage of entities.
  * <p>
  * When interacting with the {@code Repository} the framework expects an active {@link ProcessingContext}. If there is
  * no active {@code UnitOfWork} an {@link IllegalStateException} is thrown.
@@ -31,13 +31,12 @@ import javax.annotation.Nonnull;
  * @param <T>  The type of entity this repository stores.
  * @param <ID> The type of identifier for entities in this repository.
  * @author Allard Buijze
- * @implNote Implementations of this interface must implement {@link AsyncRepository.LifecycleManagement} instead.
+ * @implNote Implementations of this interface must implement {@link Repository.LifecycleManagement} instead.
  * @since 0.1
- * TODO rename to Repository once the previous repository is removed
  */
-public sealed interface AsyncRepository<ID, T>
+public sealed interface Repository<ID, T>
         extends DescribableComponent
-        permits AsyncRepository.LifecycleManagement {
+        permits Repository.LifecycleManagement {
 
     /**
      * The type of entity stored in this repository.
@@ -91,7 +90,7 @@ public sealed interface AsyncRepository<ID, T>
                                  @Nonnull ProcessingContext processingContext);
 
     /**
-     * Specialization of the {@link AsyncRepository} interface that <em>must</em> be implemented by all implementations
+     * Specialization of the {@link Repository} interface that <em>must</em> be implemented by all implementations
      * of the {@code AsyncRepository}. It exposes some methods that are required to perform lifecycle management
      * operations that are not typically required outside of repository implementation.
      * <p>
@@ -101,7 +100,7 @@ public sealed interface AsyncRepository<ID, T>
      * @param <T>  The type of entity this repository stores.
      * @param <ID> The type of identifier for entities in this repository.
      */
-    non-sealed interface LifecycleManagement<ID, T> extends AsyncRepository<ID, T> {
+    non-sealed interface LifecycleManagement<ID, T> extends Repository<ID, T> {
 
         /**
          * Ensures that the given {@code entity} has its lifecycle managed in the given {@code processingContext}. This

@@ -35,9 +35,10 @@ import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
  *
  * @author Allard Buijze
  * @since 0.6
+ * @deprecated In favor of the {@link UnitOfWork}.
  */
-@Deprecated // TODO #3064 Remove once old AbstractUnitOfWork is removed
-public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<T> {
+@Deprecated(since = "5.0.0")
+public class LegacyDefaultUnitOfWork<T extends Message<?>> extends AbstractLegacyUnitOfWork<T> {
 
     private final MessageProcessingContext<T> processingContext;
 
@@ -51,8 +52,8 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
      * @param message the message that will be processed in the context of the unit of work
      * @return the started UnitOfWork instance
      */
-    public static <T extends Message<?>> DefaultUnitOfWork<T> startAndGet(T message) {
-        DefaultUnitOfWork<T> uow = new DefaultUnitOfWork<>(message);
+    public static <T extends Message<?>> LegacyDefaultUnitOfWork<T> startAndGet(T message) {
+        LegacyDefaultUnitOfWork<T> uow = new LegacyDefaultUnitOfWork<>(message);
         uow.start();
         return uow;
     }
@@ -62,7 +63,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
      *
      * @param message the message that will be processed in the context of the unit of work
      */
-    public DefaultUnitOfWork(T message) {
+    public LegacyDefaultUnitOfWork(T message) {
         processingContext = new MessageProcessingContext<>(message);
     }
 
@@ -117,7 +118,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     }
 
     @Override
-    protected void addHandler(Phase phase, Consumer<UnitOfWork<T>> handler) {
+    protected void addHandler(Phase phase, Consumer<LegacyUnitOfWork<T>> handler) {
         Assert.state(!phase.isBefore(phase()), () -> "Cannot register a listener for phase: " + phase
                 + " because the Unit of Work is already in a later phase: " + phase());
         processingContext.addHandler(phase, handler);
@@ -129,7 +130,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractUnitOfWork<
     }
 
     @Override
-    public UnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
+    public LegacyUnitOfWork<T> transformMessage(Function<T, ? extends Message<?>> transformOperator) {
         processingContext.transformMessage(transformOperator);
         return this;
     }

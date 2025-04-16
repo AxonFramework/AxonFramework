@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing;
 
 import org.axonframework.eventsourcing.utils.StubDomainEvent;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
@@ -28,8 +29,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -51,7 +51,7 @@ import static org.mockito.Mockito.reset;
 public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtExceptionHandler {
 
     private static final int CONCURRENT_MODIFIERS = 10;
-    private EventSourcingRepository<SimpleAggregateRoot> repository;
+    private LegacyEventSourcingRepository<SimpleAggregateRoot> repository;
     private String aggregateIdentifier;
     private LegacyEventStore eventStore;
     private List<Throwable> uncaughtExceptions = new CopyOnWriteArrayList<>();
@@ -75,13 +75,13 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     private void initializeRepository() throws Exception {
         eventStore = LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine()).build();
-        repository = EventSourcingRepository.builder(SimpleAggregateRoot.class)
-                .aggregateFactory(new SimpleAggregateFactory())
-                .eventStore(eventStore)
-                .build();
+        repository = LegacyEventSourcingRepository.builder(SimpleAggregateRoot.class)
+                                                  .aggregateFactory(new SimpleAggregateFactory())
+                                                  .eventStore(eventStore)
+                                                  .build();
         EventBus mockEventBus = mock(EventBus.class);
 
-        UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyUnitOfWork<?> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         Aggregate<SimpleAggregateRoot> aggregate = repository.newInstance(SimpleAggregateRoot::new);
         uow.commit();
 
@@ -130,12 +130,12 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     }
 
     private Thread prepareAggregateModifier(final CountDownLatch awaitFor, final CountDownLatch reportDone,
-                                            final EventSourcingRepository<SimpleAggregateRoot> repository,
+                                            final LegacyEventSourcingRepository<SimpleAggregateRoot> repository,
                                             final String aggregateIdentifier) {
         Thread t = new Thread(() -> {
             try {
                 awaitFor.await();
-                UnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
+                LegacyUnitOfWork<?> uow = LegacyDefaultUnitOfWork.startAndGet(null);
                 Aggregate<SimpleAggregateRoot> aggregate = repository.load(aggregateIdentifier, null);
                 aggregate.execute(SimpleAggregateRoot::doOperation);
                 aggregate.execute(SimpleAggregateRoot::doOperation);

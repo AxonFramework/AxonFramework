@@ -46,10 +46,10 @@ import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.eventhandling.async.FullConcurrencyPolicy;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
-import org.axonframework.eventsourcing.CachingEventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyCachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
@@ -66,7 +66,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.CreationPolicy;
-import org.axonframework.modelling.command.GenericJpaRepository;
+import org.axonframework.modelling.command.LegacyGenericJpaRepository;
 import org.axonframework.modelling.command.VersionedAggregateIdentifier;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.queryhandling.SimpleQueryUpdateEmitter;
@@ -141,7 +141,7 @@ class DefaultConfigurerTest {
         var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
-        assertEquals(EventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
+        assertEquals(LegacyEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config, AggregateConfiguration.class, AxonIQConsoleModule.class);
     }
@@ -315,13 +315,14 @@ class DefaultConfigurerTest {
                                        .configureAggregate(
                                                defaultConfiguration(StubAggregate.class)
                                                        .configureRepository(
-                                                               c -> GenericJpaRepository.builder(StubAggregate.class)
-                                                                                        .entityManagerProvider(new SimpleEntityManagerProvider(
-                                                                                                entityManager
-                                                                                        ))
-                                                                                        .eventBus(c.eventBus())
-                                                                                        .parameterResolverFactory(c.parameterResolverFactory())
-                                                                                        .build()
+                                                               c -> LegacyGenericJpaRepository.builder(StubAggregate.class)
+                                                                                              .entityManagerProvider(new SimpleEntityManagerProvider(
+                                                                                                      entityManager
+                                                                                              ))
+                                                                                              .eventBus(c.eventBus())
+                                                                                              .parameterResolverFactory(
+                                                                                                      c.parameterResolverFactory())
+                                                                                              .build()
                                                        )
                                        )
                                        .configureSerializer(c -> TestSerializer.xStreamSerializer())
@@ -394,13 +395,13 @@ class DefaultConfigurerTest {
                                                Collections.emptyList())
                                        )
                                        .configureAggregate(defaultConfiguration(StubAggregate.class).configureRepository(
-                                               c -> GenericJpaRepository.builder(StubAggregate.class)
-                                                                        .entityManagerProvider(new SimpleEntityManagerProvider(
-                                                                                entityManager
-                                                                        ))
-                                                                        .eventBus(c.eventBus())
-                                                                        .parameterResolverFactory(c.parameterResolverFactory())
-                                                                        .build())
+                                               c -> LegacyGenericJpaRepository.builder(StubAggregate.class)
+                                                                              .entityManagerProvider(new SimpleEntityManagerProvider(
+                                                                                      entityManager
+                                                                              ))
+                                                                              .eventBus(c.eventBus())
+                                                                              .parameterResolverFactory(c.parameterResolverFactory())
+                                                                              .build())
                                        )
                                        .configureSerializer(c -> TestSerializer.xStreamSerializer())
                                        .buildConfiguration();
@@ -481,7 +482,7 @@ class DefaultConfigurerTest {
                                                   ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
-        assertEquals(CachingEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
+        assertEquals(LegacyCachingEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
     }
 
     @Test

@@ -21,9 +21,8 @@ import jakarta.annotation.Nullable;
 import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
 import org.slf4j.Logger;
@@ -151,7 +150,7 @@ public class SimpleCommandBus implements CommandBus {
             logger.debug("Handling command [{} ({})]", command.getIdentifier(), command.type());
         }
 
-        AsyncUnitOfWork unitOfWork = new AsyncUnitOfWork(command.getIdentifier(), worker);
+        UnitOfWork unitOfWork = new UnitOfWork(command.getIdentifier(), worker);
         processingLifecycleHandlerRegistrars.forEach(it -> it.registerHandlers(unitOfWork));
 
         var result = unitOfWork.executeWithResult(c -> handler.handle(command, c).first().asCompletableFuture());

@@ -36,8 +36,10 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @param <T> The type of aggregate this repository stores
  * @author Allard Buijze
  * @since 0.3
+ * @deprecated In favor of an instance to be constructed still.
  */
-public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T> {
+@Deprecated(since = "5.0.0")
+public class LegacyCachingEventSourcingRepository<T> extends LegacyEventSourcingRepository<T> {
 
     private final LegacyEventStore eventStore;
     private final RepositoryProvider repositoryProvider;
@@ -45,8 +47,8 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
     private final SnapshotTriggerDefinition snapshotTriggerDefinition;
 
     /**
-     * Instantiate a {@link CachingEventSourcingRepository} based on the fields contained in the
-     * {@link EventSourcingRepository.Builder}.
+     * Instantiate a {@link LegacyCachingEventSourcingRepository} based on the fields contained in the
+     * {@link LegacyEventSourcingRepository.Builder}.
      * <p>
      * A goal of the provided Builder is to create an {@link AggregateModel} specifying generic {@code T} as the
      * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type.
@@ -62,10 +64,10 @@ public class CachingEventSourcingRepository<T> extends EventSourcingRepository<T
      * {@link Cache} are not {@code null}, resulting in an AxonConfigurationException if for any of these this is the
      * case.
      *
-     * @param builder the {@link EventSourcingRepository.Builder} used to instantiate a
-     *                {@link CachingEventSourcingRepository} instance
+     * @param builder the {@link LegacyEventSourcingRepository.Builder} used to instantiate a
+     *                {@link LegacyCachingEventSourcingRepository} instance
      */
-    protected CachingEventSourcingRepository(Builder<T> builder) {
+    protected LegacyCachingEventSourcingRepository(Builder<T> builder) {
         super(builder);
         assertNonNull(builder.cache, "The Cache is a hard requirement and should be provided");
         this.cache = builder.cache;
