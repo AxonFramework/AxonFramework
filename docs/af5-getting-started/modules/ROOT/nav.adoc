@@ -1,0 +1,5 @@
+* xref:index.adoc[]
+* xref:sample-domain-event-modeling.adoc[]
+* xref:project-structure.adoc[]
+* xref:implement-command-create-course.adoc[]
+* xref:implement-command-subscribe-student.adoc[]
