@@ -24,7 +24,15 @@ import org.slf4j.LoggerFactory;
 import java.util.Comparator;
 import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -40,7 +48,7 @@ import java.util.function.UnaryOperator;
  * providing the possibility to carry along resources throughout the phases.
  * <p/>
  * It is strongly recommended to interface with the {@code ProcessingLifecycle} and/or {@code ProcessingContext} instead
- * of with the {@link UnitOfWork} directly.
+ * of with the {@code UnitOfWork} directly.
  *
  * @author Allard Buijze
  * @author Gerard Klijs
@@ -57,9 +65,8 @@ public class UnitOfWork implements ProcessingLifecycle {
     private final String identifier;
     private final UnitOfWorkProcessingContext context;
 
-
     /**
-     * Constructs a {@link UnitOfWork} with a {@link UUID#randomUUID() random UUID String}. Will execute provided
+     * Constructs a {@code UnitOfWork} with a {@link UUID#randomUUID() random UUID String}. Will execute provided
      * actions on the same thread invoking this Unit of Work.
      */
     public UnitOfWork() {
@@ -67,7 +74,7 @@ public class UnitOfWork implements ProcessingLifecycle {
     }
 
     /**
-     * Constructs a {@link UnitOfWork} with the given {@code identifier}. Will execute provided actions on the same
+     * Constructs a {@code UnitOfWork} with the given {@code identifier}. Will execute provided actions on the same
      * thread invoking this Unit of Work.
      *
      * @param identifier The identifier of this Unit of Work.
@@ -77,7 +84,7 @@ public class UnitOfWork implements ProcessingLifecycle {
     }
 
     /**
-     * Constructs a {@link UnitOfWork} with the given {@code identifier}, processing actions through the given
+     * Constructs a {@code UnitOfWork} with the given {@code identifier}, processing actions through the given
      * {@code workScheduler}.
      *
      * @param identifier    The identifier of this Unit of Work.
