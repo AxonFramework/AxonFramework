@@ -45,8 +45,9 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  *
  * @author Rene de Waele
  * @since 3.0
+ * @deprecated This class will be removed.
  */
-@Deprecated
+@Deprecated(since = "5.0.0")
 public abstract class LegacyBatchingEventStorageEngine extends AbstractLegacyEventStorageEngine {
 
     private static final int DEFAULT_BATCH_SIZE = 100;

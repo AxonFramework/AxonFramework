@@ -59,10 +59,9 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  *
  * @author Rene de Waele
  * @since 3.0
- * @deprecated Will be removed in version 5.0.0. The
- * {@link org.axonframework.eventsourcing.eventstore.EventStorageEngine} implementations should be used instead.
+ * @deprecated In favor of the {@link LegacyJpaEventStorageEngine}.
  */
-@Deprecated
+@Deprecated(since = "5.0.0")
 public class OldJpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(OldJpaEventStorageEngine.class);

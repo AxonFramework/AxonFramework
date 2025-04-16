@@ -49,8 +49,9 @@ import javax.annotation.Nonnull;
  * @author Rene de Waele
  * @author Allard Buijze
  * @since 3.0
+ * @deprecated This will be removed entirely for now.
  */
-@Deprecated
+@Deprecated(since = "5.0.0")
 public class LegacySequenceEventStorageEngine implements LegacyEventStorageEngine {
 
     private final LegacyEventStorageEngine historicStorage, activeStorage;

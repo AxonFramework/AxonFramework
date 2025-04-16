@@ -35,8 +35,9 @@ import static java.util.Arrays.asList;
  * storage engine can also be used to store and fetch aggregate snapshot events.
  *
  * @author Rene de Waele
+ * @deprecated In favor of the {@link EventStorageEngine}.
  */
-@Deprecated
+@Deprecated(since = "5.0.0")
 public interface LegacyEventStorageEngine {
 
     /**
