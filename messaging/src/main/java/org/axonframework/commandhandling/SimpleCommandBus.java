@@ -22,9 +22,9 @@ import org.axonframework.common.DirectExecutor;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.ProcessingLifecycleHandlerRegistrar;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +58,6 @@ public class SimpleCommandBus implements CommandBus {
 
     private final List<ProcessingLifecycleHandlerRegistrar> processingLifecycleHandlerRegistrars;
     private final ConcurrentMap<QualifiedName, CommandHandler> subscriptions = new ConcurrentHashMap<>();
-    // TODO - Instead of using an Executor, we should use a WorkerFactory to allow more flexible creation (and disposal) of workers
     private final Executor worker;
 
     /**
@@ -117,7 +116,8 @@ public class SimpleCommandBus implements CommandBus {
     public SimpleCommandBus subscribe(@Nonnull QualifiedName name, @Nonnull CommandHandler commandHandler) {
         CommandHandler handler = requireNonNull(commandHandler, "Given command handler cannot be null.");
         logger.debug("Subscribing command with name [{}].", name);
-        var existingHandler = subscriptions.putIfAbsent(name, handler);
+        var existingHandler =
+                subscriptions.putIfAbsent(requireNonNull(name, "The command name cannot be null."), handler);
 
         if (existingHandler != null && existingHandler != handler) {
             throw new DuplicateCommandHandlerSubscriptionException(name, existingHandler, handler);
@@ -145,7 +145,8 @@ public class SimpleCommandBus implements CommandBus {
      * @param command The actual command to handle.
      * @param handler The handler that must be invoked for this command.
      */
-    protected CompletableFuture<? extends Message<?>> handle(CommandMessage<?> command, CommandHandler handler) {
+    protected CompletableFuture<? extends Message<?>> handle(@Nonnull CommandMessage<?> command,
+                                                             @Nonnull CommandHandler handler) {
         if (logger.isDebugEnabled()) {
             logger.debug("Handling command [{} ({})]", command.getIdentifier(), command.type());
         }

@@ -25,7 +25,7 @@ import org.axonframework.messaging.QualifiedName;
  * against.
  *
  * @author Steven van Beelen
- * @since 4.2
+ * @since 4.2.0
  */
 public class DuplicateCommandHandlerSubscriptionException extends AxonNonTransientException {
 

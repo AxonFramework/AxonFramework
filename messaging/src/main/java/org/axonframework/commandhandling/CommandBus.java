@@ -34,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
  * on the command bus. A command being {@link #dispatch(CommandMessage, ProcessingContext) dispatched} matches a command
  * handler based on the {@link QualifiedName} present in the {@link CommandMessage#type() command's type}.
  * <p>
- * Only a <em>single</em> handler may be subscribed for a single command name at any time.
+ * Only a <em>single</em> handler may be subscribed for a given command name at any time.
  *
  * @author Allard Buijze
  * @since 0.5

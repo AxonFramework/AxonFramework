@@ -140,7 +140,6 @@ public class GenericCommandResultMessage<R> extends GenericResultMessage<R> impl
 
     @Override
     public <T> CommandResultMessage<T> withConvertedPayload(@Nonnull Function<R, T> conversion) {
-        // TODO - Once Message declares a convert method, use that
         Throwable exception = optionalExceptionResult().orElse(null);
         Message<R> delegate = getDelegate();
         Message<T> transformed = new GenericMessage<>(delegate.getIdentifier(),

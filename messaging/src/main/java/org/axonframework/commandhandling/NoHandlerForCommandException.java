@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package org.axonframework.commandhandling;
 
-import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.common.AxonTransientException;
+import org.axonframework.messaging.retry.RetryScheduler;
 
 import static java.lang.String.format;
 
@@ -25,8 +25,7 @@ import static java.lang.String.format;
  * Exception indicating that no suitable command handler could be found for the given command.
  * <p>
  * As of 4.2, this exception has been moved to {@link AxonTransientException}, since (especially in a MicroServices
- * Architecture context) the handler may return. {@link RetryScheduler}s will
- * now see this exception as retryable.
+ * Architecture context) the handler may return. {@link RetryScheduler}s will now see this exception as retryable.
  *
  * @author Allard Buijze
  * @since 0.5
@@ -36,7 +35,7 @@ public class NoHandlerForCommandException extends AxonTransientException {
     /**
      * Initialize this exception with the given {@code message}.
      *
-     * @param message the message describing the cause of the exception
+     * @param message The message describing the cause of the exception.
      */
     public NoHandlerForCommandException(String message) {
         super(message);
@@ -46,7 +45,7 @@ public class NoHandlerForCommandException extends AxonTransientException {
      * Initialize this exception with a message describing the given {@link CommandMessage}. This constructor specifies
      * in its message that missing parameters could be the culprit of finding a matching handler.
      *
-     * @param commandMessage the {@link CommandMessage command} for which no handler was found
+     * @param commandMessage The {@link CommandMessage command} for which no handler was found.
      */
     public NoHandlerForCommandException(CommandMessage<?> commandMessage) {
         this(format(
