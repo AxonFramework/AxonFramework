@@ -29,7 +29,7 @@ import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.OldJpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.json.JacksonSerializer;
@@ -86,7 +86,7 @@ class AxonAutoConfigurationWithEventSerializerPropertiesTest {
         assertSame(axonConfiguration.serializer(), axonConfiguration.messageSerializer());
         assertNotSame(axonConfiguration.messageSerializer(), axonConfiguration.eventSerializer());
         assertNotNull(applicationContext.getBean(TokenStore.class));
-        assertNotNull(applicationContext.getBean(JpaEventStorageEngine.class));
+        assertNotNull(applicationContext.getBean(OldJpaEventStorageEngine.class));
         assertEquals(SQLErrorCodesResolver.class,
                      applicationContext.getBean(PersistenceExceptionResolver.class).getClass());
         assertNotNull(applicationContext.getBean(EntityManagerProvider.class));
@@ -101,7 +101,7 @@ class AxonAutoConfigurationWithEventSerializerPropertiesTest {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
         final Serializer eventSerializer = applicationContext.getBean("eventSerializer", Serializer.class);
         final Serializer messageSerializer = applicationContext.getBean("messageSerializer", Serializer.class);
-        final JpaEventStorageEngine engine = applicationContext.getBean(JpaEventStorageEngine.class);
+        final OldJpaEventStorageEngine engine = applicationContext.getBean(OldJpaEventStorageEngine.class);
 
         assertTrue(messageSerializer instanceof JacksonSerializer);
         assertEquals(serializer, engine.getSnapshotSerializer());

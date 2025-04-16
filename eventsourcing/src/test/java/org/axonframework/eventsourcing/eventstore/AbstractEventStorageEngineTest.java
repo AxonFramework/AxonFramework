@@ -17,6 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.DomainEventMessage;
+import org.axonframework.eventsourcing.eventstore.jpa.OldJpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.AggregateStreamCreationException;
 import org.axonframework.modelling.command.ConcurrencyException;
@@ -35,7 +36,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Abstract test class used to create tests for the {@link org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine}
+ * Abstract test class used to create tests for the {@link OldJpaEventStorageEngine}
  * and {@link org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine}.
  * <p>
  * Methods are public so they can be overridden by {@link LegacyEventStorageEngine} implementation test cases in different

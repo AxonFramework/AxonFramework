@@ -24,7 +24,7 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStoreTest;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.OldJpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
@@ -49,7 +49,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import javax.sql.DataSource;
 
 /**
- * An {@link EmbeddedEventStoreTest} implementation using the {@link JpaEventStorageEngine} during testing.
+ * An {@link EmbeddedEventStoreTest} implementation using the {@link OldJpaEventStorageEngine} during testing.
  *
  * @author Steven van Beelen
  */
@@ -79,12 +79,12 @@ class JpaEmbeddedCborEventStoreTest extends EmbeddedEventStoreTest {
     @Override
     public LegacyEventStorageEngine createStorageEngine() {
         Serializer testSerializer = TestSerializer.CBOR.getSerializer();
-        return JpaEventStorageEngine.builder()
-                                    .eventSerializer(testSerializer)
-                                    .snapshotSerializer(testSerializer)
-                                    .entityManagerProvider(entityManagerProvider)
-                                    .transactionManager(transactionManager)
-                                    .build();
+        return OldJpaEventStorageEngine.builder()
+                                       .eventSerializer(testSerializer)
+                                       .snapshotSerializer(testSerializer)
+                                       .entityManagerProvider(entityManagerProvider)
+                                       .transactionManager(transactionManager)
+                                       .build();
     }
 
     @Configuration

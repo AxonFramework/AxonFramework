@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import org.axonframework.serialization.Serializer;
 
 /**
  * Default implementation of a tracked domain event entry. This implementation is used by the {@link
- * JpaEventStorageEngine} to store events. Event payload and metadata are serialized to a byte array.
+ * OldJpaEventStorageEngine} to store events. Event payload and metadata are serialized to a byte array.
  *
  * @author Rene de Waele
  */

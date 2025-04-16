@@ -27,7 +27,7 @@ import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.LegacyBatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.OldJpaEventStorageEngine;
 import org.axonframework.eventsourcing.utils.EventStoreTestUtils;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
@@ -59,7 +59,7 @@ import javax.sql.DataSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration test class validating the insertion order of events for the {@link JpaEventStorageEngine}.
+ * Integration test class validating the insertion order of events for the {@link OldJpaEventStorageEngine}.
  *
  * @author Rene de Waele
  */
@@ -81,12 +81,12 @@ class JpaStorageEngineInsertionReadOrderTest {
     @BeforeEach
     void setUp() {
         txTemplate = new TransactionTemplate(tx);
-        testSubject = JpaEventStorageEngine.builder()
-                                           .snapshotSerializer(serializer)
-                                           .eventSerializer(serializer)
-                                           .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
-                                           .transactionManager(new SpringTransactionManager(tx))
-                                           .build();
+        testSubject = OldJpaEventStorageEngine.builder()
+                                              .snapshotSerializer(serializer)
+                                              .eventSerializer(serializer)
+                                              .entityManagerProvider(new SimpleEntityManagerProvider(entityManager))
+                                              .transactionManager(new SpringTransactionManager(tx))
+                                              .build();
     }
 
     @AfterEach

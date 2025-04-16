@@ -60,15 +60,15 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine}.
+ * Test class validating the {@link OldJpaEventStorageEngine}.
  *
  * @author Rene de Waele
  */
 
 class JpaEventStorageEngineTest
-        extends BatchingEventStorageEngineTest<JpaEventStorageEngine, JpaEventStorageEngine.Builder> {
+        extends BatchingEventStorageEngineTest<OldJpaEventStorageEngine, OldJpaEventStorageEngine.Builder> {
 
-    private JpaEventStorageEngine testSubject;
+    private OldJpaEventStorageEngine testSubject;
 
     private final EntityManagerFactory entityManagerFactory =
             Persistence.createEntityManagerFactory("jpaEventStorageEngineTest");
@@ -203,15 +203,15 @@ class JpaEventStorageEngineTest
     @DirtiesContext
     void storeEventsWithCustomEntity() {
         XStreamSerializer serializer = xStreamSerializer();
-        JpaEventStorageEngine.Builder jpaEventStorageEngineBuilder =
-                JpaEventStorageEngine.builder()
-                        .snapshotSerializer(serializer)
-                        .persistenceExceptionResolver(defaultPersistenceExceptionResolver)
-                        .eventSerializer(serializer)
-                        .entityManagerProvider(entityManagerProvider)
-                        .transactionManager(NoTransactionManager.INSTANCE)
-                        .explicitFlush(false);
-        testSubject = new JpaEventStorageEngine(jpaEventStorageEngineBuilder) {
+        OldJpaEventStorageEngine.Builder jpaEventStorageEngineBuilder =
+                OldJpaEventStorageEngine.builder()
+                                        .snapshotSerializer(serializer)
+                                        .persistenceExceptionResolver(defaultPersistenceExceptionResolver)
+                                        .eventSerializer(serializer)
+                                        .entityManagerProvider(entityManagerProvider)
+                                        .transactionManager(NoTransactionManager.INSTANCE)
+                                        .explicitFlush(false);
+        testSubject = new OldJpaEventStorageEngine(jpaEventStorageEngineBuilder) {
 
             @Override
             protected EventData<?> createEventEntity(EventMessage<?> eventMessage, Serializer serializer) {
@@ -285,17 +285,17 @@ class JpaEventStorageEngineTest
     }
 
     @Override
-    protected JpaEventStorageEngine createEngine(UnaryOperator<JpaEventStorageEngine.Builder> customization) {
-        JpaEventStorageEngine.Builder engineBuilder =
-                JpaEventStorageEngine.builder()
-                        .upcasterChain(NoOpEventUpcaster.INSTANCE)
-                        .persistenceExceptionResolver(defaultPersistenceExceptionResolver)
-                        .batchSize(100)
-                        .entityManagerProvider(entityManagerProvider)
-                        .transactionManager(transactionManager)
-                        .eventSerializer(xStreamSerializer())
-                        .snapshotSerializer(xStreamSerializer());
-        return new JpaEventStorageEngine(customization.apply(engineBuilder));
+    protected OldJpaEventStorageEngine createEngine(UnaryOperator<OldJpaEventStorageEngine.Builder> customization) {
+        OldJpaEventStorageEngine.Builder engineBuilder =
+                OldJpaEventStorageEngine.builder()
+                                        .upcasterChain(NoOpEventUpcaster.INSTANCE)
+                                        .persistenceExceptionResolver(defaultPersistenceExceptionResolver)
+                                        .batchSize(100)
+                                        .entityManagerProvider(entityManagerProvider)
+                                        .transactionManager(transactionManager)
+                                        .eventSerializer(xStreamSerializer())
+                                        .snapshotSerializer(xStreamSerializer());
+        return new OldJpaEventStorageEngine(customization.apply(engineBuilder));
     }
 
     /**

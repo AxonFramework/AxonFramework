@@ -63,9 +63,9 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * {@link org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine} implementations should be used instead.
  */
 @Deprecated
-public class JpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
+public class OldJpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
 
-    private static final Logger logger = LoggerFactory.getLogger(JpaEventStorageEngine.class);
+    private static final Logger logger = LoggerFactory.getLogger(OldJpaEventStorageEngine.class);
 
     private static final int DEFAULT_MAX_GAP_OFFSET = 10000;
     private static final long DEFAULT_LOWEST_GLOBAL_SEQUENCE = 1;
@@ -84,15 +84,15 @@ public class JpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
     private final GapAwareTrackingTokenOperations tokenOperations;
 
     /**
-     * Instantiate a {@link JpaEventStorageEngine} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link OldJpaEventStorageEngine} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the event and snapshot {@link Serializer}, the {@link EntityManagerProvider} and
      * {@link TransactionManager} are not {@code null}, and will throw an {@link AxonConfigurationException} if any of
      * them is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link JpaEventStorageEngine} instance
+     * @param builder the {@link Builder} used to instantiate a {@link OldJpaEventStorageEngine} instance
      */
-    protected JpaEventStorageEngine(Builder builder) {
+    protected OldJpaEventStorageEngine(Builder builder) {
         super(builder);
         this.entityManagerProvider = builder.entityManagerProvider;
         this.transactionManager = builder.transactionManager;
@@ -112,7 +112,7 @@ public class JpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link JpaEventStorageEngine}.
+     * Instantiate a Builder to be able to create a {@link OldJpaEventStorageEngine}.
      * <p>
      * The following configurable fields have defaults:
      * <ul>
@@ -131,7 +131,7 @@ public class JpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
      * The event and snapshot {@link Serializer}, the {@link EntityManagerProvider} and {@link TransactionManager} are
      * <b>hard requirements</b> and as such should be provided.
      *
-     * @return a Builder to be able to create a {@link JpaEventStorageEngine}
+     * @return a Builder to be able to create a {@link OldJpaEventStorageEngine}
      */
     public static Builder builder() {
         return new Builder();
@@ -356,7 +356,7 @@ public class JpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
     }
 
     /**
-     * Builder class to instantiate a {@link JpaEventStorageEngine}.
+     * Builder class to instantiate a {@link OldJpaEventStorageEngine}.
      * <p>
      * The following configurable fields have defaults:
      * <ul>
@@ -386,19 +386,19 @@ public class JpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
         private int gapCleaningThreshold = DEFAULT_GAP_CLEANING_THRESHOLD;
 
         @Override
-        public JpaEventStorageEngine.Builder snapshotSerializer(Serializer snapshotSerializer) {
+        public OldJpaEventStorageEngine.Builder snapshotSerializer(Serializer snapshotSerializer) {
             super.snapshotSerializer(snapshotSerializer);
             return this;
         }
 
         @Override
-        public JpaEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
+        public OldJpaEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
             super.upcasterChain(upcasterChain);
             return this;
         }
 
         @Override
-        public JpaEventStorageEngine.Builder persistenceExceptionResolver(
+        public OldJpaEventStorageEngine.Builder persistenceExceptionResolver(
                 PersistenceExceptionResolver persistenceExceptionResolver
         ) {
             super.persistenceExceptionResolver(persistenceExceptionResolver);
@@ -406,7 +406,7 @@ public class JpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
         }
 
         @Override
-        public JpaEventStorageEngine.Builder eventSerializer(Serializer eventSerializer) {
+        public OldJpaEventStorageEngine.Builder eventSerializer(Serializer eventSerializer) {
             super.eventSerializer(eventSerializer);
             return this;
         }
@@ -417,20 +417,20 @@ public class JpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
          * The JpaEventStorageEngine defaults to using any batch smaller than the batch size as the final batch.
          */
         @Override
-        public JpaEventStorageEngine.Builder finalAggregateBatchPredicate(
+        public OldJpaEventStorageEngine.Builder finalAggregateBatchPredicate(
                 Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate) {
             super.finalAggregateBatchPredicate(finalAggregateBatchPredicate);
             return this;
         }
 
         @Override
-        public JpaEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
+        public OldJpaEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
             super.snapshotFilter(snapshotFilter);
             return this;
         }
 
         @Override
-        public JpaEventStorageEngine.Builder batchSize(int batchSize) {
+        public OldJpaEventStorageEngine.Builder batchSize(int batchSize) {
             super.batchSize(batchSize);
             return this;
         }
@@ -438,8 +438,8 @@ public class JpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
         /**
          * Sets the {@link PersistenceExceptionResolver} as a {@link SQLErrorCodesResolver}, using the provided
          * {@link DataSource} to resolve the error codes. <b>Note</b> that the provided DataSource sole purpose in this
-         * {@link LegacyEventStorageEngine} implementation is to be used for
-         * instantiating the PersistenceExceptionResolver.
+         * {@link LegacyEventStorageEngine} implementation is to be used for instantiating the
+         * PersistenceExceptionResolver.
          *
          * @param dataSource the {@link DataSource} used to instantiate a
          *                   {@link SQLErrorCodesResolver#SQLErrorCodesResolver(DataSource)} as the
@@ -500,7 +500,7 @@ public class JpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
          * the event with the highest known index. If the gap is bigger it is assumed that the missing event will not be
          * committed to the store anymore. This event storage engine will no longer look for those events the next time
          * a batch is fetched. Defaults to an integer of {@code 10000}
-         * ({@link JpaEventStorageEngine#DEFAULT_MAX_GAP_OFFSET}.
+         * ({@link OldJpaEventStorageEngine#DEFAULT_MAX_GAP_OFFSET}.
          *
          * @param maxGapOffset an {@code int} specifying the maximum distance in sequence numbers between a missing
          *                     event and the event with the highest known index
@@ -515,7 +515,7 @@ public class JpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
         /**
          * Sets the {@code lowestGlobalSequence} specifying the first expected auto generated sequence number. For most
          * data stores this is 1 unless the table has contained entries before. Defaults to a {@code long} of {@code 1}
-         * ({@link JpaEventStorageEngine#DEFAULT_LOWEST_GLOBAL_SEQUENCE}).
+         * ({@link OldJpaEventStorageEngine#DEFAULT_LOWEST_GLOBAL_SEQUENCE}).
          *
          * @param lowestGlobalSequence a {@code long} specifying the first expected auto generated sequence number
          * @return the current Builder instance, for fluent interfacing
@@ -532,7 +532,7 @@ public class JpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
          * Sets the amount of time until a 'gap' in a TrackingToken may be considered timed out. This setting will
          * affect the cleaning process of gaps. Gaps that have timed out will be removed from Tracking Tokens to improve
          * performance of reading events. Defaults to an  integer of {@code 60000}
-         * ({@link JpaEventStorageEngine#DEFAULT_GAP_TIMEOUT}), thus 1 minute.
+         * ({@link OldJpaEventStorageEngine#DEFAULT_GAP_TIMEOUT}), thus 1 minute.
          *
          * @param gapTimeout an {@code int} specifying the amount of time in milliseconds until a 'gap' in a
          *                   TrackingToken may be considered timed out
@@ -546,7 +546,7 @@ public class JpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
 
         /**
          * Sets the threshold of number of gaps in a token before an attempt to clean gaps up is taken. Defaults to an
-         * integer of {@code 250} ({@link JpaEventStorageEngine#DEFAULT_GAP_CLEANING_THRESHOLD}).
+         * integer of {@code 250} ({@link OldJpaEventStorageEngine#DEFAULT_GAP_CLEANING_THRESHOLD}).
          *
          * @param gapCleaningThreshold an {@code int} specifying the threshold of number of gaps in a token before an
          *                             attempt to clean gaps up is taken
@@ -563,12 +563,12 @@ public class JpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
         }
 
         /**
-         * Initializes a {@link JpaEventStorageEngine} as specified through this Builder.
+         * Initializes a {@link OldJpaEventStorageEngine} as specified through this Builder.
          *
-         * @return a {@link JpaEventStorageEngine} as specified through this Builder
+         * @return a {@link OldJpaEventStorageEngine} as specified through this Builder
          */
-        public JpaEventStorageEngine build() {
-            return new JpaEventStorageEngine(this);
+        public OldJpaEventStorageEngine build() {
+            return new OldJpaEventStorageEngine(this);
         }
 
         /**
