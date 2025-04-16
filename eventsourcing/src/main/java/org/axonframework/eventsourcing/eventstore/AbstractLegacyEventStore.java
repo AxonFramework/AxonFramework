@@ -40,6 +40,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  *
  * @author Rene de Waele
  * @since 3.0
+ * @deprecated This will be removed.
  */
 @Deprecated
 public abstract class AbstractLegacyEventStore extends AbstractEventBus implements LegacyEventStore {

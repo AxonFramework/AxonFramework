@@ -34,6 +34,7 @@ import javax.annotation.Nonnull;
  *
  * @author Allard Buijze
  * @author Rene de Waele
+ * @deprecated In favor of the {@link EventStore}.
  */
 @Deprecated
 public interface LegacyEventStore
