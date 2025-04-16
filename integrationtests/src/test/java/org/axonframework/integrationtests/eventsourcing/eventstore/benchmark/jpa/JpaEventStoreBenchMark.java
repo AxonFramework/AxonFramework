@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.eventsourcing.eventstore.benchmark.jp
 import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.eventstore.jpa.OldJpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.integrationtests.eventsourcing.eventstore.benchmark.AbstractEventStoreBenchmark;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
@@ -41,7 +41,8 @@ public class JpaEventStoreBenchMark extends AbstractEventStoreBenchmark {
         benchmark.start();
     }
 
-    public JpaEventStoreBenchMark(OldJpaEventStorageEngine storageEngine, PlatformTransactionManager transactionManager) {
+    public JpaEventStoreBenchMark(LegacyJpaEventStorageEngine storageEngine,
+                                  PlatformTransactionManager transactionManager) {
         super(storageEngine);
         this.transactionManager = new SpringTransactionManager(transactionManager);
     }

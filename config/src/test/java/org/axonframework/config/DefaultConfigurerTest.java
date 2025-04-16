@@ -55,7 +55,7 @@ import org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
-import org.axonframework.eventsourcing.eventstore.jpa.OldJpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.GenericMessage;
@@ -254,18 +254,18 @@ class DefaultConfigurerTest {
         LegacyConfiguration config =
                 LegacyDefaultConfigurer.defaultConfiguration()
                                        .configureEmbeddedEventStore(
-                                               c -> OldJpaEventStorageEngine.builder()
-                                                                            .snapshotSerializer(c.serializer())
-                                                                            .upcasterChain(c.upcasterChain())
-                                                                            .persistenceExceptionResolver(c.getComponent(
-                                                                                    PersistenceExceptionResolver.class
-                                                                            ))
-                                                                            .entityManagerProvider(() -> entityManager)
-                                                                            .transactionManager(c.getComponent(
-                                                                                    TransactionManager.class
-                                                                            ))
-                                                                            .eventSerializer(c.serializer())
-                                                                            .build())
+                                               c -> LegacyJpaEventStorageEngine.builder()
+                                                                               .snapshotSerializer(c.serializer())
+                                                                               .upcasterChain(c.upcasterChain())
+                                                                               .persistenceExceptionResolver(c.getComponent(
+                                                                                       PersistenceExceptionResolver.class
+                                                                               ))
+                                                                               .entityManagerProvider(() -> entityManager)
+                                                                               .transactionManager(c.getComponent(
+                                                                                       TransactionManager.class
+                                                                               ))
+                                                                               .eventSerializer(c.serializer())
+                                                                               .build())
                                        .configureAggregate(
                                                defaultConfiguration(StubAggregate.class)
                                                        .configureCommandTargetResolver(

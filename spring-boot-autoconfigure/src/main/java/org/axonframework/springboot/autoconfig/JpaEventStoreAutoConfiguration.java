@@ -24,7 +24,7 @@ import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.eventsourcing.eventstore.jpa.OldJpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.util.RegisterDefaultEntities;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -60,14 +60,14 @@ public class JpaEventStoreAutoConfiguration {
                                                        LegacyConfiguration configuration,
                                                        EntityManagerProvider entityManagerProvider,
                                                        TransactionManager transactionManager) {
-        return OldJpaEventStorageEngine.builder()
-                                       .snapshotSerializer(defaultSerializer)
-                                       .upcasterChain(configuration.upcasterChain())
-                                       .persistenceExceptionResolver(persistenceExceptionResolver)
-                                       .eventSerializer(eventSerializer)
-                                       .snapshotFilter(configuration.snapshotFilter())
-                                       .entityManagerProvider(entityManagerProvider)
-                                       .transactionManager(transactionManager)
-                                       .build();
+        return LegacyJpaEventStorageEngine.builder()
+                                          .snapshotSerializer(defaultSerializer)
+                                          .upcasterChain(configuration.upcasterChain())
+                                          .persistenceExceptionResolver(persistenceExceptionResolver)
+                                          .eventSerializer(eventSerializer)
+                                          .snapshotFilter(configuration.snapshotFilter())
+                                          .entityManagerProvider(entityManagerProvider)
+                                          .transactionManager(transactionManager)
+                                          .build();
     }
 }
