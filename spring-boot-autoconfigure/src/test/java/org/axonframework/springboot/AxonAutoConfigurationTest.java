@@ -41,7 +41,7 @@ import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
@@ -248,7 +248,7 @@ class AxonAutoConfigurationTest {
 
         @Bean
         public LegacyEventStorageEngine storageEngine() {
-            return new InMemoryEventStorageEngine();
+            return new LegacyInMemoryEventStorageEngine();
         }
 
         @Bean

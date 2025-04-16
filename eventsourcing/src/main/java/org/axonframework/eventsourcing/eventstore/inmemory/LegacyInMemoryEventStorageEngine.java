@@ -53,8 +53,8 @@ import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
  *
  * @author Rene de Waele
  * @since 3.0
- */ // TODO Replace for AsyncInMemoryEventStorageEngine once the latter is fully integrated
-public class InMemoryEventStorageEngine implements LegacyEventStorageEngine {
+ */
+public class LegacyInMemoryEventStorageEngine implements LegacyEventStorageEngine {
 
     @SuppressWarnings("SortedCollectionWithNonComparableKeys")
     private final NavigableMap<TrackingToken, TrackedEventMessage<?>> events = new ConcurrentSkipListMap<>();
@@ -64,7 +64,7 @@ public class InMemoryEventStorageEngine implements LegacyEventStorageEngine {
     /**
      * Initializes an InMemoryEventStorageEngine. The engine will be empty, and there is no offset for the first token.
      */
-    public InMemoryEventStorageEngine() {
+    public LegacyInMemoryEventStorageEngine() {
         this(0L);
     }
 
@@ -73,7 +73,7 @@ public class InMemoryEventStorageEngine implements LegacyEventStorageEngine {
      *
      * @param offset The value to use for the token of the first event appended
      */
-    public InMemoryEventStorageEngine(long offset) {
+    public LegacyInMemoryEventStorageEngine(long offset) {
         this.offset = offset;
     }
 

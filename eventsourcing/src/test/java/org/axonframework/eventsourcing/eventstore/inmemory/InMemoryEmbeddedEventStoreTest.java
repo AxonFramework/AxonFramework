@@ -20,7 +20,7 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStoreTest;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 
 /**
- * An {@link EmbeddedEventStoreTest} implementation using the {@link InMemoryEventStorageEngine} during testing.
+ * An {@link EmbeddedEventStoreTest} implementation using the {@link LegacyInMemoryEventStorageEngine} during testing.
  *
  * @author Steven van Beelen
  */
@@ -28,6 +28,6 @@ class InMemoryEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
 
     @Override
     public LegacyEventStorageEngine createStorageEngine() {
-        return new InMemoryEventStorageEngine();
+        return new LegacyInMemoryEventStorageEngine();
     }
 }

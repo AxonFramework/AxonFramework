@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.GenericTrackedDomainEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -291,8 +291,8 @@ class SequenceEventStorageEngineTest {
 
     @Test
     void streamFromPositionInActiveStorage() {
-        historicStorage = new InMemoryEventStorageEngine();
-        activeStorage = new InMemoryEventStorageEngine(1);
+        historicStorage = new LegacyInMemoryEventStorageEngine();
+        activeStorage = new LegacyInMemoryEventStorageEngine(1);
 
         testSubject = new SequenceEventStorageEngine(historicStorage, activeStorage);
 

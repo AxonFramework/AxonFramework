@@ -20,7 +20,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.ListenerInvocationErrorHandler;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.modelling.saga.AnnotatedSagaManager;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.SagaEventHandler;
@@ -112,7 +112,7 @@ class SagaConfigurerTest {
     void deduplicateRegisterSaga() {
         LegacyEmbeddedEventStore eventStore =
                 LegacyEmbeddedEventStore.builder()
-                                        .storageEngine(new InMemoryEventStorageEngine())
+                                        .storageEngine(new LegacyInMemoryEventStorageEngine())
                                         .build();
         SagaStore<Object> sagaStore = new InMemorySagaStore();
         EventProcessingModule eventProcessingModule = new EventProcessingModule();

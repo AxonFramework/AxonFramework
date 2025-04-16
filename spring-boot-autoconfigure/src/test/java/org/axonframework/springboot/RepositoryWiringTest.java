@@ -21,7 +21,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.modelling.command.GenericJpaRepository;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.spring.stereotype.Aggregate;
@@ -168,7 +168,7 @@ class RepositoryWiringTest {
 
         @Bean
         public LegacyEventStorageEngine eventStorageEngine() {
-            return new InMemoryEventStorageEngine();
+            return new LegacyInMemoryEventStorageEngine();
         }
 
         @Bean

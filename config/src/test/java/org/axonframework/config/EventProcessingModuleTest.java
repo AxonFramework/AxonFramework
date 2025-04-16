@@ -51,7 +51,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
@@ -109,10 +109,10 @@ class EventProcessingModuleTest {
         configurer = LegacyDefaultConfigurer.defaultConfiguration();
 
         eventStoreOne = spy(LegacyEmbeddedEventStore.builder()
-                                                    .storageEngine(new InMemoryEventStorageEngine())
+                                                    .storageEngine(new LegacyInMemoryEventStorageEngine())
                                                     .build());
         eventStoreTwo = spy(LegacyEmbeddedEventStore.builder()
-                                                    .storageEngine(new InMemoryEventStorageEngine())
+                                                    .storageEngine(new LegacyInMemoryEventStorageEngine())
                                                     .build());
 
         eventStoreOne.publish(EventTestUtils.asEventMessage("test1"));
@@ -987,7 +987,7 @@ class EventProcessingModuleTest {
         TokenStore testTokenStore = new InMemoryTokenStore();
         TestSpanFactory testSpanFactory = new TestSpanFactory();
 
-        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                   .configureSpanFactory(c -> testSpanFactory)
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(testName)
@@ -1247,7 +1247,7 @@ class EventProcessingModuleTest {
         CountDownLatch transactionCommitted = new CountDownLatch(1);
         TransactionManager defaultTransactionManager = new StubTransactionManager(transactionCommitted);
 
-        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(testName)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
@@ -1271,7 +1271,7 @@ class EventProcessingModuleTest {
         CountDownLatch transactionCommitted = new CountDownLatch(1);
         TransactionManager processorSpecificTransactionManager = new StubTransactionManager(transactionCommitted);
 
-        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(testName)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
@@ -1294,7 +1294,7 @@ class EventProcessingModuleTest {
     ) throws NoSuchFieldException, IllegalAccessException {
         String processingGroup = "pooled-streaming";
 
-        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
@@ -1339,7 +1339,7 @@ class EventProcessingModuleTest {
         String processingGroup = "pooled-streaming";
         EnqueuePolicy<EventMessage<?>> expectedPolicy = (letter, cause) -> Decisions.ignore();
 
-        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
@@ -1385,7 +1385,7 @@ class EventProcessingModuleTest {
         EnqueuePolicy<EventMessage<?>> expectedPolicy = (letter, cause) -> Decisions.ignore();
         EnqueuePolicy<EventMessage<?>> unexpectedPolicy = (letter, cause) -> Decisions.evict();
 
-        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
@@ -1433,7 +1433,7 @@ class EventProcessingModuleTest {
     ) throws NoSuchFieldException, IllegalAccessException {
         String processingGroup = "pooled-streaming";
 
-        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
@@ -1475,7 +1475,7 @@ class EventProcessingModuleTest {
         String processingGroup = "pooled-streaming";
         String otherProcessingGroup = "tracking";
 
-        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerPooledStreamingEventProcessor(otherProcessingGroup)
@@ -1511,7 +1511,7 @@ class EventProcessingModuleTest {
         StubInterceptor interceptor1 = new StubInterceptor();
         StubInterceptor interceptor2 = new StubInterceptor();
 
-        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
@@ -1536,7 +1536,7 @@ class EventProcessingModuleTest {
     ) throws NoSuchFieldException, IllegalAccessException {
         String processingGroup = "pooled-streaming";
 
-        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
@@ -1582,7 +1582,7 @@ class EventProcessingModuleTest {
     ) {
         String processingGroup = "pooled-streaming";
 
-        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                   .eventProcessing()
                   .registerPooledStreamingEventProcessor(processingGroup)
                   .registerEventHandler(config -> new PooledStreamingEventHandler())
@@ -1612,7 +1612,7 @@ class EventProcessingModuleTest {
 
     private void buildComplexEventHandlingConfiguration(CountDownLatch tokenStoreInvocation) {
         // Use InMemoryEventStorageEngine so tracking processors don't miss events
-        configurer.configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine());
+        configurer.configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine());
         configurer.eventProcessing()
                   .registerSubscribingEventProcessor("subscribing")
                   .registerTrackingEventProcessor("tracking")

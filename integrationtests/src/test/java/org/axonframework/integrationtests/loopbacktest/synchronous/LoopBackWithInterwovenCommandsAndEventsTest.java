@@ -26,7 +26,7 @@ import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -79,7 +79,7 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
                                        }
                                    });
         configuration = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
-                                               .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                               .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                                .configureAggregate(aggregateConfigurer)
                                                .registerCommandHandler(c -> new MyCommandHandler(
                                                  c.repository(MyAggregate.class), c.commandGateway()

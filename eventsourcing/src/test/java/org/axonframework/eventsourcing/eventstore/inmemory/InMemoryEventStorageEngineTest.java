@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@link InMemoryEventStorageEngine}.
+ * Test class validating the {@link LegacyInMemoryEventStorageEngine}.
  *
  * @author Rene de Waele
  */
@@ -39,11 +39,11 @@ class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
 
     private static final EventMessage<Object> TEST_EVENT = EventTestUtils.asEventMessage("test");
 
-    private InMemoryEventStorageEngine testSubject;
+    private LegacyInMemoryEventStorageEngine testSubject;
 
     @BeforeEach
     void setUp() {
-        testSubject = new InMemoryEventStorageEngine();
+        testSubject = new LegacyInMemoryEventStorageEngine();
         setTestSubject(testSubject);
     }
 
@@ -57,7 +57,7 @@ class InMemoryEventStorageEngineTest extends EventStorageEngineTest {
 
     @Test
     void publishedEventsEmittedToExistingStreams_WithOffset() {
-        testSubject = new InMemoryEventStorageEngine(1);
+        testSubject = new LegacyInMemoryEventStorageEngine(1);
         Stream<? extends TrackedEventMessage<?>> stream = testSubject.readEvents(null, true);
         testSubject.appendEvents(TEST_EVENT);
 

@@ -21,7 +21,7 @@ import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.config.LegacyDefaultConfigurer;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
 import org.axonframework.modelling.command.EntityId;
@@ -41,7 +41,7 @@ class NestedUowRollbackTest {
         LegacyConfiguration c = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
                                                        .configureAggregate(TestAggregate.class)
                                                        .registerCommandHandler(x -> new Handler())
-                                                       .configureEmbeddedEventStore(x -> new InMemoryEventStorageEngine())
+                                                       .configureEmbeddedEventStore(x -> new LegacyInMemoryEventStorageEngine())
                                                        .buildConfiguration();
 
         c.start();

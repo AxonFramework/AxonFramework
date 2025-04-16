@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.StreamingEventProcessor;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.modelling.saga.repository.CachingSagaStore;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
@@ -106,7 +106,7 @@ public abstract class CachingIntegrationTestSuite {
                 TrackingEventProcessorConfiguration.forParallelProcessing(4)
                                                    .andEventAvailabilityTimeout(10, TimeUnit.MILLISECONDS);
         config = LegacyDefaultConfigurer.defaultConfiguration(DO_NOT_AUTO_LOCATE_CONFIGURER_MODULES)
-                                        .configureEmbeddedEventStore(c -> new InMemoryEventStorageEngine())
+                                        .configureEmbeddedEventStore(c -> new LegacyInMemoryEventStorageEngine())
                                         .eventProcessing(
                                           procConfig -> procConfig
                                                   .usingTrackingEventProcessors()

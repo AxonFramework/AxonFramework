@@ -32,7 +32,7 @@ import org.axonframework.eventhandling.Timestamp;
 import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
@@ -113,7 +113,7 @@ public abstract class AbstractDeadlineManagerTestSuite {
         spanFactory = new TestSpanFactory();
         LegacyEventStore eventStore =
                 spy(LegacyEmbeddedEventStore.builder()
-                                            .storageEngine(new InMemoryEventStorageEngine())
+                                            .storageEngine(new LegacyInMemoryEventStorageEngine())
                                             .spanFactory(DefaultEventBusSpanFactory.builder()
                                                                                    .spanFactory(spanFactory)
                                                                                    .build())

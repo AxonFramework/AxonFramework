@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.polymorphic;
 import jakarta.persistence.EntityManager;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.junit.jupiter.api.*;
@@ -48,7 +48,7 @@ public class PolymorphicESAggregateAnnotationCommandHandlerTest
                 .builder(aggregateType)
                 .subtypes(subTypes)
                 .eventStore(LegacyEmbeddedEventStore.builder()
-                                                    .storageEngine(new InMemoryEventStorageEngine())
+                                                    .storageEngine(new LegacyInMemoryEventStorageEngine())
                                                     .build())
                 .repositoryProvider(new RepositoryProvider() {
                     @Override

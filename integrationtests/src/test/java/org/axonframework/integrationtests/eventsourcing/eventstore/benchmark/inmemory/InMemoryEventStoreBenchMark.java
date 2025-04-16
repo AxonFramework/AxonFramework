@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package org.axonframework.integrationtests.eventsourcing.eventstore.benchmark.inmemory;
 
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.integrationtests.eventsourcing.eventstore.benchmark.AbstractEventStoreBenchmark;
 
 /**
@@ -29,6 +29,6 @@ public class InMemoryEventStoreBenchMark extends AbstractEventStoreBenchmark {
     }
 
     public InMemoryEventStoreBenchMark() {
-        super(new InMemoryEventStorageEngine());
+        super(new LegacyInMemoryEventStorageEngine());
     }
 }

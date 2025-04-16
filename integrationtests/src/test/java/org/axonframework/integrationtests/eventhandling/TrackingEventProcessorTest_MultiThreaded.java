@@ -31,7 +31,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.integrationtests.utils.MockException;
 import org.junit.jupiter.api.*;
 
@@ -82,7 +82,7 @@ class TrackingEventProcessorTest_MultiThreaded {
                                                  ? Long.valueOf(((DomainEventMessage<?>) event).getSequenceNumber())
                                                  : event.getIdentifier())
                                          .build();
-        eventBus = LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
+        eventBus = LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine()).build();
 
         // A processor config, with a policy which guarantees segmenting by using the sequence number.
         configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2)

@@ -45,7 +45,7 @@ import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.SequenceEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.integrationtests.utils.MockException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.StreamableMessageSource;
@@ -208,7 +208,7 @@ class TrackingEventProcessorTest {
             return null;
         }).when(mockTransactionManager).executeInTransaction(any(Runnable.class));
         eventBus = LegacyEmbeddedEventStore.builder()
-                                           .storageEngine(new InMemoryEventStorageEngine())
+                                           .storageEngine(new LegacyInMemoryEventStorageEngine())
                                            .spanFactory(
                                                    DefaultEventBusSpanFactory.builder()
                                                                              .spanFactory(spanFactory)
@@ -272,8 +272,8 @@ class TrackingEventProcessorTest {
 
     @Test
     void sequenceEventStorageReceivesEachEventOnlyOnce() throws Exception {
-        InMemoryEventStorageEngine historic = new InMemoryEventStorageEngine();
-        InMemoryEventStorageEngine active = new InMemoryEventStorageEngine(2);
+        LegacyInMemoryEventStorageEngine historic = new LegacyInMemoryEventStorageEngine();
+        LegacyInMemoryEventStorageEngine active = new LegacyInMemoryEventStorageEngine(2);
         SequenceEventStorageEngine sequenceEventStorageEngine = new SequenceEventStorageEngine(historic, active);
 
         LegacyEmbeddedEventStore sequenceEventBus = LegacyEmbeddedEventStore.builder()
@@ -1986,7 +1986,7 @@ class TrackingEventProcessorTest {
                                                    .andInitialSegmentsCount(1)
                                                    .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS);
         LegacyEventStore enhancedEventStore = new LegacyEmbeddedEventStore(
-                LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine())
+                LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine())
         ) {
             @Override
             public TrackingEventStream openStream(TrackingToken trackingToken) {
