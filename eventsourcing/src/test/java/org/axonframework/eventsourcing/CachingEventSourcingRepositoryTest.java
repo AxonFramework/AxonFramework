@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import org.axonframework.common.caching.EhCacheAdapter;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.eventsourcing.utils.StubAggregate;
@@ -55,14 +55,14 @@ import static org.mockito.Mockito.*;
 class CachingEventSourcingRepositoryTest {
 
     private CachingEventSourcingRepository<StubAggregate> testSubject;
-    private EventStore mockEventStore;
+    private LegacyEventStore mockEventStore;
     private Cache cache;
     private org.ehcache.core.Ehcache ehCache;
     private CacheManager cacheManager;
 
     @BeforeEach
     void setUp() {
-        mockEventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
+        mockEventStore = spy(LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
         Map<String, CacheConfiguration<?, ?>> caches = new HashMap<>();
         DefaultConfiguration config = new DefaultConfiguration(caches, null);
         cacheManager = new EhcacheManager(config);

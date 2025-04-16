@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.messaging.Context.ResourceKey;
@@ -40,7 +40,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * {@link AsyncRepository} implementation that loads entities based on their historic event streams, provided by an
- * {@link AsyncEventStore}.
+ * {@link EventStore}.
  *
  * @param <I> The type of identifier used to identify the event sourced entity.
  * @param <E> The type of the event sourced entity to load.
@@ -55,7 +55,7 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
 
     private final Class<I> idType;
     private final Class<E> entityType;
-    private final AsyncEventStore eventStore;
+    private final EventStore eventStore;
     private final CriteriaResolver<I> criteriaResolver;
     private final EntityEvolver<E> entityEvolver;
     private final EventSourcedEntityFactory<I, E> entityFactory;
@@ -78,7 +78,7 @@ public class AsyncEventSourcingRepository<I, E> implements AsyncRepository.Lifec
      */
     public AsyncEventSourcingRepository(@Nonnull Class<I> idType,
                                         @Nonnull Class<E> entityType,
-                                        @Nonnull AsyncEventStore eventStore,
+                                        @Nonnull EventStore eventStore,
                                         @Nonnull EventSourcedEntityFactory<I, E> entityFactory,
                                         @Nonnull CriteriaResolver<I> criteriaResolver,
                                         @Nonnull EntityEvolver<E> entityEvolver) {

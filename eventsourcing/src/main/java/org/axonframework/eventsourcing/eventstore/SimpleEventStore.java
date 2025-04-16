@@ -19,7 +19,6 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.MessageStream;
@@ -27,11 +26,10 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Simple implementation of the {@link AsyncEventStore} and {@link StreamableEventSource} fixed for a <b>single</b>
+ * Simple implementation of the {@link EventStore} and {@link StreamableEventSource} fixed for a <b>single</b>
  * {@code context}.
  * <p>
  * Invocations of this event store that provide a different {@code context} than is used during construction of this
@@ -42,7 +40,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Steven van Beelen
  * @since 3.0
  */
-public class SimpleEventStore implements AsyncEventStore, StreamableEventSource<EventMessage<?>> {
+public class SimpleEventStore implements EventStore, StreamableEventSource<EventMessage<?>> {
 
     private final AsyncEventStorageEngine eventStorageEngine;
     private final TagResolver tagResolver;

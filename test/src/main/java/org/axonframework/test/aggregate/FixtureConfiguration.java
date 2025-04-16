@@ -25,7 +25,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandler;
@@ -56,7 +56,7 @@ import java.util.function.Supplier;
  * handler will require a repository. The test fixture initializes an Event Sourcing Repository, which can be obtained
  * using {@link #getRepository()}. Alternatively, you can register your own repository using the {@link
  * #registerRepository(Repository)} method. Registering the repository
- * will cause the fixture to configure the correct {@link EventBus} and {@link EventStore} implementations required by
+ * will cause the fixture to configure the correct {@link EventBus} and {@link LegacyEventStore} implementations required by
  * the test.
  * <p/>
  * Typical usage example:<br/> <code>
@@ -424,7 +424,7 @@ public interface FixtureConfiguration<T> {
      *
      * @return the event store used by this fixture
      */
-    EventStore getEventStore();
+    LegacyEventStore getEventStore();
 
     /**
      * Returns the repository used by this fixture. This repository is provided for wiring purposes only. The

@@ -38,9 +38,9 @@ import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.Snapshotter;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
@@ -97,7 +97,7 @@ class AxonAutoConfigurationTest {
                     assertNotNull(applicationContext.getBean(CommandBus.class));
                     assertNotNull(applicationContext.getBean(EventBus.class));
                     assertNotNull(applicationContext.getBean(QueryBus.class));
-                    assertNotNull(applicationContext.getBean(EventStore.class));
+                    assertNotNull(applicationContext.getBean(LegacyEventStore.class));
                     assertNotNull(applicationContext.getBean(CommandGateway.class));
                     assertNotNull(applicationContext.getBean(EventGateway.class));
                     assertNotNull(applicationContext.getBean(Serializer.class));
@@ -166,10 +166,10 @@ class AxonAutoConfigurationTest {
                 .withUserConfiguration(Context.class)
                 .withPropertyValues("axon.axonserver.enabled=false");
 
-        AtomicReference<EmbeddedEventStore> eventStore = new AtomicReference<>();
+        AtomicReference<LegacyEmbeddedEventStore> eventStore = new AtomicReference<>();
 
         applicationContextRunner.run(context -> {
-            eventStore.set(context.getBean(EmbeddedEventStore.class));
+            eventStore.set(context.getBean(LegacyEmbeddedEventStore.class));
             assertNotNull(eventStore.get());
         });
         verify(eventStore.get(), atLeastOnce()).shutDown();
@@ -242,8 +242,8 @@ class AxonAutoConfigurationTest {
         }
 
         @Bean
-        public EventStore eventStore() {
-            return spy(EmbeddedEventStore.builder().storageEngine(storageEngine()).build());
+        public LegacyEventStore eventStore() {
+            return spy(LegacyEmbeddedEventStore.builder().storageEngine(storageEngine()).build());
         }
 
         @Bean

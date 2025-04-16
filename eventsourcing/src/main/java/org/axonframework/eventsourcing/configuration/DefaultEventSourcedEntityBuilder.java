@@ -25,7 +25,7 @@ import org.axonframework.eventsourcing.EntityEvolver;
 import org.axonframework.eventsourcing.PayloadBasedEntityEvolver;
 import org.axonframework.eventsourcing.SimpleEventSourcedComponent;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.slf4j.Logger;
@@ -114,7 +114,7 @@ class DefaultEventSourcedEntityBuilder<I, E> implements
         return config -> new AsyncEventSourcingRepository<>(
                 idType,
                 entityType,
-                config.getComponent(AsyncEventStore.class),
+                config.getComponent(EventStore.class),
                 entityFactory.build(config),
                 criteriaResolver.build(config),
                 constructEntityEvolver(config)

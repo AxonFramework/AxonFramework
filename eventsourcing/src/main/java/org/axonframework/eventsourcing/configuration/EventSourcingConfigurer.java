@@ -32,7 +32,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
 import org.axonframework.modelling.configuration.ModellingConfigurer;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
@@ -49,7 +49,7 @@ import java.util.function.Consumer;
  * <ul>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver} for class {@link org.axonframework.eventsourcing.eventstore.TagResolver}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine} for class {@link org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link org.axonframework.eventsourcing.eventstore.AsyncEventStore}</li>
+ *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventStore}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventSink}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.AggregateSnapshotter} for class {@link org.axonframework.eventsourcing.Snapshotter}</li>
  * </ul>
@@ -147,16 +147,16 @@ public class EventSourcingConfigurer implements ApplicationConfigurer {
     }
 
     /**
-     * Registers the given {@link AsyncEventStore} factory in this {@code Configurer}.
+     * Registers the given {@link EventStore} factory in this {@code Configurer}.
      * <p>
      * The {@code eventStoreFactory} receives the {@link Configuration} as input and is expected to return a
-     * {@link AsyncEventStore} instance.
+     * {@link EventStore} instance.
      *
-     * @param eventStoreFactory The factory building the {@link AsyncEventStore}.
+     * @param eventStoreFactory The factory building the {@link EventStore}.
      * @return The current instance of the {@code Configurer} for a fluent API.
      */
-    public EventSourcingConfigurer registerEventStore(@Nonnull ComponentFactory<AsyncEventStore> eventStoreFactory) {
-        delegate.componentRegistry(cr -> cr.registerComponent(AsyncEventStore.class, eventStoreFactory));
+    public EventSourcingConfigurer registerEventStore(@Nonnull ComponentFactory<EventStore> eventStoreFactory) {
+        delegate.componentRegistry(cr -> cr.registerComponent(EventStore.class, eventStoreFactory));
         return this;
     }
 

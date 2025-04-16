@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package org.axonframework.eventsourcing.conflictresolution;
 
 import org.axonframework.modelling.command.ConflictingModificationException;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.junit.jupiter.api.*;
 
@@ -31,12 +31,12 @@ import static org.mockito.Mockito.spy;
 
 class DefaultConflictResolverTest {
 
-    private EventStore eventStore;
+    private LegacyEventStore eventStore;
     private DefaultConflictResolver subject;
 
     @BeforeEach
     void setUp() {
-        eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
+        eventStore = spy(LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
         eventStore.publish(IntStream.range(0, 10).mapToObj(
                 sequenceNumber -> createEvent(AGGREGATE, sequenceNumber, PAYLOAD + sequenceNumber)).collect(toList()));
     }

@@ -27,7 +27,7 @@ import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.scheduling.EventScheduler;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.Snapshotter;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ScopeAwareProvider;
@@ -116,12 +116,12 @@ public interface LegacyConfiguration extends LifecycleOperations {
      *
      * @return the Event Store defined in this Configuration
      */
-    default EventStore eventStore() {
+    default LegacyEventStore eventStore() {
         EventBus eventBus = eventBus();
-        if (!(eventBus instanceof EventStore)) {
+        if (!(eventBus instanceof LegacyEventStore)) {
             throw new AxonConfigurationException("A component is requesting an Event Store, however, there is none configured");
         }
-        return (EventStore) eventBus;
+        return (LegacyEventStore) eventBus;
     }
 
     /**

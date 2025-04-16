@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.integrationtests.utils.MockException;
 import org.junit.jupiter.api.*;
@@ -63,7 +63,7 @@ import static org.mockito.Mockito.*;
  */
 class TrackingEventProcessorTest_MultiThreaded {
 
-    private EmbeddedEventStore eventBus;
+    private LegacyEmbeddedEventStore eventBus;
     private TokenStore tokenStore;
     private EventHandlerInvoker eventHandlerInvoker;
     private EventMessageHandler mockHandler;
@@ -82,7 +82,7 @@ class TrackingEventProcessorTest_MultiThreaded {
                                                  ? Long.valueOf(((DomainEventMessage<?>) event).getSequenceNumber())
                                                  : event.getIdentifier())
                                          .build();
-        eventBus = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
+        eventBus = LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
 
         // A processor config, with a policy which guarantees segmenting by using the sequence number.
         configureProcessor(TrackingEventProcessorConfiguration.forParallelProcessing(2)

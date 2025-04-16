@@ -54,7 +54,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 import static org.axonframework.common.BuilderUtils.assertPositive;
 
 /**
- * Implementation of an {@link EventStore} that stores and fetches events using an {@link EventStorageEngine}. If
+ * Implementation of an {@link LegacyEventStore} that stores and fetches events using an {@link EventStorageEngine}. If
  * supported by its storage engine the embedded event store provides event tracking and replaying capabilities.
  * <p>
  * The event store can be tracked by multiple event processors simultaneously. To prevent that each event processor
@@ -73,13 +73,14 @@ import static org.axonframework.common.BuilderUtils.assertPositive;
  *
  * @author Rene de Waele
  * @since 3.0
+ * @deprecated This will be removed.
  */
-@Deprecated // TODO Replace for SimpleEventStore once fully integrated
-public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle {
+@Deprecated(since = "5.0.0")
+public class LegacyEmbeddedEventStore extends AbstractLegacyEventStore implements Lifecycle {
 
-    private static final Logger logger = LoggerFactory.getLogger(EmbeddedEventStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(LegacyEmbeddedEventStore.class);
 
-    private static final ThreadGroup THREAD_GROUP = new ThreadGroup(EmbeddedEventStore.class.getSimpleName());
+    private static final ThreadGroup THREAD_GROUP = new ThreadGroup(LegacyEmbeddedEventStore.class.getSimpleName());
     private static final String OPTIMIZE_EVENT_CONSUMPTION_SYSTEM_PROPERTY = "optimize-event-consumption";
 
     private final Lock consumerLock = new ReentrantLock();
@@ -94,14 +95,14 @@ public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle 
     private volatile Node oldest;
 
     /**
-     * Instantiate a {@link EmbeddedEventStore} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link LegacyEmbeddedEventStore} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the {@link EventStorageEngine} is not {@code null}, and will throw an {@link
      * AxonConfigurationException} if it is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link EmbeddedEventStore} instance
+     * @param builder the {@link Builder} used to instantiate a {@link LegacyEmbeddedEventStore} instance
      */
-    protected EmbeddedEventStore(Builder builder) {
+    protected LegacyEmbeddedEventStore(Builder builder) {
         super(builder);
         this.threadFactory = builder.threadFactory;
         this.optimizeEventConsumption = builder.optimizeEventConsumption;
@@ -112,7 +113,7 @@ public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle 
     }
 
     /**
-     * Instantiate a Builder to be able to create an {@link EmbeddedEventStore}.
+     * Instantiate a Builder to be able to create an {@link LegacyEmbeddedEventStore}.
      * <p>
      * The following configurable fields have defaults:
      * <ul>
@@ -123,12 +124,12 @@ public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle 
      * <li>The {@code cleanupDelay} is defaulted to {@code 10000}.</li>
      * <li>The {@link TimeUnit} is defaulted to {@link TimeUnit#MILLISECONDS}.</li>
      * <li>The {@link ThreadFactory} is defaulted to {@link AxonThreadFactory} with {@link ThreadGroup} {@link
-     * EmbeddedEventStore#THREAD_GROUP}.</li>
+     * LegacyEmbeddedEventStore#THREAD_GROUP}.</li>
      * <li>The {@code optimizeEventConsumption} is defaulted to {@code true}.</li>
      * </ul>
      * The {@link EventStorageEngine} is a <b>hard requirement</b> and as such should be provided.
      *
-     * @return a Builder to be able to create a {@link EmbeddedEventStore}
+     * @return a Builder to be able to create a {@link LegacyEmbeddedEventStore}
      */
     public static Builder builder() {
         return new Builder();
@@ -479,7 +480,7 @@ public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle 
     }
 
     /**
-     * Builder class to instantiate an {@link EmbeddedEventStore}.
+     * Builder class to instantiate an {@link LegacyEmbeddedEventStore}.
      * <p>
      * The following configurable fields have defaults:
      * <ul>
@@ -490,12 +491,12 @@ public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle 
      * <li>The {@code cleanupDelay} is defaulted to {@code 10000}.</li>
      * <li>The {@link TimeUnit} is defaulted to {@link TimeUnit#MILLISECONDS}.</li>
      * <li>The {@link ThreadFactory} is defaulted to {@link AxonThreadFactory} with {@link ThreadGroup} {@link
-     * EmbeddedEventStore#THREAD_GROUP}.</li>
+     * LegacyEmbeddedEventStore#THREAD_GROUP}.</li>
      * <li>The {@code optimizeEventConsumption} is defaulted to {@code true}.</li>
      * </ul>
      * The {@link EventStorageEngine} is a <b>hard requirement</b> and as such should be provided.
      */
-    public static class Builder extends AbstractEventStore.Builder {
+    public static class Builder extends AbstractLegacyEventStore.Builder {
 
         private int cachedEvents = 10000;
         private long fetchDelay = 1000L;
@@ -597,7 +598,7 @@ public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle 
 
         /**
          * Sets the {@link ThreadFactory} used to create threads for consuming, producing and cleaning up. Defaults to a
-         * {@link AxonThreadFactory} with {@link ThreadGroup} {@link EmbeddedEventStore#THREAD_GROUP}.
+         * {@link AxonThreadFactory} with {@link ThreadGroup} {@link LegacyEmbeddedEventStore#THREAD_GROUP}.
          *
          * @param threadFactory a {@link ThreadFactory} used to create threads for consuming, producing and cleaning up
          * @return the current Builder instance, for fluent interfacing
@@ -627,12 +628,12 @@ public class EmbeddedEventStore extends AbstractEventStore implements Lifecycle 
         }
 
         /**
-         * Initializes a {@link EmbeddedEventStore} as specified through this Builder.
+         * Initializes a {@link LegacyEmbeddedEventStore} as specified through this Builder.
          *
-         * @return a {@link EmbeddedEventStore} as specified through this Builder
+         * @return a {@link LegacyEmbeddedEventStore} as specified through this Builder
          */
-        public EmbeddedEventStore build() {
-            return new EmbeddedEventStore(this);
+        public LegacyEmbeddedEventStore build() {
+            return new LegacyEmbeddedEventStore(this);
         }
 
         /**

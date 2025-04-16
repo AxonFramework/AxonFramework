@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.integrationtests.polymorphic;
 
 import jakarta.persistence.EntityManager;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
@@ -47,9 +47,9 @@ public class PolymorphicESAggregateAnnotationCommandHandlerTest
         EventSourcingRepository<T> repository = EventSourcingRepository
                 .builder(aggregateType)
                 .subtypes(subTypes)
-                .eventStore(EmbeddedEventStore.builder()
-                                              .storageEngine(new InMemoryEventStorageEngine())
-                                              .build())
+                .eventStore(LegacyEmbeddedEventStore.builder()
+                                                    .storageEngine(new InMemoryEventStorageEngine())
+                                                    .build())
                 .repositoryProvider(new RepositoryProvider() {
                     @Override
                     public <R> Repository<R> repositoryFor(@Nonnull Class<R> aggregateType) {

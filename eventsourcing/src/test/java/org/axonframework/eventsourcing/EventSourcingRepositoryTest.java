@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.utils.StubDomainEvent;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
@@ -52,7 +52,7 @@ import static org.mockito.Mockito.*;
  */
 class EventSourcingRepositoryTest {
 
-    private EventStore mockEventStore;
+    private LegacyEventStore mockEventStore;
     private EventSourcingRepository<TestAggregate> testSubject;
     private UnitOfWork<?> unitOfWork;
     private StubAggregateFactory stubAggregateFactory;
@@ -62,7 +62,7 @@ class EventSourcingRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        mockEventStore = mock(EventStore.class);
+        mockEventStore = mock(LegacyEventStore.class);
         stubAggregateFactory = new StubAggregateFactory();
         snapshotTrigger = mock(SnapshotTrigger.class);
         triggerDefinition = mock(SnapshotTriggerDefinition.class);

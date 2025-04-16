@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngineTest;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.JdbcEventStorageEngineStatements;
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.ReadEventDataForAggregateStatementBuilder;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
@@ -226,7 +226,7 @@ class JdbcEventStorageEngineTest
 
         int testBatchSize = 2;
         testSubject = createEngine(engineBuilder -> engineBuilder.batchSize(testBatchSize));
-        EmbeddedEventStore testEventStore = EmbeddedEventStore.builder().storageEngine(testSubject).build();
+        LegacyEmbeddedEventStore testEventStore = LegacyEmbeddedEventStore.builder().storageEngine(testSubject).build();
 
         testSubject.appendEvents(createEvent(AGGREGATE, 1, "Payload1"),
                                  createEvent(AGGREGATE, 2, "Payload2"));

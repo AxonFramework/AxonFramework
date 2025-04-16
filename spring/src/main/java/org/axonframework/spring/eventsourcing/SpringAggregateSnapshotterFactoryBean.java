@@ -21,7 +21,7 @@ import org.axonframework.common.transaction.NoTransactionManager;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventsourcing.AggregateSnapshotter;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
@@ -62,7 +62,7 @@ public class SpringAggregateSnapshotterFactoryBean
     private PlatformTransactionManager transactionManager;
     private ApplicationContext applicationContext;
     private TransactionDefinition transactionDefinition = new DefaultTransactionDefinition();
-    private EventStore eventStore;
+    private LegacyEventStore eventStore;
     private RepositoryProvider repositoryProvider;
     private ParameterResolverFactory parameterResolverFactory;
     private HandlerDefinition handlerDefinition;
@@ -78,7 +78,7 @@ public class SpringAggregateSnapshotterFactoryBean
         }
 
         if (eventStore == null) {
-            eventStore = applicationContext.getBean(EventStore.class);
+            eventStore = applicationContext.getBean(LegacyEventStore.class);
         }
 
         if (repositoryProvider == null) {
@@ -150,7 +150,7 @@ public class SpringAggregateSnapshotterFactoryBean
      *
      * @param eventStore The Event Store to store the snapshot events in
      */
-    public void setEventStore(EventStore eventStore) {
+    public void setEventStore(LegacyEventStore eventStore) {
         this.eventStore = eventStore;
     }
 

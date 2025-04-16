@@ -28,7 +28,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.TokenSchema;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
@@ -72,13 +72,13 @@ public class JdbcAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean({EventStorageEngine.class, EventSchema.class, EventStore.class})
+    @ConditionalOnMissingBean({EventStorageEngine.class, EventSchema.class, LegacyEventStore.class})
     public EventSchema eventSchema() {
         return new EventSchema();
     }
 
     @Bean
-    @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class, EventStore.class})
+    @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class, LegacyEventStore.class})
     public EventStorageEngine eventStorageEngine(Serializer defaultSerializer,
                                                  PersistenceExceptionResolver persistenceExceptionResolver,
                                                  @Qualifier("eventSerializer") Serializer eventSerializer,
@@ -99,7 +99,7 @@ public class JdbcAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean({PersistenceExceptionResolver.class, EventStore.class})
+    @ConditionalOnMissingBean({PersistenceExceptionResolver.class, LegacyEventStore.class})
     public PersistenceExceptionResolver jdbcSQLErrorCodesResolver() {
         return new JdbcSQLErrorCodesResolver();
     }

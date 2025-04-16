@@ -31,7 +31,7 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.snapshotting.RevisionSnapshotFilter;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.lifecycle.Phase;
@@ -136,7 +136,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
         repository = new Component<>(
                 () -> parent, name("Repository"),
                 c -> {
-                    state(c.eventBus() instanceof EventStore,
+                    state(c.eventBus() instanceof LegacyEventStore,
                           () -> "Default configuration requires the use of event sourcing. Either configure an Event " +
                                   "Store to use, or configure a specific repository implementation for " +
                                   aggregate.toString());

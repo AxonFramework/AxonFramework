@@ -42,8 +42,8 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.UnableToClaimTokenException;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.SequenceEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.integrationtests.utils.MockException;
@@ -116,7 +116,7 @@ class TrackingEventProcessorTest {
     private static final Object NO_RESET_PAYLOAD = null;
 
     private TrackingEventProcessor testSubject;
-    private EmbeddedEventStore eventBus;
+    private LegacyEmbeddedEventStore eventBus;
     private TokenStore tokenStore;
     private EventHandlerInvoker eventHandlerInvoker;
     private EventMessageHandler mockHandler;
@@ -207,14 +207,14 @@ class TrackingEventProcessorTest {
             r.run();
             return null;
         }).when(mockTransactionManager).executeInTransaction(any(Runnable.class));
-        eventBus = EmbeddedEventStore.builder()
-                                     .storageEngine(new InMemoryEventStorageEngine())
-                                     .spanFactory(
-                                             DefaultEventBusSpanFactory.builder()
-                                                                       .spanFactory(spanFactory)
-                                                                       .build()
-                                     )
-                                     .build();
+        eventBus = LegacyEmbeddedEventStore.builder()
+                                           .storageEngine(new InMemoryEventStorageEngine())
+                                           .spanFactory(
+                                                   DefaultEventBusSpanFactory.builder()
+                                                                             .spanFactory(spanFactory)
+                                                                             .build()
+                                           )
+                                           .build();
         sleepInstructions = new CopyOnWriteArrayList<>();
 
         initDefaultProcessor();
@@ -276,9 +276,9 @@ class TrackingEventProcessorTest {
         InMemoryEventStorageEngine active = new InMemoryEventStorageEngine(2);
         SequenceEventStorageEngine sequenceEventStorageEngine = new SequenceEventStorageEngine(historic, active);
 
-        EmbeddedEventStore sequenceEventBus = EmbeddedEventStore.builder()
-                                                                .storageEngine(sequenceEventStorageEngine)
-                                                                .build();
+        LegacyEmbeddedEventStore sequenceEventBus = LegacyEmbeddedEventStore.builder()
+                                                                            .storageEngine(sequenceEventStorageEngine)
+                                                                            .build();
 
         initProcessor(builder -> builder.messageSource(sequenceEventBus));
 
@@ -355,7 +355,7 @@ class TrackingEventProcessorTest {
         when(mockHandler.canHandleType(String.class)).thenReturn(false);
         Set<Class<?>> skipped = new HashSet<>();
 
-        EmbeddedEventStore mockEventBus = mock(EmbeddedEventStore.class);
+        LegacyEmbeddedEventStore mockEventBus = mock(LegacyEmbeddedEventStore.class);
         TrackingToken trackingToken = new GlobalSequenceTrackingToken(0);
         List<TrackedEventMessage<?>> events =
                 createEvents(2).stream().map(event -> asTrackedEventMessage(event, trackingToken)).collect(toList());
@@ -867,7 +867,7 @@ class TrackingEventProcessorTest {
     void eventsWithTheSameTokenAreProcessedInTheSameBatch() throws Exception {
         eventBus.shutDown();
 
-        eventBus = mock(EmbeddedEventStore.class);
+        eventBus = mock(LegacyEmbeddedEventStore.class);
         TrackingToken trackingToken = new GlobalSequenceTrackingToken(0);
         List<TrackedEventMessage<?>> events =
                 createEvents(2).stream().map(event -> asTrackedEventMessage(event, trackingToken)).collect(toList());
@@ -1985,8 +1985,8 @@ class TrackingEventProcessorTest {
                 TrackingEventProcessorConfiguration.forParallelProcessing(2)
                                                    .andInitialSegmentsCount(1)
                                                    .andEventAvailabilityTimeout(100, TimeUnit.MILLISECONDS);
-        EventStore enhancedEventStore = new EmbeddedEventStore(
-                EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine())
+        LegacyEventStore enhancedEventStore = new LegacyEmbeddedEventStore(
+                LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine())
         ) {
             @Override
             public TrackingEventStream openStream(TrackingToken trackingToken) {
@@ -2310,6 +2310,7 @@ class TrackingEventProcessorTest {
     }
 
     private static class TestError extends Error {
+
     }
 
     @SuppressWarnings("unused")

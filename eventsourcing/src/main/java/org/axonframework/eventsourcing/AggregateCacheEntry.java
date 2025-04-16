@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.inspection.AggregateModel;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 
 public class AggregateCacheEntry<T> {
 
@@ -38,12 +38,12 @@ public class AggregateCacheEntry<T> {
     }
 
     public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model,
-                                                      EventStore eventStore,
+                                                      LegacyEventStore eventStore,
                                                       SnapshotTriggerDefinition snapshotTriggerDefinition) {
         return recreateAggregate(model, eventStore, null, snapshotTriggerDefinition);
     }
 
-    public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model, EventStore eventStore,
+    public EventSourcedAggregate<T> recreateAggregate(AggregateModel<T> model, LegacyEventStore eventStore,
                                                       RepositoryProvider repositoryProvider,
                                                       SnapshotTriggerDefinition snapshotTriggerDefinition) {
         if (aggregate != null) {

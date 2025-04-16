@@ -22,8 +22,8 @@ import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
@@ -49,14 +49,14 @@ import static org.mockito.Mockito.*;
 class AggregateCreationFromCommandsTest {
 
     private CommandBus commandBus;
-    private EventStore eventStore;
+    private LegacyEventStore eventStore;
     private EventSourcingRepository<StubAggregateForCreation> repository;
     private AtomicInteger factoryInvocationCounter;
 
     @BeforeEach
     void setUp() {
         this.commandBus = new SimpleCommandBus();
-        eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
+        eventStore = spy(LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
         repository = EventSourcingRepository.builder(StubAggregateForCreation.class)
                                             .eventStore(eventStore)
                                             .build();

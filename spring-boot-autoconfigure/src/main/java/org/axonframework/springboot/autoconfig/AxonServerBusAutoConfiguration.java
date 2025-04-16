@@ -32,7 +32,7 @@ import org.axonframework.commandhandling.tracing.CommandBusSpanFactory;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.config.LegacyConfiguration;
 import org.axonframework.eventhandling.EventBusSpanFactory;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.interceptors.CorrelationDataInterceptor;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryBusSpanFactory;
@@ -53,7 +53,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
 /**
- * Configures Axon Server implementations of the {@link CommandBus}, {@link EventStore}, and {@link QueryBus}.
+ * Configures Axon Server implementations of the {@link CommandBus}, {@link LegacyEventStore}, and {@link QueryBus}.
  *
  * @author Marc Gathier
  * @author Stefan Dragisic
@@ -124,11 +124,11 @@ public class AxonServerBusAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(name = "axon.axonserver.event-store.enabled", matchIfMissing = true)
-    public EventStore eventStore(AxonServerConfiguration axonServerConfiguration,
-                                 LegacyConfiguration configuration,
-                                 AxonServerConnectionManager axonServerConnectionManager,
-                                 Serializer snapshotSerializer,
-                                 @Qualifier("eventSerializer") Serializer eventSerializer) {
+    public LegacyEventStore eventStore(AxonServerConfiguration axonServerConfiguration,
+                                       LegacyConfiguration configuration,
+                                       AxonServerConnectionManager axonServerConnectionManager,
+                                       Serializer snapshotSerializer,
+                                       @Qualifier("eventSerializer") Serializer eventSerializer) {
         return AxonServerEventStore.builder()
                                    .messageMonitor(configuration
                                                            .messageMonitor(AxonServerEventStore.class, "eventStore"))

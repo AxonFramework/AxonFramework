@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.HandlerEnhancerDefinition;
@@ -274,12 +274,12 @@ public interface LegacyConfigurer extends LifecycleOperations {
 
     /**
      * Configures the given Event Store to use in this configuration. The builder receives the Configuration as input
-     * and is expected to return a fully initialized {@link EventStore} instance.
+     * and is expected to return a fully initialized {@link LegacyEventStore} instance.
      *
-     * @param eventStoreBuilder The builder function for the {@link EventStore}
+     * @param eventStoreBuilder The builder function for the {@link LegacyEventStore}
      * @return the current instance of the Configurer, for chaining purposes
      */
-    default LegacyConfigurer configureEventStore(@Nonnull Function<LegacyConfiguration, EventStore> eventStoreBuilder) {
+    default LegacyConfigurer configureEventStore(@Nonnull Function<LegacyConfiguration, LegacyEventStore> eventStoreBuilder) {
         return registerComponent(EventBus.class, eventStoreBuilder);
     }
 

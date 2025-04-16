@@ -22,7 +22,7 @@ import org.axonframework.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.spring.config.annotation.StubAggregate;
@@ -49,7 +49,7 @@ class SpringAggregateSnapshotterFactoryBeanTest {
     private SpringAggregateSnapshotterFactoryBean testSubject;
     private PlatformTransactionManager mockTransactionManager;
     private String aggregateIdentifier;
-    private EventStore mockEventStore;
+    private LegacyEventStore mockEventStore;
     private RepositoryProvider mockRepositoryProvider;
     private ApplicationContext mockApplicationContext;
     private Executor executor;
@@ -57,7 +57,7 @@ class SpringAggregateSnapshotterFactoryBeanTest {
     @BeforeEach
     void setUp() {
         mockApplicationContext = mock(ApplicationContext.class);
-        mockEventStore = mock(EventStore.class);
+        mockEventStore = mock(LegacyEventStore.class);
         mockRepositoryProvider = mock(RepositoryProvider.class);
         executor = spy(new MockExecutor());
 
@@ -101,7 +101,7 @@ class SpringAggregateSnapshotterFactoryBeanTest {
     void retrieveAggregateFactoryFromRepositoryIfNotExplicitlyAvailable() {
         testSubject.setEventStore(null);
         reset(mockApplicationContext);
-        when(mockApplicationContext.getBean(EventStore.class)).thenReturn(mockEventStore);
+        when(mockApplicationContext.getBean(LegacyEventStore.class)).thenReturn(mockEventStore);
 
         when(mockApplicationContext.getBeansOfType(EventSourcingRepository.class))
                 .thenReturn(Collections.singletonMap("myRepository",

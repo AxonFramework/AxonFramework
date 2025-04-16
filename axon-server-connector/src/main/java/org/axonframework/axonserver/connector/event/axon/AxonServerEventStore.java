@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
-import org.axonframework.common.BuilderUtils;
 import org.axonframework.common.StringUtils;
 import org.axonframework.common.jdbc.PersistenceExceptionResolver;
 import org.axonframework.common.stream.BlockingStream;
@@ -45,7 +44,7 @@ import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.EventStreamUtils;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStore;
+import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
@@ -91,9 +90,10 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @author Allard Buijze
  * @since 4.0
+ * @deprecated In favor of the {@link org.axonframework.axonserver.connector.event.LegacyAxonServerEventStorageEngine}.
  */
-@Deprecated // TODO 3101 - Reimplement with different interfaces
-public class AxonServerEventStore extends AbstractEventStore {
+@Deprecated(since = "5.0.0")
+public class AxonServerEventStore extends AbstractLegacyEventStore {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -188,7 +188,7 @@ public class AxonServerEventStore extends AbstractEventStore {
      * The event and snapshot {@link Serializer}, {@link AxonServerConfiguration} and
      * {@link AxonServerConnectionManager} are <b>hard requirements</b> if no EventStorageEngine is provided directly.
      */
-    public static class Builder extends AbstractEventStore.Builder {
+    public static class Builder extends AbstractLegacyEventStore.Builder {
 
         private AxonServerConfiguration configuration;
         private AxonServerConnectionManager axonServerConnectionManager;

@@ -26,8 +26,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
@@ -44,12 +44,12 @@ import static org.mockito.Mockito.*;
 class EventPublicationOrderTest {
 
     private CommandBus commandBus;
-    private EventStore eventStore;
+    private LegacyEventStore eventStore;
 
     @BeforeEach
     void setUp() {
         this.commandBus = new SimpleCommandBus();
-        eventStore = spy(EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
+        eventStore = spy(LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build());
         EventSourcingRepository<StubAggregate> repository = EventSourcingRepository.builder(StubAggregate.class)
                                                                                    .eventStore(eventStore)
                                                                                    .build();

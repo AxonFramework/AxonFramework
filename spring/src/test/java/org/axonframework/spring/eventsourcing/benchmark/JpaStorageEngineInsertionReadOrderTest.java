@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.utils.EventStoreTestUtils;
 import org.axonframework.serialization.Serializer;
@@ -125,7 +125,7 @@ class JpaStorageEngineInsertionReadOrderTest {
         int rollbacksPerThread = (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
 
-        EmbeddedEventStore embeddedEventStore = EmbeddedEventStore.builder().storageEngine(testSubject).build();
+        LegacyEmbeddedEventStore embeddedEventStore = LegacyEmbeddedEventStore.builder().storageEngine(testSubject).build();
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
 
@@ -152,12 +152,12 @@ class JpaStorageEngineInsertionReadOrderTest {
         int rollbacksPerThread = (eventsPerThread + inverseRollbackRate - 1) / inverseRollbackRate;
         int expectedEventCount = threadCount * eventsPerThread - rollbacksPerThread * threadCount;
 
-        EmbeddedEventStore embeddedEventStore = EmbeddedEventStore.builder()
-                                                                  .storageEngine(testSubject)
-                                                                  .cachedEvents(20)
-                                                                  .fetchDelay(100)
-                                                                  .cleanupDelay(1000)
-                                                                  .build();
+        LegacyEmbeddedEventStore embeddedEventStore = LegacyEmbeddedEventStore.builder()
+                                                                              .storageEngine(testSubject)
+                                                                              .cachedEvents(20)
+                                                                              .fetchDelay(100)
+                                                                              .cleanupDelay(1000)
+                                                                              .build();
         Thread[] writerThreads = storeEvents(threadCount, eventsPerThread, inverseRollbackRate);
         TrackingEventStream readEvents = embeddedEventStore.openStream(null);
 

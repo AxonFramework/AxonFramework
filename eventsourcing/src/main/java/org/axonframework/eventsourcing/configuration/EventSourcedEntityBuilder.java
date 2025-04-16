@@ -41,8 +41,7 @@ import java.util.function.BiFunction;
  * Provides operations to guide users to provide the necessary
  * {@link EntityFactoryPhase#entityFactory(ComponentFactory) entity factory} and
  * {@link CriteriaResolverPhase#criteriaResolver(ComponentFactory) criteria resolver} (used to source the entity from an
- * {@link org.axonframework.eventsourcing.eventstore.AsyncEventStore}) before expecting event sourcing handler
- * registration.
+ * {@link org.axonframework.eventsourcing.eventstore.EventStore}) before expecting event sourcing handler registration.
  * <p>
  * The separate methods of this builder ensure that the bare minimum required to provide the {@link #entityName()} and
  * {@link #repository()} are present at the end.
@@ -105,8 +104,8 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          * <p>
          * The resulting {@link EventSourcedEntityFactory} from the component factory receives the entity type {@code E}
          * and the identifier of type {@code I} and expects an event sourced entity instance of type {@code E} as a
-         * result. The {@link Configuration} in the component factory allows the
-         * entity factory to use other components that have been registered.
+         * result. The {@link Configuration} in the component factory allows the entity factory to use other components
+         * that have been registered.
          *
          * @param entityFactory A factory method constructing the entity of type {@code E} based on the entity's type
          *                      and an identifier of type {@code I}.
@@ -125,7 +124,7 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
      * {@link org.axonframework.eventsourcing.eventstore.EventCriteria} as as result. The resulting
      * {@code EventCriteria} is used to
      * {@link org.axonframework.eventsourcing.eventstore.EventStoreTransaction#source(SourcingCondition) source} the
-     * entity from the {@link org.axonframework.eventsourcing.eventstore.AsyncEventStore}.
+     * entity from the {@link org.axonframework.eventsourcing.eventstore.EventStore}.
      *
      * @param <I> The type of identifier used to identify the event sourced entity that's being built.
      * @param <E> The type of the event sourced entity being built.
@@ -139,7 +138,7 @@ public interface EventSourcedEntityBuilder<I, E> extends EntityBuilder<I, E> {
          * {@link org.axonframework.eventsourcing.eventstore.EventCriteria} as as result. The resulting
          * {@code EventCriteria} is used to
          * {@link org.axonframework.eventsourcing.eventstore.EventStoreTransaction#source(SourcingCondition) source} the
-         * entity from the {@link org.axonframework.eventsourcing.eventstore.AsyncEventStore}.
+         * entity from the {@link org.axonframework.eventsourcing.eventstore.EventStore}.
          *
          * @param criteriaResolver A factory method constructing the {@link CriteriaResolver}, used to resolve the
          *                         {@link org.axonframework.eventsourcing.eventstore.EventCriteria} based on the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
 import org.axonframework.tracing.NoOpSpanFactory;
-import org.axonframework.tracing.SpanFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,27 +36,28 @@ import javax.annotation.Nonnull;
 import static org.axonframework.common.BuilderUtils.assertNonNull;
 
 /**
- * Abstract implementation of an {@link EventStore} that uses a {@link EventStorageEngine} to store and load events.
+ * Abstract implementation of an {@link LegacyEventStore} that uses a {@link EventStorageEngine} to store and load events.
  *
  * @author Rene de Waele
  * @since 3.0
+ * @deprecated This will be removed.
  */
-@Deprecated // TODO Remove once SimpleEventStore is fully integrated
-public abstract class AbstractEventStore extends AbstractEventBus implements EventStore {
+@Deprecated(since = "5.0.0")
+public abstract class AbstractLegacyEventStore extends AbstractEventBus implements LegacyEventStore {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractEventStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractLegacyEventStore.class);
 
     private final EventStorageEngine storageEngine;
 
     /**
-     * Instantiate an {@link AbstractEventStore} based on the fields contained in the {@link Builder}.
+     * Instantiate an {@link AbstractLegacyEventStore} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the {@link EventStorageEngine} is not {@code null}, and will throw an
      * {@link AxonConfigurationException} if it is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link AbstractEventStore} instance
+     * @param builder the {@link Builder} used to instantiate a {@link AbstractLegacyEventStore} instance
      */
-    protected AbstractEventStore(Builder builder) {
+    protected AbstractLegacyEventStore(Builder builder) {
         super(builder);
         this.storageEngine = builder.storageEngine;
     }
@@ -183,7 +183,7 @@ public abstract class AbstractEventStore extends AbstractEventBus implements Eve
     }
 
     /**
-     * Abstract Builder class to instantiate an {@link AbstractEventStore}.
+     * Abstract Builder class to instantiate an {@link AbstractLegacyEventStore}.
      * <p>
      * The {@link MessageMonitor} is defaulted to an {@link NoOpMessageMonitor} and the
      * {@link org.axonframework.eventhandling.EventBusSpanFactory} defaults to a

@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventStoreTransaction;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
@@ -53,7 +53,7 @@ class AsyncEventSourcingRepositoryTest {
     private static final Set<Tag> TEST_TAGS = Set.of(new Tag("aggregateId", "id"));
     private static final EventCriteria TEST_CRITERIA = EventCriteria.havingTags("aggregateId", "id");
 
-    private AsyncEventStore eventStore;
+    private EventStore eventStore;
     private EventStoreTransaction eventStoreTransaction;
 
     private AsyncEventSourcingRepository<String, String> testSubject;

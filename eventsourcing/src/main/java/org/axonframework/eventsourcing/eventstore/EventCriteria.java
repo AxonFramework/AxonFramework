@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 /**
  * Describes the criteria for {@link EventStoreTransaction#source(SourcingCondition) sourcing} or
  * {@link StreamableEventSource#open(StreamingCondition) streaming} events. The criteria are used to filter the events
- * to read from the {@link AsyncEventStore event store}.
+ * to read from the {@link EventStore event store}.
  * <p>
  * <h3>Filtering</h3>
  * Filtering happens based on the {@link TaggedEventMessage#tags() tags} of the event, indicating an association during
@@ -288,7 +288,7 @@ public sealed interface EventCriteria
 
     /**
      * Flatten this, possibly nested, {@code EventCriteria} into a {@link Set} of {@link EventCriterion}. These
-     * {@code EventCriterion} instances can be used by the {@link AsyncEventStore} to construct queries without the need
+     * {@code EventCriterion} instances can be used by the {@link EventStore} to construct queries without the need
      * to interpret the criteria.
      *
      * @return The flattened set of {@code EventCriteria}.

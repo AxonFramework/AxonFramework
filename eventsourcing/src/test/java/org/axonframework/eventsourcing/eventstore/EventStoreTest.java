@@ -35,16 +35,16 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class validating the {@code default} methods of the {@link AsyncEventStore}.
+ * Test class validating the {@code default} methods of the {@link EventStore}.
  *
  * @author Steven van Beelen
  */
-class AsyncEventStoreTest {
+class EventStoreTest {
 
     private AtomicReference<ProcessingContext> processingContextReference;
     private AtomicReference<List<EventMessage<?>>> appendedEventsReference;
 
-    private AsyncEventStore testSubject;
+    private EventStore testSubject;
 
     @BeforeEach
     void setUp() {
@@ -71,7 +71,7 @@ class AsyncEventStoreTest {
         assertTrue(testAppendedEvents.contains(testEventTwo));
     }
 
-    static class StubEventStore implements AsyncEventStore {
+    static class StubEventStore implements EventStore {
 
         private final AtomicReference<ProcessingContext> processingContext;
         private final AtomicReference<List<EventMessage<?>>> appendedEvents;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.conflictresolution.ConflictResolution;
 import org.axonframework.eventsourcing.conflictresolution.DefaultConflictResolver;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
@@ -34,7 +34,6 @@ import org.axonframework.modelling.command.Repository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
-import org.axonframework.tracing.SpanFactory;
 
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -46,16 +45,16 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
 /**
  * Abstract repository implementation that allows easy implementation of an Event Sourcing mechanism. It will
  * automatically publish new events to the given {@link org.axonframework.eventhandling.EventBus} and delegate event
- * storage to the provided {@link org.axonframework.eventsourcing.eventstore.EventStore}.
+ * storage to the provided {@link LegacyEventStore}.
  *
  * @param <T> The type of aggregate this repository stores
  * @author Allard Buijze
- * @see org.axonframework.eventsourcing.eventstore.EventStore
+ * @see LegacyEventStore
  * @since 0.1
  */
 public class EventSourcingRepository<T> extends LockingRepository<T, EventSourcedAggregate<T>> {
 
-    private final EventStore eventStore;
+    private final LegacyEventStore eventStore;
     private final SnapshotTriggerDefinition snapshotTriggerDefinition;
     private final AggregateFactory<T> aggregateFactory;
     private final RepositoryProvider repositoryProvider;
@@ -74,7 +73,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * instantiated internally based on the {@code aggregateType}. Hence, one of both is a hard requirement, and will
      * also result in an AxonConfigurationException if both are missing.
      * <p>
-     * Additionally, the builder will assert that the {@link LockFactory}, {@link EventStore} and
+     * Additionally, the builder will assert that the {@link LockFactory}, {@link LegacyEventStore} and
      * {@link SnapshotTriggerDefinition} are not {@code null}, resulting in an AxonConfigurationException if for any of
      * these this is the case. The {@link RepositorySpanFactory} is defaulted to a
      * {@link org.axonframework.modelling.command.DefaultRepositorySpanFactory} backed by a
@@ -107,7 +106,7 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * AggregateFactory can be set directly or it will be instantiated internally based on the {@code aggregateType}.
      * Hence, one of both is a hard requirement.
      * <p>
-     * Additionally, the {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
+     * Additionally, the {@link LegacyEventStore} is a <b>hard requirement</b> and as such should be provided.
      *
      * @return a Builder to be able to create a {@link EventSourcingRepository}
      */
@@ -232,13 +231,13 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
      * AggregateFactory can be set directly or it will be instantiated internally based on the {@code aggregateType}.
      * Hence, one of both is a hard requirement.
      * <p>
-     * Additionally, the {@link EventStore} is a <b>hard requirement</b> and as such should be provided.
+     * Additionally, the {@link LegacyEventStore} is a <b>hard requirement</b> and as such should be provided.
      *
      * @param <T> a generic specifying the Aggregate type contained in this {@link Repository} implementation
      */
     public static class Builder<T> extends LockingRepository.Builder<T> {
 
-        protected EventStore eventStore;
+        protected LegacyEventStore eventStore;
         protected SnapshotTriggerDefinition snapshotTriggerDefinition = NoSnapshotTriggerDefinition.INSTANCE;
         private AggregateFactory<T> aggregateFactory;
         protected RepositoryProvider repositoryProvider;
@@ -303,13 +302,13 @@ public class EventSourcingRepository<T> extends LockingRepository<T, EventSource
         }
 
         /**
-         * Sets the {@link EventStore} that holds the event stream this repository needs to event source an Aggregate.
+         * Sets the {@link LegacyEventStore} that holds the event stream this repository needs to event source an Aggregate.
          *
-         * @param eventStore an {@link EventStore} that holds the event stream this repository needs to event source
+         * @param eventStore an {@link LegacyEventStore} that holds the event stream this repository needs to event source
          *                   an Aggregate
          * @return the current Builder instance, for fluent interfacing
          */
-        public Builder<T> eventStore(EventStore eventStore) {
+        public Builder<T> eventStore(LegacyEventStore eventStore) {
             assertNonNull(eventStore, "EventStore may not be null");
             this.eventStore = eventStore;
             return this;

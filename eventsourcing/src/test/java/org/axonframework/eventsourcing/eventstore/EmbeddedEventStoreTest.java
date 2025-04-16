@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,8 +57,8 @@ import static org.mockito.Mockito.*;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
- * Test suite validating the {@link EmbeddedEventStore}. Expects end users to make a concrete implementation choosing an
- * {@link EventStorageEngine} implementation to use during testing.
+ * Test suite validating the {@link LegacyEmbeddedEventStore}. Expects end users to make a concrete implementation
+ * choosing an {@link EventStorageEngine} implementation to use during testing.
  *
  * @author Rene de Waele
  * @author Steven van Beelen
@@ -70,7 +70,7 @@ public abstract class EmbeddedEventStoreTest {
     private static final long CLEANUP_DELAY = 10000;
     private static final boolean OPTIMIZE_EVENT_CONSUMPTION = true;
 
-    private EmbeddedEventStore testSubject;
+    private LegacyEmbeddedEventStore testSubject;
     protected TransactionManager transactionManager;
     private EventStorageEngine storageEngine;
     private ThreadFactory threadFactory;
@@ -81,7 +81,7 @@ public abstract class EmbeddedEventStoreTest {
         spanFactory = new TestSpanFactory();
         transactionManager = getTransactionManager();
         storageEngine = spy(createStorageEngine());
-        threadFactory = spy(new AxonThreadFactory(EmbeddedEventStore.class.getSimpleName()));
+        threadFactory = spy(new AxonThreadFactory(LegacyEmbeddedEventStore.class.getSimpleName()));
         newTestSubject(CACHED_EVENTS, FETCH_DELAY, CLEANUP_DELAY, OPTIMIZE_EVENT_CONSUMPTION);
     }
 
@@ -107,19 +107,18 @@ public abstract class EmbeddedEventStoreTest {
                                 long fetchDelay,
                                 long cleanupDelay,
                                 boolean optimizeEventConsumption) {
-        Optional.ofNullable(testSubject).ifPresent(EmbeddedEventStore::shutDown);
-        testSubject = EmbeddedEventStore.builder()
-                                        .storageEngine(storageEngine)
-                                        .cachedEvents(cachedEvents)
-                                        .fetchDelay(fetchDelay)
-                                        .cleanupDelay(cleanupDelay)
-                                        .threadFactory(threadFactory)
-                                        .optimizeEventConsumption(optimizeEventConsumption)
-                                        .spanFactory(DefaultEventBusSpanFactory.builder()
-                                                                               .spanFactory(spanFactory)
-                                                                               .build()
-                                        )
-                                        .build();
+        Optional.ofNullable(testSubject).ifPresent(LegacyEmbeddedEventStore::shutDown);
+        testSubject = LegacyEmbeddedEventStore.builder()
+                                              .storageEngine(storageEngine)
+                                              .cachedEvents(cachedEvents)
+                                              .fetchDelay(fetchDelay)
+                                              .cleanupDelay(cleanupDelay)
+                                              .threadFactory(threadFactory)
+                                              .optimizeEventConsumption(optimizeEventConsumption)
+                                              .spanFactory(DefaultEventBusSpanFactory.builder()
+                                                                                     .spanFactory(spanFactory)
+                                                                                     .build())
+                                              .build();
     }
 
     @AfterEach

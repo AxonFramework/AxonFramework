@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.MultiSourceTrackingToken;
 import org.axonframework.eventhandling.MultiStreamableMessageSource;
 import org.axonframework.eventhandling.TrackedEventMessage;
-import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
@@ -55,13 +55,13 @@ class MultiStreamableMessageSourceTest {
 
     private MultiStreamableMessageSource testSubject;
 
-    private EmbeddedEventStore eventStoreA;
-    private EmbeddedEventStore eventStoreB;
+    private LegacyEmbeddedEventStore eventStoreA;
+    private LegacyEmbeddedEventStore eventStoreB;
 
     @BeforeEach
     void setUp() {
-        eventStoreA = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
-        eventStoreB = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
+        eventStoreA = LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
+        eventStoreB = LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine()).build();
 
         testSubject = MultiStreamableMessageSource.builder()
                                                   .addMessageSource("eventStoreA", eventStoreA)
@@ -362,8 +362,8 @@ class MultiStreamableMessageSourceTest {
                 Comparator.comparing((Map.Entry<String, TrackedEventMessage<?>> e) -> !e.getKey().equals("eventStoreA"))
                           .thenComparing(e -> e.getValue().getTimestamp());
 
-        EmbeddedEventStore eventStoreC = EmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine())
-                                                           .build();
+        LegacyEmbeddedEventStore eventStoreC = LegacyEmbeddedEventStore.builder().storageEngine(new InMemoryEventStorageEngine())
+                                                                       .build();
 
         MultiStreamableMessageSource prioritySourceTestSubject =
                 MultiStreamableMessageSource.builder()

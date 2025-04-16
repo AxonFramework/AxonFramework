@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.utils.StubDomainEvent;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -51,7 +51,7 @@ public class AggregateSnapshotterTest {
         mockAggregateFactory = mock(AggregateFactory.class);
         when(mockAggregateFactory.getAggregateType()).thenReturn(StubAggregate.class);
         testSubject = AggregateSnapshotter.builder()
-                                          .eventStore(mock(EventStore.class))
+                                          .eventStore(mock(LegacyEventStore.class))
                                           .aggregateFactories(singletonList(mockAggregateFactory))
                                           .build();
     }

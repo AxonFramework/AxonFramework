@@ -19,7 +19,7 @@ package org.axonframework.config;
 import jakarta.inject.Inject;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.eventsourcing.eventstore.EventStore;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.junit.jupiter.api.*;
 
@@ -58,7 +58,7 @@ public class ConfigurationResourceInjectorTest {
         private String inexistent;
 
         private CommandGateway commandGateway;
-        private EventStore eventStore;
+        private LegacyEventStore eventStore;
 
         @Inject
         public void setCommandGateway(CommandGateway commandGateway) {
@@ -66,7 +66,7 @@ public class ConfigurationResourceInjectorTest {
         }
 
         @Inject
-        public void setEventStore(EventStore eventStore) {
+        public void setEventStore(LegacyEventStore eventStore) {
             this.eventStore = eventStore;
         }
     }

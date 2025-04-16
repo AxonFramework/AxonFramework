@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.PayloadBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
@@ -64,7 +64,7 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
         assertTrue(eventStorageEngine.isPresent());
         assertInstanceOf(AsyncInMemoryEventStorageEngine.class, eventStorageEngine.get());
 
-        Optional<AsyncEventStore> eventStore = result.getOptionalComponent(AsyncEventStore.class);
+        Optional<EventStore> eventStore = result.getOptionalComponent(EventStore.class);
         assertTrue(eventStore.isPresent());
         assertInstanceOf(SimpleEventStore.class, eventStore.get());
 
@@ -124,12 +124,12 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
 
     @Test
     void registerEventStoreOverridesDefault() {
-        AsyncEventStore expected = new SimpleEventStore(null, null);
+        EventStore expected = new SimpleEventStore(null, null);
 
         Configuration result = testSubject.registerEventStore(c -> expected)
                                           .build();
 
-        assertEquals(expected, result.getComponent(AsyncEventStore.class));
+        assertEquals(expected, result.getComponent(EventStore.class));
     }
 
     @Test
