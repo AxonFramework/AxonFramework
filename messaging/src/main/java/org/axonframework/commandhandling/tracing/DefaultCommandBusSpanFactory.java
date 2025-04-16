@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@ public class DefaultCommandBusSpanFactory implements CommandBusSpanFactory {
     private final boolean distributedInSameTrace;
 
     /**
-     * Creates a new {@link DefaultCommandBusSpanFactory} using the provided {@code builder}.
+     * Creates a new {@code DefaultCommandBusSpanFactory} using the provided {@code builder}.
      *
-     * @param builder The builder to build the {@link DefaultCommandBusSpanFactory} from.
+     * @param builder The builder to build the {@code DefaultCommandBusSpanFactory} from.
      */
     protected DefaultCommandBusSpanFactory(Builder builder) {
         builder.validate();
@@ -69,13 +69,13 @@ public class DefaultCommandBusSpanFactory implements CommandBusSpanFactory {
     }
 
     /**
-     * Creates a Builder to be able to create a {@link DefaultCommandBusSpanFactory}. The default values are:
+     * Creates a Builder to be able to create a {@code DefaultCommandBusSpanFactory}. The default values are:
      * <ul>
      *     <li>{@code distributedCommandInSameTrace} defaults to {@code true}</li>
      * </ul>
      * The {@code spanFactory} is a required field and should be provided.
      *
-     * @return a Builder to be able to create a {@link DefaultCommandBusSpanFactory}
+     * @return a Builder to be able to create a {@code DefaultCommandBusSpanFactory}
      */
     public static Builder builder() {
         return new Builder();
@@ -108,8 +108,8 @@ public class DefaultCommandBusSpanFactory implements CommandBusSpanFactory {
         /**
          * Sets whether the {@link CommandMessage}s should be handled in the same trace as the dispatching span.
          *
-         * @param distributedInSameTrace whether the {@link CommandMessage CommandsMessages} should be handled in the same trace as the
-         *                               dispatching span.
+         * @param distributedInSameTrace whether the {@link CommandMessage CommandsMessages} should be handled in the
+         *                               same trace as the dispatching span.
          * @return The current Builder instance, for fluent interfacing.
          */
         public Builder distributedInSameTrace(boolean distributedInSameTrace) {

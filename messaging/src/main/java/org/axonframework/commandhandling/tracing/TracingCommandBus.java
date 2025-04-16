@@ -29,8 +29,9 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.tracing.Span;
 
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A {@code CommandBus} wrapper that adds tracing for outgoing and incoming {@link CommandMessage commands}.
@@ -54,21 +55,24 @@ public class TracingCommandBus implements CommandBus {
      */
     public TracingCommandBus(@Nonnull CommandBus delegate,
                              @Nonnull CommandBusSpanFactory spanFactory) {
-        this.delegate = Objects.requireNonNull(delegate, "Given CommandBus delegate cannot be null.");
-        this.spanFactory = Objects.requireNonNull(spanFactory, "Given CommandBusSpanFactory cannot be null.");
+        this.delegate = requireNonNull(delegate, "The command bus delegate must be null.");
+        this.spanFactory = requireNonNull(spanFactory, "The CommandBusSpanFactory must not be null.");
     }
 
     @Override
     public TracingCommandBus subscribe(@Nonnull QualifiedName name,
-                                       @Nonnull CommandHandler handler) {
-        delegate.subscribe(name, new TracingHandler(Objects.requireNonNull(handler, "Given handler cannot be null.")));
+                                       @Nonnull CommandHandler commandHandler) {
+        delegate.subscribe(name,
+                           new TracingHandler(requireNonNull(commandHandler, "The command handler cannot be null.")));
         return this;
     }
 
     @Override
     public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
                                                             @Nullable ProcessingContext processingContext) {
-        Span span = spanFactory.createDispatchCommandSpan(command, false);
+        Span span = spanFactory.createDispatchCommandSpan(
+                requireNonNull(command, "The command message cannot be null."), false
+        );
         return span.runSupplierAsync(() -> delegate.dispatch(spanFactory.propagateContext(command), processingContext));
     }
 
@@ -88,8 +92,10 @@ public class TracingCommandBus implements CommandBus {
 
         @Nonnull
         @Override
-        public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
-                                                                              @Nonnull ProcessingContext processingContext) {
+        public MessageStream.Single<? extends CommandResultMessage<?>> handle(
+                @Nonnull CommandMessage<?> message,
+                @Nonnull ProcessingContext processingContext
+        ) {
             return spanFactory.createHandleCommandSpan(message, false)
                               .runSupplier(() -> handler.handle(message, processingContext));
         }
