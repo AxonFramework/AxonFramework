@@ -30,7 +30,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyBatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.serialization.Serializer;
@@ -63,7 +63,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * {@link org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine} implementations should be used instead.
  */
 @Deprecated
-public class JpaEventStorageEngine extends BatchingEventStorageEngine {
+public class JpaEventStorageEngine extends LegacyBatchingEventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(JpaEventStorageEngine.class);
 
@@ -375,7 +375,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
      * The event and snapshot {@link Serializer}, the {@link EntityManagerProvider} and {@link TransactionManager} are
      * <b>hard requirements</b> and as such should be provided.
      */
-    public static class Builder extends BatchingEventStorageEngine.Builder {
+    public static class Builder extends LegacyBatchingEventStorageEngine.Builder {
 
         private EntityManagerProvider entityManagerProvider;
         private TransactionManager transactionManager;

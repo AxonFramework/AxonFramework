@@ -32,7 +32,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedDomainEventData;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyBatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.AppendEventsStatementBuilder;
@@ -98,7 +98,7 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  * @author Rene de Waele
  * @since 3.0
  */
-public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
+public class JdbcEventStorageEngine extends LegacyBatchingEventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -838,7 +838,7 @@ public class JdbcEventStorageEngine extends BatchingEventStorageEngine {
      * The event and snapshot {@link Serializer}, {@link ConnectionProvider} and {@link TransactionManager} are <b>hard
      * requirements</b> and as such should be provided.
      */
-    public static class Builder extends BatchingEventStorageEngine.Builder {
+    public static class Builder extends LegacyBatchingEventStorageEngine.Builder {
 
         private ConnectionProvider connectionProvider;
         private TransactionManager transactionManager;

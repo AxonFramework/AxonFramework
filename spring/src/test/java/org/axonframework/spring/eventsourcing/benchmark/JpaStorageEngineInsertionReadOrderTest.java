@@ -25,7 +25,7 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyBatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.eventsourcing.utils.EventStoreTestUtils;
@@ -76,7 +76,7 @@ class JpaStorageEngineInsertionReadOrderTest {
     private PlatformTransactionManager tx;
     private TransactionTemplate txTemplate;
 
-    private BatchingEventStorageEngine testSubject;
+    private LegacyBatchingEventStorageEngine testSubject;
 
     @BeforeEach
     void setUp() {

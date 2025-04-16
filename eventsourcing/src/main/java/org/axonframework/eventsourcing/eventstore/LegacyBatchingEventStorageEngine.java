@@ -46,7 +46,8 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Rene de Waele
  * @since 3.0
  */
-public abstract class BatchingEventStorageEngine extends AbstractLegacyEventStorageEngine {
+@Deprecated
+public abstract class LegacyBatchingEventStorageEngine extends AbstractLegacyEventStorageEngine {
 
     private static final int DEFAULT_BATCH_SIZE = 100;
     /**
@@ -61,14 +62,14 @@ public abstract class BatchingEventStorageEngine extends AbstractLegacyEventStor
     private final Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate;
 
     /**
-     * Instantiate a {@link BatchingEventStorageEngine} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link LegacyBatchingEventStorageEngine} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the event and snapshot {@link Serializer} are not {@code null}, and will throw an {@link
      * AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link BatchingEventStorageEngine} instance
+     * @param builder the {@link Builder} used to instantiate a {@link LegacyBatchingEventStorageEngine} instance
      */
-    protected BatchingEventStorageEngine(Builder builder) {
+    protected LegacyBatchingEventStorageEngine(Builder builder) {
         super(builder);
         this.batchSize = builder.batchSize;
         this.finalAggregateBatchPredicate = getOrDefault(builder.finalAggregateBatchPredicate, this::defaultFinalAggregateBatchPredicate);
@@ -161,7 +162,7 @@ public abstract class BatchingEventStorageEngine extends AbstractLegacyEventStor
     }
 
     /**
-     * Abstract Builder class to instantiate a {@link BatchingEventStorageEngine}.
+     * Abstract Builder class to instantiate a {@link LegacyBatchingEventStorageEngine}.
      * <p>
      * The {@link EventUpcaster} defaults to a {@link NoOpEventUpcaster}, the {@code snapshotFilter} defaults to a
      * {@link SnapshotFilter#allowAll()} instance and the {@code batchSize} is defaulted to an integer of size {@code
@@ -175,19 +176,19 @@ public abstract class BatchingEventStorageEngine extends AbstractLegacyEventStor
         private Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate;
 
         @Override
-        public BatchingEventStorageEngine.Builder snapshotSerializer(Serializer snapshotSerializer) {
+        public LegacyBatchingEventStorageEngine.Builder snapshotSerializer(Serializer snapshotSerializer) {
             super.snapshotSerializer(snapshotSerializer);
             return this;
         }
 
         @Override
-        public BatchingEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
+        public LegacyBatchingEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
             super.upcasterChain(upcasterChain);
             return this;
         }
 
         @Override
-        public BatchingEventStorageEngine.Builder persistenceExceptionResolver(
+        public LegacyBatchingEventStorageEngine.Builder persistenceExceptionResolver(
                 PersistenceExceptionResolver persistenceExceptionResolver
         ) {
             super.persistenceExceptionResolver(persistenceExceptionResolver);
@@ -195,7 +196,7 @@ public abstract class BatchingEventStorageEngine extends AbstractLegacyEventStor
         }
 
         @Override
-        public BatchingEventStorageEngine.Builder eventSerializer(Serializer eventSerializer) {
+        public LegacyBatchingEventStorageEngine.Builder eventSerializer(Serializer eventSerializer) {
             super.eventSerializer(eventSerializer);
             return this;
         }
@@ -209,14 +210,14 @@ public abstract class BatchingEventStorageEngine extends AbstractLegacyEventStor
          *
          * @return the current Builder instance, for fluent interfacing
          */
-        public BatchingEventStorageEngine.Builder finalAggregateBatchPredicate(Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate) {
+        public LegacyBatchingEventStorageEngine.Builder finalAggregateBatchPredicate(Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate) {
             BuilderUtils.assertNonNull(finalAggregateBatchPredicate, "The finalAggregateBatchPredicate must not be null");
             this.finalAggregateBatchPredicate = finalAggregateBatchPredicate;
             return this;
         }
 
         @Override
-        public BatchingEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
+        public LegacyBatchingEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
             super.snapshotFilter(snapshotFilter);
             return this;
         }
