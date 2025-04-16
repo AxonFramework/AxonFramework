@@ -40,8 +40,9 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  *
  * @author Rene de Waele
  * @since 3.0
+ * @deprecated This will be removed.
  */
-@Deprecated
+@Deprecated(since = "5.0.0")
 public abstract class AbstractLegacyEventStore extends AbstractEventBus implements LegacyEventStore {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractLegacyEventStore.class);

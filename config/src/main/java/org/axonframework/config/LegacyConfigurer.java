@@ -61,7 +61,7 @@ import javax.annotation.Nonnull;
  * @since 3.0
  * @deprecated In favor of the {@link ComponentRegistry}.
  */
-@Deprecated
+@Deprecated(since = "5.0.0")
 public interface LegacyConfigurer extends LifecycleOperations {
 
     /**
