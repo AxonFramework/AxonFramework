@@ -16,8 +16,7 @@
 
 package org.axonframework.eventhandling.gateway;
 
-import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.messaging.MessageDispatchInterceptorSupport;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,35 +24,30 @@ import javax.annotation.Nonnull;
 
 /**
  * Interface towards the Event Handling components of an application. This interface provides a friendlier API toward
- * the event bus. The EventGateway allows for components to easily publish events.
+ * the {@link org.axonframework.eventhandling.EventSink} and allows for components to easily publish events.
+ * <p>
+ * Any call to this interface will publish the given events in a new
+ * {@link org.axonframework.messaging.unitofwork.AsyncUnitOfWork}.
  *
  * @author Bert Laverman
  * @see DefaultEventGateway
  * @since 4.1
  */
-public interface EventGateway extends MessageDispatchInterceptorSupport<EventMessage<?>> {
+public interface EventGateway {
 
     /**
-     * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed
-     * listeners.
-     * <p>
-     * Implementations may treat the given {@code events} as a single batch and distribute the events as such to
-     * all subscribed EventListeners.
+     * Publish a collection of events immediately in a new {@link ProcessingContext}.
      *
-     * @param events The collection of events to publish
+     * @param events The collection of events to publish.
      */
     default void publish(Object... events) {
         publish(Arrays.asList(events));
     }
 
     /**
-     * Publish a collection of events on this bus (one, or multiple). The events will be dispatched to all subscribed
-     * listeners.
-     * <p>
-     * Implementations may treat the given {@code events} as a single batch and distribute the events as such to all
-     * subscribed EventListeners.
+     * Publish a collection of events immediately in a new {@link ProcessingContext}.
      *
-     * @param events The collection of events to publish
+     * @param events The collection of events to publish.
      */
     void publish(@Nonnull List<?> events);
 }

@@ -18,15 +18,12 @@ package org.axonframework.integrationtests.testsuite.student;
 
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
-import org.axonframework.eventhandling.EventSink;
-import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.integrationtests.testsuite.student.commands.ChangeStudentNameCommand;
 import org.axonframework.integrationtests.testsuite.student.events.StudentNameChangedEvent;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.annotation.InjectEntity;
 import org.junit.jupiter.api.*;
 
@@ -43,11 +40,13 @@ class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite 
     void canHandleCommandThatTargetsOneEntityUsingStateManager() {
         registerCommandHandlers(handlerPhase -> handlerPhase.commandHandler(
                 new QualifiedName(ChangeStudentNameCommand.class),
-                (command, state, context) -> {
+                c -> (command, state, context) -> {
+                    EventAppender eventAppender = EventAppender.forContext(context, c);
                     ChangeStudentNameCommand payload = (ChangeStudentNameCommand) command.getPayload();
                     Student student = state.loadEntity(Student.class, payload.id(), context).join();
-                    appendEvent(context,
-                                new StudentNameChangedEvent(student.getId(), payload.name()));
+                    eventAppender.append(new StudentNameChangedEvent(student.getId(), payload.name()));
+                    // Model through magic of repository automatically updated
+                    assertEquals(student.getName(), payload.name());
                     return MessageStream.just(SUCCESSFUL_COMMAND_RESULT).cast();
                 }
         ));
@@ -86,13 +85,9 @@ class SingleEntityCommandHandlingComponentTest extends AbstractStudentTestSuite 
         @CommandHandler
         public void handle(ChangeStudentNameCommand command,
                            @InjectEntity Student student,
-                           EventSink eventSink,
-                           ProcessingContext context) {
+                           EventAppender eventAppender) {
             // Change name through event
-            eventSink.publish(context, new GenericEventMessage<>(
-                    new MessageType(StudentNameChangedEvent.class),
-                    new StudentNameChangedEvent(student.getId(), command.name())
-            ));
+            eventAppender.append(new StudentNameChangedEvent(student.getId(), command.name()));
             // Model through magic of repository automatically updated
             assertEquals(student.getName(), command.name());
         }
