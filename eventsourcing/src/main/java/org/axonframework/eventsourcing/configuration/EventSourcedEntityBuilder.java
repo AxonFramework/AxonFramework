@@ -21,7 +21,7 @@ import org.axonframework.configuration.ComponentFactory;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.eventsourcing.EntityEvolver;
+import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.annotation.EventSourcedEntityFactory;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.eventsourcing;
+package org.axonframework.modelling;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;

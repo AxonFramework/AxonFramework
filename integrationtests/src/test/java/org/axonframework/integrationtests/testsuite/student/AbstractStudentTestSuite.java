@@ -20,9 +20,8 @@ import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Configuration;
-import org.axonframework.eventsourcing.AnnotationBasedEntityEvolver;
+import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.eventsourcing.EntityEvolver;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
@@ -34,6 +33,7 @@ import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.modelling.repository.Repository;
 import org.junit.jupiter.api.*;
@@ -155,10 +155,10 @@ public abstract class AbstractStudentTestSuite {
 
     /**
      * Returns the {@link EntityEvolver} for the {@link Student} model. Defaults to using the
-     * {@link AnnotationBasedEntityEvolver} to use the annotations placed.
+     * {@link AnnotationBasedEventSourcedComponent} to use the annotations placed.
      */
     protected EntityEvolver<Student> studentEvolver(Configuration config) {
-        return new AnnotationBasedEntityEvolver<>(Student.class);
+        return new AnnotationBasedEventSourcedComponent<>(Student.class);
     }
 
     protected void changeStudentName(String studentId, String name) {

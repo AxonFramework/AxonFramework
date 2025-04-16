@@ -18,6 +18,7 @@ package org.axonframework.eventsourcing;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.modelling.EntityEvolver;
 
 import java.util.Set;
 
