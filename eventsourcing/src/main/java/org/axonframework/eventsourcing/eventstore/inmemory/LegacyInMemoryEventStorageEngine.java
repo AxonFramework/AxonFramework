@@ -54,6 +54,7 @@ import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
  * @author Rene de Waele
  * @since 3.0
  */
+@Deprecated
 public class LegacyInMemoryEventStorageEngine implements LegacyEventStorageEngine {
 
     @SuppressWarnings("SortedCollectionWithNonComparableKeys")

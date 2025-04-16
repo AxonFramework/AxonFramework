@@ -39,6 +39,7 @@ import javax.annotation.Nonnull;
  * @author Allard Buijze
  * @since 3.1
  */
+@Deprecated
 public class LegacyFilteringEventStorageEngine implements LegacyEventStorageEngine {
 
     private final LegacyEventStorageEngine delegate;

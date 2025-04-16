@@ -48,6 +48,7 @@ import static org.axonframework.eventsourcing.EventStreamUtils.upcastAndDeserial
  * @author Rene de Waele
  * @since 3.0
  */
+@Deprecated
 public abstract class AbstractLegacyEventStorageEngine implements LegacyEventStorageEngine {
 
     private final Serializer snapshotSerializer;

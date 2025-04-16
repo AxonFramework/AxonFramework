@@ -50,6 +50,7 @@ import javax.annotation.Nonnull;
  * @author Allard Buijze
  * @since 3.0
  */
+@Deprecated
 public class LegacySequenceEventStorageEngine implements LegacyEventStorageEngine {
 
     private final LegacyEventStorageEngine historicStorage, activeStorage;
