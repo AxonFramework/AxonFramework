@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.TrackerStatus;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventhandling.WrappedToken;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
-import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
@@ -311,7 +311,7 @@ class WorkPackage {
                          segment.getSegmentId(), name, eventBatch.size());
             try {
                 processingEvents.set(true);
-                LegacyUnitOfWork<TrackedEventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventBatch);
+                LegacyUnitOfWork<TrackedEventMessage<?>> unitOfWork = new LegacyBatchingUnitOfWork<>(eventBatch);
                 unitOfWork.attachTransaction(transactionManager);
                 unitOfWork.resources().put(segmentIdResourceKey, segment.getSegmentId());
                 unitOfWork.resources().put(lastTokenResourceKey, lastConsumedToken);

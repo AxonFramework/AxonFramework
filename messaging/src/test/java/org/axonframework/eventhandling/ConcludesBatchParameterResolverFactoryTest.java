@@ -18,7 +18,7 @@ package org.axonframework.eventhandling;
 
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.junit.jupiter.api.*;
 
@@ -64,15 +64,15 @@ class ConcludesBatchParameterResolverFactoryTest {
     @Test
     void resolvesToFalseWithBatchingUnitOfWorkIfMessageIsNotLast() {
         List<? extends EventMessage<?>> events = createEvents(5);
-        new BatchingUnitOfWork<>(events).execute(() -> assertFalse(testSubject.resolveParameterValue(events.get(0),
-                                                                                                     null)));
+        new LegacyBatchingUnitOfWork<>(events)
+                .execute(() -> assertFalse(testSubject.resolveParameterValue(events.get(0), null)));
     }
 
     @Test
     void resolvesToFalseWithBatchingUnitOfWorkIfMessageIsLast() {
         List<? extends EventMessage<?>> events = createEvents(5);
-        new BatchingUnitOfWork<>(events).execute(() -> assertTrue(testSubject.resolveParameterValue(events.get(4),
-                                                                                                    null)));
+        new LegacyBatchingUnitOfWork<>(events)
+                .execute(() -> assertTrue(testSubject.resolveParameterValue(events.get(4), null)));
     }
 
     @SuppressWarnings("unused")

@@ -24,7 +24,7 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.lifecycle.Lifecycle;
 import org.axonframework.lifecycle.Phase;
 import org.axonframework.messaging.SubscribableMessageSource;
-import org.axonframework.messaging.unitofwork.BatchingUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.messaging.unitofwork.RollbackConfigurationType;
 import org.axonframework.monitoring.MessageMonitor;
@@ -130,7 +130,8 @@ public class SubscribingEventProcessor extends AbstractEventProcessor implements
      */
     protected void process(List<? extends EventMessage<?>> eventMessages) {
         try {
-            BatchingUnitOfWork<? extends EventMessage<?>> unitOfWork = new BatchingUnitOfWork<>(eventMessages);
+            LegacyBatchingUnitOfWork<? extends EventMessage<?>> unitOfWork =
+                    new LegacyBatchingUnitOfWork<>(eventMessages);
             unitOfWork.attachTransaction(transactionManager);
             processInUnitOfWork(eventMessages, unitOfWork);
         } catch (RuntimeException e) {

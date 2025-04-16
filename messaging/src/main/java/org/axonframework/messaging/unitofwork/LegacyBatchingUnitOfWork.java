@@ -46,7 +46,7 @@ import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
  * @deprecated In favor of the {@link AsyncUnitOfWork}.
  */
 @Deprecated(since = "5.0.0")
-public class BatchingUnitOfWork<T extends Message<?>> extends AbstractLegacyUnitOfWork<T> {
+public class LegacyBatchingUnitOfWork<T extends Message<?>> extends AbstractLegacyUnitOfWork<T> {
 
     private final List<MessageProcessingContext<T>> processingContexts;
     private MessageProcessingContext<T> processingContext;
@@ -57,7 +57,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractLegacyUnit
      * @param messages batch of messages to process
      */
     @SafeVarargs
-    public BatchingUnitOfWork(T... messages) {
+    public LegacyBatchingUnitOfWork(T... messages) {
         this(Arrays.asList(messages));
     }
 
@@ -66,7 +66,7 @@ public class BatchingUnitOfWork<T extends Message<?>> extends AbstractLegacyUnit
      *
      * @param messages batch of messages to process
      */
-    public BatchingUnitOfWork(List<T> messages) {
+    public LegacyBatchingUnitOfWork(List<T> messages) {
         Assert.isFalse(messages.isEmpty(), () -> "The list of Messages to process is empty");
         processingContexts = messages.stream().map(MessageProcessingContext::new).collect(Collectors.toList());
         processingContext = processingContexts.get(0);
