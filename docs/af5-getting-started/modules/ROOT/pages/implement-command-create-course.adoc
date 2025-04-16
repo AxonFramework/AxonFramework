@@ -1,10 +1,7 @@
-:navtitle: Feature: Create Course
-:reftext: Implementing the create new course feature
-
-= Create Course Feature
+= Feature: Course Creation
 
 When implementing a new feature in Axon Framework 5, the first step is defining the messages that will flow through the system. Messages are first-class citizens in Axon, and everything is designed around them.
-They are inputs and ouputs of the certain features (slices in the Vertical Slice Architecture).
+They are inputs and outputs of the certain features (slices in the Vertical Slice Architecture).
 While designing the app and also during execution—you're always in the context of some command.
 
 For our first feature, we'll implement the capability to create a new course.

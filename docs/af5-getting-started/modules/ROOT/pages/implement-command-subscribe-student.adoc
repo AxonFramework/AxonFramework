@@ -1,7 +1,5 @@
-:navtitle: Feature: Subscribe Student To Course
-:reftext: Implementing the subscribe student feature
 
-= Subscribe Student Feature
+= Feature: Subscribe Student
 
 One of the major benefits of Axon Framework 5's Vertical Slice Architecture is the ability to implement features independently.
 Now we'll implement the `SubscribeStudentToCourse` feature without needing to implement every feature in between.
@@ -592,5 +590,5 @@ Let's do it! Remember to mark the slice as completed in the Event Modeling diagr
 Thank you for completing this tutorial!
 We hope you've found value in exploring these new APIs and are excited about the upcoming Axon Framework 5 release.
 You now have a unique opportunity to shape the framework's future and transform application development practices across the industry.
-If you'd like to do so, please share your feedback with us. You can do it on link:https://discuss.axoniq.io/t/feedback-template/6034[https://discuss.axoniq.io/c/axonframework/af5-milestones/38][AxonIQ Discuss] or connect directly with our Framework team on LinkedIn.
+If you'd like to do so, please share your feedback with us. You can do it on link:https://discuss.axoniq.io/t/feedback-template/6034[AxonIQ Discuss] or connect directly with our Framework team on LinkedIn.
 Your perspectives are invaluable to us, and we're eager to engage in meaningful discussions about your ideas and experiences.

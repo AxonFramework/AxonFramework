@@ -19,6 +19,7 @@ Axon Framework 5 represents a significant evolution with major improvements to t
 
 Dynamic Consistency Boundary (DCB) - A revolutionary concept that allows more flexible event sourcing patterns overcoming traditional aggregates limitations.
 With this mind-shift, you can organize your code  around features than entities with ease, called link:https://www.baeldung.com/java-vertical-slice-architecture[Vertical Slice Architecture].
+
 * Revisited Configuration - A new, more flexible configuration model.
 * Improved Testing Support - Enhanced testing fixtures that allow you to verify your app configured as same as in the production code.
 * Java 21 Baseline - Taking advantage of the latest Java features.
@@ -45,7 +46,7 @@ Your feedback is incredibly valuable as we refine the framework.
 
 Because of that, your opinion is even more valuable to us.
 Your input will help shape the future of event sourcing with Axon Framework!
-After playing around with the Axon Framework 5, please share your feedback on link:https://discuss.axoniq.io/t/feedback-template/6034[https://discuss.axoniq.io/c/axonframework/af5-milestones/38][AxonIQ Discuss].
+After playing around with the Axon Framework 5, please share your feedback on link:https://discuss.axoniq.io/t/feedback-template/6034[AxonIQ Discuss].
 If you'd like to, please don't hesitate to reach out to our team directly on LinkedIn,
 we will be so happy to talk with you.
 

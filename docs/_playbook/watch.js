@@ -33,8 +33,7 @@ const rebuild = (path) => {
     })
 }
 
-createWatcher("localLinks")
-createWatcher("content")
+createWatcher(__dirname + "/../*")
 
 app.use(express.static('build/site'))
 
