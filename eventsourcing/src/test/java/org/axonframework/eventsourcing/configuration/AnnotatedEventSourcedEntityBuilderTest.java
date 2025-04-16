@@ -148,8 +148,8 @@ class AnnotatedEventSourcedEntityBuilderTest {
         @Override
         public <E, ID> CriteriaResolver<ID> createEventCriteriaResolver(@Nonnull Class<E> entityType,
                                                                         @Nonnull Class<ID> idType,
-                                                                        @Nonnull NewConfiguration configuration) {
-            assertInstanceOf(NewConfiguration.class, configuration);
+                                                                        @Nonnull Configuration configuration) {
+            assertInstanceOf(Configuration.class, configuration);
             return new CustomCriteriaResolver<>();
         }
     }
@@ -174,7 +174,7 @@ class AnnotatedEventSourcedEntityBuilderTest {
         public EventSourcedEntityFactory<CourseId, CustomEntityFactoryCourse> createFactory(
                 @Nonnull Class<CustomEntityFactoryCourse> entityType,
                 @Nonnull Class<CourseId> idType,
-                @Nonnull NewConfiguration configuration
+                @Nonnull Configuration configuration
         ) {
             return new CustomEventSourcedEntityFactory();
         }

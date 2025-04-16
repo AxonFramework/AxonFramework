@@ -17,10 +17,9 @@
 package org.axonframework.eventsourcing.annotation;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
-import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.junit.jupiter.api.*;
@@ -32,11 +31,11 @@ import static org.mockito.Mockito.*;
 
 class AnnotationBasedEventCriteriaResolverTest {
 
-    private static final NewConfiguration configuration = mock(NewConfiguration.class);
-    private static final MessageTypeResolver messageTypeResolver = (clazz) -> new MessageType(null, "MyMessageType", "0.0.5");
+    private static final Configuration configuration = mock(Configuration.class);
+    private static final MessageTypeResolver messageTypeResolver =
+            (clazz) -> new MessageType(null, "MyMessageType", "0.0.5");
     private static final EventSink eventSink = mock(EventSink.class);
     private static final CommandGateway commandGateway = mock(CommandGateway.class);
-
 
     @BeforeEach
     void setUp() {
@@ -89,16 +88,19 @@ class AnnotationBasedEventCriteriaResolverTest {
     @EventSourcedEntity(tagKey = "fallbackTagKey")
     static class FunctionalEventSourcedEntity {
 
+        @SuppressWarnings("unused")
         @EventCriteriaBuilder
         public static EventCriteria buildCriteria(String id) {
             return EventCriteria.havingTags("aggregateIdentifierOfString", id);
         }
 
+        @SuppressWarnings("unused")
         @EventCriteriaBuilder
         public static EventCriteria buildCriteria(Long id) {
             return EventCriteria.havingTags("aggregateIdentifierOfLong", id.toString());
         }
 
+        @SuppressWarnings("unused")
         @EventCriteriaBuilder
         public static EventCriteria buildCriteria(Integer id) {
             return null;
@@ -117,6 +119,7 @@ class AnnotationBasedEventCriteriaResolverTest {
 
     @EventSourcedEntity()
     static class DefaultEventSourcedEntity {
+
     }
 
     @Test
@@ -132,8 +135,11 @@ class AnnotationBasedEventCriteriaResolverTest {
     @EventSourcedEntity
     static class EntityWithManyInjectionParameters {
 
+        @SuppressWarnings("unused")
         @EventCriteriaBuilder
-        public static EventCriteria buildCriteria(String id, MessageTypeResolver messageTypeResolver, EventSink eventSink, CommandGateway commandGateway, NewConfiguration configuration) {
+        public static EventCriteria buildCriteria(String id, MessageTypeResolver messageTypeResolver,
+                                                  EventSink eventSink, CommandGateway commandGateway,
+                                                  Configuration configuration) {
             assertSame(AnnotationBasedEventCriteriaResolverTest.messageTypeResolver, messageTypeResolver);
             assertSame(AnnotationBasedEventCriteriaResolverTest.eventSink, eventSink);
             assertSame(AnnotationBasedEventCriteriaResolverTest.commandGateway, commandGateway);
@@ -150,8 +156,8 @@ class AnnotationBasedEventCriteriaResolverTest {
             var exception = Assertions.assertThrows(
                     IllegalArgumentException.class,
                     () -> new AnnotationBasedEventCriteriaResolver<>(EntityWithNonStaticEventCriteriaBuilder.class,
-                                                                   Object.class,
-                                                                   configuration));
+                                                                     Object.class,
+                                                                     configuration));
             assertEquals(
                     "Method annotated with @EventCriteriaBuilder must be static. Violating method: buildCriteria(java.lang.String)",
                     exception.getMessage()
@@ -161,6 +167,7 @@ class AnnotationBasedEventCriteriaResolverTest {
         @EventSourcedEntity
         static class EntityWithNonStaticEventCriteriaBuilder {
 
+            @SuppressWarnings("unused")
             @EventCriteriaBuilder
             public EventCriteria buildCriteria(String id) {
                 return EventCriteria.havingTags("aggregateIdentifier", id);
@@ -184,6 +191,7 @@ class AnnotationBasedEventCriteriaResolverTest {
         @EventSourcedEntity
         static class EntityWithZeroArgEventCriteriaBuilder {
 
+            @SuppressWarnings("unused")
             @EventCriteriaBuilder
             public static EventCriteria buildCriteria() {
                 return EventCriteria.havingAnyTag();
@@ -205,8 +213,9 @@ class AnnotationBasedEventCriteriaResolverTest {
 
 
         @EventSourcedEntity
-        class EntityWithPrivateEventCriteriaBuilder {
+        static class EntityWithPrivateEventCriteriaBuilder {
 
+            @SuppressWarnings("unused")
             @EventCriteriaBuilder
             private static EventCriteria buildCriteria(String id) {
                 return EventCriteria.havingTags("aggregateIdentifier", id);
@@ -224,8 +233,9 @@ class AnnotationBasedEventCriteriaResolverTest {
 
 
         @EventSourcedEntity
-        class EntityWithVoidReturnValue {
+        static class EntityWithVoidReturnValue {
 
+            @SuppressWarnings("unused")
             @EventCriteriaBuilder
             public static void buildCriteria(String id) {
             }
@@ -265,11 +275,13 @@ class AnnotationBasedEventCriteriaResolverTest {
         @EventSourcedEntity
         static class EntityWithDuplicatedParameterType {
 
+            @SuppressWarnings("unused")
             @EventCriteriaBuilder
             public static EventCriteria buildCriteriaOne(String id) {
                 return EventCriteria.havingAnyTag();
             }
 
+            @SuppressWarnings("unused")
             @EventCriteriaBuilder
             public static EventCriteria buildCriteriaTwo(String id) {
                 return EventCriteria.havingAnyTag();
@@ -286,12 +298,13 @@ class AnnotationBasedEventCriteriaResolverTest {
 
             var criteria = resolver.resolve("id");
             assertEquals(EventCriteria.havingTags("aggregateIdentifier", "id")
-                                 .andBeingOneOfTypes("MyMessageType"), criteria);
+                                      .andBeingOneOfTypes("MyMessageType"), criteria);
         }
 
         @EventSourcedEntity
         static class EntityWithInjectedMessageTypeResolver {
 
+            @SuppressWarnings("unused")
             @EventCriteriaBuilder
             public static EventCriteria buildCriteria(String id, MessageTypeResolver messageTypeResolver) {
                 return EventCriteria.havingTags("aggregateIdentifier", id)
@@ -315,6 +328,7 @@ class AnnotationBasedEventCriteriaResolverTest {
         @EventSourcedEntity
         static class EntityWithUnknownInjectionParameter {
 
+            @SuppressWarnings("unused")
             @EventCriteriaBuilder
             public static EventCriteria buildCriteria(String id, Integer integer) {
                 return EventCriteria.havingTags("aggregateIdentifier", id);

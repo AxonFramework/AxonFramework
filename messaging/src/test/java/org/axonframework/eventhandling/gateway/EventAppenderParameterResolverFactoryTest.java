@@ -16,7 +16,7 @@
 
 package org.axonframework.eventhandling.gateway;
 
-import org.axonframework.configuration.NewConfiguration;
+import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.MessageTypeResolver;
@@ -32,11 +32,12 @@ import static org.mockito.Mockito.*;
 
 class EventAppenderParameterResolverFactoryTest {
 
-    private final NewConfiguration configuration = mock(NewConfiguration.class);
+    private final Configuration configuration = mock(Configuration.class);
     private final EventSink eventSink = mock(EventSink.class);
     private final MessageTypeResolver messageTypeResolver = mock(MessageTypeResolver.class);
-    private final EventAppenderParameterResolverFactory testSubject = new EventAppenderParameterResolverFactory(
-            configuration);
+
+    private final EventAppenderParameterResolverFactory testSubject =
+            new EventAppenderParameterResolverFactory(configuration);
 
     @BeforeEach
     void setUp() {

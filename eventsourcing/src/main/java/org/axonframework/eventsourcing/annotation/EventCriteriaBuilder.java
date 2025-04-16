@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
  * identifier of the entity to load. If you need to resolve multiple identifier types, you can use the
  * {@link EventCriteriaBuilder} annotation on multiple methods.
  * <p>
- * You can define any component from the {@link org.axonframework.configuration.NewConfiguration} as a parameter to the
+ * You can define any component from the {@link org.axonframework.configuration.Configuration} as a parameter to the
  * method to be able to resolve the {@link EventCriteria}. You can also inject the entire configuration as a parameter
  * by declaring it as such. Note that the first parameter must be the identifier, and cannot be a component.
  *

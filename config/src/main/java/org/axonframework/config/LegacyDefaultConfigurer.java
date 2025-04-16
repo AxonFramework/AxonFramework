@@ -770,7 +770,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param configuration The configuration based on which the component is initialized.
      * @return The default EventSink to use.
      */
-    protected EventSink defaultEventSink(Configuration configuration) {
+    protected EventSink defaultEventSink(LegacyConfiguration configuration) {
         EventBus eventBus = configuration.getComponent(EventBus.class);
         return events -> {
             eventBus.publish(events);
@@ -785,7 +785,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
      * @param configuration The configuration based on which the component is initialized.
      * @return The default MessageTypeResolver to use.
      */
-    private MessageTypeResolver defaultMessageTypeResolver(Configuration configuration) {
+    private MessageTypeResolver defaultMessageTypeResolver(LegacyConfiguration configuration) {
         return new ClassBasedMessageTypeResolver();
     }
 
