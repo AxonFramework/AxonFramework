@@ -38,11 +38,6 @@
             <artifactId>axon-eventsourcing</artifactId>
             <version>${axon.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.axonframework</groupId>
-            <artifactId>axon-configuration</artifactId>
-            <version>${axon.version}</version>
-        </dependency>
 
         <!-- Log4j Dependencies -->
         <dependency>
