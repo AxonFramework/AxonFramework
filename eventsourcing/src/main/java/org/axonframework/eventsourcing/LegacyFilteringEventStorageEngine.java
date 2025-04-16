@@ -39,7 +39,7 @@ import javax.annotation.Nonnull;
  * @author Allard Buijze
  * @since 3.1
  */
-public class FilteringEventStorageEngine implements LegacyEventStorageEngine {
+public class LegacyFilteringEventStorageEngine implements LegacyEventStorageEngine {
 
     private final LegacyEventStorageEngine delegate;
     private final Predicate<? super EventMessage<?>> filter;
@@ -55,7 +55,7 @@ public class FilteringEventStorageEngine implements LegacyEventStorageEngine {
      * @param delegate the EventStorageEngine to store matching messages in
      * @param filter   the predicate that event messages must match against to be stored
      */
-    public FilteringEventStorageEngine(LegacyEventStorageEngine delegate, Predicate<? super EventMessage<?>> filter) {
+    public LegacyFilteringEventStorageEngine(LegacyEventStorageEngine delegate, Predicate<? super EventMessage<?>> filter) {
         this.delegate = delegate;
         this.filter = filter;
     }

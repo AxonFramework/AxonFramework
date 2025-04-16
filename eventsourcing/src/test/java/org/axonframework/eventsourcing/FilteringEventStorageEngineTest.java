@@ -33,13 +33,13 @@ import static org.mockito.Mockito.*;
 class FilteringEventStorageEngineTest {
 
     private LegacyEventStorageEngine mockStorage;
-    private FilteringEventStorageEngine testSubject;
+    private LegacyFilteringEventStorageEngine testSubject;
 
     @BeforeEach
     void setUp() {
         Predicate<EventMessage<?>> filter = m -> m.getPayload().toString().contains("accept");
         mockStorage = mock(LegacyEventStorageEngine.class);
-        testSubject = new FilteringEventStorageEngine(mockStorage, filter);
+        testSubject = new LegacyFilteringEventStorageEngine(mockStorage, filter);
     }
 
     @Test
