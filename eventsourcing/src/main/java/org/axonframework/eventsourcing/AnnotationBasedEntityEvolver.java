@@ -24,6 +24,7 @@ import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ClasspathHandlerDefinition;
 import org.axonframework.messaging.annotation.ClasspathParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.EntityEvolver;
 
 import static java.util.Objects.requireNonNull;
 

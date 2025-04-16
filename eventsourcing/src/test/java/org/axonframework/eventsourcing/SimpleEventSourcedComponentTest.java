@@ -22,6 +22,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.EntityEvolver;
 import org.junit.jupiter.api.*;
 
 import java.util.HashMap;

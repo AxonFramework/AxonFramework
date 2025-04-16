@@ -22,7 +22,7 @@ import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.AnnotationBasedEntityEvolver;
 import org.axonframework.eventsourcing.CriteriaResolver;
-import org.axonframework.eventsourcing.EntityEvolver;
+import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.eventsourcing.configuration.EventSourcedEntityBuilder;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;

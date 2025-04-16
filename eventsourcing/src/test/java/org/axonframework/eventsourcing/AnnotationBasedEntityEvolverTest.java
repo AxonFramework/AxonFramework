@@ -26,6 +26,7 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.annotation.MetaDataValue;
 import org.axonframework.messaging.annotation.SourceId;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.EntityEvolver;
 import org.junit.jupiter.api.*;
 
 import java.time.Clock;
