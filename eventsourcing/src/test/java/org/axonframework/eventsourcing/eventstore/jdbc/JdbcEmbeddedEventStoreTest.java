@@ -26,7 +26,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
- * An {@link EmbeddedEventStoreTest} implementation using the {@link OldJdbcEventStorageEngine} during testing.
+ * An {@link EmbeddedEventStoreTest} implementation using the {@link LegacyJdbcEventStorageEngine} during testing.
  *
  * @author Steven van Beelen
  */
@@ -41,16 +41,16 @@ class JdbcEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
             dataSource = new JDBCDataSource();
             dataSource.setUrl("jdbc:hsqldb:mem:test");
         }
-        return createTables(OldJdbcEventStorageEngine.builder()
-                                                     .eventSerializer(testSerializer)
-                                                     .snapshotSerializer(testSerializer)
-                                                     .connectionProvider(dataSource::getConnection)
-                                                     .transactionManager(transactionManager)
-                                                     .build());
+        return createTables(LegacyJdbcEventStorageEngine.builder()
+                                                        .eventSerializer(testSerializer)
+                                                        .snapshotSerializer(testSerializer)
+                                                        .connectionProvider(dataSource::getConnection)
+                                                        .transactionManager(transactionManager)
+                                                        .build());
     }
 
     @SuppressWarnings({"SqlNoDataSourceInspection", "SqlDialectInspection"})
-    private OldJdbcEventStorageEngine createTables(OldJdbcEventStorageEngine testEngine) {
+    private LegacyJdbcEventStorageEngine createTables(LegacyJdbcEventStorageEngine testEngine) {
         try (Connection connection = dataSource.getConnection()) {
             connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
             connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();

@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
-import org.axonframework.eventsourcing.eventstore.jdbc.OldJdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.DomainEventEntry;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -39,8 +39,8 @@ import java.util.SortedSet;
 import static org.axonframework.common.DateTimeUtils.formatInstant;
 
 /**
- * Class which holds the default {@link PreparedStatement} builder methods for use in the {@link
- * OldJdbcEventStorageEngine}.
+ * Class which holds the default {@link PreparedStatement} builder methods for use in the
+ * {@link LegacyJdbcEventStorageEngine}.
  *
  * @author Lucas Campos
  * @since 4.3
@@ -52,11 +52,13 @@ public abstract class JdbcEventStorageEngineStatements {
     }
 
     /**
-     * Build the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#createTokenAt(Instant)}. Defaults to:
+     * Build the PreparedStatement to be used on {@link LegacyJdbcEventStorageEngine#createTokenAt(Instant)}. Defaults
+     * to:
      * <p/>
      * {@code "SELECT min([globalIndexColumn]) - 1 FROM [domainEventTable] WHERE [timestampColumn] >= ?" }
      * <p/>
-     * <b>NOTE:</b> "?" is the Instant parameter from {@link OldJdbcEventStorageEngine#createTokenAt(Instant)} and should
+     * <b>NOTE:</b> "?" is the Instant parameter from {@link LegacyJdbcEventStorageEngine#createTokenAt(Instant)} and
+     * should
      * <b>always</b> be present for the PreparedStatement to work.
      * <p>
      *
@@ -77,8 +79,8 @@ public abstract class JdbcEventStorageEngineStatements {
     }
 
     /**
-     * Set the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#appendEvents(List, Serializer)}. Defaults
-     * to:
+     * Set the PreparedStatement to be used on {@link LegacyJdbcEventStorageEngine#appendEvents(List, Serializer)}.
+     * Defaults to:
      * <p/>
      * {@code "INSERT INTO [domainEventTable] ([domainEventFields]) VALUES (?,?,?,?,?,?,?,?,?)" }
      * <p/>
@@ -124,12 +126,13 @@ public abstract class JdbcEventStorageEngineStatements {
     }
 
     /**
-     * Converts an {@link EventMessage} to a {@link DomainEventMessage}. If the message already is a {@link
-     * DomainEventMessage} it will be returned as is. Otherwise a new {@link GenericDomainEventMessage} is made with
-     * {@code null} type, {@code aggregateIdentifier} equal to {@code messageIdentifier} and sequence number of 0L.
+     * Converts an {@link EventMessage} to a {@link DomainEventMessage}. If the message already is a
+     * {@link DomainEventMessage} it will be returned as is. Otherwise a new {@link GenericDomainEventMessage} is made
+     * with {@code null} type, {@code aggregateIdentifier} equal to {@code messageIdentifier} and sequence number of
+     * 0L.
      * <p>
-     * Doing so allows using the {@link DomainEventEntry} to store both a {@link GenericEventMessage} and a {@link
-     * GenericDomainEventMessage}.
+     * Doing so allows using the {@link DomainEventEntry} to store both a {@link GenericEventMessage} and a
+     * {@link GenericDomainEventMessage}.
      *
      * @param event the input event message
      * @param <T>   the type of payload in the message
@@ -142,12 +145,13 @@ public abstract class JdbcEventStorageEngineStatements {
     }
 
     /**
-     * Set the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#lastSequenceNumberFor(String)}. Defaults
-     * to:
+     * Set the PreparedStatement to be used on {@link LegacyJdbcEventStorageEngine#lastSequenceNumberFor(String)}.
+     * Defaults to:
      * <p/>
      * {@code "SELECT max([sequenceNumberColumn]) FROM [domainEventTable] WHERE [aggregateIdentifierColumn] = ?" }
      * <p/>
-     * <b>NOTE:</b> "?" is the aggregateIdentifier parameter from {@link OldJdbcEventStorageEngine#lastSequenceNumberFor(String)}
+     * <b>NOTE:</b> "?" is the aggregateIdentifier parameter from
+     * {@link LegacyJdbcEventStorageEngine#lastSequenceNumberFor(String)}
      * and should <b>always</b> be present for the PreparedStatement to work.
      *
      * @param connection          The connection to the database.
@@ -167,7 +171,7 @@ public abstract class JdbcEventStorageEngineStatements {
     }
 
     /**
-     * Set the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#createTailToken()}. Defaults to:
+     * Set the PreparedStatement to be used on {@link LegacyJdbcEventStorageEngine#createTailToken()}. Defaults to:
      * <p/>
      * {@code "SELECT min([globalIndexColumn]) - 1 FROM [domainEventTable]" }
      * <p/>
@@ -183,7 +187,7 @@ public abstract class JdbcEventStorageEngineStatements {
     }
 
     /**
-     * Set the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#createHeadToken()}. Defaults to:
+     * Set the PreparedStatement to be used on {@link LegacyJdbcEventStorageEngine#createHeadToken()}. Defaults to:
      * <p/>
      * {@code "SELECT max([globalIndexColumn]) FROM [domainEventTable]" }
      * <p/>
@@ -199,8 +203,8 @@ public abstract class JdbcEventStorageEngineStatements {
     }
 
     /**
-     * Set the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#storeSnapshot(DomainEventMessage,
-     * Serializer)} . Defaults to:
+     * Set the PreparedStatement to be used on
+     * {@link LegacyJdbcEventStorageEngine#storeSnapshot(DomainEventMessage, Serializer)} . Defaults to:
      * <p/>
      * {@code "INSERT INTO [snapshotTable] ([domainEventFields]) VALUES (?,?,?,?,?,?,?,?,?)" }
      * <p/>
@@ -241,14 +245,14 @@ public abstract class JdbcEventStorageEngineStatements {
     }
 
     /**
-     * Set the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#storeSnapshot(DomainEventMessage,
-     * Serializer)} . Defaults to:
+     * Set the PreparedStatement to be used on
+     * {@link LegacyJdbcEventStorageEngine#storeSnapshot(DomainEventMessage, Serializer)} . Defaults to:
      * <p/>
      * {@code "DELETE FROM [snapshotTable] WHERE [aggregateIdentifierColumn] = ?1 AND [sequenceNumberColumn] < ?2" }
      * <p/>
      * <b>NOTE:</b> "?1" is the aggregateIdentifier and "?2" is the sequenceNumber parameters taken from the snapshot
-     * from {@link OldJdbcEventStorageEngine#storeSnapshot(DomainEventMessage, Serializer)} and they should <b>always</b>
-     * be present for the PreparedStatement to work.
+     * from {@link LegacyJdbcEventStorageEngine#storeSnapshot(DomainEventMessage, Serializer)} and they should
+     * <b>always</b> be present for the PreparedStatement to work.
      *
      * @param connection          The connection to the database.
      * @param schema              The EventSchema to be used
@@ -269,12 +273,13 @@ public abstract class JdbcEventStorageEngineStatements {
     }
 
     /**
-     * Set the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}.
-     * Defaults to:
+     * Set the PreparedStatement to be used on
+     * {@link LegacyJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}. Defaults to:
      * <p/>
      * {@code "SELECT min([globalIndexColumn]) FROM [domainEventTable] WHERE [globalIndexColumn] > ?" }
      * <p/>
-     * <b>NOTE:</b> "?" is based on the lastToken parameter from {@link OldJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken,
+     * <b>NOTE:</b> "?" is based on the lastToken parameter from
+     * {@link LegacyJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken,
      * int)} and should <b>always</b> be present for the PreparedStatement to work.
      *
      * @param connection The connection to the database.
@@ -320,13 +325,14 @@ public abstract class JdbcEventStorageEngineStatements {
     }
 
     /**
-     * Set the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#fetchDomainEvents(String, long, int)}
+     * Set the PreparedStatement to be used on
+     * {@link LegacyJdbcEventStorageEngine#fetchDomainEvents(String, long, int)}
      * <p/>
      * {@code "SELECT [trackedEventFields] FROM [domainEventTable] WHERE [aggregateIdentifierColumn] = ?1 AND
      * [sequenceNumberColumn] >= ?2 AND [sequenceNumberColumn] < ?3 ORDER BY [sequenceNumberColumn] ASC" }
      * <p/>
      * <b>NOTE:</b> "?1" is the identifier, "?2" is the firstSequenceNumber and "?3" is based on batchSize
-     * parameters from {@link OldJdbcEventStorageEngine#fetchDomainEvents(String, long, int)} and they should
+     * parameters from {@link LegacyJdbcEventStorageEngine#fetchDomainEvents(String, long, int)} and they should
      * <b>always</b> be present for the PreparedStatement to work.
      *
      * @param connection          The connection to the database.
@@ -353,12 +359,13 @@ public abstract class JdbcEventStorageEngineStatements {
     }
 
     /**
-     * Set the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#readSnapshotData(String)}. Defaults to:
+     * Set the PreparedStatement to be used on {@link LegacyJdbcEventStorageEngine#readSnapshotData(String)}. Defaults
+     * to:
      * <p/>
      * {@code "SELECT [domainEventFields] FROM [snapshotTable] WHERE [aggregateIdentifierColumn] = ? ORDER BY
      * [sequenceNumberColumn] DESC" }
      * <p/>
-     * <b>NOTE:</b> "?" is the identifier parameter from {@link OldJdbcEventStorageEngine#readSnapshotData(String)}
+     * <b>NOTE:</b> "?" is the identifier parameter from {@link LegacyJdbcEventStorageEngine#readSnapshotData(String)}
      * and should <b>always</b> be present for the PreparedStatement to work.
      *
      * @param connection The connection to the database.
@@ -379,15 +386,16 @@ public abstract class JdbcEventStorageEngineStatements {
     }
 
     /**
-     * Set the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}
-     * when there is no gaps on the {@link GapAwareTrackingToken}. Defaults to:
+     * Set the PreparedStatement to be used on
+     * {@link LegacyJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)} when there is no gaps on the
+     * {@link GapAwareTrackingToken}. Defaults to:
      * <p/>
      * {@code "SELECT [trackedEventFields] FROM [domainEventTable] WHERE ([globalIndexColumn] > ?1 AND
      * [globalIndexColumn] <= ?2) ORDER BY [globalIndexColumn] ASC" }
      * <p/>
      * <b>NOTE:</b> "?1" is the globalIndex and "?2" is the batchSize parameters from {@link
-     * OldJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)} and they should <b>always</b> be present for the
-     * PreparedStatement to work.
+     * LegacyJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)} and they should <b>always</b> be present for
+     * the PreparedStatement to work.
      *
      * @param connection  The connection to the database.
      * @param schema      The EventSchema to be used
@@ -409,15 +417,17 @@ public abstract class JdbcEventStorageEngineStatements {
     }
 
     /**
-     * Set the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}
-     * when there are gaps on the {@link GapAwareTrackingToken}. Defaults to:
+     * Set the PreparedStatement to be used on
+     * {@link LegacyJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)} when there are gaps on the
+     * {@link GapAwareTrackingToken}. Defaults to:
      * <p/>
      * {@code "SELECT [trackedEventFields] FROM [domainEventTable] WHERE ([globalIndexColumn] > ?1 AND
      * [globalIndexColumn] <= ?2) OR [globalIndexColumn] IN (?3 .. ?n) ORDER BY [globalIndexColumn] ASC" }
      * <p/>
      * <b>NOTE:</b> "?1" is the globalIndex and "?2" is the batchSize parameters from {@link
-     * OldJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}. "?3 .. ?n" is taken from the {@link
-     * GapAwareTrackingToken#getGaps()} and they should <b>always</b> be present for the PreparedStatement to work.
+     * LegacyJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}. "?3 .. ?n" is taken from the
+     * {@link GapAwareTrackingToken#getGaps()} and they should <b>always</b> be present for the PreparedStatement to
+     * work.
      *
      * @param connection  The connection to the database.
      * @param schema      The EventSchema to be used

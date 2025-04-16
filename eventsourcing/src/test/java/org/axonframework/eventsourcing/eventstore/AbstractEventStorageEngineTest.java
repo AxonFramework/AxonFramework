@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore;
 
 import org.axonframework.eventhandling.DomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.jdbc.OldJdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jdbc.LegacyJdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.modelling.command.AggregateStreamCreationException;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.*;
 
 /**
  * Abstract test class used to create tests for the {@link LegacyJpaEventStorageEngine}
- * and {@link OldJdbcEventStorageEngine}.
+ * and {@link LegacyJdbcEventStorageEngine}.
  * <p>
  * Methods are public so they can be overridden by {@link LegacyEventStorageEngine} implementation test cases in different
  * repository, like the [Mongo Extension](https://github.com/AxonFramework/extension-mongo).
