@@ -29,10 +29,10 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.retry.RetryScheduler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+import static java.util.Objects.requireNonNull;
 import static org.axonframework.common.FutureUtils.unwrap;
 
 /**
@@ -57,8 +57,8 @@ public class RetryingCommandBus implements CommandBus {
      */
     public RetryingCommandBus(@Nonnull CommandBus delegate,
                               @Nonnull RetryScheduler retryScheduler) {
-        this.delegate = Objects.requireNonNull(delegate, "Given CommandBus delegate cannot be null.");
-        this.retryScheduler = Objects.requireNonNull(retryScheduler, "Given RetryScheduler cannot be null.");
+        this.delegate = requireNonNull(delegate, "The command bus delegate must be null.");
+        this.retryScheduler = requireNonNull(retryScheduler, "the RetryScheduler must not be null.");
     }
 
     @Override
@@ -77,7 +77,8 @@ public class RetryingCommandBus implements CommandBus {
 
     private CompletableFuture<Message<?>> dispatchToDelegate(CommandMessage<?> command,
                                                              ProcessingContext processingContext) {
-        return delegate.dispatch(command, processingContext).thenApply(Function.identity());
+        return delegate.dispatch(command, processingContext)
+                       .thenApply(Function.identity());
     }
 
     private CompletableFuture<Message<?>> performRetry(CommandMessage<?> command,
