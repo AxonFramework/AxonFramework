@@ -18,7 +18,7 @@ package org.axonframework.configuration;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
-import org.axonframework.commandhandling.config.CommandBusBuilder;
+import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
 import org.axonframework.common.FutureUtils;
@@ -104,10 +104,9 @@ class MessagingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static CommandBus defaultCommandBus(Configuration config) {
-        CommandBusBuilder commandBusBuilder = CommandBusBuilder.forSimpleCommandBus();
-        config.getOptionalComponent(TransactionManager.class)
-              .ifPresent(commandBusBuilder::withTransactions);
-        return commandBusBuilder.build();
+        return config.getOptionalComponent(TransactionManager.class)
+                     .map(SimpleCommandBus::new)
+                     .orElse(new SimpleCommandBus());
     }
 
     private static CommandGateway defaultCommandGateway(Configuration config) {
