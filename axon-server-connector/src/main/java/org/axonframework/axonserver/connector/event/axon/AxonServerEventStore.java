@@ -25,6 +25,7 @@ import io.axoniq.axonserver.grpc.event.Event;
 import io.grpc.Status;
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
+import org.axonframework.axonserver.connector.event.AggregateBasedAxonServerEventStorageEngine;
 import org.axonframework.axonserver.connector.util.GrpcMetaDataConverter;
 import org.axonframework.common.Assert;
 import org.axonframework.common.AxonConfigurationException;
@@ -90,7 +91,7 @@ import static org.axonframework.common.ObjectUtils.getOrDefault;
  * @author Marc Gathier
  * @author Allard Buijze
  * @since 4.0
- * @deprecated In favor of the {@link org.axonframework.axonserver.connector.event.LegacyAxonServerEventStorageEngine}.
+ * @deprecated In favor of the {@link AggregateBasedAxonServerEventStorageEngine}.
  */
 @Deprecated(since = "5.0.0")
 public class AxonServerEventStore extends AbstractLegacyEventStore {

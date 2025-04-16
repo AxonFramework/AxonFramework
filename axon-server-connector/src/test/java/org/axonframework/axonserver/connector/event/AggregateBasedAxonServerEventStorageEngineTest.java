@@ -37,8 +37,8 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
-class LegacyAxonServerEventStorageEngineTest extends
-        AggregateBasedStorageEngineTestSuite<LegacyAxonServerEventStorageEngine> {
+class AggregateBasedAxonServerEventStorageEngineTest extends
+        AggregateBasedStorageEngineTestSuite<AggregateBasedAxonServerEventStorageEngine> {
 
     private static final AxonServerContainer axonServerContainer = new AxonServerContainer()
             .withAxonServerHostname("localhost")
@@ -71,11 +71,11 @@ class LegacyAxonServerEventStorageEngineTest extends
     }
 
     @Override
-    protected LegacyAxonServerEventStorageEngine buildStorageEngine() throws IOException {
+    protected AggregateBasedAxonServerEventStorageEngine buildStorageEngine() throws IOException {
         AxonServerUtils.purgeEventsFromAxonServer(axonServerContainer.getHost(),
                                                   axonServerContainer.getHttpPort(),
                                                   "default");
-        return new LegacyAxonServerEventStorageEngine(connection, new Converter() {
+        return new AggregateBasedAxonServerEventStorageEngine(connection, new Converter() {
             @Override
             public boolean canConvert(Class<?> sourceType, Class<?> targetType) {
                 return byte[].class.isAssignableFrom(targetType);
