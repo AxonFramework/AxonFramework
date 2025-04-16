@@ -29,7 +29,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
-import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.AggregateBasedJpaEventStorageEngine;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
@@ -54,9 +54,10 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = LegacyJpaEventStorageEngineTest.TestContext.class)
+@ContextConfiguration(classes = AggregateBasedJpaEventStorageEngineTest.TestContext.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSuite<LegacyJpaEventStorageEngine> {
+class AggregateBasedJpaEventStorageEngineTest
+        extends AggregateBasedStorageEngineTestSuite<AggregateBasedJpaEventStorageEngine> {
 
     public static final JacksonSerializer TEST_SERIALIZER = JacksonSerializer.defaultSerializer();
     public static final ObjectMapper OBJECT_MAPPER = TEST_SERIALIZER.getObjectMapper();
@@ -68,11 +69,13 @@ class LegacyJpaEventStorageEngineTest extends AggregateBasedStorageEngineTestSui
     private EntityManagerProvider entityManagerProvider;
 
     @Override
-    protected LegacyJpaEventStorageEngine buildStorageEngine() {
-        return new LegacyJpaEventStorageEngine(entityManagerProvider,
-                                               new SpringTransactionManager(platformTransactionManager),
-                                               TEST_SERIALIZER,
-                                               config -> config.persistenceExceptionResolver(new JdbcSQLErrorCodesResolver()));
+    protected AggregateBasedJpaEventStorageEngine buildStorageEngine() {
+        return new AggregateBasedJpaEventStorageEngine(
+                entityManagerProvider,
+                new SpringTransactionManager(platformTransactionManager),
+                TEST_SERIALIZER,
+                config -> config.persistenceExceptionResolver(new JdbcSQLErrorCodesResolver())
+        );
     }
 
     @Override

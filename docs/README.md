@@ -24,6 +24,7 @@ You can check the [detailed information on how the process to build the docs wor
 
 1. Make sure you have Node (a LTS version is preferred), Antora and Vale installed in your system.
 2. CD to the `docs/_playbook` folder.
-3. Run `npx antora playbook.yaml`. Antora will generate the set of static html files under `docs/_playbook/build/site`
-4. Move to `docs/_playbook/build/site` and execute some local http server to serve files in that directory. For example by executing `python3 -m http.server 8070`
-5. Open your browser and go to `http://localhost:8070`. You should be able to navigate the local version of the docs.
+3. Run `npm install.`
+4. Run `npx antora playbook.yaml`. Antora will generate the set of static html files under `docs/_playbook/build/site`
+5. Move to `docs/_playbook/build/site` and execute some local http server to serve files in that directory. For example by executing `python3 -m http.server 8070`
+6. Open your browser and go to `http://localhost:8070`. You should be able to navigate the local version of the docs.

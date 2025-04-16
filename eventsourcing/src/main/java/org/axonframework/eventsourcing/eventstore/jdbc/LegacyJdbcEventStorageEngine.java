@@ -92,14 +92,14 @@ import static org.axonframework.common.jdbc.JdbcUtils.*;
  * <p>
  * Before using this store make sure the database contains a table named {@link EventSchema#domainEventTable()} and
  * {@link EventSchema#snapshotTable()} in which to store events and snapshots in respectively. For convenience, these
- * tables can be constructed through the {@link OldJdbcEventStorageEngine#createSchema(EventTableFactory)} operation.
+ * tables can be constructed through the {@link LegacyJdbcEventStorageEngine#createSchema(EventTableFactory)} operation.
  *
  * @author Rene de Waele
  * @since 3.0
  * @deprecated In favor of the {@code LegacyJdbcEventStorageEngine}.
  */
 @Deprecated(since = "5.0.0")
-public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine {
+public class LegacyJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -133,15 +133,15 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
     private int gapCleaningThreshold;
 
     /**
-     * Instantiate a {@link OldJdbcEventStorageEngine} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link LegacyJdbcEventStorageEngine} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the event and snapshot {@link Serializer}, the {@link ConnectionProvider} and
      * {@link TransactionManager} are not {@code null}, and will throw an {@link AxonConfigurationException} if any of
      * them is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link OldJdbcEventStorageEngine} instance
+     * @param builder the {@link Builder} used to instantiate a {@link LegacyJdbcEventStorageEngine} instance
      */
-    protected OldJdbcEventStorageEngine(Builder builder) {
+    protected LegacyJdbcEventStorageEngine(Builder builder) {
         super(builder);
         this.connectionProvider = builder.connectionProvider;
         this.transactionManager = builder.transactionManager;
@@ -168,7 +168,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link OldJdbcEventStorageEngine}.
+     * Instantiate a Builder to be able to create a {@link LegacyJdbcEventStorageEngine}.
      * <p>
      * The following configurable fields have defaults:
      * <ul>
@@ -201,14 +201,14 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
      * The event and snapshot {@link Serializer}, {@link ConnectionProvider} and {@link TransactionManager} are <b>hard
      * requirements</b> and as such should be provided.
      *
-     * @return a Builder to be able to create a {@link OldJdbcEventStorageEngine}
+     * @return a Builder to be able to create a {@link LegacyJdbcEventStorageEngine}
      */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Creates a statement to be used at {@link OldJdbcEventStorageEngine#createTokenAt(Instant)}.
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#createTokenAt(Instant)}.
      *
      * @param connection The connection to the database.
      * @param dateTime   The dateTime where the token will be created.
@@ -220,7 +220,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
     }
 
     /**
-     * Creates a statement to be used at {@link OldJdbcEventStorageEngine#appendEvents(List, Serializer)}.
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#appendEvents(List, Serializer)}.
      *
      * @param connection The connection to the database.
      * @param events     The events to be added.
@@ -234,7 +234,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
     }
 
     /**
-     * Creates a statement to be used at {@link OldJdbcEventStorageEngine#lastSequenceNumberFor(String)}.
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#lastSequenceNumberFor(String)}.
      *
      * @param connection          The connection to the database.
      * @param aggregateIdentifier The identifier of the aggregate.
@@ -247,7 +247,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
     }
 
     /**
-     * Creates a statement to be used at {@link OldJdbcEventStorageEngine#createTailToken()}.
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#createTailToken()}.
      *
      * @param connection The connection to the database.
      * @return The newly created {@link PreparedStatement}.
@@ -258,7 +258,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
     }
 
     /**
-     * Creates a statement to be used at {@link OldJdbcEventStorageEngine#createHeadToken()}.
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#createHeadToken()}.
      *
      * @param connection The connection to the database.
      * @return The newly created {@link PreparedStatement}.
@@ -269,7 +269,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
     }
 
     /**
-     * Creates a statement to be used at {@link OldJdbcEventStorageEngine#storeSnapshot(DomainEventMessage)}.
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#storeSnapshot(DomainEventMessage)}.
      *
      * @param connection The connection to the database.
      * @param snapshot   The snapshot to be appended.
@@ -283,7 +283,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
     }
 
     /**
-     * Creates a statement to be used at {@link OldJdbcEventStorageEngine#storeSnapshot(DomainEventMessage)}.
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#storeSnapshot(DomainEventMessage)}.
      *
      * @param connection          The connection to the database.
      * @param aggregateIdentifier The identifier of the aggregate taken from the snapshot.
@@ -297,7 +297,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
     }
 
     /**
-     * Creates a statement to be used at {@link OldJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}.
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}.
      *
      * @param connection The connection to the database.
      * @param index      The index taken from the tracking token.
@@ -309,7 +309,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
     }
 
     /**
-     * Creates a statement to be used at {@link OldJdbcEventStorageEngine#cleanGaps(TrackingToken)}.
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#cleanGaps(TrackingToken)}.
      *
      * @param connection The connection to the database.
      * @param gaps       The Set of gaps taken from the tracking token.
@@ -321,7 +321,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
     }
 
     /**
-     * Creates a statement to be used at {@link OldJdbcEventStorageEngine#fetchDomainEvents(String, long, int)}
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#fetchDomainEvents(String, long, int)}
      *
      * @param connection          The connection to the database.
      * @param identifier          The identifier of the aggregate.
@@ -336,7 +336,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
     }
 
     /**
-     * Creates a statement to be used at {@link OldJdbcEventStorageEngine#readSnapshotData(String)}.
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#readSnapshotData(String)}.
      *
      * @param connection The connection to the database.
      * @param identifier The identifier of the aggregate.
@@ -348,7 +348,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
     }
 
     /**
-     * Creates a statement to be used at {@link OldJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}
      *
      * @param connection  The connection to the database.
      * @param globalIndex The index taken from the tracking token.
@@ -362,7 +362,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
     }
 
     /**
-     * Creates a statement to be used at {@link OldJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}
+     * Creates a statement to be used at {@link LegacyJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}
      *
      * @param connection  The connection to the database.
      * @param globalIndex The index taken from the tracking token.
@@ -785,7 +785,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
     }
 
     /**
-     * Builder class to instantiate a {@link OldJdbcEventStorageEngine}.
+     * Builder class to instantiate a {@link LegacyJdbcEventStorageEngine}.
      * <p>
      * The following configurable fields have defaults:
      * <ul>
@@ -849,7 +849,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
         }
 
         /**
-         * Set the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#createTokenAt}. Defaults to
+         * Set the PreparedStatement to be used on {@link LegacyJdbcEventStorageEngine#createTokenAt}. Defaults to
          * {@link JdbcEventStorageEngineStatements#createTokenAt(Connection, EventSchema, Instant)}.
          *
          * @return the current Builder instance, for fluent interfacing
@@ -862,7 +862,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
 
         /**
          * Set the PreparedStatement to be used on
-         * {@link OldJdbcEventStorageEngine#appendEvents(Connection, List, Serializer)} en}. Defaults to
+         * {@link LegacyJdbcEventStorageEngine#appendEvents(Connection, List, Serializer)} en}. Defaults to
          * {@link JdbcEventStorageEngineStatements#appendEvents(Connection, EventSchema, Class, List, Serializer,
          * TimestampWriter)}.
          *
@@ -876,7 +876,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
 
         /**
          * Set the PreparedStatement to be used on
-         * {@link OldJdbcEventStorageEngine#lastSequenceNumberFor(Connection, String)}. Defaults to
+         * {@link LegacyJdbcEventStorageEngine#lastSequenceNumberFor(Connection, String)}. Defaults to
          * {@link JdbcEventStorageEngineStatements#lastSequenceNumberFor(Connection, EventSchema, String)}
          *
          * @return the current Builder instance, for fluent interfacing
@@ -888,7 +888,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
         }
 
         /**
-         * Set the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#createTailToken(Connection)}.
+         * Set the PreparedStatement to be used on {@link LegacyJdbcEventStorageEngine#createTailToken(Connection)}.
          * Defaults to {@link JdbcEventStorageEngineStatements#createTailToken(Connection, EventSchema)}
          *
          * @return the current Builder instance, for fluent interfacing
@@ -900,7 +900,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
         }
 
         /**
-         * Set the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#createHeadToken(Connection)}.
+         * Set the PreparedStatement to be used on {@link LegacyJdbcEventStorageEngine#createHeadToken(Connection)}.
          * Defaults to {@link JdbcEventStorageEngineStatements#createHeadToken(Connection, EventSchema)}
          *
          * @return the current Builder instance, for fluent interfacing
@@ -913,7 +913,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
 
         /**
          * Set the PreparedStatement to be used on
-         * {@link OldJdbcEventStorageEngine#appendSnapshot(Connection, DomainEventMessage, Serializer)}. Defaults to
+         * {@link LegacyJdbcEventStorageEngine#appendSnapshot(Connection, DomainEventMessage, Serializer)}. Defaults to
          * {@link JdbcEventStorageEngineStatements#appendEvents(Connection, EventSchema, Class, List, Serializer,
          * TimestampWriter)}
          *
@@ -927,7 +927,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
 
         /**
          * Set the PreparedStatement to be used on
-         * {@link OldJdbcEventStorageEngine#deleteSnapshots(Connection, String, long)}. Defaults to
+         * {@link LegacyJdbcEventStorageEngine#deleteSnapshots(Connection, String, long)}. Defaults to
          * {@link JdbcEventStorageEngineStatements#deleteSnapshots(Connection, EventSchema, String, long)}
          *
          * @return the current Builder instance, for fluent interfacing
@@ -940,7 +940,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
 
         /**
          * Set the PreparedStatement to be used on
-         * {@link OldJdbcEventStorageEngine#fetchTrackedEvents(Connection, long)}. Defaults to
+         * {@link LegacyJdbcEventStorageEngine#fetchTrackedEvents(Connection, long)}. Defaults to
          * {@link JdbcEventStorageEngineStatements#fetchTrackedEvents(Connection, EventSchema, long)}
          *
          * @return the current Builder instance, for fluent interfacing
@@ -952,7 +952,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
         }
 
         /**
-         * Set the PreparedStatement to be used on {@link OldJdbcEventStorageEngine#cleanGaps(Connection, SortedSet)}.
+         * Set the PreparedStatement to be used on {@link LegacyJdbcEventStorageEngine#cleanGaps(Connection, SortedSet)}.
          * Defaults to {@link JdbcEventStorageEngineStatements#cleanGaps(Connection, EventSchema, SortedSet)}
          *
          * @return the current Builder instance, for fluent interfacing
@@ -965,7 +965,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
 
         /**
          * Set the PreparedStatement to be used on
-         * {@link OldJdbcEventStorageEngine#readEventData(Connection, String, long, int)}. Defaults to
+         * {@link LegacyJdbcEventStorageEngine#readEventData(Connection, String, long, int)}. Defaults to
          * {@link JdbcEventStorageEngineStatements#readEventDataForAggregate(Connection, EventSchema, String, long,
          * int)}
          *
@@ -979,7 +979,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
 
         /**
          * Set the PreparedStatement to be used on
-         * {@link OldJdbcEventStorageEngine#readSnapshotData(Connection, String)}. Defaults to
+         * {@link LegacyJdbcEventStorageEngine#readSnapshotData(Connection, String)}. Defaults to
          * {@link JdbcEventStorageEngineStatements#readSnapshotData(Connection, EventSchema, String)}
          *
          * @return the current Builder instance, for fluent interfacing
@@ -992,7 +992,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
 
         /**
          * Set the PreparedStatement to be used on
-         * {@link OldJdbcEventStorageEngine#readEventDataWithoutGaps(Connection, long, int)}. Defaults to
+         * {@link LegacyJdbcEventStorageEngine#readEventDataWithoutGaps(Connection, long, int)}. Defaults to
          * {@link JdbcEventStorageEngineStatements#readEventDataWithoutGaps(Connection, EventSchema, long, int)}
          *
          * @return the current Builder instance, for fluent interfacing
@@ -1005,7 +1005,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
 
         /**
          * Set the PreparedStatement to be used on
-         * {@link OldJdbcEventStorageEngine#readEventDataWithGaps(Connection, long, int, List)}. Defaults to
+         * {@link LegacyJdbcEventStorageEngine#readEventDataWithGaps(Connection, long, int, List)}. Defaults to
          * {@link JdbcEventStorageEngineStatements#readEventDataWithGaps(Connection, EventSchema, long, int, List)}
          *
          * @return the current Builder instance, for fluent interfacing
@@ -1017,13 +1017,13 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
         }
 
         @Override
-        public OldJdbcEventStorageEngine.Builder snapshotSerializer(Serializer snapshotSerializer) {
+        public LegacyJdbcEventStorageEngine.Builder snapshotSerializer(Serializer snapshotSerializer) {
             super.snapshotSerializer(snapshotSerializer);
             return this;
         }
 
         @Override
-        public OldJdbcEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
+        public LegacyJdbcEventStorageEngine.Builder upcasterChain(EventUpcaster upcasterChain) {
             super.upcasterChain(upcasterChain);
             return this;
         }
@@ -1032,7 +1032,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
          * {@inheritDoc} Defaults to a {@link JdbcSQLErrorCodesResolver}.
          */
         @Override
-        public OldJdbcEventStorageEngine.Builder persistenceExceptionResolver(
+        public LegacyJdbcEventStorageEngine.Builder persistenceExceptionResolver(
                 PersistenceExceptionResolver persistenceExceptionResolver
         ) {
             super.persistenceExceptionResolver(persistenceExceptionResolver);
@@ -1040,7 +1040,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
         }
 
         @Override
-        public OldJdbcEventStorageEngine.Builder eventSerializer(Serializer eventSerializer) {
+        public LegacyJdbcEventStorageEngine.Builder eventSerializer(Serializer eventSerializer) {
             super.eventSerializer(eventSerializer);
             return this;
         }
@@ -1053,20 +1053,20 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
          * the event store, any batch smaller than the maximum batch size can be seen as the final batch.
          */
         @Override
-        public OldJdbcEventStorageEngine.Builder finalAggregateBatchPredicate(
+        public LegacyJdbcEventStorageEngine.Builder finalAggregateBatchPredicate(
                 Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate) {
             super.finalAggregateBatchPredicate(finalAggregateBatchPredicate);
             return this;
         }
 
         @Override
-        public OldJdbcEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
+        public LegacyJdbcEventStorageEngine.Builder snapshotFilter(SnapshotFilter snapshotFilter) {
             super.snapshotFilter(snapshotFilter);
             return this;
         }
 
         @Override
-        public OldJdbcEventStorageEngine.Builder batchSize(int batchSize) {
+        public LegacyJdbcEventStorageEngine.Builder batchSize(int batchSize) {
             super.batchSize(batchSize);
             return this;
         }
@@ -1128,7 +1128,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
          * the event with the highest known index. If the gap is bigger it is assumed that the missing event will not be
          * committed to the store anymore. This event storage engine will no longer look for those events the next time
          * a batch is fetched. Defaults to an integer of {@code 10000}
-         * ({@link OldJdbcEventStorageEngine#DEFAULT_MAX_GAP_OFFSET}.
+         * ({@link LegacyJdbcEventStorageEngine#DEFAULT_MAX_GAP_OFFSET}.
          *
          * @param maxGapOffset an {@code int} specifying the maximum distance in sequence numbers between a missing
          *                     event and the event with the highest known index
@@ -1143,7 +1143,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
         /**
          * Sets the {@code lowestGlobalSequence} specifying the first expected auto generated sequence number. For most
          * data stores this is 1 unless the table has contained entries before. Defaults to a {@code long} of {@code 1}
-         * ({@link OldJdbcEventStorageEngine#DEFAULT_LOWEST_GLOBAL_SEQUENCE}).
+         * ({@link LegacyJdbcEventStorageEngine#DEFAULT_LOWEST_GLOBAL_SEQUENCE}).
          *
          * @param lowestGlobalSequence a {@code long} specifying the first expected auto generated sequence number
          * @return the current Builder instance, for fluent interfacing
@@ -1160,7 +1160,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
          * Sets the amount of time until a 'gap' in a TrackingToken may be considered timed out. This setting will
          * affect the cleaning process of gaps. Gaps that have timed out will be removed from Tracking Tokens to improve
          * performance of reading events. Defaults to an integer of {@code 60000}
-         * ({@link OldJdbcEventStorageEngine#DEFAULT_GAP_TIMEOUT}), thus 1 minute.
+         * ({@link LegacyJdbcEventStorageEngine#DEFAULT_GAP_TIMEOUT}), thus 1 minute.
          *
          * @param gapTimeout an {@code int} specifying the amount of time until a 'gap' in a TrackingToken may be
          *                   considered timed out
@@ -1174,7 +1174,7 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
 
         /**
          * Sets the threshold of number of gaps in a token before an attempt to clean gaps up is taken. Defaults to an
-         * integer of {@code 250} ({@link OldJdbcEventStorageEngine#DEFAULT_GAP_CLEANING_THRESHOLD}).
+         * integer of {@code 250} ({@link LegacyJdbcEventStorageEngine#DEFAULT_GAP_CLEANING_THRESHOLD}).
          *
          * @param gapCleaningThreshold an {@code int} specifying the threshold of number of gaps in a token before an
          *                             attempt to clean gaps up is taken
@@ -1213,12 +1213,12 @@ public class OldJdbcEventStorageEngine extends LegacyBatchingEventStorageEngine 
         }
 
         /**
-         * Initializes a {@link OldJdbcEventStorageEngine} as specified through this Builder.
+         * Initializes a {@link LegacyJdbcEventStorageEngine} as specified through this Builder.
          *
-         * @return a {@link OldJdbcEventStorageEngine} as specified through this Builder
+         * @return a {@link LegacyJdbcEventStorageEngine} as specified through this Builder
          */
-        public OldJdbcEventStorageEngine build() {
-            return new OldJdbcEventStorageEngine(this);
+        public LegacyJdbcEventStorageEngine build() {
+            return new LegacyJdbcEventStorageEngine(this);
         }
 
         /**

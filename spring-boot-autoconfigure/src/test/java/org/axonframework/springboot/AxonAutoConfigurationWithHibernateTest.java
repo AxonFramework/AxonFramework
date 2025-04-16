@@ -30,7 +30,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventsourcing.Snapshotter;
-import org.axonframework.eventsourcing.eventstore.jpa.OldJpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jpa.SQLErrorCodesResolver;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
@@ -93,7 +93,7 @@ class AxonAutoConfigurationWithHibernateTest {
         assertNotNull(applicationContext.getBean(EventGateway.class));
         assertNotNull(applicationContext.getBean(Serializer.class));
         assertNotNull(applicationContext.getBean(TokenStore.class));
-        assertNotNull(applicationContext.getBean(OldJpaEventStorageEngine.class));
+        assertNotNull(applicationContext.getBean(LegacyJpaEventStorageEngine.class));
         Assertions.assertEquals(SQLErrorCodesResolver.class,
                                 applicationContext.getBean(PersistenceExceptionResolver.class).getClass());
         assertNotNull(applicationContext.getBean(EntityManagerProvider.class));
@@ -114,7 +114,7 @@ class AxonAutoConfigurationWithHibernateTest {
     @Test
     public void eventStorageEngineUsesSerializerBean() {
         final Serializer serializer = applicationContext.getBean(Serializer.class);
-        final OldJpaEventStorageEngine engine = applicationContext.getBean(OldJpaEventStorageEngine.class);
+        final LegacyJpaEventStorageEngine engine = applicationContext.getBean(LegacyJpaEventStorageEngine.class);
 
         Assertions.assertEquals(serializer, engine.getSnapshotSerializer());
 

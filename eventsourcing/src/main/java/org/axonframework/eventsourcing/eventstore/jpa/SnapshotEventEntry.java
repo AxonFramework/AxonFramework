@@ -23,8 +23,8 @@ import org.axonframework.serialization.Serializer;
 
 /**
  * Default implementation of an event entry containing a serialized snapshot of an aggregate. This implementation is
- * used by the {@link OldJpaEventStorageEngine} to store snapshot events. Event payload and metadata are serialized to a
- * byte array.
+ * used by the {@link LegacyJpaEventStorageEngine} to store snapshot events. Event payload and metadata are serialized
+ * to a byte array.
  *
  * @author Rene de Waele
  */

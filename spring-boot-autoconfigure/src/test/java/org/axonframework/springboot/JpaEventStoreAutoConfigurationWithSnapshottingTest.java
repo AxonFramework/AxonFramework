@@ -26,7 +26,7 @@ import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
-import org.axonframework.eventsourcing.eventstore.jpa.OldJpaEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
@@ -77,7 +77,7 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
             assertNotNull(snapshotTriggerDefinition);
             Snapshotter snapshotter = context.getBean(Snapshotter.class);
             assertNotNull(snapshotter);
-            assertNotNull(context.getBean(OldJpaEventStorageEngine.class));
+            assertNotNull(context.getBean(LegacyJpaEventStorageEngine.class));
 
             CommandGateway commandGateway = context.getBean(CommandGateway.class);
             commandGateway.send(new TestContext.CreateCommand(AGGREGATE_ID), ProcessingContext.NONE)
@@ -96,7 +96,7 @@ class JpaEventStoreAutoConfigurationWithSnapshottingTest {
         testContext.run(context -> {
             SnapshotFilter snapshotFilter = context.getBean(SnapshotFilter.class);
             assertNotNull(snapshotFilter);
-            assertNotNull(context.getBean(OldJpaEventStorageEngine.class));
+            assertNotNull(context.getBean(LegacyJpaEventStorageEngine.class));
 
             CommandGateway commandGateway = context.getBean(CommandGateway.class);
             commandGateway.send(new TestContext.CreateCommand(AGGREGATE_ID), ProcessingContext.NONE)

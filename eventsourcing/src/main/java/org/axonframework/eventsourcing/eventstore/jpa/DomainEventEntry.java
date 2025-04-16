@@ -25,7 +25,7 @@ import org.axonframework.serialization.Serializer;
 
 /**
  * Default implementation of a tracked domain event entry. This implementation is used by the {@link
- * OldJpaEventStorageEngine} to store events. Event payload and metadata are serialized to a byte array.
+ * LegacyJpaEventStorageEngine} to store events. Event payload and metadata are serialized to a byte array.
  *
  * @author Rene de Waele
  */

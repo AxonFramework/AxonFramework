@@ -26,7 +26,7 @@
         <constructor-arg index="1" ref="transactionManager"/>
     </bean>
 
-    <bean id="eventStorageEngine" class="org.axonframework.eventsourcing.eventstore.jpa.OldJpaEventStorageEngine">
+    <bean id="eventStorageEngine" class="org.axonframework.eventsourcing.eventstore.jpa.LegacyJpaEventStorageEngine">
         <constructor-arg name="entityManagerProvider" ref="entityManagerProvider"/>
         <constructor-arg name="transactionManager" ref="axonTransactionManager"/>
     </bean>
