@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,12 +41,12 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 import static org.axonframework.common.ObjectUtils.getOrDefault;
 
 /**
- * {@link AbstractEventStorageEngine} implementation that fetches events in batches from the backing database.
+ * {@link AbstractLegacyEventStorageEngine} implementation that fetches events in batches from the backing database.
  *
  * @author Rene de Waele
  * @since 3.0
  */
-public abstract class BatchingEventStorageEngine extends AbstractEventStorageEngine {
+public abstract class BatchingEventStorageEngine extends AbstractLegacyEventStorageEngine {
 
     private static final int DEFAULT_BATCH_SIZE = 100;
     /**
@@ -169,7 +169,7 @@ public abstract class BatchingEventStorageEngine extends AbstractEventStorageEng
      * <p>
      * The event and snapshot {@link Serializer} are <b>hard requirements</b> and as such should be provided.
      */
-    public abstract static class Builder extends AbstractEventStorageEngine.Builder {
+    public abstract static class Builder extends AbstractLegacyEventStorageEngine.Builder {
 
         private int batchSize = DEFAULT_BATCH_SIZE;
         private Predicate<List<? extends DomainEventData<?>>> finalAggregateBatchPredicate;

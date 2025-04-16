@@ -43,7 +43,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.EventStreamUtils;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
@@ -373,7 +373,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
         }
     }
 
-    static class AxonIQEventStorageEngine extends AbstractEventStorageEngine {
+    static class AxonIQEventStorageEngine extends AbstractLegacyEventStorageEngine {
 
         private static final int ALLOW_SNAPSHOTS_MAGIC_VALUE = -42;
         private final String APPEND_EVENT_TRANSACTION = this + "/APPEND_EVENT_TRANSACTION";
@@ -676,7 +676,7 @@ public class AxonServerEventStore extends AbstractLegacyEventStore {
             return this.eventSerializer;
         }
 
-        private static class Builder extends AbstractEventStorageEngine.Builder {
+        private static class Builder extends AbstractLegacyEventStorageEngine.Builder {
 
             private boolean snapshotFilterSet;
             private AxonServerConfiguration configuration;

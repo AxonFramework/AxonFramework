@@ -43,10 +43,10 @@ import static org.mockito.Mockito.*;
  *
  * @author Rene de Waele
  */
-public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStorageEngine, EB extends AbstractEventStorageEngine.Builder>
+public abstract class AbstractEventStorageEngineTest<E extends AbstractLegacyEventStorageEngine, EB extends AbstractLegacyEventStorageEngine.Builder>
         extends EventStorageEngineTest {
 
-    private AbstractEventStorageEngine testSubject;
+    private AbstractLegacyEventStorageEngine testSubject;
 
     @Test
     public void uniqueKeyConstraintOnFirstEventIdentifierThrowsAggregateIdentifierAlreadyExistsException() {
@@ -148,7 +148,7 @@ public abstract class AbstractEventStorageEngineTest<E extends AbstractEventStor
         assertFalse(testSubject.readSnapshot(AGGREGATE).isPresent());
     }
 
-    protected void setTestSubject(AbstractEventStorageEngine testSubject) {
+    protected void setTestSubject(AbstractLegacyEventStorageEngine testSubject) {
         super.setTestSubject(this.testSubject = testSubject);
     }
 

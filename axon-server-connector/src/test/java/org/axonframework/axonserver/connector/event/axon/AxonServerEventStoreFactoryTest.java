@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.AbstractEventBus;
 import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStore;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.monitoring.MessageMonitor;
@@ -107,16 +107,16 @@ class AxonServerEventStoreFactoryTest {
         assertEquals(connectionManager, resultConnectionManager);
 
         Serializer resultSnapshotSerializer =
-                getFieldValue(AbstractEventStorageEngine.class.getDeclaredField("snapshotSerializer"), storageEngine);
+                getFieldValue(AbstractLegacyEventStorageEngine.class.getDeclaredField("snapshotSerializer"), storageEngine);
         assertEquals(snapshotSerializer, resultSnapshotSerializer);
         Serializer resultEventSerializer =
-                getFieldValue(AbstractEventStorageEngine.class.getDeclaredField("eventSerializer"), storageEngine);
+                getFieldValue(AbstractLegacyEventStorageEngine.class.getDeclaredField("eventSerializer"), storageEngine);
         assertEquals(eventSerializer, resultEventSerializer);
         EventUpcaster resultUpcasterChain =
-                getFieldValue(AbstractEventStorageEngine.class.getDeclaredField("upcasterChain"), storageEngine);
+                getFieldValue(AbstractLegacyEventStorageEngine.class.getDeclaredField("upcasterChain"), storageEngine);
         assertEquals(upcasterChain, resultUpcasterChain);
         SnapshotFilter resultSnapshotFilter =
-                getFieldValue(AbstractEventStorageEngine.class.getDeclaredField("snapshotFilter"), storageEngine);
+                getFieldValue(AbstractLegacyEventStorageEngine.class.getDeclaredField("snapshotFilter"), storageEngine);
         assertEquals(snapshotFilter, resultSnapshotFilter);
 
         MessageMonitor<? super EventMessage<?>> resultMessageMonitor =
@@ -143,10 +143,10 @@ class AxonServerEventStoreFactoryTest {
         );
         assertEquals(TEST_CONTEXT, resultContext);
         Serializer resultSnapshotSerializer =
-                getFieldValue(AbstractEventStorageEngine.class.getDeclaredField("snapshotSerializer"), storageEngine);
+                getFieldValue(AbstractLegacyEventStorageEngine.class.getDeclaredField("snapshotSerializer"), storageEngine);
         assertEquals(expectedSerializer, resultSnapshotSerializer);
         Serializer resultEventSerializer =
-                getFieldValue(AbstractEventStorageEngine.class.getDeclaredField("eventSerializer"), storageEngine);
+                getFieldValue(AbstractLegacyEventStorageEngine.class.getDeclaredField("eventSerializer"), storageEngine);
         assertEquals(expectedSerializer, resultEventSerializer);
     }
 

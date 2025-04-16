@@ -48,7 +48,7 @@ import static org.axonframework.eventsourcing.EventStreamUtils.upcastAndDeserial
  * @author Rene de Waele
  * @since 3.0
  */
-public abstract class AbstractEventStorageEngine implements LegacyEventStorageEngine {
+public abstract class AbstractLegacyEventStorageEngine implements LegacyEventStorageEngine {
 
     private final Serializer snapshotSerializer;
     protected final EventUpcaster upcasterChain;
@@ -57,14 +57,14 @@ public abstract class AbstractEventStorageEngine implements LegacyEventStorageEn
     private final SnapshotFilter snapshotFilter;
 
     /**
-     * Instantiate a {@link AbstractEventStorageEngine} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link AbstractLegacyEventStorageEngine} based on the fields contained in the {@link Builder}.
      * <p>
      * Will assert that the event and snapshot {@link Serializer} are not {@code null}, and will throw an
      * {@link AxonConfigurationException} if any of them is {@code null}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link AbstractEventStorageEngine} instance
+     * @param builder the {@link Builder} used to instantiate a {@link AbstractLegacyEventStorageEngine} instance
      */
-    protected AbstractEventStorageEngine(Builder builder) {
+    protected AbstractLegacyEventStorageEngine(Builder builder) {
         builder.validate();
         this.snapshotSerializer = builder.snapshotSerializer.get();
         this.upcasterChain = builder.upcasterChain;
@@ -241,7 +241,7 @@ public abstract class AbstractEventStorageEngine implements LegacyEventStorageEn
     }
 
     /**
-     * Abstract Builder class to instantiate an {@link AbstractEventStorageEngine}.
+     * Abstract Builder class to instantiate an {@link AbstractLegacyEventStorageEngine}.
      * <p>
      * The {@link EventUpcaster} defaults to a {@link NoOpEventUpcaster} and the {@code snapshotFilter} defaults to a
      * {@link SnapshotFilter#allowAll()} instance.

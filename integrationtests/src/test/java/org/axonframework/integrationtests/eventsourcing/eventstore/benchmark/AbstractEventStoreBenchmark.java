@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.EventProcessor;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
-import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
@@ -188,8 +188,8 @@ public abstract class AbstractEventStoreBenchmark {
     }
 
     protected Optional<Serializer> serializer() {
-        return storageEngine instanceof AbstractEventStorageEngine ?
-                Optional.of(((AbstractEventStorageEngine) storageEngine).getSnapshotSerializer()) : Optional.empty();
+        return storageEngine instanceof AbstractLegacyEventStorageEngine ?
+                Optional.of(((AbstractLegacyEventStorageEngine) storageEngine).getSnapshotSerializer()) : Optional.empty();
     }
 
     public int getTotalEventCount() {
