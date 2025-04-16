@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
 import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
@@ -64,7 +64,7 @@ class EventSourcingConfigurationDefaultsTest {
         assertInstanceOf(AnnotationBasedTagResolver.class, resultConfig.getComponent(TagResolver.class));
         assertInstanceOf(AsyncInMemoryEventStorageEngine.class,
                          resultConfig.getComponent(AsyncEventStorageEngine.class));
-        AsyncEventStore eventStore = resultConfig.getComponent(AsyncEventStore.class);
+        EventStore eventStore = resultConfig.getComponent(EventStore.class);
         assertInstanceOf(SimpleEventStore.class, eventStore);
         EventSink eventSink = resultConfig.getComponent(EventSink.class);
         assertInstanceOf(SimpleEventStore.class, eventSink);

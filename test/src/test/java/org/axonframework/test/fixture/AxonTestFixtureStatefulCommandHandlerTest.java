@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.AnnotationBasedEntityEvolver;
 import org.axonframework.eventsourcing.AsyncEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStore;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventStorageEngine;
@@ -239,25 +239,25 @@ class AxonTestFixtureStatefulCommandHandlerTest {
 
     private static void registerSampleStatefulCommandHandler(MessagingConfigurer configurer) {
         configurer.componentRegistry(cr -> cr.registerComponent(
-                StateManager.class,
-                c -> {
-                    var repository = new AsyncEventSourcingRepository<>(
-                            String.class,
-                            Student.class,
-                            c.getComponent(AsyncEventStore.class),
-                            (type, id) -> new Student(id),
-                            id -> EventCriteria.havingTags("Student", id),
-                            new AnnotationBasedEntityEvolver<>(Student.class)
-                    );
-                    return SimpleStateManager.builder("testfixture")
-                                             .register(repository)
-                                             .build();
-                })
-                                             .registerComponent(AsyncEventStore.class,
+                                                     StateManager.class,
+                                                     c -> {
+                                                         var repository = new AsyncEventSourcingRepository<>(
+                                                                 String.class,
+                                                                 Student.class,
+                                                                 c.getComponent(EventStore.class),
+                                                                 (type, id) -> new Student(id),
+                                                                 id -> EventCriteria.havingTags("Student", id),
+                                                                 new AnnotationBasedEntityEvolver<>(Student.class)
+                                                         );
+                                                         return SimpleStateManager.builder("testfixture")
+                                                                                  .register(repository)
+                                                                                  .build();
+                                                     })
+                                             .registerComponent(EventStore.class,
                                                                 c -> new SimpleEventStore(new AsyncInMemoryEventStorageEngine(),
                                                                                           new AnnotationBasedTagResolver()))
                                              .registerComponent(EventSink.class,
-                                                                c -> c.getComponent(AsyncEventStore.class))
+                                                                c -> c.getComponent(EventStore.class))
                                              .registerDecorator(CommandBus.class, 50, (c, name, delegate) -> {
                                                  var stateManager = c.getComponent(StateManager.class);
                                                  var statefulCommandHandler = StatefulCommandHandlingComponent

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,19 +28,18 @@ import java.util.List;
 /**
  * Infrastructure component providing the means to start an {@link EventStoreTransaction} to
  * {@link EventStoreTransaction#appendEvent(EventMessage) append events} and
- * {@link EventStoreTransaction#source(SourcingCondition) event source} models from the underlying
- * storage solution.
+ * {@link EventStoreTransaction#source(SourcingCondition) event source} models from the underlying storage solution.
  * <p>
  * As an implementation of the {@link EventSink}, this {@code EventStore} will initiate a
- * {@link #transaction(ProcessingContext)} when {@link #publish(ProcessingContext, List)} is triggered
- * to append events.
+ * {@link #transaction(ProcessingContext)} when {@link #publish(ProcessingContext, List)} is triggered to append
+ * events.
  *
  * @author Allard Buijze
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 0.1
- */ // TODO Rename to EventStore once fully integrated
-public interface AsyncEventStore extends EventSink, DescribableComponent {
+ */
+public interface EventStore extends EventSink, DescribableComponent {
 
     @Override
     default void publish(@Nonnull ProcessingContext processingContext,

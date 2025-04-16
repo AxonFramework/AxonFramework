@@ -34,7 +34,7 @@ import javax.annotation.Nonnull;
  *
  * @author Allard Buijze
  * @author Rene de Waele
- */ // TODO Replace for AsyncEventStore once fully integrated.
+ */
 @Deprecated
 public interface LegacyEventStore
         extends EventBus, StreamableMessageSource<TrackedEventMessage<?>>, DomainEventSequenceAware {

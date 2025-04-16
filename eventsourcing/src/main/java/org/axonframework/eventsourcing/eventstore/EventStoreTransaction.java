@@ -23,8 +23,8 @@ import org.axonframework.messaging.MessageStream;
 import java.util.function.Consumer;
 
 /**
- * Interface describing the actions that can be taken on a transaction to source a model from the
- * {@link AsyncEventStore} based on the resulting {@link MessageStream}.
+ * Interface describing the actions that can be taken on a transaction to source a model from the {@link EventStore}
+ * based on the resulting {@link MessageStream}.
  * <p>
  * Note that this transaction includes operations for {@link #source(SourcingCondition)} the model as well as
  * {@link #appendEvent(EventMessage) appending events}.
@@ -47,7 +47,7 @@ public interface EventStoreTransaction {
     MessageStream<? extends EventMessage<?>> source(@Nonnull SourcingCondition condition);
 
     /**
-     * Appends an {@code eventMessage} to be appended to an {@link AsyncEventStore} in this transaction with the given
+     * Appends an {@code eventMessage} to be appended to an {@link EventStore} in this transaction with the given
      * {@code condition}.
      *
      * @param eventMessage The {@link EventMessage} to append.
