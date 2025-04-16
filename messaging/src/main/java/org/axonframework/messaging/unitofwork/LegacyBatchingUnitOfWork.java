@@ -43,7 +43,7 @@ import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
  * @author Rene de Waele
  * @author Allard Buijze
  * @since 3.0
- * @deprecated In favor of the {@link AsyncUnitOfWork}.
+ * @deprecated In favor of the {@link UnitOfWork}.
  */
 @Deprecated(since = "5.0.0")
 public class LegacyBatchingUnitOfWork<T extends Message<?>> extends AbstractLegacyUnitOfWork<T> {

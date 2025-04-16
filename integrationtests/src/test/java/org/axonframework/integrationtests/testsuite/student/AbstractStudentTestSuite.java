@@ -33,7 +33,7 @@ import org.axonframework.integrationtests.testsuite.student.events.StudentEnroll
 import org.axonframework.integrationtests.testsuite.student.state.Course;
 import org.axonframework.integrationtests.testsuite.student.state.Student;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.configuration.StatefulCommandHandlingModule;
 import org.axonframework.modelling.repository.AsyncRepository;
 import org.junit.jupiter.api.*;
@@ -174,7 +174,7 @@ public abstract class AbstractStudentTestSuite {
     }
 
     protected void verifyStudentName(String id, String name) {
-        AsyncUnitOfWork uow = new AsyncUnitOfWork();
+        UnitOfWork uow = new UnitOfWork();
         uow.executeWithResult(context -> studentRepository
                    .load(id, context)
                    .thenAccept(student -> assertEquals(name, student.entity().getName())))
@@ -182,7 +182,7 @@ public abstract class AbstractStudentTestSuite {
     }
 
     protected void verifyStudentEnrolledInCourse(String id, String courseId) {
-        AsyncUnitOfWork uow = new AsyncUnitOfWork();
+        UnitOfWork uow = new UnitOfWork();
         uow.executeWithResult(context -> studentRepository
                    .load(id, context)
                    .thenAccept(student -> assertTrue(student.entity().getCoursesEnrolled().contains(courseId)))

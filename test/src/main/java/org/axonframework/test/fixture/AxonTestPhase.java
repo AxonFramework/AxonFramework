@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MetaData;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -44,10 +45,10 @@ import java.util.function.Predicate;
  *   <li>{@link Then} - Validating the results of the test</li>
  * </ul>
  * <p>
- * The test fixture manages {@link org.axonframework.messaging.unitofwork.AsyncUnitOfWork} instances during test execution,
+ * The test fixture manages {@link UnitOfWork} instances during test execution,
  * automatically committing as appropriate. During the Given phase, each operation (like {@link Given#event}},
  * {@link Given#command} or even batched like {@link Given#events} and {@link Given#commands})
- * is executed in its own separate {@link org.axonframework.messaging.unitofwork.AsyncUnitOfWork} that is committed immediately after execution. In the When phase, a single Unit of Work is started
+ * is executed in its own separate {@link UnitOfWork} that is committed immediately after execution. In the When phase, a single Unit of Work is started
  * and committed after the command is executed. The Then phase only validates the results.
  * <p>
  * The test phases operates on components defined in {@link Configuration} that you pass to the fixture during its construction.

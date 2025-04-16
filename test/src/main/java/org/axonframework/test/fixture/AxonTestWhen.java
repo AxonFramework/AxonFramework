@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.Arrays;
@@ -110,13 +110,13 @@ class AxonTestWhen implements AxonTestPhase.When {
     }
 
     private void inUnitOfWorkRunOnInvocation(Consumer<ProcessingContext> action) {
-        var unitOfWork = new AsyncUnitOfWork();
+        var unitOfWork = new UnitOfWork();
         unitOfWork.runOnInvocation(action);
         awaitCompletion(unitOfWork.execute());
     }
 
     private void inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
-        var unitOfWork = new AsyncUnitOfWork();
+        var unitOfWork = new UnitOfWork();
         unitOfWork.onInvocation(action);
         awaitCompletion(unitOfWork.execute());
     }

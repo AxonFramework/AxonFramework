@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import java.util.function.UnaryOperator;
  * providing the possibility to carry along resources throughout the phases.
  * <p/>
  * It is strongly recommended to interface with the {@code ProcessingLifecycle} and/or {@code ProcessingContext} instead
- * of with the {@link AsyncUnitOfWork} directly.
+ * of with the {@link UnitOfWork} directly.
  *
  * @author Allard Buijze
  * @author Gerard Klijs
@@ -50,41 +50,40 @@ import java.util.function.UnaryOperator;
  * @author Steven van Beelen
  * @since 0.6
  */
-// TODO #3064 - Rename to UnitOfWork once old version is removed.
-public class AsyncUnitOfWork implements ProcessingLifecycle {
+public class UnitOfWork implements ProcessingLifecycle {
 
-    private static final Logger logger = LoggerFactory.getLogger(AsyncUnitOfWork.class);
+    private static final Logger logger = LoggerFactory.getLogger(UnitOfWork.class);
 
     private final String identifier;
     private final UnitOfWorkProcessingContext context;
 
 
     /**
-     * Constructs a {@link AsyncUnitOfWork} with a {@link UUID#randomUUID() random UUID String}. Will execute provided
+     * Constructs a {@link UnitOfWork} with a {@link UUID#randomUUID() random UUID String}. Will execute provided
      * actions on the same thread invoking this Unit of Work.
      */
-    public AsyncUnitOfWork() {
+    public UnitOfWork() {
         this(UUID.randomUUID().toString());
     }
 
     /**
-     * Constructs a {@link AsyncUnitOfWork} with the given {@code identifier}. Will execute provided actions on the same
+     * Constructs a {@link UnitOfWork} with the given {@code identifier}. Will execute provided actions on the same
      * thread invoking this Unit of Work.
      *
      * @param identifier The identifier of this Unit of Work.
      */
-    public AsyncUnitOfWork(String identifier) {
+    public UnitOfWork(String identifier) {
         this(identifier, Runnable::run);
     }
 
     /**
-     * Constructs a {@link AsyncUnitOfWork} with the given {@code identifier}, processing actions through the given
+     * Constructs a {@link UnitOfWork} with the given {@code identifier}, processing actions through the given
      * {@code workScheduler}.
      *
      * @param identifier    The identifier of this Unit of Work.
      * @param workScheduler The {@link Executor} used to process the steps attached to the phases in this Unit of Work
      */
-    public AsyncUnitOfWork(String identifier, Executor workScheduler) {
+    public UnitOfWork(String identifier, Executor workScheduler) {
         this.identifier = identifier;
         this.context = new UnitOfWorkProcessingContext(identifier, workScheduler);
     }
@@ -110,7 +109,7 @@ public class AsyncUnitOfWork implements ProcessingLifecycle {
     }
 
     @Override
-    public AsyncUnitOfWork on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
+    public UnitOfWork on(Phase phase, Function<ProcessingContext, CompletableFuture<?>> action) {
         context.on(phase, action);
         return this;
     }

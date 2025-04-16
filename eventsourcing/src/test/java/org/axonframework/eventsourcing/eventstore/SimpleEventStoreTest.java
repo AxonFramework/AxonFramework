@@ -22,10 +22,9 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.messaging.StubProcessingContext;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -141,10 +140,10 @@ class SimpleEventStoreTest {
             EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
             GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(42);
 
-            AsyncUnitOfWork asyncUnitOfWork = new AsyncUnitOfWork();
+            UnitOfWork unitOfWork = new UnitOfWork();
             when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
-            var result = asyncUnitOfWork.executeWithResult(pc -> {
+            var result = unitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc);
                 transaction.appendEvent(eventMessage(0));
                 return completedFuture(transaction);
@@ -161,12 +160,12 @@ class SimpleEventStoreTest {
             EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
             GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(42);
 
-            AsyncUnitOfWork asyncUnitOfWork = new AsyncUnitOfWork();
+            UnitOfWork unitOfWork = new UnitOfWork();
             when(mockStorageEngine.source(any())).thenReturn(messageStreamOf(10));
             when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
 
-            var result = asyncUnitOfWork.executeWithResult(pc -> {
+            var result = unitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc);
                 doConsumeAll(transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag())));
                 transaction.appendEvent(eventMessage(0));
@@ -196,13 +195,13 @@ class SimpleEventStoreTest {
             EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
             GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(101);
 
-            AsyncUnitOfWork asyncUnitOfWork = new AsyncUnitOfWork();
+            UnitOfWork unitOfWork = new UnitOfWork();
             when(mockStorageEngine.source(any())).thenReturn(messageStreamOf(size1))
                                                  .thenReturn(messageStreamOf(size2))
                                                  .thenReturn(messageStreamOf(size3));
             when(mockStorageEngine.appendEvents(any(), anyList())).thenReturn(completedFuture(mockAppendTransaction));
             when(mockAppendTransaction.commit()).thenReturn(completedFuture(markerAfterCommit));
-            var result = asyncUnitOfWork.executeWithResult(pc -> {
+            var result = unitOfWork.executeWithResult(pc -> {
                 EventStoreTransaction transaction = testSubject.transaction(pc);
                 var firstStream = transaction.source(SourcingCondition.conditionFor(EventCriteria.havingAnyTag()));
 

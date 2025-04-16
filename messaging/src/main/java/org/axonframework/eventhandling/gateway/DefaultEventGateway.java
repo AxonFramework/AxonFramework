@@ -20,7 +20,7 @@ import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.messaging.MessageTypeResolver;
-import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 /**
  * Default implementation of the {@link EventGateway} interface. Events are published using the {@link EventSink} in a
- * new {@link AsyncUnitOfWork}.
+ * new {@link UnitOfWork}.
  *
  * @author Bert laverman
  * @author Mitchell Herrijgers
@@ -56,7 +56,7 @@ public class DefaultEventGateway implements EventGateway {
 
     @Override
     public void publish(@Nonnull List<?> events) {
-        AsyncUnitOfWork unitOfWork = new AsyncUnitOfWork();
+        UnitOfWork unitOfWork = new UnitOfWork();
         unitOfWork.onInvocation(context -> {
             doPublish(events, context);
             return CompletableFuture.completedFuture(null);

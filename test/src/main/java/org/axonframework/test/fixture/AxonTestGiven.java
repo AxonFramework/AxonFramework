@@ -24,7 +24,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
-import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.List;
@@ -92,13 +92,13 @@ class AxonTestGiven implements AxonTestPhase.Given {
     }
 
     private void inUnitOfWorkRunOnInvocation(Consumer<ProcessingContext> action) {
-        var unitOfWork = new AsyncUnitOfWork();
+        var unitOfWork = new UnitOfWork();
         unitOfWork.runOnInvocation(action);
         unitOfWork.execute().join();
     }
 
     private void inUnitOfWorkOnInvocation(Function<ProcessingContext, CompletableFuture<?>> action) {
-        var unitOfWork = new AsyncUnitOfWork();
+        var unitOfWork = new UnitOfWork();
         unitOfWork.onInvocation(action);
         unitOfWork.execute().join();
     }

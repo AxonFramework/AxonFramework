@@ -16,7 +16,7 @@
 
 package org.axonframework.modelling;
 
-import org.axonframework.messaging.unitofwork.AsyncUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.modelling.repository.ManagedEntity;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -51,7 +51,7 @@ class SimpleRepositoryTest {
 
     @Test
     void loadedEntityPersistsOnCommit() throws ExecutionException, InterruptedException, TimeoutException {
-        new AsyncUnitOfWork().executeWithResult(ctx -> {
+        new UnitOfWork().executeWithResult(ctx -> {
             ManagedEntity<String, Integer> entity = testSubject.load("42", ctx).join();
             assertEquals(42, entity.entity());
 
@@ -81,7 +81,7 @@ class SimpleRepositoryTest {
         Mockito.when(managedEntity.identifier()).thenReturn("42");
         Mockito.when(managedEntity.entity()).thenReturn(42);
 
-        new AsyncUnitOfWork().executeWithResult(ctx -> {
+        new UnitOfWork().executeWithResult(ctx -> {
             ManagedEntity<String, Integer> entity = testSubject.attach(managedEntity, ctx);
             assertEquals(42, entity.entity());
             assertEquals("42", entity.identifier());
@@ -100,7 +100,7 @@ class SimpleRepositoryTest {
     @Test
     void queuesPersistForCommitOnPersistNonLoadedEntity()
             throws ExecutionException, InterruptedException, TimeoutException {
-        new AsyncUnitOfWork().executeWithResult(ctx -> {
+        new UnitOfWork().executeWithResult(ctx -> {
             ManagedEntity<String, Integer> entity = testSubject.persist("42", 42, ctx);
             assertEquals(42, entity.entity());
 
@@ -122,7 +122,7 @@ class SimpleRepositoryTest {
     @Test
     void updatesKnownEntityWhenLoadedAndPersistedWithOtherValue()
             throws ExecutionException, InterruptedException, TimeoutException {
-        new AsyncUnitOfWork().executeWithResult(ctx -> {
+        new UnitOfWork().executeWithResult(ctx -> {
             ManagedEntity<String, Integer> entity = testSubject.load("42", ctx).join();
             assertEquals(42, entity.entity());
 
