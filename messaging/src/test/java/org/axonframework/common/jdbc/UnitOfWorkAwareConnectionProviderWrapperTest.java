@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.axonframework.messaging.ExecutionException;
 import org.axonframework.messaging.GenericResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.ExecutionResult;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -61,7 +61,7 @@ class UnitOfWorkAwareConnectionProviderWrapperTest {
 
     @Test
     void connectionIsWrappedWhenUnitOfWorkIsActive() throws SQLException {
-        DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         Connection actual = testSubject.getConnection();
         assertNotSame(actual, mockConnection);
 
@@ -76,7 +76,7 @@ class UnitOfWorkAwareConnectionProviderWrapperTest {
 
     @Test
     void wrappedConnectionBlocksCommitCallsUntilUnitOfWorkCommit() throws SQLException {
-        DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         when(mockConnection.getAutoCommit()).thenReturn(false);
         when(mockConnection.isClosed()).thenReturn(false);
 
@@ -96,7 +96,7 @@ class UnitOfWorkAwareConnectionProviderWrapperTest {
 
     @Test
     void wrappedConnectionRollsBackCallsWhenUnitOfWorkRollback() throws SQLException {
-        DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         when(mockConnection.getAutoCommit()).thenReturn(false);
         when(mockConnection.isClosed()).thenReturn(false);
 
@@ -117,7 +117,7 @@ class UnitOfWorkAwareConnectionProviderWrapperTest {
 
     @Test
     void originalExceptionThrewWhenRollbackFailed() throws SQLException {
-        DefaultUnitOfWork<Message<?>> uow = new DefaultUnitOfWork<Message<?>>(null) {
+        LegacyDefaultUnitOfWork<Message<?>> uow = new LegacyDefaultUnitOfWork<>(null) {
             @Override
             public ExecutionResult getExecutionResult() {
                 return new ExecutionResult(
@@ -142,12 +142,12 @@ class UnitOfWorkAwareConnectionProviderWrapperTest {
         when(mockConnection.getAutoCommit()).thenReturn(false);
         when(mockConnection.isClosed()).thenReturn(false);
 
-        DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         Connection actualOuter = testSubject.getConnection();
 
         verify(mockConnectionProvider, times(1)).getConnection();
 
-        DefaultUnitOfWork<Message<?>> innerUow = DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message<?>> innerUow = LegacyDefaultUnitOfWork.startAndGet(null);
         Connection actualInner = testSubject.getConnection();
 
         verify(mockConnectionProvider, times(1)).getConnection();

@@ -19,7 +19,7 @@ package org.axonframework.modelling.saga.repository;
 import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.Saga;
@@ -48,7 +48,7 @@ class LockingSagaRepositoryTest {
         lock = mock(Lock.class);
         when(lockFactory.obtainLock(anyString())).thenReturn(lock);
         subject = spy(CustomSagaRepository.builder().lockFactory(lockFactory).build());
-        DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork.startAndGet(null);
     }
 
     @AfterEach

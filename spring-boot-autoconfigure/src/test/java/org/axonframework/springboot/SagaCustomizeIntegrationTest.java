@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingEventProcessorConfiguration;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.serialization.Serializer;
@@ -101,7 +101,7 @@ class SagaCustomizeIntegrationTest {
     }
 
     private void publishEvent(EchoEvent... events) {
-        DefaultUnitOfWork.startAndGet(null).execute(
+        LegacyDefaultUnitOfWork.startAndGet(null).execute(
                 () -> {
                     Transaction tx = transactionManager.startTransaction();
                     CurrentUnitOfWork.get().onRollback(u -> tx.rollback());

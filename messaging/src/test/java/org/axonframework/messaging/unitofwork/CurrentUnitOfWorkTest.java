@@ -61,9 +61,9 @@ class CurrentUnitOfWorkTest {
 
     @Test
     void notCurrentUnitOfWorkCommitted() {
-        DefaultUnitOfWork<?> outerUoW = new DefaultUnitOfWork<>(null);
+        LegacyDefaultUnitOfWork<?> outerUoW = new LegacyDefaultUnitOfWork<>(null);
         outerUoW.start();
-        new DefaultUnitOfWork<>(null).start();
+        new LegacyDefaultUnitOfWork<>(null).start();
         try {
             outerUoW.commit();
         } catch (IllegalStateException e) {

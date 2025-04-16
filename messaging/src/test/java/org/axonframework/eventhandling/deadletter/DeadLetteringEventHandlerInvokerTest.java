@@ -35,7 +35,7 @@ import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
 
@@ -84,7 +84,7 @@ class DeadLetteringEventHandlerInvokerTest {
         transactionManager = spy(new StubTransactionManager());
 
         setTestSubject(createTestSubject());
-        DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork.startAndGet(null);
     }
 
     @AfterEach

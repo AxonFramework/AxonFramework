@@ -30,7 +30,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
@@ -340,13 +340,13 @@ public abstract class EmbeddedEventStoreTest {
         String aggregateId = UUID.randomUUID().toString();
         List<DomainEventMessage<?>> events = createEvents(() -> aggregateId, 10);
         testSubject.publish(events.subList(0, 2));
-        DefaultUnitOfWork.startAndGet(null)
-                         .execute(() -> {
-                             assertEquals(2, testSubject.readEvents(aggregateId).asStream().count());
+        LegacyDefaultUnitOfWork.startAndGet(null)
+                               .execute(() -> {
+                                   assertEquals(2, testSubject.readEvents(aggregateId).asStream().count());
 
-                             testSubject.publish(events.subList(2, events.size()));
-                             assertEquals(10, testSubject.readEvents(aggregateId).asStream().count());
-                         });
+                                   testSubject.publish(events.subList(2, events.size()));
+                                   assertEquals(10, testSubject.readEvents(aggregateId).asStream().count());
+                               });
     }
 
     @Test
@@ -354,13 +354,13 @@ public abstract class EmbeddedEventStoreTest {
         String aggregateId = UUID.randomUUID().toString();
         List<DomainEventMessage<?>> events = createEvents(() -> aggregateId, 10);
         testSubject.publish(events.subList(0, 2));
-        DefaultUnitOfWork.startAndGet(null)
-                         .execute(() -> {
-                             assertEquals(2, testSubject.readEvents(aggregateId).asStream().count());
+        LegacyDefaultUnitOfWork.startAndGet(null)
+                               .execute(() -> {
+                                   assertEquals(2, testSubject.readEvents(aggregateId).asStream().count());
 
-                             testSubject.publish(events.subList(2, events.size()));
-                             assertEquals(8, testSubject.readEvents(aggregateId, 2).asStream().count());
-                         });
+                                   testSubject.publish(events.subList(2, events.size()));
+                                   assertEquals(8, testSubject.readEvents(aggregateId, 2).asStream().count());
+                               });
     }
 
     @Test
@@ -368,7 +368,7 @@ public abstract class EmbeddedEventStoreTest {
         String aggregateId = UUID.randomUUID().toString();
         List<DomainEventMessage<?>> events = createEvents(() -> aggregateId, 10);
         testSubject.publish(events.subList(0, 2));
-        DefaultUnitOfWork<Message<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message<?>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events.subList(2, events.size()));
 
         CurrentUnitOfWork.clear(unitOfWork);
@@ -386,7 +386,7 @@ public abstract class EmbeddedEventStoreTest {
     @Test
     void appendEventsCreatesCorrectSpans() {
         List<DomainEventMessage<?>> events = createEvents(10);
-        DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events);
         events.forEach(e -> {
             spanFactory.verifySpanCompleted("EventBus.publishEvent", e);
@@ -405,9 +405,9 @@ public abstract class EmbeddedEventStoreTest {
         String aggregateId = UUID.randomUUID().toString();
         List<DomainEventMessage<?>> events = createEvents(() -> aggregateId, 10);
         testSubject.publish(events.subList(0, 2));
-        DefaultUnitOfWork<Message<?>> outerUoW = DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message<?>> outerUoW = LegacyDefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events.subList(2, 4));
-        DefaultUnitOfWork<Message<?>> innerUoW = DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message<?>> innerUoW = LegacyDefaultUnitOfWork.startAndGet(null);
         testSubject.publish(events.subList(4, events.size()));
 
         Consumer<LegacyUnitOfWork<Message<?>>> assertCorrectEventCount =

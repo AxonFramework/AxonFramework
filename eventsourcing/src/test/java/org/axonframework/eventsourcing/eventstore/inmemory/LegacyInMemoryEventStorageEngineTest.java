@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngineTest;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 
@@ -70,7 +70,7 @@ class LegacyInMemoryEventStorageEngineTest extends EventStorageEngineTest {
 
     @Test
     void eventsAreStoredOnCommitIfCurrentUnitOfWorkIsActive() {
-        LegacyUnitOfWork<EventMessage<Object>> unitOfWork = DefaultUnitOfWork.startAndGet(TEST_EVENT);
+        LegacyUnitOfWork<EventMessage<Object>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(TEST_EVENT);
 
         // when _only_ publishing...
         testSubject.appendEvents(TEST_EVENT);
@@ -89,7 +89,7 @@ class LegacyInMemoryEventStorageEngineTest extends EventStorageEngineTest {
 
     @Test
     void eventsAreNotStoredWhenTheUnitOfWorkIsRolledBackIfCurrentUnitOfWorkIsActive() {
-        LegacyUnitOfWork<EventMessage<Object>> unitOfWork = DefaultUnitOfWork.startAndGet(TEST_EVENT);
+        LegacyUnitOfWork<EventMessage<Object>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(TEST_EVENT);
 
         // when _only_ publishing...
         testSubject.appendEvents(TEST_EVENT);

@@ -30,7 +30,7 @@ import org.axonframework.common.transaction.Transaction;
 import org.axonframework.common.transaction.TransactionManager;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.CreationPolicy;
@@ -230,7 +230,7 @@ public abstract class AbstractPolymorphicAggregateAnnotationCommandHandlerTestSu
     }
 
     private void assertAggregateState(String aggregateId, String expectedState) {
-        DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         uow.attachTransaction(transactionManager);
         String state = uow.executeWithResult(() -> {
             AtomicReference<String> rv = new AtomicReference<>();

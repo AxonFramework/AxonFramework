@@ -24,7 +24,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.queryhandling.GenericQueryMessage;
 import org.axonframework.queryhandling.QueryMessage;
@@ -108,7 +108,7 @@ class DeadLetterParameterResolverFactoryTest {
         DeadLetter<EventMessage<String>> expected = new GenericDeadLetter<>(
                 "sequenceId", testMessage, new RuntimeException("some-cause")
         );
-        LegacyUnitOfWork<EventMessage<String>> uow = DefaultUnitOfWork.startAndGet(testMessage);
+        LegacyUnitOfWork<EventMessage<String>> uow = LegacyDefaultUnitOfWork.startAndGet(testMessage);
         uow.resources().put(DeadLetter.class.getName(), expected);
 
         ParameterResolver<DeadLetter<?>> resolver =
@@ -131,7 +131,7 @@ class DeadLetterParameterResolverFactoryTest {
     @Test
     void resolvesNullWhenNoDeadLetterIsPresentInTheUnitOfWorkResources() {
         EventMessage<String> testMessage = EventTestUtils.asEventMessage("some-event");
-        DefaultUnitOfWork.startAndGet(testMessage);
+        LegacyDefaultUnitOfWork.startAndGet(testMessage);
 
         ParameterResolver<DeadLetter<?>> resolver =
                 testSubject.createInstance(deadLetterMethod, deadLetterMethod.getParameters(), 0);

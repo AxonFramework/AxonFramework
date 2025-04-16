@@ -23,7 +23,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 import org.slf4j.LoggerFactory;
@@ -59,7 +59,7 @@ class LoggingInterceptorTest {
         loggerField.set(logger, mockLogger);
 
         interceptorChain = mock(InterceptorChain.class);
-        unitOfWork = new DefaultUnitOfWork<>(
+        unitOfWork = new LegacyDefaultUnitOfWork<>(
                 new GenericMessage<>(new MessageType("message"), new StubMessage())
         );
     }

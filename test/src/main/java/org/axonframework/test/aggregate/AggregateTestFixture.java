@@ -62,7 +62,7 @@ import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
@@ -366,7 +366,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
         }
 
         ensureRepositoryConfiguration();
-        DefaultUnitOfWork.startAndGet(null).execute(() -> {
+        LegacyDefaultUnitOfWork.startAndGet(null).execute(() -> {
             try {
                 repository.newInstance(aggregate::get);
             } catch (Exception e) {
@@ -516,7 +516,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public ResultValidator<T> whenConstructing(Callable<T> aggregateFactory) {
-        return when(validator -> DefaultUnitOfWork.startAndGet(null).execute(() -> {
+        return when(validator -> LegacyDefaultUnitOfWork.startAndGet(null).execute(() -> {
             try {
                 repository.newInstance(aggregateFactory);
             } catch (Exception | AssertionError e) {
@@ -528,7 +528,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public ResultValidator<T> whenInvoking(String aggregateId, Consumer<T> aggregateSupplier) {
-        return when(validator -> DefaultUnitOfWork.startAndGet(null).execute(() -> {
+        return when(validator -> LegacyDefaultUnitOfWork.startAndGet(null).execute(() -> {
             try {
                 repository.load(aggregateId)
                           .execute(aggregateSupplier);
@@ -664,7 +664,7 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
     private void detectIllegalStateChanges(MatchAllFieldFilter fieldFilter, Aggregate<T> workingAggregate) {
         logger.debug("Starting separate Unit of Work for the purpose of checking illegal state changes in Aggregate");
         if (aggregateIdentifier != null && workingAggregate != null && reportIllegalStateChange) {
-            LegacyUnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
+            LegacyUnitOfWork<?> uow = LegacyDefaultUnitOfWork.startAndGet(null);
             try {
                 Aggregate<T> aggregate2 = repository.delegate.load(aggregateIdentifier);
                 if (workingAggregate.isDeleted()) {

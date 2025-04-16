@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.queryhandling;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.GenericSubscriptionQueryMessage;
 import org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage;
@@ -197,8 +197,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         List<String> expectedUpdates = Collections.singletonList(testUpdate);
 
         // Sets given UnitOfWork as the current, active, started UnitOfWork
-        DefaultUnitOfWork<?> unitOfWork =
-                new DefaultUnitOfWork<>(EventTestUtils.<String>asEventMessage("some-event-payload"));
+        LegacyDefaultUnitOfWork<?> unitOfWork =
+                new LegacyDefaultUnitOfWork<>(EventTestUtils.<String>asEventMessage("some-event-payload"));
         unitOfWork.start();
 
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
@@ -294,8 +294,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         List<String> expectedUpdates = Collections.singletonList(testUpdate);
 
         // Sets given UnitOfWork as the current, active, started UnitOfWork
-        DefaultUnitOfWork<?> unitOfWork =
-                new DefaultUnitOfWork<>(EventTestUtils.<String>asEventMessage("some-event-payload"));
+        LegacyDefaultUnitOfWork<?> unitOfWork =
+                new LegacyDefaultUnitOfWork<>(EventTestUtils.<String>asEventMessage("some-event-payload"));
         unitOfWork.start();
 
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(
@@ -355,8 +355,8 @@ public abstract class AbstractSubscriptionQueryTestSuite {
         List<String> expectedUpdates = Collections.singletonList(testUpdate);
 
         // Sets given UnitOfWork as the current, active, started UnitOfWork
-        DefaultUnitOfWork<?> unitOfWork =
-                new DefaultUnitOfWork<>(EventTestUtils.<String>asEventMessage("some-event-payload"));
+        LegacyDefaultUnitOfWork<?> unitOfWork =
+                new LegacyDefaultUnitOfWork<>(EventTestUtils.<String>asEventMessage("some-event-payload"));
         unitOfWork.start();
 
         SubscriptionQueryMessage<String, List<String>, String> queryMessage = new GenericSubscriptionQueryMessage<>(

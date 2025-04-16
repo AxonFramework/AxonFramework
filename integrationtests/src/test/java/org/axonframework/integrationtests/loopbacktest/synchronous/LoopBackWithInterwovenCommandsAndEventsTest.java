@@ -29,7 +29,7 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -108,7 +108,7 @@ class LoopBackWithInterwovenCommandsAndEventsTest {
 
         CommandMessage<String> testCommand =
                 new GenericCommandMessage<>(new MessageType("command"), "loading");
-        LegacyUnitOfWork<CommandMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(testCommand);
+        LegacyUnitOfWork<CommandMessage<?>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(testCommand);
         MyAggregate loadedAggregate = repository.load(aggregateIdentifier).invoke(Function.identity());
         unitOfWork.commit();
 

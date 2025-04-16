@@ -24,7 +24,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 
@@ -48,7 +48,7 @@ class BeanValidationInterceptorTest {
         testSubject = new BeanValidationInterceptor<>();
 
         interceptorChain = mock(InterceptorChain.class);
-        uow = new DefaultUnitOfWork<>(null);
+        uow = new LegacyDefaultUnitOfWork<>(null);
     }
 
     @Test

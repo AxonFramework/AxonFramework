@@ -33,7 +33,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
@@ -276,7 +276,7 @@ public class JobRunrEventScheduler implements EventScheduler, Lifecycle {
 
     @SuppressWarnings("rawtypes")
     private void publishEventMessage(EventMessage eventMessage) {
-        LegacyUnitOfWork<EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        LegacyUnitOfWork<EventMessage<?>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
         unitOfWork.attachTransaction(transactionManager);
         unitOfWork.execute(() -> eventBus.publish(eventMessage));
     }

@@ -20,7 +20,7 @@ import org.axonframework.common.FutureUtils;
 import org.axonframework.common.IdentifierFactory;
 import org.axonframework.common.caching.Cache;
 import org.axonframework.messaging.Message;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.AssociationValuesImpl;
@@ -243,7 +243,7 @@ public abstract class CachingSagaStoreTest {
                      .mapToObj(i -> CompletableFuture.runAsync(
                              () -> {
                                  try {
-                                     LegacyUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+                                     LegacyUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
                                      String sagaId = IdentifierFactory.getInstance().generateIdentifier();
                                      // Create instances
                                      Saga<StubSaga> saga = sagaRepository.createInstance(sagaId, StubSaga::new);
@@ -251,8 +251,8 @@ public abstract class CachingSagaStoreTest {
                                      // Find Saga identifiers
                                      Set<String> sagaIds = sagaRepository.find(associationValue);
                                      // Load Sagas
-                                     DefaultUnitOfWork.startAndGet(null)
-                                                      .execute(() -> sagaIds.forEach(sagaRepository::load));
+                                     LegacyDefaultUnitOfWork.startAndGet(null)
+                                                            .execute(() -> sagaIds.forEach(sagaRepository::load));
                                  } catch (Exception e) {
                                      throw new RuntimeException(e);
                                  }

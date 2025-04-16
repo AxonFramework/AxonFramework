@@ -23,7 +23,7 @@ import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 
@@ -49,7 +49,7 @@ class TransactionManagingInterceptorTest {
         }
         interceptorChain = mock(InterceptorChain.class);
         Message<?> message = new GenericMessage<>(new MessageType("message"), new Object());
-        unitOfWork = DefaultUnitOfWork.startAndGet(message);
+        unitOfWork = LegacyDefaultUnitOfWork.startAndGet(message);
         transactionManager = mock(TransactionManager.class);
         transaction = mock(Transaction.class);
         when(transactionManager.startTransaction()).thenReturn(transaction);

@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.Segment;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.annotation.MetaDataValue;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.inmemory.InMemorySagaStore;
@@ -186,7 +186,7 @@ public class AnnotatedSagaManagerTest {
     }
 
     private void handle(EventMessage<?> event) throws Exception {
-        ResultMessage<?> resultMessage = DefaultUnitOfWork.startAndGet(event).executeWithResult(() -> {
+        ResultMessage<?> resultMessage = LegacyDefaultUnitOfWork.startAndGet(event).executeWithResult(() -> {
             testSubject.handle(event, null, Segment.ROOT_SEGMENT);
             return null;
         });

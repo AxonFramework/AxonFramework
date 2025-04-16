@@ -31,7 +31,7 @@ import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeAware;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.serialization.SerializedObject;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -134,7 +134,7 @@ public class DeadlineJob implements Job {
                                                   context.getTrigger().getJobKey().getName(),
                                                   deadlineMessage).start();
         try (SpanScope unused = span.makeCurrent()) {
-            DefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(
+            LegacyDefaultUnitOfWork<DeadlineMessage<?>> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(
                     deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult()

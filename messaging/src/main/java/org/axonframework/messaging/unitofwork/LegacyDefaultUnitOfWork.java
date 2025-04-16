@@ -38,7 +38,7 @@ import static org.axonframework.messaging.GenericResultMessage.asResultMessage;
  * @deprecated In favor of the {@link AsyncUnitOfWork}.
  */
 @Deprecated(since = "5.0.0")
-public class DefaultUnitOfWork<T extends Message<?>> extends AbstractLegacyUnitOfWork<T> {
+public class LegacyDefaultUnitOfWork<T extends Message<?>> extends AbstractLegacyUnitOfWork<T> {
 
     private final MessageProcessingContext<T> processingContext;
 
@@ -52,8 +52,8 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractLegacyUnitO
      * @param message the message that will be processed in the context of the unit of work
      * @return the started UnitOfWork instance
      */
-    public static <T extends Message<?>> DefaultUnitOfWork<T> startAndGet(T message) {
-        DefaultUnitOfWork<T> uow = new DefaultUnitOfWork<>(message);
+    public static <T extends Message<?>> LegacyDefaultUnitOfWork<T> startAndGet(T message) {
+        LegacyDefaultUnitOfWork<T> uow = new LegacyDefaultUnitOfWork<>(message);
         uow.start();
         return uow;
     }
@@ -63,7 +63,7 @@ public class DefaultUnitOfWork<T extends Message<?>> extends AbstractLegacyUnitO
      *
      * @param message the message that will be processed in the context of the unit of work
      */
-    public DefaultUnitOfWork(T message) {
+    public LegacyDefaultUnitOfWork(T message) {
         processingContext = new MessageProcessingContext<>(message);
     }
 

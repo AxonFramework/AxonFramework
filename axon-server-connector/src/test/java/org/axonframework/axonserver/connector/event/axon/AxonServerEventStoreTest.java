@@ -37,7 +37,7 @@ import org.axonframework.eventsourcing.eventstore.EventStoreException;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.serialization.json.JacksonSerializer;
 import org.axonframework.serialization.upcasting.event.ContextAwareSingleEventUpcaster;
@@ -123,7 +123,7 @@ class AxonServerEventStoreTest {
 
     @Test
     void publishAndConsumeEvents() throws Exception {
-        LegacyUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         EventMessage<?>[] eventMessages = {EventTestUtils.asEventMessage("Test1"),
                 EventTestUtils.asEventMessage("Test2"),
                 EventTestUtils.asEventMessage("Test3")};
@@ -149,7 +149,7 @@ class AxonServerEventStoreTest {
         String queryAll = "";
         boolean noLiveUpdates = false;
 
-        LegacyUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         testSubject.publish(EventTestUtils.asEventMessage("Test1"),
                             EventTestUtils.asEventMessage("Test2"),
                             EventTestUtils.asEventMessage("Test3"));

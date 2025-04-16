@@ -45,19 +45,21 @@ class UnitOfWorkNestingTest {
             CurrentUnitOfWork.get().rollback();
         }
 
-        outer = new DefaultUnitOfWork<>(new GenericEventMessage<>(new MessageType("event"), "Input 1")) {
+        outer = new LegacyDefaultUnitOfWork<>(new GenericEventMessage<>(new MessageType("event"), "Input 1")) {
             @Override
             public String toString() {
                 return "outer";
             }
         };
-        middle = new DefaultUnitOfWork<>(new GenericEventMessage<Object>(new MessageType("event"), "Input middle")) {
+        middle = new LegacyDefaultUnitOfWork<>(
+                new GenericEventMessage<Object>(new MessageType("event"), "Input middle")
+        ) {
             @Override
             public String toString() {
                 return "middle";
             }
         };
-        inner = new DefaultUnitOfWork<>(new GenericEventMessage<>(new MessageType("event"), "Input 2")) {
+        inner = new LegacyDefaultUnitOfWork<>(new GenericEventMessage<>(new MessageType("event"), "Input 2")) {
             @Override
             public String toString() {
                 return "inner";

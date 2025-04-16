@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.HandlerExecutionException;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.test.FixtureExecutionException;
 import org.axonframework.test.deadline.DeadlineManagerValidator;
@@ -136,7 +136,7 @@ public class ResultValidatorImpl<T> implements ResultValidator<T> {
 
     @Override
     public ResultValidator<T> expectState(Consumer<T> aggregateStateValidator) {
-        DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         try {
             state.get().execute(aggregateStateValidator);
         } finally {

@@ -28,7 +28,7 @@ import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.integrationtests.utils.StubAggregate;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
@@ -58,11 +58,11 @@ class CommandHandlingTest {
 
     @Test
     void commandHandlerLoadsSameAggregateTwice() throws Exception {
-        DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork.startAndGet(null);
         repository.newInstance(() -> new StubAggregate(aggregateIdentifier)).execute(StubAggregate::doSomething);
         CurrentUnitOfWork.commit();
 
-        DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork.startAndGet(null);
         repository.load(aggregateIdentifier).execute(StubAggregate::doSomething);
         repository.load(aggregateIdentifier).execute(StubAggregate::doSomething);
         CurrentUnitOfWork.commit();

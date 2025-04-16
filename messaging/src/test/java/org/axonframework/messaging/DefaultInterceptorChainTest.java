@@ -16,7 +16,7 @@
 
 package org.axonframework.messaging;
 
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 
@@ -36,7 +36,7 @@ class DefaultInterceptorChainTest {
     @BeforeEach
     @SuppressWarnings("unchecked")
     void setUp() throws Exception {
-        unitOfWork = new DefaultUnitOfWork<>(null);
+        unitOfWork = new LegacyDefaultUnitOfWork<>(null);
         mockHandler = mock(MessageHandler.class);
         when(mockHandler.handleSync(isA(Message.class))).thenReturn("Result");
     }

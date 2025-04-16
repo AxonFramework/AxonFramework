@@ -28,7 +28,7 @@ import org.axonframework.eventsourcing.utils.RecordingAppender;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
@@ -104,7 +104,7 @@ class AbstractSnapshotterTest {
 
     @Test
     void scheduleSnapshotIsPostponedUntilUnitOfWorkAfterCommit() {
-        DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(createEvents(2)));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);
@@ -117,7 +117,7 @@ class AbstractSnapshotterTest {
 
     @Test
     void scheduleSnapshotOnlyOnce() {
-        DefaultUnitOfWork<Message<?>> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork<Message<?>> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         String aggregateIdentifier = "aggregateIdentifier";
         when(mockEventStore.readEvents(aggregateIdentifier)).thenReturn(DomainEventStream.of(createEvents(2)));
         testSubject.scheduleSnapshot(Object.class, aggregateIdentifier);

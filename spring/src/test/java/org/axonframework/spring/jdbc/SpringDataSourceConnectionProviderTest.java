@@ -19,7 +19,7 @@ package org.axonframework.spring.jdbc;
 import org.axonframework.common.jdbc.ConnectionProvider;
 import org.axonframework.common.jdbc.UnitOfWorkAwareConnectionProviderWrapper;
 import org.axonframework.common.transaction.Transaction;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.spring.messaging.unitofwork.SpringTransactionManager;
 import org.junit.jupiter.api.*;
@@ -73,7 +73,7 @@ class SpringDataSourceConnectionProviderTest {
             return null;
         });
 
-        LegacyUnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyUnitOfWork<?> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         Connection connection = connectionProvider.getConnection();
 
         connection.commit();
@@ -89,7 +89,7 @@ class SpringDataSourceConnectionProviderTest {
             return spy;
         }).when(dataSource).getConnection();
 
-        LegacyUnitOfWork<?> uow = DefaultUnitOfWork.startAndGet(null);
+        LegacyUnitOfWork<?> uow = LegacyDefaultUnitOfWork.startAndGet(null);
         Transaction transaction = springTransactionManager.startTransaction();
         uow.onCommit(u -> transaction.commit());
         uow.onRollback(u -> transaction.rollback());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.tracing.TestSpanFactory;
 import org.junit.jupiter.api.*;
 import org.mockito.*;
@@ -79,7 +79,7 @@ class GenericJpaRepositoryTest {
                                                                                    .spanFactory(spanFactory)
                                                                                    .build())
                                           .build();
-        DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork.startAndGet(null);
         aggregateId = "123";
         aggregate = new StubJpaAggregate(aggregateId);
         when(mockEntityManager.find(eq(StubJpaAggregate.class), eq("123"), any(LockModeType.class)))
@@ -143,7 +143,7 @@ class GenericJpaRepositoryTest {
                                           .identifierConverter(identifierConverter)
                                           .build();
 
-        DefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
+        LegacyDefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
             Aggregate<StubJpaAggregate> agg =
                     testSubject.newInstance(() -> new StubJpaAggregate("id", "test1", "test2"));
             agg.execute(e -> e.doSomething("test3"));
@@ -186,7 +186,7 @@ class GenericJpaRepositoryTest {
                                           .identifierConverter(identifierConverter)
                                           .build();
 
-        DefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
+        LegacyDefaultUnitOfWork.startAndGet(null).executeWithResult(() -> {
             Aggregate<StubJpaAggregate> agg = testSubject.load(aggregateId);
             agg.execute(e -> e.doSomething("test2"));
             return null;
@@ -221,14 +221,14 @@ class GenericJpaRepositoryTest {
                                           .disableSequenceNumberGeneration()
                                           .build();
 
-        DefaultUnitOfWork.startAndGet(null)
-                         .executeWithResult(() -> {
-                             Aggregate<StubJpaAggregate> aggregate = testSubject.newInstance(
-                                     () -> new StubJpaAggregate("id", expectedFirstPayload, expectedSecondPayload)
-                             );
-                             aggregate.execute(e -> e.doSomething(expectedThirdPayload));
-                             return null;
-                         });
+        LegacyDefaultUnitOfWork.startAndGet(null)
+                               .executeWithResult(() -> {
+                                   Aggregate<StubJpaAggregate> aggregate = testSubject.newInstance(
+                                           () -> new StubJpaAggregate("id", expectedFirstPayload, expectedSecondPayload)
+                                   );
+                                   aggregate.execute(e -> e.doSomething(expectedThirdPayload));
+                                   return null;
+                               });
         CurrentUnitOfWork.commit();
 
         List<EventMessage<?>> publishedEvents = testEventBus.getPublishedEvents();

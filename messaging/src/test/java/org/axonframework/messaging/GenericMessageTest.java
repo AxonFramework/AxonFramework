@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.correlation.ThrowingCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.serialization.CannotConvertBetweenTypesException;
 import org.axonframework.serialization.SerializedObject;
@@ -110,7 +110,7 @@ class GenericMessageTest {
 
     @Test
     void whenCorrelationDataProviderThrowsException_thenCatchException() {
-        unitOfWork = new DefaultUnitOfWork<>(
+        unitOfWork = new LegacyDefaultUnitOfWork<>(
                 new GenericEventMessage<>(new MessageType("event"), "Input 1")
         );
         CurrentUnitOfWork.set(unitOfWork);

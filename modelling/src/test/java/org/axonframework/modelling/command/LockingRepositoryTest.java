@@ -26,7 +26,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.inspection.AggregateModel;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
@@ -268,7 +268,7 @@ class LockingRepositoryTest {
     }
 
     private LegacyUnitOfWork<?> startAndGetUnitOfWork() {
-        return DefaultUnitOfWork.startAndGet(MESSAGE);
+        return LegacyDefaultUnitOfWork.startAndGet(MESSAGE);
     }
 
     private static class InMemoryLockingRepository extends LockingRepository<StubAggregate, Aggregate<StubAggregate>> {

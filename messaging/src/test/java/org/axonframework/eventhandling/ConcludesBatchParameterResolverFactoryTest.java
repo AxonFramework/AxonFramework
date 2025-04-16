@@ -19,7 +19,7 @@ package org.axonframework.eventhandling;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.LegacyBatchingUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Method;
@@ -57,8 +57,8 @@ class ConcludesBatchParameterResolverFactoryTest {
     @Test
     void resolvesToTrueWithRegularUnitOfWork() {
         EventMessage<?> event = asEventMessage("testEvent");
-        DefaultUnitOfWork.startAndGet(event).execute(() -> assertTrue(testSubject.resolveParameterValue(event,
-                                                                                                        null)));
+        LegacyDefaultUnitOfWork.startAndGet(event)
+                               .execute(() -> assertTrue(testSubject.resolveParameterValue(event, null)));
     }
 
     @Test

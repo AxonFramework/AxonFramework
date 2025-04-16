@@ -51,7 +51,7 @@ import org.axonframework.messaging.annotation.MultiHandlerEnhancerDefinition;
 import org.axonframework.messaging.annotation.MultiParameterResolverFactory;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.AnnotatedSagaManager;
 import org.axonframework.modelling.saga.ResourceInjector;
@@ -160,7 +160,8 @@ public class SagaTestFixture<T> implements FixtureConfiguration, ContinuedGivenS
     protected void handleInSaga(EventMessage<?> event) {
         ensureSagaResourcesInitialized();
         TrackedEventMessage<?> trackedEventMessage = asTrackedEventMessage(event);
-        DefaultUnitOfWork<? extends EventMessage<?>> unitOfWork = DefaultUnitOfWork.startAndGet(trackedEventMessage);
+        LegacyDefaultUnitOfWork<? extends EventMessage<?>> unitOfWork =
+                LegacyDefaultUnitOfWork.startAndGet(trackedEventMessage);
         ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> new DefaultInterceptorChain<>(
                 unitOfWork,
                 eventHandlerInterceptors,

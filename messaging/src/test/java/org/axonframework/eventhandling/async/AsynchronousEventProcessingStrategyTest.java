@@ -18,7 +18,7 @@ package org.axonframework.eventhandling.async;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -88,7 +88,7 @@ class AsynchronousEventProcessingStrategyTest {
             return null;
         }).when(processor).accept(anyList());
 
-        new DefaultUnitOfWork<>(null).execute(() -> {
+        new LegacyDefaultUnitOfWork<>(null).execute(() -> {
             testSubject.handle(Collections.singletonList(event1), processor);
             testSubject.handle(Collections.singletonList(event2), processor);
         });
@@ -118,7 +118,7 @@ class AsynchronousEventProcessingStrategyTest {
         EventMessage<?> message1 = createEvent("aggregate1", 1);
         EventMessage<?> message2 = createEvent("aggregate2", 1);
 
-        LegacyUnitOfWork<EventMessage<?>> uow = DefaultUnitOfWork.startAndGet(message1);
+        LegacyUnitOfWork<EventMessage<?>> uow = LegacyDefaultUnitOfWork.startAndGet(message1);
         uow.onPrepareCommit(u -> verify(executor, never()).execute(isA(Runnable.class)));
 
         testSubject.handle(Arrays.asList(message1, message2), mock(Consumer.class));

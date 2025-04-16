@@ -22,7 +22,7 @@ import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.saga.SagaScopeDescriptor;
@@ -50,8 +50,8 @@ class AbstractRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        testSubject = new AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
-                new AbstractRepository.Builder<JpaAggregate>(JpaAggregate.class) {}) {
+        testSubject = new AbstractRepository<>(
+                new AbstractRepository.Builder<>(JpaAggregate.class) {}) {
 
             @Override
             protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod)
@@ -88,7 +88,7 @@ class AbstractRepositoryTest {
             }
         };
 
-        DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork.startAndGet(null);
     }
 
     @AfterEach

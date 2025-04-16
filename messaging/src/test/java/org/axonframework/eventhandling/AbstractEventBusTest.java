@@ -20,7 +20,7 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.monitoring.MessageMonitor;
 import org.junit.jupiter.api.*;
@@ -53,7 +53,7 @@ class AbstractEventBusTest {
 
     @BeforeEach
     void setUp() {
-        (unitOfWork = spy(new DefaultUnitOfWork<>(null))).start();
+        (unitOfWork = spy(new LegacyDefaultUnitOfWork<>(null))).start();
         testSubject = spy(StubPublishingEventBus.builder().build());
     }
 
@@ -250,7 +250,7 @@ class AbstractEventBusTest {
                 if (number > 0) {
                     EventMessage<Integer> nextEvent = numberedEvent(number - 1);
                     if (startNewUowBeforePublishing) {
-                        LegacyUnitOfWork<?> nestedUnitOfWork = DefaultUnitOfWork.startAndGet(null);
+                        LegacyUnitOfWork<?> nestedUnitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
                         try {
                             publish(nextEvent);
                         } finally {

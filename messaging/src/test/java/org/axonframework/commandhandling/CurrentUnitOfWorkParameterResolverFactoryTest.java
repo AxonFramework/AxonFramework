@@ -21,7 +21,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.junit.jupiter.api.*;
 
@@ -58,7 +58,7 @@ class CurrentUnitOfWorkParameterResolverFactoryTest {
 
     @Test
     void resolveParameterValue() {
-        DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork.startAndGet(null);
         try {
             assertSame(CurrentUnitOfWork.get(), testSubject.resolveParameterValue(mock(GenericCommandMessage.class),
                                                                                   null));
@@ -75,7 +75,7 @@ class CurrentUnitOfWorkParameterResolverFactoryTest {
     @Test
     void matches() {
         assertTrue(testSubject.matches(mock(GenericCommandMessage.class), null));
-        DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork.startAndGet(null);
         try {
             assertTrue(testSubject.matches(mock(Message.class), null));
             assertTrue(testSubject.matches(mock(EventMessage.class), null));

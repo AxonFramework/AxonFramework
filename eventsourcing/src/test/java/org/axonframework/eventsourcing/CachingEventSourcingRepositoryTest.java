@@ -27,7 +27,7 @@ import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventSt
 import org.axonframework.eventsourcing.utils.MockException;
 import org.axonframework.eventsourcing.utils.StubAggregate;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateLifecycle;
@@ -112,7 +112,7 @@ class CachingEventSourcingRepositoryTest {
         assertEquals(2, aggregate1.getWrappedAggregate().lastSequence());
         CurrentUnitOfWork.commit();
 
-        DefaultUnitOfWork.startAndGet(null);
+        LegacyDefaultUnitOfWork.startAndGet(null);
         DomainEventStream events = mockEventStore.readEvents("aggregateId");
         List<EventMessage> eventList = new ArrayList<>();
         while (events.hasNext()) {
@@ -226,7 +226,7 @@ class CachingEventSourcingRepositoryTest {
     }
 
     private LegacyUnitOfWork<?> startAndGetUnitOfWork() {
-        return DefaultUnitOfWork.startAndGet(null);
+        return LegacyDefaultUnitOfWork.startAndGet(null);
     }
 
     private static class StubAggregateFactory extends AbstractAggregateFactory<StubAggregate> {

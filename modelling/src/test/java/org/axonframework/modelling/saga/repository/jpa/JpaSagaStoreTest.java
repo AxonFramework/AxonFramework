@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import org.axonframework.common.jpa.EntityManagerProvider;
 import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.Saga;
 import org.axonframework.modelling.saga.repository.AnnotatedSagaRepository;
@@ -51,7 +51,7 @@ class JpaSagaStoreTest {
             Persistence.createEntityManagerFactory("jpaSagaStorePersistenceUnit");
     private final EntityManager entityManager = entityManagerFactory.createEntityManager();
     private final EntityManagerProvider entityManagerProvider = new SimpleEntityManagerProvider(entityManager);
-    private DefaultUnitOfWork<Message<?>> unitOfWork;
+    private LegacyDefaultUnitOfWork<Message<?>> unitOfWork;
 
     @BeforeEach
     void setUp() {
@@ -80,7 +80,7 @@ class JpaSagaStoreTest {
     protected void startUnitOfWork() {
         Assert.isTrue(unitOfWork == null || !unitOfWork.isActive(),
                 () -> "Cannot start unit of work. There is one still active.");
-        unitOfWork = DefaultUnitOfWork.startAndGet(null);
+        unitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
         EntityTransaction transaction = entityManager.getTransaction();
         transaction.begin();
         unitOfWork.onRollback(u -> transaction.rollback());

@@ -26,7 +26,7 @@ import org.axonframework.eventsourcing.utils.StubDomainEvent;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -77,7 +77,7 @@ class EventSourcingRepositoryTest {
                                                                                       .spanFactory(testSpanFactory)
                                                                                       .build())
                                              .build();
-        unitOfWork = DefaultUnitOfWork.startAndGet(
+        unitOfWork = LegacyDefaultUnitOfWork.startAndGet(
                 new GenericMessage<>(new MessageType("message"), "test")
         );
     }

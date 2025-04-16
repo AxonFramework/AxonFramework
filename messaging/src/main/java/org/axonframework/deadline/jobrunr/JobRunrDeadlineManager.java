@@ -39,7 +39,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.ResultMessage;
 import org.axonframework.messaging.ScopeAwareProvider;
 import org.axonframework.messaging.ScopeDescriptor;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.SimpleSerializedObject;
@@ -221,7 +221,7 @@ public class JobRunrDeadlineManager extends AbstractDeadlineManager implements L
                                                   deadlineId,
                                                   deadlineMessage).start();
         try (SpanScope ignored = span.makeCurrent()) {
-            LegacyUnitOfWork<DeadlineMessage<?>> unitOfWork = new DefaultUnitOfWork<>(deadlineMessage);
+            LegacyUnitOfWork<DeadlineMessage<?>> unitOfWork = new LegacyDefaultUnitOfWork<>(deadlineMessage);
             unitOfWork.attachTransaction(transactionManager);
             unitOfWork.onRollback(uow -> span.recordException(uow.getExecutionResult().getExceptionResult()));
             InterceptorChain chain = new DefaultInterceptorChain<>(

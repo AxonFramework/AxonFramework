@@ -36,7 +36,7 @@ import org.axonframework.messaging.deadletter.EnqueuePolicy;
 import org.axonframework.messaging.deadletter.GenericDeadLetter;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterProcessor;
 import org.axonframework.messaging.deadletter.SequencedDeadLetterQueue;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.slf4j.Logger;
@@ -235,7 +235,7 @@ public class DeadLetteringEventHandlerInvoker
                                                     interceptors,
                                                     enqueuePolicy,
                                                     transactionManager);
-        LegacyUnitOfWork<?> uow = new DefaultUnitOfWork<>(null);
+        LegacyUnitOfWork<?> uow = new LegacyDefaultUnitOfWork<>(null);
         uow.attachTransaction(transactionManager);
         return uow.executeWithResult(() -> queue.process(sequenceFilter, processingTask::process)).getPayload();
     }

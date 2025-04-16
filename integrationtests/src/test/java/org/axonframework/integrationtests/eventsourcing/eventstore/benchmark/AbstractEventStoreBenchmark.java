@@ -27,7 +27,7 @@ import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.AbstractLegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.serialization.Serializer;
 import org.slf4j.Logger;
@@ -179,7 +179,7 @@ public abstract class AbstractEventStoreBenchmark {
     }
 
     protected void executeStorageJob(EventMessage<?>... events) {
-        LegacyUnitOfWork<?> unitOfWork = new DefaultUnitOfWork<>(null);
+        LegacyUnitOfWork<?> unitOfWork = new LegacyDefaultUnitOfWork<>(null);
         unitOfWork.execute(() -> storeEvents(events));
     }
 

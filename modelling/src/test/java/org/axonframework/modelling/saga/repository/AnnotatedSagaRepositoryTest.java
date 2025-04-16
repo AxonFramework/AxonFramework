@@ -23,7 +23,7 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.saga.AssociationValue;
 import org.axonframework.modelling.saga.Saga;
@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nonnull;
 
 import static java.util.Collections.singleton;
-import static org.axonframework.messaging.unitofwork.DefaultUnitOfWork.startAndGet;
+import static org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork.startAndGet;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -144,7 +144,7 @@ class AnnotatedSagaRepositoryTest {
         AssociationValue associationValue = new AssociationValue("test", "value");
 
         Thread otherProcess = new Thread(() -> {
-            LegacyUnitOfWork<?> unitOfWork = DefaultUnitOfWork.startAndGet(null);
+            LegacyUnitOfWork<?> unitOfWork = LegacyDefaultUnitOfWork.startAndGet(null);
             testSubject.createInstance(sagaId, Object::new).getAssociationValues().add(associationValue);
             CurrentUnitOfWork.clear(unitOfWork);
         });

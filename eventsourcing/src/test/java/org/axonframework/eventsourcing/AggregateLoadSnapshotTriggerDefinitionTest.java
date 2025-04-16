@@ -22,17 +22,12 @@ import org.axonframework.eventsourcing.utils.StubAggregate;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregate;
 import org.axonframework.modelling.command.inspection.AnnotatedAggregateMetaModelFactory;
 import org.junit.jupiter.api.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -60,7 +55,7 @@ class AggregateLoadSnapshotTriggerDefinitionTest {
         mockSnapshotter = mock(Snapshotter.class);
         testSubject = new AggregateLoadTimeSnapshotTriggerDefinition(mockSnapshotter, 1000);
         aggregateIdentifier = "aggregateIdentifier";
-        DefaultUnitOfWork.startAndGet(new GenericMessage<>(new MessageType("message"), "test"));
+        LegacyDefaultUnitOfWork.startAndGet(new GenericMessage<>(new MessageType("message"), "test"));
         aggregate = AnnotatedAggregate.initialize(
                 new StubAggregate(aggregateIdentifier),
                 AnnotatedAggregateMetaModelFactory.inspectAggregate(StubAggregate.class),

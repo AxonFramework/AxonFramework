@@ -30,7 +30,7 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.SimpleEventHandlerInvoker;
 import org.axonframework.eventhandling.SubscribingEventProcessor;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.GenericJpaRepository;
@@ -165,7 +165,7 @@ class GenericJpaRepositoryIntegrationTest implements EventMessageHandler {
     }
 
     private LegacyUnitOfWork<?> startAndGetUnitOfWork() {
-        return DefaultUnitOfWork.startAndGet(null);
+        return LegacyDefaultUnitOfWork.startAndGet(null);
     }
 
     @Configuration

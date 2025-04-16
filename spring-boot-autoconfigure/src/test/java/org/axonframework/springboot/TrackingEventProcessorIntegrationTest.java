@@ -38,7 +38,7 @@ import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.StreamableMessageSource;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
+import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.springboot.autoconfig.AxonServerActuatorAutoConfiguration;
 import org.axonframework.springboot.autoconfig.AxonServerAutoConfiguration;
@@ -208,7 +208,7 @@ public class TrackingEventProcessorIntegrationTest {
     }
 
     private void publishEvent(Object... events) {
-        DefaultUnitOfWork.startAndGet(null).execute(
+        LegacyDefaultUnitOfWork.startAndGet(null).execute(
                 () -> {
                     Transaction tx = transactionManager.startTransaction();
                     CurrentUnitOfWork.get().onRollback(u -> tx.rollback());

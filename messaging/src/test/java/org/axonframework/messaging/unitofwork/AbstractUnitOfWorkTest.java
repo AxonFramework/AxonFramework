@@ -51,7 +51,7 @@ class AbstractUnitOfWorkTest {
         while (CurrentUnitOfWork.isStarted()) {
             CurrentUnitOfWork.get().rollback();
         }
-        subject = spy(new DefaultUnitOfWork(
+        subject = spy(new LegacyDefaultUnitOfWork(
                 new GenericEventMessage<>(new MessageType("event"), "Input 1")
         ) {
             @Override
