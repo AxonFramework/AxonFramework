@@ -37,7 +37,7 @@ import java.util.Objects;
  * <p>
  * Will only register the following components <b>if</b> there is no component registered for the given class yet:
  * <ul>
- *     <li>Registers a {@link AnnotationBasedTagResolver} for class {@link agResolver}</li>
+ *     <li>Registers a {@link AnnotationBasedTagResolver} for class {@link TagResolver}</li>
  *     <li>Registers a {@link InMemoryEventStorageEngine} for class {@link EventStorageEngine}</li>
  *     <li>Registers a {@link SimpleEventStore} for class {@link EventStore}</li>
  *     <li>Registers a {@link SimpleEventStore} for class {@link EventSink}</li>
