@@ -64,8 +64,8 @@ import static org.axonframework.eventsourcing.eventstore.AppendEventsTransaction
  * @author Milan Savić
  * @author Steven van Beelen
  * @since 3.0.0
- */ // TODO Rename to InMemoryEventStorageEngine once fully integrated
-public class AsyncInMemoryEventStorageEngine implements EventStorageEngine {
+ */
+public class InMemoryEventStorageEngine implements EventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -81,7 +81,7 @@ public class AsyncInMemoryEventStorageEngine implements EventStorageEngine {
      * <p>
      * The engine will be empty, and there is no offset for the first token.
      */
-    public AsyncInMemoryEventStorageEngine() {
+    public InMemoryEventStorageEngine() {
         this(0L);
     }
 
@@ -90,7 +90,7 @@ public class AsyncInMemoryEventStorageEngine implements EventStorageEngine {
      *
      * @param offset The value to use for the token of the first event appended.
      */
-    public AsyncInMemoryEventStorageEngine(long offset) {
+    public InMemoryEventStorageEngine(long offset) {
         this.offset = offset;
     }
 

@@ -28,7 +28,7 @@ import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
-import org.axonframework.eventsourcing.eventstore.inmemory.AsyncInMemoryEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 
 import java.util.Objects;
 
@@ -37,11 +37,11 @@ import java.util.Objects;
  * <p>
  * Will only register the following components <b>if</b> there is no component registered for the given class yet:
  * <ul>
- *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver} for class {@link org.axonframework.eventsourcing.eventstore.TagResolver}</li>
- *     <li>Registers a {@link AsyncInMemoryEventStorageEngine} for class {@link EventStorageEngine}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventStore}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventSink}</li>
- *     <li>Registers a {@link org.axonframework.eventsourcing.AggregateSnapshotter} for class {@link org.axonframework.eventsourcing.Snapshotter}</li>
+ *     <li>Registers a {@link AnnotationBasedTagResolver} for class {@link agResolver}</li>
+ *     <li>Registers a {@link InMemoryEventStorageEngine} for class {@link EventStorageEngine}</li>
+ *     <li>Registers a {@link SimpleEventStore} for class {@link EventStore}</li>
+ *     <li>Registers a {@link SimpleEventStore} for class {@link EventSink}</li>
+ *     <li>Registers a {@link org.axonframework.eventsourcing.AggregateSnapshotter} for class {@link Snapshotter}</li>
  * </ul>
  *
  * @author Steven van Beelen
@@ -84,7 +84,7 @@ class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
     }
 
     private static EventStorageEngine defaultEventStorageEngine(Configuration config) {
-        return new AsyncInMemoryEventStorageEngine();
+        return new InMemoryEventStorageEngine();
     }
 
     private static EventStore defaultEventStore(Configuration config) {
