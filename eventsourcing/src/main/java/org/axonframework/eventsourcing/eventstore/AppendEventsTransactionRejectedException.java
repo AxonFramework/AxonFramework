@@ -32,12 +32,12 @@ public class AppendEventsTransactionRejectedException extends AxonNonTransientEx
     }
 
     /**
-     * Constructs an {@code AppendConditionAssertionException} noting that the {@link AsyncEventStorageEngine} contains
+     * Constructs an {@code AppendConditionAssertionException} noting that the {@link EventStorageEngine} contains
      * events matching the {@link AppendCondition#criteria() criteria} passed the given {@code consistencyMarker}.
      *
-     * @param consistencyMarker The pointer in the {@link AsyncEventStorageEngine} after which no events should've been
+     * @param consistencyMarker The pointer in the {@link EventStorageEngine} after which no events should've been
      *                          appended that match the {@link EventCriteria} of an {@link AppendCondition}.
-     * @return An {@code AppendConditionAssertionException} noting that the {@link AsyncEventStorageEngine} contains
+     * @return An {@code AppendConditionAssertionException} noting that the {@link EventStorageEngine} contains
      * events matching the {@link AppendCondition#criteria() criteria} passed the given {@code consistencyMarker}.
      */
     public static AppendEventsTransactionRejectedException conflictingEventsDetected(

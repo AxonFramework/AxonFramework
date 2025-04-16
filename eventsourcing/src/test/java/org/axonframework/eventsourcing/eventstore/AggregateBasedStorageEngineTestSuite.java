@@ -19,7 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine.AppendTransaction;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.MessageType;
@@ -44,12 +44,12 @@ import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test suite validating implementations of {@link AsyncEventStorageEngine} implementations that are aggregate-based.
+ * Test suite validating implementations of {@link EventStorageEngine} implementations that are aggregate-based.
  *
  * @author Allard Buijze
  * @since 5.0.0
  */
-public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEventStorageEngine> {
+public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     private static final String TEST_AGGREGATE_TYPE = "TEST_AGGREGATE";
     private static ExecutorService executor;
@@ -87,9 +87,9 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
     }
 
     /**
-     * Constructs the {@link AsyncEventStorageEngine} used in this test suite.
+     * Constructs the {@link EventStorageEngine} used in this test suite.
      *
-     * @return The {@link AsyncEventStorageEngine} used in this test suite.
+     * @return The {@link EventStorageEngine} used in this test suite.
      */
     protected abstract ESE buildStorageEngine() throws Exception;
 
@@ -475,7 +475,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends AsyncEven
         TaggedEventMessage<?> violatingEntry = taggedEventMessage("event2",
                                                                   Set.of(new Tag("key1", "value1"),
                                                                          new Tag("key2", "value2")));
-        CompletableFuture<AsyncEventStorageEngine.AppendTransaction> actual = testSubject.appendEvents(
+        CompletableFuture<EventStorageEngine.AppendTransaction> actual = testSubject.appendEvents(
                 AppendCondition.none(),
                 taggedEventMessage("event1", Set.of(new Tag("key1", "value1"))),
                 violatingEntry,

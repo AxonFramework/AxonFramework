@@ -33,7 +33,7 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
 import org.axonframework.eventsourcing.eventstore.EventCriterion;
@@ -66,7 +66,7 @@ import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEve
  * @author Allard Buijze
  * @since 5.0.0
  */
-public class LegacyAxonServerEventStorageEngine implements AsyncEventStorageEngine {
+public class LegacyAxonServerEventStorageEngine implements EventStorageEngine {
 
     private final AxonServerConnection connection;
     private final Converter payloadConverter;

@@ -47,20 +47,19 @@ import static org.mockito.Mockito.*;
 
 /**
  * Test class validating the {@link SimpleEventStore} supports just one context and delegates operations to
- * {@link AsyncEventStorageEngine}.
+ * {@link EventStorageEngine}.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
 class SimpleEventStoreTest {
+
     private SimpleEventStore testSubject;
-    private AsyncEventStorageEngine mockStorageEngine;
-    private StubProcessingContext processingContext;
+    private EventStorageEngine mockStorageEngine;
 
     @BeforeEach
     void setUp() {
-        mockStorageEngine = mock(AsyncEventStorageEngine.class);
-        processingContext = new StubProcessingContext();
+        mockStorageEngine = mock(EventStorageEngine.class);
         testSubject = new SimpleEventStore(mockStorageEngine, m -> Collections.emptySet());
     }
 
@@ -139,7 +138,7 @@ class SimpleEventStoreTest {
 
         @Test
         void appendingWithoutReadMustUseInfinityConsistencyMarker() throws Exception {
-            AsyncEventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
             GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(42);
 
             AsyncUnitOfWork asyncUnitOfWork = new AsyncUnitOfWork();
@@ -159,7 +158,7 @@ class SimpleEventStoreTest {
 
         @Test
         void appendingAfterReadsUpdatesTheAppendCondition() throws Exception {
-            AsyncEventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
             GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(42);
 
             AsyncUnitOfWork asyncUnitOfWork = new AsyncUnitOfWork();
@@ -194,7 +193,7 @@ class SimpleEventStoreTest {
         @MethodSource("generateRandomNumbers")
         void readingMultipleTimesShouldKeepTheConsistencyMarkerAtTheSmallestPosition(int size1, int size2, int size3)
                 throws Exception {
-            AsyncEventStorageEngine.AppendTransaction mockAppendTransaction = mock();
+            EventStorageEngine.AppendTransaction mockAppendTransaction = mock();
             GlobalIndexConsistencyMarker markerAfterCommit = new GlobalIndexConsistencyMarker(101);
 
             AsyncUnitOfWork asyncUnitOfWork = new AsyncUnitOfWork();

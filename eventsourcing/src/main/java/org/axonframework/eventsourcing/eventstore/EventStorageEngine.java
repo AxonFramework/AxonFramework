@@ -41,8 +41,8 @@ import static java.util.Arrays.asList;
  * @author Rene de Waele
  * @author Steven van Beelen
  * @since 3.0
- */ // TODO Rename to EventStorageEngine once fully integrated
-public interface AsyncEventStorageEngine extends DescribableComponent {
+ */
+public interface EventStorageEngine extends DescribableComponent {
 
     /**
      * Append one or more {@link EventMessage events} to the underlying storage solution.

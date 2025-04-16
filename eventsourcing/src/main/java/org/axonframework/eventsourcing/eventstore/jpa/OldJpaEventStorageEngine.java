@@ -60,7 +60,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * @author Rene de Waele
  * @since 3.0
  * @deprecated Will be removed in version 5.0.0. The
- * {@link org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine} implementations should be used instead.
+ * {@link org.axonframework.eventsourcing.eventstore.EventStorageEngine} implementations should be used instead.
  */
 @Deprecated
 public class OldJpaEventStorageEngine extends LegacyBatchingEventStorageEngine {

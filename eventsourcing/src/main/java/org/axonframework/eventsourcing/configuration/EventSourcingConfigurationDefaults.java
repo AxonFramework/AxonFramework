@@ -24,7 +24,7 @@ import org.axonframework.configuration.ConfigurationEnhancer;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.SimpleEventStore;
 import org.axonframework.eventsourcing.eventstore.TagResolver;
@@ -38,7 +38,7 @@ import java.util.Objects;
  * Will only register the following components <b>if</b> there is no component registered for the given class yet:
  * <ul>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver} for class {@link org.axonframework.eventsourcing.eventstore.TagResolver}</li>
- *     <li>Registers a {@link AsyncInMemoryEventStorageEngine} for class {@link org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine}</li>
+ *     <li>Registers a {@link AsyncInMemoryEventStorageEngine} for class {@link EventStorageEngine}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventStore}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.eventstore.SimpleEventStore} for class {@link EventSink}</li>
  *     <li>Registers a {@link org.axonframework.eventsourcing.AggregateSnapshotter} for class {@link org.axonframework.eventsourcing.Snapshotter}</li>
@@ -61,7 +61,7 @@ class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
 
         registerIfNotPresent(registry, TagResolver.class,
                              EventSourcingConfigurationDefaults::defaultTagResolver);
-        registerIfNotPresent(registry, AsyncEventStorageEngine.class,
+        registerIfNotPresent(registry, EventStorageEngine.class,
                              EventSourcingConfigurationDefaults::defaultEventStorageEngine);
         registerIfNotPresent(registry, EventStore.class,
                              EventSourcingConfigurationDefaults::defaultEventStore);
@@ -83,12 +83,12 @@ class EventSourcingConfigurationDefaults implements ConfigurationEnhancer {
         return new AnnotationBasedTagResolver();
     }
 
-    private static AsyncEventStorageEngine defaultEventStorageEngine(Configuration config) {
+    private static EventStorageEngine defaultEventStorageEngine(Configuration config) {
         return new AsyncInMemoryEventStorageEngine();
     }
 
     private static EventStore defaultEventStore(Configuration config) {
-        return new SimpleEventStore(config.getComponent(AsyncEventStorageEngine.class),
+        return new SimpleEventStore(config.getComponent(EventStorageEngine.class),
                                     config.getComponent(TagResolver.class));
     }
 

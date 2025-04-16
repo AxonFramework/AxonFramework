@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EventsCondition;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
@@ -57,7 +57,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import static org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException.conflictingEventsDetected;
 
 /**
- * Thread-safe {@link AsyncEventStorageEngine} implementation storing events in memory.
+ * Thread-safe {@link EventStorageEngine} implementation storing events in memory.
  *
  * @author Allard Buijze
  * @author Rene de Waele
@@ -65,7 +65,7 @@ import static org.axonframework.eventsourcing.eventstore.AppendEventsTransaction
  * @author Steven van Beelen
  * @since 3.0.0
  */ // TODO Rename to InMemoryEventStorageEngine once fully integrated
-public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine {
+public class AsyncInMemoryEventStorageEngine implements EventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -77,7 +77,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     private final long offset;
 
     /**
-     * Initializes an in-memory {@link AsyncEventStorageEngine}.
+     * Initializes an in-memory {@link EventStorageEngine}.
      * <p>
      * The engine will be empty, and there is no offset for the first token.
      */
@@ -86,7 +86,7 @@ public class AsyncInMemoryEventStorageEngine implements AsyncEventStorageEngine 
     }
 
     /**
-     * Initializes an in-memory {@link AsyncEventStorageEngine} using given {@code offset} to initialize the tokens.
+     * Initializes an in-memory {@link EventStorageEngine} using given {@code offset} to initialize the tokens.
      *
      * @param offset The value to use for the token of the first event appended.
      */

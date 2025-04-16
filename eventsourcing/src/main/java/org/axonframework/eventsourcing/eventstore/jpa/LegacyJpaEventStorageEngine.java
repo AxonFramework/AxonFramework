@@ -37,7 +37,7 @@ import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
 import org.axonframework.eventsourcing.eventstore.EventCriterion;
@@ -86,7 +86,7 @@ import static org.axonframework.eventsourcing.eventstore.LegacyAggregateBasedEve
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class LegacyJpaEventStorageEngine implements AsyncEventStorageEngine {
+public class LegacyJpaEventStorageEngine implements EventStorageEngine {
 
     private static final Logger logger = LoggerFactory.getLogger(LegacyJpaEventStorageEngine.class);
     private static final String DOMAIN_EVENT_ENTRY_ENTITY_NAME = DomainEventEntry.class.getSimpleName();

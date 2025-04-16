@@ -22,7 +22,7 @@ import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventSink;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AnnotationBasedTagResolver;
-import org.axonframework.eventsourcing.eventstore.AsyncEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.PayloadBasedTagResolver;
@@ -59,8 +59,8 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
         assertTrue(tagResolver.isPresent());
         assertInstanceOf(AnnotationBasedTagResolver.class, tagResolver.get());
 
-        Optional<AsyncEventStorageEngine> eventStorageEngine =
-                result.getOptionalComponent(AsyncEventStorageEngine.class);
+        Optional<EventStorageEngine> eventStorageEngine =
+                result.getOptionalComponent(EventStorageEngine.class);
         assertTrue(eventStorageEngine.isPresent());
         assertInstanceOf(AsyncInMemoryEventStorageEngine.class, eventStorageEngine.get());
 
@@ -114,12 +114,12 @@ class EventSourcingConfigurerTest extends ApplicationConfigurerTestSuite<EventSo
 
     @Test
     void registerEventStorageEngineOverridesDefault() {
-        AsyncEventStorageEngine expected = new AsyncInMemoryEventStorageEngine();
+        EventStorageEngine expected = new AsyncInMemoryEventStorageEngine();
 
         Configuration result = testSubject.registerEventStorageEngine(c -> expected)
                                           .build();
 
-        assertEquals(expected, result.getComponent(AsyncEventStorageEngine.class));
+        assertEquals(expected, result.getComponent(EventStorageEngine.class));
     }
 
     @Test

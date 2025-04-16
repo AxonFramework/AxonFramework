@@ -22,9 +22,9 @@ import java.util.concurrent.CompletableFuture;
  * Represents an empty append transaction. This transaction does nothing and always succeeds. It is used when there are
  * no events to persist.
  */
-public record EmptyAppendTransaction() implements AsyncEventStorageEngine.AppendTransaction {
+public record EmptyAppendTransaction() implements EventStorageEngine.AppendTransaction {
 
-    public static final AsyncEventStorageEngine.AppendTransaction INSTANCE = new EmptyAppendTransaction();
+    public static final EventStorageEngine.AppendTransaction INSTANCE = new EmptyAppendTransaction();
 
     /**
      * Commits the empty append transaction. Always completes successfully with the provided consistency marker.
