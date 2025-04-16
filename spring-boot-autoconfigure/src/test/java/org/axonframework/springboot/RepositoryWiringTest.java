@@ -19,7 +19,7 @@ package org.axonframework.springboot;
 import com.thoughtworks.xstream.XStream;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.modelling.command.LegacyGenericJpaRepository;
@@ -61,7 +61,7 @@ class RepositoryWiringTest {
 
             LegacyRepository<SingleAggregateContext.AggregateOne> repositoryFromHandler = externalHandler.getRepository();
             assertNotNull(repositoryFromHandler);
-            assertEquals(repositoryFromHandler.getClass(), EventSourcingRepository.class);
+            assertEquals(repositoryFromHandler.getClass(), LegacyEventSourcingRepository.class);
             Object repositoryFromContext =
                     context.getBean(repositoryBeanName(SingleAggregateContext.AggregateOne.class));
             assertNotNull(repositoryFromContext);
@@ -80,7 +80,7 @@ class RepositoryWiringTest {
             LegacyRepository<SeveralAggregatesContext.AggregateOne> repositoryOneFromHandler =
                     externalHandler.getRepositoryOne();
             assertNotNull(repositoryOneFromHandler);
-            assertEquals(repositoryOneFromHandler.getClass(), EventSourcingRepository.class);
+            assertEquals(repositoryOneFromHandler.getClass(), LegacyEventSourcingRepository.class);
             Object repositoryOneFromContext =
                     context.getBean(repositoryBeanName(SeveralAggregatesContext.AggregateOne.class));
             assertNotNull(repositoryOneFromContext);
@@ -89,7 +89,7 @@ class RepositoryWiringTest {
             LegacyRepository<SeveralAggregatesContext.AggregateTwo> repositoryTwoFromHandler =
                     externalHandler.getRepositoryTwo();
             assertNotNull(repositoryTwoFromHandler);
-            assertEquals(repositoryTwoFromHandler.getClass(), EventSourcingRepository.class);
+            assertEquals(repositoryTwoFromHandler.getClass(), LegacyEventSourcingRepository.class);
             Object repositoryTwoFromContext =
                     context.getBean(repositoryBeanName(SeveralAggregatesContext.AggregateTwo.class));
             assertNotNull(repositoryTwoFromContext);
@@ -98,7 +98,7 @@ class RepositoryWiringTest {
             LegacyRepository<SeveralAggregatesContext.AggregateThree> repositoryThreeFromHandler =
                     externalHandler.getRepositoryThree();
             assertNotNull(repositoryThreeFromHandler);
-            assertEquals(repositoryThreeFromHandler.getClass(), EventSourcingRepository.class);
+            assertEquals(repositoryThreeFromHandler.getClass(), LegacyEventSourcingRepository.class);
             Object repositoryThreeFromContext =
                     context.getBean(repositoryBeanName(SeveralAggregatesContext.AggregateThree.class));
             assertNotNull(repositoryThreeFromContext);
@@ -115,7 +115,7 @@ class RepositoryWiringTest {
 
             LegacyRepository<?> repositoryOneFromHandler = externalHandler.getRepositoryOne();
             assertNotNull(repositoryOneFromHandler);
-            assertEquals(repositoryOneFromHandler.getClass(), EventSourcingRepository.class);
+            assertEquals(repositoryOneFromHandler.getClass(), LegacyEventSourcingRepository.class);
             Object repositoryOneFromContext =
                     context.getBean(repositoryBeanName(SeveralAggregatesContext.AggregateOne.class));
             assertNotNull(repositoryOneFromContext);
@@ -123,7 +123,7 @@ class RepositoryWiringTest {
 
             LegacyRepository<?> repositoryTwoFromHandler = externalHandler.getRepositoryTwo();
             assertNotNull(repositoryTwoFromHandler);
-            assertEquals(repositoryTwoFromHandler.getClass(), EventSourcingRepository.class);
+            assertEquals(repositoryTwoFromHandler.getClass(), LegacyEventSourcingRepository.class);
             Object repositoryTwoFromContext =
                     context.getBean(repositoryBeanName(SeveralAggregatesContext.AggregateTwo.class));
             assertNotNull(repositoryTwoFromContext);
@@ -131,7 +131,7 @@ class RepositoryWiringTest {
 
             LegacyRepository<?> repositoryThreeFromHandler = externalHandler.getRepositoryThree();
             assertNotNull(repositoryThreeFromHandler);
-            assertEquals(repositoryThreeFromHandler.getClass(), EventSourcingRepository.class);
+            assertEquals(repositoryThreeFromHandler.getClass(), LegacyEventSourcingRepository.class);
             Object repositoryThreeFromContext =
                     context.getBean(repositoryBeanName(SeveralAggregatesContext.AggregateThree.class));
             assertNotNull(repositoryThreeFromContext);

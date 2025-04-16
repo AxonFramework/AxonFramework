@@ -46,14 +46,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link EventSourcingRepository}.
+ * Test class validating the {@link LegacyEventSourcingRepository}.
  *
  * @author Allard Buijze
  */
 class EventSourcingRepositoryTest {
 
     private LegacyEventStore mockEventStore;
-    private EventSourcingRepository<TestAggregate> testSubject;
+    private LegacyEventSourcingRepository<TestAggregate> testSubject;
     private LegacyUnitOfWork<?> unitOfWork;
     private StubAggregateFactory stubAggregateFactory;
     private SnapshotTriggerDefinition triggerDefinition;
@@ -68,15 +68,15 @@ class EventSourcingRepositoryTest {
         triggerDefinition = mock(SnapshotTriggerDefinition.class);
         testSpanFactory = new TestSpanFactory();
         when(triggerDefinition.prepareTrigger(any())).thenReturn(snapshotTrigger);
-        testSubject = EventSourcingRepository.builder(TestAggregate.class)
-                                             .aggregateFactory(stubAggregateFactory)
-                                             .eventStore(mockEventStore)
-                                             .snapshotTriggerDefinition(triggerDefinition)
-                                             .filterByAggregateType()
-                                             .spanFactory(DefaultRepositorySpanFactory.builder()
-                                                                                      .spanFactory(testSpanFactory)
-                                                                                      .build())
-                                             .build();
+        testSubject = LegacyEventSourcingRepository.builder(TestAggregate.class)
+                                                   .aggregateFactory(stubAggregateFactory)
+                                                   .eventStore(mockEventStore)
+                                                   .snapshotTriggerDefinition(triggerDefinition)
+                                                   .filterByAggregateType()
+                                                   .spanFactory(DefaultRepositorySpanFactory.builder()
+                                                                                            .spanFactory(testSpanFactory)
+                                                                                            .build())
+                                                   .build();
         unitOfWork = LegacyDefaultUnitOfWork.startAndGet(
                 new GenericMessage<>(new MessageType("message"), "test")
         );
@@ -262,9 +262,9 @@ class EventSourcingRepositoryTest {
 
     @Test
     void buildWithNullSubtypesThrowsAxonConfigurationException() {
-        EventSourcingRepository.Builder<TestAggregate> builderTestSubject =
-                EventSourcingRepository.builder(TestAggregate.class)
-                                       .eventStore(mockEventStore);
+        LegacyEventSourcingRepository.Builder<TestAggregate> builderTestSubject =
+                LegacyEventSourcingRepository.builder(TestAggregate.class)
+                                             .eventStore(mockEventStore);
 
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtypes(null));
@@ -272,9 +272,9 @@ class EventSourcingRepositoryTest {
 
     @Test
     void buildWithNullSubtypeThrowsAxonConfigurationException() {
-        EventSourcingRepository.Builder<TestAggregate> builderTestSubject =
-                EventSourcingRepository.builder(TestAggregate.class)
-                                       .eventStore(mockEventStore);
+        LegacyEventSourcingRepository.Builder<TestAggregate> builderTestSubject =
+                LegacyEventSourcingRepository.builder(TestAggregate.class)
+                                             .eventStore(mockEventStore);
 
         //noinspection DataFlowIssue
         assertThrows(AxonConfigurationException.class, () -> builderTestSubject.subtype(null));

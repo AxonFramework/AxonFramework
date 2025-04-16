@@ -23,7 +23,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.integrationtests.utils.StubAggregate;
@@ -43,16 +43,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CommandHandlingTest {
 
-    private EventSourcingRepository<StubAggregate> repository;
+    private LegacyEventSourcingRepository<StubAggregate> repository;
     private String aggregateIdentifier;
     private StubEventStore stubEventStore;
 
     @BeforeEach
     void setUp() {
         stubEventStore = StubEventStore.builder().build();
-        repository = EventSourcingRepository.builder(StubAggregate.class)
-                .eventStore(stubEventStore)
-                .build();
+        repository = LegacyEventSourcingRepository.builder(StubAggregate.class)
+                                                  .eventStore(stubEventStore)
+                                                  .build();
         aggregateIdentifier = "testAggregateIdentifier";
     }
 

@@ -49,7 +49,7 @@ import org.axonframework.eventsourcing.AggregateSnapshotter;
 import org.axonframework.eventsourcing.CachingEventSourcingRepository;
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.AbstractSnapshotEventEntry;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
@@ -141,7 +141,7 @@ class DefaultConfigurerTest {
         var result = config.commandBus().dispatch(TEST_COMMAND, ProcessingContext.NONE);
         assertEquals("test", result.get().getPayload());
         assertNotNull(config.repository(StubAggregate.class));
-        assertEquals(EventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
+        assertEquals(LegacyEventSourcingRepository.class, config.repository(StubAggregate.class).getClass());
         assertEquals(2, config.getModules().size());
         assertExpectedModules(config, AggregateConfiguration.class, AxonIQConsoleModule.class);
     }

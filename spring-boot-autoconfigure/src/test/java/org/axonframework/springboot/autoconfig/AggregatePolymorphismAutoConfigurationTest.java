@@ -20,7 +20,7 @@ import com.thoughtworks.xstream.XStream;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
@@ -122,7 +122,7 @@ class AggregatePolymorphismAutoConfigurationTest {
                               .run(context -> {
                                   assertThat(context).hasSingleBean(LegacyRepository.class);
                                   assertThat(context).getBean(LegacyRepository.class)
-                                                     .isInstanceOf(EventSourcingRepository.class);
+                                                     .isInstanceOf(LegacyEventSourcingRepository.class);
                                   String[] namesForRepositoryBeans =
                                           context.getBeanNamesForType(LegacyRepository.class);
                                   assertThat(namesForRepositoryBeans.length).isEqualTo(1);

@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
 import org.axonframework.eventsourcing.AbstractAggregateFactory;
 import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.MessageType;
@@ -103,12 +103,13 @@ class SpringAggregateSnapshotterFactoryBeanTest {
         reset(mockApplicationContext);
         when(mockApplicationContext.getBean(LegacyEventStore.class)).thenReturn(mockEventStore);
 
-        when(mockApplicationContext.getBeansOfType(EventSourcingRepository.class))
-                .thenReturn(Collections.singletonMap("myRepository",
-                                                     EventSourcingRepository.builder(StubAggregate.class)
-                                                                            .eventStore(mockEventStore)
-                                                                            .repositoryProvider(mockRepositoryProvider)
-                                                                            .build()
+        when(mockApplicationContext.getBeansOfType(LegacyEventSourcingRepository.class))
+                .thenReturn(Collections.singletonMap(
+                        "myRepository",
+                        LegacyEventSourcingRepository.builder(StubAggregate.class)
+                                                     .eventStore(mockEventStore)
+                                                     .repositoryProvider(mockRepositoryProvider)
+                                                     .build()
                 ));
         snapshotCreatedNoTransaction();
     }

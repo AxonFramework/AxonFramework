@@ -17,7 +17,7 @@
 package org.axonframework.integrationtests.polymorphic;
 
 import jakarta.persistence.EntityManager;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.LegacyInMemoryEventStorageEngine;
 import org.axonframework.modelling.command.LegacyRepository;
@@ -44,7 +44,7 @@ public class PolymorphicESAggregateAnnotationCommandHandlerTest
     public <T> LegacyRepository<T> repository(Class<T> aggregateType,
                                               Set<Class<? extends T>> subTypes,
                                               EntityManager entityManager) {
-        EventSourcingRepository<T> repository = EventSourcingRepository
+        LegacyEventSourcingRepository<T> repository = LegacyEventSourcingRepository
                 .builder(aggregateType)
                 .subtypes(subTypes)
                 .eventStore(LegacyEmbeddedEventStore.builder()

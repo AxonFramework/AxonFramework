@@ -22,7 +22,7 @@ import org.axonframework.common.jpa.SimpleEntityManagerProvider;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.TimestampParameterResolverFactory;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.messaging.annotation.AnnotatedMessageHandlingMemberDefinition;
 import org.axonframework.modelling.command.AggregateCreationPolicy;
 import org.axonframework.modelling.command.AggregateIdentifier;
@@ -66,7 +66,7 @@ class FixtureRepositoryRegistrationTest {
     void fixturesDefaultRepositoryCanBeWiredAsMessageHandlingParameter() {
         testSubject.givenNoPriorActivity()
                    .when("some-command")
-                   .expectEvents("some-command_" + EventSourcingRepository.class.getSimpleName());
+                   .expectEvents("some-command_" + LegacyEventSourcingRepository.class.getSimpleName());
     }
 
     @Test
@@ -207,7 +207,7 @@ class FixtureRepositoryRegistrationTest {
         }
     }
 
-    private static class CustomRepository extends EventSourcingRepository<MyAggregate> {
+    private static class CustomRepository extends LegacyEventSourcingRepository<MyAggregate> {
 
         protected CustomRepository(Builder builder) {
             super(builder);
@@ -217,7 +217,7 @@ class FixtureRepositoryRegistrationTest {
             return new Builder(MyAggregate.class);
         }
 
-        private static class Builder extends EventSourcingRepository.Builder<MyAggregate> {
+        private static class Builder extends LegacyEventSourcingRepository.Builder<MyAggregate> {
 
             protected Builder(Class<MyAggregate> aggregateType) {
                 super(aggregateType);

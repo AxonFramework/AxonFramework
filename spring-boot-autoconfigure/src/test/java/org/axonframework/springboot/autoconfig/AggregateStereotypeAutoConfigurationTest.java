@@ -27,7 +27,7 @@ import org.axonframework.common.lock.Lock;
 import org.axonframework.common.lock.LockFactory;
 import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
@@ -375,9 +375,9 @@ class AggregateStereotypeAutoConfigurationTest {
 
         @Bean
         public LegacyRepository<CustomRepoTestAggregate> testRepository(LegacyEventStore eventStore) {
-            return spy(EventSourcingRepository.builder(CustomRepoTestAggregate.class)
-                                              .eventStore(eventStore)
-                                              .build());
+            return spy(LegacyEventSourcingRepository.builder(CustomRepoTestAggregate.class)
+                                                    .eventStore(eventStore)
+                                                    .build());
         }
     }
 

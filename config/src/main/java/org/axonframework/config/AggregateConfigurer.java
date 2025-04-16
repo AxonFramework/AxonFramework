@@ -27,7 +27,7 @@ import org.axonframework.common.lock.NullLockFactory;
 import org.axonframework.common.lock.PessimisticLockFactory;
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventsourcing.AggregateFactory;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
 import org.axonframework.eventsourcing.NoSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
@@ -141,16 +141,16 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
                                   "Store to use, or configure a specific repository implementation for " +
                                   aggregate.toString());
 
-                    EventSourcingRepository.Builder<A> builder =
-                            EventSourcingRepository.builder(aggregate)
-                                                   .aggregateModel(metaModel.get())
-                                                   .lockFactory(lockFactory.get())
-                                                   .eventStore(c.eventStore())
-                                                   .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
-                                                   .aggregateFactory(aggregateFactory.get())
-                                                   .repositoryProvider(c::repository)
-                                                   .spanFactory(c.getComponent(RepositorySpanFactory.class))
-                                                   .cache(cache.get());
+                    LegacyEventSourcingRepository.Builder<A> builder =
+                            LegacyEventSourcingRepository.builder(aggregate)
+                                                         .aggregateModel(metaModel.get())
+                                                         .lockFactory(lockFactory.get())
+                                                         .eventStore(c.eventStore())
+                                                         .snapshotTriggerDefinition(snapshotTriggerDefinition.get())
+                                                         .aggregateFactory(aggregateFactory.get())
+                                                         .repositoryProvider(c::repository)
+                                                         .spanFactory(c.getComponent(RepositorySpanFactory.class))
+                                                         .cache(cache.get());
                     if (eventStreamFilter.get() != null) {
                         builder = builder.eventStreamFilter(eventStreamFilter.get());
                     } else if (filterEventsByType.get()) {
@@ -303,7 +303,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
 
     /**
      * Defines the {@link LockFactory} to use in the {@link LegacyRepository} for the aggregate under configuration.
-     * Defaults to the {@link PessimisticLockFactory} for the {@link EventSourcingRepository} and
+     * Defaults to the {@link PessimisticLockFactory} for the {@link LegacyEventSourcingRepository} and
      * {@link NullLockFactory} for a {@link LegacyGenericJpaRepository}.
      *
      * @param lockFactory a {@link Function} building the {@link LockFactory} to use based on the
@@ -379,7 +379,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      *
      * @param filterBuilder The function creating the filter.
      * @return this configurer instance for chaining
-     * @see EventSourcingRepository.Builder#eventStreamFilter(Predicate)
+     * @see LegacyEventSourcingRepository.Builder#eventStreamFilter(Predicate)
      */
     public AggregateConfigurer<A> configureEventStreamFilter(
             Function<LegacyConfiguration, Predicate<? super DomainEventMessage<?>>> filterBuilder
@@ -420,7 +420,7 @@ public class AggregateConfigurer<A> implements AggregateConfiguration<A> {
      *
      * @param filterConfigurationPredicate The function determining whether or not to filter events by Aggregate type.
      * @return this configurer instance for chaining
-     * @see EventSourcingRepository.Builder#filterByAggregateType()
+     * @see LegacyEventSourcingRepository.Builder#filterByAggregateType()
      */
     public AggregateConfigurer<A> configureFilterEventsByType(
             Function<LegacyConfiguration, Boolean> filterConfigurationPredicate

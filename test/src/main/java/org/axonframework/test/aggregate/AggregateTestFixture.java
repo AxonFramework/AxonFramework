@@ -36,11 +36,11 @@ import org.axonframework.eventhandling.TrackingEventStream;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.AggregateFactory;
 import org.axonframework.eventsourcing.EventSourcedAggregate;
-import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.GenericAggregateFactory;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
 import org.axonframework.messaging.GenericMessage;
 import org.axonframework.messaging.Message;
@@ -63,8 +63,8 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.annotation.SimpleResourceParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.messaging.unitofwork.LegacyDefaultUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateAnnotationCommandHandler;
 import org.axonframework.modelling.command.AggregateNotFoundException;
@@ -204,13 +204,13 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
 
     @Override
     public FixtureConfiguration<T> registerAggregateFactory(AggregateFactory<T> aggregateFactory) {
-        return registerRepository(EventSourcingRepository.builder(aggregateFactory.getAggregateType())
-                                                         .aggregateFactory(aggregateFactory)
-                                                         .eventStore(eventStore)
-                                                         .parameterResolverFactory(getParameterResolverFactory())
-                                                         .handlerDefinition(getHandlerDefinition())
-                                                         .repositoryProvider(getRepositoryProvider())
-                                                         .build());
+        return registerRepository(LegacyEventSourcingRepository.builder(aggregateFactory.getAggregateType())
+                                                               .aggregateFactory(aggregateFactory)
+                                                               .eventStore(eventStore)
+                                                               .parameterResolverFactory(getParameterResolverFactory())
+                                                               .handlerDefinition(getHandlerDefinition())
+                                                               .repositoryProvider(getRepositoryProvider())
+                                                               .build());
     }
 
     @Override
@@ -624,16 +624,16 @@ public class AggregateTestFixture<T> implements FixtureConfiguration<T>, TestExe
                     getRepositoryProvider()));
         } else {
             AggregateModel<T> aggregateModel = aggregateModel();
-            this.registerRepository(EventSourcingRepository.builder(aggregateType)
-                                                           .aggregateModel(aggregateModel)
-                                                           .aggregateFactory(
-                                                                   new GenericAggregateFactory<>(aggregateModel)
-                                                           )
-                                                           .eventStore(eventStore)
-                                                           .parameterResolverFactory(getParameterResolverFactory())
-                                                           .handlerDefinition(getHandlerDefinition())
-                                                           .repositoryProvider(getRepositoryProvider())
-                                                           .build());
+            this.registerRepository(LegacyEventSourcingRepository.builder(aggregateType)
+                                                                 .aggregateModel(aggregateModel)
+                                                                 .aggregateFactory(
+                                                                         new GenericAggregateFactory<>(aggregateModel)
+                                                                 )
+                                                                 .eventStore(eventStore)
+                                                                 .parameterResolverFactory(getParameterResolverFactory())
+                                                                 .handlerDefinition(getHandlerDefinition())
+                                                                 .repositoryProvider(getRepositoryProvider())
+                                                                 .build());
         }
     }
 

@@ -51,7 +51,7 @@ import static org.mockito.Mockito.reset;
 public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtExceptionHandler {
 
     private static final int CONCURRENT_MODIFIERS = 10;
-    private EventSourcingRepository<SimpleAggregateRoot> repository;
+    private LegacyEventSourcingRepository<SimpleAggregateRoot> repository;
     private String aggregateIdentifier;
     private LegacyEventStore eventStore;
     private List<Throwable> uncaughtExceptions = new CopyOnWriteArrayList<>();
@@ -75,10 +75,10 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
 
     private void initializeRepository() throws Exception {
         eventStore = LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine()).build();
-        repository = EventSourcingRepository.builder(SimpleAggregateRoot.class)
-                .aggregateFactory(new SimpleAggregateFactory())
-                .eventStore(eventStore)
-                .build();
+        repository = LegacyEventSourcingRepository.builder(SimpleAggregateRoot.class)
+                                                  .aggregateFactory(new SimpleAggregateFactory())
+                                                  .eventStore(eventStore)
+                                                  .build();
         EventBus mockEventBus = mock(EventBus.class);
 
         LegacyUnitOfWork<?> uow = LegacyDefaultUnitOfWork.startAndGet(null);
@@ -130,7 +130,7 @@ public class EventSourcingRepositoryIntegrationTest implements Thread.UncaughtEx
     }
 
     private Thread prepareAggregateModifier(final CountDownLatch awaitFor, final CountDownLatch reportDone,
-                                            final EventSourcingRepository<SimpleAggregateRoot> repository,
+                                            final LegacyEventSourcingRepository<SimpleAggregateRoot> repository,
                                             final String aggregateIdentifier) {
         Thread t = new Thread(() -> {
             try {

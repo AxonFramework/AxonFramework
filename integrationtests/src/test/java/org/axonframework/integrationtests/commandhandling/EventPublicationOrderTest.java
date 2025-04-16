@@ -24,7 +24,7 @@ import org.axonframework.commandhandling.annotation.AnnotatedCommandHandlingComp
 import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.EventSourcingRepository;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
@@ -49,10 +49,13 @@ class EventPublicationOrderTest {
     @BeforeEach
     void setUp() {
         this.commandBus = new SimpleCommandBus();
-        eventStore = spy(LegacyEmbeddedEventStore.builder().storageEngine(new LegacyInMemoryEventStorageEngine()).build());
-        EventSourcingRepository<StubAggregate> repository = EventSourcingRepository.builder(StubAggregate.class)
-                                                                                   .eventStore(eventStore)
-                                                                                   .build();
+        eventStore = spy(LegacyEmbeddedEventStore.builder()
+                                                 .storageEngine(new LegacyInMemoryEventStorageEngine())
+                                                 .build());
+        LegacyEventSourcingRepository<StubAggregate> repository =
+                LegacyEventSourcingRepository.builder(StubAggregate.class)
+                                             .eventStore(eventStore)
+                                             .build();
         StubAggregateCommandHandler target = new StubAggregateCommandHandler();
         target.setRepository(repository);
         target.setEventBus(eventStore);

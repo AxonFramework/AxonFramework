@@ -28,9 +28,9 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 import org.axonframework.modelling.command.Aggregate;
 import org.axonframework.modelling.command.AggregateNotFoundException;
+import org.axonframework.modelling.command.LegacyLockingRepository;
 import org.axonframework.modelling.command.LegacyRepository;
 import org.axonframework.modelling.command.LockAwareAggregate;
-import org.axonframework.modelling.command.LegacyLockingRepository;
 import org.axonframework.modelling.command.RepositoryProvider;
 import org.axonframework.modelling.command.RepositorySpanFactory;
 import org.axonframework.modelling.command.inspection.AggregateModel;
@@ -54,7 +54,7 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @deprecated In favor of the {@link AsyncEventSourcingRepository}.
  */
 @Deprecated(since = "5.0.0")
-public class EventSourcingRepository<T> extends LegacyLockingRepository<T, EventSourcedAggregate<T>> {
+public class LegacyEventSourcingRepository<T> extends LegacyLockingRepository<T, EventSourcedAggregate<T>> {
 
     private final LegacyEventStore eventStore;
     private final SnapshotTriggerDefinition snapshotTriggerDefinition;
@@ -63,7 +63,7 @@ public class EventSourcingRepository<T> extends LegacyLockingRepository<T, Event
     private final Predicate<? super DomainEventMessage<?>> eventStreamFilter;
 
     /**
-     * Instantiate a {@link EventSourcingRepository} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link LegacyEventSourcingRepository} based on the fields contained in the {@link Builder}.
      * <p>
      * A goal of the provided Builder is to create an {@link AggregateModel} specifying generic {@code T} as the
      * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To
@@ -81,9 +81,9 @@ public class EventSourcingRepository<T> extends LegacyLockingRepository<T, Event
      * {@link org.axonframework.modelling.command.DefaultRepositorySpanFactory} backed by a
      * {@link org.axonframework.tracing.NoOpSpanFactory}.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link EventSourcingRepository} instance
+     * @param builder the {@link Builder} used to instantiate a {@link LegacyEventSourcingRepository} instance
      */
-    protected EventSourcingRepository(Builder<T> builder) {
+    protected LegacyEventSourcingRepository(Builder<T> builder) {
         super(builder);
         this.eventStore = builder.eventStore;
         this.aggregateFactory = builder.buildAggregateFactory();
@@ -93,7 +93,7 @@ public class EventSourcingRepository<T> extends LegacyLockingRepository<T, Event
     }
 
     /**
-     * Instantiate a Builder to be able to create a {@link EventSourcingRepository} for aggregate type {@code T}. Can
+     * Instantiate a Builder to be able to create a {@link LegacyEventSourcingRepository} for aggregate type {@code T}. Can
      * also be used to instantiate a {@link CachingEventSourcingRepository} for aggregate type {@code T}. This Builder
      * will check whether a {@link Cache} is provided. If this holds, the {@link Builder#build()} function returns a
      * CachingEventSourcingRepository instead of an EventSourcingRepository.
@@ -110,7 +110,7 @@ public class EventSourcingRepository<T> extends LegacyLockingRepository<T, Event
      * <p>
      * Additionally, the {@link LegacyEventStore} is a <b>hard requirement</b> and as such should be provided.
      *
-     * @return a Builder to be able to create a {@link EventSourcingRepository}
+     * @return a Builder to be able to create a {@link LegacyEventSourcingRepository}
      */
     public static <T> Builder<T> builder(Class<T> aggregateType) {
         return new Builder<>(aggregateType);
@@ -215,7 +215,7 @@ public class EventSourcingRepository<T> extends LegacyLockingRepository<T, Event
     }
 
     /**
-     * Builder class to instantiate a {@link EventSourcingRepository}. Can also be used to instantiate a
+     * Builder class to instantiate a {@link LegacyEventSourcingRepository}. Can also be used to instantiate a
      * {@link CachingEventSourcingRepository}. This Builder will check whether a {@link Cache} is provided. If this
      * holds, the {@link Builder#build()} function returns a CachingEventSourcingRepository instead of an
      * EventSourcingRepository.
@@ -366,8 +366,8 @@ public class EventSourcingRepository<T> extends LegacyLockingRepository<T, Event
 
         /**
          * Sets the {@link Predicate} used to filter events when reading from the EventStore. By default, all events
-         * with the Aggregate identifier passed to {@link EventSourcingRepository#readEvents(String)} are returned.
-         * Calls to {@link #filterByAggregateType()} will overwrite this configuration and vice versa.
+         * with the Aggregate identifier passed to {@link LegacyEventSourcingRepository#readEvents(String)} are
+         * returned. Calls to {@link #filterByAggregateType()} will overwrite this configuration and vice versa.
          *
          * @param filter a {@link Predicate} that may return false to discard events.
          */
@@ -391,28 +391,28 @@ public class EventSourcingRepository<T> extends LegacyLockingRepository<T, Event
         }
 
         /**
-         * Initializes a {@link EventSourcingRepository} or {@link CachingEventSourcingRepository} as specified through
-         * this Builder. Will return a CachingEventSourcingRepository if {@link #cache(Cache)} has been set. Otherwise
-         * builds a regular EventSourcingRepository
+         * Initializes a {@link LegacyEventSourcingRepository} or {@link CachingEventSourcingRepository} as specified
+         * through this Builder. Will return a CachingEventSourcingRepository if {@link #cache(Cache)} has been set.
+         * Otherwise builds a regular EventSourcingRepository
          *
-         * @param <R> a generic extending {@link EventSourcingRepository}, so allowing both an EventSourcingRepository
-         *            and {@link CachingEventSourcingRepository} return type
-         * @return a {@link EventSourcingRepository} or {@link CachingEventSourcingRepository} (if {@link #cache(Cache)}
-         * has been set) as specified through this Builder
+         * @param <R> a generic extending {@link LegacyEventSourcingRepository}, so allowing both an
+         *            EventSourcingRepository and {@link CachingEventSourcingRepository} return type
+         * @return a {@link LegacyEventSourcingRepository} or {@link CachingEventSourcingRepository} (if
+         * {@link #cache(Cache)} has been set) as specified through this Builder
          */
         @SuppressWarnings("unchecked")
-        public <R extends EventSourcingRepository<T>> R build() {
+        public <R extends LegacyEventSourcingRepository<T>> R build() {
             return cache != null
                     ? (R) new CachingEventSourcingRepository<>(this)
-                    : (R) new EventSourcingRepository<>(this);
+                    : (R) new LegacyEventSourcingRepository<>(this);
         }
 
         /**
          * Instantiate the {@link AggregateFactory} of generic type {@code T} for the Aggregate this
-         * {@link EventSourcingRepository} will instantiate based on an event stream.
+         * {@link LegacyEventSourcingRepository} will instantiate based on an event stream.
          *
          * @return a {@link AggregateFactory} of generic type {@code T} for the Aggregate this
-         * {@link EventSourcingRepository} will instantiate based on an event stream
+         * {@link LegacyEventSourcingRepository} will instantiate based on an event stream
          */
         private AggregateFactory<T> buildAggregateFactory() {
             if (aggregateFactory == null) {

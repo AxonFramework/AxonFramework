@@ -18,7 +18,10 @@ package org.axonframework.spring.eventsourcing;
 
 import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.common.transaction.TransactionManager;
-import org.axonframework.eventsourcing.*;
+import org.axonframework.eventsourcing.AggregateFactory;
+import org.axonframework.eventsourcing.AggregateSnapshotter;
+import org.axonframework.eventsourcing.LegacyEventSourcingRepository;
+import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.messaging.annotation.HandlerDefinition;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
@@ -28,14 +31,14 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
-
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
+
+import static org.springframework.beans.factory.BeanFactoryUtils.beansOfTypeIncludingAncestors;
 
 /**
  * Snapshotter implementation that uses the AggregateRoot as state for the snapshot. Unlike the
@@ -97,10 +100,12 @@ public class SpringAggregateSnapshotter extends AggregateSnapshotter implements 
                                       .filter(af -> Objects.equals(af.getAggregateType(), aggregateType))
                                       .findFirst();
             if (!factory.isPresent()) {
-                factory = beansOfTypeIncludingAncestors(applicationContext, EventSourcingRepository.class).values().stream()
-                                            .map((Function<EventSourcingRepository, AggregateFactory>) EventSourcingRepository::getAggregateFactory)
-                                            .filter(af -> Objects.equals(af.getAggregateType(), aggregateType))
-                                            .findFirst();
+                factory = beansOfTypeIncludingAncestors(applicationContext, LegacyEventSourcingRepository.class)
+                        .values()
+                        .stream()
+                        .map((Function<LegacyEventSourcingRepository, AggregateFactory>) LegacyEventSourcingRepository::getAggregateFactory)
+                        .filter(af -> Objects.equals(af.getAggregateType(), aggregateType))
+                        .findFirst();
                 if (factory.isPresent()) {
                     aggregateFactory = factory.get();
                     registerAggregateFactory(aggregateFactory);
