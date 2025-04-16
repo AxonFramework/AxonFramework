@@ -220,7 +220,7 @@ public class AnnotatedAggregateTest {
         }
     }
 
-    private static class StubRepository extends AbstractRepository<AggregateRoot, Aggregate<AggregateRoot>> {
+    private static class StubRepository extends AbstractLegacyRepository<AggregateRoot, Aggregate<AggregateRoot>> {
 
         private final EventBus eventBus;
 
@@ -260,7 +260,7 @@ public class AnnotatedAggregateTest {
 
         }
 
-        private static class Builder extends AbstractRepository.Builder<AggregateRoot> {
+        private static class Builder extends AbstractLegacyRepository.Builder<AggregateRoot> {
 
             private EventBus eventBus;
 

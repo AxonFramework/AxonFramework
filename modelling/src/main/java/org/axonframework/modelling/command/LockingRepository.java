@@ -60,7 +60,7 @@ import static org.axonframework.common.ObjectUtils.sameInstanceSupplier;
  */
 @Deprecated(since = "5.0.0")
 public abstract class LockingRepository<T, A extends Aggregate<T>> extends
-        AbstractRepository<T, LockAwareAggregate<T, A>> {
+        AbstractLegacyRepository<T, LockAwareAggregate<T, A>> {
 
     private static final Logger logger = LoggerFactory.getLogger(LockingRepository.class);
 
@@ -266,7 +266,7 @@ public abstract class LockingRepository<T, A extends Aggregate<T>> extends
      *
      * @param <T> a generic specifying the Aggregate type contained in this {@link LegacyRepository} implementation
      */
-    protected static abstract class Builder<T> extends AbstractRepository.Builder<T> {
+    protected static abstract class Builder<T> extends AbstractLegacyRepository.Builder<T> {
 
         private LockFactory lockFactory = PessimisticLockFactory.usingDefaults();
 

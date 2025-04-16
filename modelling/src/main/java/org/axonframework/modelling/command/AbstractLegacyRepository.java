@@ -60,16 +60,16 @@ import static org.axonframework.common.BuilderUtils.assertNonNull;
  * @deprecated This instance will be removed.
  */
 @Deprecated(since = "5.0.0")
-public abstract class AbstractRepository<T, A extends Aggregate<T>> implements LegacyRepository<T> {
+public abstract class AbstractLegacyRepository<T, A extends Aggregate<T>> implements LegacyRepository<T> {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractLegacyRepository.class);
 
     private final String aggregatesKey = this + "_AGGREGATES";
     private final AggregateModel<T> aggregateModel;
     protected final RepositorySpanFactory spanFactory;
 
     /**
-     * Instantiate a {@link AbstractRepository} based on the fields contained in the {@link Builder}.
+     * Instantiate a {@link AbstractLegacyRepository} based on the fields contained in the {@link Builder}.
      * <p>
      * The provided Builder's main goal is to build an {@link AggregateModel} specifying generic {@code T} as the
      * aggregate type to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type.
@@ -78,9 +78,9 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements L
      * AggregateModel. Thus, either the AggregateModel <b>or</b> the {@code aggregateType} should be provided. An
      * {@link org.axonframework.common.AxonConfigurationException} is thrown if this criteria is not met.
      *
-     * @param builder the {@link Builder} used to instantiate a {@link AbstractRepository} instance
+     * @param builder the {@link Builder} used to instantiate a {@link AbstractLegacyRepository} instance
      */
-    protected AbstractRepository(Builder<T> builder) {
+    protected AbstractLegacyRepository(Builder<T> builder) {
         builder.validate();
         this.aggregateModel = builder.buildAggregateModel();
         this.spanFactory = builder.spanFactory;
@@ -426,7 +426,7 @@ public abstract class AbstractRepository<T, A extends Aggregate<T>> implements L
     }
 
     /**
-     * Abstract Builder class to instantiate {@link AbstractRepository} implementations.
+     * Abstract Builder class to instantiate {@link AbstractLegacyRepository} implementations.
      * <p>
      * This Builder's main goal is to build an {@link AggregateModel} specifying generic {@code T} as the aggregate type
      * to be stored. All aggregates in this repository must be {@code instanceOf} this aggregate type. To instantiate

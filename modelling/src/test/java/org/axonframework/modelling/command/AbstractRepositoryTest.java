@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Test class validating the {@link AbstractRepository}.
+ * Test class validating the {@link AbstractLegacyRepository}.
  *
  * @author Allard Buijze
  */
@@ -43,15 +43,15 @@ class AbstractRepositoryTest {
 
     private static final String AGGREGATE_ID = "some-identifier";
 
-    private AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>> testSubject;
+    private AbstractLegacyRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>> testSubject;
 
     private AnnotatedAggregate<JpaAggregate> spiedAggregate;
     private final Message<?> failureMessage = null;
 
     @BeforeEach
     void setUp() {
-        testSubject = new AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
-                new AbstractRepository.Builder<JpaAggregate>(JpaAggregate.class) {}) {
+        testSubject = new AbstractLegacyRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
+                new AbstractLegacyRepository.Builder<JpaAggregate>(JpaAggregate.class) {}) {
 
             @Override
             protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod)
@@ -113,9 +113,9 @@ class AbstractRepositoryTest {
     @Test
     void aggregateTypeVerification_WrongType() {
         //noinspection rawtypes
-        AbstractRepository anonymousTestSubject =
-                new AbstractRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
-                        new AbstractRepository.Builder<JpaAggregate>(JpaAggregate.class) {}) {
+        AbstractLegacyRepository anonymousTestSubject =
+                new AbstractLegacyRepository<JpaAggregate, AnnotatedAggregate<JpaAggregate>>(
+                        new AbstractLegacyRepository.Builder<JpaAggregate>(JpaAggregate.class) {}) {
 
                     @Override
                     protected AnnotatedAggregate<JpaAggregate> doCreateNew(Callable<JpaAggregate> factoryMethod)
