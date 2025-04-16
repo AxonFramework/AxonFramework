@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.axonframework.common.AxonConfigurationException;
 import org.axonframework.eventhandling.DefaultEventBusSpanFactory;
 import org.axonframework.eventhandling.EventBusSpanFactory;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.NoOpMessageMonitor;
@@ -153,7 +153,7 @@ public class AxonServerEventStoreFactory {
          * Sets the {@link AxonServerConfiguration} describing the servers to connect with and how to manage flow
          * control.
          * <p>
-         * This object is used by the Axon Server {@link AxonServerEventStore event store's} {@link EventStorageEngine}
+         * This object is used by the Axon Server {@link AxonServerEventStore event store's} {@link LegacyEventStorageEngine}
          * implementation.
          *
          * @param configuration The {@link AxonServerConfiguration} describing the servers to connect with and how to
@@ -169,7 +169,7 @@ public class AxonServerEventStoreFactory {
         /**
          * Sets the {@link AxonServerConnectionManager} managing the connections to Axon Server.
          * <p>
-         * This object is used by the Axon Server {@link AxonServerEventStore event store's} {@link EventStorageEngine}
+         * This object is used by the Axon Server {@link AxonServerEventStore event store's} {@link LegacyEventStorageEngine}
          * implementation.
          *
          * @param connectionManager The {@link AxonServerConnectionManager} managing the connections to Axon Server.
@@ -186,7 +186,7 @@ public class AxonServerEventStoreFactory {
          * <p>
          * Defaults to a {@link XStreamSerializer}.
          * <p>
-         * This object is used by the Axon Server {@link AxonServerEventStore event store's} {@link EventStorageEngine}
+         * This object is used by the Axon Server {@link AxonServerEventStore event store's} {@link LegacyEventStorageEngine}
          * implementation.
          *
          * @param snapshotSerializer The {@link Serializer} used to de-/serialize snapshot events.
@@ -204,7 +204,7 @@ public class AxonServerEventStoreFactory {
          * <p>
          * Defaults to a {@link XStreamSerializer}.
          * <p>
-         * This object is used by the Axon Server {@link AxonServerEventStore event store's} {@link EventStorageEngine}
+         * This object is used by the Axon Server {@link AxonServerEventStore event store's} {@link LegacyEventStorageEngine}
          * implementation.
          *
          * @param eventSerializer The serializer to de-/serialize the {@link EventMessage#getPayload() event payload}
@@ -223,7 +223,7 @@ public class AxonServerEventStoreFactory {
          * When not set all snapshots are used. Note that {@link SnapshotFilter} instances can be combined and should
          * return {@code true} if they handle a snapshot they wish to ignore.
          * <p>
-         * This object is used by the Axon Server {@link AxonServerEventStore event store's} {@link EventStorageEngine}
+         * This object is used by the Axon Server {@link AxonServerEventStore event store's} {@link LegacyEventStorageEngine}
          * implementation.
          *
          * @param snapshotFilter The {@link SnapshotFilter} used to filter snapshots when returning aggregate events.
@@ -240,7 +240,7 @@ public class AxonServerEventStoreFactory {
          * <p>
          * Defaults to a {@link NoOpEventUpcaster}.
          * <p>
-         * This object is used by the Axon Server {@link AxonServerEventStore event store's} {@link EventStorageEngine}
+         * This object is used by the Axon Server {@link AxonServerEventStore event store's} {@link LegacyEventStorageEngine}
          * implementation.
          *
          * @param upcasterChain An {@link EventUpcaster} used to deserialize events of older revisions.

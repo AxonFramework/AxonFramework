@@ -52,7 +52,7 @@ import org.axonframework.eventsourcing.DefaultSnapshotterSpanFactory;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.SnapshotterSpanFactory;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.axonframework.lifecycle.LifecycleHandlerInvocationException;
@@ -946,7 +946,7 @@ public class LegacyDefaultConfigurer implements LegacyConfigurer {
 
     @Override
     public LegacyConfigurer configureEmbeddedEventStore(
-            @Nonnull Function<LegacyConfiguration, EventStorageEngine> storageEngineBuilder
+            @Nonnull Function<LegacyConfiguration, LegacyEventStorageEngine> storageEngineBuilder
     ) {
         return configureEventStore(c -> {
             MessageMonitor<Message<?>> monitor =

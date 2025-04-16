@@ -27,7 +27,7 @@ import org.axonframework.eventhandling.deadletter.jdbc.JdbcSequencedDeadLetterQu
 import org.axonframework.eventhandling.tokenstore.TokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.JdbcTokenStore;
 import org.axonframework.eventhandling.tokenstore.jdbc.TokenSchema;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
@@ -72,20 +72,20 @@ public class JdbcAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean({EventStorageEngine.class, EventSchema.class, LegacyEventStore.class})
+    @ConditionalOnMissingBean({LegacyEventStorageEngine.class, EventSchema.class, LegacyEventStore.class})
     public EventSchema eventSchema() {
         return new EventSchema();
     }
 
     @Bean
-    @ConditionalOnMissingBean({EventStorageEngine.class, EventBus.class, LegacyEventStore.class})
-    public EventStorageEngine eventStorageEngine(Serializer defaultSerializer,
-                                                 PersistenceExceptionResolver persistenceExceptionResolver,
-                                                 @Qualifier("eventSerializer") Serializer eventSerializer,
-                                                 LegacyConfiguration configuration,
-                                                 ConnectionProvider connectionProvider,
-                                                 TransactionManager transactionManager,
-                                                 EventSchema eventSchema) {
+    @ConditionalOnMissingBean({LegacyEventStorageEngine.class, EventBus.class, LegacyEventStore.class})
+    public LegacyEventStorageEngine eventStorageEngine(Serializer defaultSerializer,
+                                                       PersistenceExceptionResolver persistenceExceptionResolver,
+                                                       @Qualifier("eventSerializer") Serializer eventSerializer,
+                                                       LegacyConfiguration configuration,
+                                                       ConnectionProvider connectionProvider,
+                                                       TransactionManager transactionManager,
+                                                       EventSchema eventSchema) {
         return JdbcEventStorageEngine.builder()
                                      .snapshotSerializer(defaultSerializer)
                                      .upcasterChain(configuration.upcasterChain())

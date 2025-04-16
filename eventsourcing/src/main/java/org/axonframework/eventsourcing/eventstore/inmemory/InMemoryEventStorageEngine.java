@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2024. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackedEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
 
 import java.time.Instant;
@@ -54,7 +54,7 @@ import static org.axonframework.eventhandling.EventUtils.asTrackedEventMessage;
  * @author Rene de Waele
  * @since 3.0
  */ // TODO Replace for AsyncInMemoryEventStorageEngine once the latter is fully integrated
-public class InMemoryEventStorageEngine implements EventStorageEngine {
+public class InMemoryEventStorageEngine implements LegacyEventStorageEngine {
 
     @SuppressWarnings("SortedCollectionWithNonComparableKeys")
     private final NavigableMap<TrackingToken, TrackedEventMessage<?>> events = new ConcurrentSkipListMap<>();

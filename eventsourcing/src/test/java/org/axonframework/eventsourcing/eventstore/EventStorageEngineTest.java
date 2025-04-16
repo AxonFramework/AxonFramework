@@ -39,9 +39,9 @@ import static org.axonframework.eventsourcing.utils.EventStoreTestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Base test class for {@link EventStorageEngine} implementations.
+ * Base test class for {@link LegacyEventStorageEngine} implementations.
  * <p>
- * Methods are public so they can be overridden by {@link EventStorageEngine} implementation test cases in different
+ * Methods are public so they can be overridden by {@link LegacyEventStorageEngine} implementation test cases in different
  * repository, like the [Mongo Extension](https://github.com/AxonFramework/extension-mongo).
  *
  * @author Rene de Waele
@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Transactional
 public abstract class EventStorageEngineTest {
 
-    private EventStorageEngine testSubject;
+    private LegacyEventStorageEngine testSubject;
 
     @AfterEach
     public void tearDown() {
@@ -288,7 +288,7 @@ public abstract class EventStorageEngineTest {
         assertEventStreamsById(Arrays.asList(event1, event2, event3), readEvents);
     }
 
-    protected void setTestSubject(EventStorageEngine testSubject) {
+    protected void setTestSubject(LegacyEventStorageEngine testSubject) {
         this.testSubject = testSubject;
     }
 

@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.TrackingEventProcessor;
 import org.axonframework.eventhandling.tokenstore.inmemory.InMemoryTokenStore;
 import org.axonframework.eventsourcing.eventstore.AbstractEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.messaging.unitofwork.DefaultUnitOfWork;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
 import org.axonframework.serialization.Serializer;
@@ -62,17 +62,17 @@ public abstract class AbstractEventStoreBenchmark {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final LegacyEmbeddedEventStore eventStore;
     private final EventProcessor eventProcessor;
-    private final EventStorageEngine storageEngine;
+    private final LegacyEventStorageEngine storageEngine;
     private final int threadCount, batchSize, batchCount;
     private final ExecutorService executorService;
     private final CountDownLatch remainingEvents;
     private final Set<String> readEvents = new HashSet<>();
 
-    protected AbstractEventStoreBenchmark(EventStorageEngine storageEngine) {
+    protected AbstractEventStoreBenchmark(LegacyEventStorageEngine storageEngine) {
         this(storageEngine, DEFAULT_THREAD_COUNT, DEFAULT_BATCH_SIZE, DEFAULT_BATCH_COUNT);
     }
 
-    protected AbstractEventStoreBenchmark(EventStorageEngine storageEngine, int threadCount, int batchSize,
+    protected AbstractEventStoreBenchmark(LegacyEventStorageEngine storageEngine, int threadCount, int batchSize,
                                           int batchCount) {
         this.eventStore = LegacyEmbeddedEventStore.builder()
                                                   .storageEngine(this.storageEngine = storageEngine)
@@ -196,7 +196,7 @@ public abstract class AbstractEventStoreBenchmark {
         return threadCount * batchSize * batchCount;
     }
 
-    protected EventStorageEngine getStorageEngine() {
+    protected LegacyEventStorageEngine getStorageEngine() {
         return storageEngine;
     }
 }

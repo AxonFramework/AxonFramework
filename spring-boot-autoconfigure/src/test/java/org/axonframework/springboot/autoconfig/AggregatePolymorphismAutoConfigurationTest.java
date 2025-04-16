@@ -24,7 +24,7 @@ import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.DomainEventStream;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.modelling.command.Repository;
@@ -233,7 +233,7 @@ class AggregatePolymorphismAutoConfigurationTest {
     static class DefaultContext {
 
         @Bean
-        public EventStorageEngine eventStorageEngine() {
+        public LegacyEventStorageEngine eventStorageEngine() {
             return new InMemoryEventStorageEngine();
         }
 

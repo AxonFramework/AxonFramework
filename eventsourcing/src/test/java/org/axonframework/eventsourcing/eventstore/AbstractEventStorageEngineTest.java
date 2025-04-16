@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.*;
  * Abstract test class used to create tests for the {@link org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine}
  * and {@link org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine}.
  * <p>
- * Methods are public so they can be overridden by {@link EventStorageEngine} implementation test cases in different
+ * Methods are public so they can be overridden by {@link LegacyEventStorageEngine} implementation test cases in different
  * repository, like the [Mongo Extension](https://github.com/AxonFramework/extension-mongo).
  *
  * @author Rene de Waele

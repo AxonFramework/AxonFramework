@@ -54,15 +54,15 @@ import static org.mockito.Mockito.*;
  */
 class SequenceEventStorageEngineTest {
 
-    private EventStorageEngine activeStorage;
-    private EventStorageEngine historicStorage;
+    private LegacyEventStorageEngine activeStorage;
+    private LegacyEventStorageEngine historicStorage;
 
     private SequenceEventStorageEngine testSubject;
 
     @BeforeEach
     void setUp() {
-        activeStorage = mock(EventStorageEngine.class, "activeStorage");
-        historicStorage = mock(EventStorageEngine.class, "historicStorage");
+        activeStorage = mock(LegacyEventStorageEngine.class, "activeStorage");
+        historicStorage = mock(LegacyEventStorageEngine.class, "historicStorage");
         testSubject = new SequenceEventStorageEngine(historicStorage, activeStorage);
 
         when(historicStorage.readSnapshot(anyString())).thenReturn(Optional.empty());

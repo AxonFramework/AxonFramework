@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,9 @@ import org.axonframework.modelling.command.ConcurrencyException;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
 import org.axonframework.serialization.upcasting.event.NoOpEventUpcaster;
-import org.axonframework.serialization.xml.XStreamSerializer;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -45,12 +43,12 @@ import static org.axonframework.eventhandling.EventUtils.upcastAndDeserializeTra
 import static org.axonframework.eventsourcing.EventStreamUtils.upcastAndDeserializeDomainEvents;
 
 /**
- * Abstract {@link EventStorageEngine} implementation that takes care of event serialization and upcasting.
+ * Abstract {@link LegacyEventStorageEngine} implementation that takes care of event serialization and upcasting.
  *
  * @author Rene de Waele
  * @since 3.0
  */
-public abstract class AbstractEventStorageEngine implements EventStorageEngine {
+public abstract class AbstractEventStorageEngine implements LegacyEventStorageEngine {
 
     private final Serializer snapshotSerializer;
     protected final EventUpcaster upcasterChain;

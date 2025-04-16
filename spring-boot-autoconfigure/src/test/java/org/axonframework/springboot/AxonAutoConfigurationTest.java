@@ -39,7 +39,7 @@ import org.axonframework.eventsourcing.EventCountSnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.SnapshotTriggerDefinition;
 import org.axonframework.eventsourcing.Snapshotter;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.lifecycle.Lifecycle;
@@ -104,7 +104,7 @@ class AxonAutoConfigurationTest {
                     assertNotNull(applicationContext.getBean(SpanFactory.class));
                     assertEquals(MultiParameterResolverFactory.class,
                                  applicationContext.getBean(ParameterResolverFactory.class).getClass());
-                    assertEquals(1, applicationContext.getBeansOfType(EventStorageEngine.class).size());
+                    assertEquals(1, applicationContext.getBeansOfType(LegacyEventStorageEngine.class).size());
                     assertEquals(0, applicationContext.getBeansOfType(TokenStore.class).size());
                     assertNotNull(applicationContext.getBean(Context.MySaga.class));
                     assertNotNull(applicationContext.getBean(Context.MyAggregate.class));
@@ -247,7 +247,7 @@ class AxonAutoConfigurationTest {
         }
 
         @Bean
-        public EventStorageEngine storageEngine() {
+        public LegacyEventStorageEngine storageEngine() {
             return new InMemoryEventStorageEngine();
         }
 

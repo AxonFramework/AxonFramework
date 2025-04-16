@@ -19,7 +19,7 @@ package org.axonframework.springboot;
 import org.axonframework.eventhandling.EventBus;
 import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventsourcing.eventstore.LegacyEmbeddedEventStore;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.jpa.JpaEventStorageEngine;
 import org.junit.jupiter.api.*;
@@ -61,7 +61,7 @@ class JpaEventStoreAutoConfigurationWithoutAxonServerTest {
                     assertThat(context).hasBean("simpleEventBus");
                     assertThat(context).getBean(EventBus.class).isInstanceOf(SimpleEventBus.class);
                     assertThat(context).doesNotHaveBean(LegacyEventStore.class);
-                    assertThat(context).doesNotHaveBean(EventStorageEngine.class);
+                    assertThat(context).doesNotHaveBean(LegacyEventStorageEngine.class);
                 });
     }
 

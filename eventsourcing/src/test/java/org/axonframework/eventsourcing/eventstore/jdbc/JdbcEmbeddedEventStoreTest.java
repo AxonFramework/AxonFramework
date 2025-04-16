@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package org.axonframework.eventsourcing.eventstore.jdbc;
 
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStoreTest;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.TestSerializer;
 import org.hsqldb.jdbc.JDBCDataSource;
@@ -35,7 +35,7 @@ class JdbcEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
     private JDBCDataSource dataSource;
 
     @Override
-    public EventStorageEngine createStorageEngine() {
+    public LegacyEventStorageEngine createStorageEngine() {
         Serializer testSerializer = TestSerializer.JACKSON.getSerializer();
         if (dataSource == null) {
             dataSource = new JDBCDataSource();

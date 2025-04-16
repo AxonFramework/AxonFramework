@@ -20,7 +20,7 @@ import org.axonframework.eventhandling.DomainEventMessage;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.EventTestUtils;
 import org.axonframework.eventhandling.GenericDomainEventMessage;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.messaging.MessageType;
 import org.junit.jupiter.api.*;
 
@@ -32,13 +32,13 @@ import static org.mockito.Mockito.*;
 
 class FilteringEventStorageEngineTest {
 
-    private EventStorageEngine mockStorage;
+    private LegacyEventStorageEngine mockStorage;
     private FilteringEventStorageEngine testSubject;
 
     @BeforeEach
     void setUp() {
         Predicate<EventMessage<?>> filter = m -> m.getPayload().toString().contains("accept");
-        mockStorage = mock(EventStorageEngine.class);
+        mockStorage = mock(LegacyEventStorageEngine.class);
         testSubject = new FilteringEventStorageEngine(mockStorage, filter);
     }
 

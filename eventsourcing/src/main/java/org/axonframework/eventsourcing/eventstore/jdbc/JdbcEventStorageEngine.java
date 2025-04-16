@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventStoreException;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.AppendEventsStatementBuilder;
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.AppendSnapshotStatementBuilder;
 import org.axonframework.eventsourcing.eventstore.jdbc.statements.CleanGapsStatementBuilder;
@@ -84,7 +85,7 @@ import static org.axonframework.common.DateTimeUtils.formatInstant;
 import static org.axonframework.common.jdbc.JdbcUtils.*;
 
 /**
- * An {@link org.axonframework.eventsourcing.eventstore.EventStorageEngine} implementation that uses JDBC to store and
+ * An {@link LegacyEventStorageEngine} implementation that uses JDBC to store and
  * fetch events.
  * <p>
  * By default, it stores the payload of events as a serialized blob of bytes. It uses other columns to store meta-data

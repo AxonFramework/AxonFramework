@@ -31,6 +31,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.TrackedEventData;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.BatchingEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.snapshotting.SnapshotFilter;
 import org.axonframework.serialization.Serializer;
 import org.axonframework.serialization.upcasting.event.EventUpcaster;
@@ -437,7 +438,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
         /**
          * Sets the {@link PersistenceExceptionResolver} as a {@link SQLErrorCodesResolver}, using the provided
          * {@link DataSource} to resolve the error codes. <b>Note</b> that the provided DataSource sole purpose in this
-         * {@link org.axonframework.eventsourcing.eventstore.EventStorageEngine} implementation is to be used for
+         * {@link LegacyEventStorageEngine} implementation is to be used for
          * instantiating the PersistenceExceptionResolver.
          *
          * @param dataSource the {@link DataSource} used to instantiate a
@@ -453,7 +454,7 @@ public class JpaEventStorageEngine extends BatchingEventStorageEngine {
 
         /**
          * Sets the {@link EntityManagerProvider} which provides the {@link EntityManager} used to access the underlying
-         * database for this {@link org.axonframework.eventsourcing.eventstore.EventStorageEngine} implementation.
+         * database for this {@link LegacyEventStorageEngine} implementation.
          *
          * @param entityManagerProvider a {@link EntityManagerProvider} which provides the {@link EntityManager} used to
          *                              access the underlying database
