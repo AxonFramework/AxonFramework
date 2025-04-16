@@ -39,9 +39,9 @@ import java.util.function.Consumer;
  * @deprecated This class will be removed.
  */
 @Deprecated(since = "5.0.0")
-public abstract class AbstractUnitOfWork<T extends Message<?>> implements LegacyUnitOfWork<T> {
+public abstract class AbstractLegacyUnitOfWork<T extends Message<?>> implements LegacyUnitOfWork<T> {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractUnitOfWork.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractLegacyUnitOfWork.class);
     private final Map<String, Object> resources = new HashMap<>();
     private final Collection<CorrelationDataProvider> correlationDataProviders = new LinkedHashSet<>();
     private LegacyUnitOfWork<?> parentUnitOfWork;
