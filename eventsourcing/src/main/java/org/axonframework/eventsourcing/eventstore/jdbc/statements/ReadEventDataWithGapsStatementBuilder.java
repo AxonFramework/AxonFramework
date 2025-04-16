@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.axonframework.eventsourcing.eventstore.jdbc.statements;
 
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
-import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jdbc.OldJdbcEventStorageEngine;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -26,7 +26,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Contract which defines how to build a PreparedStatement for use on {@link JdbcEventStorageEngine#fetchTrackedEvents(TrackingToken,
+ * Contract which defines how to build a PreparedStatement for use on {@link OldJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken,
  * int)}
  *
  * @author Lucas Campos
@@ -36,7 +36,7 @@ import java.util.List;
 public interface ReadEventDataWithGapsStatementBuilder {
 
     /**
-     * Creates a statement to be used at {@link JdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}
+     * Creates a statement to be used at {@link OldJdbcEventStorageEngine#fetchTrackedEvents(TrackingToken, int)}
      *
      * @param connection  The connection to the database.
      * @param schema      The EventSchema to be used
@@ -45,7 +45,7 @@ public interface ReadEventDataWithGapsStatementBuilder {
      * @param gaps        The Set of gaps taken from the tracking token.
      * @return The newly created {@link PreparedStatement}.
      * @throws SQLException when an exception occurs while creating the prepared statement.
-     * @see JdbcEventStorageEngine#readEventData(Connection, TrackingToken, int)
+     * @see OldJdbcEventStorageEngine#readEventData(Connection, TrackingToken, int)
      */
     PreparedStatement build(Connection connection, EventSchema schema, long globalIndex, int batchSize, List<Long> gaps)
             throws SQLException;

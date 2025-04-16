@@ -26,7 +26,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
- * An {@link EmbeddedEventStoreTest} implementation using the {@link JdbcEventStorageEngine} during testing.
+ * An {@link EmbeddedEventStoreTest} implementation using the {@link OldJdbcEventStorageEngine} during testing.
  *
  * @author Steven van Beelen
  */
@@ -41,16 +41,16 @@ class JdbcEmbeddedEventStoreTest extends EmbeddedEventStoreTest {
             dataSource = new JDBCDataSource();
             dataSource.setUrl("jdbc:hsqldb:mem:test");
         }
-        return createTables(JdbcEventStorageEngine.builder()
-                                                  .eventSerializer(testSerializer)
-                                                  .snapshotSerializer(testSerializer)
-                                                  .connectionProvider(dataSource::getConnection)
-                                                  .transactionManager(transactionManager)
-                                                  .build());
+        return createTables(OldJdbcEventStorageEngine.builder()
+                                                     .eventSerializer(testSerializer)
+                                                     .snapshotSerializer(testSerializer)
+                                                     .connectionProvider(dataSource::getConnection)
+                                                     .transactionManager(transactionManager)
+                                                     .build());
     }
 
     @SuppressWarnings({"SqlNoDataSourceInspection", "SqlDialectInspection"})
-    private JdbcEventStorageEngine createTables(JdbcEventStorageEngine testEngine) {
+    private OldJdbcEventStorageEngine createTables(OldJdbcEventStorageEngine testEngine) {
         try (Connection connection = dataSource.getConnection()) {
             connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
             connection.prepareStatement("DROP TABLE IF EXISTS SnapshotEventEntry").executeUpdate();

@@ -30,7 +30,7 @@ import org.axonframework.eventhandling.tokenstore.jdbc.TokenSchema;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.LegacyEventStore;
 import org.axonframework.eventsourcing.eventstore.jdbc.EventSchema;
-import org.axonframework.eventsourcing.eventstore.jdbc.JdbcEventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.jdbc.OldJdbcEventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.jdbc.JdbcSQLErrorCodesResolver;
 import org.axonframework.modelling.saga.repository.SagaStore;
 import org.axonframework.modelling.saga.repository.jdbc.GenericSagaSqlSchema;
@@ -86,16 +86,16 @@ public class JdbcAutoConfiguration {
                                                        ConnectionProvider connectionProvider,
                                                        TransactionManager transactionManager,
                                                        EventSchema eventSchema) {
-        return JdbcEventStorageEngine.builder()
-                                     .snapshotSerializer(defaultSerializer)
-                                     .upcasterChain(configuration.upcasterChain())
-                                     .persistenceExceptionResolver(persistenceExceptionResolver)
-                                     .eventSerializer(eventSerializer)
-                                     .snapshotFilter(configuration.snapshotFilter())
-                                     .connectionProvider(connectionProvider)
-                                     .transactionManager(transactionManager)
-                                     .schema(eventSchema)
-                                     .build();
+        return OldJdbcEventStorageEngine.builder()
+                                        .snapshotSerializer(defaultSerializer)
+                                        .upcasterChain(configuration.upcasterChain())
+                                        .persistenceExceptionResolver(persistenceExceptionResolver)
+                                        .eventSerializer(eventSerializer)
+                                        .snapshotFilter(configuration.snapshotFilter())
+                                        .connectionProvider(connectionProvider)
+                                        .transactionManager(transactionManager)
+                                        .schema(eventSchema)
+                                        .build();
     }
 
     @Bean

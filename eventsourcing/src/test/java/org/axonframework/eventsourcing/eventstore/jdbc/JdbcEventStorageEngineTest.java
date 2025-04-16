@@ -69,17 +69,17 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 /**
- * Test class validating the {@link JdbcEventStorageEngine}.
+ * Test class validating the {@link OldJdbcEventStorageEngine}.
  *
  * @author Rene de Waele
  */
 @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
 class JdbcEventStorageEngineTest
-        extends BatchingEventStorageEngineTest<JdbcEventStorageEngine, JdbcEventStorageEngine.Builder> {
+        extends BatchingEventStorageEngineTest<OldJdbcEventStorageEngine, OldJdbcEventStorageEngine.Builder> {
 
     private JDBCDataSource dataSource;
     private PersistenceExceptionResolver defaultPersistenceExceptionResolver;
-    private JdbcEventStorageEngine testSubject;
+    private OldJdbcEventStorageEngine testSubject;
     private ReadEventDataForAggregateStatementBuilder readForAggregateStatementBuilder;
 
     @BeforeEach
@@ -427,35 +427,35 @@ class JdbcEventStorageEngineTest
     }
 
     @Override
-    protected JdbcEventStorageEngine createEngine(UnaryOperator<JdbcEventStorageEngine.Builder> customization) {
+    protected OldJdbcEventStorageEngine createEngine(UnaryOperator<OldJdbcEventStorageEngine.Builder> customization) {
         return createEngine(customization, HsqlEventTableFactory.INSTANCE);
     }
 
-    private JdbcEventStorageEngine createEngine(UnaryOperator<JdbcEventStorageEngine.Builder> customization,
-                                                EventTableFactory eventTableFactory) {
-        JdbcEventStorageEngine.Builder engineBuilder =
-                JdbcEventStorageEngine.builder()
-                                      .eventSerializer(TestSerializer.xStreamSerializer())
-                                      .persistenceExceptionResolver(defaultPersistenceExceptionResolver)
-                                      .snapshotSerializer(TestSerializer.xStreamSerializer())
-                                      .batchSize(100)
-                                      .connectionProvider(dataSource::getConnection)
-                                      .transactionManager(NoTransactionManager.INSTANCE);
+    private OldJdbcEventStorageEngine createEngine(UnaryOperator<OldJdbcEventStorageEngine.Builder> customization,
+                                                   EventTableFactory eventTableFactory) {
+        OldJdbcEventStorageEngine.Builder engineBuilder =
+                OldJdbcEventStorageEngine.builder()
+                                         .eventSerializer(TestSerializer.xStreamSerializer())
+                                         .persistenceExceptionResolver(defaultPersistenceExceptionResolver)
+                                         .snapshotSerializer(TestSerializer.xStreamSerializer())
+                                         .batchSize(100)
+                                         .connectionProvider(dataSource::getConnection)
+                                         .transactionManager(NoTransactionManager.INSTANCE);
         return doCreateTables(
                 eventTableFactory,
-                new JdbcEventStorageEngine(customization.apply(engineBuilder))
+                new OldJdbcEventStorageEngine(customization.apply(engineBuilder))
         );
     }
 
-    private JdbcEventStorageEngine createTimestampEngine(EventTableFactory eventTableFactory) {
-        JdbcEventStorageEngine.Builder builder =
-                JdbcEventStorageEngine.builder()
-                                      .eventSerializer(TestSerializer.xStreamSerializer())
-                                      .snapshotSerializer(TestSerializer.xStreamSerializer())
-                                      .connectionProvider(dataSource::getConnection)
-                                      .transactionManager(NoTransactionManager.INSTANCE);
+    private OldJdbcEventStorageEngine createTimestampEngine(EventTableFactory eventTableFactory) {
+        OldJdbcEventStorageEngine.Builder builder =
+                OldJdbcEventStorageEngine.builder()
+                                         .eventSerializer(TestSerializer.xStreamSerializer())
+                                         .snapshotSerializer(TestSerializer.xStreamSerializer())
+                                         .connectionProvider(dataSource::getConnection)
+                                         .transactionManager(NoTransactionManager.INSTANCE);
 
-        JdbcEventStorageEngine result = new JdbcEventStorageEngine(builder) {
+        OldJdbcEventStorageEngine result = new OldJdbcEventStorageEngine(builder) {
             @Override
             protected Object readTimeStamp(ResultSet resultSet, String columnName) throws SQLException {
                 Timestamp ts = resultSet.getTimestamp(columnName);
@@ -472,7 +472,7 @@ class JdbcEventStorageEngineTest
         return doCreateTables(eventTableFactory, result);
     }
 
-    private JdbcEventStorageEngine doCreateTables(EventTableFactory eventTableFactory, JdbcEventStorageEngine result) {
+    private OldJdbcEventStorageEngine doCreateTables(EventTableFactory eventTableFactory, OldJdbcEventStorageEngine result) {
         try {
             Connection connection = dataSource.getConnection();
             connection.prepareStatement("DROP TABLE IF EXISTS DomainEventEntry").executeUpdate();
