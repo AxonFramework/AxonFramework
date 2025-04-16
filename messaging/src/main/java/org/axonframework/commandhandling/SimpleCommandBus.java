@@ -50,7 +50,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @author Allard Buijze
  * @author Martin Tilma
- * @since 0.5
+ * @since 0.5.0
  */
 public class SimpleCommandBus implements CommandBus {
 
