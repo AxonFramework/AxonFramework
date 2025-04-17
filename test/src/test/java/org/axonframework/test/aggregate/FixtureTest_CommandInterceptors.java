@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,7 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.correlation.SimpleCorrelationDataProvider;
 import org.axonframework.messaging.unitofwork.UnitOfWork;
-import org.axonframework.modelling.command.AggregateEntityNotFoundException;
-import org.axonframework.modelling.command.AggregateIdentifier;
-import org.axonframework.modelling.command.AggregateMember;
-import org.axonframework.modelling.command.CommandHandlerInterceptor;
-import org.axonframework.modelling.command.TargetAggregateIdentifier;
+import org.axonframework.modelling.command.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
@@ -43,12 +39,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.axonframework.test.aggregate.FixtureTest_CommandInterceptors.InterceptorAggregate.AGGREGATE_IDENTIFIER;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -62,6 +58,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class FixtureTest_CommandInterceptors {
 
+    private static final String AGGREGATE_IDENTIFIER = "id1";
     private static final String DISPATCH_META_DATA_KEY = "dispatchKey";
     private static final String DISPATCH_META_DATA_VALUE = "dispatchValue";
     private static final String HANDLER_META_DATA_KEY = "handlerKey";
@@ -75,10 +72,12 @@ class FixtureTest_CommandInterceptors {
     private MessageDispatchInterceptor<CommandMessage<?>> secondMockCommandDispatchInterceptor;
     @Mock
     private MessageHandlerInterceptor<CommandMessage<?>> mockCommandHandlerInterceptor;
+    private static AtomicBoolean intercepted;
 
     @BeforeEach
     void setUp() {
         fixture = new AggregateTestFixture<>(InterceptorAggregate.class);
+        intercepted = new AtomicBoolean(false);
     }
 
     @Test
@@ -92,7 +91,7 @@ class FixtureTest_CommandInterceptors {
 
         TestCommand expectedCommand = new TestCommand(AGGREGATE_IDENTIFIER);
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
-               .when(expectedCommand);
+                .when(expectedCommand);
 
         //noinspection unchecked
         ArgumentCaptor<GenericCommandMessage<?>> firstCommandMessageCaptor =
@@ -112,8 +111,8 @@ class FixtureTest_CommandInterceptors {
     @Test
     void registeredCommandDispatchInterceptorIsInvokedAndAltersAppliedEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
-               .when(new TestCommand(AGGREGATE_IDENTIFIER))
-               .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, Collections.emptyMap()));
+                .when(new TestCommand(AGGREGATE_IDENTIFIER))
+                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, Collections.emptyMap()));
 
         fixture.registerCommandDispatchInterceptor(new TestCommandDispatchInterceptor());
 
@@ -121,8 +120,8 @@ class FixtureTest_CommandInterceptors {
                 new MetaData(Collections.singletonMap(DISPATCH_META_DATA_KEY, DISPATCH_META_DATA_VALUE));
 
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
-               .when(new TestCommand(AGGREGATE_IDENTIFIER))
-               .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, expectedValues));
+                .when(new TestCommand(AGGREGATE_IDENTIFIER))
+                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, expectedValues));
     }
 
     @Test
@@ -133,8 +132,8 @@ class FixtureTest_CommandInterceptors {
                 new MetaData(Collections.singletonMap(DISPATCH_META_DATA_KEY, DISPATCH_META_DATA_VALUE));
 
         fixture.givenCommands(new CreateStandardAggregateCommand(AGGREGATE_IDENTIFIER))
-               .when(new TestCommand(AGGREGATE_IDENTIFIER))
-               .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, expectedValues));
+                .when(new TestCommand(AGGREGATE_IDENTIFIER))
+                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, expectedValues));
     }
 
     @Test
@@ -150,7 +149,7 @@ class FixtureTest_CommandInterceptors {
         expectedMetaDataMap.put(HANDLER_META_DATA_KEY, HANDLER_META_DATA_VALUE);
 
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
-               .when(expectedCommand, expectedMetaDataMap);
+                .when(expectedCommand, expectedMetaDataMap);
 
         //noinspection unchecked
         ArgumentCaptor<UnitOfWork<? extends CommandMessage<?>>> unitOfWorkCaptor =
@@ -166,8 +165,8 @@ class FixtureTest_CommandInterceptors {
     @Test
     void registeredCommandHandlerInterceptorIsInvokedAndAltersEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
-               .when(new TestCommand(AGGREGATE_IDENTIFIER))
-               .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, Collections.emptyMap()));
+                .when(new TestCommand(AGGREGATE_IDENTIFIER))
+                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, Collections.emptyMap()));
 
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
 
@@ -175,8 +174,8 @@ class FixtureTest_CommandInterceptors {
         expectedMetaDataMap.put(HANDLER_META_DATA_KEY, HANDLER_META_DATA_VALUE);
 
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
-               .when(new TestCommand(AGGREGATE_IDENTIFIER), expectedMetaDataMap)
-               .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, expectedMetaDataMap));
+                .when(new TestCommand(AGGREGATE_IDENTIFIER), expectedMetaDataMap)
+                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, expectedMetaDataMap));
     }
 
     @Test
@@ -187,15 +186,15 @@ class FixtureTest_CommandInterceptors {
         expectedMetaDataMap.put(HANDLER_META_DATA_KEY, HANDLER_META_DATA_VALUE);
 
         fixture.givenCommands(new CreateStandardAggregateCommand(AGGREGATE_IDENTIFIER))
-               .when(new TestCommand(AGGREGATE_IDENTIFIER), expectedMetaDataMap)
-               .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, expectedMetaDataMap));
+                .when(new TestCommand(AGGREGATE_IDENTIFIER), expectedMetaDataMap)
+                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, expectedMetaDataMap));
     }
 
     @Test
     void registeredCommandDispatchAndHandlerInterceptorAreBothInvokedAndAlterEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
-               .when(new TestCommand(AGGREGATE_IDENTIFIER))
-               .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, Collections.emptyMap()));
+                .when(new TestCommand(AGGREGATE_IDENTIFIER))
+                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, Collections.emptyMap()));
 
         fixture.registerCommandDispatchInterceptor(new TestCommandDispatchInterceptor());
         fixture.registerCommandHandlerInterceptor(new TestCommandHandlerInterceptor());
@@ -207,8 +206,8 @@ class FixtureTest_CommandInterceptors {
         expectedMetaDataMap.put(DISPATCH_META_DATA_KEY, DISPATCH_META_DATA_VALUE);
 
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
-               .when(new TestCommand(AGGREGATE_IDENTIFIER), testMetaDataMap)
-               .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, new MetaData(expectedMetaDataMap)));
+                .when(new TestCommand(AGGREGATE_IDENTIFIER), testMetaDataMap)
+                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, new MetaData(expectedMetaDataMap)));
     }
 
     @Test
@@ -221,9 +220,9 @@ class FixtureTest_CommandInterceptors {
         });
 
         fixture.givenCommands(new CreateStandardAggregateCommand(AGGREGATE_IDENTIFIER))
-               .when(new TestCommand(AGGREGATE_IDENTIFIER))
-               .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, MetaData.emptyInstance()))
-               .expectSuccessfulHandlerExecution();
+                .when(new TestCommand(AGGREGATE_IDENTIFIER))
+                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, MetaData.emptyInstance()))
+                .expectSuccessfulHandlerExecution();
 
         assertEquals(2, invocations.get());
     }
@@ -237,9 +236,9 @@ class FixtureTest_CommandInterceptors {
         });
 
         fixture.givenCommands(new CreateStandardAggregateCommand(AGGREGATE_IDENTIFIER))
-               .when(new TestCommand(AGGREGATE_IDENTIFIER))
-               .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, MetaData.emptyInstance()))
-               .expectSuccessfulHandlerExecution();
+                .when(new TestCommand(AGGREGATE_IDENTIFIER))
+                .expectEvents(new TestEvent(AGGREGATE_IDENTIFIER, MetaData.emptyInstance()))
+                .expectSuccessfulHandlerExecution();
 
         assertEquals(2, invocations.get());
     }
@@ -247,23 +246,35 @@ class FixtureTest_CommandInterceptors {
     @Test
     void interceptorChainIsInvokedWhenInterceptorForEntityWiresInterceptorChainWithoutExistingEntity() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
-               .when(new DoWithEntityCommand(AGGREGATE_IDENTIFIER))
-               .expectSuccessfulHandlerExecution()
-               .expectNoEvents()
-               .expectResultMessagePayload("invoked-without-entity");
+                .when(new DoWithEntityCommand(AGGREGATE_IDENTIFIER))
+                .expectSuccessfulHandlerExecution()
+                .expectNoEvents()
+                .expectResultMessagePayload("invoked-without-entity");
     }
 
     @Test
     void interceptorChainIsNotInvokedWhenInterceptorForEntityDoesNotWireInterceptorChainWithoutExistingEntity() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
-               .when(new DoWithEntityWithoutInterceptorCommand(AGGREGATE_IDENTIFIER))
-               .expectNoEvents()
-               .expectException(AggregateEntityNotFoundException.class);
+                .when(new DoWithEntityWithoutInterceptorCommand(AGGREGATE_IDENTIFIER))
+                .expectNoEvents()
+                .expectException(AggregateEntityNotFoundException.class);
     }
 
-    public static class InterceptorAggregate {
+    @Test
+    void messageInterceptorOnAggregateMemberOnlyIsInvokedAsExpected() {
+        FixtureConfiguration<AggregateWithAggregateMemberInterceptorOnly> memberOnlyInterceptorFixture =
+                new AggregateTestFixture<>(AggregateWithAggregateMemberInterceptorOnly.class);
 
-        public static final String AGGREGATE_IDENTIFIER = "id1";
+        memberOnlyInterceptorFixture
+                .given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
+                .when(new DoWithEntityCommand(AGGREGATE_IDENTIFIER))
+                .expectEvents(new DoneWithEntityEvent(AGGREGATE_IDENTIFIER))
+                .expectSuccessfulHandlerExecution();
+        assertTrue(intercepted.get());
+    }
+
+    @SuppressWarnings("unused")
+    private static class InterceptorAggregate {
 
         @SuppressWarnings("UnusedDeclaration")
         private transient int counter;
@@ -327,11 +338,17 @@ class FixtureTest_CommandInterceptors {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class InterceptorEntity {
+
+        @CommandHandlerInterceptor
+        public void intercept(Object command) {
+            intercepted.set(true);
+        }
 
         @CommandHandler
         public void handle(DoWithEntityCommand command) {
-            // Nothing to do here
+            apply(new DoneWithEntityEvent(command.getAggregateIdentifier()));
         }
 
         @CommandHandler
@@ -367,6 +384,21 @@ class FixtureTest_CommandInterceptors {
         }
     }
 
+    @SuppressWarnings("unused")
+    private static class DoneWithEntityEvent {
+
+        private final Object aggregateIdentifier;
+
+        public DoneWithEntityEvent(Object aggregateIdentifier) {
+            this.aggregateIdentifier = aggregateIdentifier;
+        }
+
+        public Object getAggregateIdentifier() {
+            return aggregateIdentifier;
+        }
+    }
+
+    @SuppressWarnings("unused")
     private static class DoWithEntityWithoutInterceptorCommand {
 
         @TargetAggregateIdentifier
@@ -404,6 +436,30 @@ class FixtureTest_CommandInterceptors {
                              @Nonnull InterceptorChain interceptorChain) throws Exception {
             unitOfWork.registerCorrelationDataProvider(new SimpleCorrelationDataProvider(HANDLER_META_DATA_KEY));
             return interceptorChain.proceed();
+        }
+    }
+
+    @SuppressWarnings({"unused", "FieldCanBeLocal"})
+    private static class AggregateWithAggregateMemberInterceptorOnly {
+
+        @AggregateIdentifier
+        private String identifier;
+        @AggregateMember
+        private InterceptorEntity entity;
+
+        private AggregateWithAggregateMemberInterceptorOnly() {
+            // No-arg constructor required by Axon
+        }
+
+        @CommandHandler
+        public AggregateWithAggregateMemberInterceptorOnly(CreateStandardAggregateCommand cmd) {
+            apply(new StandardAggregateCreatedEvent(cmd.getAggregateIdentifier()));
+        }
+
+        @EventHandler
+        public void handle(StandardAggregateCreatedEvent event) {
+            this.identifier = event.getAggregateIdentifier().toString();
+            this.entity = new InterceptorEntity();
         }
     }
 }
