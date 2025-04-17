@@ -342,8 +342,8 @@ class FixtureTest_CommandInterceptors {
     private static class InterceptorEntity {
 
         @CommandHandlerInterceptor
-        public void intercept(CommandMessage<?> command,
-                              InterceptorChain interceptorChain) throws Exception {
+        public void intercept(final CommandMessage<?> command,
+                              final InterceptorChain interceptorChain) throws Exception {
             intercepted.set(true);
             interceptorChain.proceed();
         }
