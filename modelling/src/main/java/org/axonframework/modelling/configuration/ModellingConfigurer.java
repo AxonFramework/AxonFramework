@@ -27,9 +27,6 @@ import org.axonframework.configuration.LifecycleRegistry;
 import org.axonframework.configuration.MessagingConfigurer;
 import org.axonframework.configuration.Module;
 import org.axonframework.configuration.ModuleBuilder;
-import org.axonframework.modelling.StateManager;
-import org.axonframework.modelling.HierarchicalStateManagerConfigurationEnhancer;
-import org.axonframework.modelling.annotation.InjectEntity;
 
 import java.util.function.Consumer;
 
