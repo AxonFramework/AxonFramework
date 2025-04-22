@@ -194,98 +194,120 @@ The following classes have undergone changes to accompany this shift:
 
 The configuration API of Axon Framework has seen a big adjustment. You can essentially say it has been turned upside
 down. We have done so, because the `axon-configuration` module enforced a dependency on all other modules of Axon
-Framework. Due to this, it was, for example, not possible to make an Axon Framework application that only support
+Framework. Due to this, it was, for example, not possible to make an Axon Framework application that only supports
 command messaging and use the configuration API; the module just pulled in everything.
 
 As an act to clean this up, we have broken down the `Configurer` and `Configuration` into manageable chunks.
-As such, the `Configurer` interface now only provides basic operations
-to [register components](#registering-components-with-the-componentbuilder-interface), [decorate components](#decorating-components-with-the-componentdecorator-interface), [register enhancers](#registering-enhancers-with-the-configurerenhancer-interface),
-and [register modules](#registering-modules-with-the-modulebuilder-interface), besides the basic start-and-shutdown
-handler registration from the `LifecycleOperations` interface. The `Configuration` in turn now only has the means to
-retrieve components, and it's modules' components.
+As such, the (new) `ApplicationConfigurer` interface now only provides basic operations
+to [register components](#registering-components-with-the-componentfactory-interface), [decorate components](#decorating-components-with-the-componentdecorator-interface), [register enhancers](#registering-enhancers-with-the-configurationenhancer-interface),
+and [register modules](#registering-modules-through-the-modulebuilder-interface), besides the basic start-and-shutdown
+handler registration. It does this by having two different registries, being the `ComponentRegistry` and
+`LifecycleRegistry`. The former takes care of the component, decorator, enhancer, and module registration. The latter
+provides the aforementioned methods to register start and shutdown handlers as part of registering components. The
+`Configuration` in turn now only has the means to retrieve components (optionally), and it's modules' components. This
+means **all** infra-specific methods, like for example `Configuration#eventBus`, no longer exist.
 
 So, how do you start Axon's configuration? That depends on what you are going to use from Axon Framework. If you, for
 example, only want to use the basic messaging concepts, you can start with the `MessagingConfigurer`. You can construct
 one through the static `MessagingConfigurer#create` method. This `MessagingConfigurer` will provide you a
 couple of defaults, like the `CommandBus` and `QueryBus`. Furthermore, on this configurer, you are able to provide new
 or replace existing components, decorate these components, and register the aforementioned module-specific `Modules`.
+Subsequently, if you want to do event sourcing with Axon Framework, you would start by invoking the
+`EventSourcingConfigurer#create` operation
+
+Each of these layers provides registration methods that are specific for the layer. Henceforth, the
+`MessagingConfigurer` has a `registerCommandBus`, `registerEventSink`, and `registerQueryBus` method. Subsequently, the
+`EventSourcingConfigurer` has the `registerEventStore` and `registerEventStorageEngine` method. To be able to reach the
+lower level operations, each `ApplicationConfigurer` wraps a more low-level variant. This causes the "layering" we
+talked about earlier. The `EventSourcingConfigurer` thus wraps a `ModellingConfigurer`, the `ModellingConfigurer` a
+`MessagingConfigurer`, and the `MessagingConfigurer` contains the `ComponentRegistry` and `LifecycleRegistry`
+components. You can move down each of these layers to access gradually lower-level APIs. For more details on this, read
+the following [section](#accessing-lower-level-applicationconfigurer-methods).
 
 In this fashion, we intend to ensure the following points:
 
-1. We clean up the `Configurer` and `Configuration` API substantially by splitting it into manageable chunks. This
-   should simplify configuration of Axon applications, as well as ease the introduction of specific `Configurer`
-   instances like the `MessagingConfigurer`.
+1. We clean up the (old) `Configurer` and `Configuration` API substantially by splitting it into manageable chunks. This
+   should simplify configuration of Axon applications, as well as ease the introduction of specific
+   `ApplicationConfigurer` instances like the `MessagingConfigurer`.
 2. We reverse the dependency order. In doing so, each Axon Framework module can provide its own `Configurer`. This
    allows users to pick and choose the Axon modules they need.
 
 For more details on how to use the new configuration API, be sure to read the following subsections.
 
-### Registering components with the ComponentBuilder interface
+### Registering components with the ComponentFactory interface
 
-The configuration API boosts a new interface, called the `ComponentBuilder`. The `ComponentBuilder` can generate any
+The configuration API boosts a new interface, called the `ComponentFactory`. The `ComponentFactory` can generate any
 type of component you would need to register with Axon, based on a given `Configuration` instance. By providing the
 `Configuration` instance, you are able to pull other (Axon) components out of it that you might require to construct
-your component. The `Configurer#registerComponent` method is adjusted to expect such a `ComponentBuilder` upon
+your component. The `ComponentRegistry#registerComponent` method is adjusted to expect such a `ComponentFactory` upon
 registration.
 
-Here's an example of how to register a `DefaultCommandGateway` in Java:
+Here's an example of how to register a `DefaultCommandGateway` through the `registerComponent` method:
 
 ```java
 public static void main(String[] args) {
     MessagingConfigurer.create()
-                       .registerComponent(CommandGateway.class, config -> new DefaultCommandGateway(
-                               config.getComponent(CommandBus.class),
-                               config.getComponent(MessageTypeResolver.class)
+                       .componentRegistry(registry -> registry.registerComponent(
+                               CommandGateway.class,
+                               config -> new DefaultCommandGateway(
+                                       config.getComponent(CommandBus.class),
+                                       config.getComponent(MessageTypeResolver.class)
+                               )
                        ));
     // Further configuration...
 }
 ```
 
+Although the sample above uses the `MessagingConfigurer#componentRegistry(Consumer<ComponentRegistry>)` operation, the
+same `ComponentFactory` behavior resides on higher-level operations like `MessagingConfigurer#registerCommandBus`.
+
 ### Decorating components with the ComponentDecorator interface
 
 New functionality to the configuration API, is the ability to provide decorators
-for [registered components](#registering-components-with-the-componentbuilder-interface). The decorator pattern is what
+for [registered components](#registering-components-with-the-componentfactory-interface). The decorator pattern is what
 Axon Framework uses to construct its infrastructure components, like the `CommandBus`, as of version 5.
 
 In the command bus' example, concepts like intercepting, tracing, being distributed, and retrying, are now decorators
-around a `SimpleCommandBus`. We register those through the `Configurer#registerDecorator` method, which expect
-provisioning of a `ComponentDecorator` instance. The `ComponentDecorator` provides a `Configuration` and _delegate_
-component when invoked, and expects a new instance of the `ComponentDecorator's` generic type to be returned.
+around a `SimpleCommandBus`. We register those through the `ComponentRegistry#registerDecorator` method, which expects
+provisioning of a `ComponentDecorator` instance. The `ComponentDecorator` provides a `Configuration`, name, and
+_delegate_ component when invoked, and expects a new instance of the `ComponentDecorator's` generic type to be returned.
 
 Here's an example of how we can decorate the `SimpleCommandBus` in with a `ComponentDecorator`, in Java:
 
 ```java
 public static void main(String[] args) {
     MessagingConfigurer.create()
-                       .registerComponent(CommandBus.class, config -> new SimpleCommandBus())
-                       .registerDecorator(
+                       .componentRegistry(registry -> registry.registerComponent(
+                               CommandBus.class, config -> new SimpleCommandBus()
+                       ))
+                       .componentRegistry(registry -> registry.registerDecorator(
                                CommandBus.class,
                                0,
-                               (config, delegate) -> new TracingCommandBus(
+                               (config, name, delegate) -> new TracingCommandBus(
                                        delegate,
                                        config.getComponent(CommandBusSpanFactory.class)
                                )
-                       );
+                       ));
     // Further configuration...
 }
 ```
 
-By providing this functionality on the base `Configurer` interface, you are able to decorate any of Axon's components
+By providing this functionality on the `ComponentRegistry`, you are able to decorate any of Axon's components
 with your own custom logic. Since ordering of these decorates can be of importance, you are required to provide an
 order upon registration of a `ComponentDecorator`.
 
-### Registering enhancers with the ConfigurerEnhancer interface
+### Registering enhancers with the ConfigurationEnhancer interface
 
-The `ConfigurerEnhancer` replaces the old `ConfigurerModule`, with one major difference: A `ConfigurerEnhancer` acts on
-the `Configurer` during `Configurer#build` instead of immediately.
+The `ConfigurationEnhancer` replaces the old `ConfigurerModule`, with one major difference: A `ConfigurationEnhancer`
+acts on the `ComponentRegistry` during `ApplicationConfigurer#build` instead of immediately.
 
-This adjustment allows enhancers to enact on its `Configurer` in a pre-definable order. They are thus staged to enhance
-when the configuration is ready for it. The order is either the registration order with the `Configurer` or it is based
-on the `ConfigurerEnhancer#order` value.
+This adjustment allows enhancers to enact on its `ComponentRegistry` in a pre-definable order. They are thus staged to
+enhance when the configuration is ready for it. The order is either the registration order with the `ComponentRegistry`
+or it is based on the `ConfigurationEnhancer#order` value.
 
-Furthermore, a `ConfigurerEnhancer` can conditionally make adjustments as it sees fit through the
-`Configurer#hasComponent` operation. Through this approach, the implementers of an enhancer can choose to
-replace a component or decorate a component only when it (or another) is present.
+Furthermore, a `ConfigurationEnhancer` can conditionally make adjustments as it sees fit through the
+`ComponentRegistry#hasComponent` operation. Through this approach, the implementers of an enhancer can choose to replace
+a component or decorate a component only when it (or another) is present.
 
 See the example below where decorating a `CommandBus` with tracing logic is only done when a `CommandBus` component is
 present:
@@ -293,17 +315,17 @@ present:
 ```java
 public static void main(String[] args) {
     MessagingConfigurer.create()
-                       .registerEnhancer(configurer -> {
+                       .componentRegistry(registry -> registry.registerEnhancer(configurer -> {
                            if (configurer.hasComponent(CommandBus.class)) {
                                configurer.registerDecorator(
                                        CommandBus.class, 0,
-                                       (config, delegate) -> new TracingCommandBus(
+                                       (config, name, delegate) -> new TracingCommandBus(
                                                delegate,
                                                config.getComponent(CommandBusSpanFactory.class)
                                        )
                                );
                            }
-                       });
+                       }));
     // Further configuration...
 }
 ```
@@ -313,13 +335,12 @@ decorate it as a `TracingCommandBus` by retrieving the `CommandBusSpanFactory` f
 `ComponentDecorator`. Note that this sample does expect that somewhere else during the configuration a
 `CommandBusSpanFactory` has been added.
 
-### Registering modules with the ModuleBuilder interface
+### Registering Modules through the ModuleBuilder interface
 
-To support clear encapsulation, each `Configurer` provides the means to register a `ModuleBuilder` that constructs a
-`Module` based on a `LifecycleSupportingConfiguration`. A `LifecycleSupportingConfiguration` instance is given, so that
-the `Module` under construction is able to retrieve components as well as register start and shutdown handlers. The
-latter allow the `Module` to take part in the lifecycle of Axon Framework, ensuring that, for example, handler
-registration phases happen at the right point in time.
+To support clear encapsulation, each `ApplicationConfigurer` provides the means to register a `ModuleBuilder` that
+constructs a `Module`. A `Module` is basically a container of a `ComponentRegistry` with a parent `ComponentRegistry`.
+This structure ensures that (1) it has its own local registry that others cannot influence and (2) that it is still able
+to retrieve components from the parent registry.
 
 To emphasize it more, the `Module` **is** able to retrieve components from its parent configuration, but this
 configuration **is not** able to retrieve components from the `Module`. This allows users to break down their
@@ -329,53 +350,61 @@ parent configuration.
 Imagine you define an integration module in your project that should use a different `CommandBus` from the rest of your
 application. By making a `Module` and registering this specific `CommandBus` on this `Module`, you ensure only **it** is
 able to retrieve this `CommandBus`. But, if this `Module` requires common components from its parent, it can still
-retrieve those. Down below is an example usage of the `SimpleModule` to achieve just that:
+retrieve those.
+
+Besides the exemplified infrastructure separation from above, Axon Framework uses these `Modules` to encapsulate message
+handling. A concrete example of this, is the `StatefulCommandHandlingModule` (that can be registered with the
+`ModellingConfigurer`). We have made this decision to strengthen the guideline that your message handlers "should not be
+aware of, nor make any assumptions of other components." This rule comes from the location transparency definition,
+which Axon Framework provides through it's messaging support. By having the `Module` encapsulated from the rest, we
+ensure the parent `ApplicationConfigurer`, nor other `Modules`, are able to depend on it.
+
+Down below is shortened example on how to register a `StatefulCommandHandlingModule`:
 
 ```java
 public static void main(String[] args) {
-    MessagingConfigurer.create()
-                       .registerModule(config -> new SimpleModule(config)
-                               .registerComponent(CommandBus.class, c -> new SimpleCommandBus())
+    ModellingConfigurer.create()
+                       .registerStatefulCommandHandlingModule(
+                               StatefulCommandHandlingModule.named("my-module")
+                               // Further MODULE configuration...
                        );
     // Further configuration...
 }
 ```
 
-### Accessing other Configurer methods from specific Configurer implementations
+### Accessing lower-level ApplicationConfigurer methods
 
-Although the API of a `Configurer` is greatly simplified, we still believe it valuable to have specific registration
-methods guiding the user.
-For example, the `Configurer` no longer has a `subscribeCommandBus` operation, as that method does not belong on this
-low level API.
-However, the specific `MessagingConfigurer` still has this operation, as registering your `CommandBus` on the messaging
-layer is intuitive.
+Although the API of an `ApplicationConfigurer` is greatly simplified, we still believe it valuable to have specific
+registration methods guiding the user. For example, the `ApplicationConfigurer` no longer has a `subscribeCommandBus`
+operation, as that method does not belong on this low level API. However, the specific `MessagingConfigurer` still has
+this operation, as registering your `CommandBus` on the messaging layer is intuitive.
 
 To not overencumber users of the `MessagingConfigurer`, we did not give it lifecycle specific configuration operations
-like the `AxonApplication#registerLifecyclePhaseTimeout` operation. The same will apply for modelling and event sourcing
+like the `LifecycleRegistry#registerLifecyclePhaseTimeout` operation. The same applies for modelling and event sourcing
 configurers: these will not override the registration operations of their delegates.
 
-To be able to access a delegate `Configurer`, you can use the `Configurer#delegate` operation:
+To be able to access a "delegate" `ApplicationConfigurer` there are special accessor methods that expect a lambda of the
+delegate to be given. For example the `MessagingConfigurer` has a `componentRegistry(Consumer<ComponentRegistry>)` and
+`lifecycleRegistry(Consumer<LifecycleRegistry>)` operation to invoke operations on the `ComponentRegistry` and
+`LifecycleRegistry` respectively. Furthermore, the `ModellingConfigurer` has the
+`messaging(Consumer<MessagingConfigurer>)` operation to move up to the delegate `MessagingConfigurer` layer:
 
 ```java
 public static void main(String[] args) {
-    MessagingConfigurer.create()
-                       .delegate(
-                               AxonApplication.class,
-                               axonApp -> axonApp.registerLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS)
-                       )
-                       .build();
-    // Further configuration...
-}
-```
-
-As specifying the `Configurer` type can become verbose, the `MessagingConfigurer` has a `axon` operation to allow for
-the exact same operation:
-
-```java
-public static void main(String[] args) {
-    MessagingConfigurer.create()
-                       .axon(axon -> axon.registerLifecyclePhaseTimeout(100, TimeUnit.MILLISECONDS))
-                       .build();
+    ModellingConfigurer.create()
+                       .componentRegistry(componentRegistry -> componentRegistry.registerComponent(
+                               CommandGateway.class,
+                               config -> new DefaultCommandGateway(
+                                       config.getComponent(CommandBus.class),
+                                       config.getComponent(MessageTypeResolver.class)
+                               )
+                       ))
+                       .lifecycleRegistry(lifecycleRegistry -> lifecycleRegistry.registerLifecyclePhaseTimeout(
+                               5, TimeUnit.DAYS
+                       ))
+                       .messaging(messagingConfigurer -> messagingConfigurer.registerEventSink(
+                               config -> new CustomEventSink()
+                       ));
     // Further configuration...
 }
 ```
