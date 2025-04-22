@@ -27,15 +27,20 @@ Major API Changes
   `MessageStream` changes **a lot** of (public) APIs within Axon Framework. Please check
   the [Message Stream](#message-stream) section for more details, like an exhaustive list of all the adjusted
   interfaces.
-* We no longer support message handler annotated constructors. For example, the constructor of an aggregate can no
-  longer contain the `@CommandHandler` annotation. Instead, the `@CreationPolicy` should be used.
-* All annotation logic is moved to the annotation module.
+* The API of all infrastructure components is rewritten to be "async native." This means that the
+  aforementioned [Unit of Work](#unit-of-work) adjustments flow through most APIs, as well as the use of
+  a [Message Stream](#message-stream) to provide a way to support imperative and reactive message handlers. See
+  the [Adjusted APIs](#adjusted-apis) section for a list of all classes that have undergone changes.
 * The Configuration of Axon Framework has been flipped around. Instead of having a `axon-configuration` module that
   depends on all of Axon's modules to provide a global configuration, the core module (`axon-messaging`) of Axon now
   contains a `Configurer` with a base set of operations. This `Configurer` can either take `Components` or `Modules`.
   The former typically represents an infrastructure component (e.g. the `CommandBus`) whereas modules are themselves
   configurers for a specific module of an application. For an exhaustive list of all the operations that have been
   removed, moved, or altered, see the [Configurer and Configuration](#applicationconfigurer-and-configuration) section.
+* All annotation logic is moved to the annotation module.
+* All reflection logic is moved to a dedicated "reflection" package per module.
+* We no longer support message handler annotated constructors. For example, the constructor of an aggregate can no
+  longer contain the `@CommandHandler` annotation. Instead, the `@CreationPolicy` should be used.
 
 ## Unit of Work
 
