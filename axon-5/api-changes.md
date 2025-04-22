@@ -148,7 +148,27 @@ users of the factory methods need to revert to using the constructor of the `Mes
 
 ## Message Stream
 
-TODO - provide description once the `MessageStream` generics discussion has been finalized.
+We have introduced the so-called `MessageStream` to allow people to draft both imperative **and** reactive message
+handlers. As such, the `MessageStream` is the expected result type from event handlers, command handlers, and query
+handlers. Furthermore, the `MessageStream` can mirror response of nothing (zero), one, or N, thus reflecting the
+expected behavior of an event handler (no response), a command handler (one response), and query handlers (N responses).
+Besides being **the** response for all message handlers in Axon Framework, it is also the return type when
+streaming and sourcing events from an `EventStore`.
+
+To achieve all this, the `MessageStream` has several creational methods, like:
+
+1. `MessageStream#fromIterable`
+2. `MessageStream#fromStream`
+3. `MessageStream#fromFlux`
+4. `MessageStream#fromFuture`
+5. `MessageStream#just`
+6. `MessageStream#empty`
+
+As can be expected, the `MessageStream` streams implementation of `Message`. Hence, the creational methods expect
+`Message` implementations when invoked. On top of that, you can add context-specific information to each entry in the
+`MessageStream`, by specifying a lambda that takes in the `Message` and returns a `Context` object. For example, Axon
+Framework uses this `Context` to add the aggregate identifier, aggregate type, and sequence number for events that
+originate from an aggregate-based event store (thus a pre-Dynamic Consistency Boundary event store).
 
 ### Adjusted APIs
 
