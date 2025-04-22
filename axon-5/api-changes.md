@@ -170,9 +170,25 @@ As can be expected, the `MessageStream` streams implementation of `Message`. Hen
 Framework uses this `Context` to add the aggregate identifier, aggregate type, and sequence number for events that
 originate from an aggregate-based event store (thus a pre-Dynamic Consistency Boundary event store).
 
-### Adjusted APIs
+## Adjusted APIs
 
-TODO - Start filling adjusted operation once the `MessageStream` generics discussion has been finalized.
+The changes incurred by the new [Unit of Work](#unit-of-work) and [Message Stream](#message-stream) combined form the
+basis to make Axon Framework what we have dubbed "Async Native." In other words, it is intended to make Axon Framework
+fully asynchronous, top to bottom, without requiring people to deal with asynchronous programming details (e.g.
+`CompletableFuture` / `Mono`) at each and every turn.
+
+This shift has an obvious impact on the API of Axon Framework's infrastructure components. The APIs now favor the use of
+the `ProcessingContext`, `MessageStream`, and are generally made asynchronous through the use of a `CompletableFuture`.
+As these APIs are in most cases not directly invoked by the user, they should typically not form an obstruction.
+Nonetheless, if you **do** use these operations, it is good to know they've changed with the desire to be async native.
+
+The following classes have undergone changes to accompany this shift:
+
+* The `EventStorageEngine`
+* The `EventStore`
+* The `Repository`
+* The `StreamableMessageSource`
+* The `CommandBus`
 
 ## ApplicationConfigurer and Configuration
 
