@@ -101,46 +101,50 @@ list of the latter, please check [here](#removed).
 
 ## Message
 
-### Payload Type and Qualified Name
+### Message Type and Qualified Name
 
-TODO - check if the below section is clear about the uncertainty of the further existence of payloadType (or perhaps
-contentType).
+For added flexibility with Axon Framework's `Message` API, we introduced two classes, namely:
 
-The `Message` API has seen roughly two major changes, being:
+1. The `MessageType`, and
+2. the `QualifiedName`.
 
-1. Deprecation and subsequent removal of the `Message#getPayloadType()` operation.
-2. Introduction of the `Message#type()` operation, returning a `QualifiedName`.
+The `MessageType` is a combination of a `QualifiedName` and a version (of type `String`). Furthermore, **every**
+`Message` implementation now has the `type()` method, returning its `MessageType`. The intent for this new class on the
+`Message`, is to ensure all messages clarify their version and qualified name
+within the domain they act in. Furthermore, both the `QualifiedName` and version are non-null variables on the
+`MessageType`, ensuring they are always present.
 
-We omit the `payloadType` from the `Message` as it restricts us in how a Message Handler would read a `Message`.
-By making this flexible, Message Handlers can choose how to convert a given `payload` on the spot.
+This is a shift compared to Axon Framework 4 in roughly two areas, being:
 
-Furthermore, the `payloadType`, as it was a `Class`, tied `Messages` to the fully-qualified-class-name.
-Hence, it exposed the internals of an application, making the FQCN part of the domain knowledge.
+1. The `version` (`revision` as it was called in AF4) is no longer an event-only thing. This makes it so that
+   applications can describe the version of their commands and queries more easily, making it possible to construct
+   converters or define default mappings between different application releases.
+2. The introduction of the `QualifiedName` makes it so that Axon Framework does not have to lean on the
+   `Message#getPayloadType` anymore as the defining factor of the `Message` in question.
 
-The latter point can be regarded as undesirable for several reasons, like the fact it exposes technical concerns like
-the package structure to others.
-Furthermore, it means users are unable to define a so-called "business" or "domain" name to their `Message`; you're
-stuck to the FQCN to make things work.
-Lastly, it ties Axon Framework into the JVM space, as the FQCN is important to adhere to the `Mesasge#getPayloadType`
-method.
-Hence, having Axon Framework applications communicate with non-JVM-based applications is, simply put, rough.
+Thus, through the introduction of the `QualifiedName`, users are able to decouple their message class implementations
+from their definition within the application. For example, somebody can define business names for their messages, easing
+and clarifying communication with the business and the developer. Or, users can create several unique message
+implementations per (micro)service that all map to the same `QualifiedName`. The latter argument makes it so that users
+don't have to rely on sharing their concrete message implementations between parties.
 
-It is for this reason that we introduced the `QualifiedName`, which is retrievable through the `Message#type` method.
-The `QualifiedName` provides space for a `localName`, a `namespace`, and a `revision`, expecting all three to be present
-at all times.
-The fields can respectively be used to define the `Class#getSimpleName`, the package name, and the version of the
-`Message` it is connected too.
-This layer of indirection will allow us to provide the freedom that currently is not an option (as explained above).
+Next to adding the `MessageType` to the `Message`, this shift also introduced the dependency on a `QualifiedName` for
+message handlers. This shift came from a similar desire as with the `Message`: to ensure somebody doesn't have to rely
+on the FQCN and its implementation. On top of this, it allows Axon Framework to deal with messages that come outside the
+JVM space more easily.
+
+Although throughout Axon Framework now anticipates the `MessageType` on `Messages` and the `QualifiedName` when
+subscribing message handlers, this does not change the default behavior: if you don't specify anything,
+the framework will use the `Class#getName` to define the `QualifiedName`, and thus subsequently to define a
+`MessageType`. This shift should make it feasible for those to stick to the old behavior or to decouple their concrete
+classes and message from one another.
 
 ### Factory Methods, like GenericMessage#asMessage(Object)
 
 The factory methods that would construct a `Mesage` implementation based on a given `Object` have been removed from Axon
-Framework.
-These factory methods no longer align with the new API, which expects that the `QualifiedName` is set consciously.
-Hence, users of the factory methods need to revert to using the constructor of the `Message` implementation instead.
-Here's a revised version with improved grammar and clarity:
-If a user needs to specify custom `Metadata` for a `Message`, they can use the `Gateway` method overloads that accept
-`Metadata` as an additional parameter alongside the payload.
+Framework. These factory methods no longer align with the new API, which expects that the `MessageType` is set
+consciously. Hence,
+users of the factory methods need to revert to using the constructor of the `Message` implementation instead.
 
 ## Message Stream
 
@@ -387,23 +391,23 @@ This section contains two tables:
 
 ### Moved / Renamed
 
-| Axon 4                                                             | Axon 5                                                         | Module change?                 |
-|--------------------------------------------------------------------|----------------------------------------------------------------|--------------------------------|
-| org.axonframework.common.caching.EhCache3Adapter                   | org.axonframework.common.caching.EhCacheAdapter                | No                             |
-| org.axonframework.eventsourcing.MultiStreamableMessageSource       | org.axonframework.eventhandling.MultiStreamableMessageSource   | No                             |
-| org.axonframework.eventhandling.EventBus                           | org.axonframework.eventhandling.EventSink                      | No                             |
-| org.axonframework.commandhandling.CommandHandler                   | org.axonframework.commandhandling.annotation.CommandHandler    | No                             |
-| org.axonframework.eventhandling.EventHandler                       | org.axonframework.eventhandling.annotation.EventHandler        | No                             |
-| org.axonframework.queryhandling.QueryHandler                       | org.axonframework.queryhandling.annotation.QueryHandler        | No                             |
-| org.axonframework.config.Configuration                             | org.axonframework.configuration.Configuration                  | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.Component                                 | org.axonframework.configuration.Component                      | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.ConfigurerModule                          | org.axonframework.configuration.ConfigurationEnhancer          | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.ModuleConfiguration                       | org.axonframework.configuration.Module                         | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.LifecycleHandler                          | org.axonframework.configuration.LifecycleHandler               | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.LifecycleHandlerInspector                 | org.axonframework.configuration.LifecycleHandlerInspector      | Yes. Moved to `axon-messaging` |
-| org.axonframework.config.LifecycleOperations                       | org.axonframework.configuration.LifecycleRegistry              | Yes. Moved to `axon-messaging` |
-| org.axonframework.commandhandling.CommandCallback                  | org.axonframework.commandhandling.gateway.CommandResult        |                                |
-| org.axonframework.commandhandling.callbacks.FutureCallback         | org.axonframework.commandhandling.gateway.FutureCommandResult  |                                |
+| Axon 4                                                       | Axon 5                                                        | Module change?                 |
+|--------------------------------------------------------------|---------------------------------------------------------------|--------------------------------|
+| org.axonframework.common.caching.EhCache3Adapter             | org.axonframework.common.caching.EhCacheAdapter               | No                             |
+| org.axonframework.eventsourcing.MultiStreamableMessageSource | org.axonframework.eventhandling.MultiStreamableMessageSource  | No                             |
+| org.axonframework.eventhandling.EventBus                     | org.axonframework.eventhandling.EventSink                     | No                             |
+| org.axonframework.commandhandling.CommandHandler             | org.axonframework.commandhandling.annotation.CommandHandler   | No                             |
+| org.axonframework.eventhandling.EventHandler                 | org.axonframework.eventhandling.annotation.EventHandler       | No                             |
+| org.axonframework.queryhandling.QueryHandler                 | org.axonframework.queryhandling.annotation.QueryHandler       | No                             |
+| org.axonframework.config.Configuration                       | org.axonframework.configuration.Configuration                 | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.Component                           | org.axonframework.configuration.Component                     | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.ConfigurerModule                    | org.axonframework.configuration.ConfigurationEnhancer         | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.ModuleConfiguration                 | org.axonframework.configuration.Module                        | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleHandler                    | org.axonframework.configuration.LifecycleHandler              | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleHandlerInspector           | org.axonframework.configuration.LifecycleHandlerInspector     | Yes. Moved to `axon-messaging` |
+| org.axonframework.config.LifecycleOperations                 | org.axonframework.configuration.LifecycleRegistry             | Yes. Moved to `axon-messaging` |
+| org.axonframework.commandhandling.CommandCallback            | org.axonframework.commandhandling.gateway.CommandResult       |                                |
+| org.axonframework.commandhandling.callbacks.FutureCallback   | org.axonframework.commandhandling.gateway.FutureCommandResult |                                |
 
 ### Removed
 
@@ -431,22 +435,22 @@ This section contains three subsections, called:
 
 #### Constructors
 
-| Constructor                                                                                | What                           | Why                                          | 
-|--------------------------------------------------------------------------------------------|--------------------------------|----------------------------------------------|
-| One org.axonframework.messaging.AbstractMessage constructor                                | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
-| One org.axonframework.serialization.SerializedMessage constructor                          | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
-| All none-copy org.axonframework.messaging.GenericMessage constructors                      | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
-| All none-copy org.axonframework.commandhandling.GenericCommandMessage constructors         | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
-| All none-copy org.axonframework.eventhandling.GenericEventMessage constructors             | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
-| All none-copy org.axonframework.eventhandling.GenericDomainEventMessage constructors       | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
-| All none-copy org.axonframework.queryhandling.GenericQueryMessage constructors             | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
-| All none-copy org.axonframework.queryhandling.GenericSubscriptionQueryMessage constructors | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
-| All none-copy org.axonframework.queryhandling.GenericStreamingQueryMessage constructors    | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
-| All none-copy org.axonframework.deadline.GenericDeadlineMessage constructors               | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
-| All none-copy org.axonframework.messaging.GenericResultMessage constructors                | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
-| All none-copy org.axonframework.commandhandling.GenericCommandResultMessage constructors   | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
-| All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
-| All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `QualifiedName` type | See [here](#payload-type-and-qualified-name) |
+| Constructor                                                                                | What                         | Why                                          | 
+|--------------------------------------------------------------------------------------------|------------------------------|----------------------------------------------|
+| One org.axonframework.messaging.AbstractMessage constructor                                | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
+| One org.axonframework.serialization.SerializedMessage constructor                          | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
+| All none-copy org.axonframework.messaging.GenericMessage constructors                      | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
+| All none-copy org.axonframework.commandhandling.GenericCommandMessage constructors         | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
+| All none-copy org.axonframework.eventhandling.GenericEventMessage constructors             | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
+| All none-copy org.axonframework.eventhandling.GenericDomainEventMessage constructors       | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
+| All none-copy org.axonframework.queryhandling.GenericQueryMessage constructors             | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
+| All none-copy org.axonframework.queryhandling.GenericSubscriptionQueryMessage constructors | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
+| All none-copy org.axonframework.queryhandling.GenericStreamingQueryMessage constructors    | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
+| All none-copy org.axonframework.deadline.GenericDeadlineMessage constructors               | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
+| All none-copy org.axonframework.messaging.GenericResultMessage constructors                | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
+| All none-copy org.axonframework.commandhandling.GenericCommandResultMessage constructors   | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
+| All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
+| All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
 
 ### Moved/renamed methods and constructors
 
