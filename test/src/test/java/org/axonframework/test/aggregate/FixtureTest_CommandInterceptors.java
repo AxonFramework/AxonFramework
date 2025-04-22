@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,12 +43,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import javax.annotation.Nonnull;
 
 import static org.axonframework.modelling.command.AggregateLifecycle.apply;
-import static org.axonframework.test.aggregate.FixtureTest_CommandInterceptors.InterceptorAggregate.AGGREGATE_IDENTIFIER;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -62,6 +62,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class FixtureTest_CommandInterceptors {
 
+    private static final String AGGREGATE_IDENTIFIER = "id1";
     private static final String DISPATCH_META_DATA_KEY = "dispatchKey";
     private static final String DISPATCH_META_DATA_VALUE = "dispatchValue";
     private static final String HANDLER_META_DATA_KEY = "handlerKey";
@@ -75,10 +76,12 @@ class FixtureTest_CommandInterceptors {
     private MessageDispatchInterceptor<CommandMessage<?>> secondMockCommandDispatchInterceptor;
     @Mock
     private MessageHandlerInterceptor<CommandMessage<?>> mockCommandHandlerInterceptor;
+    private static AtomicBoolean intercepted;
 
     @BeforeEach
     void setUp() {
         fixture = new AggregateTestFixture<>(InterceptorAggregate.class);
+        intercepted = new AtomicBoolean(false);
     }
 
     @Test
@@ -261,9 +264,21 @@ class FixtureTest_CommandInterceptors {
                .expectException(AggregateEntityNotFoundException.class);
     }
 
-    public static class InterceptorAggregate {
+    @Test
+    void messageInterceptorOnAggregateMemberOnlyIsInvokedAsExpected() {
+        FixtureConfiguration<AggregateWithAggregateMemberInterceptorOnly> memberOnlyInterceptorFixture =
+                new AggregateTestFixture<>(AggregateWithAggregateMemberInterceptorOnly.class);
 
-        public static final String AGGREGATE_IDENTIFIER = "id1";
+        memberOnlyInterceptorFixture
+                .given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
+                .when(new DoWithEntityCommand(AGGREGATE_IDENTIFIER))
+                .expectEvents(new DoneWithEntityEvent(AGGREGATE_IDENTIFIER))
+                .expectSuccessfulHandlerExecution();
+        assertTrue(intercepted.get());
+    }
+
+    @SuppressWarnings("unused")
+    private static class InterceptorAggregate {
 
         @SuppressWarnings("UnusedDeclaration")
         private transient int counter;
@@ -327,11 +342,19 @@ class FixtureTest_CommandInterceptors {
         }
     }
 
+    @SuppressWarnings("unused")
     private static class InterceptorEntity {
+
+        @CommandHandlerInterceptor
+        public void intercept(CommandMessage<?> command,
+                              InterceptorChain interceptorChain) throws Exception {
+            intercepted.set(true);
+            interceptorChain.proceed();
+        }
 
         @CommandHandler
         public void handle(DoWithEntityCommand command) {
-            // Nothing to do here
+            apply(new DoneWithEntityEvent(command.getAggregateIdentifier()));
         }
 
         @CommandHandler
@@ -367,6 +390,21 @@ class FixtureTest_CommandInterceptors {
         }
     }
 
+    @SuppressWarnings("unused")
+    private static class DoneWithEntityEvent {
+
+        private final Object aggregateIdentifier;
+
+        public DoneWithEntityEvent(Object aggregateIdentifier) {
+            this.aggregateIdentifier = aggregateIdentifier;
+        }
+
+        public Object getAggregateIdentifier() {
+            return aggregateIdentifier;
+        }
+    }
+
+    @SuppressWarnings("unused")
     private static class DoWithEntityWithoutInterceptorCommand {
 
         @TargetAggregateIdentifier
@@ -404,6 +442,30 @@ class FixtureTest_CommandInterceptors {
                              @Nonnull InterceptorChain interceptorChain) throws Exception {
             unitOfWork.registerCorrelationDataProvider(new SimpleCorrelationDataProvider(HANDLER_META_DATA_KEY));
             return interceptorChain.proceed();
+        }
+    }
+
+    @SuppressWarnings({"unused", "FieldCanBeLocal"})
+    private static class AggregateWithAggregateMemberInterceptorOnly {
+
+        @AggregateIdentifier
+        private String identifier;
+        @AggregateMember
+        private InterceptorEntity entity;
+
+        private AggregateWithAggregateMemberInterceptorOnly() {
+            // No-arg constructor required by Axon
+        }
+
+        @CommandHandler
+        public AggregateWithAggregateMemberInterceptorOnly(CreateStandardAggregateCommand cmd) {
+            apply(new StandardAggregateCreatedEvent(cmd.getAggregateIdentifier()));
+        }
+
+        @EventHandler
+        public void handle(StandardAggregateCreatedEvent event) {
+            this.identifier = event.getAggregateIdentifier().toString();
+            this.entity = new InterceptorEntity();
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.axonframework.messaging.annotation;
 
-import org.axonframework.messaging.Message;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -27,7 +25,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,7 +33,6 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.emptySortedSet;
@@ -340,37 +336,5 @@ public class AnnotatedHandlerInspector<T> {
                             .map(AnnotatedHandlerInspector::getAllInspectedTypes)
                             .forEach(inspectedTypes::addAll);
         return Collections.unmodifiableSet(inspectedTypes);
-    }
-
-    private static class ChainedMessageHandlerInterceptorMember<T> implements MessageHandlerInterceptorMemberChain<T> {
-        private final MessageHandlingMember<? super T> delegate;
-        private final MessageHandlerInterceptorMemberChain<T> next;
-
-        private ChainedMessageHandlerInterceptorMember(Class<?> targetType, Iterator<MessageHandlingMember<? super T>> iterator) {
-            this.delegate = iterator.next();
-            if (iterator.hasNext()) {
-                this.next = new ChainedMessageHandlerInterceptorMember<>(targetType, iterator);
-            } else {
-                this.next = NoMoreInterceptors.instance();
-            }
-        }
-
-        @Override
-        public Object handle(@Nonnull Message<?> message, @Nonnull T target,
-                             @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
-            return InterceptorChainParameterResolverFactory.callWithInterceptorChain(() -> next.handle(message,
-                                                                                                       target,
-                                                                                                       handler),
-                                                                                     () -> doHandle(message,
-                                                                                                    target,
-                                                                                                    handler));
-        }
-
-        private Object doHandle(Message<?> message, T target, MessageHandlingMember<? super T> handler) throws Exception {
-            if (delegate.canHandle(message)) {
-                return delegate.handle(message, target);
-            }
-            return next.handle(message, target, handler);
-        }
     }
 }
