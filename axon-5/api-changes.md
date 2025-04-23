@@ -1,3 +1,19 @@
+API Changes
+===========
+
+As is to be expected of a new major release, a lot of things have changed compared to the previous major release. This
+document serves the purpose of containing all the changes that may proof breaking to users. Some of the changes have a
+lower chance of directly impact users of Axon Framework 4 (like the [Message Stream](#message-stream)), while others
+certainly impact all users (like the [Test Fixture](#test-fixtures) adjustment).
+
+This document can be broken down in five sections:
+
+1. [Version and Dependency Compatibility](#version-and-dependency-compatibility)
+2. [Major API Changes](#major-api-changes)
+3. [Minor API Changes](#minor-api-changes)
+4. [Stored Format Changes](#stored-format-changes)
+5. [Class and Method Changes](#class-and-method-changes)
+
 Version and Dependency Compatibility
 ====================================
 
@@ -102,7 +118,7 @@ To conclude, here is a list of changes to take into account concerning the `Unit
    components will pass along the current context by containing the `ProcessingContext` as a parameter throughout.
 
 Note that the rewrite of the `UnitOfWork` has caused _a lot_ of API changes and numerous removals. For an exhaustive
-list of the latter, please check [here](#removed).
+list of the latter, please check [here](#removed-classes).
 
 ## Message
 
@@ -447,7 +463,7 @@ We acknowledge that this shift is a massive breaking changes between Axon Framew
 test suites, we will provide a legacy installment of the old fixtures, albeit deprecated. This way, users are able to
 migrate the tests on their own pass.
 
-Other API changes
+Minor API Changes
 =================
 
 * The `EventBus` has been renamed to `EventSink`, with adjusted APIs. All publish methods now expect a `String context`
@@ -455,7 +471,7 @@ Other API changes
   `ProcessingContext` or the `publish` returning a `CompletableFuture<Void>` should be used, as these make it possible
   to perform the publication asynchronously.
 
-Stored format changes
+Stored Format Changes
 =====================
 
 ## Dead Letters
@@ -484,15 +500,17 @@ Stored format changes
 4. The dbscheduler `org.axonframework.deadline.dbscheduler.DbSchedulerHumanReadableDeadlineDetails` expects the
    `QualifiedName` to be present under the field `type`.
 
-Changed Classes
-======================
+Class and Method Changes
+========================
+
+## Class Changes
 
 This section contains two tables:
 
 1. A table of all the moved and renamed classes.
 2. A table of all the removed classes.
 
-### Moved / Renamed
+### Moved or Renamed Classes
 
 | Axon 4                                                       | Axon 5                                                        | Module change?                 |
 |--------------------------------------------------------------|---------------------------------------------------------------|--------------------------------|
@@ -512,7 +530,7 @@ This section contains two tables:
 | org.axonframework.commandhandling.CommandCallback            | org.axonframework.commandhandling.gateway.CommandResult       |                                |
 | org.axonframework.commandhandling.callbacks.FutureCallback   | org.axonframework.commandhandling.gateway.FutureCommandResult |                                |
 
-### Removed
+### Removed Classes
 
 | Class                                                           | Why                                                                                                                                            |
 |-----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -525,13 +543,12 @@ This section contains two tables:
 | org.axonframework.messaging.unitofwork.MessageProcessingContext | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
 | org.axonframework.eventsourcing.eventstore.AbstractEventStore   | Made obsolete through the rewrite of the `EventStore`.                                                                                         |
 
-Method signature changes
-========================
+## Method Signature Changes
 
 This section contains three subsections, called:
 
 1. [Parameter adjustments](#parameter-adjustments)
-2. [Moved methods and constructors](#moved-methods-and-constructors)
+2. [Moved methods and constructors](#moved--renamed-methods-and-constructors)
 3. [Removed methods and constructors](#removed-methods-and-constructors)
 
 ### Parameter adjustments
@@ -555,7 +572,7 @@ This section contains three subsections, called:
 | All none-copy org.axonframework.queryhandling.GenericQueryResponseMessage constructors     | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
 | All org.axonframework.queryhandling.GenericSubscriptionQueryUpdateMessage constructors     | Added the `MessageType` type | See [here](#message-type-and-qualified-name) |
 
-### Moved/renamed methods and constructors
+### Moved / Renamed Methods and Constructors
 
 | Constructor / Method                                                 | To where                                                   |
 |----------------------------------------------------------------------|------------------------------------------------------------|
@@ -568,7 +585,7 @@ This section contains three subsections, called:
 | `Configurer#registerComponent(Function<Configuration, ? extends C>)` | `ComponentRegistry#registerComponent(ComponentFactory<C>)` | 
 | `Configurer#registerModule(ModuleConfiguration)`                     | `ComponentRegistry#registerComponent(Module)`              | 
 
-### Removed methods and constructors
+### Removed Methods and Constructors
 
 | Constructor / Method                                                            | Why                                                                             | 
 |---------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
