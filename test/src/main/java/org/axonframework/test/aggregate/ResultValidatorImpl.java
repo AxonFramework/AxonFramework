@@ -56,7 +56,9 @@ import static org.hamcrest.CoreMatchers.*;
  *
  * @author Allard Buijze
  * @since 0.7
+ * @deprecated In favor of the {@link org.axonframework.test.fixture.AxonTestFixture}.
  */
+@Deprecated(since = "5.0.0")
 public class ResultValidatorImpl<T> implements ResultValidator<T> {
 
     private final List<EventMessage<?>> publishedEvents;
