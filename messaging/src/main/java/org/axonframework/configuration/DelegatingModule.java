@@ -23,16 +23,15 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
- * Base implementation for custom modules that contains the ComponentRegistry required to register components, enhancers
- * and (sub)modules.
+ * Base implementation for custom modules that uses same ComponentRegistry as the delegate.
  *
  * @param <S> The type extending this module, to support fluent interfaces.
  * @author Allard Buijze
  * @since 5.0.0
  */
-public abstract class BaseModule<S extends BaseModule<S>> implements Module {
+public abstract class DelegatingModule implements Module {
 
-    private final DefaultComponentRegistry componentRegistry;
+    private final Module delegate;
     private final String name;
 
     /**
@@ -40,21 +39,10 @@ public abstract class BaseModule<S extends BaseModule<S>> implements Module {
      *
      * @param name The name of this module. Must not be {@code null}.
      */
-    protected BaseModule(@Nonnull String name) {
-        this(name, new DefaultComponentRegistry());
-    }
-
-    /**
-     * Construct a base module with the given {@code name}.
-     *
-     * @param name The name of this module. Must not be {@code null}.
-     * @param componentRegistry The component registry to use for this module. Must not be {@code null}.
-     */
-    protected BaseModule(@Nonnull String name, @Nonnull DefaultComponentRegistry componentRegistry) {
+    protected DelegatingModule(@Nonnull String name) {
         Assert.nonEmpty(name, "The Module name cannot be null or empty.");
-        Assert.nonEmpty(name, "The Default Component Registry cannot be null.");
         this.name = name;
-        this.componentRegistry = componentRegistry;
+        this.componentRegistry = new DefaultComponentRegistry();
     }
 
     @Override
