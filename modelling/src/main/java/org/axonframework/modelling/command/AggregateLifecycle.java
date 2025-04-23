@@ -20,17 +20,21 @@ import org.axonframework.messaging.MetaData;
 import org.axonframework.messaging.Scope;
 import org.axonframework.messaging.ScopeDescriptor;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
  * Abstract base class of a component that models an aggregate's life cycle.
+ *
+ * @deprecated In favor of a multitude of operation, differing per method.
  */
+@Deprecated(since = "5.0.0")
 public abstract class AggregateLifecycle extends Scope {
 
     /**
-     * Apply a {@link org.axonframework.eventhandling.DomainEventMessage} with given payload and metadata (metadata
-     * from interceptors will be combined with the provided metadata). Applying events means they are immediately
-     * applied (published) to the aggregate and scheduled for publication to other event handlers.
+     * Apply a {@link org.axonframework.eventhandling.DomainEventMessage} with given payload and metadata (metadata from
+     * interceptors will be combined with the provided metadata). Applying events means they are immediately applied
+     * (published) to the aggregate and scheduled for publication to other event handlers.
      * <p/>
      * The event is applied on all entities part of this aggregate. If the event is applied from an event handler of the
      * aggregate and additional events need to be applied that depends on state changes brought about by the first event
@@ -40,7 +44,9 @@ public abstract class AggregateLifecycle extends Scope {
      * @param metaData any meta-data that must be registered with the Event
      * @return a gizmo to apply additional events after the given event has been processed by the entire aggregate
      * @see ApplyMore
+     * @deprecated In favor of {@link org.axonframework.eventhandling.gateway.EventAppender#append(List)}
      */
+    @Deprecated(since = "5.0.0")
     public static ApplyMore apply(Object payload, MetaData metaData) {
         return AggregateLifecycle.getInstance().doApply(payload, metaData);
     }
@@ -57,7 +63,9 @@ public abstract class AggregateLifecycle extends Scope {
      * @param payload the payload of the event to apply
      * @return a gizmo to apply additional events after the given event has been processed by the entire aggregate
      * @see ApplyMore
+     * @deprecated In favor of {@link org.axonframework.eventhandling.gateway.EventAppender#append(List)}
      */
+    @Deprecated(since = "5.0.0")
     public static ApplyMore apply(Object payload) {
         return AggregateLifecycle.getInstance().doApply(payload, MetaData.emptyInstance());
     }
