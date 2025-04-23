@@ -37,6 +37,11 @@ Major API Changes
   The former typically represents an infrastructure component (e.g. the `CommandBus`) whereas modules are themselves
   configurers for a specific module of an application. For an exhaustive list of all the operations that have been
   removed, moved, or altered, see the [Configurer and Configuration](#applicationconfigurer-and-configuration) section.
+* The Test Fixtures have been replaced by an approach that, instead of an Aggregate or Saga class, take in an
+  `ApplicationConfigurer` instance. In doing so, test fixtures reflect the actual application configuration. This
+  resolves the predicament that you need to configure your application twice (for production and testing), making the
+  chance slimmer that parts will be skipped. For more on this change, please check the [Test Fixtures](#test-fixtures)
+  section of this document.
 * All annotation logic is moved to the annotation module.
 * All reflection logic is moved to a dedicated "reflection" package per module.
 * We no longer support message handler annotated constructors. For example, the constructor of an aggregate can no
@@ -408,6 +413,39 @@ public static void main(String[] args) {
     // Further configuration...
 }
 ```
+
+## Test Fixtures
+
+The `axon-test` module of Axon Framework has historically provided two different test fixtures:
+
+1. The `AggregateTestFixture`
+2. The `SagaTestFixture`
+
+Both provide a given-when-then style of testing, based on the messages going in and out of the aggregate and saga.
+Although practical, we have encountered a couple of predicaments with this style over the years:
+
+1. It is very easy to miss a part of the application configuration with the test fixtures. Although the fixtures have
+   numerous registration methods for all things important with aggregate and saga testing, this does not resolve the
+   case that somebody might simply forget to add the configuration in both the production and the test scenario.
+2. Testing is limited to aggregates and sagas. Hence, Event Handling Components, or Projectors/Projections, do not have
+   testing support at all.
+3. The test fixtures do not support a form of integration testing. Differently put, it is not possible to validate
+   whether the aggregate process (for example) flows through the upcaster process, or triggers snapshots.
+
+In Axon Framework 5, we resolve this by replacing both fixtures with the `AxonTestFixture`. The `AxonTestFixture` is
+created by inserting the `ApplicationConfigurer`. From there, it provides the usual given-when-then style of testing.
+Any form of message can initiate the given-phase, any form of message can influence the when-phase, and any form of
+message can be expected in the then-phase.
+
+By basing the fixture on the `ApplicationConfigurer`, we resolve the concern that users might forget to add
+configuration to their fixture that's used in their (production) system. Furthermore, by having the **entire**
+`ApplicationConfigurer`, we can easily expand the test fixture to incorporate other areas for testing, like
+snapshotting, dead-letter queues, and event scheduling (to name a few). And, lastly, it should serve as an easier
+solution towards integration testing an Axon Framework application.
+
+We acknowledge that this shift is a massive breaking changes between Axon Framework 4 and 5. Given the importance of
+test suites, we will provide a legacy installment of the old fixtures, albeit deprecated. This way, users are able to
+migrate the tests on their own pass.
 
 Other API changes
 =================
