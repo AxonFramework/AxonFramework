@@ -603,6 +603,8 @@ Minor API Changes
   of a `BlockingStream`, taking a `StreamingCondition` (that can be based on a `TrackingToken`) as input. Lastly, all
   `TrackingToken` methods now return a `CompletableFuture<TrackingToken>`, signaling they're potential asynchronous
   operations.
+* To append events within an aggregate / entity, use the `EventAppender#append` instead of the
+  `AggregateLifecycle#apply` method.
 
 Stored Format Changes
 =====================
