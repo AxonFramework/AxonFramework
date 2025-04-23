@@ -605,6 +605,10 @@ Minor API Changes
   operations.
 * To append events within an aggregate / entity, use the `EventAppender#append` instead of the
   `AggregateLifecycle#apply` method.
+* The `EventStorageEngine` uses append, source, and streaming conditions, for appending, sourcing, and streaming events,
+  as described in the [Event Store](#event-store) section. Furthermore, operations have been made "async-native," as
+  described [here](#adjusted-apis). This is marked as a minor API changes since the `EventStorageEngine` should not be
+  used directly
 
 Stored Format Changes
 =====================
@@ -711,39 +715,51 @@ This section contains three subsections, called:
 
 ### Moved / Renamed Methods and Constructors
 
-| Constructor / Method                                                 | To where                                                   |
-|----------------------------------------------------------------------|------------------------------------------------------------|
-| `Configurer#configureCommandBus`                                     | `MessagingConfigurer#registerCommandBus`                   | 
-| `Configurer#configureEventBus`                                       | `MessagingConfigurer#registerEventSink`                    | 
-| `Configurer#configureQueryBus`                                       | `MessagingConfigurer#registerQueryBus`                     | 
-| `Configurer#configureQueryUpdateEmitter`                             | `MessagingConfigurer#registerQueryUpdateEmitter`           | 
-| `ConfigurerModule#configureModule`                                   | `ConfigurationEnhancer#enhance`                            | 
-| `ConfigurerModule#configureLifecyclePhaseTimeout`                    | `LifecycleRegistry#registerLifecyclePhaseTimeout`          | 
-| `Configurer#registerComponent(Function<Configuration, ? extends C>)` | `ComponentRegistry#registerComponent(ComponentFactory<C>)` | 
-| `Configurer#registerModule(ModuleConfiguration)`                     | `ComponentRegistry#registerComponent(Module)`              | 
-| `StreamableMessageSource#openStream(TrackingToken)`                  | `StreamableEventSource#open(SourcingCondition)`            | 
-| `StreamableMessageSource#createTailToken()`                          | `StreamableEventSource#headToken()`                        | 
-| `StreamableMessageSource#createHeadToken()`                          | `StreamableEventSource#tailToken()`                        | 
-| `StreamableMessageSource#createTokenAt(Instant)`                     | `StreamableEventSource#tokenAt(Instant)`                   | 
-| `Repository#newInstance(Callable<T>)`                                | `Repository#persist(ID, T, ProcessingContext)`             | 
-| `Repository#load(String)`                                            | `Repository#load(ID, ProcessingContext)`                   | 
-| `Repository#loadOrCreate(String, Callable<T>)`                       | `Repository#loadOrCreate(ID, ProcessingContext)`           | 
-| `EventStore#readEvents(String)`                                      | `EventStoreTransaction#source(SourcingCondition)`          | 
+| Constructor / Method                                                 | To where                                                                        |
+|----------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| `Configurer#configureCommandBus`                                     | `MessagingConfigurer#registerCommandBus`                                        | 
+| `Configurer#configureEventBus`                                       | `MessagingConfigurer#registerEventSink`                                         | 
+| `Configurer#configureQueryBus`                                       | `MessagingConfigurer#registerQueryBus`                                          | 
+| `Configurer#configureQueryUpdateEmitter`                             | `MessagingConfigurer#registerQueryUpdateEmitter`                                | 
+| `ConfigurerModule#configureModule`                                   | `ConfigurationEnhancer#enhance`                                                 | 
+| `ConfigurerModule#configureLifecyclePhaseTimeout`                    | `LifecycleRegistry#registerLifecyclePhaseTimeout`                               | 
+| `Configurer#registerComponent(Function<Configuration, ? extends C>)` | `ComponentRegistry#registerComponent(ComponentFactory<C>)`                      | 
+| `Configurer#registerModule(ModuleConfiguration)`                     | `ComponentRegistry#registerComponent(Module)`                                   | 
+| `StreamableMessageSource#openStream(TrackingToken)`                  | `StreamableEventSource#open(SourcingCondition)`                                 | 
+| `StreamableMessageSource#createTailToken()`                          | `StreamableEventSource#headToken()`                                             | 
+| `StreamableMessageSource#createHeadToken()`                          | `StreamableEventSource#tailToken()`                                             | 
+| `StreamableMessageSource#createTokenAt(Instant)`                     | `StreamableEventSource#tokenAt(Instant)`                                        | 
+| `Repository#newInstance(Callable<T>)`                                | `Repository#persist(ID, T, ProcessingContext)`                                  | 
+| `Repository#load(String)`                                            | `Repository#load(ID, ProcessingContext)`                                        | 
+| `Repository#loadOrCreate(String, Callable<T>)`                       | `Repository#loadOrCreate(ID, ProcessingContext)`                                | 
+| `EventStore#readEvents(String)`                                      | `EventStoreTransaction#source(SourcingCondition)`                               | 
+| `EventStorageEngine#readEvents(EventMessage<?>...)`                  | `EventStorageEngine#appendEvents(AppendCondition, TaggedEventMessage...)`       | 
+| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`   | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)` | 
+| `EventStorageEngine#appendEvents(List<? extends EventMessage<?>>)`   | `EventStorageEngine#appendEvents(AppendCondition, List<TaggedEventMessage<?>>)` | 
+| `EventStorageEngine#readEvents(String)`                              | `EventStorageEngine#source(SourcingCondition)`                                  | 
+| `EventStorageEngine#readEvents(String, long)`                        | `EventStorageEngine#source(SourcingCondition)`                                  | 
+| `EventStorageEngine#readEvents(TrackingToken, boolean)`              | `EventStorageEngine#stream(StreamingCondition)`                                 | 
+| `EventStorageEngine#createTailToken()`                               | `EventStorageEngine#tailToken()`                                                | 
+| `EventStorageEngine#createHeadToken()`                               | `EventStorageEngine#headToken()`                                                | 
+| `EventStorageEngine#createTokenAt(Instant)`                          | `EventStorageEngine#tokenAt(Instant)`                                           | 
 
 ### Removed Methods and Constructors
 
-| Constructor / Method                                                                              | Why                                                                                      | 
-|---------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`                          | Initialize is now replace fully by start and shutdown handlers.                          |
-| `org.axonframework.config.ModuleConfiguration#unwrap()`                                           | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant.          |
-| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                                   | Only use by `unwrap()` that's also removed.                                              |
-| `org.axonframework.config.Configuration#lifecycleRegistry()`                                      | A round about way to support life cycle handler registration.                            |
-| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`                       | Fully replaced by start and shutdown handler registration.                               |
-| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)`                   | Each Configurer now has get optional operation replacing this functionality.             |
-| `org.axonframework.messaging.StreamableMessageSource#createTokenSince(Duration)`                  | Can be replaced by the user with an `StreamableEventSource#tokenAt(Instant)` invocation. |
-| `org.axonframework.modelling.command.Repository#load(String, Long)`                               | Leftover behavior to support aggregate validation on subsequent invocations.             |
-| `org.axonframework.modelling.command.Repository#newInstance(Callable<T>, Consumer<Aggregate<T>>)` | No longer necessary with replacement `Repository#persist(ID, T, ProcessingContext)`.     |
-| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String)`                        | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).     | 
-| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String, long)`                  | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).     | 
-| `org.axonframework.eventsourcing.eventstore.EventStore#storeSnapshot(DomainEventMessage<?>)`      | Replaced for a dedicated `SnapshotStore`.                                                |
-| `org.axonframework.eventsourcing.eventstore.EventStore#lastSequenceNumberFor(String)`             | No longer necessary to support through the introduction of DCB.                          |
+| Constructor / Method                                                                                 | Why                                                                                      | 
+|------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`                             | Initialize is now replace fully by start and shutdown handlers.                          |
+| `org.axonframework.config.ModuleConfiguration#unwrap()`                                              | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant.          |
+| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                                      | Only use by `unwrap()` that's also removed.                                              |
+| `org.axonframework.config.Configuration#lifecycleRegistry()`                                         | A round about way to support life cycle handler registration.                            |
+| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`                          | Fully replaced by start and shutdown handler registration.                               |
+| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)`                      | Each Configurer now has get optional operation replacing this functionality.             |
+| `org.axonframework.messaging.StreamableMessageSource#createTokenSince(Duration)`                     | Can be replaced by the user with an `StreamableEventSource#tokenAt(Instant)` invocation. |
+| `org.axonframework.modelling.command.Repository#load(String, Long)`                                  | Leftover behavior to support aggregate validation on subsequent invocations.             |
+| `org.axonframework.modelling.command.Repository#newInstance(Callable<T>, Consumer<Aggregate<T>>)`    | No longer necessary with replacement `Repository#persist(ID, T, ProcessingContext)`.     |
+| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String)`                           | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).     | 
+| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String, long)`                     | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).     | 
+| `org.axonframework.eventsourcing.eventstore.EventStore#storeSnapshot(DomainEventMessage<?>)`         | Replaced for a dedicated `SnapshotStore`.                                                |
+| `org.axonframework.eventsourcing.eventstore.EventStore#lastSequenceNumberFor(String)`                | No longer necessary to support through the introduction of DCB.                          |
+| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#storeSnapshot(DomainEventMessage<?>)` | Replaced for a dedicated `SnapshotStore`.                                                |
+| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#readSnapshot(String)`                 | Replaced for a dedicated `SnapshotStore`.                                                |
+| `org.axonframework.eventsourcing.eventstore.EventStorageEngine#lastSequenceNumberFor(String)`        | No longer necessary to support through the introduction of DCB.                          |
