@@ -23,15 +23,13 @@ import java.util.function.UnaryOperator;
 
 public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
 
-    private final String version;
     private final Customization customization;
 
     public LambdaBasedMessageTypeResolver() {
-        this(MessageType.DEFAULT_VERSION, c -> c);
+        this(c -> c);
     }
 
-    public LambdaBasedMessageTypeResolver(String version, UnaryOperator<Customization> customization) {
-        this.version = version;
+    public LambdaBasedMessageTypeResolver(UnaryOperator<Customization> customization) {
         this.customization = customization.apply(new Customization());
     }
 
@@ -43,17 +41,29 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
 
     public class Customization {
 
+        private String version;
         private final Map<Class<?>, MessageTypeResolver> resolvers = new HashMap<>();
 
-        public <T> Customization on(Class<T> payloadType, Function<T, MessageType> resolver) {
+        private Customization() {
+            this.version = MessageType.DEFAULT_VERSION;
+        }
+
+        public Customization defaultVersion(String version) {
+            this.version = version;
+            return this;
+        }
+
+        public <T> Customization messageTypeOn(Class<T> payloadType, Function<T, MessageType> resolver) {
+            // todo: throw if already exists resolver!
             resolvers.put(payloadType, (payload) -> resolver.apply(payloadType.cast(payload)));
             return this;
         }
 
-//        public <T> Customization on(Class<T> payloadType, Function<T, QualifiedName> resolver) {
-//            resolvers.put(payloadType,
-//                          (payload) -> new MessageType(resolver.apply(payloadType.cast(payload)), version));
-//            return this;
-//        }
+        public <T> Customization qualifiedNameOn(Class<T> payloadType, Function<T, QualifiedName> resolver) {
+            // todo: throw if already exists resolver!
+            resolvers.put(payloadType,
+                          (payload) -> new MessageType(resolver.apply(payloadType.cast(payload)), version));
+            return this;
+        }
     }
 }
