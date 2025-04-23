@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,9 @@ import javax.annotation.Nullable;
  * Interface for a source of {@link Message messages} that processors can track.
  *
  * @author Rene de Waele
+ *@deprecated In favor of the {@code org.axonframework.eventsourcing.eventstore.StreamableEventSource}.
  */
+@Deprecated(since = "5.0.0")
 public interface StreamableMessageSource<M extends Message<?>> {
 
     /**

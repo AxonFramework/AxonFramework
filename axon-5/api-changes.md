@@ -470,6 +470,11 @@ Minor API Changes
   to define in which (bounded-)context an event should be published. Furthermore, either the method holding the
   `ProcessingContext` or the `publish` returning a `CompletableFuture<Void>` should be used, as these make it possible
   to perform the publication asynchronously.
+* The `StreamableEventSource` replaces the `StreamableMessageSource`, enforcing the `Message` type streamed to an
+  `EventMessage` implementation. Furthermore, the `StreamableMessageSource#openStream` returns a `MessageStream` instead
+  of a `BlockingStream`, taking a `StreamingCondition` (that can be based on a `TrackingToken`) as input. Lastly, all
+  `TrackingToken` methods now return a `CompletableFuture<TrackingToken>`, signaling they're potential asynchronous
+  operations.
 
 Stored Format Changes
 =====================
@@ -584,14 +589,19 @@ This section contains three subsections, called:
 | `ConfigurerModule#configureLifecyclePhaseTimeout`                    | `LifecycleRegistry#registerLifecyclePhaseTimeout`          | 
 | `Configurer#registerComponent(Function<Configuration, ? extends C>)` | `ComponentRegistry#registerComponent(ComponentFactory<C>)` | 
 | `Configurer#registerModule(ModuleConfiguration)`                     | `ComponentRegistry#registerComponent(Module)`              | 
+| `StreamableMessageSource#openStream(TrackingToken)`                  | `StreamableEventSource#open(SourcingCondition)`            | 
+| `StreamableMessageSource#createTailToken()`                          | `StreamableEventSource#headToken()`                        | 
+| `StreamableMessageSource#createHeadToken()`                          | `StreamableEventSource#tailToken()`                        | 
+| `StreamableMessageSource#createTokenAt(Instant)`                     | `StreamableEventSource#tokenAt(Instant)`                   | 
 
 ### Removed Methods and Constructors
 
-| Constructor / Method                                                            | Why                                                                             | 
-|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`        | Initialize is now replace fully by start and shutdown handlers.                 |
-| `org.axonframework.config.ModuleConfiguration#unwrap()`                         | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant. |
-| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                 | Only use by `unwrap()` that's also removed.                                     |
-| `org.axonframework.config.Configuration#lifecycleRegistry()`                    | A round about way to support life cycle handler registration.                   |
-| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`     | Fully replaced by start and shutdown handler registration.                      |
-| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)` | Each Configurer now has get optional operation replacing this functionality.    |
+| Constructor / Method                                                             | Why                                                                                     | 
+|----------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`         | Initialize is now replace fully by start and shutdown handlers.                         |
+| `org.axonframework.config.ModuleConfiguration#unwrap()`                          | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant.         |
+| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                  | Only use by `unwrap()` that's also removed.                                             |
+| `org.axonframework.config.Configuration#lifecycleRegistry()`                     | A round about way to support life cycle handler registration.                           |
+| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`      | Fully replaced by start and shutdown handler registration.                              |
+| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)`  | Each Configurer now has get optional operation replacing this functionality.            |
+| `org.axonframework.messaging.StreamableMessageSource#createTokenSince(Duration)` | Can be replaced by the user with an `StreamableEventSource#tokenAt(Instant)` invocation |
