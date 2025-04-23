@@ -466,6 +466,10 @@ migrate the tests on their own pass.
 Minor API Changes
 =================
 
+* The `Repository`, just as other components, has been made [async native](#adjusted-apis). This means methods return a
+  `CompletableFuture` instead of the loaded `Aggregate`. Furthermore, the notion of aggregate was removed from the
+  `Repository`, in favor of talking about `ManagedEntity` instances. This makes the `Repository` applicable for
+  non-aggregate solutions too.
 * The `EventBus` has been renamed to `EventSink`, with adjusted APIs. All publish methods now expect a `String context`
   to define in which (bounded-)context an event should be published. Furthermore, either the method holding the
   `ProcessingContext` or the `publish` returning a `CompletableFuture<Void>` should be used, as these make it possible
@@ -532,8 +536,9 @@ This section contains two tables:
 | org.axonframework.config.LifecycleHandler                    | org.axonframework.configuration.LifecycleHandler              | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.LifecycleHandlerInspector           | org.axonframework.configuration.LifecycleHandlerInspector     | Yes. Moved to `axon-messaging` |
 | org.axonframework.config.LifecycleOperations                 | org.axonframework.configuration.LifecycleRegistry             | Yes. Moved to `axon-messaging` |
-| org.axonframework.commandhandling.CommandCallback            | org.axonframework.commandhandling.gateway.CommandResult       |                                |
-| org.axonframework.commandhandling.callbacks.FutureCallback   | org.axonframework.commandhandling.gateway.FutureCommandResult |                                |
+| org.axonframework.commandhandling.CommandCallback            | org.axonframework.commandhandling.gateway.CommandResult       | No                             |
+| org.axonframework.commandhandling.callbacks.FutureCallback   | org.axonframework.commandhandling.gateway.FutureCommandResult | No                             |
+| org.axonframework.modelling.command.Repository               | org.axonframework.modelling.repository.Repository             | No                             |
 
 ### Removed Classes
 
@@ -593,15 +598,20 @@ This section contains three subsections, called:
 | `StreamableMessageSource#createTailToken()`                          | `StreamableEventSource#headToken()`                        | 
 | `StreamableMessageSource#createHeadToken()`                          | `StreamableEventSource#tailToken()`                        | 
 | `StreamableMessageSource#createTokenAt(Instant)`                     | `StreamableEventSource#tokenAt(Instant)`                   | 
+| `Repository#newInstance(Callable<T>)`                                | `Repository#persist(ID, T, ProcessingContext)`             | 
+| `Repository#load(String)`                                            | `Repository#load(ID, ProcessingContext)`                   | 
+| `Repository#loadOrCreate(String, Callable<T>)`                       | `Repository#loadOrCreate(ID, ProcessingContext)`           | 
 
 ### Removed Methods and Constructors
 
-| Constructor / Method                                                             | Why                                                                                     | 
-|----------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
-| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`         | Initialize is now replace fully by start and shutdown handlers.                         |
-| `org.axonframework.config.ModuleConfiguration#unwrap()`                          | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant.         |
-| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                  | Only use by `unwrap()` that's also removed.                                             |
-| `org.axonframework.config.Configuration#lifecycleRegistry()`                     | A round about way to support life cycle handler registration.                           |
-| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`      | Fully replaced by start and shutdown handler registration.                              |
-| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)`  | Each Configurer now has get optional operation replacing this functionality.            |
-| `org.axonframework.messaging.StreamableMessageSource#createTokenSince(Duration)` | Can be replaced by the user with an `StreamableEventSource#tokenAt(Instant)` invocation |
+| Constructor / Method                                                                                | Why                                                                                      | 
+|-----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`                            | Initialize is now replace fully by start and shutdown handlers.                          |
+| `org.axonframework.config.ModuleConfiguration#unwrap()`                                             | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant.          |
+| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                                     | Only use by `unwrap()` that's also removed.                                              |
+| `org.axonframework.config.Configuration#lifecycleRegistry()`                                        | A round about way to support life cycle handler registration.                            |
+| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`                         | Fully replaced by start and shutdown handler registration.                               |
+| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)`                     | Each Configurer now has get optional operation replacing this functionality.             |
+| `org.axonframework.messaging.StreamableMessageSource#createTokenSince(Duration)`                    | Can be replaced by the user with an `StreamableEventSource#tokenAt(Instant)` invocation. |
+| `org.axonframework.modelling.command.Repository#load(String, Long)`                                 | Leftover behavior to support aggregate validation on subsequent invocations.             |
+| `org.axonframework.modelling.command.Repository#newInstance(Callable<T>, Consumer<Aggregate<T>>)`   | No longer necessary with replacement `Repository#persist(ID, T, ProcessingContext)`      |
