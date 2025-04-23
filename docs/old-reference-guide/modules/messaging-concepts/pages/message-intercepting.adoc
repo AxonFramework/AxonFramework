@@ -345,6 +345,17 @@ By default, it reacts to any `Message` implementation.
 If an `EventMessage` specific interceptor is desired, the `messageType` parameter on the annotation should be set to `EventMessage.class`.
 . For even more fine-grained control of which messages should react to the interceptor, the `payloadType` contained in the `Message` to handle can be specified.
 
+[Note]
+.Intercepting `@EventSourcingHandler` annotated methods on Aggregate Members
+====
+The `@MessageHandlerInterceptor` **is not** intended to intercept events that are passed to `@EventSourcingHandler` annotated methods in aggregates.
+Although it works for the aggregate root, this is a mere side effect of the implemented handler support.
+Due to this, `@EventSourcingHandler` annotated methods on aggregate members does not work at all.
+
+This is clear discrepancy with all other message handler annotated methods that we cannot easily adjust with Axon Framework 4 it's structure.
+As such, it is not recommended to rely on the invocation of `@MessageHandlerInterceptor` annotated methods while sourcing an aggregate.
+====
+
 The following snippets shows some possible approaches of using the `@MessageHandlerInterceptor` annotation:
 
 *Simple `@MessageHandlerInterceptor` method*
