@@ -87,9 +87,9 @@ Furthermore, the `ProcessingLifecycle` works with a `CompletableFuture` througho
 The `ProcessingContext` will in turn provide the space to register resources to be used throughout the
 `ProcessingLifecycle`.
 Although roughly similar to the previous resource management of the old `UnitOfWork`, we intend this format to replace
-the use of the `ThreadLocal`.
-As such, you will notice that the `ProcessingContext` will become a parameter throughout virtually all infrastructure
-interfaces Axon Framework provides.
+the use of the `ThreadLocal`. As such, you will notice that the `ProcessingContext` will become a parameter throughout
+virtually **all** infrastructure interfaces Axon Framework provides. This will become most apparent on all message
+handlers.
 
 It is the replacement of the interfaces with the old `UnitOfWork`, and the spreading of the `ProcessingContext`
 instead of the `UnitOfWork` directly, will ensure that operation that are not intended for the end user cannot be
@@ -210,6 +210,130 @@ The following classes have undergone changes to accompany this shift:
 * The `Repository`
 * The `StreamableMessageSource`
 * The `CommandBus`
+
+## Event Store
+
+The `EventStore` has seen a rigorous change in Axon Framework 5 to accompany the Dynamic Consistency Boundary.
+
+The Dynamic Consistency Boundary, or DCB for short, allows for a flexible boundary to what should be appended
+consistently with other existing event streams in the event store. In doing so, it eliminates the focus on the
+aggregate identifier, replacing it for user defined "tags." Note that tags are plural. As such, an event is no longer
+either attached to zero or one aggregate/entity, but potentially several.
+
+This shift will provide greater flexibility in deriving models, as there is no longer a hard boundary around the
+aggregate stream. It allows users to depend on N-"aggregate" streams in one sourcing operation, allowing commands to
+span a more complete view.
+
+To not overencumber the sourcing operation, not only tags, but also (event) "types" are used during event store
+operation. The types act as a filter on the entity streams that matching the tags. The tags and the types combined from
+the `EventCriteria`. It is this `EventCriteria` that Axon Framework uses
+for appending events, sourcing events, and streaming events.
+
+It is the `EventCriteria` that thus allows you to define "slices" of an otherwise potentially large aggregate model.
+Events that (although part of the entity's stream) don't influence the decision-making process, can be omitted when
+sourcing an entity.
+
+As becomes apparent, this is a rather massive changes for those interacting directly with the `EventStore` API from Axon
+Framework. Luckily, most users will not interact with this infrastructure component directly. Although this shift
+removes the aggregate focus entirely, it does not remove the option to use aggregates. It is purely the internals of
+appending, sourcing, and streaming that shift from a 0-or-1 event stream focus to a 0-N event stream solution.
+
+### Appending Events
+
+In the past, you would use the `EventStore#publish` operation to publish events. To ensure the event would be part of an
+aggregate stream, users would deal with the `AggregateLifecycle#apply` operation. This used, internally, a `ThreadLocal`
+to find the "active" aggregate model, providing the `apply` operation knowledge about the aggregate identifier and
+sequence number.
+
+To append events in Axon Framework 5, users first need to start an `EventStoreTransaction` with an active
+`ProcessingContext` (see [Unit of Work](#unit-of-work) for more on the `ProcessingContext`).
+From there, to append, you would use the `EventStoreTransaction#appendEvent(EventMessage)` operation. To make it so that
+appending events are part of an aggregate / consistency boundary that's active, users would first invoke
+`EventStoreTransaction#source(SourcingCondition)` (as further explained [here](#sourcing-events)). It is the act of
+sourcing that instructs Axon Framework to make a matching `AppendCondition` to use during appending events.
+
+In code, this would like so:
+
+```java
+public void appendEvents(EventStore eventStore,
+                         ProcessingContext context,
+                         EventMessage<?> event) {
+    EventStoreTransaction transaction = eventStore.transaction(context);
+    transaction.appendEvent(event);
+}
+```
+
+As stated in [Unit of Work](#unit-of-work), the `ProcessingContext` is propagated throughout Axon Framework. As such, it
+is **always** available in message handling functions.
+
+Note that above is the technical solution, applicable only to those interacting with the `EventStore` directly. To
+publish events as part of an entity, an `EventAppender` can be injected in command handling methods. On an
+`@CommandHandler` annotated method, this would look as follows:
+
+```java
+
+@CommandHandler
+public void handle(SubscribeStudentCommand command,
+                   EventAppender appender) {
+    StudentSubscribedEvent event = this.decide(command);
+    appender.append(event);
+}
+```
+
+### Sourcing Events
+
+In the past, to source an aggregate, the `EventStore#readEvents(String aggregateIdentifier)` method or
+`EventStore#readEvents(String aggregateIdentifier, Long firstSequenceNumber)` method was used. Since events are no
+longer attached to a single aggregate, neither exist as is anymore.
+
+Instead, the `EventStoreTransaction`, that is also used for [appending events](#appending-events), should be used to
+source an entity. More specifically, the `EventStoreTransaction#source(SourcingCondition)` method should be invoked. The
+`SourcingCondition` in turn contains the `EventCriteria` to source for, as well as that it is able to define a start and
+end position.
+
+If you want to source an (old-fashioned) aggregate, the `EventCriteria` contains a single `Tag` of key `aggregateId` and
+a value matching the aggregate to source. In code, this would look as follows:
+
+```java
+public void sourcingEvents(EventStore eventStore,
+                           ProcessingContext context) {
+    Tag aggregateIdTag = new Tag("aggregateId", UUID.randomUUID().toString());
+    EventCriteria criteria = EventCriteria.havingTags(aggregateIdTag);
+    SourcingCondition sourcingCondition = SourcingCondition.conditionFor(criteria);
+
+    EventStoreTransaction transaction = eventStore.transaction(context);
+    MessageStream<? extends EventMessage<?>> sourcedEvents = transaction.source(sourcingCondition);
+    // Process the sourced events as desired...
+}
+```
+
+Note that we do not expect users to source an aggregate / entity manually like this. Axon Framework has extensive
+support to define both state-based and event-sourced entities, ensuring all components are in place such that you
+*never* have to create any form of condition.
+
+### Streaming Events
+
+In the past, to stream events, the `StreamableMessageSource#openStream(TrackingToken)` method (which the `EventStore`
+implements) would be used. This behavior shifted to align with a DCB-based event store. This means we now expect a
+condition with an `EventCriteria`, referring to several tags and types. For streaming events, the most feasible filter
+are the types, as event streaming is intended to create query models.
+
+To stream events, Axon Framework 5 has replaced the `StreamableMessageSource` for a `StreamableEventSource`.
+Furthermore, the `open` operation no longer expects a `TrackingToken`, but a `StreamingCondition` instead. When invoked
+manually (thus without the use of Event Processors), this would look as such:
+
+```java
+public void streamingEvents(
+        StreamableEventSource<EventMessage<?>> streamableEventSource
+) throws ExecutionException, InterruptedException, TimeoutException {
+    CompletableFuture<TrackingToken> asyncToken = streamableEventSource.headToken();
+    TrackingToken trackingToken = asyncToken.get(500, TimeUnit.MILLISECONDS);
+    StreamingCondition streamingCondition = StreamingCondition.startingFrom(trackingToken);
+
+    MessageStream<EventMessage<?>> eventStream = streamableEventSource.open(streamingCondition);
+    // Process the event stream as desired...
+}
+```
 
 ## ApplicationConfigurer and Configuration
 
@@ -551,7 +675,8 @@ This section contains two tables:
 | org.axonframework.messaging.unitofwork.DefaultUnitOfWork        | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
 | org.axonframework.messaging.unitofwork.ExecutionResult          | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
 | org.axonframework.messaging.unitofwork.MessageProcessingContext | Made obsolete through the rewrite of the `UnitOfWork` (see [Unit of Work](#unit-of-work))                                                      |
-| org.axonframework.eventsourcing.eventstore.AbstractEventStore   | Made obsolete through the rewrite of the `EventStore`.                                                                                         |
+| org.axonframework.eventsourcing.eventstore.AbstractEventStore   | Made obsolete through the rewrite of the `EventStore` (see [Event Store](#event-store).                                                        |
+| org.axonframework.modelling.command.AggregateLifecycle          | Made obsolete through the rewrite of the `EventStore` (see [Event Store](#event-store).                                                        |
 
 ## Method Signature Changes
 
@@ -601,17 +726,22 @@ This section contains three subsections, called:
 | `Repository#newInstance(Callable<T>)`                                | `Repository#persist(ID, T, ProcessingContext)`             | 
 | `Repository#load(String)`                                            | `Repository#load(ID, ProcessingContext)`                   | 
 | `Repository#loadOrCreate(String, Callable<T>)`                       | `Repository#loadOrCreate(ID, ProcessingContext)`           | 
+| `EventStore#readEvents(String)`                                      | `EventStoreTransaction#source(SourcingCondition)`          | 
 
 ### Removed Methods and Constructors
 
-| Constructor / Method                                                                                | Why                                                                                      | 
-|-----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`                            | Initialize is now replace fully by start and shutdown handlers.                          |
-| `org.axonframework.config.ModuleConfiguration#unwrap()`                                             | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant.          |
-| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                                     | Only use by `unwrap()` that's also removed.                                              |
-| `org.axonframework.config.Configuration#lifecycleRegistry()`                                        | A round about way to support life cycle handler registration.                            |
-| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`                         | Fully replaced by start and shutdown handler registration.                               |
-| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)`                     | Each Configurer now has get optional operation replacing this functionality.             |
-| `org.axonframework.messaging.StreamableMessageSource#createTokenSince(Duration)`                    | Can be replaced by the user with an `StreamableEventSource#tokenAt(Instant)` invocation. |
-| `org.axonframework.modelling.command.Repository#load(String, Long)`                                 | Leftover behavior to support aggregate validation on subsequent invocations.             |
-| `org.axonframework.modelling.command.Repository#newInstance(Callable<T>, Consumer<Aggregate<T>>)`   | No longer necessary with replacement `Repository#persist(ID, T, ProcessingContext)`      |
+| Constructor / Method                                                                              | Why                                                                                      | 
+|---------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| `org.axonframework.config.ModuleConfiguration#initialize(Configuration)`                          | Initialize is now replace fully by start and shutdown handlers.                          |
+| `org.axonframework.config.ModuleConfiguration#unwrap()`                                           | Unwrapping never reached its intended use in AF3 and AF4 and is thus redundant.          |
+| `org.axonframework.config.ModuleConfiguration#isType(Class<?>)`                                   | Only use by `unwrap()` that's also removed.                                              |
+| `org.axonframework.config.Configuration#lifecycleRegistry()`                                      | A round about way to support life cycle handler registration.                            |
+| `org.axonframework.config.Configurer#onInitialize(Consumer<Configuration>)`                       | Fully replaced by start and shutdown handler registration.                               |
+| `org.axonframework.config.Configurer#defaultComponent(Class<T>, Configuration)`                   | Each Configurer now has get optional operation replacing this functionality.             |
+| `org.axonframework.messaging.StreamableMessageSource#createTokenSince(Duration)`                  | Can be replaced by the user with an `StreamableEventSource#tokenAt(Instant)` invocation. |
+| `org.axonframework.modelling.command.Repository#load(String, Long)`                               | Leftover behavior to support aggregate validation on subsequent invocations.             |
+| `org.axonframework.modelling.command.Repository#newInstance(Callable<T>, Consumer<Aggregate<T>>)` | No longer necessary with replacement `Repository#persist(ID, T, ProcessingContext)`.     |
+| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String)`                        | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).     | 
+| `org.axonframework.eventsourcing.eventstore.EventStore#readEvents(String, long)`                  | Replaced for the `EventStoreTransaction` (see [appending events](#appending-events).     | 
+| `org.axonframework.eventsourcing.eventstore.EventStore#storeSnapshot(DomainEventMessage<?>)`      | Replaced for a dedicated `SnapshotStore`.                                                |
+| `org.axonframework.eventsourcing.eventstore.EventStore#lastSequenceNumberFor(String)`             | No longer necessary to support through the introduction of DCB.                          |
