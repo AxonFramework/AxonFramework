@@ -31,53 +31,53 @@ import java.util.function.Consumer;
  */
 public abstract class DelegatingModule implements Module {
 
-    private final Module delegate;
-    private final String name;
-
-    /**
-     * Construct a base module with the given {@code name}.
-     *
-     * @param name The name of this module. Must not be {@code null}.
-     */
-    protected DelegatingModule(@Nonnull String name) {
-        Assert.nonEmpty(name, "The Module name cannot be null or empty.");
-        this.name = name;
-        this.componentRegistry = new DefaultComponentRegistry();
-    }
-
-    @Override
-    public String name() {
-        return this.name;
-    }
-
-    @Override
-    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
-        return postProcessConfiguration(componentRegistry.buildNested(parent, lifecycleRegistry));
-    }
-
-    /**
-     * Method that can be overridden to specify specific actions that need to be taken after the configuration for this
-     * module is constructed.
-     * <p>
-     * The default implementation returns the configuration unchanged.
-     *
-     * @param moduleConfiguration The configuration for this module.
-     */
-    @SuppressWarnings("unused")
-    protected Configuration postProcessConfiguration(Configuration moduleConfiguration) {
-        return moduleConfiguration;
-    }
-
-    /**
-     * Executes the given {@code registryAction} on the {@link ComponentRegistry} associated with this module.
-     *
-     * @param registryAction The action to perform on the component registry.
-     * @return This instance for fluent interfacing.
-     */
-    public S componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
-        Objects.requireNonNull(registryAction, "The registryAction must be null.")
-               .accept(this.componentRegistry);
-        //noinspection unchecked
-        return (S) this;
-    }
+//    private final Module delegate;
+//    private final String name;
+//
+//    /**
+//     * Construct a base module with the given {@code name}.
+//     *
+//     * @param name The name of this module. Must not be {@code null}.
+//     */
+//    protected DelegatingModule(@Nonnull String name) {
+//        Assert.nonEmpty(name, "The Module name cannot be null or empty.");
+//        this.name = name;
+//        this.componentRegistry = new DefaultComponentRegistry();
+//    }
+//
+//    @Override
+//    public String name() {
+//        return this.name;
+//    }
+//
+//    @Override
+//    public Configuration build(@Nonnull Configuration parent, @Nonnull LifecycleRegistry lifecycleRegistry) {
+//        return postProcessConfiguration(componentRegistry.buildNested(parent, lifecycleRegistry));
+//    }
+//
+//    /**
+//     * Method that can be overridden to specify specific actions that need to be taken after the configuration for this
+//     * module is constructed.
+//     * <p>
+//     * The default implementation returns the configuration unchanged.
+//     *
+//     * @param moduleConfiguration The configuration for this module.
+//     */
+//    @SuppressWarnings("unused")
+//    protected Configuration postProcessConfiguration(Configuration moduleConfiguration) {
+//        return moduleConfiguration;
+//    }
+//
+//    /**
+//     * Executes the given {@code registryAction} on the {@link ComponentRegistry} associated with this module.
+//     *
+//     * @param registryAction The action to perform on the component registry.
+//     * @return This instance for fluent interfacing.
+//     */
+//    public S componentRegistry(@Nonnull Consumer<ComponentRegistry> registryAction) {
+//        Objects.requireNonNull(registryAction, "The registryAction must be null.")
+//               .accept(this.componentRegistry);
+//        //noinspection unchecked
+//        return (S) this;
+//    }
 }
