@@ -54,8 +54,7 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
     }
 
     /**
-     * Starts building a new resolver and registers the first payload type
-     * with a custom resolver.
+     * Starts building a new resolver and registers the first payload type with a custom resolver.
      *
      * @param payloadType The class to register the resolver for
      * @param resolver    The resolver that resolves the payload type class to a {@link MessageType}
@@ -68,8 +67,7 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
     }
 
     /**
-     * Starts building a new resolver and registers the first payload type
-     * with a fixed message type.
+     * Starts building a new resolver and registers the first payload type with a fixed message type.
      *
      * @param payloadType The class to register the fixed message type for
      * @param messageType The message type to use for the given payload type
@@ -82,13 +80,13 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
     @Override
     public MessageType resolve(Class<?> payloadType) {
         var resolver = resolvers.get(payloadType);
-        if (resolver == null) {
-            if (defaultResolver != null) {
-                return defaultResolver.resolve(payloadType);
-            }
+        if (resolver != null) {
+            return resolver.resolve(payloadType);
+        }
+        if (defaultResolver == null) {
             throw new IllegalArgumentException("No resolver found for payload type [" + payloadType.getName() + "]");
         }
-        return resolver.resolve(payloadType);
+        return defaultResolver.resolve(payloadType);
     }
 
     /**
