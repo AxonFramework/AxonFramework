@@ -65,5 +65,5 @@ public @interface InjectEntity {
      *
      * @return The {@link EntityIdResolver} to resolve the identifier of the model to inject.
      */
-    Class<? extends EntityIdResolver<?>> idResolver() default AnnotationBasedEntityIdResolver.class;
+    Class<? extends EntityIdResolver> idResolver() default AnnotationBasedEntityIdResolver.class;
 }
