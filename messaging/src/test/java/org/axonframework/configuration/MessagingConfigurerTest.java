@@ -26,6 +26,8 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
+import org.axonframework.messaging.LambdaBasedMessageTypeResolver;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
@@ -84,6 +86,18 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
         Optional<QueryUpdateEmitter> queryUpdateEmitter = result.getOptionalComponent(QueryUpdateEmitter.class);
         assertTrue(queryUpdateEmitter.isPresent());
         assertInstanceOf(SimpleQueryUpdateEmitter.class, queryUpdateEmitter.get());
+    }
+
+    @Test
+    void registerMessageTypeResolverOverridesDefault() {
+        MessageTypeResolver expected = LambdaBasedMessageTypeResolver
+                .on(String.class, __ -> new MessageType("test.message.", "1.0.0"))
+                .onUnknownFail();
+
+        Configuration result = testSubject.registerMessageTypeResolver(c -> expected)
+                                          .build();
+
+        assertEquals(expected, result.getComponent(MessageTypeResolver.class));
     }
 
     @Test
