@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2022. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import javax.annotation.Nonnull;
  *
  * @author Allard Buijze
  * @see DefaultCommandGateway
- * @since 2.0
+ * @since 2.0.0
  */
 public interface CommandGateway extends MessageDispatchInterceptorSupport<CommandMessage<?>> {
 
@@ -56,11 +56,16 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
     <C, R> void send(@Nonnull C command, @Nonnull CommandCallback<? super C, ? super R> callback);
 
     /**
-     * Sends the given {@code command} and wait for it to execute. The result of the execution is returned when
-     * available. This method will block indefinitely, until a result is available, or until the thread is interrupted.
-     * When the thread is interrupted, this method returns {@code null}. If command execution resulted in an exception,
-     * it is wrapped in a {@link CommandExecutionException}. If command dispatching failed,
-     * {@link CommandDispatchException} is thrown instead.
+     * Sends the given {@code command} and wait for it to execute.
+     * <p>
+     * The result of the execution is returned when available. If the command handling method returns any
+     * {@code Object}, that {@code Object} will be the result from invoking this {@code sendAndWait} operation. If the
+     * command handling method returns {@code void}, that means the result of invoking this operation is {@code null}.
+     * <p>
+     * This method will block indefinitely, until a result is available, or until the thread is interrupted. When the
+     * thread is interrupted, this method returns {@code null}. If command execution resulted in an exception, it is
+     * wrapped in a {@link CommandExecutionException}. If command dispatching failed, {@link CommandDispatchException}
+     * is thrown instead.
      * <p/>
      * The given {@code command} is wrapped as the payload of the {@link CommandMessage} that is eventually posted on
      * the {@link org.axonframework.commandhandling.CommandBus}, unless the {@code command} already implements
@@ -79,11 +84,16 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
     <R> R sendAndWait(@Nonnull Object command);
 
     /**
-     * Sends the given {@code command} with the given {@code metaData} and wait for it to execute. The result of the
-     * execution is returned when available. This method will block indefinitely, until a result is available, or until
-     * the thread is interrupted. When the thread is interrupted, this method returns {@code null}. If command execution
-     * resulted in an exception, it is wrapped in a {@link CommandExecutionException}. If command dispatching failed,
-     * {@link CommandDispatchException} is thrown instead.
+     * Sends the given {@code command} with the given {@code metaData} and wait for it to execute.
+     * <p>
+     * The result of the execution is returned when available. If the command handling method returns any
+     * {@code Object}, that {@code Object} will be the result from invoking this {@code sendAndWait} operation. If the
+     * command handling method returns {@code void}, that means the result of invoking this operation is {@code null}.
+     * <p>
+     * This method will block indefinitely, until a result is available, or until the thread is interrupted. When the
+     * thread is interrupted, this method returns {@code null}. If command execution resulted in an exception, it is
+     * wrapped in a {@link CommandExecutionException}. If command dispatching failed, {@link CommandDispatchException}
+     * is thrown instead.
      * <p/>
      * The given {@code command} and {@code metaData} are wrapped as the payload of the {@link CommandMessage} that is
      * eventually posted on the {@link org.axonframework.commandhandling.CommandBus}, unless the {@code command} already
@@ -105,12 +115,16 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
     }
 
     /**
-     * Sends the given {@code command} and wait for it to execute. The result of the execution is returned when
-     * available. This method will block until a result is available, or the given {@code timeout} was reached, or until
-     * the thread is interrupted. When the timeout is reached or the thread is interrupted, this method returns
-     * {@code null}. If command execution resulted in an exception, it is wrapped in a
-     * {@link CommandExecutionException}. If command dispatching failed, {@link CommandDispatchException} is thrown
-     * instead.
+     * Sends the given {@code command} and wait for it to execute.
+     * <p>
+     * The result of the execution is returned when available. If the command handling method returns any
+     * {@code Object}, that {@code Object} will be the result from invoking this {@code sendAndWait} operation. If the
+     * command handling method returns {@code void}, that means the result of invoking this operation is {@code null}.
+     * <p>
+     * This method will block until a result is available, or the given {@code timeout} was reached, or until the thread
+     * is interrupted. When the timeout is reached or the thread is interrupted, this method returns {@code null}. If
+     * command execution resulted in an exception, it is wrapped in a {@link CommandExecutionException}. If command
+     * dispatching failed, {@link CommandDispatchException} is thrown instead.
      * <p/>
      * The given {@code command} is wrapped as the payload of the {@link CommandMessage} that is eventually posted on
      * the {@link org.axonframework.commandhandling.CommandBus}, unless the {@code command} already implements
@@ -131,12 +145,16 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
     <R> R sendAndWait(@Nonnull Object command, long timeout, @Nonnull TimeUnit unit);
 
     /**
-     * Sends the given {@code command} with the given {@code metaData} and wait for it to execute. The result of the
-     * execution is returned when available. This method will block until a result is available, or the given
-     * {@code timeout} was reached, or until the thread is interrupted. When the timeout is reached or the thread is
-     * interrupted, this method returns {@code null}. If command execution resulted in an exception, it is wrapped in a
-     * {@link CommandExecutionException}. If command dispatching failed, {@link CommandDispatchException} is thrown
-     * instead.
+     * Sends the given {@code command} with the given {@code metaData} and wait for it to execute.
+     * <p>
+     * The result of the execution is returned when available. If the command handling method returns any
+     * {@code Object}, that {@code Object} will be the result from invoking this {@code sendAndWait} operation. If the
+     * command handling method returns {@code void}, that means the result of invoking this operation is {@code null}.
+     * <p>
+     * This method will block until a result is available, or the given {@code timeout} was reached, or until the thread
+     * is interrupted. When the timeout is reached or the thread is interrupted, this method returns {@code null}. If
+     * command execution resulted in an exception, it is wrapped in a {@link CommandExecutionException}. If command
+     * dispatching failed, {@link CommandDispatchException} is thrown instead.
      * <p/>
      * The given {@code command} and {@code metaData} are wrapped as the payload of the {@link CommandMessage} that is
      * eventually posted on the {@link org.axonframework.commandhandling.CommandBus}, unless the {@code command} already
@@ -155,7 +173,9 @@ public interface CommandGateway extends MessageDispatchInterceptorSupport<Comman
      * @throws CommandExecutionException When an exception occurred while processing the command.
      * @throws CommandDispatchException  When an exception occurred while dispatching the command.
      */
-    default <R> R sendAndWait(@Nonnull Object command, @Nonnull MetaData metaData, long timeout,
+    default <R> R sendAndWait(@Nonnull Object command,
+                              @Nonnull MetaData metaData,
+                              long timeout,
                               @Nonnull TimeUnit unit) {
         return sendAndWait(GenericCommandMessage.asCommandMessage(command).andMetaData(metaData), timeout, unit);
     }
