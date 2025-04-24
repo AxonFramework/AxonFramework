@@ -214,16 +214,4 @@ class LambdaBasedMessageTypeResolverTest {
         // then
         assertEquals(version, result.version());
     }
-
-    private static class TestEvent {
-        private final String data;
-
-        public TestEvent(String data) {
-            this.data = data;
-        }
-
-        public String getData() {
-            return data;
-        }
-    }
 }
