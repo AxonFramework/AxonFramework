@@ -35,7 +35,7 @@ class LambdaBasedMessageTypeResolverTest {
         MessageType expected = new MessageType("test.string", "1.0.0");
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, cls -> expected)
-                .failByDefault();
+                .onUnknownFail();
 
         // when
         MessageType result = resolver.resolve(String.class);
@@ -49,7 +49,7 @@ class LambdaBasedMessageTypeResolverTest {
         // given
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, cls -> new MessageType("test.string", "1.0.0"))
-                .failByDefault();
+                .onUnknownFail();
 
         // when/then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
@@ -62,7 +62,7 @@ class LambdaBasedMessageTypeResolverTest {
         // given
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, cls -> new MessageType("test.string", "1.0.0"))
-                .useByDefault(new ClassBasedMessageTypeResolver("2.0.0"));
+                .onUnknownUse(new ClassBasedMessageTypeResolver("2.0.0"));
 
         // when
         MessageType result = resolver.resolve(Integer.class);
@@ -78,7 +78,7 @@ class LambdaBasedMessageTypeResolverTest {
         MessageType expectedString = new MessageType("custom.string", "1.0.0");
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, cls -> expectedString)
-                .useByDefault(new ClassBasedMessageTypeResolver("2.0.0"));
+                .onUnknownUse(new ClassBasedMessageTypeResolver("2.0.0"));
 
         // when
         MessageType stringResult = resolver.resolve(String.class);
@@ -97,7 +97,7 @@ class LambdaBasedMessageTypeResolverTest {
                 .on(String.class, cls -> new MessageType("custom.string", "1.0.0"))
                 .on(Integer.class, cls -> new MessageType("custom.int", "2.0.0"))
                 .on(Double.class, cls -> new MessageType("custom.double", "3.0.0"))
-                .failByDefault();
+                .onUnknownFail();
 
         // when
         MessageType stringResult = resolver.resolve(String.class);
@@ -135,8 +135,8 @@ class LambdaBasedMessageTypeResolverTest {
         var phase2 = phase1
                 .on(Integer.class, cls -> new MessageType("test.integer", "2.0.0"));
 
-        var resolver1 = phase1.failByDefault();
-        var resolver2 = phase2.failByDefault();
+        var resolver1 = phase1.onUnknownFail();
+        var resolver2 = phase2.onUnknownFail();
 
         // then - resolver1 doesn't know about Integer
         assertThrows(IllegalArgumentException.class,
@@ -152,7 +152,7 @@ class LambdaBasedMessageTypeResolverTest {
         // given
         MessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, this::createStringType)
-                .failByDefault();
+                .onUnknownFail();
 
         // when
         MessageType result = resolver.resolve(String.class);
@@ -171,7 +171,7 @@ class LambdaBasedMessageTypeResolverTest {
                     String pkg = cls.getPackageName();
                     return new MessageType(pkg + ".event." + name, "1.0.0");
                 })
-                .failByDefault();
+                .onUnknownFail();
 
         // when
         MessageType result = resolver.resolve(TestEvent.class);
@@ -190,7 +190,7 @@ class LambdaBasedMessageTypeResolverTest {
         // Use a different resolver for String
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, cls -> new MessageType("test.string", "1.0.0"))
-                .failByDefault();
+                .onUnknownFail();
 
         // when
         MessageType result = resolver.resolve(message);
@@ -205,7 +205,7 @@ class LambdaBasedMessageTypeResolverTest {
         // given
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, cls -> new MessageType("test.string", version))
-                .failByDefault();
+                .onUnknownFail();
 
         // when
         MessageType result = resolver.resolve(String.class);
