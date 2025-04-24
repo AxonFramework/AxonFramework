@@ -131,7 +131,7 @@ class LambdaBasedMessageTypeResolverTest {
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, new MessageType("test.string", "1.0.0"))
                 .on(Integer.class, new MessageType("test.integer", "2.0.0"))
-                .on(Double.class, cls -> new MessageType("test.double", "3.0.0"))
+                .on(Double.class, cls -> new MessageType(cls.getSimpleName(), "3.0.0"))
                 .onUnknownFail();
 
         // when
@@ -146,7 +146,7 @@ class LambdaBasedMessageTypeResolverTest {
         assertEquals("test.integer", intResult.qualifiedName().toString());
         assertEquals("2.0.0", intResult.version());
 
-        assertEquals("test.double", doubleResult.qualifiedName().toString());
+        assertEquals("Double", doubleResult.qualifiedName().toString());
         assertEquals("3.0.0", doubleResult.version());
     }
 
