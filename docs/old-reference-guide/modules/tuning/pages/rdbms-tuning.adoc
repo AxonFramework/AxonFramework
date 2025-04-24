@@ -88,6 +88,10 @@ That is because Axon Framework uses default settings for the `@GeneratedValue` a
 When using the `@GeneratedValue` annotation as-is in Hibernate 6, the default increment value jumped to 50.
 This change, in combination with, for example, the xref:multitenancy-extension-reference::index.adoc[multitenancy] extension, may lead to uniqueness issues.
 Hence, it is strongly recommended to define a custom sequence generator, as described below.
+
+Furthermore, if you use Hibernate's xref:https://vladmihalcea.com/hibernate-hidden-gem-the-pooled-lo-optimizer/[pooled optimizer], we suggest to set the `allocation-size` to **1**.
+If this setting is left unchanged, Hibernate will prepare 50 (as per the default) sequences, increasing the change of `globalIndex` gaps when running several application instances.
+Note that this does not resolve the chance of gaps entirely! However, it does make the window of opportunity a lot smaller.
 ====
 
 To override these settings, create a file called `/META-INF/orm.xml` on the classpath, which looks as follows:
@@ -100,7 +104,7 @@ To override these settings, create a file called `/META-INF/orm.xml` on the clas
         <attributes>
             <id name="globalIndex">
                 <generated-value strategy="SEQUENCE" generator="myGenerator"/>
-                <sequence-generator name="myGenerator" sequence-name="mySequence"/>
+                <sequence-generator name="myGenerator" sequence-name="mySequence" allocation-size="1"/>
             </id>
         </attributes>
     </mapped-superclass>
