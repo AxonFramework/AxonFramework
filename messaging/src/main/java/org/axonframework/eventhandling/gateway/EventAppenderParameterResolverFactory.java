@@ -48,7 +48,7 @@ public class EventAppenderParameterResolverFactory implements ParameterResolverF
 
     @Override
     public ParameterResolver<?> createInstance(Executable executable, Parameter[] parameters, int parameterIndex) {
-        if (parameters[parameterIndex].getType().isAssignableFrom(EventAppender.class)) {
+        if (EventAppender.class.isAssignableFrom(parameters[parameterIndex].getType())) {
             return new ParameterResolver<>() {
                 @Override
                 public Object resolveParameterValue(Message<?> message, ProcessingContext processingContext) {
