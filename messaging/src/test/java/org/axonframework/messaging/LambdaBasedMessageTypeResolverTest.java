@@ -30,11 +30,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class LambdaBasedMessageTypeResolverTest {
 
     @Test
-    void shouldResolveRegisteredType() {
+    void shouldResolveRegisteredTypeUsingMessageTypeResolver() {
         // given
         MessageType expected = new MessageType("test.string", "1.0.0");
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
-                .on(String.class, cls -> expected)
+                .on(String.class, payloadType -> expected)
                 .onUnknownFail();
 
         // when
@@ -45,10 +45,43 @@ class LambdaBasedMessageTypeResolverTest {
     }
 
     @Test
-    void shouldThrowExceptionForUnregisteredTypeWithFailByDefault() {
+    void shouldResolveRegisteredTypeUsingFixedMessageType() {
+        // given
+        MessageType expected = new MessageType("test.string", "1.0.0");
+        LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
+                .on(String.class, expected)
+                .onUnknownFail();
+
+        // when
+        MessageType result = resolver.resolve(String.class);
+
+        // then
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void shouldAllowMixingFixedMessageTypesAndResolvers() {
+        // given
+        MessageType fixedType = new MessageType("test.string", "1.0.0");
+        LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
+                .on(String.class, fixedType)
+                .on(Integer.class, payloadType -> new MessageType("test.integer", "2.0.0"))
+                .onUnknownFail();
+
+        // when
+        MessageType stringResult = resolver.resolve(String.class);
+        MessageType intResult = resolver.resolve(Integer.class);
+
+        // then
+        assertEquals(fixedType, stringResult);
+        assertEquals(new MessageType("test.integer", "2.0.0"), intResult);
+    }
+
+    @Test
+    void shouldThrowExceptionForUnregisteredTypeWithOnUnknownFail() {
         // given
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
-                .on(String.class, cls -> new MessageType("test.string", "1.0.0"))
+                .on(String.class, new MessageType("test.string", "1.0.0"))
                 .onUnknownFail();
 
         // when/then
@@ -60,9 +93,10 @@ class LambdaBasedMessageTypeResolverTest {
     @Test
     void shouldUseDefaultResolverForUnregisteredTypes() {
         // given
+        MessageTypeResolver defaultResolver = new ClassBasedMessageTypeResolver("2.0.0");
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
-                .on(String.class, cls -> new MessageType("test.string", "1.0.0"))
-                .onUnknownUse(new ClassBasedMessageTypeResolver("2.0.0"));
+                .on(String.class, new MessageType("test.string", "1.0.0"))
+                .onUnknownUse(defaultResolver);
 
         // when
         MessageType result = resolver.resolve(Integer.class);
@@ -76,9 +110,10 @@ class LambdaBasedMessageTypeResolverTest {
     void shouldPreferRegisteredResolversOverDefaultResolver() {
         // given
         MessageType expectedString = new MessageType("custom.string", "1.0.0");
+        MessageTypeResolver defaultResolver = new ClassBasedMessageTypeResolver("2.0.0");
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
-                .on(String.class, cls -> expectedString)
-                .onUnknownUse(new ClassBasedMessageTypeResolver("2.0.0"));
+                .on(String.class, expectedString)
+                .onUnknownUse(defaultResolver);
 
         // when
         MessageType stringResult = resolver.resolve(String.class);
@@ -94,9 +129,9 @@ class LambdaBasedMessageTypeResolverTest {
     void shouldAllowChainedRegistration() {
         // given
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
-                .on(String.class, cls -> new MessageType("custom.string", "1.0.0"))
-                .on(Integer.class, cls -> new MessageType("custom.int", "2.0.0"))
-                .on(Double.class, cls -> new MessageType("custom.double", "3.0.0"))
+                .on(String.class, new MessageType("test.string", "1.0.0"))
+                .on(Integer.class, new MessageType("test.integer", "2.0.0"))
+                .on(Double.class, cls -> new MessageType("test.double", "3.0.0"))
                 .onUnknownFail();
 
         // when
@@ -105,13 +140,13 @@ class LambdaBasedMessageTypeResolverTest {
         MessageType doubleResult = resolver.resolve(Double.class);
 
         // then
-        assertEquals("custom.string", stringResult.qualifiedName().toString());
+        assertEquals("test.string", stringResult.qualifiedName().toString());
         assertEquals("1.0.0", stringResult.version());
 
-        assertEquals("custom.int", intResult.qualifiedName().toString());
+        assertEquals("test.integer", intResult.qualifiedName().toString());
         assertEquals("2.0.0", intResult.version());
 
-        assertEquals("custom.double", doubleResult.qualifiedName().toString());
+        assertEquals("test.double", doubleResult.qualifiedName().toString());
         assertEquals("3.0.0", doubleResult.version());
     }
 
@@ -120,8 +155,8 @@ class LambdaBasedMessageTypeResolverTest {
         // when/then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                                                           () -> LambdaBasedMessageTypeResolver
-                                                                  .on(String.class, cls -> new MessageType("first"))
-                                                                  .on(String.class, cls -> new MessageType("second")));
+                                                                  .on(String.class, new MessageType("first"))
+                                                                  .on(String.class, new MessageType("second")));
 
         assertEquals("A resolver is already registered for payload type [java.lang.String]", exception.getMessage());
     }
@@ -130,10 +165,10 @@ class LambdaBasedMessageTypeResolverTest {
     void shouldCreateImmutablePhaseInstances() {
         // given
         var phase1 = LambdaBasedMessageTypeResolver
-                .on(String.class, cls -> new MessageType("test.string", "1.0.0"));
+                .on(String.class, new MessageType("test.string", "1.0.0"));
 
         var phase2 = phase1
-                .on(Integer.class, cls -> new MessageType("test.integer", "2.0.0"));
+                .on(Integer.class, new MessageType("test.integer", "2.0.0"));
 
         var resolver1 = phase1.onUnknownFail();
         var resolver2 = phase2.onUnknownFail();
@@ -148,40 +183,6 @@ class LambdaBasedMessageTypeResolverTest {
     }
 
     @Test
-    void shouldHandleMethodReferencesAsResolvers() {
-        // given
-        MessageTypeResolver resolver = LambdaBasedMessageTypeResolver
-                .on(String.class, this::createStringType)
-                .onUnknownFail();
-
-        // when
-        MessageType result = resolver.resolve(String.class);
-
-        // then
-        assertEquals("test.string.methodref", result.qualifiedName().toString());
-        assertEquals("ref-version", result.version());
-    }
-
-    @Test
-    void shouldUtilizeClassInfoInResolvers() {
-        // given
-        LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
-                .on(TestEvent.class, cls -> {
-                    String name = cls.getSimpleName();
-                    String pkg = cls.getPackageName();
-                    return new MessageType(pkg + ".event." + name, "1.0.0");
-                })
-                .onUnknownFail();
-
-        // when
-        MessageType result = resolver.resolve(TestEvent.class);
-
-        // then
-        assertEquals("org.axonframework.messaging.event.TestEvent", result.qualifiedName().toString());
-        assertEquals("1.0.0", result.version());
-    }
-
-    @Test
     void shouldRetrieveOriginalMessageTypeFromMessage() {
         // given
         MessageType originalType = new MessageType("test.original", "original-version");
@@ -189,7 +190,7 @@ class LambdaBasedMessageTypeResolverTest {
 
         // Use a different resolver for String
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
-                .on(String.class, cls -> new MessageType("test.string", "1.0.0"))
+                .on(String.class, new MessageType("test.string", "1.0.0"))
                 .onUnknownFail();
 
         // when
@@ -204,7 +205,7 @@ class LambdaBasedMessageTypeResolverTest {
     void shouldWorkWithDifferentVersionFormats(String version) {
         // given
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
-                .on(String.class, cls -> new MessageType("test.string", version))
+                .on(String.class, new MessageType("test.string", version))
                 .onUnknownFail();
 
         // when
@@ -212,10 +213,6 @@ class LambdaBasedMessageTypeResolverTest {
 
         // then
         assertEquals(version, result.version());
-    }
-
-    private MessageType createStringType(Class<?> cls) {
-        return new MessageType("test.string.methodref", "ref-version");
     }
 
     private static class TestEvent {

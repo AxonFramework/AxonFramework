@@ -54,17 +54,29 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
     }
 
     /**
-     * Entry point for the fluent API. Starts building a new resolver and registers the first payload type.
+     * Starts building a new resolver and registers the first payload type
+     * with a custom resolver.
      *
-     * @param <T>         The type of payload
      * @param payloadType The class to register the resolver for
-     * @param resolver    The function that resolves the payload type class to a {@link MessageType}
+     * @param resolver    The resolver that resolves the payload type class to a {@link MessageType}
      * @return The type resolver phase for further configuration
      */
-    public static <T> TypeResolverPhase on(Class<T> payloadType, MessageTypeResolver resolver) {
+    public static TypeResolverPhase on(Class<?> payloadType, MessageTypeResolver resolver) {
         Map<Class<?>, MessageTypeResolver> initialResolvers = new HashMap<>();
         initialResolvers.put(payloadType, resolver);
         return new InternalTypeResolverPhase(initialResolvers, null);
+    }
+
+    /**
+     * Starts building a new resolver and registers the first payload type
+     * with a fixed message type.
+     *
+     * @param payloadType The class to register the fixed message type for
+     * @param messageType The message type to use for the given payload type
+     * @return The type resolver phase for further configuration
+     */
+    public static TypeResolverPhase on(Class<?> payloadType, MessageType messageType) {
+        return on(payloadType, payloadType1 -> messageType);
     }
 
     @Override
@@ -88,11 +100,23 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
          * Registers a resolver that returns a {@link MessageType} for the given payload type.
          *
          * @param payloadType The class to register the resolver for
-         * @param resolver    The function that resolves the payload type class to a {@link MessageType}
+         * @param resolver    The resolver that produces a {@link MessageType} for the given payload type
          * @return The current phase for further configuration
          * @throws IllegalArgumentException if a resolver is already registered for the given payload type
          */
-         TypeResolverPhase on(Class<?> payloadType, MessageTypeResolver resolver);
+        TypeResolverPhase on(Class<?> payloadType, MessageTypeResolver resolver);
+
+        /**
+         * Registers a fixed {@link MessageType} for the given payload type.
+         *
+         * @param payloadType The class to register the fixed message type for
+         * @param messageType The message type to use for the given payload type
+         * @return The current phase for further configuration
+         * @throws IllegalArgumentException if a resolver is already registered for the given payload type
+         */
+        default TypeResolverPhase on(Class<?> payloadType, MessageType messageType) {
+            return on(payloadType, __ -> messageType);
+        }
 
         /**
          * Configures the resolver to throw an exception when no specific resolver is found for a payload type. This is
