@@ -19,6 +19,7 @@ package org.axonframework.configuration;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.eventhandling.EventSink;
+import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.queryhandling.QueryBus;
 import org.axonframework.queryhandling.QueryUpdateEmitter;
@@ -106,6 +107,23 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     }
 
     /**
+     * Registers the given {@link MessageTypeResolver} factory in this {@code Configurer}. This is the global
+     * {@link MessageTypeResolver}, those mappings can be accessed by all Modules and Components within the application.
+     * <p>
+     * The {@code commandBusFactory} receives the {@link Configuration} as input and is expected to return a
+     * {@link MessageTypeResolver} instance.
+     *
+     * @param messageTypeResolverFactory The factory building the {@link MessageTypeResolver}.
+     * @return The current instance of the {@code Configurer} for a fluent API.
+     */
+    public MessagingConfigurer registerMessageTypeResolver(
+            @Nonnull ComponentFactory<MessageTypeResolver> messageTypeResolverFactory) {
+        applicationConfigurer.componentRegistry(cr -> cr
+                .registerComponent(MessageTypeResolver.class, messageTypeResolverFactory));
+        return this;
+    }
+
+    /**
      * Registers the given {@link CommandBus} factory in this {@code Configurer}.
      * <p>
      * The {@code commandBusFactory} receives the {@link Configuration} as input and is expected to return a
@@ -150,8 +168,8 @@ public class MessagingConfigurer implements ApplicationConfigurer {
     /**
      * Registers the given {@link ParameterResolverFactory} factory in this {@code Configurer}.
      * <p>
-     * The {@code parameterResolverFactoryFactory} receives the {@link Configuration} as input and is expected to
-     * return a {@link ParameterResolverFactory} instance.
+     * The {@code parameterResolverFactoryFactory} receives the {@link Configuration} as input and is expected to return
+     * a {@link ParameterResolverFactory} instance.
      *
      * @param parameterResolverFactoryFactory The factory building the {@link ParameterResolverFactory}.
      * @return The current instance of the {@code Configurer} for a fluent API.
