@@ -19,6 +19,7 @@ package org.axonframework.modelling.entity.child;
 import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.common.Assert;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
@@ -26,26 +27,28 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.EntityModel;
 
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
+/**
+ * An {@link EntityChildModel} that handles commands and events for a single child entity. It will use the provided
+ * {@link ChildEntityFieldDefinition} to resolve the child entity from the parent entity. Once the entity is resolved,
+ * it will delegate the command- and event-handling to the child entity model.
+ * <p>
+ * If the child entity is not present in the parent entity, an {@link IllegalArgumentException} will be thrown.
+ *
+ * @param <C> The type of the child entity.
+ * @param <P> The type of the parent entity.
+ * @author Mitchell Herrijgers
+ * @since 5.0.0
+ */
 public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
 
-    private final Class<P> parentClass;
     private final EntityModel<C> childEntityModel;
-    private final Function<P, C> childEntityResolver;
-    private final BiFunction<P, C, P> parentEntityEvolver;
+    private final ChildEntityFieldDefinition<P, C> childEntityFieldDefinition;
 
-    private SingleEntityChildModel(
-            Class<P> parentclass,
-            EntityModel<C> childEntityModel,
-            Function<P, C> childEntityResolver,
-            BiFunction<P, C, P> parentEntityEvolver
-    ) {
-        this.parentClass = parentclass;
+    private SingleEntityChildModel(EntityModel<C> childEntityModel,
+                                   ChildEntityFieldDefinition<P, C> childEntityFieldDefinition) {
         this.childEntityModel = childEntityModel;
-        this.childEntityResolver = childEntityResolver;
-        this.parentEntityEvolver = parentEntityEvolver;
+        this.childEntityFieldDefinition = childEntityFieldDefinition;
     }
 
     public Set<QualifiedName> supportedCommands() {
@@ -55,18 +58,19 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
 
     @Override
     public P evolve(@Nonnull P entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
-        C childEntity = childEntityResolver.apply(entity);
+        C childEntity = childEntityFieldDefinition.getChildEntities(entity);
         if (childEntity != null) {
             C evolvedEntity = childEntityModel.evolve(childEntity, event, context);
-            return parentEntityEvolver.apply(entity, evolvedEntity);
+            return childEntityFieldDefinition.evolveParentBasedOnChildEntities(entity, evolvedEntity);
         }
         return entity;
     }
+
     @Override
     public MessageStream.Single<? extends CommandResultMessage<?>> handle(CommandMessage<?> message,
                                                                           P entity,
                                                                           ProcessingContext context) {
-        C childEntity = childEntityResolver.apply(entity);
+        C childEntity = childEntityFieldDefinition.getChildEntities(entity);
         if (childEntity == null) {
             throw new IllegalArgumentException(
                     "No child entity found for command " + message.type().qualifiedName()
@@ -81,42 +85,67 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
         return childEntityModel.entityType();
     }
 
+    /**
+     * Creates a new {@link Builder} for the given parent class and child entity model. The
+     * {@link ChildEntityFieldDefinition} is required to resolve the child entity from the parent entity and evolve the
+     * parent entity based on the child entities. events.
+     *
+     * @param parentClass The class of the parent entity.
+     * @param entityModel The {@link EntityModel} of the child entity.
+     * @param <C>         The type of the child entity.
+     * @param <P>         The type of the parent entity.
+     * @return A new {@link Builder} for the given parent class and child entity model.
+     */
     public static <C, P> Builder<C, P> forEntityClass(Class<P> parentClass,
-                                                        EntityModel<C> childEntityModel) {
-        return new Builder<>(parentClass, childEntityModel);
+                                                      EntityModel<C> entityModel) {
+        return new Builder<>(parentClass, entityModel);
     }
 
 
+    /**
+     * Builder for creating a {@link SingleEntityChildModel} for the given parent class and child entity model. The
+     * {@link ChildEntityFieldDefinition} is required to resolve the child entities from the parent entity and evolve
+     * the parent entity based on the child entities. T
+     *
+     * @param <C> The type of the child entity.
+     * @param <P> The type of the parent entity.
+     */
     public static class Builder<C, P> {
 
-        private final Class<P> parentClass;
         private final EntityModel<C> childEntityModel;
-        private Function<P, C> childEntityResolver;
-        private BiFunction<P, C, P> parentEntityEvolver;
+        private ChildEntityFieldDefinition<P, C> childEntityFieldDefinition;
 
-        private Builder(Class<P> parentClass,
-                        EntityModel<C> childEntityModel
+        @SuppressWarnings("unused") // Uses for generics
+        private Builder(@Nonnull Class<P> parentClass,
+                        @Nonnull EntityModel<C> childEntityModel
         ) {
-            this.parentClass = parentClass;
             this.childEntityModel = childEntityModel;
         }
 
-        public Builder<C, P> childEntityResolver(Function<P, C> childEntityResolver) {
-            this.childEntityResolver = childEntityResolver;
+        /**
+         * Sets the {@link ChildEntityFieldDefinition} to use for resolving the child entity from the parent entity and
+         * evolving the parent entity based on the evolved child entity.
+         *
+         * @param fieldDefinition The {@link ChildEntityFieldDefinition} to use for resolving the child entities from
+         *                        the parent entity
+         * @return This builder instance.
+         */
+        public Builder<C, P> childEntityFieldDefinition(ChildEntityFieldDefinition<P, C> fieldDefinition) {
+            this.childEntityFieldDefinition = fieldDefinition;
             return this;
         }
 
-        public Builder<C, P> parentEntityEvolver(
-                BiFunction<P, C, P> parentEntityEvolver) {
-            this.parentEntityEvolver = parentEntityEvolver;
-            return this;
-        }
-
+        /**
+         * Builds a new {@link SingleEntityChildModel} instance with the configured properties. The
+         * {@link ChildEntityFieldDefinition} is required to be set before calling this method.
+         *
+         * @return A new {@link SingleEntityChildModel} instance with the configured properties.
+         */
         public SingleEntityChildModel<C, P> build() {
-            return new SingleEntityChildModel<>(parentClass,
-                                                childEntityModel,
-                                                childEntityResolver,
-                                                parentEntityEvolver);
+            Assert.notNull(childEntityFieldDefinition, () -> "Child entity field definition is required");
+            return new SingleEntityChildModel<>(childEntityModel,
+                                                childEntityFieldDefinition
+            );
         }
     }
 }

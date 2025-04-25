@@ -23,9 +23,27 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.configuration.MessageHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
+/**
+ * Functional interface describing a handler of a {@link CommandMessage} that gets passed in the relevant entity to make
+ * a decision. This is typically used in the context of an {@link EntityModel} where the entity is passed to the handler
+ * to allow for more complex command handling logic.
+ *
+ * @param <E> The type of the entity.
+ * @author Mitchell Herrijgers
+ * @see EntityModel
+ * @since 5.0.0
+ */
 @FunctionalInterface
 public interface EntityCommandHandler<E> extends MessageHandler {
 
+    /**
+     * Handles the given {@link CommandMessage} for the given {@code entity}.
+     *
+     * @param command The {@link CommandMessage} to handle.
+     * @param entity  The entity instance to handle the command for.
+     * @param context The {@link ProcessingContext} for the command.
+     * @return The result of the command handling, which may be a {@link CommandResultMessage} or an error message.
+     */
     @Nonnull
     MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
                                                                    @Nonnull E entity,

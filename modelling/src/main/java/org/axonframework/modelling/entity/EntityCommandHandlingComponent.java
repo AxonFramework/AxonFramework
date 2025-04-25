@@ -28,21 +28,40 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.EntityIdResolver;
 import org.axonframework.modelling.repository.Repository;
 
+import java.util.Objects;
 import java.util.Set;
 
+/**
+ * A {@link CommandHandlingComponent} that handles commands for an entity. It will resolve the identifier of the entity
+ * through the provided {@link EntityIdResolver}, load if from the provided {@link Repository} and delegate the handling
+ * of the command to the {@link EntityModel} of the entity.
+ *
+ * @param <ID> The type of the identifier of the entity.
+ * @param <E>  The type of the entity.
+ * @author Mitchell Herrijgers
+ * @since 5.0.0
+ */
 public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingComponent, DescribableComponent {
 
-    private Repository<ID, E> repository;
-    private EntityModel<E> entityModel;
-    private EntityIdResolver<ID> idResolver;
+    private final Repository<ID, E> repository;
+    private final EntityModel<E> entityModel;
+    private final EntityIdResolver<ID> idResolver;
 
-    public EntityCommandHandlingComponent(Repository<ID, E> repository,
-                                          EntityModel<E> entityModel,
-                                          EntityIdResolver<ID> idResolver
+    /**
+     * Creates a new {@link EntityCommandHandlingComponent} that handles commands for the given entity type.
+     *
+     * @param repository  The {@link Repository} to load the entity from.
+     * @param entityModel The {@link EntityModel} to delegate the handling of the command to.
+     * @param idResolver  The {@link EntityIdResolver} to resolve the identifier of the entity.
+     */
+    public EntityCommandHandlingComponent(
+            @Nonnull Repository<ID, E> repository,
+            @Nonnull EntityModel<E> entityModel,
+            @Nonnull EntityIdResolver<ID> idResolver
     ) {
-        this.repository = repository;
-        this.entityModel = entityModel;
-        this.idResolver = idResolver;
+        this.repository = Objects.requireNonNull(repository, "repository may not be null");
+        this.entityModel = Objects.requireNonNull(entityModel, "entityModel may not be null");
+        this.idResolver = Objects.requireNonNull(idResolver, "idResolver may not be null");
     }
 
     @Override

@@ -45,6 +45,7 @@ import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
 import org.axonframework.modelling.entity.EntityModel;
 import org.axonframework.modelling.entity.PolymorphicEntityModel;
 import org.axonframework.modelling.entity.SimpleEntityModel;
+import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.ListEntityChildModel;
 import org.axonframework.modelling.entity.child.SingleEntityChildModel;
 
@@ -102,11 +103,9 @@ public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSui
                                 }))
                 .addChild(ListEntityChildModel
                                   .forEntityModel(Employee.class, taskModel)
-                                  .childEntityResolver(Employee::getTaskList)
-                                  .parentEntityEvolver((e, t) -> {
-                                      e.setTaskList(t);
-                                      return e;
-                                  })
+                                  .childEntityFieldDefinition(ChildEntityFieldDefinition.forGetterSetter(
+                                          Employee::getTaskList, Employee::setTaskList
+                                  ))
                                   .commandTargetMatcher((task, commandMessage) -> {
                                       if (commandMessage.getPayload() instanceof CompleteTaskCommand assignTaskCommand) {
                                           return task.getTaskId()
@@ -125,13 +124,9 @@ public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSui
                 )
                 .addChild(SingleEntityChildModel
                                   .forEntityClass(Employee.class, salaryInformationModel)
-                                  .childEntityResolver(Employee::getSalary)
-                                  .parentEntityEvolver(
-                                          (e, s) -> {
-                                              e.setSalary(s);
-                                              return e;
-                                          }
-                                  )
+                                  .childEntityFieldDefinition(ChildEntityFieldDefinition.forFieldName(
+                                          Employee.class, "salary"
+                                  ))
                                   .build()
                 )
                 .build();
@@ -149,9 +144,9 @@ public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSui
                 .build();
 
         EntityModel<Person> personModel = PolymorphicEntityModel
-                .forAbstractEntityClass(Person.class)
-                .addPolymorphicModel(employeeModel)
-                .addPolymorphicModel(customerModel)
+                .forSuperType(Person.class)
+                .addConcreteType(employeeModel)
+                .addConcreteType(customerModel)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(Person.class))
                 .commandHandler(typeResolver.resolve(ChangeEmailAddress.class).qualifiedName(),
                                 (command, entity, context) -> {

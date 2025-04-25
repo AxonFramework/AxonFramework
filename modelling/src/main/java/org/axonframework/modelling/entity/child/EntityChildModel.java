@@ -22,14 +22,43 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
+import org.axonframework.modelling.entity.EntityModel;
 
 import java.util.Set;
 
+/**
+ * Interface describing a child {@link EntityModel} that can be handled in the context of its parent. Handling commands
+ * for this model is done in the context of the parent. This model resolved the child from its parent, and can then
+ * invoke the child model to handle the command.
+ *
+ * @param <C> The type of the child entity.
+ * @param <P> The type of the parent entity.
+ * @author Mitchell Herrijgers
+ * @since 5.0.0
+ */
 public interface EntityChildModel<C, P> extends EntityEvolver<P> {
 
+    /**
+     * Returns the set of all {@link QualifiedName QualifiedNames} that this model supports for command handlers.
+     *
+     * @return A set of {@link QualifiedName} instances representing the supported command names.
+     */
     Set<QualifiedName> supportedCommands();
 
+    /**
+     * Handles the given {@link CommandMessage} for the given child entity, using the provided parent entity.
+     *
+     * @param message The {@link CommandMessage} to handle.
+     * @param entity  The child entity instance to handle the command for.
+     * @param context The {@link ProcessingContext} for the command.
+     * @return The result of the command handling, which may be a {@link CommandResultMessage} or an error message.
+     */
     MessageStream.Single<? extends CommandResultMessage<?>> handle(CommandMessage<?> message, P entity, ProcessingContext context);
 
+    /**
+     * Returns the {@link Class} of the child entity this model describes.
+     *
+     * @return The {@link Class} of the child entity this model describes.
+     */
     Class<C> entityType();
 }

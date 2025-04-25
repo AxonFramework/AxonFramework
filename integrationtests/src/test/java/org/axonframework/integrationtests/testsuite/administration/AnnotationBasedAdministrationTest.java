@@ -52,8 +52,9 @@ import org.axonframework.modelling.command.EntityId;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
 import org.axonframework.modelling.entity.EntityModel;
 import org.axonframework.modelling.entity.EntityModelBuilder;
+import org.axonframework.modelling.entity.PolyMorphicEntityModelBuilder;
 import org.axonframework.modelling.entity.PolymorphicEntityModel;
-import org.axonframework.modelling.entity.SimpleEntityModel;
+import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.ListEntityChildModel;
 import org.axonframework.modelling.entity.child.SingleEntityChildModel;
 
@@ -145,14 +146,14 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
 
             EntityModelBuilder<E> builder;
             if (collect.isEmpty()) {
-                builder = SimpleEntityModel.forEntityClass(entityType)
-                                                    .entityEvolver(createEntityEvolver(inspected));
+                builder = EntityModel.forEntityType(entityType)
+                                     .entityEvolver(createEntityEvolver(inspected));
             } else {
-                PolymorphicEntityModel.Builder<E> polymorphicBuilder = PolymorphicEntityModel
-                        .forAbstractEntityClass(entityType);
-                polymorphicBuilder.entityEvolver(createEntityEvolver(inspected));
+                PolyMorphicEntityModelBuilder<E> polymorphicBuilder = PolymorphicEntityModel
+                        .forSuperType(entityType)
+                        .entityEvolver(createEntityEvolver(inspected));
                 collect.forEach((subType, model) -> {
-                    polymorphicBuilder.addPolymorphicModel(model);
+                    polymorphicBuilder.addConcreteType(model);
                 });
                 builder = polymorphicBuilder;
             }
@@ -240,11 +241,9 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
                                  builder.addChild(
                                          ListEntityChildModel
                                                  .forEntityModel(entityType, childModel)
-                                                 .childEntityResolver(e -> ReflectionUtils.getFieldValue(field, e))
-                                                 .parentEntityEvolver((e, children) -> {
-                                                     ReflectionUtils.setFieldValue(field, e, children);
-                                                     return e;
-                                                 })
+                                                 .childEntityFieldDefinition(ChildEntityFieldDefinition.forFieldName(
+                                                         entityType, field.getName())
+                                                 )
                                                  .commandTargetMatcher((o, commandMessage) ->
                                                                                forwardingMode.matches(commandMessage,
                                                                                                       o))
@@ -261,11 +260,9 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
                                  builder.addChild(
                                          SingleEntityChildModel
                                                  .forEntityClass(entityType, childModel)
-                                                 .childEntityResolver(e -> ReflectionUtils.getFieldValue(field, e))
-                                                 .parentEntityEvolver((e, children) -> {
-                                                     ReflectionUtils.setFieldValue(field, e, children);
-                                                     return e;
-                                                 })
+                                                 .childEntityFieldDefinition(ChildEntityFieldDefinition.forFieldName(
+                                                         entityType, field.getName())
+                                                 )
                                                  .build()
 
 

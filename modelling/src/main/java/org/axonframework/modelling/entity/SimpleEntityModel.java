@@ -17,6 +17,7 @@
 package org.axonframework.modelling.entity;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -36,39 +37,59 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ *  Simple implementation of the {@link EntityModel} interface. It allows for the definition of command handlers and child entities
+ *  for a given entity type. Optionally, an {@link EntityEvolver} can be provided to evolve the entity state based on events.
+ *  If no {@link EntityEvolver} is provided, state can exclusively be changed through command handlers.
  *
+ * @since 5.0.0
+ * @author Mitchell Herrijgers
+ * @param <E> The type of the entity this model describes.
  */
-@SuppressWarnings("MissingJavadoc")
 public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E> {
 
     private final Class<E> entityType;
     private final Map<Class<?>, EntityChildModel<?, E>> children = new HashMap<>();
     private final Map<QualifiedName, EntityCommandHandler<E>> commandHandlers = new HashMap<>();
     private final EntityEvolver<E> entityEvolver;
+    private final Set<QualifiedName> supportedCommandNames = new HashSet<>();
 
-    private SimpleEntityModel(Class<E> entityType,
-                              Map<QualifiedName, EntityCommandHandler<E>> commandHandlers,
-                              List<EntityChildModel<?, E>> children, EntityEvolver<E> entityEvolver) {
+    private SimpleEntityModel(@Nonnull Class<E> entityType,
+                              @Nonnull Map<QualifiedName, EntityCommandHandler<E>> commandHandlers,
+                              @Nonnull List<EntityChildModel<?, E>> children,
+                              @Nullable EntityEvolver<E> entityEvolver) {
         this.entityType = entityType;
         this.entityEvolver = entityEvolver;
         this.commandHandlers.putAll(commandHandlers);
         children.forEach(child -> this.children.put(child.entityType(), child));
+
+        // To prevent constantly creating new sets, we create a single set and add all command handlers and children to it.
+        supportedCommandNames.addAll(commandHandlers.keySet());
+        children.forEach(child -> supportedCommandNames.addAll(child.supportedCommands()));
     }
 
+    /**
+     * Creates a {@link Builder} instance for the specified entity type. This builder provides a fluent API for defining
+     * and constructing an {@link EntityModel} for the given entity class.
+     *
+     * @param <E>        The type of the entity for which the model is being built.
+     * @param entityType The {@code Class} object representing the entity type.
+     * @return A {@link Builder} instance configured for the specified entity type.
+     */
     public static <E> Builder<E> forEntityClass(Class<E> entityType) {
         return new Builder<>(entityType);
     }
 
     @Override
     public Set<QualifiedName> supportedCommands() {
-        Set<QualifiedName> qualifiedNames = new HashSet<>(commandHandlers.keySet());
-        children.values().forEach(child -> qualifiedNames.addAll(child.supportedCommands()));
-        return qualifiedNames;
+        return supportedCommandNames;
     }
 
 
     @Override
     public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+        if (entityEvolver == null) {
+            return entity;
+        }
         var currentEntity = entity;
         for (EntityChildModel<?, E> child : children.values()) {
             currentEntity = child.evolve(currentEntity, event, context);
@@ -110,10 +131,19 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("entityType", entityType);
         descriptor.describeProperty("commandHandlers", commandHandlers);
+        descriptor.describeProperty("supportedCommandNames", supportedCommandNames);
+        descriptor.describeProperty("entityEvolver", entityEvolver);
         descriptor.describeProperty("children", children);
     }
 
 
+    /**
+     * Builder class for constructing an {@link EntityModel} for a specific entity type.
+     * This class provides a fluent API to configure the entity model by specifying
+     * command handlers, child entities, and the entity evolver.
+     *
+     * @param <E> The type of the entity for which the model is being constructed.
+     */
     public static class Builder<E> implements EntityModelBuilder<E> {
 
         private final Class<E> entityType;
@@ -121,7 +151,7 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         private final List<EntityChildModel<?, E>> children = new ArrayList<>();
         private EntityEvolver<E> entityEvolver;
 
-        public Builder(Class<E> entityType) {
+        private Builder(Class<E> entityType) {
             this.entityType = entityType;
         }
 
