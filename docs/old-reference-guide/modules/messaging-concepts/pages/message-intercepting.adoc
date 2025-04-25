@@ -413,6 +413,52 @@ public class CardSummaryProjection {
 }
 ----
 
+*`@MessageHandlerInterceptor` method hierarchy on an Aggregate Member and Aggregate Root*
+
+[source,java]
+----
+public class GiftCard {
+
+    @AggregateIdentifier
+    private String id;
+
+    @AggregateMember
+    private List<GiftCardTransaction> transactions = new ArrayList<>();
+
+    @MessageHandlerInterceptor
+    public void intercept(Message<?> message) {
+        // This interceptor will be invoked FIRST!
+    }
+    // omitted constructors, command and event sourcing handlers
+}
+
+public class GiftCardTransaction {
+
+    @EntityId
+    private String transactionId;
+
+    @MessageHandlerInterceptor
+    public void intercept(Message<?> message) {
+        // This interceptor will be invoked SECOND!
+    }
+    // omitted constructor, command and event sourcing handlers and equals/hashCode
+}
+----
+
+[Note]
+.`@MessageHandlerInterceptor` method hierarchy for `@EventSourcingHandler` annotated methods
+====
+As explained above, `@MessageHandlerInterceptor` follow the aggregate hierarchy when applicable.
+More concrete, if an aggregate root has an interceptor, as well as one or several of the entities, the interceptor chain will "move up" the hierarchy.
+
+However, this support **does not** exist for event sourcing handlers!
+Instead, only the interceptors on that level of the hierarchy are invoked.
+Thus, in the example above, when the `GiftCardTransaction` is event sourced, only its interceptor is invoked, disregarding the one on the `GiftCard` class.
+
+This is clear discrepancy with all other message handler annotated methods that we cannot easily adjust with Axon Framework 4 it's structure.
+As such, it is not recommended to rely on an invocation hierarchy for `@MessageHandlerInterceptor` annotated methods while sourcing an aggregate.
+====
+
 Next to the message, payload and `InterceptorChain`, a `@MessageHandlerInterceptor` annotated method can resolve other parameters as well.
 Which parameters the framework can resolve on such a function, is based on the type of `Message` being handled by the interceptor.
 For more specifics on which parameters are resolvable for the `Message` being handled, take a look at xref:supported-parameters-annotated-handlers.adoc[this] page.

@@ -16,6 +16,8 @@
 
 package org.axonframework.messaging.annotation;
 
+import java.lang.reflect.Constructor;
+
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
@@ -33,7 +35,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -351,59 +352,5 @@ public class AnnotatedHandlerInspector<T> {
                             .map(AnnotatedHandlerInspector::getAllInspectedTypes)
                             .forEach(inspectedTypes::addAll);
         return Collections.unmodifiableSet(inspectedTypes);
-    }
-
-    private static class ChainedMessageHandlerInterceptorMember<T> implements MessageHandlerInterceptorMemberChain<T> {
-
-        private final MessageHandlingMember<? super T> delegate;
-        private final MessageHandlerInterceptorMemberChain<T> next;
-
-        private ChainedMessageHandlerInterceptorMember(Class<?> targetType,
-                                                       Iterator<MessageHandlingMember<? super T>> iterator) {
-            this.delegate = iterator.next();
-            if (iterator.hasNext()) {
-                this.next = new ChainedMessageHandlerInterceptorMember<>(targetType, iterator);
-            } else {
-                this.next = NoMoreInterceptors.instance();
-            }
-        }
-
-        @Override
-        public Object handleSync(@Nonnull Message<?> message, @Nonnull T target,
-                                 @Nonnull MessageHandlingMember<? super T> handler) throws Exception {
-            return InterceptorChainParameterResolverFactory.callWithInterceptorChainSync(
-                    () -> next.handleSync(message, target, handler),
-                    () -> doHandleSync(message, target, handler)
-            );
-        }
-
-        @Override
-        public MessageStream<?> handle(@Nonnull Message<?> message,
-                                       @Nonnull ProcessingContext processingContext,
-                                       @Nonnull T target,
-                                       @Nonnull MessageHandlingMember<? super T> handler) {
-            return InterceptorChainParameterResolverFactory.callWithInterceptorChain(
-                    processingContext,
-                    () -> next.handle(message, processingContext, target, handler),
-                    (pc) -> doHandle(message, pc, target, handler)
-            );
-        }
-
-        private Object doHandleSync(Message<?> message, T target, MessageHandlingMember<? super T> handler)
-                throws Exception {
-            if (delegate.canHandle(message, null)) {
-                return delegate.handleSync(message, target);
-            }
-            return next.handleSync(message, target, handler);
-        }
-
-        private MessageStream<?> doHandle(Message<?> message,
-                                          ProcessingContext processingContext,
-                                          T target,
-                                          MessageHandlingMember<? super T> handler) {
-            return delegate.canHandle(message, processingContext)
-                    ? delegate.handle(message, processingContext, target)
-                    : next.handle(message, processingContext, target, handler);
-        }
     }
 }
