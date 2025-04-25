@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.tokenstore.ConfigToken
 import org.axonframework.extensions.kotlin.messaging.responsetypes.ArrayResponseType
 import org.axonframework.extensions.kotlin.serialization.AxonSerializersModule
 import org.axonframework.extensions.kotlin.serialization.KotlinSerializer
+import org.axonframework.messaging.MetaData
 import org.axonframework.messaging.responsetypes.InstanceResponseType
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType
 import org.axonframework.messaging.responsetypes.OptionalResponseType
@@ -35,6 +36,7 @@ import org.axonframework.serialization.SimpleSerializedObject
 import org.axonframework.serialization.SimpleSerializedType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 internal class AxonSerializersTest {
@@ -171,6 +173,26 @@ internal class AxonSerializersTest {
         val json = """{"expectedResponseType":"java.lang.String"}"""
         assertEquals(json, serializer.serialize(responseType, String::class.java).data)
         assertEquals(responseType, serializer.deserializeResponseType(responseType.javaClass.name, json))
+    }
+
+    @Test
+    fun metaDataSerialization() {
+        val metaData = MetaData.emptyInstance()
+        val json = """{}"""
+        val serialized = serializer.serialize(metaData, String::class.java).data
+
+        val serializedType = SimpleSerializedType(type, null)
+        val serializedToken = SimpleSerializedObject(json, String::class.java, serializedType)
+        return deserialize(serializedToken)
+        assertEquals(json, serialized)
+    }
+
+    @Test
+    fun metaDataSerialization2() {
+        val metaData = MetaData.with("key", "value")
+        val json = """{}"""
+        val serialized = serializer.serialize(metaData, String::class.java).data
+        assertEquals(json, serialized)
     }
 
     private fun Serializer.deserializeTrackingToken(tokenType: String, json: String): TrackingToken =
