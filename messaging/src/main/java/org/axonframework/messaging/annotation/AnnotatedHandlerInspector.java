@@ -16,16 +16,10 @@
 
 package org.axonframework.messaging.annotation;
 
-import java.lang.reflect.Constructor;
-
-import jakarta.annotation.Nonnull;
 import org.axonframework.common.ObjectUtils;
 import org.axonframework.messaging.GenericMessage;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
-import org.axonframework.messaging.QualifiedName;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;

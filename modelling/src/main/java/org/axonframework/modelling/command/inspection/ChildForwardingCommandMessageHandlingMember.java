@@ -22,10 +22,8 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ChainedMessageHandlerInterceptorMember;
 import org.axonframework.messaging.annotation.MessageHandlerInterceptorMemberChain;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.unitofwork.CurrentUnitOfWork;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
 import org.axonframework.messaging.annotation.NoMoreInterceptors;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.AggregateEntityNotFoundException;
 
 import java.util.List;

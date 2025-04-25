@@ -17,9 +17,9 @@
 package org.axonframework.test.aggregate;
 
 
-import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.annotation.EventHandler;
 import org.axonframework.messaging.InterceptorChain;
 import org.axonframework.messaging.Message;
@@ -363,7 +363,7 @@ class FixtureTest_CommandInterceptors {
         public void intercept(CommandMessage<?> command,
                               InterceptorChain interceptorChain) throws Exception {
             intercepted.set(true);
-            interceptorChain.proceed();
+            interceptorChain.proceedSync();
         }
 
         @CommandHandler
@@ -472,7 +472,8 @@ class FixtureTest_CommandInterceptors {
         }
 
         @CommandHandler
-        public AggregateWithAggregateMemberInterceptorOnly(CreateStandardAggregateCommand cmd) {
+        @CreationPolicy(AggregateCreationPolicy.ALWAYS)
+        public void handle(CreateStandardAggregateCommand cmd) {
             apply(new StandardAggregateCreatedEvent(cmd.getAggregateIdentifier()));
         }
 
