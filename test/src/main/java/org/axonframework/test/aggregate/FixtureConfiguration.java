@@ -93,7 +93,9 @@ import java.util.function.Supplier;
  * @param <T> The type of the aggregate under test
  * @author Allard Buijze
  * @since 0.6
+ * @deprecated In favor of the {@link org.axonframework.test.fixture.AxonTestFixture}.
  */
+@Deprecated(since = "5.0.0")
 public interface FixtureConfiguration<T> {
 
     /**
