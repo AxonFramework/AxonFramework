@@ -50,12 +50,12 @@ import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.command.EntityId;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
-import org.axonframework.modelling.entity.EvolvableEntityModel;
-import org.axonframework.modelling.entity.EvolvableEntityModelBuilder;
-import org.axonframework.modelling.entity.child.ListEvolvableEntityChildModel;
-import org.axonframework.modelling.entity.PolymorphicEvolvableEntityModel;
-import org.axonframework.modelling.entity.SimpleEvolvableEntityModel;
-import org.axonframework.modelling.entity.child.SingleEvolvableEntityChildModel;
+import org.axonframework.modelling.entity.EntityModel;
+import org.axonframework.modelling.entity.EntityModelBuilder;
+import org.axonframework.modelling.entity.PolymorphicEntityModel;
+import org.axonframework.modelling.entity.SimpleEntityModel;
+import org.axonframework.modelling.entity.child.ListEntityChildModel;
+import org.axonframework.modelling.entity.child.SingleEntityChildModel;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -90,7 +90,7 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
 
     @Override
     CommandHandlingComponent getCommandHandlingComponent(Configuration configuration) {
-        EvolvableEntityModel<Person> personModel = new AnnotatedEventSourcedEntityModel<>(
+        EntityModel<Person> personModel = new AnnotatedEventSourcedEntityModel<>(
                 Person.class,
                 configuration.getComponent(ParameterResolverFactory.class),
                 Set.of(Customer.class, Employee.class));
@@ -124,10 +124,10 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
         // TODO This will not work, as ESH's now cannot return entities (or better said, it's lost)
     }
 
-    private class AnnotatedEventSourcedEntityModel<E> implements EvolvableEntityModel<E>, DescribableComponent {
+    private class AnnotatedEventSourcedEntityModel<E> implements EntityModel<E>, DescribableComponent {
 
         private final Class<E> entityType;
-        private final EvolvableEntityModel<E> entityModel;
+        private final EntityModel<E> entityModel;
 
 
         public AnnotatedEventSourcedEntityModel(Class<E> entityType,
@@ -135,7 +135,7 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
                                                 Set<Class<? extends E>> subTypes
         ) {
             this.entityType = entityType;
-            Map<Class<? extends E>, EvolvableEntityModel<? extends E>> collect =
+            Map<Class<? extends E>, EntityModel<? extends E>> collect =
                     subTypes.stream().collect(Collectors.toMap(
                             c -> c,
                             c -> new AnnotatedEventSourcedEntityModel<>(c, parameterResolverFactory, Set.of())));
@@ -143,12 +143,12 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
             AnnotatedHandlerInspector<E> inspected = AnnotatedHandlerInspector.inspectType(entityType,
                                                                                            parameterResolverFactory);
 
-            EvolvableEntityModelBuilder<E> builder;
+            EntityModelBuilder<E> builder;
             if (collect.isEmpty()) {
-                builder = SimpleEvolvableEntityModel.forEntityClass(entityType)
+                builder = SimpleEntityModel.forEntityClass(entityType)
                                                     .entityEvolver(createEntityEvolver(inspected));
             } else {
-                PolymorphicEvolvableEntityModel.Builder<E> polymorphicBuilder = PolymorphicEvolvableEntityModel
+                PolymorphicEntityModel.Builder<E> polymorphicBuilder = PolymorphicEntityModel
                         .forAbstractEntityClass(entityType);
                 polymorphicBuilder.entityEvolver(createEntityEvolver(inspected));
                 collect.forEach((subType, model) -> {
@@ -195,7 +195,7 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
             return existing;
         }
 
-        private void initializeCommandHandlers(EvolvableEntityModelBuilder<E> builder,
+        private void initializeCommandHandlers(EntityModelBuilder<E> builder,
                                                AnnotatedHandlerInspector<E> inspected) {
             inspected
                     .getHandlers(entityType)
@@ -207,7 +207,7 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
                                                     .first())));
         }
 
-        private void initializeChildren(EvolvableEntityModelBuilder<E> builder,
+        private void initializeChildren(EntityModelBuilder<E> builder,
                                         ParameterResolverFactory parameterResolverFactory) {
             StreamSupport.stream(ReflectionUtils.fieldsOf(entityType).spliterator(), false)
                          .filter(field -> field.isAnnotationPresent(EntityMember.class))
@@ -238,7 +238,7 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
                                      ), e);
                                  }
                                  builder.addChild(
-                                         ListEvolvableEntityChildModel
+                                         ListEntityChildModel
                                                  .forEntityModel(entityType, childModel)
                                                  .childEntityResolver(e -> ReflectionUtils.getFieldValue(field, e))
                                                  .parentEntityEvolver((e, children) -> {
@@ -259,7 +259,7 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
                                                                                          parameterResolverFactory,
                                                                                          Set.of());
                                  builder.addChild(
-                                         SingleEvolvableEntityChildModel
+                                         SingleEntityChildModel
                                                  .forEntityClass(entityType, childModel)
                                                  .childEntityResolver(e -> ReflectionUtils.getFieldValue(field, e))
                                                  .parentEntityEvolver((e, children) -> {
@@ -326,14 +326,14 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
         private final Map<Class, Property> entityRoutingKeyProperties = new ConcurrentHashMap<>();
 
         private String routingKey;
-        private EvolvableEntityModel childEntity;
+        private EntityModel childEntity;
 
         public MatchingInstancesMessageForwardingMode() {
         }
 
         @Override
         public void initialize(@javax.annotation.Nonnull Member member,
-                               @javax.annotation.Nonnull EvolvableEntityModel childEntity) {
+                               @javax.annotation.Nonnull EntityModel childEntity) {
             this.childEntity = childEntity;
             this.routingKey = AnnotationUtils.findAnnotationAttributes((AnnotatedElement) member,
                                                                        EntityMember.class)
@@ -398,7 +398,7 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
     public interface MessageForwardingMode {
 
         default void initialize(@javax.annotation.Nonnull Member member,
-                                @javax.annotation.Nonnull EvolvableEntityModel childEntity) {
+                                @javax.annotation.Nonnull EntityModel childEntity) {
         }
 
         <E> boolean matches(@javax.annotation.Nonnull Message<?> message, @javax.annotation.Nonnull E candidate);

@@ -42,11 +42,11 @@ import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
-import org.axonframework.modelling.entity.EvolvableEntityModel;
-import org.axonframework.modelling.entity.child.ListEvolvableEntityChildModel;
-import org.axonframework.modelling.entity.PolymorphicEvolvableEntityModel;
-import org.axonframework.modelling.entity.SimpleEvolvableEntityModel;
-import org.axonframework.modelling.entity.child.SingleEvolvableEntityChildModel;
+import org.axonframework.modelling.entity.EntityModel;
+import org.axonframework.modelling.entity.PolymorphicEntityModel;
+import org.axonframework.modelling.entity.SimpleEntityModel;
+import org.axonframework.modelling.entity.child.ListEntityChildModel;
+import org.axonframework.modelling.entity.child.SingleEntityChildModel;
 
 public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSuite {
 
@@ -54,7 +54,7 @@ public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSui
     CommandHandlingComponent getCommandHandlingComponent(Configuration configuration) {
         MessageTypeResolver typeResolver = configuration.getComponent(MessageTypeResolver.class);
 
-        EvolvableEntityModel<Task> taskModel = SimpleEvolvableEntityModel
+        EntityModel<Task> taskModel = SimpleEntityModel
                 .forEntityClass(Task.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(Task.class))
                 .commandHandler(typeResolver.resolve(CompleteTaskCommand.class).qualifiedName(),
@@ -66,7 +66,7 @@ public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSui
                 .build();
 
 
-        EvolvableEntityModel<SalaryInformation> salaryInformationModel = SimpleEvolvableEntityModel
+        EntityModel<SalaryInformation> salaryInformationModel = SimpleEntityModel
                 .forEntityClass(SalaryInformation.class)
                 .entityEvolver((entity, event, context) -> {
                     Object payload = event.getPayload();
@@ -85,7 +85,7 @@ public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSui
                                 })
                 .build();
 
-        EvolvableEntityModel<Employee> employeeModel = SimpleEvolvableEntityModel
+        EntityModel<Employee> employeeModel = SimpleEntityModel
                 .forEntityClass(Employee.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(Employee.class))
                 .commandHandler(typeResolver.resolve(CreateEmployee.class).qualifiedName(),
@@ -100,31 +100,30 @@ public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSui
                                     entity.handle((AssignTaskCommand) command.getPayload(), eventAppender);
                                     return MessageStream.empty().cast();
                                 }))
-                .addChild(ListEvolvableEntityChildModel.forEntityModel(
-                                                               Employee.class,
-                                                               taskModel
-                                                       ).childEntityResolver(Employee::getTaskList)
-                                                       .parentEntityEvolver((e, t) -> {
-                                                           e.setTaskList(t);
-                                                           return e;
-                                                       })
-                                                       .commandTargetMatcher((task, commandMessage) -> {
-                                                           if (commandMessage.getPayload() instanceof CompleteTaskCommand assignTaskCommand) {
-                                                               return task.getTaskId()
-                                                                          .equals(assignTaskCommand.taskId());
-                                                           }
-                                                           return false;
-                                                       })
-                                                       .eventTargetMatcher((o, eventMessage) -> {
-                                                           if (eventMessage.getPayload() instanceof TaskCompleted taskAssigned) {
-                                                               return o.getTaskId().equals(taskAssigned.taskId());
-                                                           }
-                                                           return false;
-                                                       })
-                                                       .build()
+                .addChild(ListEntityChildModel
+                                  .forEntityModel(Employee.class, taskModel)
+                                  .childEntityResolver(Employee::getTaskList)
+                                  .parentEntityEvolver((e, t) -> {
+                                      e.setTaskList(t);
+                                      return e;
+                                  })
+                                  .commandTargetMatcher((task, commandMessage) -> {
+                                      if (commandMessage.getPayload() instanceof CompleteTaskCommand assignTaskCommand) {
+                                          return task.getTaskId()
+                                                     .equals(assignTaskCommand.taskId());
+                                      }
+                                      return false;
+                                  })
+                                  .eventTargetMatcher((o, eventMessage) -> {
+                                      if (eventMessage.getPayload() instanceof TaskCompleted taskAssigned) {
+                                          return o.getTaskId().equals(taskAssigned.taskId());
+                                      }
+                                      return false;
+                                  })
+                                  .build()
 
                 )
-                .addChild(SingleEvolvableEntityChildModel
+                .addChild(SingleEntityChildModel
                                   .forEntityClass(Employee.class, salaryInformationModel)
                                   .childEntityResolver(Employee::getSalary)
                                   .parentEntityEvolver(
@@ -137,7 +136,7 @@ public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSui
                 )
                 .build();
 
-        EvolvableEntityModel<Customer> customerModel = SimpleEvolvableEntityModel
+        EntityModel<Customer> customerModel = SimpleEntityModel
                 .forEntityClass(Customer.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(Customer.class))
                 .commandHandler(
@@ -149,7 +148,7 @@ public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSui
                         }))
                 .build();
 
-        EvolvableEntityModel<Person> personModel = PolymorphicEvolvableEntityModel
+        EntityModel<Person> personModel = PolymorphicEntityModel
                 .forAbstractEntityClass(Person.class)
                 .addPolymorphicModel(employeeModel)
                 .addPolymorphicModel(customerModel)

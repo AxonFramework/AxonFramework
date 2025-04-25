@@ -21,9 +21,11 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.EntityChildModel;
 
 import java.util.ArrayList;
@@ -51,6 +53,12 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
         return new Builder<>(entityType);
     }
 
+    @Override
+    public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+        abstractEntityModel.evolve(entity, event, context);
+        return modelFor(entity).evolve(entity, event, context);
+    }
+
     /**
      * Helper that “captures” the ? extends E for this particular entity instance.
      */
@@ -72,9 +80,9 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
                                                                           E entity,
                                                                           ProcessingContext context) {
 
-        EntityModel<E> model = modelFor(entity);
-        if (model.supportedCommands().contains(message.type().qualifiedName())) {
-            return model.handle(message, entity, context);
+        EntityModel<E> eEntityModel = modelFor(entity);
+        if (eEntityModel.supportedCommands().contains(message.type().qualifiedName())) {
+            return eEntityModel.handle(message, entity, context);
         }
         return abstractEntityModel.handle(message, entity, context);
     }
@@ -87,12 +95,13 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("entityType", entityType());
-        descriptor.describeProperty("abstractModel", abstractEntityModel);
+        descriptor.describeProperty("abstractCommandHandlingEntityModel", abstractEntityModel);
         descriptor.describeProperty("polymorphicModels", polymorphicModels);
     }
 
 
-    public static class Builder<E> implements EntityModelBuilder<E> {
+    public static class Builder<E> implements EntityModelBuilder<E>
+    {
 
         private final SimpleEntityModel.Builder<E> abstractDelegate;
         private final List<EntityModel<? extends E>> polymorphicModels = new ArrayList<>();
@@ -113,7 +122,13 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
             return this;
         }
 
-        public Builder<E> addPolymorphicModel(EvolvableEntityModel<? extends E> polymorphicModel) {
+
+        public Builder<E> entityEvolver(EntityEvolver<E> entityEvolver) {
+            abstractDelegate.entityEvolver(entityEvolver);
+            return this;
+        }
+
+        public Builder<E> addPolymorphicModel(EntityModel<? extends E> polymorphicModel) {
             polymorphicModels.add(polymorphicModel);
             return this;
         }

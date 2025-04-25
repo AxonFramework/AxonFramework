@@ -17,6 +17,7 @@
 package org.axonframework.modelling.entity;
 
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.EntityChildModel;
 
 public interface EntityModelBuilder<E> {
@@ -25,7 +26,7 @@ public interface EntityModelBuilder<E> {
 
     EntityModelBuilder<E> addChild(EntityChildModel<?, E> child);
 
-    Class<E> entityType();
+    EntityModelBuilder<E> entityEvolver(EntityEvolver<E> entityEvolver);
 
     EntityModel<E> build();
 }

@@ -16,14 +16,14 @@
 
 package org.axonframework.modelling.entity.child;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.EntityModel;
-import org.axonframework.modelling.entity.EvolvableEntityModel;
-import org.axonframework.modelling.entity.child.EntityChildModel;
 
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -34,21 +34,34 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
     private final Class<P> parentClass;
     private final EntityModel<C> childEntityModel;
     private final Function<P, C> childEntityResolver;
+    private final BiFunction<P, C, P> parentEntityEvolver;
 
     private SingleEntityChildModel(
             Class<P> parentclass,
             EntityModel<C> childEntityModel,
-            Function<P, C> childEntityResolver
+            Function<P, C> childEntityResolver,
+            BiFunction<P, C, P> parentEntityEvolver
     ) {
         this.parentClass = parentclass;
         this.childEntityModel = childEntityModel;
         this.childEntityResolver = childEntityResolver;
+        this.parentEntityEvolver = parentEntityEvolver;
     }
 
     public Set<QualifiedName> supportedCommands() {
         return childEntityModel.supportedCommands();
     }
 
+
+    @Override
+    public P evolve(@Nonnull P entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+        C childEntity = childEntityResolver.apply(entity);
+        if (childEntity != null) {
+            C evolvedEntity = childEntityModel.evolve(childEntity, event, context);
+            return parentEntityEvolver.apply(entity, evolvedEntity);
+        }
+        return entity;
+    }
     @Override
     public MessageStream.Single<? extends CommandResultMessage<?>> handle(CommandMessage<?> message,
                                                                           P entity,
@@ -93,8 +106,17 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
             return this;
         }
 
+        public Builder<C, P> parentEntityEvolver(
+                BiFunction<P, C, P> parentEntityEvolver) {
+            this.parentEntityEvolver = parentEntityEvolver;
+            return this;
+        }
+
         public SingleEntityChildModel<C, P> build() {
-            return new SingleEntityChildModel<>(parentClass, childEntityModel, childEntityResolver);
+            return new SingleEntityChildModel<>(parentClass,
+                                                childEntityModel,
+                                                childEntityResolver,
+                                                parentEntityEvolver);
         }
     }
 }

@@ -21,10 +21,11 @@ import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.EntityEvolver;
 
 import java.util.Set;
 
-public interface EntityChildModel<C, P> {
+public interface EntityChildModel<C, P> extends EntityEvolver<P> {
 
     Set<QualifiedName> supportedCommands();
 

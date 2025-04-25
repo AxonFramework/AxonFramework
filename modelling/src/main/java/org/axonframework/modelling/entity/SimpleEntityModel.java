@@ -21,11 +21,12 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.EntityChildModel;
-import org.axonframework.modelling.entity.child.SingleEntityChildModel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,7 +34,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 
 /**
  *
@@ -44,11 +44,13 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
     private final Class<E> entityType;
     private final Map<Class<?>, EntityChildModel<?, E>> children = new HashMap<>();
     private final Map<QualifiedName, EntityCommandHandler<E>> commandHandlers = new HashMap<>();
+    private final EntityEvolver<E> entityEvolver;
 
     private SimpleEntityModel(Class<E> entityType,
                               Map<QualifiedName, EntityCommandHandler<E>> commandHandlers,
-                              List<EntityChildModel<?, E>> children) {
+                              List<EntityChildModel<?, E>> children, EntityEvolver<E> entityEvolver) {
         this.entityType = entityType;
+        this.entityEvolver = entityEvolver;
         this.commandHandlers.putAll(commandHandlers);
         children.forEach(child -> this.children.put(child.entityType(), child));
     }
@@ -62,6 +64,16 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         Set<QualifiedName> qualifiedNames = new HashSet<>(commandHandlers.keySet());
         children.values().forEach(child -> qualifiedNames.addAll(child.supportedCommands()));
         return qualifiedNames;
+    }
+
+
+    @Override
+    public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+        var currentEntity = entity;
+        for (EntityChildModel<?, E> child : children.values()) {
+            currentEntity = child.evolve(currentEntity, event, context);
+        }
+        return entityEvolver.evolve(currentEntity, event, context);
     }
 
     @Override
@@ -107,6 +119,7 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         private final Class<E> entityType;
         private final Map<QualifiedName, EntityCommandHandler<E>> commandHandlers = new HashMap<>();
         private final List<EntityChildModel<?, E>> children = new ArrayList<>();
+        private EntityEvolver<E> entityEvolver;
 
         public Builder(Class<E> entityType) {
             this.entityType = entityType;
@@ -127,8 +140,14 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
             return this;
         }
 
+        @Override
+        public EntityModelBuilder<E> entityEvolver(EntityEvolver<E> entityEvolver) {
+            this.entityEvolver = entityEvolver;
+            return this;
+        }
+
         public EntityModel<E> build() {
-            return new SimpleEntityModel<>(entityType, commandHandlers, children);
+            return new SimpleEntityModel<>(entityType, commandHandlers, children, entityEvolver);
         }
     }
 }

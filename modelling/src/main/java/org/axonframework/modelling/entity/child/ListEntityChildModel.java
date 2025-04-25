@@ -16,36 +16,46 @@
 
 package org.axonframework.modelling.entity.child;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.EntityModel;
-import org.axonframework.modelling.entity.child.EntityChildModel;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
 
     private final Class<P> parentClass;
     private final EntityModel<C> childEntityModel;
     private final Function<P, List<C>> childEntityResolver;
-    private BiPredicate<C, CommandMessage<?>> commandTargetMatcher;
+    private final BiFunction<P, List<C>, P> parentEntityEvolver;
+    private final BiPredicate<C, CommandMessage<?>> commandTargetMatcher;
+    private final BiPredicate<C, EventMessage<?>> eventTargetMatcher;
 
     private ListEntityChildModel(
             Class<P> parentclass,
             EntityModel<C> childEntityModel,
             Function<P, List<C>> childEntityResolver,
-            BiPredicate<C, CommandMessage<?>> commandTargetMatcher
+            BiPredicate<C, CommandMessage<?>> commandTargetMatcher,
+            BiFunction<P, List<C>, P> parentEntityEvolver,
+            BiPredicate<C, EventMessage<?>> eventTargetMatcher
     ) {
         this.parentClass = parentclass;
         this.childEntityModel = childEntityModel;
         this.childEntityResolver = childEntityResolver;
         this.commandTargetMatcher = commandTargetMatcher;
+        this.parentEntityEvolver = parentEntityEvolver;
+        this.eventTargetMatcher = eventTargetMatcher;
     }
 
     public Set<QualifiedName> supportedCommands() {
@@ -76,6 +86,21 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
     }
 
     @Override
+    public P evolve(@Nonnull P entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+        var result = childEntityResolver.apply(entity)
+                                        .stream()
+                                        .map(child -> {
+                                            if (eventTargetMatcher.test(child, event)) {
+                                                return childEntityModel.evolve(child, event, context);
+                                            }
+                                            return child;
+                                        })
+                                        .filter(Objects::nonNull)
+                                        .collect(Collectors.toList());
+        return parentEntityEvolver.apply(entity, result);
+    }
+
+    @Override
     public Class<C> entityType() {
         return childEntityModel.entityType();
     }
@@ -92,6 +117,8 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
         private EntityModel<C> childEntityModel;
         private Function<P, List<C>> childEntityResolver;
         private BiPredicate<C, CommandMessage<?>> commandTargetMatcher;
+        private BiPredicate<C, EventMessage<?>> eventTargetMatcher;
+        private BiFunction<P, List<C>, P> parentEntityEvolver;
 
         protected Builder(Class<P> parentClass, EntityModel<C> childEntityModel) {
             this.parentClass = parentClass;
@@ -108,11 +135,25 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
             return this;
         }
 
+        public Builder<C, P> eventTargetMatcher(
+                BiPredicate<C, EventMessage<?>> eventTargetMatcher) {
+            this.eventTargetMatcher = eventTargetMatcher;
+            return this;
+        }
+
+        public Builder<C, P> parentEntityEvolver(
+                BiFunction<P, List<C>, P> parentEntityEvolver) {
+            this.parentEntityEvolver = parentEntityEvolver;
+            return this;
+        }
+
         public ListEntityChildModel<C, P> build() {
             return new ListEntityChildModel<>(parentClass,
                                               childEntityModel,
                                               childEntityResolver,
-                                              commandTargetMatcher);
+                                              commandTargetMatcher,
+                                              parentEntityEvolver,
+                                              eventTargetMatcher);
         }
     }
 }
