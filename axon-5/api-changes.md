@@ -63,7 +63,7 @@ Major API Changes
   resolves the predicament that you need to configure your application twice (for production and testing), making the
   chance slimmer that parts will be skipped. For more on this change, please check the [Test Fixtures](#test-fixtures)
   section of this document.
-* All annotation logic is moved to the annotation module.
+* The annotation logic of all modules is moved to a separate `annotation` package.
 * All reflection logic is moved to a dedicated "reflection" package per module.
 * We no longer support message handler annotated constructors. For example, the constructor of an aggregate can no
   longer contain the `@CommandHandler` annotation. Instead, the `@CreationPolicy` should be used.
