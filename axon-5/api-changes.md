@@ -145,7 +145,7 @@ This is a shift compared to Axon Framework 4 in roughly two areas, being:
 1. The `version` (`revision` as it was called in AF4) is no longer an event-only thing. This makes it so that
    applications can describe the version of their commands and queries more easily, making it possible to construct
    converters or define default mappings between different application releases.
-2. The introduction of the `QualifiedName` makes it so that Axon Framework does not have to lean on the
+2. The introduction of the `QualifiedName` makes it so that Axon Framework does not have to rely on the
    `Message#getPayloadType` anymore as the defining factor of the `Message` in question.
 
 Thus, through the introduction of the `QualifiedName`, users are able to decouple their message class implementations
