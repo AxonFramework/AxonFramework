@@ -134,11 +134,10 @@ For added flexibility with Axon Framework's `Message` API, we introduced two cla
 1. The `MessageType`, and
 2. the `QualifiedName`.
 
-The `MessageType` is a combination of a `QualifiedName` and a version (of type `String`). Furthermore, **every**
-`Message` implementation now has the `type()` method, returning its `MessageType`. The intent for this new class on the
-`Message`, is to ensure all messages clarify their version and qualified name
-within the domain they act in. Furthermore, both the `QualifiedName` and version are non-null variables on the
-`MessageType`, ensuring they are always present.
+The `MessageType` is a combination of a `QualifiedName` and a version (of type `String`). **Every** `Message`
+implementation now has the `type()` method, returning its `MessageType`. The intent for this new class on the `Message`,
+is to ensure all messages clarify their version and qualified name within the domain they act in. Note that both the
+`QualifiedName` and version are non-null variables on the `MessageType`, ensuring they are always present.
 
 This is a shift compared to Axon Framework 4 in roughly two areas, being:
 
