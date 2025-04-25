@@ -126,8 +126,8 @@ public class SimpleCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                            @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                               @Nullable ProcessingContext processingContext) {
         return findCommandHandlerFor(command)
                 .map(handler -> handle(command, handler))
                 .orElseGet(() -> CompletableFuture.failedFuture(new NoHandlerForCommandException(format(
@@ -145,8 +145,8 @@ public class SimpleCommandBus implements CommandBus {
      * @param command The actual command to handle.
      * @param handler The handler that must be invoked for this command.
      */
-    protected CompletableFuture<? extends Message<?>> handle(@Nonnull CommandMessage<?> command,
-                                                             @Nonnull CommandHandler handler) {
+    protected CompletableFuture<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                @Nonnull CommandHandler handler) {
         if (logger.isDebugEnabled()) {
             logger.debug("Handling command [{} ({})]", command.getIdentifier(), command.type());
         }

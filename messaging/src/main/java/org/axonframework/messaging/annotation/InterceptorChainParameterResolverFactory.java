@@ -78,10 +78,10 @@ public class InterceptorChainParameterResolverFactory
      * @param action           The action to invoke
      * @return The response from the invocation of given {@code action}
      */
-    public static <M extends Message<?>, T extends Message<?>> MessageStream<? extends T> callWithInterceptorChain(
+    public static <M extends Message<?>, T extends Message<?>> MessageStream<T> callWithInterceptorChain(
             ProcessingContext processingContext,
             InterceptorChain<M, T> interceptorChain,
-            Function<ProcessingContext, MessageStream<? extends T>> action
+            Function<ProcessingContext, MessageStream<T>> action
     ) {
         ProcessingContext newProcessingContext = new ResourceOverridingProcessingContext<>(processingContext,
                                                                                            INTERCEPTOR_CHAIN_KEY,

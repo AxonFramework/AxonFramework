@@ -20,7 +20,6 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.messaging.InterceptorChain;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
@@ -50,7 +49,7 @@ public class InterceptingCommandBus implements CommandBus {
     private final CommandBus delegate;
     private final LinkedList<MessageHandlerInterceptor<? super CommandMessage<?>>> handlerInterceptors;
     private final List<MessageDispatchInterceptor<? super CommandMessage<?>>> dispatchInterceptors;
-    private final BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>> dispatcher;
+    private final BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<CommandResultMessage<?>>> dispatcher;
 
     /**
      * Constructs a {@code InterceptingCommandBus}, delegating dispatching and handling logic to the given
@@ -77,7 +76,7 @@ public class InterceptingCommandBus implements CommandBus {
 
         Iterator<MessageDispatchInterceptor<? super CommandMessage<?>>> di =
                 new LinkedList<>(dispatchInterceptors).descendingIterator();
-        BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>> dis =
+        BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<CommandResultMessage<?>>> dis =
                 (c, p) -> MessageStream.fromFuture(delegate.dispatch(c, p));
         while (di.hasNext()) {
             dis = new Dispatcher(di.next(), dis);
@@ -99,8 +98,8 @@ public class InterceptingCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                            @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                               @Nullable ProcessingContext processingContext) {
         return dispatcher.apply(requireNonNull(command, "The command message cannot be null."), processingContext)
                          .first()
                          .asCompletableFuture()
@@ -121,8 +120,8 @@ public class InterceptingCommandBus implements CommandBus {
 
         @Nonnull
         @Override
-        public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
-                                                                              @Nonnull ProcessingContext processingContext) {
+        public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+                                                                    @Nonnull ProcessingContext processingContext) {
             try {
                 return interceptor.interceptOnHandle(message, processingContext, this)
                                   .first();
@@ -137,21 +136,21 @@ public class InterceptingCommandBus implements CommandBus {
         }
 
         @Override
-        public MessageStream<? extends CommandResultMessage<?>> proceed(CommandMessage<?> message,
-                                                                        ProcessingContext processingContext) {
+        public MessageStream<CommandResultMessage<?>> proceed(CommandMessage<?> message,
+                                                              ProcessingContext processingContext) {
             return next.handle(message, processingContext);
         }
     }
 
     private record Dispatcher(
             MessageDispatchInterceptor<? super CommandMessage<?>> interceptor,
-            BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>> next
-    ) implements BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<? extends Message<?>>>,
-            InterceptorChain<CommandMessage<?>, Message<?>> {
+            BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<CommandResultMessage<?>>> next
+    ) implements BiFunction<CommandMessage<?>, ProcessingContext, MessageStream<CommandResultMessage<?>>>,
+            InterceptorChain<CommandMessage<?>, CommandResultMessage<?>> {
 
         @Override
-        public MessageStream<? extends Message<?>> apply(CommandMessage<?> commandMessage,
-                                                         ProcessingContext processingContext) {
+        public MessageStream<CommandResultMessage<?>> apply(CommandMessage<?> commandMessage,
+                                                            ProcessingContext processingContext) {
             try {
                 return interceptor.interceptOnDispatch(commandMessage, processingContext, this);
             } catch (RuntimeException e) {
@@ -165,8 +164,8 @@ public class InterceptingCommandBus implements CommandBus {
         }
 
         @Override
-        public MessageStream<? extends Message<?>> proceed(CommandMessage<?> message,
-                                                           ProcessingContext processingContext) {
+        public MessageStream<CommandResultMessage<?>> proceed(CommandMessage<?> message,
+                                                              ProcessingContext processingContext) {
             return next.apply(message, processingContext);
         }
     }

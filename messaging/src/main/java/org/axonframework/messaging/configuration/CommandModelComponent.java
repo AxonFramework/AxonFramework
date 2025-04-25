@@ -75,8 +75,8 @@ public class CommandModelComponent
 
     @Nonnull
     @Override
-    public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                                          @Nonnull ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                @Nonnull ProcessingContext context) {
         return commandComponent.handle(command, context);
     }
 

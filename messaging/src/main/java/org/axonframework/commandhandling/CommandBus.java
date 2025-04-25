@@ -53,6 +53,6 @@ public interface CommandBus extends CommandHandlerRegistry<CommandBus>, Describa
      * @throws NoHandlerForCommandException when no {@link CommandHandler command handler} is registered for the given
      *                                      {@code command}'s name.
      */
-    CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                     @Nullable ProcessingContext processingContext);
+    CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                        @Nullable ProcessingContext processingContext);
 }
