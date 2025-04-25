@@ -15,6 +15,7 @@
  */
 package org.axonframework.extensions.kotlin.serialization
 
+import MetaDataSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.SerializationException
@@ -22,6 +23,7 @@ import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.SetSerializer
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.CompositeDecoder
@@ -43,6 +45,7 @@ import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken
 import org.axonframework.eventhandling.scheduling.quartz.QuartzScheduleToken
 import org.axonframework.eventhandling.tokenstore.ConfigToken
 import org.axonframework.extensions.kotlin.messaging.responsetypes.ArrayResponseType
+import org.axonframework.messaging.MetaData
 import org.axonframework.messaging.responsetypes.InstanceResponseType
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType
 import org.axonframework.messaging.responsetypes.OptionalResponseType
@@ -76,7 +79,7 @@ val replayTokenContextSerializer = String.serializer().nullable
  * This module includes serializers for TrackingTokens, ScheduleTokens, and ResponseTypes, enabling
  * seamless integration with Axon-based applications.
  */
-val AxonSerializersModule = SerializersModule {
+val `AxonSerializersModule` = SerializersModule {
     contextual(ConfigToken::class) { ConfigTokenSerializer }
     contextual(GapAwareTrackingToken::class) { GapAwareTrackingTokenSerializer }
     contextual(MultiSourceTrackingToken::class) { MultiSourceTrackingTokenSerializer }
@@ -109,6 +112,7 @@ val AxonSerializersModule = SerializersModule {
         subclass(MultipleInstancesResponseTypeSerializer)
         subclass(ArrayResponseTypeSerializer)
     }
+    contextual(MetaData::class) { MetaDataSerializer }
 }
 
 /**
