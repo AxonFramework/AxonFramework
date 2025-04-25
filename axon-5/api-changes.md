@@ -2,7 +2,7 @@ API Changes
 ===========
 
 As is to be expected of a new major release, a lot of things have changed compared to the previous major release. This
-document serves the purpose of containing all the changes that may proof breaking to users. Some of the changes have a
+document serves the purpose of containing all the changes that may prove breaking to users. Some of the changes have a
 lower chance of directly impact users of Axon Framework 4 (like the [Message Stream](#message-stream)), while others
 certainly impact all users (like the [Test Fixture](#test-fixtures) adjustment).
 
