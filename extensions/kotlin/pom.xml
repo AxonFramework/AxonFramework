@@ -149,7 +149,6 @@
               <groupId>org.jetbrains.kotlinx</groupId>
               <artifactId>kotlinx-serialization-json</artifactId>
               <version>${kotlin-serialization.version}</version>
-              <scope>test</scope>
             </dependency>
             <dependency>
               <groupId>org.jetbrains.kotlinx</groupId>
