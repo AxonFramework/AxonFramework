@@ -52,7 +52,7 @@ public interface EntityModel<E> extends EntityEvolver<E> {
      * @param context The {@link ProcessingContext} for the command.
      * @return The {@link EntityEvolver} for this model.
      */
-    MessageStream.Single<? extends CommandResultMessage<?>> handle(
+    MessageStream.Single<CommandResultMessage<?>> handle(
             CommandMessage<?> message, E entity, ProcessingContext context
     );
 

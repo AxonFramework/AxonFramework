@@ -53,7 +53,8 @@ public interface EntityChildModel<C, P> extends EntityEvolver<P> {
      * @param context The {@link ProcessingContext} for the command.
      * @return The result of the command handling, which may be a {@link CommandResultMessage} or an error message.
      */
-    MessageStream.Single<? extends CommandResultMessage<?>> handle(CommandMessage<?> message, P entity, ProcessingContext context);
+    MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message, P entity,
+                                                         ProcessingContext context);
 
     /**
      * Returns the {@link Class} of the child entity this model describes.

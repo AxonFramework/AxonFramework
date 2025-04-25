@@ -93,9 +93,9 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
     }
 
     @Override
-    public MessageStream.Single<? extends CommandResultMessage<?>> handle(CommandMessage<?> message,
-                                                                          E entity,
-                                                                          ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message,
+                                                                E entity,
+                                                                ProcessingContext context) {
 
         EntityModel<E> concreteModel = modelFor(entity);
         if (concreteModel.supportedCommands().contains(message.type().qualifiedName())) {

@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -75,7 +76,8 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
      * @param entityType The {@code Class} object representing the entity type.
      * @return A {@link Builder} instance configured for the specified entity type.
      */
-    public static <E> Builder<E> forEntityClass(Class<E> entityType) {
+    public static <E> Builder<E> forEntityClass(@Nonnull Class<E> entityType) {
+        Objects.requireNonNull(entityType, "entityType may not be null");
         return new Builder<>(entityType);
     }
 
@@ -98,8 +100,8 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
     }
 
     @Override
-    public MessageStream.Single<? extends CommandResultMessage<?>> handle(CommandMessage<?> message, E entity,
-                                                                          ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message, E entity,
+                                                                ProcessingContext context) {
         try {
             // First try to find child entity able to handle
             for (Map.Entry<Class<?>, EntityChildModel<?, E>> entry : children.entrySet()) {

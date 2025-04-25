@@ -71,8 +71,8 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
 
     @Nonnull
     @Override
-    public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                                          @Nonnull ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                @Nonnull ProcessingContext context) {
         try {
             ID id = idResolver.resolve(command, context);
             E entity = repository.load(id, context).join().entity();

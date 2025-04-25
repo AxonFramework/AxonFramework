@@ -68,9 +68,9 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
     }
 
     @Override
-    public MessageStream.Single<? extends CommandResultMessage<?>> handle(CommandMessage<?> message,
-                                                                          P entity,
-                                                                          ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message,
+                                                                P entity,
+                                                                ProcessingContext context) {
         List<C> matchingChildEntities = getChildEntities(entity)
                 .stream()
                 .filter(child -> commandTargetMatcher.matches(child, message))

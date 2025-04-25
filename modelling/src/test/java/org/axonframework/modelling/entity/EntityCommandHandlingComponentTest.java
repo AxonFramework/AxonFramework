@@ -85,16 +85,10 @@ class EntityCommandHandlingComponentTest {
         when(managedEntity.entity()).thenReturn(mockEntity);
         when(repository.load(eq(entityId), any())).thenReturn(CompletableFuture.completedFuture(managedEntity));
         CommandResultMessage<?> resultMessage = mock(GenericCommandResultMessage.class);
-        MessageStream.Single<? extends CommandResultMessage<?>> entityResult = MessageStream.just(resultMessage);
-        OngoingStubbing<? extends MessageStream.Single<? extends CommandResultMessage<?>>> stubbingCall = when(
-                entityModel.handle(
-                        eq(commandMessage),
-                        eq(mockEntity),
-                        any()));
-        ((OngoingStubbing<MessageStream.Single<? extends CommandResultMessage<?>>>) stubbingCall).thenReturn(
-                entityResult);
+        MessageStream.Single<CommandResultMessage<?>> entityResult = MessageStream.just(resultMessage);
+        when(entityModel.handle(eq(commandMessage), eq(mockEntity), any())).thenReturn(entityResult);
 
-        MessageStream.Single<? extends CommandResultMessage<?>> componentResult = testComponent.handle(commandMessage,
+        MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(commandMessage,
                                                                                                        mock(ProcessingContext.class));
 
         verify(entityModel).handle(eq(commandMessage), eq(mockEntity), any());

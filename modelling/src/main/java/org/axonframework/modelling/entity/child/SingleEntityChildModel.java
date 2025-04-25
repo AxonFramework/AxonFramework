@@ -67,9 +67,9 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
     }
 
     @Override
-    public MessageStream.Single<? extends CommandResultMessage<?>> handle(CommandMessage<?> message,
-                                                                          P entity,
-                                                                          ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message,
+                                                                P entity,
+                                                                ProcessingContext context) {
         C childEntity = childEntityFieldDefinition.getChildEntities(entity);
         if (childEntity == null) {
             throw new IllegalArgumentException(
