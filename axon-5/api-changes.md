@@ -50,7 +50,7 @@ Major API Changes
 * Axon's `EventStore` implementations let go their aggregate-focus, instead following the "Dynamic Consistency
   Boundary" approach. This shift changed the `EventStore` and `EventStorageEngine` API heavily, providing a lot of
   flexibility in defining how entities are event sourced and how events are appended for them. Although most users won't
-  interact with the `EventStore` or `EventStorageEngine` directly, knowing the changes could still proof beneficial. For
+  interact with the `EventStore` or `EventStorageEngine` directly, knowing the changes could still prove beneficial. For
   those that are curious, be sure to read the [Event Store](#event-store) section.
 * The Configuration of Axon Framework has been flipped around. Instead of having a `axon-configuration` module that
   depends on all of Axon's modules to provide a global configuration, the core module (`axon-messaging`) of Axon now
