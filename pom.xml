@@ -119,8 +119,8 @@
         <!-- Serialization -->
         <avro.version>1.11.4</avro.version><!-- Don't upgrade due to JDK8, the JDK11+ version is defined in profile below -->
         <dom4j.version>2.1.4</dom4j.version>
-        <gson.version>2.13.0</gson.version>
-        <jackson.version>2.18.3</jackson.version>
+        <gson.version>2.13.1</gson.version>
+        <jackson.version>2.19.0</jackson.version>
         <xstream.version>1.4.21</xstream.version>
         <!-- Scheduling -->
         <db-scheduler.version>13.0.0</db-scheduler.version><!-- Don't upgrade due to JDK8 -->
