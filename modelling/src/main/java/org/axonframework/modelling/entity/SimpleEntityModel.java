@@ -39,8 +39,9 @@ import java.util.Set;
 
 /**
  * Implementation of the {@link EntityModel} interface that enables the definition of command handlers and child
- * entities for a given entity type. Optionally, an {@link EntityEvolver} can be provided to evolve the entity state
- * based on events. If no {@link EntityEvolver} is provided, state can exclusively be changed through command handlers.
+ * entities for a given entity type {@code E}. Optionally, an {@link EntityEvolver} can be provided to evolve the entity
+ * state based on events. If no {@link EntityEvolver} is provided, state can exclusively be changed through command
+ * handlers.
  * <p>
  * During the handling of commands, handlers defined in child entities take precedence over the parent entity's command
  * handlers. Event handlers are invoked on both the parent and child models, with child models being invoked first.
@@ -61,10 +62,11 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
                               @Nonnull Map<QualifiedName, EntityCommandHandler<E>> commandHandlers,
                               @Nonnull List<EntityChildModel<?, E>> children,
                               @Nullable EntityEvolver<E> entityEvolver) {
-        this.entityType = entityType;
+        this.entityType = Objects.requireNonNull(entityType, "entityType may not be null");
         this.entityEvolver = entityEvolver;
-        this.commandHandlers.putAll(commandHandlers);
-        children.forEach(child -> this.children.put(child.entityType(), child));
+        this.commandHandlers.putAll(Objects.requireNonNull(commandHandlers, "commandHandlers may not be null"));
+        Objects.requireNonNull(children, "children may not be null")
+               .forEach(child -> this.children.put(child.entityType(), child));
 
         // To prevent constantly creating new sets, we create a single set and add all command handlers and children to it.
         supportedCommandNames.addAll(commandHandlers.keySet());
@@ -72,8 +74,9 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
     }
 
     /**
-     * Creates a {@link Builder} instance for the specified entity type. This builder provides a fluent API for defining
-     * and constructing an {@link EntityModel} for the given entity class.
+     * Creates a {@link Builder builder} for the specified entity type. This builder provides a fluent API for defining
+     * and constructing an {@link EntityModel} for the given entity class, allowing the registration of command
+     * handlers, child entities, and an optional entity evolver.
      *
      * @param <E>        The type of the entity for which the model is being built.
      * @param entityType The {@code Class} object representing the entity type.
@@ -106,7 +109,6 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
     public MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message, E entity,
                                                                 ProcessingContext context) {
         try {
-            // First try to find child entity able to handle
             for (Map.Entry<Class<?>, EntityChildModel<?, E>> entry : children.entrySet()) {
                 EntityChildModel<?, E> child = entry.getValue();
                 if (child.supportedCommands().contains(message.type().qualifiedName())) {
@@ -114,7 +116,6 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
                 }
             }
 
-            // If no child entity is able to handle, try to find command handler
             EntityCommandHandler<E> commandHandler = commandHandlers.get(message.type().qualifiedName());
             if (commandHandler != null) {
                 return commandHandler.handle(message, entity, context);

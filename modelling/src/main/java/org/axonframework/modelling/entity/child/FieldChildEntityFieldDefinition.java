@@ -18,6 +18,8 @@ package org.axonframework.modelling.entity.child;
 
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -29,19 +31,20 @@ import java.util.stream.StreamSupport;
  * available, it will use those instead.
  *
  * @param <P> The type of the parent entity.
- * @param <F> The type of the child entity.
+ * @param <F> The type of the field. This can be the type of the child entity or a collection of child entities.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDefinition<P, F> {
-
+public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDefinition<P, F>, DescribableComponent {
 
     private final Field field;
+    private final Class<P> parentClass;
+    private final String fieldName;
     private Method optionalGetter;
     private Method optionalSetter;
 
     /**
-     * Creates a new {@link FieldChildEntityFieldDefinition} that uses the given field to access the child entity.
+     * Creates a new {@link ChildEntityFieldDefinition} that uses the given field to access the child entity.
      *
      * @param parentClass The class of the parent entity.
      * @param fieldName   The name of the field to use to access the child entity.
@@ -50,18 +53,17 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
             @Nonnull Class<P> parentClass,
             @Nonnull String fieldName
     ) {
+        this.parentClass = parentClass;
+        this.fieldName = fieldName;
         Objects.requireNonNull(parentClass, "parentClass may not be null");
         Objects.requireNonNull(fieldName, "fieldName may not be null");
         this.field = StreamSupport
                 .stream(ReflectionUtils.fieldsOf(parentClass).spliterator(), false)
                 .filter(f -> f.getName().equals(fieldName))
                 .findFirst()
-                .orElseThrow(() -> {
-                    String message = String.format("Field '%s' not found in class %s",
-                                                   fieldName,
-                                                   parentClass.getName());
-                    return new IllegalArgumentException(message);
-                });
+                .orElseThrow(() -> new IllegalArgumentException(String.format("Field '%s' not found in class %s",
+                                                                          fieldName,
+                                                                          parentClass.getName())));
         ReflectionUtils.ensureAccessible(field);
         detectOptionalGetter(parentClass, field);
         detectOptionalSetter(parentClass, field);
@@ -102,11 +104,16 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
 
     @SuppressWarnings("unchecked")
     @Override
-    public P evolveParentBasedOnChildEntities(P parentEntity, F result) {
+    public P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nonnull F result) {
         try {
             if (optionalSetter != null) {
                 Object invokeResult = optionalSetter.invoke(parentEntity, result);
                 if (invokeResult != null) {
+                    if(invokeResult.getClass() != parentClass) {
+                        throw new IllegalArgumentException(
+                                String.format("Evolve method '%s' must return the same type as the parent entity",
+                                              optionalSetter.getName()));
+                    }
                     // Is an evolve method
                     return (P) invokeResult;
                 }
@@ -136,5 +143,14 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
             return string;
         }
         return Character.toUpperCase(string.charAt(0)) + string.substring(1);
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("parentClass", parentClass);
+        descriptor.describeProperty("fieldName", fieldName);
+        descriptor.describeProperty("field", field);
+        descriptor.describeProperty("optionalGetter", optionalGetter);
+        descriptor.describeProperty("optionalSetter", optionalSetter);
     }
 }

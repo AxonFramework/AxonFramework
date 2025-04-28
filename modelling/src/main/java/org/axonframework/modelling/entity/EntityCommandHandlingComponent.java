@@ -48,7 +48,7 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
     private final EntityIdResolver<ID> idResolver;
 
     /**
-     * Creates a new {@link EntityCommandHandlingComponent} that handles commands for the given entity type.
+     * Creates a new {@link CommandHandlingComponent} that handles commands for the given entity type.
      *
      * @param repository  The {@link Repository} to load the entity from.
      * @param entityModel The {@link EntityModel} to delegate the handling of the command to.

@@ -27,7 +27,7 @@ import java.util.function.Function;
  * the parent, and to evolve the parent based on the child entities.
  *
  * @param <P> The type of the parent entity.
- * @param <F> The type of the child entity.
+ * @param <F> The type of the field. This can be the type of the child entity or a collection of child entities.
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
@@ -52,7 +52,7 @@ public class GetterEvolverChildEntityFieldDefinition<P, F> implements ChildEntit
     }
 
     @Override
-    public P evolveParentBasedOnChildEntities(P parentEntity, F result) {
+    public P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nonnull F result) {
         return evolver.apply(parentEntity, result);
     }
 

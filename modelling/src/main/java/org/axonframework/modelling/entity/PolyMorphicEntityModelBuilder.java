@@ -17,12 +17,15 @@
 package org.axonframework.modelling.entity;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.EntityChildModel;
 
 /**
- * Builder for a polymorphic entity model, where a parent entity can have multiple concrete child entities.
+ * Builder for a polymorphic {@link EntityModel}, where a parent entity can have multiple concrete child entities.
+ * Command handlers of concrete types take precedence over the parent entity's command handlers. Event handlers are
+ * invoked on both, with the super entity's event handlers being invoked first.
  *
  * @param <E>
  * @author Mitchell Herrijgers
@@ -42,7 +45,7 @@ public interface PolyMorphicEntityModelBuilder<E> extends EntityModelBuilder<E> 
 
     @Nonnull
     @Override
-    PolyMorphicEntityModelBuilder<E> entityEvolver(@Nonnull EntityEvolver<E> entityEvolver);
+    PolyMorphicEntityModelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver);
 
     /**
      * Adds a concrete type to this polymorphic entity model. The concrete type must be a subclass of the parent entity

@@ -27,10 +27,10 @@ import org.axonframework.modelling.EntityEvolver;
 import java.util.Set;
 
 /**
- * Interface describing the model of an entity. It contains the information needed to handle commands and events for a
- * specific entity type. A new {@link EntityModel} can be created using the {@link #forEntityType(Class)} method. The
- * model can then be used to handle commands and events for an entity instance through the {@link #handle} and
- * {@link #evolve} methods.
+ * The model of an entity, containing the information needed to handle commands and events for a specific entity type
+ * {@code E}. An {@link EntityModel} can be created through the builder by using the {@link #forEntityType(Class)}
+ * method. The model can then be used to handle commands and events for an entity instance through the {@link #handle}
+ * and {@link #evolve} methods.
  *
  * @param <E> The type of the entity modeled by this interface.
  * @author Mitchell Herrijgers
@@ -46,12 +46,15 @@ public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
     Class<E> entityType();
 
     /**
-     * Returns the {@link EntityEvolver} for this model. This is used to evolve the entity state based on events.
+     * Handles the given {@link CommandMessage} for the given {@code entity}. If any of its children can handle the
+     * command, it will be delegated to them. Otherwise, the command will be handled by this model. If the command is
+     * not handled by this model or any of its children, an {@link MessageStream#failed(Throwable)} will be returned.
      *
      * @param message The {@link CommandMessage} to handle.
      * @param entity  The entity instance to handle the command for.
      * @param context The {@link ProcessingContext} for the command.
-     * @return The {@link EntityEvolver} for this model.
+     * @return A stream with a message containing the result of the command handling, which may be a
+     * {@link CommandResultMessage} or an error message.
      */
     MessageStream.Single<CommandResultMessage<?>> handle(
             CommandMessage<?> message, E entity, ProcessingContext context

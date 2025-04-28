@@ -43,7 +43,8 @@ public interface EntityModelBuilder<E> {
      * @return This builder for further configuration.
      */
     @Nonnull
-    EntityModelBuilder<E> commandHandler(@Nonnull QualifiedName qualifiedName, @Nonnull EntityCommandHandler<E> messageHandler);
+    EntityModelBuilder<E> commandHandler(@Nonnull QualifiedName qualifiedName,
+                                         @Nonnull EntityCommandHandler<E> messageHandler);
 
     /**
      * Adds a child {@link EntityChildModel} to this model. The child model will be used to handle commands for the
@@ -53,8 +54,8 @@ public interface EntityModelBuilder<E> {
      * <p>
      * There are various types of children that can be added to an entity model:
      * <ul>
-     *     <li>Single instances: For a field with a single instance, use the {@link SingleEntityChildModel}.</li>
-     *     <li>Single instances: For a {@link java.util.List list}, use the {@link ListEntityChildModel}.</li>
+     *     <li>Single instances: For a field with a single instance, use the {@link EntityChildModel#single(Class, EntityModel)}.</li>
+     *     <li>List instances: For a {@link java.util.List list}, use the {@link EntityChildModel#list(Class, EntityModel)}.</li>
      * </ul>
      *
      * @param child The {@link EntityChildModel} to add.
@@ -65,8 +66,8 @@ public interface EntityModelBuilder<E> {
 
     /**
      * Adds a {@link EntityEvolver} to this model. This evolver will be called upon applying an event to the entity. The
-     * evolver is responsible for evolving the entity state based on the event. Note that this is optional. However, if
-     * no evolver is provided, the entity state can only be changed through command handlers.
+     * evolver is responsible for evolving the entity state based on the event. Note that providing an evolver is
+     * optional. However, if no evolver is provided, the entity state can only be changed through command handlers.
      * <p>
      * Calling this method a second time will override the previously set evolver.
      *

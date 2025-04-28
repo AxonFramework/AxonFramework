@@ -24,9 +24,9 @@ import org.axonframework.messaging.configuration.MessageHandler;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 /**
- * Functional interface describing a handler of a {@link CommandMessage} that gets passed in the relevant entity to make
- * a decision. This is typically used in the context of an {@link EntityModel} where the entity is passed to the handler
- * to allow for more complex command handling logic.
+ * Functional interface describing a handler of a {@link CommandMessage} for that uses an entity to make a decision.
+ * This is typically used in the context of an {@link EntityModel} where the entity instance is passed to the handler to
+ * allow for more complex command handling logic.
  *
  * @param <E> The type of the entity.
  * @author Mitchell Herrijgers

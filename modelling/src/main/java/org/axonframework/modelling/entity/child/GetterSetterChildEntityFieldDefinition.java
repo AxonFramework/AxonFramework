@@ -27,7 +27,7 @@ import java.util.function.Function;
  * the parent, and to set the evolved child entities on the parent entity.
  *
  * @param <P> The type of the parent entity.
- * @param <F> The type of the child entity.
+ * @param <F> The type of the field. This can be the type of the child entity or a collection of child entities.
  */
 public class GetterSetterChildEntityFieldDefinition<P, F> implements ChildEntityFieldDefinition<P, F> {
 
@@ -50,7 +50,7 @@ public class GetterSetterChildEntityFieldDefinition<P, F> implements ChildEntity
     }
 
     @Override
-    public P evolveParentBasedOnChildEntities(P parentEntity, F result) {
+    public P evolveParentBasedOnChildEntities(@Nonnull P parentEntity, @Nonnull F result) {
         setter.accept(parentEntity, result);
         return parentEntity;
     }

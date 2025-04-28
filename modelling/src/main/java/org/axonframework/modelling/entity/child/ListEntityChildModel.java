@@ -69,9 +69,9 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
     }
 
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message,
-                                                                P entity,
-                                                                ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+                                                                @Nonnull P entity,
+                                                                @Nonnull ProcessingContext context) {
         List<C> matchingChildEntities = getChildEntities(entity)
                 .stream()
                 .filter(child -> commandTargetMatcher.matches(child, message))
@@ -229,7 +229,7 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
          * @return A new {@link ListEntityChildModel} instance with the configured properties.
          */
         public ListEntityChildModel<C, P> build() {
-            Assert.notNull(childEntityFieldDefinition, () -> "Child entity field definition is required");
+            Assert.notNull(childEntityFieldDefinition, () -> "ChildEntityFieldDefinition is required");
             return new ListEntityChildModel<>(
                     childEntityModel,
                     childEntityFieldDefinition,

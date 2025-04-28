@@ -17,6 +17,7 @@
 package org.axonframework.modelling.entity;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -161,7 +162,7 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
 
         @Nonnull
         @Override
-        public Builder<E> entityEvolver(@Nonnull EntityEvolver<E> entityEvolver) {
+        public Builder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver) {
             superTypeBuilder.entityEvolver(entityEvolver);
             return this;
         }

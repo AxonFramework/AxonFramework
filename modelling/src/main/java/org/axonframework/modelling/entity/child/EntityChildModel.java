@@ -30,8 +30,8 @@ import java.util.Set;
 
 /**
  * Interface describing a child {@link EntityModel} that can be handled in the context of its parent. Handling commands
- * for this model is done in the context of the parent. This model resolved the child from its parent, and can then
- * invoke the child model to handle the command.
+ * for this model is done in the context of the parent. This model resolves the child from the given parent and can
+ * then invoke the right child instance to handle the command.
  *
  * @param <C> The type of the child entity.
  * @param <P> The type of the parent entity.
@@ -55,8 +55,9 @@ public interface EntityChildModel<C, P> extends EntityEvolver<P> {
      * @param context The {@link ProcessingContext} for the command.
      * @return The result of the command handling, which may be a {@link CommandResultMessage} or an error message.
      */
-    MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message, P entity,
-                                                         ProcessingContext context);
+    MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
+                                                         @Nonnull P entity,
+                                                         @Nonnull ProcessingContext context);
 
     /**
      * Returns the {@link Class} of the child entity this model describes.
