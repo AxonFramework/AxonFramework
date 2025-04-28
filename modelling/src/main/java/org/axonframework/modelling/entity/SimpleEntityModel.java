@@ -177,6 +177,10 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         @Override
         public Builder<E> addChild(@Nonnull EntityChildModel<?, E> child) {
             Objects.requireNonNull(child, "child may not be null");
+            if (children.stream().anyMatch(c -> c.entityType().equals(child.entityType()))) {
+                throw new IllegalArgumentException("Child entity " + child.entityType()
+                                                            + " already registered for this model");
+            }
             children.add(child);
             return this;
         }
