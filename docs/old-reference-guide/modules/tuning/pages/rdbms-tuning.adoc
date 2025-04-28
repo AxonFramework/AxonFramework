@@ -89,7 +89,7 @@ When using the `@GeneratedValue` annotation as-is in Hibernate 6, the default in
 This change, in combination with, for example, the xref:multitenancy-extension-reference::index.adoc[multitenancy] extension, may lead to uniqueness issues.
 Hence, it is strongly recommended to define a custom sequence generator, as described below.
 
-Furthermore, if you use Hibernate's xref:https://vladmihalcea.com/hibernate-hidden-gem-the-pooled-lo-optimizer/[pooled optimizer], we suggest to set the `allocation-size` to **1**.
+Furthermore, if you use Hibernate's link:https://vladmihalcea.com/hibernate-hidden-gem-the-pooled-lo-optimizer/[pooled optimizer], we suggest to set the `allocation-size` to **1**.
 If this setting is left unchanged, Hibernate will prepare 50 (as per the default) sequences, increasing the change of `globalIndex` gaps when running several application instances.
 Note that this does not resolve the chance of gaps entirely! However, it does make the window of opportunity a lot smaller.
 ====
