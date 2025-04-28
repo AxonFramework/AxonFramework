@@ -30,21 +30,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class LambdaBasedMessageTypeResolverTest {
 
     @Test
-    void shouldResolveRegisteredTypeUsingMessageTypeResolver() {
-        // given
-        MessageType expected = new MessageType("test.string", "1.0.0");
-        LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
-                .on(String.class, payloadType -> expected)
-                .throwsIfUnknown();
-
-        // when
-        MessageType result = resolver.resolve(String.class);
-
-        // then
-        assertEquals(expected, result);
-    }
-
-    @Test
     void shouldResolveRegisteredTypeUsingFixedMessageType() {
         // given
         MessageType expected = new MessageType("test.string", "1.0.0");
@@ -60,24 +45,6 @@ class LambdaBasedMessageTypeResolverTest {
     }
 
     @Test
-    void shouldAllowMixingFixedMessageTypesAndResolvers() {
-        // given
-        MessageType fixedType = new MessageType("test.string", "1.0.0");
-        LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
-                .on(String.class, fixedType)
-                .message(Integer.class, payloadType -> new MessageType("test.integer", "2.0.0"))
-                .throwsIfUnknown();
-
-        // when
-        MessageType stringResult = resolver.resolve(String.class);
-        MessageType intResult = resolver.resolve(Integer.class);
-
-        // then
-        assertEquals(fixedType, stringResult);
-        assertEquals(new MessageType("test.integer", "2.0.0"), intResult);
-    }
-
-    @Test
     void shouldThrowExceptionForUnregisteredTypeWithOnUnknownFail() {
         // given
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
@@ -87,7 +54,7 @@ class LambdaBasedMessageTypeResolverTest {
         // when/then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                                                           () -> resolver.resolve(Integer.class));
-        assertEquals("No resolver found for payload type [java.lang.Integer]", exception.getMessage());
+        assertEquals("No MessageType found for payload type [java.lang.Integer]", exception.getMessage());
     }
 
     @Test
@@ -96,7 +63,7 @@ class LambdaBasedMessageTypeResolverTest {
         MessageTypeResolver defaultResolver = new ClassBasedMessageTypeResolver("2.0.0");
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, new MessageType("test.string", "1.0.0"))
-                .fallbacksIfUnknown(defaultResolver);
+                .fallback(defaultResolver);
 
         // when
         MessageType result = resolver.resolve(Integer.class);
@@ -113,7 +80,7 @@ class LambdaBasedMessageTypeResolverTest {
         MessageTypeResolver defaultResolver = new ClassBasedMessageTypeResolver("2.0.0");
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, expectedString)
-                .fallbacksIfUnknown(defaultResolver);
+                .fallback(defaultResolver);
 
         // when
         MessageType stringResult = resolver.resolve(String.class);
@@ -131,7 +98,7 @@ class LambdaBasedMessageTypeResolverTest {
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, new MessageType("test.string", "1.0.0"))
                 .message(Integer.class, new MessageType("test.integer", "2.0.0"))
-                .message(Double.class, cls -> new MessageType(cls.getSimpleName(), "3.0.0"))
+                .message(Double.class, new MessageType("Double", "3.0.0"))
                 .throwsIfUnknown();
 
         // when
@@ -158,7 +125,7 @@ class LambdaBasedMessageTypeResolverTest {
                                                                   .on(String.class, new MessageType("first"))
                                                                   .message(String.class, new MessageType("second")));
 
-        assertEquals("A resolver is already registered for payload type [java.lang.String]", exception.getMessage());
+        assertEquals("A MessageType is already defined for payload type [java.lang.String]", exception.getMessage());
     }
 
     @Test
