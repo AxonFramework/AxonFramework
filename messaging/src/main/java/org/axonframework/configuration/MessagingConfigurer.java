@@ -108,7 +108,7 @@ public class MessagingConfigurer implements ApplicationConfigurer {
 
     /**
      * Registers the given {@link MessageTypeResolver} factory in this {@code Configurer}. This is the global
-     * {@link MessageTypeResolver}, those mappings can be accessed by all Modules and Components within the application.
+     * {@link MessageTypeResolver}, whose mappings can be accessed by all Modules and Components within the application.
      * <p>
      * The {@code commandBusFactory} receives the {@link Configuration} as input and is expected to return a
      * {@link MessageTypeResolver} instance.
