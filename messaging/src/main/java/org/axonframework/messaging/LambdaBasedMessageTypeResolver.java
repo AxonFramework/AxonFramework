@@ -40,23 +40,23 @@ import java.util.Objects;
 public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
 
     private final Map<Class<?>, MessageTypeResolver> resolvers;
-    private final MessageTypeResolver defaultResolver;
+    private final MessageTypeResolver fallbackResolver;
 
     /**
      * Private constructor used by the builder to create the resolver with the configured resolvers and default
      * behavior.
      *
-     * @param resolvers       The map of payload types to their specific resolvers.
-     * @param defaultResolver The default resolver to use when no specific resolver is found, or null to throw an
-     *                        exception.
+     * @param resolvers        The map of payload types to their specific resolvers.
+     * @param fallbackResolver The fallback resolver to use when no specific resolver is found, or null to throw an
+     *                         exception.
      */
     private LambdaBasedMessageTypeResolver(
             @Nonnull Map<Class<?>, MessageTypeResolver> resolvers,
-            MessageTypeResolver defaultResolver
+            MessageTypeResolver fallbackResolver
     ) {
         Objects.requireNonNull(resolvers, "Resolvers may not be null");
         this.resolvers = resolvers;
-        this.defaultResolver = defaultResolver;
+        this.fallbackResolver = fallbackResolver;
     }
 
     /**
@@ -89,10 +89,10 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
         if (resolver != null) {
             return resolver.resolve(payloadType);
         }
-        if (defaultResolver == null) {
+        if (fallbackResolver == null) {
             throw new IllegalArgumentException("No resolver found for payload type [" + payloadType.getName() + "]");
         }
-        return defaultResolver.resolve(payloadType);
+        return fallbackResolver.resolve(payloadType);
     }
 
     /**
@@ -128,7 +128,7 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
          *
          * @return The completed {@link LambdaBasedMessageTypeResolver}.
          */
-        default LambdaBasedMessageTypeResolver onUnknownFail(){
+        default LambdaBasedMessageTypeResolver onUnknownFail() {
             return onUnknownUse(null);
         }
 
@@ -158,11 +158,6 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
             newResolvers.put(payloadType, resolver);
 
             return new InternalTypeResolverPhase(newResolvers, defaultResolver);
-        }
-
-        @Override
-        public LambdaBasedMessageTypeResolver onUnknownFail() {
-            return new LambdaBasedMessageTypeResolver(resolvers, null);
         }
 
         @Override
