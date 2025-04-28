@@ -30,8 +30,8 @@ import java.util.Objects;
  * <p>
  * When a payload type is not explicitly registered, the resolver can either:
  * <ul>
- *     <li>Use a fallback resolver (configured via {@link TypeResolverPhase#onUnknownUse(MessageTypeResolver)}).</li>
- *     <li>Throw an exception (configured via {@link TypeResolverPhase#onUnknownFail()}, which is the default behavior).</li>
+ *     <li>Use a fallback resolver (configured via {@link TypeResolverPhase#fallbacksIfUnknown(MessageTypeResolver)}).</li>
+ *     <li>Throw an exception (configured via {@link TypeResolverPhase#throwsIfUnknown()}, which is the default behavior).</li>
  * </ul>
  *
  * @author Mateusz Nowak
@@ -108,7 +108,7 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
          * @return The current phase for further configuration.
          * @throws IllegalArgumentException if a resolver is already registered for the given payload type.
          */
-        TypeResolverPhase on(@Nonnull Class<?> payloadType, @Nonnull MessageTypeResolver resolver);
+        TypeResolverPhase message(@Nonnull Class<?> payloadType, @Nonnull MessageTypeResolver resolver);
 
         /**
          * Registers a fixed {@link MessageType} for the given payload type.
@@ -118,18 +118,17 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
          * @return The current phase for further configuration.
          * @throws IllegalArgumentException if a resolver is already registered for the given payload type.
          */
-        default TypeResolverPhase on(@Nonnull Class<?> payloadType, @Nonnull MessageType messageType) {
-            return on(payloadType, __ -> messageType);
+        default TypeResolverPhase message(@Nonnull Class<?> payloadType, @Nonnull MessageType messageType) {
+            return message(payloadType, __ -> messageType);
         }
 
         /**
-         * Configures the resolver to throw an exception when no specific resolver is found for a payload type. This is
-         * the default behavior.
+         * Configures the resolver to throw an exception when no specific resolver is found for a payload type.
          *
          * @return The completed {@link LambdaBasedMessageTypeResolver}.
          */
-        default LambdaBasedMessageTypeResolver onUnknownFail() {
-            return onUnknownUse(null);
+        default LambdaBasedMessageTypeResolver throwsIfUnknown() {
+            return fallbacksIfUnknown(null);
         }
 
         /**
@@ -139,7 +138,7 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
          * @param resolver The default resolver to use.
          * @return The completed {@link LambdaBasedMessageTypeResolver}.
          */
-        LambdaBasedMessageTypeResolver onUnknownUse(MessageTypeResolver resolver);
+        LambdaBasedMessageTypeResolver fallbacksIfUnknown(MessageTypeResolver resolver);
     }
 
     private record InternalTypeResolverPhase(
@@ -148,7 +147,7 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
     ) implements TypeResolverPhase {
 
         @Override
-        public TypeResolverPhase on(@Nonnull Class<?> payloadType, @Nonnull MessageTypeResolver resolver) {
+        public TypeResolverPhase message(@Nonnull Class<?> payloadType, @Nonnull MessageTypeResolver resolver) {
             if (resolvers.containsKey(payloadType)) {
                 throw new IllegalArgumentException(
                         "A resolver is already registered for payload type [" + payloadType.getName() + "]");
@@ -161,7 +160,7 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
         }
 
         @Override
-        public LambdaBasedMessageTypeResolver onUnknownUse(MessageTypeResolver resolver) {
+        public LambdaBasedMessageTypeResolver fallbacksIfUnknown(MessageTypeResolver resolver) {
             return new LambdaBasedMessageTypeResolver(resolvers, resolver);
         }
     }
