@@ -46,7 +46,7 @@ import org.axonframework.modelling.entity.EntityModel;
 import org.axonframework.modelling.entity.PolymorphicEntityModel;
 import org.axonframework.modelling.entity.SimpleEntityModel;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
-import org.axonframework.modelling.entity.child.ListEntityChildModel;
+import org.axonframework.modelling.entity.child.EntityChildModel;
 import org.axonframework.modelling.entity.child.SingleEntityChildModel;
 
 public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSuite {
@@ -101,8 +101,8 @@ public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSui
                                     entity.handle((AssignTaskCommand) command.getPayload(), eventAppender);
                                     return MessageStream.empty().cast();
                                 }))
-                .addChild(ListEntityChildModel
-                                  .forEntityModel(Employee.class, taskModel)
+                .addChild(EntityChildModel
+                                  .list(Employee.class, taskModel)
                                   .childEntityFieldDefinition(ChildEntityFieldDefinition.forGetterSetter(
                                           Employee::getTaskList, Employee::setTaskList
                                   ))
@@ -122,8 +122,8 @@ public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSui
                                   .build()
 
                 )
-                .addChild(SingleEntityChildModel
-                                  .forEntityClass(Employee.class, salaryInformationModel)
+                .addChild(EntityChildModel
+                                  .single(Employee.class, salaryInformationModel)
                                   .childEntityFieldDefinition(ChildEntityFieldDefinition.forFieldName(
                                           Employee.class, "salary"
                                   ))

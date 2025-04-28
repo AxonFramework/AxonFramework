@@ -18,6 +18,7 @@ package org.axonframework.modelling.entity;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -35,7 +36,7 @@ import java.util.Set;
  * @author Mitchell Herrijgers
  * @since 5.0.0
  */
-public interface EntityModel<E> extends EntityEvolver<E> {
+public interface EntityModel<E> extends EntityEvolver<E>, DescribableComponent {
 
     /**
      * Returns the {@link Class} of the entity this model describes.

@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -54,18 +55,31 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
 
     private final EntityModel<E> superTypeModel;
     private final Map<Class<? extends E>, EntityModel<? extends E>> concreteModels;
+    private final Set<QualifiedName> supportedCommands;
 
-    public PolymorphicEntityModel(
+    private PolymorphicEntityModel(
             EntityModel<E> abstractDelegate,
             List<EntityModel<? extends E>> concreteModels
     ) {
         this.superTypeModel = abstractDelegate;
         this.concreteModels = new HashMap<>();
+        this.supportedCommands = new HashSet<>(superTypeModel.supportedCommands());
         for (EntityModel<? extends E> polymorphicModel : concreteModels) {
             this.concreteModels.put(polymorphicModel.entityType(), polymorphicModel);
+            this.supportedCommands.addAll(polymorphicModel.supportedCommands());
         }
+
     }
 
+    /**
+     * Creates a new polymorphic {@link EntityModel} for the given super type. The model can then be used to add
+     * concrete types to the model. Any method inherited from {@link EntityModelBuilder} is delegated to the super type
+     * model.
+     *
+     * @param entityType The type of the entity to create a model for.
+     * @param <E>        The type of the entity to create a model for.
+     * @return A new {@link Builder} for the given entity type.
+     */
     public static <E> PolyMorphicEntityModelBuilder<E> forSuperType(Class<E> entityType) {
         return new Builder<>(entityType);
     }
@@ -87,9 +101,7 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
 
     @Override
     public Set<QualifiedName> supportedCommands() {
-        Set<QualifiedName> names = new HashSet<>(superTypeModel.supportedCommands());
-        concreteModels.values().forEach(model -> names.addAll(model.supportedCommands()));
-        return names;
+        return supportedCommands;
     }
 
     @Override
@@ -112,7 +124,7 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
         descriptor.describeProperty("entityType", entityType());
-        descriptor.describeProperty("abstractCommandHandlingEntityModel", superTypeModel);
+        descriptor.describeProperty("superTypeModel", superTypeModel);
         descriptor.describeProperty("polymorphicModels", concreteModels);
     }
 
@@ -131,30 +143,43 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
             this.superTypeBuilder = SimpleEntityModel.forEntityClass(entityType);
         }
 
-        public Builder<E> commandHandler(QualifiedName qualifiedName,
-                                         EntityCommandHandler<E> messageHandler) {
+        @Nonnull
+        @Override
+        public Builder<E> commandHandler(@Nonnull QualifiedName qualifiedName,
+                                         @Nonnull EntityCommandHandler<E> messageHandler) {
             superTypeBuilder.commandHandler(qualifiedName, messageHandler);
             return this;
         }
 
+        @Nonnull
         @Override
-        public Builder<E> addChild(EntityChildModel<?, E> child) {
+        public Builder<E> addChild(@Nonnull EntityChildModel<?, E> child) {
             superTypeBuilder.addChild(child);
             return this;
         }
 
 
-        public Builder<E> entityEvolver(EntityEvolver<E> entityEvolver) {
+        @Nonnull
+        @Override
+        public Builder<E> entityEvolver(@Nonnull EntityEvolver<E> entityEvolver) {
             superTypeBuilder.entityEvolver(entityEvolver);
             return this;
         }
 
         @Override
-        public Builder<E> addConcreteType(EntityModel<? extends E> entityModel) {
+        @Nonnull
+        public Builder<E> addConcreteType(@Nonnull EntityModel<? extends E> entityModel) {
+            Objects.requireNonNull(entityModel, "entityModel may not be null");
+            if (polymorphicModels.stream().anyMatch(p -> p.entityType().equals(entityModel.entityType()))) {
+                throw new IllegalArgumentException("Concrete type " + entityModel.entityType()
+                                                           + " already registered for this model");
+            }
             polymorphicModels.add(entityModel);
             return this;
         }
 
+        @Override
+        @Nonnull
         public EntityModel<E> build() {
             EntityModel<E> superTypeModel = superTypeBuilder.build();
             return new PolymorphicEntityModel<>(superTypeModel, polymorphicModels);

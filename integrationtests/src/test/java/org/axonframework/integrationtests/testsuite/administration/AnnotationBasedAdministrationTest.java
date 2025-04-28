@@ -204,7 +204,7 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
                             .commandHandler(new QualifiedName(handler.payloadType()),
                                             ((command, entity, context) -> handler
                                                     .handle(command, context, entity)
-                                                    .mapMessage(GenericCommandResultMessage::new)
+                                                    .<CommandResultMessage<?>>mapMessage(GenericCommandResultMessage::new)
                                                     .first())));
         }
 
@@ -259,7 +259,7 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
                                                                                          Set.of());
                                  builder.addChild(
                                          SingleEntityChildModel
-                                                 .forEntityClass(entityType, childModel)
+                                                 .forEntityModel(entityType, childModel)
                                                  .childEntityFieldDefinition(ChildEntityFieldDefinition.forFieldName(
                                                          entityType, field.getName())
                                                  )
@@ -277,7 +277,7 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
         }
 
         @Override
-        public MessageStream.Single<? extends CommandResultMessage<?>> handle(CommandMessage<?> message,
+        public MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message,
                                                                               E entity,
                                                                               ProcessingContext context
         ) {

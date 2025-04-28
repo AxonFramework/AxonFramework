@@ -16,6 +16,8 @@
 
 package org.axonframework.modelling.entity;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.EntityChildModel;
@@ -40,7 +42,8 @@ public interface EntityModelBuilder<E> {
      * @param messageHandler The {@link EntityCommandHandler} to handle the command.
      * @return This builder for further configuration.
      */
-    EntityModelBuilder<E> commandHandler(QualifiedName qualifiedName, EntityCommandHandler<E> messageHandler);
+    @Nonnull
+    EntityModelBuilder<E> commandHandler(@Nonnull QualifiedName qualifiedName, @Nonnull EntityCommandHandler<E> messageHandler);
 
     /**
      * Adds a child {@link EntityChildModel} to this model. The child model will be used to handle commands for the
@@ -57,7 +60,8 @@ public interface EntityModelBuilder<E> {
      * @param child The {@link EntityChildModel} to add.
      * @return This builder for further configuration.
      */
-    EntityModelBuilder<E> addChild(EntityChildModel<?, E> child);
+    @Nonnull
+    EntityModelBuilder<E> addChild(@Nonnull EntityChildModel<?, E> child);
 
     /**
      * Adds a {@link EntityEvolver} to this model. This evolver will be called upon applying an event to the entity. The
@@ -69,7 +73,8 @@ public interface EntityModelBuilder<E> {
      * @param entityEvolver The {@link EntityEvolver} to use.
      * @return This builder for further configuration.
      */
-    EntityModelBuilder<E> entityEvolver(EntityEvolver<E> entityEvolver);
+    @Nonnull
+    EntityModelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver);
 
     /**
      * Builds the {@link EntityModel} instance based on the configuration of this builder. This method should be called
@@ -77,5 +82,6 @@ public interface EntityModelBuilder<E> {
      *
      * @return The {@link EntityModel} instance based on the configuration of this builder.
      */
+    @Nonnull
     EntityModel<E> build();
 }

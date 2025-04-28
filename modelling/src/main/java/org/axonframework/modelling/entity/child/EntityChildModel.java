@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.entity.child;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.MessageStream;
@@ -24,6 +25,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.EntityModel;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -62,4 +64,37 @@ public interface EntityChildModel<C, P> extends EntityEvolver<P> {
      * @return The {@link Class} of the child entity this model describes.
      */
     Class<C> entityType();
+
+    /**
+     * Starts a builder for a single child entity within the given parent entity type.
+     *
+     * @param parentClass      The class of the parent entity.
+     * @param childEntityModel The {@link EntityModel} of the child entity.
+     * @param <C>              The type of the child entity.
+     * @param <P>              The type of the parent entity.
+     * @return A {@link SingleEntityChildModel.Builder} for the child entity.
+     */
+    static <C, P> SingleEntityChildModel.Builder<C, P> single(@Nonnull Class<P> parentClass,
+                                                              @Nonnull EntityModel<C> childEntityModel) {
+        return SingleEntityChildModel.forEntityModel(
+                Objects.requireNonNull(parentClass, "parentClass may not be null"),
+                Objects.requireNonNull(childEntityModel, "childEntityModel may not be null")
+        );
+    }
+
+    /**
+     * Starts a builder for a list of child entities within the given parent entity type.
+     *
+     * @param parentClass      The class of the parent entity.
+     * @param childEntityModel The {@link EntityModel} of the child entity.
+     * @param <C>              The type of the child entity.
+     * @param <P>              The type of the parent entity.
+     * @return A {@link ListEntityChildModel.Builder} for the child entity.
+     */
+    static <C, P> ListEntityChildModel.Builder<C, P> list(Class<P> parentClass, EntityModel<C> childEntityModel) {
+        return ListEntityChildModel.forEntityModel(
+                Objects.requireNonNull(parentClass, "parentClass may not be null"),
+                Objects.requireNonNull(childEntityModel, "childEntityModel may not be null")
+        );
+    }
 }

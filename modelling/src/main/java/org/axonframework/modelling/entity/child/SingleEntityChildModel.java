@@ -26,6 +26,7 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.entity.EntityModel;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -46,7 +47,8 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
     private final ChildEntityFieldDefinition<P, C> childEntityFieldDefinition;
 
     private SingleEntityChildModel(EntityModel<C> childEntityModel,
-                                   ChildEntityFieldDefinition<P, C> childEntityFieldDefinition) {
+                                   ChildEntityFieldDefinition<P, C> childEntityFieldDefinition
+    ) {
         this.childEntityModel = childEntityModel;
         this.childEntityFieldDefinition = childEntityFieldDefinition;
     }
@@ -72,10 +74,10 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
                                                                 ProcessingContext context) {
         C childEntity = childEntityFieldDefinition.getChildEntities(entity);
         if (childEntity == null) {
-            throw new IllegalArgumentException(
+            return MessageStream.failed(new IllegalArgumentException(
                     "No child entity found for command " + message.type().qualifiedName()
                             + " on parent entity " + entity
-            );
+            ));
         }
         return childEntityModel.handle(message, childEntity, context);
     }
@@ -88,7 +90,7 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
     /**
      * Creates a new {@link Builder} for the given parent class and child entity model. The
      * {@link ChildEntityFieldDefinition} is required to resolve the child entity from the parent entity and evolve the
-     * parent entity based on the child entities. events.
+     * parent entity based on the child entities.
      *
      * @param parentClass The class of the parent entity.
      * @param entityModel The {@link EntityModel} of the child entity.
@@ -96,8 +98,8 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
      * @param <P>         The type of the parent entity.
      * @return A new {@link Builder} for the given parent class and child entity model.
      */
-    public static <C, P> Builder<C, P> forEntityClass(Class<P> parentClass,
-                                                      EntityModel<C> entityModel) {
+    public static <C, P> Builder<C, P> forEntityModel(@Nonnull Class<P> parentClass,
+                                                      @Nonnull EntityModel<C> entityModel) {
         return new Builder<>(parentClass, entityModel);
     }
 
@@ -105,7 +107,7 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
     /**
      * Builder for creating a {@link SingleEntityChildModel} for the given parent class and child entity model. The
      * {@link ChildEntityFieldDefinition} is required to resolve the child entities from the parent entity and evolve
-     * the parent entity based on the child entities. T
+     * the parent entity based on the child entities.
      *
      * @param <C> The type of the child entity.
      * @param <P> The type of the parent entity.
@@ -119,7 +121,8 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
         private Builder(@Nonnull Class<P> parentClass,
                         @Nonnull EntityModel<C> childEntityModel
         ) {
-            this.childEntityModel = childEntityModel;
+            Objects.requireNonNull(parentClass, "parentClass may not be null");
+            this.childEntityModel = Objects.requireNonNull(childEntityModel, "childEntityModel may not be null");
         }
 
         /**
@@ -130,8 +133,9 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
          *                        the parent entity
          * @return This builder instance.
          */
-        public Builder<C, P> childEntityFieldDefinition(ChildEntityFieldDefinition<P, C> fieldDefinition) {
-            this.childEntityFieldDefinition = fieldDefinition;
+        public Builder<C, P> childEntityFieldDefinition(@Nonnull ChildEntityFieldDefinition<P, C> fieldDefinition) {
+            this.childEntityFieldDefinition = Objects.requireNonNull(fieldDefinition,
+                                                                     "fieldDefinition may not be null");
             return this;
         }
 

@@ -38,13 +38,16 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- *  Simple implementation of the {@link EntityModel} interface. It allows for the definition of command handlers and child entities
- *  for a given entity type. Optionally, an {@link EntityEvolver} can be provided to evolve the entity state based on events.
- *  If no {@link EntityEvolver} is provided, state can exclusively be changed through command handlers.
+ * Implementation of the {@link EntityModel} interface that enables the definition of command handlers and child
+ * entities for a given entity type. Optionally, an {@link EntityEvolver} can be provided to evolve the entity state
+ * based on events. If no {@link EntityEvolver} is provided, state can exclusively be changed through command handlers.
+ * <p>
+ * During the handling of commands, handlers defined in child entities take precedence over the parent entity's command
+ * handlers. Event handlers are invoked on both the parent and child models, with child models being invoked first.
  *
- * @since 5.0.0
- * @author Mitchell Herrijgers
  * @param <E> The type of the entity this model describes.
+ * @author Mitchell Herrijgers
+ * @since 5.0.0
  */
 public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E> {
 
@@ -76,6 +79,7 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
      * @param entityType The {@code Class} object representing the entity type.
      * @return A {@link Builder} instance configured for the specified entity type.
      */
+    @Nonnull
     public static <E> Builder<E> forEntityClass(@Nonnull Class<E> entityType) {
         Objects.requireNonNull(entityType, "entityType may not be null");
         return new Builder<>(entityType);
@@ -86,15 +90,14 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         return supportedCommandNames;
     }
 
-
     @Override
     public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
-        if (entityEvolver == null) {
-            return entity;
-        }
         var currentEntity = entity;
         for (EntityChildModel<?, E> child : children.values()) {
             currentEntity = child.evolve(currentEntity, event, context);
+        }
+        if (entityEvolver == null) {
+            return currentEntity;
         }
         return entityEvolver.evolve(currentEntity, event, context);
     }
@@ -119,9 +122,9 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         } catch (Exception e) {
             return MessageStream.failed(e);
         }
-        throw new IllegalArgumentException(
+        return MessageStream.failed(new IllegalArgumentException(
                 "No command handler found for command " + message.type().qualifiedName() + " on entity " + entity
-        );
+        ));
     }
 
     @Override
@@ -138,11 +141,9 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         descriptor.describeProperty("children", children);
     }
 
-
     /**
-     * Builder class for constructing an {@link EntityModel} for a specific entity type.
-     * This class provides a fluent API to configure the entity model by specifying
-     * command handlers, child entities, and the entity evolver.
+     * Builder class for constructing an {@link EntityModel} for a specific entity type. This class provides a fluent
+     * API to configure the entity model by specifying command handlers, child entities, and the entity evolver.
      *
      * @param <E> The type of the entity for which the model is being constructed.
      */
@@ -157,8 +158,12 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
             this.entityType = entityType;
         }
 
-        public Builder<E> commandHandler(QualifiedName qualifiedName,
-                                                    EntityCommandHandler<E> messageHandler) {
+        @Nonnull
+        @Override
+        public Builder<E> commandHandler(@Nonnull QualifiedName qualifiedName,
+                                         @Nonnull EntityCommandHandler<E> messageHandler) {
+            Objects.requireNonNull(qualifiedName, "qualifiedName may not be null");
+            Objects.requireNonNull(messageHandler, "messageHandler may not be null");
             if (commandHandlers.containsKey(qualifiedName)) {
                 throw new IllegalArgumentException(
                         "Command handler with name " + qualifiedName + " already registered");
@@ -167,17 +172,22 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
             return this;
         }
 
-        public Builder<E> addChild(EntityChildModel<?, E> child) {
+        @Nonnull
+        @Override
+        public Builder<E> addChild(@Nonnull EntityChildModel<?, E> child) {
+            Objects.requireNonNull(child, "child may not be null");
             children.add(child);
             return this;
         }
 
+        @Nonnull
         @Override
-        public EntityModelBuilder<E> entityEvolver(EntityEvolver<E> entityEvolver) {
+        public EntityModelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver) {
             this.entityEvolver = entityEvolver;
             return this;
         }
 
+        @Nonnull
         public EntityModel<E> build() {
             return new SimpleEntityModel<>(entityType, commandHandlers, children, entityEvolver);
         }
