@@ -1,58 +1,48 @@
 package org.axonframework.extensions.kotlin.serialization
 
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.descriptors.mapSerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import org.axonframework.messaging.MetaData
 
+
 object MetaDataSerializer : KSerializer<MetaData> {
+
     private val json = Json { encodeDefaults = true; ignoreUnknownKeys = true }
 
-    private val mapSerializer = MapSerializer(
-        keySerializer = String.serializer(),
-        valueSerializer = JsonElement.serializer()
-    )
-
-    @OptIn(ExperimentalSerializationApi::class)
-    override val descriptor: SerialDescriptor = mapSerialDescriptor(
-        String.serializer().descriptor,
-        JsonElement.serializer().descriptor
-    )
+    override val descriptor: SerialDescriptor = String.serializer().descriptor
 
     override fun serialize(encoder: Encoder, value: MetaData) {
-        val jsonMap = value.entries.associate { (key, rawValue) ->
+        val map: Map<String, JsonElement> = value.entries.associate { (key, rawValue) ->
             key to toJsonElement(rawValue)
         }
-        encoder.encodeSerializableValue(mapSerializer, jsonMap)
+        val jsonString = json.encodeToString(MapSerializer(String.serializer(), JsonElement.serializer()), map)
+        encoder.encodeSerializableValue(String.serializer(), jsonString)
     }
 
     override fun deserialize(decoder: Decoder): MetaData {
-        val map = decoder.decodeSerializableValue(mapSerializer)
-        val restored = map.mapValues { (_, jsonElement) -> fromJsonElement(jsonElement) }
-        return MetaData(restored)
+        val jsonString = decoder.decodeSerializableValue(String.serializer())
+        val map = json.decodeFromString(MapSerializer(String.serializer(), JsonElement.serializer()), jsonString)
+        val reconstructed = map.mapValues { (_, jsonElement) -> fromJsonElement(jsonElement) }
+        return MetaData(reconstructed)
     }
 
     private fun toJsonElement(value: Any?): JsonElement = when (value) {
         null -> JsonNull
         is String -> JsonPrimitive(value)
+        is Boolean -> JsonPrimitive(value)
         is Int -> JsonPrimitive(value)
         is Long -> JsonPrimitive(value)
-        is Double -> JsonPrimitive(value)
         is Float -> JsonPrimitive(value)
-        is Boolean -> JsonPrimitive(value)
+        is Double -> JsonPrimitive(value)
+        is Map<*, *> -> JsonObject(value.entries.associate { (k, v) -> k.toString() to toJsonElement(v) })
         is List<*> -> JsonArray(value.map { toJsonElement(it) })
-        is Map<*, *> -> JsonObject(
-            value.entries.associate { (k, v) ->
-                k.toString() to toJsonElement(v)
-            }
-        )
-        else -> JsonPrimitive(value.toString()) // Fallback toString()
+        else -> JsonPrimitive(value.toString())
     }
 
     private fun fromJsonElement(element: JsonElement): Any? = when (element) {
@@ -68,5 +58,21 @@ object MetaDataSerializer : KSerializer<MetaData> {
         }
         is JsonObject -> element.mapValues { fromJsonElement(it.value) }
         is JsonArray -> element.map { fromJsonElement(it) }
+    }
+}
+
+object JsonElementSerializer : KSerializer<JsonElement> {
+    private val json = Json { encodeDefaults = true }
+
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("kotlinx.serialization.json.JsonElement")
+
+    override fun serialize(encoder: Encoder, value: JsonElement) {
+        val jsonString = json.encodeToString(JsonElement.serializer(), value)
+        encoder.encodeString(jsonString)
+    }
+
+    override fun deserialize(decoder: Decoder): JsonElement {
+        val jsonString = decoder.decodeString()
+        return json.decodeFromString(JsonElement.serializer(), jsonString)
     }
 }
