@@ -16,10 +16,12 @@
 
 package org.axonframework.modelling.entity.child;
 
+import jakarta.annotation.Nonnull;
 import org.axonframework.common.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Objects;
 import java.util.stream.StreamSupport;
 
 /**
@@ -45,23 +47,30 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
      * @param fieldName   The name of the field to use to access the child entity.
      */
     public FieldChildEntityFieldDefinition(
-            Class<P> parentClass,
-            String fieldName
+            @Nonnull Class<P> parentClass,
+            @Nonnull String fieldName
     ) {
-        this.field = StreamSupport.stream(ReflectionUtils.fieldsOf(parentClass).spliterator(), false)
-                                  .filter(f -> f.getName().equals(fieldName))
-                                  .findFirst()
-                                  .orElseThrow(() -> {
-                                      String message = String.format("Field '%s' not found in class %s",
-                                                                     fieldName,
-                                                                     parentClass.getName());
-                                      return new IllegalArgumentException(message);
-                                  });
+        Objects.requireNonNull(parentClass, "parentClass may not be null");
+        Objects.requireNonNull(fieldName, "fieldName may not be null");
+        this.field = StreamSupport
+                .stream(ReflectionUtils.fieldsOf(parentClass).spliterator(), false)
+                .filter(f -> f.getName().equals(fieldName))
+                .findFirst()
+                .orElseThrow(() -> {
+                    String message = String.format("Field '%s' not found in class %s",
+                                                   fieldName,
+                                                   parentClass.getName());
+                    return new IllegalArgumentException(message);
+                });
         ReflectionUtils.ensureAccessible(field);
         detectOptionalGetter(parentClass, field);
         detectOptionalSetter(parentClass, field);
     }
 
+    /**
+     * Detects the optional getter for the given field. It will look for a method with the same name as the field, or a
+     * method with the name "get" + the field name.
+     */
     private void detectOptionalGetter(Class<P> parentClass, Field field) {
         this.optionalGetter = StreamSupport.stream(ReflectionUtils.methodsOf(parentClass).spliterator(), false)
                                            .filter(m -> m.getParameterCount() == 0)
@@ -74,6 +83,10 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
         }
     }
 
+    /**
+     * Detects the optional setter for the given field. It will look for a method with the same name as the field, the
+     * name "set" + the field name, or the name "evolve" + the field name.
+     */
     private void detectOptionalSetter(Class<P> parentClass, Field field) {
         this.optionalSetter = StreamSupport.stream(ReflectionUtils.methodsOf(parentClass).spliterator(), false)
                                            .filter(m -> m.getParameterCount() == 1)

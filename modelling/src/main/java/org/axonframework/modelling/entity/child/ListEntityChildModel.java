@@ -29,6 +29,7 @@ import org.axonframework.modelling.entity.EntityModel;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -76,16 +77,16 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
                 .filter(child -> commandTargetMatcher.matches(child, message))
                 .toList();
         if (matchingChildEntities.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "No child entity found for command " + message.type().qualifiedName()
-                            + " on parent entity " + entity + " for command " + message
-            );
+            return MessageStream.failed(new IllegalArgumentException(
+                    "No matching child entity found for command " + message.type().qualifiedName()
+                            + " on parent entity " + entity
+            ));
         }
         if (matchingChildEntities.size() > 1) {
-            throw new IllegalArgumentException(
-                    "Multiple child entities found for command " + message.type().qualifiedName()
+            return MessageStream.failed(new IllegalArgumentException(
+                    "Multiple matching child entities found for command " + message.type().qualifiedName()
                             + " on parent entity " + entity
-            );
+            ));
         }
         return childEntityModel.handle(message, matchingChildEntities.getFirst(), context);
     }
@@ -101,17 +102,22 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
 
     @Override
     public P evolve(@Nonnull P entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
-        var entities = getChildEntities(entity)
+        final AtomicBoolean evolvedChildEntity = new AtomicBoolean(false);
+        var evolvedEntities = getChildEntities(entity)
                 .stream()
                 .map(child -> {
                     if (eventTargetMatcher.matches(child, event)) {
+                        evolvedChildEntity.set(true);
                         return childEntityModel.evolve(child, event, context);
                     }
                     return child;
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        P evolvedParentEntity = childEntityFieldDefinition.evolveParentBasedOnChildEntities(entity, entities);
+        if (!evolvedChildEntity.get()) {
+            return entity;
+        }
+        P evolvedParentEntity = childEntityFieldDefinition.evolveParentBasedOnChildEntities(entity, evolvedEntities);
         if (evolvedParentEntity == null) {
             throw new IllegalArgumentException(
                     "Parent entity evolution resulted in null value for parent entity " + entity
@@ -139,10 +145,13 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
      * @param <P>         The type of the parent entity.
      * @return A new {@link Builder} for the given parent class and child entity model.
      */
-    public static <C, P> Builder<C, P> forEntityModel(Class<P> parentClass,
-                                                      EntityModel<C> entityModel
+    public static <C, P> Builder<C, P> forEntityModel(@Nonnull Class<P> parentClass,
+                                                      @Nonnull EntityModel<C> entityModel
     ) {
-        return new Builder<>(parentClass, entityModel);
+        return new Builder<>(
+                Objects.requireNonNull(parentClass, "parentClass may not be null"),
+                Objects.requireNonNull(entityModel, "entityModel may not be null")
+        );
     }
 
     /**
@@ -177,8 +186,9 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
          *                        the parent entity
          * @return This builder instance.
          */
-        public Builder<C, P> childEntityFieldDefinition(ChildEntityFieldDefinition<P, List<C>> fieldDefinition) {
-            this.childEntityFieldDefinition = fieldDefinition;
+        public Builder<C, P> childEntityFieldDefinition(@Nonnull ChildEntityFieldDefinition<P, List<C>> fieldDefinition) {
+            this.childEntityFieldDefinition = Objects.requireNonNull(fieldDefinition,
+                                                                     "childEntityFieldDefinition may not be null");
             return this;
         }
 
@@ -191,8 +201,10 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
          *                             command.
          * @return This builder instance.
          */
-        public Builder<C, P> commandTargetMatcher(ChildEntityMatcher<C, CommandMessage<?>> commandTargetMatcher) {
-            this.commandTargetMatcher = commandTargetMatcher;
+        public Builder<C, P> commandTargetMatcher(
+                @Nonnull ChildEntityMatcher<C, CommandMessage<?>> commandTargetMatcher) {
+            this.commandTargetMatcher = Objects.requireNonNull(commandTargetMatcher,
+                                                               "commandTargetMatcher may not be null");
             return this;
         }
 
@@ -205,9 +217,8 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
          *                           event.
          * @return This builder instance.
          */
-        public Builder<C, P> eventTargetMatcher(
-                ChildEntityMatcher<C, EventMessage<?>> eventTargetMatcher) {
-            this.eventTargetMatcher = eventTargetMatcher;
+        public Builder<C, P> eventTargetMatcher(@Nonnull ChildEntityMatcher<C, EventMessage<?>> eventTargetMatcher) {
+            this.eventTargetMatcher = Objects.requireNonNull(eventTargetMatcher, "eventTargetMatcher may not be null");
             return this;
         }
 

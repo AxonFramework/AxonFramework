@@ -16,6 +16,9 @@
 
 package org.axonframework.modelling.entity.child;
 
+import jakarta.annotation.Nonnull;
+
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -29,26 +32,26 @@ import java.util.function.Function;
 public class GetterSetterChildEntityFieldDefinition<P, F> implements ChildEntityFieldDefinition<P, F> {
 
     private final Function<P, F> getter;
-    private final BiConsumer<P, F> evolver;
+    private final BiConsumer<P, F> setter;
 
     /**
-     * Creates a new {@link GetterSetterChildEntityFieldDefinition} that uses the given getter and setter to access the
+     * Creates a new {@link ChildEntityFieldDefinition} that uses the given getter and setter to access the
      * child entity and set the evolved child entities on the parent entity.
      *
      * @param getter  the getter to access the child entity.
-     * @param evolver the setter to set the evolved child entity on the parent entity.
+     * @param setter the setter to set the evolved child entity on the parent entity.
      */
     public GetterSetterChildEntityFieldDefinition(
-            Function<P, F> getter,
-            BiConsumer<P, F> evolver
+            @Nonnull Function<P, F> getter,
+            @Nonnull BiConsumer<P, F> setter
     ) {
-        this.getter = getter;
-        this.evolver = evolver;
+        this.getter = Objects.requireNonNull(getter, "getter may not be null");
+        this.setter = Objects.requireNonNull(setter, "setter may not be null");
     }
 
     @Override
     public P evolveParentBasedOnChildEntities(P parentEntity, F result) {
-        evolver.accept(parentEntity, result);
+        setter.accept(parentEntity, result);
         return parentEntity;
     }
 

@@ -19,6 +19,8 @@ package org.axonframework.modelling.entity;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -120,6 +122,16 @@ class EntityCommandHandlingComponentTest {
 
         var exception = assertThrows(RuntimeException.class, () -> componentResult.asCompletableFuture().join());
         assertEquals("Failed to load entity", exception.getCause().getMessage());
+    }
+
+    @Test
+    void correctlyDescribesComponent() {
+        MockComponentDescriptor descriptor = new MockComponentDescriptor();
+        testComponent.describeTo(descriptor);
+
+        assertEquals(repository, descriptor.getProperty("repository"));
+        assertEquals(entityModel, descriptor.getProperty("entityModel"));
+        assertEquals(idResolver, descriptor.getProperty("idResolver"));
     }
 
 
