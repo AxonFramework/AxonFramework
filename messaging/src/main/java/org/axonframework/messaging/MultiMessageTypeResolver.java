@@ -37,7 +37,7 @@ import java.util.Objects;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
+public class MultiMessageTypeResolver implements MessageTypeResolver {
 
     private final Map<Class<?>, MessageType> mappings;
     private final MessageTypeResolver fallbackResolver;
@@ -50,7 +50,7 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
      * @param fallbackResolver The fallback resolver to use when no specific resolver is found, or null to throw an
      *                         exception.
      */
-    private LambdaBasedMessageTypeResolver(
+    private MultiMessageTypeResolver(
             @Nonnull Map<Class<?>, MessageType> mappings,
             MessageTypeResolver fallbackResolver
     ) {
@@ -102,9 +102,9 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
         /**
          * Configures the resolver to throw an exception when no specific resolver is found for a payload type.
          *
-         * @return The completed {@link LambdaBasedMessageTypeResolver}.
+         * @return The completed {@link MultiMessageTypeResolver}.
          */
-        default LambdaBasedMessageTypeResolver throwsIfUnknown() {
+        default MultiMessageTypeResolver throwsIfUnknown() {
             return fallback(null);
         }
 
@@ -113,9 +113,9 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
          * payload type.
          *
          * @param resolver The default resolver to use.
-         * @return The completed {@link LambdaBasedMessageTypeResolver}.
+         * @return The completed {@link MultiMessageTypeResolver}.
          */
-        LambdaBasedMessageTypeResolver fallback(MessageTypeResolver resolver);
+        MultiMessageTypeResolver fallback(MessageTypeResolver resolver);
     }
 
     private record InternalTypeResolverPhase(
@@ -137,8 +137,8 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
         }
 
         @Override
-        public LambdaBasedMessageTypeResolver fallback(MessageTypeResolver resolver) {
-            return new LambdaBasedMessageTypeResolver(mappings, resolver);
+        public MultiMessageTypeResolver fallback(MessageTypeResolver resolver) {
+            return new MultiMessageTypeResolver(mappings, resolver);
         }
     }
 }
