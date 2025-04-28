@@ -55,5 +55,4 @@ public interface MessageTypeResolver {
      * @throws MessageTypeNotResolvedException if the {@link MessageType type} could not be resolved.
      */
     MessageType resolve(Class<?> payloadType);
-
 }

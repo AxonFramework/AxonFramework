@@ -23,13 +23,17 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
     private final String namespace;
     private final SimpleMessageTypeResolver simple;
 
-    public NamespaceMessageTypeResolver(String namespace) {
+    private NamespaceMessageTypeResolver(String namespace) {
         this(namespace, new SimpleMessageTypeResolver());
     }
 
     private NamespaceMessageTypeResolver(String namespace, SimpleMessageTypeResolver simple) {
         this.namespace = namespace;
         this.simple = simple;
+    }
+
+    public static NamespaceMessageTypeResolver namespace(@Nonnull String namespace) {
+        return new NamespaceMessageTypeResolver(namespace);
     }
 
     public NamespaceMessageTypeResolver message(@Nonnull Class<?> payloadType, @Nonnull String localName, @Nonnull String version) {
@@ -42,13 +46,8 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
         );
     }
 
-    public NamespaceMessageTypeResolver namespace(@Nonnull String namespace) {
-        return new NamespaceMessageTypeResolver(namespace, this.simple);
-    }
-
     @Override
     public MessageType resolve(Class<?> payloadType) {
         return simple.resolve(payloadType);
     }
-
 }
