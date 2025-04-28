@@ -61,7 +61,7 @@ public class DefaultInterceptorChain<T extends Message<?>, R extends Message<?>>
     }
 
     @Override
-    public MessageStream<? extends R> proceed(T message, ProcessingContext processingContext) {
+    public MessageStream<R> proceed(T message, ProcessingContext processingContext) {
         if (chain.hasNext()) {
             return chain.next().interceptOnHandle(message, processingContext, this);
         } else {

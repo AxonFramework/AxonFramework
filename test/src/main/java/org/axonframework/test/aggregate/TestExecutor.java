@@ -34,7 +34,9 @@ import java.util.function.Consumer;
  * @param <T> The type of Aggregate under test
  * @author Allard Buijze
  * @since 0.6
+ * @deprecated In favor of the {@link org.axonframework.test.fixture.AxonTestFixture}.
  */
+@Deprecated(since = "5.0.0")
 public interface TestExecutor<T> {
 
     /**

@@ -28,13 +28,13 @@ import javax.annotation.Nonnull;
  * When interacting with the {@code Repository} the framework expects an active {@link ProcessingContext}. If there is
  * no active {@code UnitOfWork} an {@link IllegalStateException} is thrown.
  *
- * @param <T>  The type of entity this repository stores.
+ * @param <E>  The type of entity this repository stores.
  * @param <ID> The type of identifier for entities in this repository.
  * @author Allard Buijze
  * @implNote Implementations of this interface must implement {@link Repository.LifecycleManagement} instead.
  * @since 0.1
  */
-public sealed interface Repository<ID, T>
+public sealed interface Repository<ID, E>
         extends DescribableComponent
         permits Repository.LifecycleManagement {
 
@@ -44,7 +44,7 @@ public sealed interface Repository<ID, T>
      * @return The type of entity stored in this repository.
      */
     @Nonnull
-    Class<T> entityType();
+    Class<E> entityType();
 
     /**
      * The type of the identifier used to identify entities in this repository.
@@ -63,8 +63,8 @@ public sealed interface Repository<ID, T>
      * @return A {@link CompletableFuture} resolving to the {@link ManagedEntity} with the given identifier, or
      * {@code null} if it can't be found.
      */
-    CompletableFuture<ManagedEntity<ID, T>> load(@Nonnull ID identifier,
-                                                         @Nonnull ProcessingContext processingContext);
+    CompletableFuture<ManagedEntity<ID, E>> load(@Nonnull ID identifier,
+                                                 @Nonnull ProcessingContext processingContext);
 
     /**
      * Loads an entity from the repository.
@@ -74,7 +74,7 @@ public sealed interface Repository<ID, T>
      * @return A {@link CompletableFuture} resolving to the {@link ManagedEntity} with the given identifier, or a newly
      * constructed entity instance based on the {@code factoryMethod}.
      */
-    CompletableFuture<ManagedEntity<ID, T>> loadOrCreate(@Nonnull ID identifier,
+    CompletableFuture<ManagedEntity<ID, E>> loadOrCreate(@Nonnull ID identifier,
                                                          @Nonnull ProcessingContext processingContext);
 
     /**
@@ -85,22 +85,22 @@ public sealed interface Repository<ID, T>
      * @param processingContext The {@link ProcessingContext} in which the entity is active.
      * @return a {@link ManagedEntity} wrapping the entity managed in the {@link ProcessingContext}.
      */
-    ManagedEntity<ID, T> persist(@Nonnull ID identifier,
-                                 @Nonnull T entity,
+    ManagedEntity<ID, E> persist(@Nonnull ID identifier,
+                                 @Nonnull E entity,
                                  @Nonnull ProcessingContext processingContext);
 
     /**
-     * Specialization of the {@link Repository} interface that <em>must</em> be implemented by all implementations
-     * of the {@code AsyncRepository}. It exposes some methods that are required to perform lifecycle management
-     * operations that are not typically required outside of repository implementation.
+     * Specialization of the {@link Repository} interface that <em>must</em> be implemented by all implementations of
+     * the {@code AsyncRepository}. It exposes some methods that are required to perform lifecycle management operations
+     * that are not typically required outside of repository implementation.
      * <p>
      * More specifically, these methods are meant for implementations of a Repository wrapping another to be able to
      * properly have lifecycle operations registered with downstream {@code AsyncRepository} implementations.
      *
-     * @param <T>  The type of entity this repository stores.
+     * @param <E>  The type of entity this repository stores.
      * @param <ID> The type of identifier for entities in this repository.
      */
-    non-sealed interface LifecycleManagement<ID, T> extends Repository<ID, T> {
+    non-sealed interface LifecycleManagement<ID, E> extends Repository<ID, E> {
 
         /**
          * Ensures that the given {@code entity} has its lifecycle managed in the given {@code processingContext}. This
@@ -117,6 +117,6 @@ public sealed interface Repository<ID, T>
          * @param processingContext The processing context to link the lifecycle with.
          * @return The instance of the entity whose lifecycle is managed by this repository.
          */
-        ManagedEntity<ID, T> attach(@Nonnull ManagedEntity<ID, T> entity, @Nonnull ProcessingContext processingContext);
+        ManagedEntity<ID, E> attach(@Nonnull ManagedEntity<ID, E> entity, @Nonnull ProcessingContext processingContext);
     }
 }

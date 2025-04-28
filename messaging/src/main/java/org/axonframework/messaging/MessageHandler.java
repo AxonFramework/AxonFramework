@@ -41,7 +41,7 @@ public interface MessageHandler<T extends Message<?>, R extends Message<?>> {
     /**
      * TODO Add documentation
      */
-    default MessageStream<? extends R> handle(T message, ProcessingContext processingContext) {
+    default MessageStream<R> handle(T message, ProcessingContext processingContext) {
         try {
             return MessageStream.just((R) GenericResultMessage.asResultMessage(handleSync(message)));
         } catch (Exception e) {

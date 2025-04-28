@@ -21,6 +21,7 @@ import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.SimpleCommandBus;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.commandhandling.gateway.DefaultCommandGateway;
@@ -30,7 +31,6 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -98,8 +98,8 @@ class MessagingConfigurationDefaultsTest {
     private static class TestCommandBus implements CommandBus {
 
         @Override
-        public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                                @Nullable ProcessingContext processingContext) {
+        public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                                   @Nullable ProcessingContext processingContext) {
             throw new UnsupportedOperationException();
         }
 

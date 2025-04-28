@@ -21,8 +21,8 @@ import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -79,8 +79,8 @@ public class DistributedCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                            @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                               @Nullable ProcessingContext processingContext) {
         return connector.dispatch(command, processingContext);
     }
 
