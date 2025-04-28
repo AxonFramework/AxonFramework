@@ -1,74 +1,53 @@
+package org.axonframework.extensions.kotlin.serialization
+
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
-import kotlinx.serialization.descriptors.element
-import kotlinx.serialization.encoding.*
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
 import org.axonframework.messaging.MetaData
 
 /**
- * Serializer for Axon's MetaData class.
- *
- * This serializer handles the MetaData by converting it to a simple string-to-string
- * map for serialization. This ensures compatibility with any Kotlin serialization format.
+ * Serializer for Axon Framework's [MetaData] class.
+ * Since MetaData implements Map<String, Object>, we can use a map serializer
+ * but need special handling for the polymorphic values.
  */
 object MetaDataSerializer : KSerializer<MetaData> {
-    // Use a simple String -> String map for maximum compatibility
-    private val mapSerializer = MapSerializer(String.serializer(), String.serializer())
+    // We use a map serializer with String keys and polymorphic Any values
+    private val mapSerializer = MapSerializer(
+        keySerializer = String.serializer(),
+        valueSerializer = PolymorphicSerializer(Any::class).nullable
+    )
 
-    override val descriptor = buildClassSerialDescriptor(MetaData::class.java.name) {
-        element<Map<String, String>>("values")
-    }
-
-    override fun deserialize(decoder: Decoder): MetaData = decoder.decodeStructure(descriptor) {
-        var stringMap: Map<String, String>? = null
-        while (true) {
-            val index = decodeElementIndex(descriptor)
-            if (index == CompositeDecoder.DECODE_DONE) break
-            when (index) {
-                0 -> stringMap = decodeSerializableElement(descriptor, index, mapSerializer)
-            }
-        }
-
-        if (stringMap == null || stringMap.isEmpty()) {
-            return@decodeStructure MetaData.emptyInstance()
-        }
-
-        // The string map contains string representations of values
-        // Convert back to appropriate types when possible
-        val resultMap = HashMap<String, Any?>()
-        stringMap.forEach { (key, valueStr) ->
-            resultMap[key] = convertStringToTypedValue(valueStr)
-        }
-
-        return@decodeStructure MetaData.from(resultMap)
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("org.axonframework.messaging.MetaData") {
+        element("entries", mapSerializer.descriptor)
     }
 
     override fun serialize(encoder: Encoder, value: MetaData) {
-        // Convert MetaData entries to strings
-        val stringMap = HashMap<String, String>()
-
-        value.forEach { (key, obj) ->
-            stringMap[key] = obj?.toString() ?: "null"
-        }
-
         encoder.encodeStructure(descriptor) {
-            encodeSerializableElement(descriptor, 0, mapSerializer, stringMap)
+            encodeSerializableElement(descriptor, 0, mapSerializer, value)
         }
     }
 
-    /**
-     * Converts a string representation back to a typed value when possible.
-     */
-    private fun convertStringToTypedValue(value: String): Any? {
-        if (value == "null") return null
-
-        // Try to convert to common primitive types
-        return value.toBooleanStrictOrNull() ?:
-        value.toIntOrNull() ?:
-        value.toLongOrNull() ?:
-        value.toDoubleOrNull() ?:
-        // If all else fails, keep as string
-        value
+    override fun deserialize(decoder: Decoder): MetaData {
+        // Deserialize as a Map, then convert to MetaData
+        return decoder.decodeStructure(descriptor) {
+            var map: Map<String, Any?>? = null
+            while (true) {
+                val index = decodeElementIndex(descriptor)
+                if (index == CompositeDecoder.DECODE_DONE) break
+                when (index) {
+                    0 -> map = decodeSerializableElement(descriptor, index, mapSerializer)
+                }
+            }
+            MetaData.from(map ?: HashMap<String, Any?>())
+        }
     }
 }
