@@ -77,7 +77,7 @@ val replayTokenContextSerializer = String.serializer().nullable
  * This module includes serializers for TrackingTokens, ScheduleTokens, and ResponseTypes, enabling
  * seamless integration with Axon-based applications.
  */
-val `AxonSerializersModule` = SerializersModule {
+val AxonSerializersModule = SerializersModule {
     contextual(ConfigToken::class) { ConfigTokenSerializer }
     contextual(GapAwareTrackingToken::class) { GapAwareTrackingTokenSerializer }
     contextual(MultiSourceTrackingToken::class) { MultiSourceTrackingTokenSerializer }
