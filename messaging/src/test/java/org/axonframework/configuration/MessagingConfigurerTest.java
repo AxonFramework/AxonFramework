@@ -91,7 +91,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     @Test
     void registerMessageTypeResolverOverridesDefault() {
         MessageTypeResolver expected = MultiMessageTypeResolver
-                .on(String.class, new MessageType("test.message.", "1.0.0"))
+                .message(String.class, new MessageType("test.message.", "1.0.0"))
                 .throwsIfUnknown();
 
         Configuration result = testSubject.registerMessageTypeResolver(c -> expected)
