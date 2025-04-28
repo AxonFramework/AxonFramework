@@ -92,7 +92,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
     void registerMessageTypeResolverOverridesDefault() {
         MessageTypeResolver expected = LambdaBasedMessageTypeResolver
                 .on(String.class, __ -> new MessageType("test.message.", "1.0.0"))
-                .onUnknownFail();
+                .throwsIfUnknown();
 
         Configuration result = testSubject.registerMessageTypeResolver(c -> expected)
                                           .build();

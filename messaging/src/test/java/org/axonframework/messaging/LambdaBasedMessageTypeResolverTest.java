@@ -35,7 +35,7 @@ class LambdaBasedMessageTypeResolverTest {
         MessageType expected = new MessageType("test.string", "1.0.0");
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, payloadType -> expected)
-                .onUnknownFail();
+                .throwsIfUnknown();
 
         // when
         MessageType result = resolver.resolve(String.class);
@@ -50,7 +50,7 @@ class LambdaBasedMessageTypeResolverTest {
         MessageType expected = new MessageType("test.string", "1.0.0");
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, expected)
-                .onUnknownFail();
+                .throwsIfUnknown();
 
         // when
         MessageType result = resolver.resolve(String.class);
@@ -65,8 +65,8 @@ class LambdaBasedMessageTypeResolverTest {
         MessageType fixedType = new MessageType("test.string", "1.0.0");
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, fixedType)
-                .on(Integer.class, payloadType -> new MessageType("test.integer", "2.0.0"))
-                .onUnknownFail();
+                .message(Integer.class, payloadType -> new MessageType("test.integer", "2.0.0"))
+                .throwsIfUnknown();
 
         // when
         MessageType stringResult = resolver.resolve(String.class);
@@ -82,7 +82,7 @@ class LambdaBasedMessageTypeResolverTest {
         // given
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, new MessageType("test.string", "1.0.0"))
-                .onUnknownFail();
+                .throwsIfUnknown();
 
         // when/then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
@@ -96,7 +96,7 @@ class LambdaBasedMessageTypeResolverTest {
         MessageTypeResolver defaultResolver = new ClassBasedMessageTypeResolver("2.0.0");
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, new MessageType("test.string", "1.0.0"))
-                .onUnknownUse(defaultResolver);
+                .fallbacksIfUnknown(defaultResolver);
 
         // when
         MessageType result = resolver.resolve(Integer.class);
@@ -113,7 +113,7 @@ class LambdaBasedMessageTypeResolverTest {
         MessageTypeResolver defaultResolver = new ClassBasedMessageTypeResolver("2.0.0");
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, expectedString)
-                .onUnknownUse(defaultResolver);
+                .fallbacksIfUnknown(defaultResolver);
 
         // when
         MessageType stringResult = resolver.resolve(String.class);
@@ -130,9 +130,9 @@ class LambdaBasedMessageTypeResolverTest {
         // given
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, new MessageType("test.string", "1.0.0"))
-                .on(Integer.class, new MessageType("test.integer", "2.0.0"))
-                .on(Double.class, cls -> new MessageType(cls.getSimpleName(), "3.0.0"))
-                .onUnknownFail();
+                .message(Integer.class, new MessageType("test.integer", "2.0.0"))
+                .message(Double.class, cls -> new MessageType(cls.getSimpleName(), "3.0.0"))
+                .throwsIfUnknown();
 
         // when
         MessageType stringResult = resolver.resolve(String.class);
@@ -156,7 +156,7 @@ class LambdaBasedMessageTypeResolverTest {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                                                           () -> LambdaBasedMessageTypeResolver
                                                                   .on(String.class, new MessageType("first"))
-                                                                  .on(String.class, new MessageType("second")));
+                                                                  .message(String.class, new MessageType("second")));
 
         assertEquals("A resolver is already registered for payload type [java.lang.String]", exception.getMessage());
     }
@@ -168,10 +168,10 @@ class LambdaBasedMessageTypeResolverTest {
                 .on(String.class, new MessageType("test.string", "1.0.0"));
 
         var phase2 = phase1
-                .on(Integer.class, new MessageType("test.integer", "2.0.0"));
+                .message(Integer.class, new MessageType("test.integer", "2.0.0"));
 
-        var resolver1 = phase1.onUnknownFail();
-        var resolver2 = phase2.onUnknownFail();
+        var resolver1 = phase1.throwsIfUnknown();
+        var resolver2 = phase2.throwsIfUnknown();
 
         // then - resolver1 doesn't know about Integer
         assertThrows(IllegalArgumentException.class,
@@ -191,7 +191,7 @@ class LambdaBasedMessageTypeResolverTest {
         // Use a different resolver for String
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, new MessageType("test.string", "1.0.0"))
-                .onUnknownFail();
+                .throwsIfUnknown();
 
         // when
         MessageType result = resolver.resolve(message);
@@ -206,7 +206,7 @@ class LambdaBasedMessageTypeResolverTest {
         // given
         LambdaBasedMessageTypeResolver resolver = LambdaBasedMessageTypeResolver
                 .on(String.class, new MessageType("test.string", version))
-                .onUnknownFail();
+                .throwsIfUnknown();
 
         // when
         MessageType result = resolver.resolve(String.class);
