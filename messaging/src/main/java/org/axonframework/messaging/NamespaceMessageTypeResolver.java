@@ -23,16 +23,14 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * A {@link MessageTypeResolver} implementation that allows registering custom mappings for specific payload types.
+ * Implementation of the {@link MessageTypeResolver} that maintains a mapping of payload types to their corresponding
+ * {@link MessageType}s. This resolver organizes message types under a common namespace.
  * <p>
- * This resolver provides a fluent API to register type mappings that return a {@link MessageType} for specific payload
- * types.
+ * The resolver will throw a {@link MessageTypeNotResolvedException} when encountering a payload type for which no
+ * mapping has been defined. If fallback behavior is desired, use the {@link NamespaceMessageTypeResolverBuilder#fallback(MessageTypeResolver)}
+ * method during configuration to provide an alternative resolver.
  * <p>
- * When a payload type is not explicitly registered, the resolver can either:
- * <ul>
- *     <li>Use a fallback resolver (configured via {@link NamespaceMessagesPhase#fallback(MessageTypeResolver)}).</li>
- *     <li>Throw an exception (configured via {@link NamespaceMessagesPhase#throwsIfUnknown()}, which is the default behavior).</li>
- * </ul>
+ * Use the {@link #namespace(String)} static method to start building a resolver with a default namespace.
  *
  * @author Mateusz Nowak
  * @since 5.0.0
@@ -41,14 +39,6 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
 
     private final Map<Class<?>, MessageType> mappings;
 
-    /**
-     * Private constructor used by the builder to create the resolver with the configured mappings and default
-     * behavior.
-     *
-     * @param mappings         The mapping of payload types to their specific {@code MessageType}s.
-     * @param fallbackResolver The fallback resolver to use when no specific resolver is found, or null to throw an
-     *                         exception.
-     */
     private NamespaceMessageTypeResolver(
             @Nonnull Map<Class<?>, MessageType> mappings
     ) {
@@ -57,14 +47,13 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
     }
 
     /**
-     * Starts building a new resolver and registers the first payload type with a fixed message type.
+     * Sets a new namespace for subsequent message mappings.
      *
-     * @param payloadType The class to register the fixed message type for.
-     * @param messageType The message type to use for the given payload type.
-     * @return The type resolver phase for further configuration.
+     * @param namespace The namespace to use for message types created after this call.
+     * @return The builder instance for method chaining.
      */
-    public static NamespaceMessagesPhase namespace(@Nonnull String namespace) {
-        return new InternalNamespaceMessagesPhase(namespace, Map.of(), null);
+    public static NamespaceMessageTypeResolverBuilder namespace(@Nonnull String namespace) {
+        return new InternalNamespaceMessageTypeResolverBuilder(namespace, Map.of(), null);
     }
 
     @Override
@@ -78,52 +67,62 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
     }
 
     /**
-     * Interface representing the phase where type mappings are registered.
+     * Builder interface for constructing a {@link NamespaceMessageTypeResolver}.
+     * <p>
+     * Allows for a fluent API to configure message type mappings under a common namespace.
      */
-    public interface NamespaceMessagesPhase {
-
-        NamespaceMessagesPhase namespace(@Nonnull String namespace);
+    public interface NamespaceMessageTypeResolverBuilder {
 
         /**
-         * Registers a fixed {@link MessageType} for the given payload type.
+         * Sets a new namespace for subsequent message mappings.
          *
-         * @param payloadType The class to register the fixed message type for.
-         * @param messageType The message type to use for the given payload type.
-         * @return The current phase for further configuration.
-         * @throws IllegalArgumentException if a resolver is already registered for the given payload type.
+         * @param namespace The namespace to use for message types created after this call.
+         * @return The builder instance for method chaining.
          */
-        NamespaceMessagesPhase message(@Nonnull Class<?> payloadType, @Nonnull String localName, @Nonnull String version);
+        NamespaceMessageTypeResolverBuilder namespace(@Nonnull String namespace);
 
         /**
-         * Configures the resolver to throw an exception when no specific resolver is found for a payload type.
+         * Registers a mapping for the given {@code payloadType} to a {@link MessageType} with the specified attributes.
          *
-         * @return The completed {@link NamespaceMessageTypeResolver}.
+         * @param payloadType The class of the payload to register a mapping for.
+         * @param localName   The local name component of the resulting {@link MessageType}.
+         * @param version     The version component of the resulting {@link MessageType}.
+         * @return The builder instance for method chaining.
+         * @throws IllegalArgumentException If a mapping for the given {@code payloadType} already exists.
+         */
+        NamespaceMessageTypeResolverBuilder message(@Nonnull Class<?> payloadType, @Nonnull String localName, @Nonnull String version);
+
+        /**
+         * Finalizes the builder and returns a {@link MessageTypeResolver} that throws a {@link MessageTypeNotResolvedException}
+         * when encountering unmapped payload types.
+         *
+         * @return A {@link MessageTypeResolver} that will throw exceptions for unknown payload types.
          */
         MessageTypeResolver throwsIfUnknown();
 
         /**
-         * Configures the resolver to use the specified default resolver when no specific resolver is found for a
-         * payload type.
+         * Finalizes the builder and returns a {@link MessageTypeResolver} that delegates to the given {@code resolver}
+         * when encountering unmapped payload types.
          *
-         * @param resolver The default resolver to use.
-         * @return The completed {@link NamespaceMessageTypeResolver}.
+         * @param resolver The resolver to use as fallback when this resolver cannot resolve a payload type.
+         * @return A {@link MessageTypeResolver} with fallback behavior.
          */
         MessageTypeResolver fallback(MessageTypeResolver resolver);
     }
 
-    private record InternalNamespaceMessagesPhase(
+    private record InternalNamespaceMessageTypeResolverBuilder(
             String namespace,
             Map<Class<?>, MessageType> mappings,
             MessageTypeResolver defaultResolver
-    ) implements NamespaceMessagesPhase {
+    ) implements NamespaceMessageTypeResolverBuilder {
 
         @Override
-        public NamespaceMessagesPhase namespace(@Nonnull String namespace) {
-            return new InternalNamespaceMessagesPhase(namespace, this.mappings, defaultResolver);
+        public NamespaceMessageTypeResolverBuilder namespace(@Nonnull String namespace) {
+            return new InternalNamespaceMessageTypeResolverBuilder(namespace, this.mappings, defaultResolver);
         }
 
         @Override
-        public NamespaceMessagesPhase message(@Nonnull Class<?> payloadType, @Nonnull String localName, @Nonnull String version) {
+        public NamespaceMessageTypeResolverBuilder message(@Nonnull Class<?> payloadType, @Nonnull String localName, @Nonnull String version) {
             if (mappings.containsKey(payloadType)) {
                 throw new IllegalArgumentException(
                         "A MessageType is already defined for payload type [" + payloadType.getName() + "]");
@@ -132,7 +131,7 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
             Map<Class<?>, MessageType> newMappings = new HashMap<>(mappings);
             newMappings.put(payloadType, new MessageType(namespace, localName, version));
 
-            return new InternalNamespaceMessagesPhase(this.namespace, newMappings, defaultResolver);
+            return new InternalNamespaceMessageTypeResolverBuilder(this.namespace, newMappings, defaultResolver);
         }
 
         @Override
