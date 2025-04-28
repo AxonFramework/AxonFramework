@@ -30,14 +30,14 @@ import java.util.Objects;
  * <p>
  * When a payload type is not explicitly registered, the resolver can either:
  * <ul>
- *     <li>Use a fallback resolver (configured via {@link TypeResolverPhase#fallback(MessageTypeResolver)}).</li>
- *     <li>Throw an exception (configured via {@link TypeResolverPhase#throwsIfUnknown()}, which is the default behavior).</li>
+ *     <li>Use a fallback resolver (configured via {@link NamespaceMessagesPhase#fallback(MessageTypeResolver)}).</li>
+ *     <li>Throw an exception (configured via {@link NamespaceMessagesPhase#throwsIfUnknown()}, which is the default behavior).</li>
  * </ul>
  *
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class SimpleMessageTypeResolver implements MessageTypeResolver {
+public class NamespaceMessageTypeResolver implements MessageTypeResolver {
 
     private final Map<Class<?>, MessageType> mappings;
 
@@ -49,7 +49,7 @@ public class SimpleMessageTypeResolver implements MessageTypeResolver {
      * @param fallbackResolver The fallback resolver to use when no specific resolver is found, or null to throw an
      *                         exception.
      */
-    private SimpleMessageTypeResolver(
+    private NamespaceMessageTypeResolver(
             @Nonnull Map<Class<?>, MessageType> mappings
     ) {
         Objects.requireNonNull(mappings, "Mappings may not be null");
@@ -63,10 +63,8 @@ public class SimpleMessageTypeResolver implements MessageTypeResolver {
      * @param messageType The message type to use for the given payload type.
      * @return The type resolver phase for further configuration.
      */
-    public static TypeResolverPhase message(@Nonnull Class<?> payloadType, @Nonnull MessageType messageType) {
-        Map<Class<?>, MessageType> initialMappings = new HashMap<>();
-        initialMappings.put(payloadType, messageType);
-        return new InternalTypeResolverPhase(initialMappings, null);
+    public static NamespaceMessagesPhase namespace(@Nonnull String namespace) {
+        return new InternalNamespaceMessagesPhase(namespace, Map.of(), null);
     }
 
     @Override
@@ -82,7 +80,9 @@ public class SimpleMessageTypeResolver implements MessageTypeResolver {
     /**
      * Interface representing the phase where type mappings are registered.
      */
-    public interface TypeResolverPhase {
+    public interface NamespaceMessagesPhase {
+
+        NamespaceMessagesPhase namespace(@Nonnull String namespace);
 
         /**
          * Registers a fixed {@link MessageType} for the given payload type.
@@ -92,12 +92,12 @@ public class SimpleMessageTypeResolver implements MessageTypeResolver {
          * @return The current phase for further configuration.
          * @throws IllegalArgumentException if a resolver is already registered for the given payload type.
          */
-        TypeResolverPhase message(@Nonnull Class<?> payloadType, @Nonnull MessageType messageType);
+        NamespaceMessagesPhase message(@Nonnull Class<?> payloadType, @Nonnull String localName, @Nonnull String version);
 
         /**
          * Configures the resolver to throw an exception when no specific resolver is found for a payload type.
          *
-         * @return The completed {@link SimpleMessageTypeResolver}.
+         * @return The completed {@link NamespaceMessageTypeResolver}.
          */
         MessageTypeResolver throwsIfUnknown();
 
@@ -106,32 +106,38 @@ public class SimpleMessageTypeResolver implements MessageTypeResolver {
          * payload type.
          *
          * @param resolver The default resolver to use.
-         * @return The completed {@link SimpleMessageTypeResolver}.
+         * @return The completed {@link NamespaceMessageTypeResolver}.
          */
         MessageTypeResolver fallback(MessageTypeResolver resolver);
     }
 
-    private record InternalTypeResolverPhase(
+    private record InternalNamespaceMessagesPhase(
+            String namespace,
             Map<Class<?>, MessageType> mappings,
             MessageTypeResolver defaultResolver
-    ) implements TypeResolverPhase {
+    ) implements NamespaceMessagesPhase {
 
         @Override
-        public TypeResolverPhase message(@Nonnull Class<?> payloadType, @Nonnull MessageType messageType) {
+        public NamespaceMessagesPhase namespace(@Nonnull String namespace) {
+            return new InternalNamespaceMessagesPhase(namespace, this.mappings, defaultResolver);
+        }
+
+        @Override
+        public NamespaceMessagesPhase message(@Nonnull Class<?> payloadType, @Nonnull String localName, @Nonnull String version) {
             if (mappings.containsKey(payloadType)) {
                 throw new IllegalArgumentException(
                         "A MessageType is already defined for payload type [" + payloadType.getName() + "]");
             }
 
             Map<Class<?>, MessageType> newMappings = new HashMap<>(mappings);
-            newMappings.put(payloadType, messageType);
+            newMappings.put(payloadType, new MessageType(namespace, localName, version));
 
-            return new InternalTypeResolverPhase(newMappings, defaultResolver);
+            return new InternalNamespaceMessagesPhase(this.namespace, newMappings, defaultResolver);
         }
 
         @Override
         public MessageTypeResolver throwsIfUnknown() {
-            return new SimpleMessageTypeResolver(mappings);
+            return new NamespaceMessageTypeResolver(mappings);
         }
 
         @Override
