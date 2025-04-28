@@ -23,14 +23,14 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * A {@link MessageTypeResolver} implementation that allows registering custom resolvers for specific payload types.
+ * A {@link MessageTypeResolver} implementation that allows registering custom mappings for specific payload types.
  * <p>
- * This resolver provides a fluent API to register type resolvers that return a {@link MessageType} for specific payload
+ * This resolver provides a fluent API to register type mappings that return a {@link MessageType} for specific payload
  * types.
  * <p>
  * When a payload type is not explicitly registered, the resolver can either:
  * <ul>
- *     <li>Use a fallback resolver (configured via {@link TypeResolverPhase#fallbacksIfUnknown(MessageTypeResolver)}).</li>
+ *     <li>Use a fallback resolver (configured via {@link TypeResolverPhase#fallback(MessageTypeResolver)}).</li>
  *     <li>Throw an exception (configured via {@link TypeResolverPhase#throwsIfUnknown()}, which is the default behavior).</li>
  * </ul>
  *
@@ -39,37 +39,24 @@ import java.util.Objects;
  */
 public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
 
-    private final Map<Class<?>, MessageTypeResolver> resolvers;
+    private final Map<Class<?>, MessageType> mappings;
     private final MessageTypeResolver fallbackResolver;
 
     /**
-     * Private constructor used by the builder to create the resolver with the configured resolvers and default
+     * Private constructor used by the builder to create the resolver with the configured mappings and default
      * behavior.
      *
-     * @param resolvers        The map of payload types to their specific resolvers.
+     * @param mappings         The mapping of payload types to their specific {@code MessageType}s.
      * @param fallbackResolver The fallback resolver to use when no specific resolver is found, or null to throw an
      *                         exception.
      */
     private LambdaBasedMessageTypeResolver(
-            @Nonnull Map<Class<?>, MessageTypeResolver> resolvers,
+            @Nonnull Map<Class<?>, MessageType> mappings,
             MessageTypeResolver fallbackResolver
     ) {
-        Objects.requireNonNull(resolvers, "Resolvers may not be null");
-        this.resolvers = resolvers;
+        Objects.requireNonNull(mappings, "Mappings may not be null");
+        this.mappings = mappings;
         this.fallbackResolver = fallbackResolver;
-    }
-
-    /**
-     * Starts building a new resolver and registers the first payload type with a custom resolver.
-     *
-     * @param payloadType The class to register the resolver for.
-     * @param resolver    The resolver that resolves the payload type class to a {@link MessageType}.
-     * @return The type resolver phase for further configuration.
-     */
-    public static TypeResolverPhase on(@Nonnull Class<?> payloadType, @Nonnull MessageTypeResolver resolver) {
-        Map<Class<?>, MessageTypeResolver> initialResolvers = new HashMap<>();
-        initialResolvers.put(payloadType, resolver);
-        return new InternalTypeResolverPhase(initialResolvers, null);
     }
 
     /**
@@ -80,35 +67,27 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
      * @return The type resolver phase for further configuration.
      */
     public static TypeResolverPhase on(@Nonnull Class<?> payloadType, @Nonnull MessageType messageType) {
-        return on(payloadType, payloadType1 -> messageType);
+        Map<Class<?>, MessageType> initialMappings = new HashMap<>();
+        initialMappings.put(payloadType, messageType);
+        return new InternalTypeResolverPhase(initialMappings, null);
     }
 
     @Override
     public MessageType resolve(Class<?> payloadType) {
-        var resolver = resolvers.get(payloadType);
-        if (resolver != null) {
-            return resolver.resolve(payloadType);
+        var messageType = mappings.get(payloadType);
+        if (messageType != null) {
+            return messageType;
         }
         if (fallbackResolver == null) {
-            throw new IllegalArgumentException("No resolver found for payload type [" + payloadType.getName() + "]");
+            throw new IllegalArgumentException("No MessageType found for payload type [" + payloadType.getName() + "]");
         }
         return fallbackResolver.resolve(payloadType);
     }
 
     /**
-     * Interface representing the phase where type resolvers are registered.
+     * Interface representing the phase where type mappings are registered.
      */
     public interface TypeResolverPhase {
-
-        /**
-         * Registers a resolver that returns a {@link MessageType} for the given payload type.
-         *
-         * @param payloadType The class to register the resolver for.
-         * @param resolver    The resolver that produces a {@link MessageType} for the given payload type.
-         * @return The current phase for further configuration.
-         * @throws IllegalArgumentException if a resolver is already registered for the given payload type.
-         */
-        TypeResolverPhase message(@Nonnull Class<?> payloadType, @Nonnull MessageTypeResolver resolver);
 
         /**
          * Registers a fixed {@link MessageType} for the given payload type.
@@ -118,9 +97,7 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
          * @return The current phase for further configuration.
          * @throws IllegalArgumentException if a resolver is already registered for the given payload type.
          */
-        default TypeResolverPhase message(@Nonnull Class<?> payloadType, @Nonnull MessageType messageType) {
-            return message(payloadType, __ -> messageType);
-        }
+        TypeResolverPhase message(@Nonnull Class<?> payloadType, @Nonnull MessageType messageType);
 
         /**
          * Configures the resolver to throw an exception when no specific resolver is found for a payload type.
@@ -128,7 +105,7 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
          * @return The completed {@link LambdaBasedMessageTypeResolver}.
          */
         default LambdaBasedMessageTypeResolver throwsIfUnknown() {
-            return fallbacksIfUnknown(null);
+            return fallback(null);
         }
 
         /**
@@ -138,30 +115,30 @@ public class LambdaBasedMessageTypeResolver implements MessageTypeResolver {
          * @param resolver The default resolver to use.
          * @return The completed {@link LambdaBasedMessageTypeResolver}.
          */
-        LambdaBasedMessageTypeResolver fallbacksIfUnknown(MessageTypeResolver resolver);
+        LambdaBasedMessageTypeResolver fallback(MessageTypeResolver resolver);
     }
 
     private record InternalTypeResolverPhase(
-            Map<Class<?>, MessageTypeResolver> resolvers,
+            Map<Class<?>, MessageType> mappings,
             MessageTypeResolver defaultResolver
     ) implements TypeResolverPhase {
 
         @Override
-        public TypeResolverPhase message(@Nonnull Class<?> payloadType, @Nonnull MessageTypeResolver resolver) {
-            if (resolvers.containsKey(payloadType)) {
+        public TypeResolverPhase message(@Nonnull Class<?> payloadType, @Nonnull MessageType messageType) {
+            if (mappings.containsKey(payloadType)) {
                 throw new IllegalArgumentException(
-                        "A resolver is already registered for payload type [" + payloadType.getName() + "]");
+                        "A MessageType is already defined for payload type [" + payloadType.getName() + "]");
             }
 
-            Map<Class<?>, MessageTypeResolver> newResolvers = new HashMap<>(resolvers);
-            newResolvers.put(payloadType, resolver);
+            Map<Class<?>, MessageType> newMappings = new HashMap<>(mappings);
+            newMappings.put(payloadType, messageType);
 
-            return new InternalTypeResolverPhase(newResolvers, defaultResolver);
+            return new InternalTypeResolverPhase(newMappings, defaultResolver);
         }
 
         @Override
-        public LambdaBasedMessageTypeResolver fallbacksIfUnknown(MessageTypeResolver resolver) {
-            return new LambdaBasedMessageTypeResolver(resolvers, resolver);
+        public LambdaBasedMessageTypeResolver fallback(MessageTypeResolver resolver) {
+            return new LambdaBasedMessageTypeResolver(mappings, resolver);
         }
     }
 }
