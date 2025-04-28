@@ -26,8 +26,8 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.SimpleMessageTypeResolver;
-import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MessageTypeResolverWithFallback;
+import org.axonframework.messaging.MultiMessageTypeResolver;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.queryhandling.DefaultQueryGateway;
 import org.axonframework.queryhandling.QueryBus;
@@ -39,6 +39,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.Optional;
 
+import static org.axonframework.messaging.NamespaceMessageTypeResolver.namespace;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -90,9 +91,15 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
     @Test
     void registerMessageTypeResolverOverridesDefault() {
-        MessageTypeResolver expected = SimpleMessageTypeResolver
-                .message(String.class, new MessageType("test.message.", "1.0.0"))
-                .throwsIfUnknown();
+        MessageTypeResolver expected = new MessageTypeResolverWithFallback(
+                MultiMessageTypeResolver.of(
+                        namespace("namespace1")
+                                .message(String.class, "localName", "1.0.0"),
+                        namespace("namespace2")
+                                .message(Integer.class, "localName", "1.0.0")
+                ),
+                new ClassBasedMessageTypeResolver()
+        );
 
         Configuration result = testSubject.registerMessageTypeResolver(c -> expected)
                                           .build();
