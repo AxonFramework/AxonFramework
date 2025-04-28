@@ -74,15 +74,7 @@ public class Employee extends Person {
 
     @EventSourcingHandler
     public void on(TaskAssigned event) {
-        taskList.add(new Task(event.taskId(), event.description()));
-    }
-
-    public SalaryInformation getSalary() {
-        return salary;
-    }
-
-    public void setSalary(SalaryInformation salary) {
-        this.salary = salary;
+        taskList.add(new Task(event.taskId()));
     }
 
     public List<Task> getTaskList() {

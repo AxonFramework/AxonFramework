@@ -85,7 +85,7 @@ import static org.axonframework.common.property.PropertyAccessStrategy.getProper
  * THIS CLASS ONLY EXIST TO VERIFY THE CURRENT FUNCTIONALITY CAN BE APPLIED WITH ANNOTATIONS. THIS CLASS SHOULD NOT BE
  * REVIEWED. It's just proof of concept.
  * <p>
- * All needed classes/annotations are in this same class, so it can easily be skipped during review.
+ * All classes and annotations needed are located in this same class, so it can easily be skipped during review.
  */
 public class AnnotationBasedAdministrationTest extends AbstractAdministrationTestSuite {
 

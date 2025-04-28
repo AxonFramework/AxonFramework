@@ -24,8 +24,6 @@ import org.axonframework.integrationtests.testsuite.administration.events.Custom
 
 public class Customer extends Person {
 
-    private Double credit = 0.0;
-
     @CommandHandler
     public void handle(CreateCustomer command, EventAppender appender) {
         if (identifier != null) {
@@ -43,6 +41,5 @@ public class Customer extends Person {
         this.lastNames = event.lastNames();
         this.firstNames = event.firstNames();
         this.emailAddress = event.emailAddress();
-        this.credit = 0.0;
     }
 }

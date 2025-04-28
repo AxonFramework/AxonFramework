@@ -19,7 +19,6 @@ package org.axonframework.integrationtests.testsuite.administration;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.gateway.CommandGateway;
-import org.axonframework.configuration.AxonConfiguration;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.configuration.EventSourcingConfigurer;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
@@ -35,39 +34,42 @@ import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CompletionException;
 
+/**
+ * Test suite for verifying polymorphic behavior of entities. Can be implemented by different test classes that verify
+ * different ways of building the {@link org.axonframework.modelling.entity.EntityCommandHandlingComponent}.
+ */
 public abstract class AbstractAdministrationTestSuite {
 
     private CommandHandlingComponent component;
-    private AxonConfiguration configuration;
     private CommandGateway commandGateway;
 
-    private CreateEmployee CREATE_EMPLOYEE_1_COMMAND = new CreateEmployee(
+    private final CreateEmployee CREATE_EMPLOYEE_1_COMMAND = new CreateEmployee(
             new PersonIdentifier(PersonType.EMPLOYEE, "1234"),
             "Herrijgers",
             "Mitchell",
             "mitchell.herrijgers@axoniq.io",
-            "Super developer",
+            "Bug Creator",
             3000.0);
 
 
-    private CreateCustomer CREATE_CUSTOMER_1_COMMAND = new CreateCustomer(
-            new PersonIdentifier(PersonType.CUSTOMER, "snoop-dogg"),
-            "Dogg",
-            "Snoop",
-            "dog@snoop.y"
+    private final CreateCustomer CREATE_CUSTOMER_1_COMMAND = new CreateCustomer(
+            new PersonIdentifier(PersonType.CUSTOMER, "shomer"),
+            "Simpson",
+            "Homer",
+            "homer@the-simpsons.io"
     );
 
     @BeforeEach
     void setUp() {
-        this.configuration = EventSourcingConfigurer.create()
-                                                    .lifecycleRegistry(lr -> {
-                                                        lr.onStart(0, c -> {
-                                                            component = getCommandHandlingComponent(c);
-                                                            c.getComponent(CommandBus.class).subscribe(component);
-                                                            commandGateway = c.getComponent(CommandGateway.class);
-                                                        });
-                                                    })
-                                                    .start();
+        EventSourcingConfigurer.create()
+                               .lifecycleRegistry(lr -> {
+                                   lr.onStart(0, c -> {
+                                       component = getCommandHandlingComponent(c);
+                                       c.getComponent(CommandBus.class).subscribe(component);
+                                       commandGateway = c.getComponent(CommandGateway.class);
+                                   });
+                               })
+                               .start();
     }
 
     abstract CommandHandlingComponent getCommandHandlingComponent(Configuration configuration);
@@ -112,7 +114,7 @@ public abstract class AbstractAdministrationTestSuite {
 
         assertThrowsExceptionWithText("Email address cannot be the same as the current one", () -> {
             commandGateway.send(new ChangeEmailAddress(CREATE_CUSTOMER_1_COMMAND.identifier(),
-                                                       "dog@snoop.y"), ProcessingContext.NONE)
+                                                       CREATE_CUSTOMER_1_COMMAND.emailAddress()), ProcessingContext.NONE)
                           .getResultMessage().join();
         });
 

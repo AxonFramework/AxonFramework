@@ -26,12 +26,10 @@ import org.axonframework.modelling.command.EntityId;
 public class Task {
     @EntityId
     private String taskId;
-    private String description;
     private Boolean completed;
 
-    public Task(String taskId, String description) {
+    public Task(String taskId) {
         this.taskId = taskId;
-        this.description = description;
         this.completed = false;
     }
 
@@ -51,10 +49,6 @@ public class Task {
 
     public String getTaskId() {
         return taskId;
-    }
-
-    public String getDescription() {
-        return description;
     }
 
     public Boolean isCompleted() {

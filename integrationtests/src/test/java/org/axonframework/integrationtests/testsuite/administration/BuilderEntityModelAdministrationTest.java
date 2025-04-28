@@ -47,14 +47,17 @@ import org.axonframework.modelling.entity.PolymorphicEntityModel;
 import org.axonframework.modelling.entity.SimpleEntityModel;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.EntityChildModel;
-import org.axonframework.modelling.entity.child.SingleEntityChildModel;
 
-public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSuite {
+/**
+ * Runs the administration test suite using the builders of {@link SimpleEntityModel} and related classes.
+ */
+public class BuilderEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
 
     @Override
     CommandHandlingComponent getCommandHandlingComponent(Configuration configuration) {
         MessageTypeResolver typeResolver = configuration.getComponent(MessageTypeResolver.class);
 
+        // Task is the list-based child-model of Employee
         EntityModel<Task> taskModel = SimpleEntityModel
                 .forEntityClass(Task.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(Task.class))
@@ -66,14 +69,14 @@ public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSui
                                 })
                 .build();
 
-
+        // SalaryInformation is the singular child-model of Employee
         EntityModel<SalaryInformation> salaryInformationModel = SimpleEntityModel
                 .forEntityClass(SalaryInformation.class)
                 .entityEvolver((entity, event, context) -> {
                     Object payload = event.getPayload();
                     if (payload instanceof RaiseGiven rg) {
-                        // TODO, does not work with AnnotationBasedEventSourcedComponent
-                        return new SalaryInformation(rg.newSalary(), entity.role());
+                        // TODO: does not work with AnnotationBasedEventSourcedComponent
+                        return entity.on(rg);
                     }
                     return entity;
                 })
@@ -86,6 +89,7 @@ public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSui
                                 })
                 .build();
 
+        // Employee is a concrete entity type
         EntityModel<Employee> employeeModel = SimpleEntityModel
                 .forEntityClass(Employee.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(Employee.class))
@@ -131,6 +135,7 @@ public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSui
                 )
                 .build();
 
+        // Customer is a concrete entity type
         EntityModel<Customer> customerModel = SimpleEntityModel
                 .forEntityClass(Customer.class)
                 .entityEvolver(new AnnotationBasedEventSourcedComponent<>(Customer.class))
@@ -143,6 +148,7 @@ public class LambdaBasedAdministrationTest extends AbstractAdministrationTestSui
                         }))
                 .build();
 
+        // Person is the polymorphic entity type
         EntityModel<Person> personModel = PolymorphicEntityModel
                 .forSuperType(Person.class)
                 .addConcreteType(employeeModel)
