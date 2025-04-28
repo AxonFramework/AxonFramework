@@ -4,12 +4,10 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import org.axonframework.messaging.MetaData
-
 
 object MetaDataSerializer : KSerializer<MetaData> {
 
@@ -41,7 +39,8 @@ object MetaDataSerializer : KSerializer<MetaData> {
         is Float -> JsonPrimitive(value)
         is Double -> JsonPrimitive(value)
         is Map<*, *> -> JsonObject(value.entries.associate { (k, v) -> k.toString() to toJsonElement(v) })
-        is List<*> -> JsonArray(value.map { toJsonElement(it) })
+        is Collection<*> -> JsonArray(value.map { toJsonElement(it) })
+        is Array<*> -> JsonArray(value.map { toJsonElement(it) })
         else -> JsonPrimitive(value.toString())
     }
 
@@ -58,21 +57,5 @@ object MetaDataSerializer : KSerializer<MetaData> {
         }
         is JsonObject -> element.mapValues { fromJsonElement(it.value) }
         is JsonArray -> element.map { fromJsonElement(it) }
-    }
-}
-
-object JsonElementSerializer : KSerializer<JsonElement> {
-    private val json = Json { encodeDefaults = true }
-
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("kotlinx.serialization.json.JsonElement")
-
-    override fun serialize(encoder: Encoder, value: JsonElement) {
-        val jsonString = json.encodeToString(JsonElement.serializer(), value)
-        encoder.encodeString(jsonString)
-    }
-
-    override fun deserialize(decoder: Decoder): JsonElement {
-        val jsonString = decoder.decodeString()
-        return json.decodeFromString(JsonElement.serializer(), jsonString)
     }
 }
