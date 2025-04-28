@@ -208,7 +208,6 @@
         <dependency>
           <groupId>org.jetbrains.kotlinx</groupId>
           <artifactId>kotlinx-serialization-json</artifactId>
-          <scope>test</scope>
         </dependency>
         <dependency>
           <groupId>org.jetbrains.kotlinx</groupId>
