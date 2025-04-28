@@ -176,18 +176,6 @@ internal class AxonSerializersTest {
     }
 
     @Test
-    fun metaDataSerialization() {
-        val metaData = MetaData.emptyInstance()
-        val json = """{}"""
-        val serialized = serializer.serialize(metaData, String::class.java).data
-
-        val serializedType = SimpleSerializedType(type, null)
-        val serializedToken = SimpleSerializedObject(json, String::class.java, serializedType)
-        return deserialize(serializedToken)
-        assertEquals(json, serialized)
-    }
-
-    @Test
     fun metaDataSerialization2() {
         val metaData = MetaData.with("key", "value")
         val json = """{}"""
