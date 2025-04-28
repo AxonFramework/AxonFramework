@@ -52,8 +52,8 @@ public class RecordingCommandBus implements CommandBus {
     private CallbackBehavior callbackBehavior = new DefaultCallbackBehavior();
 
     @Override
-    public CompletableFuture<Message<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                  @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                               @Nullable ProcessingContext processingContext) {
         dispatchedCommands.add(command);
         try {
             return CompletableFuture.completedFuture(asCommandResultMessage(

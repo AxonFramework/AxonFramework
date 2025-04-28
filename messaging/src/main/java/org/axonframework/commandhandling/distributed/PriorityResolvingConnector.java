@@ -17,7 +17,7 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
-import org.axonframework.messaging.Message;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -49,8 +49,8 @@ public class PriorityResolvingConnector implements Connector {
     }
 
     @Override
-    public CompletableFuture<? extends Message<?>> dispatch(CommandMessage<?> command,
-                                                            ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage<?>> dispatch(CommandMessage<?> command,
+                                                               ProcessingContext processingContext) {
         priorityResolver.priorityFor(command);
         return delegate.dispatch(command, processingContext);
     }
