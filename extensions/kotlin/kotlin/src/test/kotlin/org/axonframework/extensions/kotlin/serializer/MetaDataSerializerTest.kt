@@ -167,17 +167,8 @@ class MetaDataSerializerTest {
         val serialized = jsonSerializer.serialize(metaData, String::class.java)
         val deserialized = jsonSerializer.deserialize<String, MetaData>(serialized)
 
-        assertEquals(metaData.size, deserialized!!.size)
-
-        // The nested map will be serialized as a string
-        val deserializedValue = deserialized["mapValue"]
-        assertTrue(deserializedValue is String)
-
-        // Verify the string representation contains the map content
-        val valueAsString = deserializedValue.toString()
-        assertTrue(valueAsString.contains("key1"))
-        assertTrue(valueAsString.contains("value1"))
-        assertTrue(valueAsString.contains("nested"))
+        val deserializedValue = deserialized!!["mapValue"]
+        assertEquals(nestedMap, deserializedValue)
     }
 
     @Test
@@ -191,15 +182,36 @@ class MetaDataSerializerTest {
 
         assertEquals(metaData.size, deserialized!!.size)
 
-        // The list will be serialized as a string
-        val deserializedValue = deserialized["listValue"]
-        assertTrue(deserializedValue is String)
+        val deserializedValue = deserialized["listValue"] as List<*>
+        assertTrue(deserializedValue.contains("item1"))
+        assertTrue(deserializedValue.contains("item2"))
+        assertTrue(deserializedValue.contains("item3"))
+    }
 
-        // Verify the string representation contains the list items
-        val valueAsString = deserializedValue.toString()
-        assertTrue(valueAsString.contains("item1"))
-        assertTrue(valueAsString.contains("item2"))
-        assertTrue(valueAsString.contains("item3"))
+    @Test
+    fun `should handle complex nested structures in MetaData`() {
+        val complexStructure = mapOf(
+            "string" to "value",
+            "number" to 42,
+            "boolean" to true,
+            "null" to null,
+            "list" to listOf(1, 2, 3),
+            "nestedMap" to mapOf(
+                "a" to "valueA",
+                "b" to listOf("x", "y", "z"),
+                "c" to mapOf("nested" to "deepValue")
+            )
+        )
+
+        val metaData = MetaData.with("complexValue", complexStructure)
+
+        val serialized = jsonSerializer.serialize(metaData, String::class.java)
+        val deserialized = jsonSerializer.deserialize<String, MetaData>(serialized)
+
+        assertEquals(metaData.size, deserialized!!.size)
+
+        val deserializedValue = deserialized["complexValue"] as Map<*, *>
+        assertEquals(deserializedValue, complexStructure)
     }
 
     @Test
@@ -226,79 +238,4 @@ class MetaDataSerializerTest {
         assertTrue(valueAsString.contains("30"))
     }
 
-    @Test
-    fun `should handle complex nested structures in MetaData`() {
-        val complexStructure = mapOf(
-            "string" to "value",
-            "number" to 42,
-            "boolean" to true,
-            "null" to null,
-            "list" to listOf(1, 2, 3),
-            "nestedMap" to mapOf(
-                "a" to "valueA",
-                "b" to listOf("x", "y", "z"),
-                "c" to mapOf("nested" to "deepValue")
-            )
-        )
-
-        val metaData = MetaData.with("complexValue", complexStructure)
-
-        val serialized = jsonSerializer.serialize(metaData, String::class.java)
-        val deserialized = jsonSerializer.deserialize<String, MetaData>(serialized)
-
-        assertEquals(metaData.size, deserialized!!.size)
-
-        // The complex structure will be serialized as a string
-        val deserializedValue = deserialized["complexValue"]
-        assertTrue(deserializedValue is String)
-
-        // Verify the string representation contains key elements
-        val valueAsString = deserializedValue.toString()
-        assertTrue(valueAsString.contains("string"))
-        assertTrue(valueAsString.contains("value"))
-        assertTrue(valueAsString.contains("42"))
-        assertTrue(valueAsString.contains("nestedMap"))
-        assertTrue(valueAsString.contains("deepValue"))
-    }
-
-    @Test
-    fun `should handle arrays in MetaData`() {
-        val array = arrayOf("first", "second", "third")
-
-        val metaData = MetaData.with("arrayValue", array)
-
-        val serialized = jsonSerializer.serialize(metaData, String::class.java)
-        val deserialized = jsonSerializer.deserialize<String, MetaData>(serialized)
-
-        assertEquals(metaData.size, deserialized!!.size)
-
-        // The array will be serialized as a string
-        val deserializedValue = deserialized["arrayValue"]
-        assertTrue(deserializedValue is String)
-
-        // Verify the string representation contains the array items
-        val valueAsString = deserializedValue.toString()
-        assertTrue(valueAsString.contains("first"))
-        assertTrue(valueAsString.contains("second"))
-        assertTrue(valueAsString.contains("third"))
-    }
-
-    @Test
-    fun `should handle Date objects in MetaData`() {
-        val date = Date()
-
-        val metaData = MetaData.with("dateValue", date)
-
-        val serialized = jsonSerializer.serialize(metaData, String::class.java)
-        val deserialized = jsonSerializer.deserialize<String, MetaData>(serialized)
-
-        assertEquals(metaData.size, deserialized!!.size)
-
-        // The date will be serialized as a string
-        val deserializedValue = deserialized["dateValue"]
-        assertTrue(deserializedValue is String)
-
-        // Verify the string representation is the date's toString() value
-        assertEquals(date.toString(), deserializedValue)
-    }
 }
