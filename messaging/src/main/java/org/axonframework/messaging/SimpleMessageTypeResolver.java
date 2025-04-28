@@ -37,10 +37,9 @@ import java.util.Objects;
  * @author Mateusz Nowak
  * @since 5.0.0
  */
-public class MultiMessageTypeResolver implements MessageTypeResolver {
+public class SimpleMessageTypeResolver implements MessageTypeResolver {
 
     private final Map<Class<?>, MessageType> mappings;
-    private final MessageTypeResolver fallbackResolver;
 
     /**
      * Private constructor used by the builder to create the resolver with the configured mappings and default
@@ -50,13 +49,11 @@ public class MultiMessageTypeResolver implements MessageTypeResolver {
      * @param fallbackResolver The fallback resolver to use when no specific resolver is found, or null to throw an
      *                         exception.
      */
-    private MultiMessageTypeResolver(
-            @Nonnull Map<Class<?>, MessageType> mappings,
-            MessageTypeResolver fallbackResolver
+    private SimpleMessageTypeResolver(
+            @Nonnull Map<Class<?>, MessageType> mappings
     ) {
         Objects.requireNonNull(mappings, "Mappings may not be null");
         this.mappings = mappings;
-        this.fallbackResolver = fallbackResolver;
     }
 
     /**
@@ -75,13 +72,11 @@ public class MultiMessageTypeResolver implements MessageTypeResolver {
     @Override
     public MessageType resolve(Class<?> payloadType) {
         var messageType = mappings.get(payloadType);
-        if (messageType != null) {
-            return messageType;
+        if (messageType == null) {
+            throw new MessageTypeNotResolvedException(
+                    "No MessageType found for payload type [" + payloadType.getName() + "]");
         }
-        if (fallbackResolver == null) {
-            throw new IllegalArgumentException("No MessageType found for payload type [" + payloadType.getName() + "]");
-        }
-        return fallbackResolver.resolve(payloadType);
+        return messageType;
     }
 
     /**
@@ -102,9 +97,9 @@ public class MultiMessageTypeResolver implements MessageTypeResolver {
         /**
          * Configures the resolver to throw an exception when no specific resolver is found for a payload type.
          *
-         * @return The completed {@link MultiMessageTypeResolver}.
+         * @return The completed {@link SimpleMessageTypeResolver}.
          */
-        default MultiMessageTypeResolver throwsIfUnknown() {
+        default MessageTypeResolver throwsIfUnknown() {
             return fallback(null);
         }
 
@@ -113,9 +108,9 @@ public class MultiMessageTypeResolver implements MessageTypeResolver {
          * payload type.
          *
          * @param resolver The default resolver to use.
-         * @return The completed {@link MultiMessageTypeResolver}.
+         * @return The completed {@link SimpleMessageTypeResolver}.
          */
-        MultiMessageTypeResolver fallback(MessageTypeResolver resolver);
+        MessageTypeResolver fallback(MessageTypeResolver resolver);
     }
 
     private record InternalTypeResolverPhase(
@@ -137,8 +132,8 @@ public class MultiMessageTypeResolver implements MessageTypeResolver {
         }
 
         @Override
-        public MultiMessageTypeResolver fallback(MessageTypeResolver resolver) {
-            return new MultiMessageTypeResolver(mappings, resolver);
+        public MessageTypeResolver fallback(MessageTypeResolver resolver) {
+            return new FallbackMessageTypeResolver(new SimpleMessageTypeResolver(mappings), resolver);
         }
     }
 }
