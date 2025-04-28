@@ -32,13 +32,13 @@ class SimpleMessageTypeResolverTest {
     @Test
     void shouldResolveRegisteredTypeUsingFixedMessageType() {
         // given
-        MessageType expected = new MessageType("test.string", "1.0.0");
-        SimpleMessageTypeResolver resolver = SimpleMessageTypeResolver
+        var expected = new MessageType("test.string", "1.0.0");
+        var resolver = SimpleMessageTypeResolver
                 .message(String.class, expected)
                 .throwsIfUnknown();
 
         // when
-        MessageType result = resolver.resolve(String.class);
+        var result = resolver.resolve(String.class);
 
         // then
         assertEquals(expected, result);
@@ -47,26 +47,26 @@ class SimpleMessageTypeResolverTest {
     @Test
     void shouldThrowExceptionForUnregisteredTypeWithMessageUnknownFail() {
         // given
-        SimpleMessageTypeResolver resolver = SimpleMessageTypeResolver
+        var resolver = SimpleMessageTypeResolver
                 .message(String.class, new MessageType("test.string", "1.0.0"))
                 .throwsIfUnknown();
 
         // when/then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                                                          () -> resolver.resolve(Integer.class));
+        var exception = assertThrows(MessageTypeNotResolvedException.class,
+                                     () -> resolver.resolve(Integer.class));
         assertEquals("No MessageType found for payload type [java.lang.Integer]", exception.getMessage());
     }
 
     @Test
     void shouldUseDefaultResolverForUnregisteredTypes() {
         // given
-        MessageTypeResolver defaultResolver = new ClassBasedMessageTypeResolver("2.0.0");
-        SimpleMessageTypeResolver resolver = SimpleMessageTypeResolver
+        var defaultResolver = new ClassBasedMessageTypeResolver("2.0.0");
+        var resolver = SimpleMessageTypeResolver
                 .message(String.class, new MessageType("test.string", "1.0.0"))
                 .fallback(defaultResolver);
 
         // when
-        MessageType result = resolver.resolve(Integer.class);
+        var result = resolver.resolve(Integer.class);
 
         // then
         assertEquals(new QualifiedName(Integer.class), result.qualifiedName());
@@ -76,15 +76,15 @@ class SimpleMessageTypeResolverTest {
     @Test
     void shouldPreferRegisteredResolversOverDefaultResolver() {
         // given
-        MessageType expectedString = new MessageType("custom.string", "1.0.0");
-        MessageTypeResolver defaultResolver = new ClassBasedMessageTypeResolver("2.0.0");
-        SimpleMessageTypeResolver resolver = SimpleMessageTypeResolver
+        var expectedString = new MessageType("custom.string", "1.0.0");
+        var defaultResolver = new ClassBasedMessageTypeResolver("2.0.0");
+        var resolver = SimpleMessageTypeResolver
                 .message(String.class, expectedString)
                 .fallback(defaultResolver);
 
         // when
-        MessageType stringResult = resolver.resolve(String.class);
-        MessageType intResult = resolver.resolve(Integer.class);
+        var stringResult = resolver.resolve(String.class);
+        var intResult = resolver.resolve(Integer.class);
 
         // then
         assertEquals(expectedString, stringResult);
@@ -95,16 +95,16 @@ class SimpleMessageTypeResolverTest {
     @Test
     void shouldAllowChainedRegistration() {
         // given
-        SimpleMessageTypeResolver resolver = SimpleMessageTypeResolver
+        var resolver = SimpleMessageTypeResolver
                 .message(String.class, new MessageType("test.string", "1.0.0"))
                 .message(Integer.class, new MessageType("test.integer", "2.0.0"))
                 .message(Double.class, new MessageType("Double", "3.0.0"))
                 .throwsIfUnknown();
 
         // when
-        MessageType stringResult = resolver.resolve(String.class);
-        MessageType intResult = resolver.resolve(Integer.class);
-        MessageType doubleResult = resolver.resolve(Double.class);
+        var stringResult = resolver.resolve(String.class);
+        var intResult = resolver.resolve(Integer.class);
+        var doubleResult = resolver.resolve(Double.class);
 
         // then
         assertEquals("test.string", stringResult.qualifiedName().toString());
@@ -120,10 +120,10 @@ class SimpleMessageTypeResolverTest {
     @Test
     void shouldThrowExceptionWhenRegisteringSameTypeTwice() {
         // when/then
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                                                          () -> SimpleMessageTypeResolver
-                                                                  .message(String.class, new MessageType("first"))
-                                                                  .message(String.class, new MessageType("second")));
+        var exception = assertThrows(IllegalArgumentException.class,
+                                     () -> SimpleMessageTypeResolver
+                                             .message(String.class, new MessageType("first"))
+                                             .message(String.class, new MessageType("second")));
 
         assertEquals("A MessageType is already defined for payload type [java.lang.String]", exception.getMessage());
     }
@@ -141,7 +141,7 @@ class SimpleMessageTypeResolverTest {
         var resolver2 = phase2.throwsIfUnknown();
 
         // then - resolver1 doesn't know about Integer
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(MessageTypeNotResolvedException.class,
                      () -> resolver1.resolve(Integer.class));
 
         // then - resolver2 knows both types
@@ -152,11 +152,11 @@ class SimpleMessageTypeResolverTest {
     @Test
     void shouldRetrieveOriginalMessageTypeFromMessage() {
         // given
-        MessageType originalType = new MessageType("test.original", "original-version");
-        GenericMessage<String> message = new GenericMessage<>(originalType, "payload");
+        var originalType = new MessageType("test.original", "original-version");
+        var message = new GenericMessage<>(originalType, "payload");
 
         // Use a different resolver for String
-        SimpleMessageTypeResolver resolver = SimpleMessageTypeResolver
+        var resolver = SimpleMessageTypeResolver
                 .message(String.class, new MessageType("test.string", "1.0.0"))
                 .throwsIfUnknown();
 
@@ -171,12 +171,12 @@ class SimpleMessageTypeResolverTest {
     @ValueSource(strings = {"1.0.0", "2.0", "major.minor.patch", "custom-version"})
     void shouldWorkWithDifferentVersionFormats(String version) {
         // given
-        SimpleMessageTypeResolver resolver = SimpleMessageTypeResolver
+        var resolver = SimpleMessageTypeResolver
                 .message(String.class, new MessageType("test.string", version))
                 .throwsIfUnknown();
 
         // when
-        MessageType result = resolver.resolve(String.class);
+        var result = resolver.resolve(String.class);
 
         // then
         assertEquals(version, result.version());
