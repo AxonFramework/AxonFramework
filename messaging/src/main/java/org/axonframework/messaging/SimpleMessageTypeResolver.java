@@ -99,9 +99,7 @@ public class SimpleMessageTypeResolver implements MessageTypeResolver {
          *
          * @return The completed {@link SimpleMessageTypeResolver}.
          */
-        default MessageTypeResolver throwsIfUnknown() {
-            return fallback(null);
-        }
+        MessageTypeResolver throwsIfUnknown();
 
         /**
          * Configures the resolver to use the specified default resolver when no specific resolver is found for a
@@ -132,8 +130,13 @@ public class SimpleMessageTypeResolver implements MessageTypeResolver {
         }
 
         @Override
+        public MessageTypeResolver throwsIfUnknown() {
+            return new SimpleMessageTypeResolver(mappings);
+        }
+
+        @Override
         public MessageTypeResolver fallback(MessageTypeResolver resolver) {
-            return new FallbackMessageTypeResolver(new SimpleMessageTypeResolver(mappings), resolver);
+            return new FallbackMessageTypeResolver(throwsIfUnknown(), resolver);
         }
     }
 }
