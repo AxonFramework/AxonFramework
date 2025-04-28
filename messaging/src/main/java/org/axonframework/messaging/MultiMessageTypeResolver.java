@@ -66,7 +66,7 @@ public class MultiMessageTypeResolver implements MessageTypeResolver {
      * @param messageType The message type to use for the given payload type.
      * @return The type resolver phase for further configuration.
      */
-    public static TypeResolverPhase on(@Nonnull Class<?> payloadType, @Nonnull MessageType messageType) {
+    public static TypeResolverPhase message(@Nonnull Class<?> payloadType, @Nonnull MessageType messageType) {
         Map<Class<?>, MessageType> initialMappings = new HashMap<>();
         initialMappings.put(payloadType, messageType);
         return new InternalTypeResolverPhase(initialMappings, null);
