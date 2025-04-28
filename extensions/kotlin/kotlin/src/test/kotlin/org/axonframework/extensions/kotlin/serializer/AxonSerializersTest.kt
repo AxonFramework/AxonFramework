@@ -175,14 +175,6 @@ internal class AxonSerializersTest {
         assertEquals(responseType, serializer.deserializeResponseType(responseType.javaClass.name, json))
     }
 
-    @Test
-    fun metaDataSerialization2() {
-        val metaData = MetaData.with("key", "value")
-        val json = """{}"""
-        val serialized = serializer.serialize(metaData, String::class.java).data
-        assertEquals(json, serialized)
-    }
-
     private fun Serializer.deserializeTrackingToken(tokenType: String, json: String): TrackingToken =
         deserializeJson(tokenType, json)
 
