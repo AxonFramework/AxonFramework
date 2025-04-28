@@ -26,7 +26,7 @@ import org.axonframework.eventhandling.SimpleEventBus;
 import org.axonframework.eventhandling.gateway.DefaultEventGateway;
 import org.axonframework.eventhandling.gateway.EventGateway;
 import org.axonframework.messaging.ClassBasedMessageTypeResolver;
-import org.axonframework.messaging.MultiMessageTypeResolver;
+import org.axonframework.messaging.SimpleMessageTypeResolver;
 import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MessageTypeResolver;
 import org.axonframework.queryhandling.DefaultQueryGateway;
@@ -90,7 +90,7 @@ class MessagingConfigurerTest extends ApplicationConfigurerTestSuite<MessagingCo
 
     @Test
     void registerMessageTypeResolverOverridesDefault() {
-        MessageTypeResolver expected = MultiMessageTypeResolver
+        MessageTypeResolver expected = SimpleMessageTypeResolver
                 .message(String.class, new MessageType("test.message.", "1.0.0"))
                 .throwsIfUnknown();
 

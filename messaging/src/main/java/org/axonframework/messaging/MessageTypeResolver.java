@@ -37,6 +37,7 @@ public interface MessageTypeResolver {
      *
      * @param payload The {@link Message#getPayload() Message payload} to resolve a {@link MessageType type} for.
      * @return The {@link MessageType type} for the given {@code payload}.
+     * @throws MessageTypeNotResolvedException if the {@link MessageType type} could not be resolved.
      */
     default MessageType resolve(Object payload) {
         if (payload instanceof Message<?>) {
@@ -51,6 +52,7 @@ public interface MessageTypeResolver {
      * @param payloadType The {@link Class type} of the {@link Message#getPayload() Message payload} to resolve a
      *                    {@link MessageType type} for.
      * @return The {@link MessageType type} for the given {@code payloadType}.
+     * @throws MessageTypeNotResolvedException if the {@link MessageType type} could not be resolved.
      */
     MessageType resolve(Class<?> payloadType);
 }

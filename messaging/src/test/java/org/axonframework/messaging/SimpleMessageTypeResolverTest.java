@@ -23,17 +23,17 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test class for {@link MultiMessageTypeResolver}
+ * Test class for {@link SimpleMessageTypeResolver}
  *
  * @author Mateusz Nowak
  */
-class MultiMessageTypeResolverTest {
+class SimpleMessageTypeResolverTest {
 
     @Test
     void shouldResolveRegisteredTypeUsingFixedMessageType() {
         // given
         MessageType expected = new MessageType("test.string", "1.0.0");
-        MultiMessageTypeResolver resolver = MultiMessageTypeResolver
+        SimpleMessageTypeResolver resolver = SimpleMessageTypeResolver
                 .message(String.class, expected)
                 .throwsIfUnknown();
 
@@ -47,7 +47,7 @@ class MultiMessageTypeResolverTest {
     @Test
     void shouldThrowExceptionForUnregisteredTypeWithMessageUnknownFail() {
         // given
-        MultiMessageTypeResolver resolver = MultiMessageTypeResolver
+        SimpleMessageTypeResolver resolver = SimpleMessageTypeResolver
                 .message(String.class, new MessageType("test.string", "1.0.0"))
                 .throwsIfUnknown();
 
@@ -61,7 +61,7 @@ class MultiMessageTypeResolverTest {
     void shouldUseDefaultResolverForUnregisteredTypes() {
         // given
         MessageTypeResolver defaultResolver = new ClassBasedMessageTypeResolver("2.0.0");
-        MultiMessageTypeResolver resolver = MultiMessageTypeResolver
+        SimpleMessageTypeResolver resolver = SimpleMessageTypeResolver
                 .message(String.class, new MessageType("test.string", "1.0.0"))
                 .fallback(defaultResolver);
 
@@ -78,7 +78,7 @@ class MultiMessageTypeResolverTest {
         // given
         MessageType expectedString = new MessageType("custom.string", "1.0.0");
         MessageTypeResolver defaultResolver = new ClassBasedMessageTypeResolver("2.0.0");
-        MultiMessageTypeResolver resolver = MultiMessageTypeResolver
+        SimpleMessageTypeResolver resolver = SimpleMessageTypeResolver
                 .message(String.class, expectedString)
                 .fallback(defaultResolver);
 
@@ -95,7 +95,7 @@ class MultiMessageTypeResolverTest {
     @Test
     void shouldAllowChainedRegistration() {
         // given
-        MultiMessageTypeResolver resolver = MultiMessageTypeResolver
+        SimpleMessageTypeResolver resolver = SimpleMessageTypeResolver
                 .message(String.class, new MessageType("test.string", "1.0.0"))
                 .message(Integer.class, new MessageType("test.integer", "2.0.0"))
                 .message(Double.class, new MessageType("Double", "3.0.0"))
@@ -121,7 +121,7 @@ class MultiMessageTypeResolverTest {
     void shouldThrowExceptionWhenRegisteringSameTypeTwice() {
         // when/then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                                                          () -> MultiMessageTypeResolver
+                                                          () -> SimpleMessageTypeResolver
                                                                   .message(String.class, new MessageType("first"))
                                                                   .message(String.class, new MessageType("second")));
 
@@ -131,7 +131,7 @@ class MultiMessageTypeResolverTest {
     @Test
     void shouldCreateImmutablePhaseInstances() {
         // given
-        var phase1 = MultiMessageTypeResolver
+        var phase1 = SimpleMessageTypeResolver
                 .message(String.class, new MessageType("test.string", "1.0.0"));
 
         var phase2 = phase1
@@ -156,7 +156,7 @@ class MultiMessageTypeResolverTest {
         GenericMessage<String> message = new GenericMessage<>(originalType, "payload");
 
         // Use a different resolver for String
-        MultiMessageTypeResolver resolver = MultiMessageTypeResolver
+        SimpleMessageTypeResolver resolver = SimpleMessageTypeResolver
                 .message(String.class, new MessageType("test.string", "1.0.0"))
                 .throwsIfUnknown();
 
@@ -171,7 +171,7 @@ class MultiMessageTypeResolverTest {
     @ValueSource(strings = {"1.0.0", "2.0", "major.minor.patch", "custom-version"})
     void shouldWorkWithDifferentVersionFormats(String version) {
         // given
-        MultiMessageTypeResolver resolver = MultiMessageTypeResolver
+        SimpleMessageTypeResolver resolver = SimpleMessageTypeResolver
                 .message(String.class, new MessageType("test.string", version))
                 .throwsIfUnknown();
 
