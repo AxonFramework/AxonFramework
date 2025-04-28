@@ -20,12 +20,12 @@ import jakarta.annotation.Nonnull;
 
 import java.util.Objects;
 
-public class MessageTypeResolverWithFallback implements MessageTypeResolver {
+public class FallbackMessageTypeResolver implements MessageTypeResolver {
 
     private final MessageTypeResolver delegate;
     private final MessageTypeResolver fallback;
 
-    public MessageTypeResolverWithFallback(@Nonnull MessageTypeResolver delegate, @Nonnull MessageTypeResolver fallback) {
+    public FallbackMessageTypeResolver(@Nonnull MessageTypeResolver delegate, @Nonnull MessageTypeResolver fallback) {
         Objects.requireNonNull(delegate, "Delegate may not be null");
         Objects.requireNonNull(fallback, "Fallback may not be null");
         this.delegate = delegate;
