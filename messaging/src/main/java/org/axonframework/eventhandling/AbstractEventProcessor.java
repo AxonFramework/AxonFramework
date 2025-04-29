@@ -21,7 +21,8 @@ import org.axonframework.common.Registration;
 import org.axonframework.messaging.DefaultInterceptorChain;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.ResultMessage;
-import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.UnitOfWork;
+import org.axonframework.messaging.Context.ResourceKey;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.RollbackConfiguration;
 import org.axonframework.monitoring.MessageMonitor;
@@ -35,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.annotation.Nonnull;
 
@@ -50,7 +52,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
  * {@link MessageHandlerInterceptor interceptors}.
  * <p>
  * Implementations are in charge of providing the events that need to be processed. Once these events are obtained they
- * can be passed to method {@link #processInUnitOfWork(List, LegacyUnitOfWork, Collection)} for processing.
+ * can be passed to method {@link #processInUnitOfWork(List, UnitOfWork, Collection)} for processing.
  *
  * @author Rene de Waele
  * @since 3.0
@@ -58,6 +60,7 @@ import static org.axonframework.common.BuilderUtils.assertThat;
 public abstract class AbstractEventProcessor implements EventProcessor {
 
     private static final List<Segment> ROOT_SEGMENT = Collections.singletonList(Segment.ROOT_SEGMENT);
+    private static final ResourceKey<EventMessage<?>> MESSAGE_KEY = ResourceKey.withLabel("EventMessage");
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final String name;
@@ -138,7 +141,7 @@ public abstract class AbstractEventProcessor implements EventProcessor {
     }
 
     /**
-     * Process a batch of events. The messages are processed in a new {@link LegacyUnitOfWork}. Before each message is
+     * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is
      * handled the event processor creates an interceptor chain containing all registered
      * {@link MessageHandlerInterceptor interceptors}.
      *
@@ -147,12 +150,12 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @throws Exception when an exception occurred during processing of the batch
      */
     protected final void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
-                                             LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork) throws Exception {
+                                             UnitOfWork unitOfWork) throws Exception {
         processInUnitOfWork(eventMessages, unitOfWork, ROOT_SEGMENT);
     }
 
     /**
-     * Process a batch of events. The messages are processed in a new {@link LegacyUnitOfWork}. Before each message is
+     * Process a batch of events. The messages are processed in a new {@link UnitOfWork}. Before each message is
      * handled the event processor creates an interceptor chain containing all registered
      * {@link MessageHandlerInterceptor interceptors}.
      *
@@ -162,31 +165,55 @@ public abstract class AbstractEventProcessor implements EventProcessor {
      * @throws Exception when an exception occurred during processing of the batch
      */
     protected void processInUnitOfWork(List<? extends EventMessage<?>> eventMessages,
-                                       LegacyUnitOfWork<? extends EventMessage<?>> unitOfWork,
+                                       UnitOfWork unitOfWork,
                                        Collection<Segment> processingSegments) throws Exception {
         // TODO - Change UnitOfWork to ProcessingContext
         spanFactory.createBatchSpan(this instanceof StreamingEventProcessor, eventMessages).runCallable(() -> {
-            ResultMessage<?> resultMessage = unitOfWork.executeWithResult(() -> {
-                EventMessage<?> message = unitOfWork.getMessage();
-                MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(message);
-                return spanFactory.createProcessEventSpan(this instanceof StreamingEventProcessor, message)
-                                  .runCallable(() -> new DefaultInterceptorChain<>(
-                                          unitOfWork,
-                                          interceptors,
-                                          m -> processMessageInUnitOfWork(processingSegments, m, null, monitorCallback))
-                                          .proceedSync());
-            }, rollbackConfiguration);
+            // Store the first message in the ProcessingContext for processing
+            EventMessage<?> message = eventMessages.get(0);
 
-            if (resultMessage.isExceptional()) {
-                Throwable e = resultMessage.exceptionResult();
-                if (unitOfWork.isRolledBack()) {
-                    errorHandler.handleError(new ErrorContext(getName(), e, eventMessages));
-                } else {
-                    logger.info(
-                            "Exception occurred while processing a message, but unit of work was committed. {}",
-                            e.getClass().getName());
+            // Use UnitOfWork's executeWithResult method
+            unitOfWork.onInvocation(processingContext -> {
+                // Store the message in the ProcessingContext
+                processingContext.putResource(MESSAGE_KEY, message);
+
+                MessageMonitor.MonitorCallback monitorCallback = messageMonitor.onMessageIngested(message);
+                CompletableFuture<Object> result = new CompletableFuture<>();
+                try {
+                    spanFactory.createProcessEventSpan(this instanceof StreamingEventProcessor, message)
+                              .runCallable(() -> {
+                                  try {
+                                      // Process the message directly
+                                      processMessageInUnitOfWork(processingSegments, message, processingContext, monitorCallback);
+                                      result.complete(null);
+                                  } catch (Exception e) {
+                                      result.completeExceptionally(e);
+                                  }
+                                  return null;
+                              });
+                } catch (Exception e) {
+                    result.completeExceptionally(e);
                 }
+                return result;
+            });
+
+            // Register error handler
+            unitOfWork.onError((processingContext, phase, error) -> {
+                try {
+                    errorHandler.handleError(new ErrorContext(getName(), error, eventMessages));
+                } catch (Exception e) {
+                    logger.error("Error while handling error", e);
+                }
+            });
+
+            // Execute the UnitOfWork
+            try {
+                unitOfWork.execute().get(); // Wait for completion
+            } catch (Exception e) {
+                // Error already handled by onError handler
+                logger.debug("Error during event processing", e);
             }
+
             return null;
         });
     }
@@ -276,11 +303,11 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         }
 
         /**
-         * Sets the {@link RollbackConfiguration} specifying the rollback behavior of the {@link LegacyUnitOfWork} while
+         * Sets the {@link RollbackConfiguration} specifying the rollback behavior of the {@link UnitOfWork} while
          * processing a batch of events.
          *
          * @param rollbackConfiguration the {@link RollbackConfiguration} specifying the rollback behavior of the
-         *                              {@link LegacyUnitOfWork} while processing a batch of events.
+         *                              {@link UnitOfWork} while processing a batch of events.
          * @return the current Builder instance, for fluent interfacing
          */
         public Builder rollbackConfiguration(@Nonnull RollbackConfiguration rollbackConfiguration) {
@@ -290,10 +317,10 @@ public abstract class AbstractEventProcessor implements EventProcessor {
         }
 
         /**
-         * Sets the {@link ErrorHandler} invoked when an {@link LegacyUnitOfWork} is rolled back during processing.
+         * Sets the {@link ErrorHandler} invoked when an {@link UnitOfWork} is in error state during processing.
          * Defaults to a {@link PropagatingErrorHandler}.
          *
-         * @param errorHandler the {@link ErrorHandler} invoked when an {@link LegacyUnitOfWork} is rolled back during
+         * @param errorHandler the {@link ErrorHandler} invoked when an {@link UnitOfWork} is in error state during
          *                     processing
          * @return the current Builder instance, for fluent interfacing
          */
