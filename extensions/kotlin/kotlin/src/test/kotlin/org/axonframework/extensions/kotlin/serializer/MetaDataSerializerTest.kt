@@ -7,6 +7,8 @@ import org.axonframework.extensions.kotlin.serialization.AxonSerializersModule
 import org.axonframework.extensions.kotlin.serialization.KotlinSerializer
 import org.axonframework.messaging.MetaData
 import org.axonframework.serialization.SerializationException
+import org.axonframework.serialization.SimpleSerializedObject
+import org.axonframework.serialization.SimpleSerializedType
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -226,6 +228,18 @@ class MetaDataSerializerTest {
 
         assertThrows<SerializationException> {
             jsonSerializer.serialize(metaData, String::class.java)
+        }
+    }
+
+    @Test
+    fun `should throw exception when deserializing malformed JSON`() {
+        val serializedType = SimpleSerializedType(MetaData::class.java.name, null)
+
+        val syntaxErrorJson = """{"key": value}"""  // missing quotes around value
+        val syntaxErrorObject = SimpleSerializedObject(syntaxErrorJson, String::class.java, serializedType)
+
+        assertThrows<SerializationException> {
+            jsonSerializer.deserialize<String, MetaData>(syntaxErrorObject)
         }
     }
 
