@@ -1,6 +1,7 @@
 package org.axonframework.extensions.kotlin.serialization
 
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -8,6 +9,9 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import org.axonframework.messaging.MetaData
+import java.time.Instant
+import java.util.Date
+import java.util.UUID
 
 object MetaDataSerializer : KSerializer<MetaData> {
 
@@ -38,10 +42,13 @@ object MetaDataSerializer : KSerializer<MetaData> {
         is Long -> JsonPrimitive(value)
         is Float -> JsonPrimitive(value)
         is Double -> JsonPrimitive(value)
+        is UUID -> JsonPrimitive(value.toString())
+        is Date -> JsonPrimitive(value.toString())
+        is Instant -> JsonPrimitive(value.toString())
         is Map<*, *> -> JsonObject(value.entries.associate { (k, v) -> k.toString() to toJsonElement(v) })
         is Collection<*> -> JsonArray(value.map { toJsonElement(it) })
         is Array<*> -> JsonArray(value.map { toJsonElement(it) })
-        else -> JsonPrimitive(value.toString())
+        else -> throw SerializationException("Unsupported type: ${value::class}")
     }
 
     private fun fromJsonElement(element: JsonElement): Any? = when (element) {

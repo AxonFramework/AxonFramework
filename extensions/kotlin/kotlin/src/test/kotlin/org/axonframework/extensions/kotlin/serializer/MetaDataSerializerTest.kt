@@ -4,8 +4,10 @@ import kotlinx.serialization.json.Json
 import org.axonframework.extensions.kotlin.serialization.AxonSerializersModule
 import org.axonframework.extensions.kotlin.serialization.KotlinSerializer
 import org.axonframework.messaging.MetaData
+import org.axonframework.serialization.SerializationException
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 import java.util.*
 
@@ -92,20 +94,26 @@ class MetaDataSerializerTest {
     }
 
     @Test
-    fun `should handle complex objects as string representations`() {
-        val now = Instant.now()
+    fun `should handle UUID`() {
         val uuid = UUID.randomUUID()
-
-        val metaData = MetaData.with("timestamp", now)
-            .and("uuid", uuid)
+        val metaData = MetaData.with("uuid", uuid)
 
         val serialized = jsonSerializer.serialize(metaData, String::class.java)
         val deserialized = jsonSerializer.deserialize<String, MetaData>(serialized)
 
-        assertEquals(metaData.size, deserialized!!.size)
-        // Complex objects are stored as strings
-        assertEquals(now.toString(), deserialized.get("timestamp"))
-        assertEquals(uuid.toString(), deserialized.get("uuid"))
+        assertEquals(uuid, metaData.get("uuid"))
+    }
+
+    @Test
+    fun `should handle Instant as String representation`() {
+        val timestamp = Instant.now()
+
+        val metaData = MetaData.with("timestamp", timestamp)
+
+        val serialized = jsonSerializer.serialize(metaData, String::class.java)
+        val deserialized = jsonSerializer.deserialize<String, MetaData>(serialized)!!
+
+        assertEquals(timestamp.toString(), deserialized.get("timestamp"))
     }
 
     @Test
@@ -118,11 +126,7 @@ class MetaDataSerializerTest {
         val serialized = jsonSerializer.serialize(metaData, String::class.java)
         val deserialized = jsonSerializer.deserialize<String, MetaData>(serialized)
 
-        assertEquals(metaData.size, deserialized!!.size)
-        assertEquals("text", deserialized.get("string"))
-        assertEquals(metaData["number"].toString(), deserialized.get("number").toString())
-        assertEquals(true, deserialized.get("boolean"))
-        assertNull(deserialized.get("null"))
+        assertEquals(metaData, deserialized)
     }
 
     @Test
@@ -134,10 +138,7 @@ class MetaDataSerializerTest {
         val serialized = cborSerializer.serialize(metaData, ByteArray::class.java)
         val deserialized = cborSerializer.deserialize<ByteArray, MetaData>(serialized)
 
-        assertEquals(metaData.size, deserialized!!.size)
-        assertEquals("text", deserialized.get("string"))
-        assertEquals(metaData["number"].toString(), deserialized.get("number").toString())
-        assertEquals(true, deserialized.get("boolean"))
+        assertEquals(metaData, deserialized)
     }
 
     @Test
@@ -148,8 +149,7 @@ class MetaDataSerializerTest {
         val serialized = jsonSerializer.serialize(metaData, String::class.java)
         val deserialized = jsonSerializer.deserialize<String, MetaData>(serialized)
 
-        assertNotNull(deserialized?.get("numberString"))
-        assertNotNull(deserialized?.get("booleanString"))
+        assertEquals(metaData, deserialized)
     }
 
     @Test
@@ -213,23 +213,16 @@ class MetaDataSerializerTest {
     }
 
     @Test
-    fun `should handle custom objects in MetaData as Strings`() {
+    fun `do not handle custom objects`() {
         data class Person(val name: String, val age: Int)
 
         val person = Person("John Doe", 30)
 
         val metaData = MetaData.with("personValue", person)
 
-        val serialized = jsonSerializer.serialize(metaData, String::class.java)
-        val deserialized = jsonSerializer.deserialize<String, MetaData>(serialized)
-
-        assertEquals(metaData.size, deserialized!!.size)
-
-        val deserializedValue = deserialized["personValue"]
-        assertTrue(deserializedValue is String)
-        val valueAsString = deserializedValue.toString()
-        assertTrue(valueAsString.contains("John Doe"))
-        assertTrue(valueAsString.contains("30"))
+        assertThrows<SerializationException> {
+            jsonSerializer.serialize(metaData, String::class.java)
+        }
     }
 
 }
