@@ -75,17 +75,7 @@ class AggregateBasedAxonServerEventStorageEngineTest extends
         AxonServerUtils.purgeEventsFromAxonServer(axonServerContainer.getHost(),
                                                   axonServerContainer.getHttpPort(),
                                                   "default");
-        return new AggregateBasedAxonServerEventStorageEngine(connection, new Converter() {
-            @Override
-            public boolean canConvert(Class<?> sourceType, Class<?> targetType) {
-                return byte[].class.isAssignableFrom(targetType);
-            }
-
-            @Override
-            public <T> T convert(Object original, Class<?> sourceType, Class<T> targetType) {
-                return (T) original.toString().getBytes(StandardCharsets.UTF_8);
-            }
-        });
+        return new AggregateBasedAxonServerEventStorageEngine(connection, new TestConverter());
     }
 
     @Override
