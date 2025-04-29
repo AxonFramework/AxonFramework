@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of the {@link EntityModel} interface that enables the definition of command handlers and child
@@ -109,11 +110,13 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
     public MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message, E entity,
                                                                 ProcessingContext context) {
         try {
-            for (Map.Entry<Class<?>, EntityChildModel<?, E>> entry : children.entrySet()) {
-                EntityChildModel<?, E> child = entry.getValue();
-                if (child.supportedCommands().contains(message.type().qualifiedName())) {
-                    return child.handle(message, entity, context);
-                }
+            var childrenWithCommandHandlers = children.values().stream()
+                                                      .filter(childEntity -> childEntity
+                                                              .supportedCommands()
+                                                              .contains(message.type().qualifiedName()))
+                                                      .collect(Collectors.toList());
+            if (!childrenWithCommandHandlers.isEmpty()) {
+                return handleForChildren(childrenWithCommandHandlers, message, entity, context);
             }
 
             EntityCommandHandler<E> commandHandler = commandHandlers.get(message.type().qualifiedName());
@@ -125,6 +128,35 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         }
         return MessageStream.failed(new IllegalArgumentException(
                 "No command handler found for command " + message.type().qualifiedName() + " on entity " + entity
+        ));
+    }
+
+    private MessageStream.Single<CommandResultMessage<?>> handleForChildren(
+            List<EntityChildModel<?, E>> childrenWithCommandHandler,
+            CommandMessage<?> message,
+            E entity,
+            ProcessingContext context) {
+        if (childrenWithCommandHandler.size() == 1) {
+            return childrenWithCommandHandler.getFirst().handle(message, entity, context);
+        }
+
+        // There are multiple children that can handle the command. We need to find the ONE that can handle it.
+        var matchingChildren = childrenWithCommandHandler
+                .stream()
+                .filter(childEntity -> childEntity.canHandle(message, entity, context))
+                .toList();
+        if (matchingChildren.size() == 1) {
+            return matchingChildren.getFirst().handle(message, entity, context);
+        }
+        if (matchingChildren.size() > 1) {
+            return MessageStream.failed(new IllegalStateException(
+                    "Multiple child entities of %s are able to handle command %s: %s"
+                            .formatted(entityType(), message.type(), matchingChildren)
+            ));
+        }
+        return MessageStream.failed(new IllegalArgumentException(
+                "No command handler found for command %s on entity %s after considering child entities: %s".formatted(
+                        message.type().qualifiedName(), entity, childrenWithCommandHandler)
         ));
     }
 
@@ -140,6 +172,11 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         descriptor.describeProperty("supportedCommandNames", supportedCommandNames);
         descriptor.describeProperty("entityEvolver", entityEvolver);
         descriptor.describeProperty("children", children);
+    }
+
+    @Override
+    public String toString() {
+        return "SimpleEntityModel{entityType=" + entityType.getName() + '}';
     }
 
     /**
@@ -177,10 +214,6 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         @Override
         public Builder<E> addChild(@Nonnull EntityChildModel<?, E> child) {
             Objects.requireNonNull(child, "child may not be null");
-            if (children.stream().anyMatch(c -> c.entityType().equals(child.entityType()))) {
-                throw new IllegalArgumentException("Child entity " + child.entityType()
-                                                            + " already registered for this model");
-            }
             children.add(child);
             return this;
         }

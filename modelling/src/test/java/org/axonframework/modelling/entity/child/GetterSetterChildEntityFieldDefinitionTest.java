@@ -34,7 +34,7 @@ class GetterSetterChildEntityFieldDefinitionTest {
         ParentEntity parentEntity = new ParentEntity();
         parentEntity.setRecordingChildEntity(childEntity);
 
-        assertEquals(childEntity, testSubject.getChildEntities(parentEntity));
+        assertEquals(childEntity, testSubject.getChildValue(parentEntity));
     }
 
     @Test

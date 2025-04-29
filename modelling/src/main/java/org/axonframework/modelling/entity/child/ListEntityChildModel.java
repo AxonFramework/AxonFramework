@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  * resolved, it will delegate the command- and event-handling to the child entity model(s), based on the
  * {@code commandTargetMatcher} and {@code eventTargetMatcher} respectively.
  * <p>
- * If the result of {@link ChildEntityFieldDefinition#getChildEntities(Object)} is null, an empty list will be assumed.
+ * If the result of {@link ChildEntityFieldDefinition#getChildValue(Object)} is null, an empty list will be assumed.
  *
  * @param <C> The type of the child entity.
  * @param <P> The type of the parent entity.
@@ -64,28 +64,40 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
         this.eventTargetMatcher = eventTargetMatcher;
     }
 
+    @Override
     public Set<QualifiedName> supportedCommands() {
         return childEntityModel.supportedCommands();
     }
 
     @Override
+    public boolean canHandle(@Nonnull CommandMessage<?> message, @Nonnull P parentEntity,
+                             @Nonnull ProcessingContext context) {
+        if (!supportedCommands().contains(message.type().qualifiedName())) {
+            return false;
+        }
+        return getChildEntities(parentEntity)
+                .stream()
+                .anyMatch(child -> commandTargetMatcher.matches(child, message));
+    }
+
+    @Override
     public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
-                                                                @Nonnull P entity,
+                                                                @Nonnull P parentEntity,
                                                                 @Nonnull ProcessingContext context) {
-        List<C> matchingChildEntities = getChildEntities(entity)
+        List<C> matchingChildEntities = getChildEntities(parentEntity)
                 .stream()
                 .filter(child -> commandTargetMatcher.matches(child, message))
                 .toList();
         if (matchingChildEntities.isEmpty()) {
             return MessageStream.failed(new IllegalArgumentException(
                     "No matching child entity found for command " + message.type().qualifiedName()
-                            + " on parent entity " + entity
+                            + " on parent entity " + parentEntity
             ));
         }
         if (matchingChildEntities.size() > 1) {
             return MessageStream.failed(new IllegalArgumentException(
                     "Multiple matching child entities found for command " + message.type().qualifiedName()
-                            + " on parent entity " + entity
+                            + " on parent entity " + parentEntity
             ));
         }
         return childEntityModel.handle(message, matchingChildEntities.getFirst(), context);
@@ -93,7 +105,7 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
 
     private List<C> getChildEntities(P entity) {
         List<C> childEntities = childEntityFieldDefinition
-                .getChildEntities(entity);
+                .getChildValue(entity);
         if (childEntities == null) {
             return List.of();
         }
@@ -129,6 +141,11 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
     @Override
     public Class<C> entityType() {
         return childEntityModel.entityType();
+    }
+
+    @Override
+    public String toString() {
+        return "ListEntityChildModel{entityType=" + entityType().getName() + '}';
     }
 
     /**
@@ -186,7 +203,8 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
          *                        the parent entity
          * @return This builder instance.
          */
-        public Builder<C, P> childEntityFieldDefinition(@Nonnull ChildEntityFieldDefinition<P, List<C>> fieldDefinition) {
+        public Builder<C, P> childEntityFieldDefinition(
+                @Nonnull ChildEntityFieldDefinition<P, List<C>> fieldDefinition) {
             this.childEntityFieldDefinition = Objects.requireNonNull(fieldDefinition,
                                                                      "childEntityFieldDefinition may not be null");
             return this;

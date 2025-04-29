@@ -70,20 +70,20 @@ class SingleEntityChildModelTest {
         @Test
         void commandForChildIsForwardedToFoundChildEntity() {
             RecordingChildEntity entityToBeFound = new RecordingChildEntity();
-            when(childEntityFieldDefinition.getChildEntities(any())).thenReturn(entityToBeFound);
+            when(childEntityFieldDefinition.getChildValue(any())).thenReturn(entityToBeFound);
 
             GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(COMMAND), "myPayload");
 
             var result = testSubject.handle(command, parentEntity, context);
             assertEquals("result", result.asCompletableFuture().join().message().getPayload());
 
-            verify(childEntityFieldDefinition).getChildEntities(parentEntity);
+            verify(childEntityFieldDefinition).getChildValue(parentEntity);
             verify(childEntityEntityModel).handle(command, entityToBeFound, context);
         }
 
         @Test
         void commandResultsInFailedMessageStreamWhenChildEntityIsNotFound() {
-            when(childEntityFieldDefinition.getChildEntities(any())).thenReturn(null);
+            when(childEntityFieldDefinition.getChildValue(any())).thenReturn(null);
 
             MessageStreamTestUtils.assertCompletedExceptionally(
                     testSubject.handle(commandMessage, parentEntity, context),
@@ -116,11 +116,11 @@ class SingleEntityChildModelTest {
 
         @Test
         void doesNotEvolveEntityWhenChildEntityIsNotFound() {
-            when(childEntityFieldDefinition.getChildEntities(any())).thenReturn(null);
+            when(childEntityFieldDefinition.getChildValue(any())).thenReturn(null);
 
             RecordingParentEntity result = testSubject.evolve(parentEntity, event, context);
 
-            verify(childEntityFieldDefinition).getChildEntities(parentEntity);
+            verify(childEntityFieldDefinition).getChildValue(parentEntity);
             verify(childEntityFieldDefinition, never()).evolveParentBasedOnChildEntities(any(), any());
 
             assertEquals(parentEntity, result);
@@ -130,7 +130,7 @@ class SingleEntityChildModelTest {
         @Test
         void evolvesChildEntityAndParentEntityWhenChildEntityIsFound() {
             RecordingChildEntity childEntity = new RecordingChildEntity();
-            when(childEntityFieldDefinition.getChildEntities(any())).thenReturn(childEntity);
+            when(childEntityFieldDefinition.getChildValue(any())).thenReturn(childEntity);
             when(childEntityEntityModel.evolve(any(), any(), any())).thenAnswer(answ -> {
                 RecordingChildEntity child = answ.getArgument(0);
                 EventMessage<String> event = answ.getArgument(1);
@@ -146,7 +146,7 @@ class SingleEntityChildModelTest {
 
             assertEquals("parent evolve: [child evolve: myPayload]", result.getEvolves().getFirst());
 
-            verify(childEntityFieldDefinition).getChildEntities(parentEntity);
+            verify(childEntityFieldDefinition).getChildValue(parentEntity);
             verify(childEntityFieldDefinition).evolveParentBasedOnChildEntities(
                     eq(parentEntity),
                     argThat(a -> a.getEvolves().contains("child evolve: myPayload"))

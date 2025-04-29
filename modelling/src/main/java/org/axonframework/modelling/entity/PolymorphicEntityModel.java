@@ -129,6 +129,11 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
         descriptor.describeProperty("polymorphicModels", concreteModels);
     }
 
+    @Override
+    public String toString() {
+        return "PolymorphicEntityModel{entityType=" + entityType().getName() + '}';
+    }
+
     /**
      * Builder for a {@link PolymorphicEntityModel}. This builder allows you to add concrete types to the model. Any
      * method inherited from {@link EntityModelBuilder} is delegated to the super type model.

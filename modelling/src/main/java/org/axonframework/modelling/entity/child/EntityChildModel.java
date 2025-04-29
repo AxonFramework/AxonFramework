@@ -48,6 +48,17 @@ public interface EntityChildModel<C, P> extends EntityEvolver<P> {
     Set<QualifiedName> supportedCommands();
 
     /**
+     * Checks if this child can handle the given {@link CommandMessage} for the given parent entity, and a child entity
+     * is available to handle it.
+     *
+     * @param message      The {@link CommandMessage} to check.
+     * @param parentEntity The parent entity instance to check against.
+     * @param context      The {@link ProcessingContext} for the command.
+     * @return {@code true} if this child can handle the command, {@code false} otherwise.
+     */
+    boolean canHandle(@Nonnull CommandMessage<?> message, @Nonnull P parentEntity, @Nonnull ProcessingContext context);
+
+    /**
      * Handles the given {@link CommandMessage} for the given child entity, using the provided parent entity.
      *
      * @param message The {@link CommandMessage} to handle.

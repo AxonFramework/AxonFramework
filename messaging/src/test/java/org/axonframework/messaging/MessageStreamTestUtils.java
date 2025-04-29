@@ -30,18 +30,17 @@ public class MessageStreamTestUtils {
      * {@code expectedMessage}.
      * @param stream The {@link MessageStream} to assert.
      * @param expectedExceptionType The expected type of the exception.
-     * @param expectedMessage The expected message of the exception.
+     * @param expectedMessagePart Part of the expected message of the exception.
      */
     public static void assertCompletedExceptionally(
             MessageStream<?> stream,
             Class<? extends Throwable> expectedExceptionType,
-            String expectedMessage
+            String expectedMessagePart
     ) {
         var exception = assertThrows(CompletionException.class, () -> {
             stream.first().asCompletableFuture().join();
         });
         assertInstanceOf(expectedExceptionType, exception.getCause());
-        assertEquals(expectedMessage,
-                     exception.getCause().getMessage());
+        assertTrue(exception.getCause().getMessage().contains(expectedMessagePart));
     }
 }

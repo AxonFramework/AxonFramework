@@ -33,7 +33,7 @@ class FieldChildEntityFieldDefinitionTest {
         FieldChildEntityFieldDefinition<ParentEntityWithOnlyField, RecordingChildEntity> testSubject =
                 new FieldChildEntityFieldDefinition<>(ParentEntityWithOnlyField.class, "childEntity");
 
-        assertEquals(childEntity, testSubject.getChildEntities(parentEntity));
+        assertEquals(childEntity, testSubject.getChildValue(parentEntity));
     }
 
     @Test
@@ -60,7 +60,7 @@ class FieldChildEntityFieldDefinitionTest {
         FieldChildEntityFieldDefinition<ParentEntityWithGetterAndSetter, RecordingChildEntity> testSubject =
                 new FieldChildEntityFieldDefinition<>(ParentEntityWithGetterAndSetter.class, "childEntity");
 
-        assertEquals(childEntity, testSubject.getChildEntities(parentEntity));
+        assertEquals(childEntity, testSubject.getChildValue(parentEntity));
         assertTrue(parentEntity.getterCalled.get());
     }
 
@@ -89,7 +89,7 @@ class FieldChildEntityFieldDefinitionTest {
         FieldChildEntityFieldDefinition<ParentEntityWithEvolveMethod, RecordingChildEntity> testSubject =
                 new FieldChildEntityFieldDefinition<>(ParentEntityWithEvolveMethod.class, "childEntity");
 
-        assertEquals(childEntity, testSubject.getChildEntities(parentEntity));
+        assertEquals(childEntity, testSubject.getChildValue(parentEntity));
     }
 
     @Test

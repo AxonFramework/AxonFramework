@@ -57,7 +57,7 @@ public class GetterEvolverChildEntityFieldDefinition<P, F> implements ChildEntit
     }
 
     @Override
-    public F getChildEntities(P parentEntity) {
+    public F getChildValue(P parentEntity) {
         return getter.apply(parentEntity);
     }
 }

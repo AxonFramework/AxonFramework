@@ -85,14 +85,14 @@ class ListEntityChildModelTest {
         void commandForChildIsForwardedToMatchingChildEntity() {
             RecordingChildEntity entityToBeFound = new RecordingChildEntity(COMMAND_MATCHING_ID);
             RecordingChildEntity entityToBeSkipped = new RecordingChildEntity(COMMAND_SKIPPING_ID);
-            when(childEntityFieldDefinition.getChildEntities(any())).thenReturn(
+            when(childEntityFieldDefinition.getChildValue(any())).thenReturn(
                     List.of(entityToBeFound, entityToBeSkipped)
             );
 
             var result = testSubject.handle(commandMessage, parentEntity, context);
             assertEquals("1337-result", result.asCompletableFuture().join().message().getPayload());
 
-            verify(childEntityFieldDefinition).getChildEntities(parentEntity);
+            verify(childEntityFieldDefinition).getChildValue(parentEntity);
             verify(childEntityEntityModel).handle(commandMessage, entityToBeFound, context);
             verify(childEntityEntityModel, times(0)).handle(commandMessage, entityToBeSkipped, context);
         }
@@ -100,7 +100,7 @@ class ListEntityChildModelTest {
         @Test
         void commandResultsInFailedMessageStreamWhenChildEntityIsNotFound() {
             RecordingParentEntity parentEntity = new RecordingParentEntity();
-            when(childEntityFieldDefinition.getChildEntities(any())).thenReturn(null);
+            when(childEntityFieldDefinition.getChildValue(any())).thenReturn(null);
 
             MessageStreamTestUtils.assertCompletedExceptionally(
                     testSubject.handle(commandMessage, parentEntity, context),
@@ -113,7 +113,7 @@ class ListEntityChildModelTest {
         void commandResultsInFailedMessageStreamWhenNoChildEntityMatches() {
             RecordingParentEntity parentEntity = new RecordingParentEntity();
             RecordingChildEntity entityToBeSkipped = new RecordingChildEntity("l0ser");
-            when(childEntityFieldDefinition.getChildEntities(any())).thenReturn(List.of(entityToBeSkipped));
+            when(childEntityFieldDefinition.getChildValue(any())).thenReturn(List.of(entityToBeSkipped));
 
             MessageStreamTestUtils.assertCompletedExceptionally(
                     testSubject.handle(commandMessage, parentEntity, context),
@@ -127,8 +127,8 @@ class ListEntityChildModelTest {
             RecordingParentEntity parentEntity = new RecordingParentEntity();
             RecordingChildEntity entityToBeFound1 = new RecordingChildEntity("1337-1");
             RecordingChildEntity entityToBeFound2 = new RecordingChildEntity("1337-2");
-            when(childEntityFieldDefinition.getChildEntities(any())).thenReturn(List.of(entityToBeFound1,
-                                                                                        entityToBeFound2));
+            when(childEntityFieldDefinition.getChildValue(any())).thenReturn(List.of(entityToBeFound1,
+                                                                                     entityToBeFound2));
 
 
             MessageStreamTestUtils.assertCompletedExceptionally(
@@ -178,11 +178,11 @@ class ListEntityChildModelTest {
 
         @Test
         void doesNotEvolveEntityWhenChildEntityIsNotFound() {
-            when(childEntityFieldDefinition.getChildEntities(any())).thenReturn(null);
+            when(childEntityFieldDefinition.getChildValue(any())).thenReturn(null);
 
             RecordingParentEntity result = testSubject.evolve(parentEntity, event, context);
 
-            verify(childEntityFieldDefinition).getChildEntities(parentEntity);
+            verify(childEntityFieldDefinition).getChildValue(parentEntity);
             verify(childEntityFieldDefinition, never()).evolveParentBasedOnChildEntities(any(), any());
 
             assertEquals(parentEntity, result);
@@ -192,12 +192,12 @@ class ListEntityChildModelTest {
         @Test
         void evolvesChildEntityAndParentEntityWhenChildEntityIsFound() {
             RecordingChildEntity childEntity = new RecordingChildEntity("42");
-            when(childEntityFieldDefinition.getChildEntities(any())).thenReturn(List.of(childEntity));
+            when(childEntityFieldDefinition.getChildValue(any())).thenReturn(List.of(childEntity));
 
             RecordingParentEntity result = testSubject.evolve(parentEntity, event, context);
 
             assertEquals("parent evolve: [[child evolve: myPayload]]", result.getEvolves().getFirst());
-            verify(childEntityFieldDefinition).getChildEntities(parentEntity);
+            verify(childEntityFieldDefinition).getChildValue(parentEntity);
             verify(childEntityFieldDefinition).evolveParentBasedOnChildEntities(
                     eq(parentEntity), argThat(a -> a.getFirst().getEvolves().contains("child evolve: myPayload")));
             verify(childEntityEntityModel).evolve(childEntity, event, context);
@@ -209,14 +209,14 @@ class ListEntityChildModelTest {
             RecordingChildEntity matchingEntityTwo = new RecordingChildEntity(EVENT_MATCHING_ID + "-2");
             RecordingChildEntity nonMatchingEntity1 = new RecordingChildEntity(EVENT_SKIPPING_ID + "-3");
             RecordingChildEntity nonMatchingEntity2 = new RecordingChildEntity(EVENT_SKIPPING_ID + "-4");
-            when(childEntityFieldDefinition.getChildEntities(any())).thenReturn(
+            when(childEntityFieldDefinition.getChildValue(any())).thenReturn(
                     List.of(matchingEntityOne, nonMatchingEntity2, matchingEntityTwo, nonMatchingEntity1)
             );
             RecordingParentEntity result = testSubject.evolve(parentEntity, event, context);
 
             assertEquals("parent evolve: [[child evolve: myPayload],[],[child evolve: myPayload],[]]",
                          result.getEvolves().getFirst());
-            verify(childEntityFieldDefinition).getChildEntities(parentEntity);
+            verify(childEntityFieldDefinition).getChildValue(parentEntity);
             verify(childEntityEntityModel).evolve(matchingEntityOne, event, context);
             verify(childEntityEntityModel).evolve(matchingEntityTwo, event, context);
             verify(childEntityEntityModel, times(0)).evolve(nonMatchingEntity1, event, context);
@@ -227,7 +227,7 @@ class ListEntityChildModelTest {
         void throwWhenParentEntityEvolverReturnsNull() {
             RecordingChildEntity childEntity = new RecordingChildEntity("42");
             reset(childEntityFieldDefinition);
-            when(childEntityFieldDefinition.getChildEntities(any())).thenReturn(List.of(childEntity));
+            when(childEntityFieldDefinition.getChildValue(any())).thenReturn(List.of(childEntity));
             when(childEntityFieldDefinition.evolveParentBasedOnChildEntities(any(), any())).thenReturn(null);
 
             assertThrows(IllegalArgumentException.class, () ->  testSubject.evolve(parentEntity, event, context));

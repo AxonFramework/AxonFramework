@@ -53,14 +53,22 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
         this.childEntityFieldDefinition = childEntityFieldDefinition;
     }
 
+    @Override
     public Set<QualifiedName> supportedCommands() {
         return childEntityModel.supportedCommands();
+    }
+
+    @Override
+    public boolean canHandle(@Nonnull CommandMessage<?> message, @Nonnull P parentEntity,
+                             @Nonnull ProcessingContext context) {
+        C childEntity = childEntityFieldDefinition.getChildValue(parentEntity);
+        return childEntity != null;
     }
 
 
     @Override
     public P evolve(@Nonnull P entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
-        C childEntity = childEntityFieldDefinition.getChildEntities(entity);
+        C childEntity = childEntityFieldDefinition.getChildValue(entity);
         if (childEntity != null) {
             C evolvedEntity = childEntityModel.evolve(childEntity, event, context);
             return childEntityFieldDefinition.evolveParentBasedOnChildEntities(entity, evolvedEntity);
@@ -72,7 +80,7 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
     public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> message,
                                                                 @Nonnull P entity,
                                                                 @Nonnull ProcessingContext context) {
-        C childEntity = childEntityFieldDefinition.getChildEntities(entity);
+        C childEntity = childEntityFieldDefinition.getChildValue(entity);
         if (childEntity == null) {
             return MessageStream.failed(new IllegalArgumentException(
                     "No child entity found for command " + message.type().qualifiedName()
@@ -85,6 +93,11 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
     @Override
     public Class<C> entityType() {
         return childEntityModel.entityType();
+    }
+
+    @Override
+    public String toString() {
+        return "SingleEntityChildModel{entityType=" + entityType().getName() + '}';
     }
 
     /**

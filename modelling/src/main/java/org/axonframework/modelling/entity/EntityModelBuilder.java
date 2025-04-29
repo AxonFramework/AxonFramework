@@ -18,7 +18,9 @@ package org.axonframework.modelling.entity;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.QualifiedName;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.EntityChildModel;
 import org.axonframework.modelling.entity.child.ListEntityChildModel;
@@ -57,6 +59,11 @@ public interface EntityModelBuilder<E> {
      *     <li>Single instances: For a field with a single instance, use the {@link EntityChildModel#single(Class, EntityModel)}.</li>
      *     <li>List instances: For a {@link java.util.List list}, use the {@link EntityChildModel#list(Class, EntityModel)}.</li>
      * </ul>
+     * <p>
+     * When multiple children that can handle the same command are present, the children will be filtered based on
+     * {@link EntityChildModel#canHandle(CommandMessage, Object, ProcessingContext)}, and thus only invoke the child
+     * with a matching entity. If no child can handle the command, an exception will be thrown. If after
+     * filtering, multiple children can handle the command, an exception will be thrown.
      *
      * @param child The {@link EntityChildModel} to add.
      * @return This builder for further configuration.

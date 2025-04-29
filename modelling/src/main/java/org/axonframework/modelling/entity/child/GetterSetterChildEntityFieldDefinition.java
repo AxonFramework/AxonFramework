@@ -56,7 +56,7 @@ public class GetterSetterChildEntityFieldDefinition<P, F> implements ChildEntity
     }
 
     @Override
-    public F getChildEntities(P parentEntity) {
+    public F getChildValue(P parentEntity) {
         return getter.apply(parentEntity);
     }
 }

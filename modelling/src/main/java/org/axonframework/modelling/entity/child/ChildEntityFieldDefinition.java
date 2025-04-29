@@ -55,7 +55,7 @@ public interface ChildEntityFieldDefinition<P, F> {
      * @param parentEntity The parent entity to get the child entities from.
      * @return The type of the field.
      */
-    F getChildEntities(P parentEntity);
+    F getChildValue(P parentEntity);
 
     /**
      * Creates a new {@link FieldChildEntityFieldDefinition} for the given field name. This will use reflection to

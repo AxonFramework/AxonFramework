@@ -127,7 +127,7 @@ public class FieldChildEntityFieldDefinition<P, F> implements ChildEntityFieldDe
 
     @SuppressWarnings("unchecked")
     @Override
-    public F getChildEntities(P parentEntity) {
+    public F getChildValue(P parentEntity) {
         try {
             if (optionalGetter != null) {
                 return (F) optionalGetter.invoke(parentEntity);

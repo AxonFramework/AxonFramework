@@ -33,7 +33,7 @@ class GetterEvolverChildEntityFieldDefinitionTest {
         RecordingChildEntity childEntity = new RecordingChildEntity("7826736");
         ParentEntity parentEntity = new ParentEntity(childEntity);
 
-        assertEquals(childEntity, testSubject.getChildEntities(parentEntity));
+        assertEquals(childEntity, testSubject.getChildValue(parentEntity));
     }
 
     @Test
