@@ -22,14 +22,10 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.integrationtests.testsuite.administration.commands.GiveRaise;
 import org.axonframework.integrationtests.testsuite.administration.events.RaiseGiven;
 
-public class ImmutableSalaryInformation {
-    Double salary;
-    String role;
-
-    public ImmutableSalaryInformation(Double salary, String role) {
-        this.salary = salary;
-        this.role = role;
-    }
+public record ImmutableSalaryInformation(
+        Double salary,
+        String role
+) {
 
     @CommandHandler
     public void handle(GiveRaise command, EventAppender appender) {
@@ -40,7 +36,10 @@ public class ImmutableSalaryInformation {
     }
 
     @EventSourcingHandler
-    public void on(RaiseGiven event) {
-        this.salary = event.newSalary();
+    public ImmutableSalaryInformation on(RaiseGiven event) {
+        return new ImmutableSalaryInformation(
+                event.newSalary(),
+                role
+        );
     }
 }

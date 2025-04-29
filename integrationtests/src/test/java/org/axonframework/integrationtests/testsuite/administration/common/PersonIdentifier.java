@@ -19,7 +19,7 @@ package org.axonframework.integrationtests.testsuite.administration.common;
 
 public record PersonIdentifier(
         PersonType type,
-        String identifier
+        String key
 ) {
 
 }

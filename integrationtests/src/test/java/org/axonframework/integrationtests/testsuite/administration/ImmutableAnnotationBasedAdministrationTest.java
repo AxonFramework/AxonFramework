@@ -17,8 +17,6 @@
 package org.axonframework.integrationtests.testsuite.administration;
 
 import org.axonframework.commandhandling.CommandHandlingComponent;
-import org.axonframework.common.annotation.AnnotationUtils;
-import org.axonframework.common.property.Property;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventsourcing.EventSourcingRepository;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
@@ -28,25 +26,15 @@ import org.axonframework.integrationtests.testsuite.administration.common.Person
 import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableCustomer;
 import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableEmployee;
 import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutablePerson;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
-import org.axonframework.modelling.command.EntityId;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
 import org.axonframework.modelling.entity.EntityModel;
 
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static java.lang.String.format;
-import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
 /**
  * THIS CLASS ONLY EXIST TO VERIFY THE CURRENT FUNCTIONALITY CAN BE APPLIED WITH ANNOTATIONS. THIS CLASS SHOULD NOT BE
@@ -76,7 +64,7 @@ public class ImmutableAnnotationBasedAdministrationTest extends AbstractAdminist
                     }
                     throw new IllegalArgumentException("Unknown type: " + id.type());
                 },
-                s -> EventCriteria.havingTags("Person", s.identifier()),
+                s -> EventCriteria.havingTags("Person", s.key()),
                 personModel
         );
 

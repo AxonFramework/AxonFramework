@@ -32,11 +32,6 @@ import org.axonframework.integrationtests.testsuite.administration.commands.Give
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonType;
 import org.axonframework.integrationtests.testsuite.administration.events.TaskCompleted;
-import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableCustomer;
-import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableEmployee;
-import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutablePerson;
-import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableSalaryInformation;
-import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableTask;
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableCustomer;
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableEmployee;
 import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutablePerson;
@@ -51,8 +46,6 @@ import org.axonframework.modelling.entity.PolymorphicEntityModel;
 import org.axonframework.modelling.entity.SimpleEntityModel;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.EntityChildModel;
-
-import java.util.ArrayList;
 
 /**
  * Runs the administration test suite using the builders of {@link SimpleEntityModel} and related classes.
@@ -173,7 +166,7 @@ public class MutableBuilderEntityModelAdministrationTest extends AbstractAdminis
                     }
                     throw new IllegalArgumentException("Unknown type: " + id.type());
                 },
-                s -> EventCriteria.havingTags("Person", s.identifier()),
+                s -> EventCriteria.havingTags("Person", s.key()),
                 personModel
         );
 

@@ -63,7 +63,7 @@ public class MutableAnnotationBasedAdministrationTest extends AbstractAdministra
                     }
                     throw new IllegalArgumentException("Unknown type: " + id.type());
                 },
-                s -> EventCriteria.havingTags("Person", s.identifier()),
+                s -> EventCriteria.havingTags("Person", s.key()),
                 personModel
         );
 

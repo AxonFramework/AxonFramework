@@ -24,6 +24,6 @@ public interface PersonEvent {
 
     @EventTag(key = "Person")
     default String tag() {
-        return identifier().identifier();
+        return identifier().key();
     }
 }
