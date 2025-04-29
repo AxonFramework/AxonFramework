@@ -278,6 +278,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
+    @Disabled("TODO #3103 - Revised Interceptor Support")
     void messageInterceptorOnAggregateMemberOnlyIsInvokedAsExpected() {
         FixtureConfiguration<AggregateWithAggregateMemberInterceptorOnly> memberOnlyInterceptorFixture =
                 new AggregateTestFixture<>(AggregateWithAggregateMemberInterceptorOnly.class);
