@@ -10,7 +10,6 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.*
 import org.axonframework.messaging.MetaData
 import java.time.Instant
-import java.util.Date
 import java.util.UUID
 
 /**
@@ -23,14 +22,14 @@ import java.util.UUID
  * ### Supported value types
  * Each entry in the MetaData map must conform to one of the following:
  * - Primitives: [String], [Int], [Long], [Float], [Double], [Boolean]
- * - Complex types: [UUID], [Instant], [Date]
+ * - Complex types: [UUID], [Instant]
  * - Collections: [Collection], [List], [Set]
  * - Arrays: [Array]
  * - Nested Maps: [Map] with keys convertible to [String]
  *
  * ### Limitations
  * - Custom types that do not fall into the above categories will throw a [SerializationException]
- * - Deserialized non-primitive types (like [UUID], [Instant], [Date]) are restored as [String], not their original types
+ * - Deserialized non-primitive types (like [UUID], [Instant]) are restored as [String], not their original types
  *
  * This serializer guarantees structural integrity of nested metadata (e.g. map within list within map), while remaining format-agnostic.
  *
@@ -67,7 +66,6 @@ object MetaDataSerializer : KSerializer<MetaData> {
         is Float -> JsonPrimitive(value)
         is Double -> JsonPrimitive(value)
         is UUID -> JsonPrimitive(value.toString())
-        is Date -> JsonPrimitive(value.toString())
         is Instant -> JsonPrimitive(value.toString())
         is Map<*, *> -> JsonObject(value.entries.associate { (k, v) -> k.toString() to toJsonElement(v) })
         is Collection<*> -> JsonArray(value.map { toJsonElement(it) })

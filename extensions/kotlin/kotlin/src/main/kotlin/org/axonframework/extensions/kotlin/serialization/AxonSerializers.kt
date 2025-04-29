@@ -74,7 +74,7 @@ val replayTokenContextSerializer = String.serializer().nullable
 
 /**
  * Module defining serializers for Axon Framework's core event handling and messaging components.
- * This module includes serializers for TrackingTokens, ScheduleTokens, and ResponseTypes, enabling
+ * This module includes serializers for TrackingTokens, ScheduleTokens, ResponseTypes and MetaData enabling
  * seamless integration with Axon-based applications.
  */
 val AxonSerializersModule = SerializersModule {
