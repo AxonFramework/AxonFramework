@@ -57,7 +57,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    @Disabled("TODO #3384 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3384 - Revisit Creation Policy behavior")
     void createOrUpdatePolicyForNewInstance() {
         fixture.givenNoPriorActivity()
                .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_EVENTS))
@@ -67,7 +67,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    @Disabled("TODO #3384 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3384 - Revisit Creation Policy behavior")
     void createOrUpdatePolicyForExistingInstance() {
         fixture.given(new CreatedOrUpdatedEvent(AGGREGATE_ID))
                .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_EVENTS))
@@ -77,7 +77,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    @Disabled("TODO #3384 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3384 - Revisit Creation Policy behavior")
     void alwaysCreatePolicyWithoutResultReturnsAggregateId() {
         fixture.givenNoPriorActivity()
                .when(new AlwaysCreateWithoutResultCommand(AGGREGATE_ID, PUBLISH_EVENTS))
@@ -88,7 +88,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    @Disabled("TODO #3384 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3384 - Revisit Creation Policy behavior")
     void alwaysCreatePolicyWithResultReturnsCommandHandlingResult() {
         Object testResult = "some-result";
         fixture.givenNoPriorActivity()
@@ -100,7 +100,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    @Disabled("TODO #3384 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3384 - Revisit Creation Policy behavior")
     void alwaysCreatePolicyWithResultReturnsNullCommandHandlingResult() {
         fixture.givenNoPriorActivity()
                .when(new AlwaysCreateWithResultCommand(AGGREGATE_ID, null))
@@ -111,7 +111,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    @Disabled("TODO #3384 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3384 - Revisit Creation Policy behavior")
     void neverCreatePolicy() {
         fixture.given(new CreatedOrUpdatedEvent(AGGREGATE_ID))
                .when(new ExecuteOnExistingCommand(AGGREGATE_ID))
@@ -121,7 +121,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    @Disabled("TODO #3384 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3384 - Revisit Creation Policy behavior")
     void alwaysCreatePolicyWithStateReturnsStateInCommandHandlingResult() {
         fixture.givenNoPriorActivity()
                .when(new AlwaysCreateWithEventSourcedResultCommand(AGGREGATE_ID))
@@ -142,7 +142,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    @Disabled("TODO #3384 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3384 - Revisit Creation Policy behavior")
     void createOrUpdatePolicyDoesNotPublishAnyEvents() {
         fixture.givenNoPriorActivity()
                .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_NO_EVENTS))
@@ -151,7 +151,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    @Disabled("TODO #3384 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3384 - Revisit Creation Policy behavior")
     void whenPrivateConstructorCombinedWithCreateIfMissingPolicyThenAggregateWorksAsExpected() {
         new AggregateTestFixture<>(TestAggregateWithPrivateNoArgConstructor.class)
                 .givenNoPriorActivity()
@@ -161,7 +161,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    @Disabled("TODO #3384 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3384 - Revisit Creation Policy behavior")
     void whenPrivateConstructorCombinedWithAlwaysPolicyThenAggregateWorksAsExpected() {
         new AggregateTestFixture<>(TestAggregateWithPrivateNoArgConstructor.class)
                 .givenNoPriorActivity()
@@ -171,7 +171,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    @Disabled("TODO #3384 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3384 - Revisit Creation Policy behavior")
     void whenProtectedConstructorCombinedWithCreateIfMissingPolicyThenAggregateWorksAsExpected() {
         new AggregateTestFixture<>(TestAggregateWithProtectedNoArgConstructor.class)
                 .givenNoPriorActivity()
@@ -181,7 +181,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    @Disabled("TODO #3384 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3384 - Revisit Creation Policy behavior")
     void whenProtectedConstructorCombinedWithAlwaysPolicyThenAggregateWorksAsExpected() {
         new AggregateTestFixture<>(TestAggregateWithProtectedNoArgConstructor.class)
                 .givenNoPriorActivity()
@@ -191,7 +191,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    @Disabled("TODO #3384 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3384 - Revisit Creation Policy behavior")
     void whenPolymorphicAggregateWithUniquelyNamedCreateIfMissingPolicyOnChildThenWorksAsExpected() {
         new AggregateTestFixture<>(TestAggregateParentForPolymorphicCase.class)
                 .withSubtypes(TestAggregateChildForPolymorphicCase.class)
@@ -202,7 +202,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    @Disabled("TODO #3384 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3384 - Revisit Creation Policy behavior")
     void whenPolymorphicAggregateWithUniquelyNamedAlwaysPolicyOnChildThenWorksAsExpected() {
         new AggregateTestFixture<>(TestAggregateParentForPolymorphicCase.class)
                 .withSubtypes(TestAggregateChildForPolymorphicCase.class)
@@ -213,7 +213,7 @@ class FixtureTest_CreationPolicy {
     }
 
     @Test
-    @Disabled("TODO #3384 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3384 - Revisit Creation Policy behavior")
     void markedDeletedAggregateDoesNotAllowForCreateIfMissingButRethrowsAggregateDeletedException() {
         fixture.given(new CreatedEvent(AGGREGATE_ID), new MarkedDeleted(AGGREGATE_ID))
                .when(new CreateOrUpdateCommand(AGGREGATE_ID, PUBLISH_EVENTS))
