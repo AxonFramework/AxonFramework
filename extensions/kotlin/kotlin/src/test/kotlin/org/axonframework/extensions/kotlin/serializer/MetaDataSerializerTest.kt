@@ -1,3 +1,5 @@
+package org.axonframework.extensions.kotlin.serializer
+
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.json.Json
@@ -71,6 +73,7 @@ class MetaDataSerializerTest {
     fun `should serialize and deserialize MetaData with boolean values`() {
         val metaData = MetaData.with("isTrue", true)
             .and("isFalse", false)
+            .and("isFalseString", "false")
 
         val serialized = jsonSerializer.serialize(metaData, String::class.java)
         val deserialized = jsonSerializer.deserialize<String, MetaData>(serialized)
@@ -78,6 +81,7 @@ class MetaDataSerializerTest {
         assertEquals(metaData, deserialized)
         assertEquals(true, deserialized?.get("isTrue"))
         assertEquals(false, deserialized?.get("isFalse"))
+        assertEquals("false", deserialized?.get("isFalseString"))
     }
 
     @Test
