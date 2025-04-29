@@ -138,7 +138,7 @@ public abstract class AbstractAdministrationTestSuite {
     }
 
     @Test
-    void canAssignUpToFiveUncompletedTasksToEmployees() {
+    void canAssignUpToThreeUncompletedTasksToEmployees() {
         commandGateway.send(CREATE_EMPLOYEE_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
 
         for (int i = 0; i < 3; i++) {
