@@ -122,8 +122,9 @@ class NamespaceMessageTypeResolverTest {
         // when/then
         var exception = assertThrows(IllegalArgumentException.class,
                                      () -> NamespaceMessageTypeResolver
-                                             .namespace("namespace")
+                                             .namespace("namespace1")
                                              .message(String.class, "first", "1.0.0")
+                                             .namespace("namespace2")
                                              .message(String.class, "second", "1.0.0"));
 
         assertEquals("A MessageType is already defined for payload type [java.lang.String]", exception.getMessage());
