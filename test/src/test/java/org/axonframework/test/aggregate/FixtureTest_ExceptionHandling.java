@@ -45,7 +45,7 @@ class FixtureTest_ExceptionHandling {
     private final FixtureConfiguration<MyAggregate> fixture = new AggregateTestFixture<>(MyAggregate.class);
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3062 - Revisit Exception Handling")
     void createAggregate() {
         fixture.givenCommands()
                .when(new CreateMyAggregateCommand("14"))
@@ -53,7 +53,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3062 - Revisit Exception Handling")
     void givenUnknownCommand() {
         FixtureExecutionException result = assertThrows(FixtureExecutionException.class, () ->
                 fixture.givenCommands(
@@ -65,7 +65,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3062 - Revisit Exception Handling")
     void whenExceptionTriggeringCommand() {
         fixture.givenCommands(new CreateMyAggregateCommand("14"))
                .when(new ExceptionTriggeringCommand("14"))
@@ -83,7 +83,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3062 - Revisit Exception Handling")
     void givenCommandWithInvalidIdentifier() {
         fixture.givenCommands(new CreateMyAggregateCommand("1"))
                .when(new ValidMyAggregateCommand("2"))
@@ -91,7 +91,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3062 - Revisit Exception Handling")
     void exceptionMessageCheck() {
         fixture.givenCommands(new CreateMyAggregateCommand("1"))
                .when(new ValidMyAggregateCommand("2"))
@@ -104,7 +104,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3062 - Revisit Exception Handling")
     void exceptionMessageCheckWithMatcher() {
         fixture.givenCommands(new CreateMyAggregateCommand("1"))
                .when(new ValidMyAggregateCommand("2"))
@@ -113,7 +113,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3062 - Revisit Exception Handling")
     void exceptionDetailsCheckWithEquality() {
         fixture.givenCommands(new CreateMyAggregateCommand("1"))
                 .when(new ExceptionWithDetailsTriggeringCommand("1"))
@@ -122,7 +122,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3062 - Revisit Exception Handling")
     void exceptionDetailsCheckWithType() {
         fixture.givenCommands(new CreateMyAggregateCommand("1"))
                .when(new ExceptionWithDetailsTriggeringCommand("1"))
@@ -131,7 +131,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3062 - Revisit Exception Handling")
     void exceptionDetailsCheckWithMatcher() {
         fixture.givenCommands(new CreateMyAggregateCommand("1"))
                .when(new ExceptionWithDetailsTriggeringCommand("1"))
@@ -140,7 +140,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3062 - Revisit Exception Handling")
     void whenCommandWithInvalidIdentifier() {
         assertThrows(FixtureExecutionException.class, () ->
                 fixture.givenCommands(
@@ -171,7 +171,7 @@ class FixtureTest_ExceptionHandling {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3062 - Revisit Exception Handling")
     void expectCheckedExceptionsDuringAggregateConstructorCommandHandler() {
         boolean doNoThrowUncheckedException = false;
         boolean throwCheckedException = true;
