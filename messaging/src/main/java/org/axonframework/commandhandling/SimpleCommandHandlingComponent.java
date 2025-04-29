@@ -65,8 +65,7 @@ public class SimpleCommandHandlingComponent implements
     }
 
     private SimpleCommandHandlingComponent(@Nonnull String name) {
-        Assert.nonEmpty(name, "The name may not be null or empty.");
-        this.name = name;
+        this.name = Assert.nonEmpty(name, "The name may not be null or empty.");
     }
 
     @Override
