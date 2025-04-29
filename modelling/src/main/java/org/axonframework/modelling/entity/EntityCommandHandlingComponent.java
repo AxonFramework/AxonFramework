@@ -22,6 +22,7 @@ import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
+import org.axonframework.messaging.DelayedMessageStream;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -75,8 +76,9 @@ public class EntityCommandHandlingComponent<ID, E> implements CommandHandlingCom
                                                                 @Nonnull ProcessingContext context) {
         try {
             ID id = idResolver.resolve(command, context);
-            E entity = repository.load(id, context).join().entity();
-            return entityModel.handle(command, entity, context);
+            return DelayedMessageStream.createSingle(
+                    repository.load(id, context)
+                              .thenApply(me -> entityModel.handle(command, me.entity(), context).first()));
         } catch (Exception e) {
             return MessageStream.failed(e);
         }
