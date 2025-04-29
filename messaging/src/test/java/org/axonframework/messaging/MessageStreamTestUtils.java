@@ -16,6 +16,7 @@
 
 package org.axonframework.messaging;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,9 +38,8 @@ public class MessageStreamTestUtils {
             Class<? extends Throwable> expectedExceptionType,
             String expectedMessagePart
     ) {
-        var exception = assertThrows(CompletionException.class, () -> {
-            stream.first().asCompletableFuture().join();
-        });
+        CompletableFuture<? extends MessageStream.Entry<?>> cf = stream.first().asCompletableFuture();
+        var exception = assertThrows(CompletionException.class, cf::join);
         assertInstanceOf(expectedExceptionType, exception.getCause());
         assertTrue(exception.getCause().getMessage().contains(expectedMessagePart));
     }

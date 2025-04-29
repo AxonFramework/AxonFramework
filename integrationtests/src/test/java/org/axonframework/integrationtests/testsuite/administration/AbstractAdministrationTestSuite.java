@@ -40,10 +40,7 @@ import java.util.concurrent.CompletionException;
  */
 public abstract class AbstractAdministrationTestSuite {
 
-    private CommandHandlingComponent component;
-    private CommandGateway commandGateway;
-
-    private final CreateEmployee CREATE_EMPLOYEE_1_COMMAND = new CreateEmployee(
+    private static final CreateEmployee CREATE_EMPLOYEE_1_COMMAND = new CreateEmployee(
             new PersonIdentifier(PersonType.EMPLOYEE, "1234"),
             "Herrijgers",
             "Mitchell",
@@ -52,12 +49,15 @@ public abstract class AbstractAdministrationTestSuite {
             3000.0);
 
 
-    private final CreateCustomer CREATE_CUSTOMER_1_COMMAND = new CreateCustomer(
+    private static final CreateCustomer CREATE_CUSTOMER_1_COMMAND = new CreateCustomer(
             new PersonIdentifier(PersonType.CUSTOMER, "shomer"),
             "Simpson",
             "Homer",
             "homer@the-simpsons.io"
     );
+
+    private CommandHandlingComponent component;
+    private CommandGateway commandGateway;
 
     @BeforeEach
     void setUp() {
