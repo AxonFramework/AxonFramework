@@ -27,8 +27,9 @@ import java.util.Objects;
  * {@link MessageType}s. This resolver organizes message types under a common namespace.
  * <p>
  * The resolver will throw a {@link MessageTypeNotResolvedException} when encountering a payload type for which no
- * mapping has been defined. If fallback behavior is desired, use the {@link NamespaceMessageTypeResolverBuilder#fallback(MessageTypeResolver)}
- * method during configuration to provide an alternative resolver.
+ * mapping has been defined. If fallback behavior is desired, use the
+ * {@link NamespaceMessageTypeResolverBuilder#fallback(MessageTypeResolver)} method during configuration to provide an
+ * alternative resolver.
  * <p>
  * Use the {@link #namespace(String)} static method to start building a resolver with a default namespace.
  *
@@ -82,19 +83,22 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
         NamespaceMessageTypeResolverBuilder namespace(@Nonnull String namespace);
 
         /**
-         * Registers a mapping for the given {@code payloadType} to a {@link MessageType} with the specified attributes.
+         * Registers a mapping for the given {@code payloadType} to a {@link MessageType} with the specified
+         * attributes.
          *
          * @param payloadType The class of the payload to register a mapping for.
          * @param localName   The local name component of the resulting {@link MessageType}.
          * @param version     The version component of the resulting {@link MessageType}.
          * @return The builder instance for method chaining.
-         * @throws IllegalArgumentException If a mapping for the given {@code payloadType} already exists.
+         * @throws IllegalArgumentException If a mapping for the given {@code payloadType} already exists. Mappings are
+         *                                  global, not in the scope of certain namespace.
          */
-        NamespaceMessageTypeResolverBuilder message(@Nonnull Class<?> payloadType, @Nonnull String localName, @Nonnull String version);
+        NamespaceMessageTypeResolverBuilder message(@Nonnull Class<?> payloadType, @Nonnull String localName,
+                                                    @Nonnull String version);
 
         /**
-         * Finalizes the builder and returns a {@link MessageTypeResolver} that throws a {@link MessageTypeNotResolvedException}
-         * when encountering unmapped payload types.
+         * Finalizes the builder and returns a {@link MessageTypeResolver} that throws a
+         * {@link MessageTypeNotResolvedException} when encountering unmapped payload types.
          *
          * @return A {@link MessageTypeResolver} that will throw exceptions for unknown payload types.
          */
@@ -122,7 +126,8 @@ public class NamespaceMessageTypeResolver implements MessageTypeResolver {
         }
 
         @Override
-        public NamespaceMessageTypeResolverBuilder message(@Nonnull Class<?> payloadType, @Nonnull String localName, @Nonnull String version) {
+        public NamespaceMessageTypeResolverBuilder message(@Nonnull Class<?> payloadType, @Nonnull String localName,
+                                                           @Nonnull String version) {
             if (mappings.containsKey(payloadType)) {
                 throw new IllegalArgumentException(
                         "A MessageType is already defined for payload type [" + payloadType.getName() + "]");
