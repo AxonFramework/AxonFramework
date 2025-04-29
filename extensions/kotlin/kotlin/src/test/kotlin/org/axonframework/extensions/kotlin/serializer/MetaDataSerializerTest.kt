@@ -93,7 +93,6 @@ class MetaDataSerializerTest {
 
     @Test
     fun `should handle complex objects as string representations`() {
-        // Objects that will be stored as string representations
         val now = Instant.now()
         val uuid = UUID.randomUUID()
 
@@ -149,7 +148,6 @@ class MetaDataSerializerTest {
         val serialized = jsonSerializer.serialize(metaData, String::class.java)
         val deserialized = jsonSerializer.deserialize<String, MetaData>(serialized)
 
-        // These might be converted to actual numbers/booleans
         assertNotNull(deserialized?.get("numberString"))
         assertNotNull(deserialized?.get("booleanString"))
     }
@@ -215,8 +213,7 @@ class MetaDataSerializerTest {
     }
 
     @Test
-    fun `should handle custom objects in MetaData`() {
-        // Define a custom object class for testing
+    fun `should handle custom objects in MetaData as Strings`() {
         data class Person(val name: String, val age: Int)
 
         val person = Person("John Doe", 30)
@@ -228,11 +225,8 @@ class MetaDataSerializerTest {
 
         assertEquals(metaData.size, deserialized!!.size)
 
-        // The custom object will be serialized as a string
         val deserializedValue = deserialized["personValue"]
         assertTrue(deserializedValue is String)
-
-        // Verify the string representation contains the object properties
         val valueAsString = deserializedValue.toString()
         assertTrue(valueAsString.contains("John Doe"))
         assertTrue(valueAsString.contains("30"))
