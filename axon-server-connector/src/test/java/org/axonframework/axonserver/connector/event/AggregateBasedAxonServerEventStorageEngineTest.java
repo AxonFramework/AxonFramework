@@ -25,7 +25,6 @@ import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
-import org.axonframework.serialization.Converter;
 import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
 import org.testcontainers.junit.jupiter.Testcontainers;
