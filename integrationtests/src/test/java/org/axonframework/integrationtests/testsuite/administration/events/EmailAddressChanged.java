@@ -21,6 +21,6 @@ import org.axonframework.integrationtests.testsuite.administration.common.Person
 public record EmailAddressChanged(
         PersonIdentifier identifier,
         String emailAddress
-) {
+) implements PersonEvent {
 
 }

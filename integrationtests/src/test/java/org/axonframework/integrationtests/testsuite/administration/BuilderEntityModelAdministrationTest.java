@@ -111,9 +111,9 @@ public class BuilderEntityModelAdministrationTest extends AbstractAdministration
                                           Employee::getTaskList, Employee::setTaskList
                                   ))
                                   .commandTargetMatcher((task, commandMessage) -> {
-                                      if (commandMessage.getPayload() instanceof CompleteTaskCommand assignTaskCommand) {
+                                      if (commandMessage.getPayload() instanceof CompleteTaskCommand completeTaskCommand) {
                                           return task.getTaskId()
-                                                     .equals(assignTaskCommand.taskId());
+                                                     .equals(completeTaskCommand.taskId());
                                       }
                                       return false;
                                   })
