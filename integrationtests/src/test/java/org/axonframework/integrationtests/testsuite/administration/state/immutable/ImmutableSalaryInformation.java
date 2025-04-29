@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.testsuite.administration.state;
+package org.axonframework.integrationtests.testsuite.administration.state.immutable;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
@@ -22,10 +22,14 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.integrationtests.testsuite.administration.commands.GiveRaise;
 import org.axonframework.integrationtests.testsuite.administration.events.RaiseGiven;
 
-public record SalaryInformation(
-        Double salary,
-        String role
-) {
+public class ImmutableSalaryInformation {
+    Double salary;
+    String role;
+
+    public ImmutableSalaryInformation(Double salary, String role) {
+        this.salary = salary;
+        this.role = role;
+    }
 
     @CommandHandler
     public void handle(GiveRaise command, EventAppender appender) {
@@ -36,7 +40,7 @@ public record SalaryInformation(
     }
 
     @EventSourcingHandler
-    public SalaryInformation on(RaiseGiven event) {
-        return new SalaryInformation(event.newSalary(), role);
+    public void on(RaiseGiven event) {
+        this.salary = event.newSalary();
     }
 }

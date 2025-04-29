@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.testsuite.administration.state;
+package org.axonframework.integrationtests.testsuite.administration.state.mutable;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.commands.ChangeEmailAddress;
+import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.events.EmailAddressChanged;
 import org.axonframework.modelling.command.EntityId;
 
-public abstract class Person {
+public abstract class MutablePerson {
 
     @EntityId
     protected PersonIdentifier identifier;

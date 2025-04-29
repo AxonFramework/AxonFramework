@@ -29,24 +29,24 @@ import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.common.property.Property;
 import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
-import org.axonframework.eventhandling.annotation.AnnotatedEventHandlingComponent;
+import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
 import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.SimpleEventSourcedComponent;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
 import org.axonframework.integrationtests.testsuite.administration.common.PersonType;
-import org.axonframework.integrationtests.testsuite.administration.state.Customer;
-import org.axonframework.integrationtests.testsuite.administration.state.Employee;
-import org.axonframework.integrationtests.testsuite.administration.state.Person;
+import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableCustomer;
+import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableEmployee;
+import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutablePerson;
+import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableCustomer;
+import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableEmployee;
+import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutablePerson;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
-import org.axonframework.messaging.annotation.MessageHandlingMember;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.command.EntityId;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
@@ -58,23 +58,17 @@ import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.ListEntityChildModel;
 import org.axonframework.modelling.entity.child.SingleEntityChildModel;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.lang.String.format;
@@ -90,22 +84,22 @@ import static org.axonframework.common.property.PropertyAccessStrategy.getProper
 public class AnnotationBasedAdministrationTest extends AbstractAdministrationTestSuite {
 
     @Override
-    CommandHandlingComponent getCommandHandlingComponent(Configuration configuration) {
-        EntityModel<Person> personModel = new AnnotatedEventSourcedEntityModel<>(
-                Person.class,
+    CommandHandlingComponent getMutableCommandHandlingComponent(Configuration configuration) {
+        EntityModel<MutablePerson> personModel = new AnnotatedEventSourcedEntityModel<>(
+                MutablePerson.class,
                 configuration.getComponent(ParameterResolverFactory.class),
-                Set.of(Customer.class, Employee.class));
+                Set.of(MutableCustomer.class, MutableEmployee.class));
 
 
-        EventSourcingRepository<PersonIdentifier, Person> repository = new EventSourcingRepository<>(
+        EventSourcingRepository<PersonIdentifier, MutablePerson> repository = new EventSourcingRepository<>(
                 PersonIdentifier.class,
-                Person.class,
+                MutablePerson.class,
                 configuration.getComponent(EventStore.class),
                 (type, id) -> {
                     if (id.type() == PersonType.EMPLOYEE) {
-                        return new Employee();
+                        return new MutableEmployee();
                     } else if (id.type() == PersonType.CUSTOMER) {
-                        return new Customer();
+                        return new MutableCustomer();
                     }
                     throw new IllegalArgumentException("Unknown type: " + id.type());
                 },
@@ -121,8 +115,34 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
     }
 
     @Override
-    void canGiveRaiseToEmployee() {
-        // TODO This will not work, as ESH's now cannot return entities (or better said, it's lost)
+    CommandHandlingComponent getImmutableCommandHandlingComponent(Configuration configuration) {
+        EntityModel<ImmutablePerson> personModel = new AnnotatedEventSourcedEntityModel<>(
+                ImmutablePerson.class,
+                configuration.getComponent(ParameterResolverFactory.class),
+                Set.of(ImmutableCustomer.class, ImmutableEmployee.class));
+
+
+        EventSourcingRepository<PersonIdentifier, ImmutablePerson> repository = new EventSourcingRepository<>(
+                PersonIdentifier.class,
+                ImmutablePerson.class,
+                configuration.getComponent(EventStore.class),
+                (type, id) -> {
+                    if (id.type() == PersonType.EMPLOYEE) {
+                        return new ImmutableEmployee(null, null, null, null, null, new ArrayList<>());
+                    } else if (id.type() == PersonType.CUSTOMER) {
+                        return new ImmutableCustomer(null, null, null, null);
+                    }
+                    throw new IllegalArgumentException("Unknown type: " + id.type());
+                },
+                s -> EventCriteria.havingTags("Person", s.identifier()),
+                personModel
+        );
+
+        return new EntityCommandHandlingComponent<>(
+                repository,
+                personModel,
+                new AnnotationBasedEntityIdResolver<>()
+        );
     }
 
     private class AnnotatedEventSourcedEntityModel<E> implements EntityModel<E>, DescribableComponent {
@@ -147,11 +167,11 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
             EntityModelBuilder<E> builder;
             if (collect.isEmpty()) {
                 builder = EntityModel.forEntityType(entityType)
-                                     .entityEvolver(createEntityEvolver(inspected));
+                                     .entityEvolver(new AnnotationBasedEventSourcedComponent<>(entityType));
             } else {
                 PolyMorphicEntityModelBuilder<E> polymorphicBuilder = PolymorphicEntityModel
                         .forSuperType(entityType)
-                        .entityEvolver(createEntityEvolver(inspected));
+                        .entityEvolver(new AnnotationBasedEventSourcedComponent<>(entityType));
                 collect.forEach((subType, model) -> {
                     polymorphicBuilder.addConcreteType(model);
                 });
@@ -163,37 +183,6 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
             initializeChildren(builder, parameterResolverFactory);
 
             this.entityModel = builder.build();
-        }
-
-        private EntityEvolver<E> createEntityEvolver(AnnotatedHandlerInspector<E> inspected) {
-            Stream<MessageHandlingMember<? super E>> handlers = inspected.getHandlers(entityType);
-            if (handlers == null) {
-                return new SimpleEventSourcedComponent<>(Collections.emptyMap());
-            }
-            return new SimpleEventSourcedComponent<>(
-                    handlers.collect(Collectors.toMap(
-                            m -> new QualifiedName(m.payloadType()),
-                            m -> (entity, event, context) -> {
-                                var eventHandler = new AnnotatedEventHandlingComponent<>(entity, inspected);
-                                var eventHandlerResult = eventHandler.handle(event, context)
-                                                                     .asCompletableFuture()
-                                                                     .join();
-                                return entityFromStreamResultOrUpdatedExisting(eventHandlerResult, entity);
-                            }
-                    ))
-            );
-        }
-
-        private E entityFromStreamResultOrUpdatedExisting(MessageStream.Entry<?> potentialEntityFromStream,
-                                                          E existing) {
-            if (potentialEntityFromStream != null) {
-                var resultPayload = potentialEntityFromStream.message().getPayload();
-                if (resultPayload != null && existing.getClass().isAssignableFrom(resultPayload.getClass())) {
-                    //noinspection unchecked
-                    return (E) existing.getClass().cast(resultPayload);
-                }
-            }
-            return existing;
         }
 
         private void initializeCommandHandlers(EntityModelBuilder<E> builder,
@@ -299,16 +288,6 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
         public Class<E> entityType() {
             return entityType;
         }
-    }
-
-    @Documented
-    @Target({ElementType.FIELD, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface EntityMember {
-
-        Class<? extends MessageForwardingMode> forwardingMode() default MatchingInstancesMessageForwardingMode.class;
-
-        String routingKey() default "";
     }
 
     public static class MatchingInstancesMessageForwardingMode implements MessageForwardingMode {

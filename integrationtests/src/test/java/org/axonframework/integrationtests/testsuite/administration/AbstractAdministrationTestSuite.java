@@ -33,6 +33,7 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.CompletionException;
+import java.util.function.Function;
 
 /**
  * Test suite for verifying polymorphic behavior of entities. Can be implemented by different test classes that verify
@@ -59,111 +60,124 @@ public abstract class AbstractAdministrationTestSuite {
     private CommandHandlingComponent component;
     private CommandGateway commandGateway;
 
-    @BeforeEach
-    void setUp() {
-        EventSourcingConfigurer.create()
-                               .lifecycleRegistry(lr -> {
-                                   lr.onStart(0, c -> {
-                                       component = getCommandHandlingComponent(c);
-                                       c.getComponent(CommandBus.class).subscribe(component);
-                                       commandGateway = c.getComponent(CommandGateway.class);
-                                   });
-                               })
-                               .start();
+    abstract CommandHandlingComponent getMutableCommandHandlingComponent(Configuration configuration);
+
+    abstract CommandHandlingComponent getImmutableCommandHandlingComponent(Configuration configuration);
+
+    @Nested
+    @DisplayName("Mutable")
+    class MutableTestcases extends Testcases {
+        @BeforeEach
+        void setUp() {
+            doSetupFor(AbstractAdministrationTestSuite.this::getMutableCommandHandlingComponent);
+        }
     }
 
-    abstract CommandHandlingComponent getCommandHandlingComponent(Configuration configuration);
 
-    @Test
-    void canNotCreateDuplicateEmployee() {
-        commandGateway.send(CREATE_EMPLOYEE_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
+    @Nested
+    @DisplayName("Immutable")
+    class ImmutableTestcases extends Testcases {
+        @BeforeEach
+        void setUp() {
+            doSetupFor(AbstractAdministrationTestSuite.this::getImmutableCommandHandlingComponent);
+        }
+    }
 
-        assertThrowsExceptionWithText("Employee already created", () -> {
+    private class Testcases {
+
+        @Test
+        void canNotCreateDuplicateEmployee() {
             commandGateway.send(CREATE_EMPLOYEE_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
-        });
-    }
 
-
-    @Test
-    void canNotCreateDuplicateCustomer() {
-        commandGateway.send(CREATE_CUSTOMER_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
-
-        assertThrowsExceptionWithText("Customer already created", () -> {
-            commandGateway.send(CREATE_CUSTOMER_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
-        });
-    }
-
-    @Test
-    void canOnlyUpdateEmailAddressToNewValueForEmployee() {
-        commandGateway.send(CREATE_EMPLOYEE_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
-
-        assertThrowsExceptionWithText("Email address cannot be the same as the current one", () -> {
-            commandGateway.send(new ChangeEmailAddress(CREATE_EMPLOYEE_1_COMMAND.identifier(),
-                                                       "mitchell.herrijgers@axoniq.io"), ProcessingContext.NONE)
-                          .getResultMessage().join();
-        });
-
-        // But we can update to a new value
-        commandGateway.send(new ChangeEmailAddress(CREATE_EMPLOYEE_1_COMMAND.identifier(), "mitchell@axoniq.io"),
-                            ProcessingContext.NONE).getResultMessage().join();
-    }
-
-    @Test
-    void canOnlyUpdateEmailAddressToNewValueForCustomer() {
-        commandGateway.send(CREATE_CUSTOMER_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
-
-        assertThrowsExceptionWithText("Email address cannot be the same as the current one", () -> {
-            commandGateway.send(new ChangeEmailAddress(CREATE_CUSTOMER_1_COMMAND.identifier(),
-                                                       CREATE_CUSTOMER_1_COMMAND.emailAddress()), ProcessingContext.NONE)
-                          .getResultMessage().join();
-        });
-
-        // But we can update to a new value
-        commandGateway.send(new ChangeEmailAddress(CREATE_CUSTOMER_1_COMMAND.identifier(), "dog@dog.y"),
-                            ProcessingContext.NONE).getResultMessage().join();
-    }
-
-    @Test
-    void canGiveRaiseToEmployee() {
-        commandGateway.send(CREATE_EMPLOYEE_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
-
-        commandGateway.send(new GiveRaise(CREATE_EMPLOYEE_1_COMMAND.identifier(), 5000000.0), ProcessingContext.NONE)
-                      .getResultMessage().join();
-
-        assertThrowsExceptionWithText("New salary must be greater than current salary", () -> {
-            commandGateway.send(new GiveRaise(CREATE_EMPLOYEE_1_COMMAND.identifier(), 4000000.0),
-                                ProcessingContext.NONE)
-                          .getResultMessage().join();
-        });
-    }
-
-    @Test
-    void canAssignUpToThreeUncompletedTasksToEmployees() {
-        commandGateway.send(CREATE_EMPLOYEE_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
-
-        for (int i = 0; i < 3; i++) {
-            commandGateway.send(new AssignTaskCommand(CREATE_EMPLOYEE_1_COMMAND.identifier(),
-                                                      "task-" + i,
-                                                      "Task " + i), ProcessingContext.NONE)
-                          .getResultMessage().join();
+            assertThrowsExceptionWithText("Employee already created", () -> {
+                commandGateway.send(CREATE_EMPLOYEE_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
+            });
         }
 
-        assertThrowsExceptionWithText("Cannot assign more than 3 tasks to an employee", () -> {
-            commandGateway.send(new AssignTaskCommand(CREATE_EMPLOYEE_1_COMMAND.identifier(), "task-4",
-                                                      "Task " + 4),
+
+        @Test
+        void canNotCreateDuplicateCustomer() {
+            commandGateway.send(CREATE_CUSTOMER_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
+
+            assertThrowsExceptionWithText("Customer already created", () -> {
+                commandGateway.send(CREATE_CUSTOMER_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
+            });
+        }
+
+        @Test
+        void canOnlyUpdateEmailAddressToNewValueForEmployee() {
+            commandGateway.send(CREATE_EMPLOYEE_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
+
+            assertThrowsExceptionWithText("Email address cannot be the same as the current one", () -> {
+                commandGateway.send(new ChangeEmailAddress(CREATE_EMPLOYEE_1_COMMAND.identifier(),
+                                                           "mitchell.herrijgers@axoniq.io"), ProcessingContext.NONE)
+                              .getResultMessage().join();
+            });
+
+            // But we can update to a new value
+            commandGateway.send(new ChangeEmailAddress(CREATE_EMPLOYEE_1_COMMAND.identifier(), "mitchell@axoniq.io"),
+                                ProcessingContext.NONE).getResultMessage().join();
+        }
+
+        @Test
+        void canOnlyUpdateEmailAddressToNewValueForCustomer() {
+            commandGateway.send(CREATE_CUSTOMER_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
+
+            assertThrowsExceptionWithText("Email address cannot be the same as the current one", () -> {
+                commandGateway.send(new ChangeEmailAddress(CREATE_CUSTOMER_1_COMMAND.identifier(),
+                                                           CREATE_CUSTOMER_1_COMMAND.emailAddress()),
+                                    ProcessingContext.NONE)
+                              .getResultMessage().join();
+            });
+
+            // But we can update to a new value
+            commandGateway.send(new ChangeEmailAddress(CREATE_CUSTOMER_1_COMMAND.identifier(), "dog@dog.y"),
+                                ProcessingContext.NONE).getResultMessage().join();
+        }
+
+        @Test
+        void canGiveRaiseToEmployee() {
+            commandGateway.send(CREATE_EMPLOYEE_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
+
+            commandGateway.send(new GiveRaise(CREATE_EMPLOYEE_1_COMMAND.identifier(), 5000000.0),
                                 ProcessingContext.NONE)
                           .getResultMessage().join();
-        });
 
-        // Now, let's complete one
-        commandGateway.send(new CompleteTaskCommand(CREATE_EMPLOYEE_1_COMMAND.identifier(), "task-0"),
-                            ProcessingContext.NONE)
-                      .getResultMessage().join();
+            assertThrowsExceptionWithText("New salary must be greater than current salary", () -> {
+                commandGateway.send(new GiveRaise(CREATE_EMPLOYEE_1_COMMAND.identifier(), 4000000.0),
+                                    ProcessingContext.NONE)
+                              .getResultMessage().join();
+            });
+        }
 
-        // And assign a new one
-        commandGateway.send(new AssignTaskCommand(CREATE_EMPLOYEE_1_COMMAND.identifier(), "task-4",
-                                                  "Task " + 4), ProcessingContext.NONE)
-                      .getResultMessage().join();
+        @Test
+        void canAssignUpToThreeUncompletedTasksToEmployees() {
+            commandGateway.send(CREATE_EMPLOYEE_1_COMMAND, ProcessingContext.NONE).getResultMessage().join();
+
+            for (int i = 0; i < 3; i++) {
+                commandGateway.send(new AssignTaskCommand(CREATE_EMPLOYEE_1_COMMAND.identifier(),
+                                                          "task-" + i,
+                                                          "Task " + i), ProcessingContext.NONE)
+                              .getResultMessage().join();
+            }
+
+            assertThrowsExceptionWithText("Cannot assign more than 3 tasks to an employee", () -> {
+                commandGateway.send(new AssignTaskCommand(CREATE_EMPLOYEE_1_COMMAND.identifier(), "task-4",
+                                                          "Task " + 4),
+                                    ProcessingContext.NONE)
+                              .getResultMessage().join();
+            });
+
+            // Now, let's complete one
+            commandGateway.send(new CompleteTaskCommand(CREATE_EMPLOYEE_1_COMMAND.identifier(), "task-0"),
+                                ProcessingContext.NONE)
+                          .getResultMessage().join();
+
+            // And assign a new one
+            commandGateway.send(new AssignTaskCommand(CREATE_EMPLOYEE_1_COMMAND.identifier(), "task-4",
+                                                      "Task " + 4), ProcessingContext.NONE)
+                          .getResultMessage().join();
+        }
     }
 
 
@@ -177,5 +191,17 @@ public abstract class AbstractAdministrationTestSuite {
             Assertions.fail("Expected CompletionException, but got: " + e.getClass().getSimpleName());
         }
         Assertions.fail("Expected CompletionException, but got no exception");
+    }
+
+    private void doSetupFor(Function<Configuration, CommandHandlingComponent> commandHandlingComponentFactory) {
+        EventSourcingConfigurer.create()
+                               .lifecycleRegistry(lr -> {
+                                   lr.onStart(0, c -> {
+                                       component = commandHandlingComponentFactory.apply(c);
+                                       c.getComponent(CommandBus.class).subscribe(component);
+                                       commandGateway = c.getComponent(CommandGateway.class);
+                                   });
+                               })
+                               .start();
     }
 }

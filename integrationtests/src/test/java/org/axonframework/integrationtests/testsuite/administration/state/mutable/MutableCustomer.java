@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.testsuite.administration.state;
+package org.axonframework.integrationtests.testsuite.administration.state.mutable;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
@@ -22,7 +22,7 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateCustomer;
 import org.axonframework.integrationtests.testsuite.administration.events.CustomerCreated;
 
-public class Customer extends Person {
+public class MutableCustomer extends MutablePerson {
 
     @CommandHandler
     public void handle(CreateCustomer command, EventAppender appender) {

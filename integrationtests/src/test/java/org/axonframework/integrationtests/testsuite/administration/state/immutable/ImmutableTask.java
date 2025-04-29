@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.testsuite.administration.state;
+package org.axonframework.integrationtests.testsuite.administration.state.immutable;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
@@ -23,16 +23,11 @@ import org.axonframework.integrationtests.testsuite.administration.commands.Comp
 import org.axonframework.integrationtests.testsuite.administration.events.TaskCompleted;
 import org.axonframework.modelling.command.EntityId;
 
-public class Task {
-    @EntityId
-    private String taskId;
-    private Boolean completed;
-
-    public Task(String taskId) {
-        this.taskId = taskId;
-        this.completed = false;
-    }
-
+public record ImmutableTask(
+        @EntityId
+        String taskId,
+        Boolean completed
+) {
     @CommandHandler
     public void handle(CompleteTaskCommand command, EventAppender eventAppender) {
         if(this.completed) {
@@ -43,8 +38,8 @@ public class Task {
     }
 
     @EventSourcingHandler
-    public void on(TaskCompleted event) {
-        this.completed = true;
+    public ImmutableTask on(TaskCompleted event) {
+        return new ImmutableTask(event.taskId(), true);
     }
 
     public String getTaskId() {

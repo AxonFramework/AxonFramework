@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.axonframework.integrationtests.testsuite.administration.state;
+package org.axonframework.integrationtests.testsuite.administration.state.mutable;
 
 import org.axonframework.commandhandling.annotation.CommandHandler;
 import org.axonframework.eventhandling.gateway.EventAppender;
 import org.axonframework.eventsourcing.EventSourcingHandler;
-import org.axonframework.integrationtests.testsuite.administration.AnnotationBasedAdministrationTest;
+import org.axonframework.integrationtests.testsuite.administration.EntityMember;
 import org.axonframework.integrationtests.testsuite.administration.commands.AssignTaskCommand;
 import org.axonframework.integrationtests.testsuite.administration.commands.CreateEmployee;
 import org.axonframework.integrationtests.testsuite.administration.events.EmployeeCreated;
@@ -29,16 +29,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Employee extends Person {
+public class MutableEmployee extends MutablePerson {
 
-    @AnnotationBasedAdministrationTest.EntityMember
-    private SalaryInformation salary;
-    @AnnotationBasedAdministrationTest.EntityMember
-    private List<Task> taskList = new ArrayList<>();
+    @EntityMember
+    private MutableSalaryInformation salary;
+    @EntityMember
+    private List<MutableTask> taskList = new ArrayList<>();
 
     @CommandHandler
     public void handle(CreateEmployee command, EventAppender eventAppender) {
-        if(identifier != null) {
+        if (identifier != null) {
             throw new IllegalStateException("Employee already created");
         }
         eventAppender.append(new EmployeeCreated(
@@ -69,19 +69,20 @@ public class Employee extends Person {
         this.lastNames = event.lastNames();
         this.firstNames = event.firstNames();
         this.emailAddress = event.emailAddress();
-        this.salary = new SalaryInformation(event.initialSalary(), event.role());
+        this.salary = new MutableSalaryInformation(event.initialSalary(), event.role());
     }
 
     @EventSourcingHandler
     public void on(TaskAssigned event) {
-        taskList.add(new Task(event.taskId()));
+        taskList.add(new MutableTask(event.taskId()));
     }
 
-    public List<Task> getTaskList() {
+    public List<MutableTask> getTaskList() {
         return taskList;
     }
 
-    public void setTaskList(List<Task> taskList) {
+    public void setTaskList(
+            List<MutableTask> taskList) {
         this.taskList = taskList;
     }
 }
