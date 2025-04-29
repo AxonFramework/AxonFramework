@@ -13,6 +13,30 @@ import java.time.Instant
 import java.util.Date
 import java.util.UUID
 
+/**
+ * A Kotlinx [KSerializer] for Axon Framework's [MetaData] type, supporting serialization across any format.
+ *
+ * This serializer converts a [MetaData] instance to a JSON-encoded [String] using a recursive conversion
+ * of all entries into [JsonElement]s. This JSON string is then serialized using [String.serializer],
+ * ensuring compatibility with any [kotlinx.serialization.encoding.Encoder]—including formats such as JSON, CBOR, ProtoBuf, or Avro.
+ *
+ * ### Supported value types
+ * Each entry in the MetaData map must conform to one of the following:
+ * - Primitives: [String], [Int], [Long], [Float], [Double], [Boolean]
+ * - Temporal types: [UUID], [Date], [Instant]
+ * - Collections: [Collection], [List], [Set]
+ * - Arrays: [Array]
+ * - Nested Maps: [Map] with keys convertible to [String]
+ *
+ * ### Limitations
+ * - Custom types that do not fall into the above categories will throw a [SerializationException]
+ * - Deserialized non-primitive types (like [UUID], [Instant], [Date]) are restored as [String], not their original types
+ *
+ * This serializer guarantees structural integrity of nested metadata (e.g. map within list within map), while remaining format-agnostic.
+ *
+ * @author Mateusz Nowak
+ * @since 4.11.1
+ */
 object MetaDataSerializer : KSerializer<MetaData> {
 
     private val json = Json { encodeDefaults = true; ignoreUnknownKeys = true }
