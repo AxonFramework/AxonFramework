@@ -23,7 +23,7 @@ import java.util.UUID
  * ### Supported value types
  * Each entry in the MetaData map must conform to one of the following:
  * - Primitives: [String], [Int], [Long], [Float], [Double], [Boolean]
- * - Temporal types: [UUID], [Date], [Instant]
+ * - Complex types: [UUID], [Instant], [Date]
  * - Collections: [Collection], [List], [Set]
  * - Arrays: [Array]
  * - Nested Maps: [Map] with keys convertible to [String]
@@ -77,14 +77,17 @@ object MetaDataSerializer : KSerializer<MetaData> {
 
     private fun fromJsonElement(element: JsonElement): Any? = when (element) {
         is JsonNull -> null
-        is JsonPrimitive -> when {
-            element.isString -> element.content
-            element.booleanOrNull != null -> element.boolean
-            element.intOrNull != null -> element.int
-            element.longOrNull != null -> element.long
-            element.floatOrNull != null -> element.float
-            element.doubleOrNull != null -> element.double
-            else -> element.content
+        is JsonPrimitive -> {
+            if (element.isString) {
+                element.content
+            } else {
+                element.booleanOrNull
+                    ?: element.intOrNull
+                    ?: element.longOrNull
+                    ?: element.floatOrNull
+                    ?: element.doubleOrNull
+                    ?: element.content
+            }
         }
         is JsonObject -> element.mapValues { fromJsonElement(it.value) }
         is JsonArray -> element.map { fromJsonElement(it) }
