@@ -116,7 +116,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3103 - Revised Interceptor Support")
     void registeredCommandDispatchInterceptorIsInvokedAndAltersAppliedEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new TestCommand(AGGREGATE_IDENTIFIER))
@@ -173,7 +173,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3103 - Revised Interceptor Support")
     void registeredCommandHandlerInterceptorIsInvokedAndAltersEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new TestCommand(AGGREGATE_IDENTIFIER))
@@ -203,7 +203,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3103 - Revised Interceptor Support")
     void registeredCommandDispatchAndHandlerInterceptorAreBothInvokedAndAlterEvent() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new TestCommand(AGGREGATE_IDENTIFIER))
@@ -259,7 +259,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3103 - Revised Interceptor Support")
     void interceptorChainIsInvokedWhenInterceptorForEntityWiresInterceptorChainWithoutExistingEntity() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new DoWithEntityCommand(AGGREGATE_IDENTIFIER))
@@ -269,7 +269,7 @@ class FixtureTest_CommandInterceptors {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3103 - Revised Interceptor Support")
     void interceptorChainIsNotInvokedWhenInterceptorForEntityDoesNotWireInterceptorChainWithoutExistingEntity() {
         fixture.given(new StandardAggregateCreatedEvent(AGGREGATE_IDENTIFIER))
                .when(new DoWithEntityWithoutInterceptorCommand(AGGREGATE_IDENTIFIER))
