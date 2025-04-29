@@ -57,10 +57,10 @@ import java.util.ArrayList;
 /**
  * Runs the administration test suite using the builders of {@link SimpleEntityModel} and related classes.
  */
-public class BuilderEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
+public class MutableBuilderEntityModelAdministrationTest extends AbstractAdministrationTestSuite {
 
     @Override
-    CommandHandlingComponent getMutableCommandHandlingComponent(Configuration configuration) {
+    CommandHandlingComponent getCommandHandlingComponent(Configuration configuration) {
         MessageTypeResolver typeResolver = configuration.getComponent(MessageTypeResolver.class);
 
         // Task is the list-based child-model of Employee
@@ -170,132 +170,6 @@ public class BuilderEntityModelAdministrationTest extends AbstractAdministration
                         return new MutableEmployee();
                     } else if (id.type() == PersonType.CUSTOMER) {
                         return new MutableCustomer();
-                    }
-                    throw new IllegalArgumentException("Unknown type: " + id.type());
-                },
-                s -> EventCriteria.havingTags("Person", s.identifier()),
-                personModel
-        );
-
-        return new EntityCommandHandlingComponent<>(
-                repository,
-                personModel,
-                new AnnotationBasedEntityIdResolver<>()
-        );
-    }
-
-    @Override
-    CommandHandlingComponent getImmutableCommandHandlingComponent(Configuration configuration) {
-        MessageTypeResolver typeResolver = configuration.getComponent(MessageTypeResolver.class);
-
-        // Task is the list-based child-model of Employee
-        EntityModel<ImmutableTask> taskModel = SimpleEntityModel
-                .forEntityClass(ImmutableTask.class)
-                .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableTask.class))
-                .commandHandler(typeResolver.resolve(CompleteTaskCommand.class).qualifiedName(),
-                                (command, entity, context) -> {
-                                    EventAppender eventAppender = EventAppender.forContext(context, configuration);
-                                    entity.handle((CompleteTaskCommand) command.getPayload(), eventAppender);
-                                    return MessageStream.empty().cast();
-                                })
-                .build();
-
-        // SalaryInformation is the singular child-model of Employee
-        EntityModel<ImmutableSalaryInformation> salaryInformationModel = SimpleEntityModel
-                .forEntityClass(ImmutableSalaryInformation.class)
-                .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableSalaryInformation.class))
-                .commandHandler(typeResolver.resolve(GiveRaise.class).qualifiedName(),
-                                (command, entity, context) -> {
-                                    EventAppender eventAppender = EventAppender.forContext(context,
-                                                                                           configuration);
-                                    entity.handle((GiveRaise) command.getPayload(), eventAppender);
-                                    return MessageStream.empty().cast();
-                                })
-                .build();
-
-        // Employee is a concrete entity type
-        EntityModel<ImmutableEmployee> employeeModel = SimpleEntityModel
-                .forEntityClass(ImmutableEmployee.class)
-                .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableEmployee.class))
-                .commandHandler(typeResolver.resolve(CreateEmployee.class).qualifiedName(),
-                                ((command, entity, context) -> {
-                                    EventAppender eventAppender = EventAppender.forContext(context, configuration);
-                                    entity.handle((CreateEmployee) command.getPayload(), eventAppender);
-                                    return MessageStream.empty().cast();
-                                }))
-                .commandHandler(typeResolver.resolve(AssignTaskCommand.class).qualifiedName(),
-                                ((command, entity, context) -> {
-                                    EventAppender eventAppender = EventAppender.forContext(context, configuration);
-                                    entity.handle((AssignTaskCommand) command.getPayload(), eventAppender);
-                                    return MessageStream.empty().cast();
-                                }))
-                .addChild(EntityChildModel
-                                  .list(ImmutableEmployee.class, taskModel)
-                                  .childEntityFieldDefinition(ChildEntityFieldDefinition.forGetterEvolver(
-                                          ImmutableEmployee::getTaskList, ImmutableEmployee::evolveTaskList
-                                  ))
-                                  .commandTargetMatcher((task, commandMessage) -> {
-                                      if (commandMessage.getPayload() instanceof CompleteTaskCommand completeTaskCommand) {
-                                          return task.getTaskId()
-                                                     .equals(completeTaskCommand.taskId());
-                                      }
-                                      return false;
-                                  })
-                                  .eventTargetMatcher((o, eventMessage) -> {
-                                      if (eventMessage.getPayload() instanceof TaskCompleted taskAssigned) {
-                                          return o.getTaskId().equals(taskAssigned.taskId());
-                                      }
-                                      return false;
-                                  })
-                                  .build()
-
-                )
-                .addChild(EntityChildModel
-                                  .single(ImmutableEmployee.class, salaryInformationModel)
-                                  .childEntityFieldDefinition(ChildEntityFieldDefinition.forGetterEvolver(
-                                          ImmutableEmployee::salaryInformation,
-                                          ImmutableEmployee::evolveSalaryInformation
-                                  ))
-                                  .build()
-                )
-                .build();
-
-        // Customer is a concrete entity type
-        EntityModel<ImmutableCustomer> customerModel = SimpleEntityModel
-                .forEntityClass(ImmutableCustomer.class)
-                .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutableCustomer.class))
-                .commandHandler(
-                        typeResolver.resolve(CreateCustomer.class).qualifiedName(),
-                        ((command, entity, context) -> {
-                            EventAppender eventAppender = EventAppender.forContext(context, configuration);
-                            entity.handle((CreateCustomer) command.getPayload(), eventAppender);
-                            return MessageStream.empty().cast();
-                        }))
-                .build();
-
-        // Person is the polymorphic entity type
-        EntityModel<ImmutablePerson> personModel = PolymorphicEntityModel
-                .forSuperType(ImmutablePerson.class)
-                .addConcreteType(employeeModel)
-                .addConcreteType(customerModel)
-                .entityEvolver(new AnnotationBasedEventSourcedComponent<>(ImmutablePerson.class))
-                .commandHandler(typeResolver.resolve(ChangeEmailAddress.class).qualifiedName(),
-                                (command, entity, context) -> {
-                                    EventAppender eventAppender = EventAppender.forContext(context, configuration);
-                                    entity.handle((ChangeEmailAddress) command.getPayload(), eventAppender);
-                                    return MessageStream.empty().cast();
-                                })
-                .build();
-
-        EventSourcingRepository<PersonIdentifier, ImmutablePerson> repository = new EventSourcingRepository<>(
-                PersonIdentifier.class,
-                ImmutablePerson.class,
-                configuration.getComponent(EventStore.class),
-                (type, id) -> {
-                    if (id.type() == PersonType.EMPLOYEE) {
-                        return new ImmutableEmployee(null, null, null, null, null, new ArrayList<>());
-                    } else if (id.type() == PersonType.CUSTOMER) {
-                        return new ImmutableCustomer(null, null, null, null);
                     }
                     throw new IllegalArgumentException("Unknown type: " + id.type());
                 },

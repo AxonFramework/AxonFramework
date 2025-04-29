@@ -17,7 +17,6 @@
 package org.axonframework.integrationtests.testsuite.administration;
 
 import jakarta.annotation.Nonnull;
-import org.axonframework.commandhandling.CommandHandlingComponent;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
@@ -27,29 +26,15 @@ import org.axonframework.common.annotation.AnnotationUtils;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.common.property.Property;
-import org.axonframework.configuration.Configuration;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventsourcing.AnnotationBasedEventSourcedComponent;
-import org.axonframework.eventsourcing.EventSourcingRepository;
-import org.axonframework.eventsourcing.eventstore.EventCriteria;
-import org.axonframework.eventsourcing.eventstore.EventStore;
-import org.axonframework.integrationtests.testsuite.administration.common.PersonIdentifier;
-import org.axonframework.integrationtests.testsuite.administration.common.PersonType;
-import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableCustomer;
-import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutableEmployee;
-import org.axonframework.integrationtests.testsuite.administration.state.immutable.ImmutablePerson;
-import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableCustomer;
-import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutableEmployee;
-import org.axonframework.integrationtests.testsuite.administration.state.mutable.MutablePerson;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.annotation.AnnotatedHandlerInspector;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
-import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.command.EntityId;
-import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
 import org.axonframework.modelling.entity.EntityModel;
 import org.axonframework.modelling.entity.EntityModelBuilder;
 import org.axonframework.modelling.entity.PolyMorphicEntityModelBuilder;
@@ -58,10 +43,14 @@ import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.ListEntityChildModel;
 import org.axonframework.modelling.entity.child.SingleEntityChildModel;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -75,228 +64,35 @@ import static java.lang.String.format;
 import static org.axonframework.common.ReflectionUtils.resolveMemberGenericType;
 import static org.axonframework.common.property.PropertyAccessStrategy.getProperty;
 
-/**
- * THIS CLASS ONLY EXIST TO VERIFY THE CURRENT FUNCTIONALITY CAN BE APPLIED WITH ANNOTATIONS. THIS CLASS SHOULD NOT BE
- * REVIEWED. It's just proof of concept.
- * <p>
- * All classes and annotations needed are located in this same class, so it can easily be skipped during review.
- */
-public class AnnotationBasedAdministrationTest extends AbstractAdministrationTestSuite {
+public class AnnotationTestDefinitions {
 
-    @Override
-    CommandHandlingComponent getMutableCommandHandlingComponent(Configuration configuration) {
-        EntityModel<MutablePerson> personModel = new AnnotatedEventSourcedEntityModel<>(
-                MutablePerson.class,
-                configuration.getComponent(ParameterResolverFactory.class),
-                Set.of(MutableCustomer.class, MutableEmployee.class));
+    public interface MessageForwardingMode {
 
+        default void initialize(@javax.annotation.Nonnull Member member,
+                                @javax.annotation.Nonnull EntityModel childEntity) {
+        }
 
-        EventSourcingRepository<PersonIdentifier, MutablePerson> repository = new EventSourcingRepository<>(
-                PersonIdentifier.class,
-                MutablePerson.class,
-                configuration.getComponent(EventStore.class),
-                (type, id) -> {
-                    if (id.type() == PersonType.EMPLOYEE) {
-                        return new MutableEmployee();
-                    } else if (id.type() == PersonType.CUSTOMER) {
-                        return new MutableCustomer();
-                    }
-                    throw new IllegalArgumentException("Unknown type: " + id.type());
-                },
-                s -> EventCriteria.havingTags("Person", s.identifier()),
-                personModel
-        );
-
-        return new EntityCommandHandlingComponent<>(
-                repository,
-                personModel,
-                new AnnotationBasedEntityIdResolver<>()
-        );
+        <E> boolean matches(@javax.annotation.Nonnull Message<?> message, @javax.annotation.Nonnull E candidate);
     }
 
-    @Override
-    CommandHandlingComponent getImmutableCommandHandlingComponent(Configuration configuration) {
-        EntityModel<ImmutablePerson> personModel = new AnnotatedEventSourcedEntityModel<>(
-                ImmutablePerson.class,
-                configuration.getComponent(ParameterResolverFactory.class),
-                Set.of(ImmutableCustomer.class, ImmutableEmployee.class));
+    @Documented
+    @Target({ElementType.FIELD, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface EntityMember {
 
+        Class<? extends MessageForwardingMode> forwardingMode() default MatchingInstancesMessageForwardingMode.class;
 
-        EventSourcingRepository<PersonIdentifier, ImmutablePerson> repository = new EventSourcingRepository<>(
-                PersonIdentifier.class,
-                ImmutablePerson.class,
-                configuration.getComponent(EventStore.class),
-                (type, id) -> {
-                    if (id.type() == PersonType.EMPLOYEE) {
-                        return new ImmutableEmployee(null, null, null, null, null, new ArrayList<>());
-                    } else if (id.type() == PersonType.CUSTOMER) {
-                        return new ImmutableCustomer(null, null, null, null);
-                    }
-                    throw new IllegalArgumentException("Unknown type: " + id.type());
-                },
-                s -> EventCriteria.havingTags("Person", s.identifier()),
-                personModel
-        );
-
-        return new EntityCommandHandlingComponent<>(
-                repository,
-                personModel,
-                new AnnotationBasedEntityIdResolver<>()
-        );
+        String routingKey() default "";
     }
 
-    private class AnnotatedEventSourcedEntityModel<E> implements EntityModel<E>, DescribableComponent {
-
-        private final Class<E> entityType;
-        private final EntityModel<E> entityModel;
-
-
-        public AnnotatedEventSourcedEntityModel(Class<E> entityType,
-                                                ParameterResolverFactory parameterResolverFactory,
-                                                Set<Class<? extends E>> subTypes
-        ) {
-            this.entityType = entityType;
-            Map<Class<? extends E>, EntityModel<? extends E>> collect =
-                    subTypes.stream().collect(Collectors.toMap(
-                            c -> c,
-                            c -> new AnnotatedEventSourcedEntityModel<>(c, parameterResolverFactory, Set.of())));
-
-            AnnotatedHandlerInspector<E> inspected = AnnotatedHandlerInspector.inspectType(entityType,
-                                                                                           parameterResolverFactory);
-
-            EntityModelBuilder<E> builder;
-            if (collect.isEmpty()) {
-                builder = EntityModel.forEntityType(entityType)
-                                     .entityEvolver(new AnnotationBasedEventSourcedComponent<>(entityType));
-            } else {
-                PolyMorphicEntityModelBuilder<E> polymorphicBuilder = PolymorphicEntityModel
-                        .forSuperType(entityType)
-                        .entityEvolver(new AnnotationBasedEventSourcedComponent<>(entityType));
-                collect.forEach((subType, model) -> {
-                    polymorphicBuilder.addConcreteType(model);
-                });
-                builder = polymorphicBuilder;
-            }
-
-
-            initializeCommandHandlers(builder, inspected);
-            initializeChildren(builder, parameterResolverFactory);
-
-            this.entityModel = builder.build();
-        }
-
-        private void initializeCommandHandlers(EntityModelBuilder<E> builder,
-                                               AnnotatedHandlerInspector<E> inspected) {
-            inspected
-                    .getHandlers(entityType)
-                    .forEach(handler -> builder
-                            .commandHandler(new QualifiedName(handler.payloadType()),
-                                            ((command, entity, context) -> handler
-                                                    .handle(command, context, entity)
-                                                    .<CommandResultMessage<?>>mapMessage(GenericCommandResultMessage::new)
-                                                    .first())));
-        }
-
-        private void initializeChildren(EntityModelBuilder<E> builder,
-                                        ParameterResolverFactory parameterResolverFactory) {
-            StreamSupport.stream(ReflectionUtils.fieldsOf(entityType).spliterator(), false)
-                         .filter(field -> field.isAnnotationPresent(EntityMember.class))
-                         .forEach(field -> {
-                             if (field.getType() == List.class) {
-                                 var childType = resolveMemberGenericType(field, 0).orElseThrow(
-                                         () -> new AxonConfigurationException(format(
-                                                 "Unable to resolve entity type of member [%s]. Please provide type explicitly in @AggregateMember annotation.",
-                                                 ReflectionUtils.getMemberGenericString(field)
-                                         )));
-                                 var childModel = new AnnotatedEventSourcedEntityModel<>((Class<Object>) childType,
-                                                                                         parameterResolverFactory,
-                                                                                         Set.of());
-                                 Map<String, Object> attributes = AnnotationUtils.findAnnotationAttributes(field,
-                                                                                                           EntityMember.class)
-                                                                                 .get();
-                                 Class<MessageForwardingMode> forwardingModeclass = (Class<MessageForwardingMode>) attributes.get(
-                                         "forwardingMode");
-                                 MessageForwardingMode forwardingMode;
-                                 try {
-                                     forwardingMode = forwardingModeclass.getDeclaredConstructor().newInstance();
-                                     forwardingMode.initialize(field, childModel);
-                                 } catch (Exception e) {
-                                     throw new AxonConfigurationException(format(
-                                             "Unable to initialize event forwarding mode [%s] for field [%s]",
-                                             forwardingModeclass.getName(),
-                                             field
-                                     ), e);
-                                 }
-                                 builder.addChild(
-                                         ListEntityChildModel
-                                                 .forEntityModel(entityType, childModel)
-                                                 .childEntityFieldDefinition(ChildEntityFieldDefinition.forFieldName(
-                                                         entityType, field.getName())
-                                                 )
-                                                 .commandTargetMatcher((o, commandMessage) ->
-                                                                               forwardingMode.matches(commandMessage,
-                                                                                                      o))
-                                                 .eventTargetMatcher((o, eventMessage) ->
-                                                                             forwardingMode.matches(eventMessage, o))
-                                                 .build()
-                                 );
-                             } else {
-                                 // Assume it's a single entity
-                                 var childType = field.getType();
-                                 var childModel = new AnnotatedEventSourcedEntityModel<>((Class<Object>) childType,
-                                                                                         parameterResolverFactory,
-                                                                                         Set.of());
-                                 builder.addChild(
-                                         SingleEntityChildModel
-                                                 .forEntityModel(entityType, childModel)
-                                                 .childEntityFieldDefinition(ChildEntityFieldDefinition.forFieldName(
-                                                         entityType, field.getName())
-                                                 )
-                                                 .build()
-
-
-                                 );
-                             }
-                         });
-        }
-
-        @Override
-        public Set<QualifiedName> supportedCommands() {
-            return entityModel.supportedCommands();
-        }
-
-        @Override
-        public MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message,
-                                                                              E entity,
-                                                                              ProcessingContext context
-        ) {
-            return entityModel.handle(message, entity, context);
-        }
-
-        @Override
-        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-            descriptor.describeWrapperOf(entityModel);
-            descriptor.describeProperty("entityType", entityType());
-        }
-
-        @Override
-        public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
-            return entityModel.evolve(entity, event, context);
-        }
-
-        @Override
-        public Class<E> entityType() {
-            return entityType;
-        }
-    }
-
-    public static class MatchingInstancesMessageForwardingMode implements MessageForwardingMode {
+    public static class MatchingInstancesMessageForwardingMode
+            implements MessageForwardingMode {
 
         private static final String EMPTY_STRING = "";
         /**
          * Placeholder value for {@code null} properties, indicating that no property is available
          */
-        private static final Property<Object> NO_PROPERTY = new MatchingInstancesMessageForwardingMode.NoProperty();
+        private static final Property<Object> NO_PROPERTY = new NoProperty();
 
         private final Map<Class, Property> routingProperties = new ConcurrentHashMap<>();
         private final Map<Class, Property> entityRoutingKeyProperties = new ConcurrentHashMap<>();
@@ -371,12 +167,148 @@ public class AnnotationBasedAdministrationTest extends AbstractAdministrationTes
         }
     }
 
-    public interface MessageForwardingMode {
+    static class AnnotatedEventSourcedEntityModel<E> implements EntityModel<E>, DescribableComponent {
 
-        default void initialize(@javax.annotation.Nonnull Member member,
-                                @javax.annotation.Nonnull EntityModel childEntity) {
+        private final Class<E> entityType;
+        private final EntityModel<E> entityModel;
+
+
+        public AnnotatedEventSourcedEntityModel(Class<E> entityType,
+                                                ParameterResolverFactory parameterResolverFactory,
+                                                Set<Class<? extends E>> subTypes
+        ) {
+            this.entityType = entityType;
+            Map<Class<? extends E>, EntityModel<? extends E>> collect =
+                    subTypes.stream().collect(Collectors.toMap(
+                            c -> c,
+                            c -> new AnnotatedEventSourcedEntityModel<>(c, parameterResolverFactory, Set.of())));
+
+            AnnotatedHandlerInspector<E> inspected = AnnotatedHandlerInspector.inspectType(entityType,
+                                                                                           parameterResolverFactory);
+
+            EntityModelBuilder<E> builder;
+            if (collect.isEmpty()) {
+                builder = EntityModel.forEntityType(entityType)
+                                     .entityEvolver(new AnnotationBasedEventSourcedComponent<>(entityType));
+            } else {
+                PolyMorphicEntityModelBuilder<E> polymorphicBuilder = PolymorphicEntityModel
+                        .forSuperType(entityType)
+                        .entityEvolver(new AnnotationBasedEventSourcedComponent<>(entityType));
+                collect.forEach((subType, model) -> {
+                    polymorphicBuilder.addConcreteType(model);
+                });
+                builder = polymorphicBuilder;
+            }
+
+
+            initializeCommandHandlers(builder, inspected);
+            initializeChildren(builder, parameterResolverFactory);
+
+            this.entityModel = builder.build();
         }
 
-        <E> boolean matches(@javax.annotation.Nonnull Message<?> message, @javax.annotation.Nonnull E candidate);
+        private void initializeCommandHandlers(EntityModelBuilder<E> builder,
+                                               AnnotatedHandlerInspector<E> inspected) {
+            inspected
+                    .getHandlers(entityType)
+                    .forEach(handler -> builder
+                            .commandHandler(new QualifiedName(handler.payloadType()),
+                                            ((command, entity, context) -> handler
+                                                    .handle(command, context, entity)
+                                                    .<CommandResultMessage<?>>mapMessage(GenericCommandResultMessage::new)
+                                                    .first())));
+        }
+
+        private void initializeChildren(EntityModelBuilder<E> builder,
+                                        ParameterResolverFactory parameterResolverFactory) {
+            StreamSupport.stream(ReflectionUtils.fieldsOf(entityType).spliterator(), false)
+                         .filter(field -> field.isAnnotationPresent(AnnotationTestDefinitions.EntityMember.class))
+                         .forEach(field -> {
+                             if (field.getType() == List.class) {
+                                 var childType = resolveMemberGenericType(field, 0).orElseThrow(
+                                         () -> new AxonConfigurationException(format(
+                                                 "Unable to resolve entity type of member [%s]. Please provide type explicitly in @AggregateMember annotation.",
+                                                 ReflectionUtils.getMemberGenericString(field)
+                                         )));
+                                 var childModel = new AnnotatedEventSourcedEntityModel<>((Class<Object>) childType,
+                                                                                         parameterResolverFactory,
+                                                                                         Set.of());
+                                 Map<String, Object> attributes = AnnotationUtils.findAnnotationAttributes(field,
+                                                                                                           EntityMember.class)
+                                                                                 .get();
+                                 Class<MessageForwardingMode> forwardingModeclass = (Class<MessageForwardingMode>) attributes.get(
+                                         "forwardingMode");
+                                 MessageForwardingMode forwardingMode;
+                                 try {
+                                     forwardingMode = forwardingModeclass.getDeclaredConstructor().newInstance();
+                                     forwardingMode.initialize(field, childModel);
+                                 } catch (Exception e) {
+                                     throw new AxonConfigurationException(format(
+                                             "Unable to initialize event forwarding mode [%s] for field [%s]",
+                                             forwardingModeclass.getName(),
+                                             field
+                                     ), e);
+                                 }
+                                 builder.addChild(
+                                         ListEntityChildModel
+                                                 .forEntityModel(entityType, childModel)
+                                                 .childEntityFieldDefinition(ChildEntityFieldDefinition.forFieldName(
+                                                         entityType, field.getName())
+                                                 )
+                                                 .commandTargetMatcher((o, commandMessage) ->
+                                                                               forwardingMode.matches(commandMessage,
+                                                                                                      o))
+                                                 .eventTargetMatcher((o, eventMessage) ->
+                                                                             forwardingMode.matches(eventMessage, o))
+                                                 .build()
+                                 );
+                             } else {
+                                 // Assume it's a single entity
+                                 var childType = field.getType();
+                                 var childModel = new AnnotatedEventSourcedEntityModel<>((Class<Object>) childType,
+                                                                                         parameterResolverFactory,
+                                                                                         Set.of());
+                                 builder.addChild(
+                                         SingleEntityChildModel
+                                                 .forEntityModel(entityType, childModel)
+                                                 .childEntityFieldDefinition(ChildEntityFieldDefinition.forFieldName(
+                                                         entityType, field.getName())
+                                                 )
+                                                 .build()
+
+
+                                 );
+                             }
+                         });
+        }
+
+        @Override
+        public Set<QualifiedName> supportedCommands() {
+            return entityModel.supportedCommands();
+        }
+
+        @Override
+        public MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message,
+                                                                    E entity,
+                                                                    ProcessingContext context
+        ) {
+            return entityModel.handle(message, entity, context);
+        }
+
+        @Override
+        public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+            descriptor.describeWrapperOf(entityModel);
+            descriptor.describeProperty("entityType", entityType());
+        }
+
+        @Override
+        public E evolve(@Nonnull E entity, @Nonnull EventMessage<?> event, @Nonnull ProcessingContext context) {
+            return entityModel.evolve(entity, event, context);
+        }
+
+        @Override
+        public Class<E> entityType() {
+            return entityType;
+        }
     }
 }
