@@ -28,6 +28,7 @@ import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Converter;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -47,15 +48,30 @@ import static org.mockito.Mockito.*;
  */
 class EventConverterTest {
 
+    private static final String EVENT_ID = UUID.randomUUID().toString();
+    private static final Long EVENT_TIMESTAMP = Instant.now().toEpochMilli();
+    private static final String EVENT_NAME = "event-name";
+    private static final String EVENT_VERSION = "event-version";
+    private static final MessageType EVENT_TYPE = new MessageType(EVENT_NAME, EVENT_VERSION);
+    private static final Map<String, String> EVENT_METADATA = Map.of("String", "Lorem Ipsum");
+
     private Converter converter;
 
     private EventConverter testSubject;
+
+    private TestEvent eventPayload;
+    private byte[] eventPayloadByteArray;
 
     @BeforeEach
     void setUp() {
         converter = spy(new TestConverter());
 
         testSubject = new EventConverter(converter);
+
+        eventPayload = new TestEvent("Lorem Ipsum", 42, List.of(true, false));
+        eventPayloadByteArray = converter.convert(eventPayload, byte[].class);
+
+        Mockito.clearInvocations(converter);
     }
 
     @Test
@@ -71,14 +87,11 @@ class EventConverterTest {
     }
 
     @Test
-    void convertsTaggedEventMessageInTaggedEventAsExpected() {
+    void convertTaggedEventMessageWorksAsExpected() {
         // given...
-        String id = UUID.randomUUID().toString();
-        MessageType type = new MessageType("event-name", "event-version");
-        TestEvent payload = new TestEvent("Lorem Ipsum", 42, List.of(true, false));
-        MetaData metaData = MetaData.with("String", "Lorem Ipsum");
-        Instant timestamp = Instant.now();
-        EventMessage<TestEvent> eventMessage = new GenericEventMessage<>(id, type, payload, metaData, timestamp);
+        EventMessage<TestEvent> eventMessage = new GenericEventMessage<>(
+                EVENT_ID, EVENT_TYPE, eventPayload, EVENT_METADATA, Instant.ofEpochMilli(EVENT_TIMESTAMP)
+        );
         Set<Tag> tags = Set.of(Tag.of("key", "value"), Tag.of("key2", "value2"), Tag.of("key3", "value3"));
         TaggedEventMessage<EventMessage<TestEvent>> taggedEventMessage =
                 new GenericTaggedEventMessage<>(eventMessage, tags);
@@ -86,12 +99,12 @@ class EventConverterTest {
         TaggedEvent result = testSubject.convertTaggedEventMessage(taggedEventMessage);
         // then...
         Event resultEvent = result.getEvent();
-        assertEquals(id, resultEvent.getIdentifier());
-        assertEquals(timestamp.toEpochMilli(), resultEvent.getTimestamp());
-        assertEquals(type.name(), resultEvent.getName());
-        assertEquals(type.version(), resultEvent.getVersion());
-        verify(converter).convert(payload, byte[].class);
-        assertArrayEquals(converter.convert(payload, byte[].class), resultEvent.getPayload().toByteArray());
+        assertEquals(EVENT_ID, resultEvent.getIdentifier());
+        assertEquals(EVENT_TIMESTAMP, resultEvent.getTimestamp());
+        assertEquals(EVENT_NAME, resultEvent.getName());
+        assertEquals(EVENT_VERSION, resultEvent.getVersion());
+        verify(converter).convert(eventPayload, byte[].class);
+        assertArrayEquals(eventPayloadByteArray, resultEvent.getPayload().toByteArray());
         Map<String, String> resultMetaData = resultEvent.getMetadataMap();
         assertEquals(1, resultMetaData.size());
         assertTrue(resultMetaData.containsKey("String"));
@@ -119,10 +132,8 @@ class EventConverterTest {
     }
 
     @Test
-    void convertsAnyTypeOfMetaDataAsExpected() {
+    void convertTaggedEventMessageConvertsAnyTypeOfMetaData() {
         // given...
-        MessageType type = new MessageType("event-name", "event-version");
-        TestEvent payload = new TestEvent("Lorem Ipsum", 42, List.of(true, false));
         TestMetaDataValue metaDataValue = new TestMetaDataValue(1337, "string");
         MetaData metaData = MetaData.from(Map.of(
                 "String", "Lorem Ipsum",
@@ -135,7 +146,7 @@ class EventConverterTest {
                 "Boolean", false,
                 "Object", metaDataValue
         ));
-        EventMessage<TestEvent> eventMessage = new GenericEventMessage<>(type, payload, metaData);
+        EventMessage<TestEvent> eventMessage = new GenericEventMessage<>(EVENT_TYPE, eventPayload, metaData);
         TaggedEventMessage<EventMessage<TestEvent>> taggedEventMessage =
                 new GenericTaggedEventMessage<>(eventMessage, Set.of(Tag.of("key", "value")));
         // when...
@@ -154,6 +165,33 @@ class EventConverterTest {
         assertFalse(Boolean.parseBoolean(result.get("Boolean")));
         verify(converter).convert(metaDataValue, String.class);
         assertEquals(converter.convert(metaDataValue, String.class), result.get("Object"));
+    }
+
+    @Test
+    void convertEventThrowsNullPointerExceptionForNullEvent() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> testSubject.convertEvent(null));
+    }
+
+    @Test
+    void convertEventWorksAsExpected() {
+        // given...
+        Event testEvent = Event.newBuilder()
+                               .setIdentifier(EVENT_ID)
+                               .setTimestamp(EVENT_TIMESTAMP)
+                               .setName(EVENT_NAME)
+                               .setVersion(EVENT_VERSION)
+                               .setPayload(ByteString.copyFrom(eventPayloadByteArray))
+                               .putAllMetadata(EVENT_METADATA)
+                               .build();
+        // when...
+        EventMessage<byte[]> result = testSubject.convertEvent(testEvent);
+        // then...
+        assertEquals(EVENT_ID, result.getIdentifier());
+        assertEquals(EVENT_TYPE, result.type());
+        assertArrayEquals(eventPayloadByteArray, result.getPayload());
+        assertEquals(EVENT_METADATA, result.getMetaData());
+        assertEquals(EVENT_TIMESTAMP, result.getTimestamp().toEpochMilli());
     }
 
     private record TestEvent(String stringState, Integer intState, List<Boolean> booleanState) {

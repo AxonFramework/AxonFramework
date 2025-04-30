@@ -21,12 +21,15 @@ import io.axoniq.axonserver.grpc.event.dcb.Event;
 import io.axoniq.axonserver.grpc.event.dcb.TaggedEvent;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.MetaData;
 import org.axonframework.serialization.Converter;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -59,6 +62,8 @@ class EventConverter {
 
     /**
      * Convert the given {@code taggedEvent} to a {@link TaggedEvent}.
+     * <p>
+     * Used to map Axon Framework events to Axon Server events while appending.
      *
      * @param taggedEvent The tagged event message to convert into a {@link TaggedEvent}.
      * @return A {@code TaggedEvent} based on the given {@code taggedEvent}.
@@ -125,5 +130,24 @@ class EventConverter {
 
     private static ByteString convertString(String s) {
         return ByteString.copyFrom(s, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Convert the given {@code event} to an {@link EventMessage}.
+     * <p>
+     * Used to map Axon Server events to Axon Framework events while sourcing and streaming.
+     *
+     * @param event The event to convert into an {@link EventMessage}.
+     * @return An {@code EventMessage} based on the given {@code event}.
+     */
+    EventMessage<byte[]> convertEvent(@Nonnull Event event) {
+        Objects.requireNonNull(event, "The event cannot be null.");
+        // TODO just taking the metadata map as is, means everything is a string now.
+        //  Discuss how we want tot adjust this
+        return new GenericEventMessage<>(event.getIdentifier(),
+                                         new MessageType(event.getName(), event.getVersion()),
+                                         event.getPayload().toByteArray(),
+                                         event.getMetadataMap(),
+                                         Instant.ofEpochMilli(event.getTimestamp()));
     }
 }
