@@ -23,13 +23,14 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageType;
+import org.axonframework.messaging.MetaData;
 import org.axonframework.utils.AssertUtils;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -38,8 +39,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 /**
  * Test suite validating the {@link SimpleEventStore} and {@link DefaultEventStoreTransaction} for different
@@ -79,6 +80,123 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     protected abstract ESE buildStorageEngine() throws Exception;
 
     @Test
+    void sourcingEventsReturnsMatchingAggregateEvents() throws Exception {
+        testSubject.appendEvents(AppendCondition.none(),
+                                 taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
+                                 taggedEventMessage("event-1", TEST_CRITERIA_TAGS),
+                                 taggedEventMessage("event-2", OTHER_CRITERIA_TAGS),
+                                 taggedEventMessage("event-3", OTHER_CRITERIA_TAGS),
+                                 taggedEventMessage("event-4", OTHER_CRITERIA_TAGS),
+                                 taggedEventMessage("event-5", TEST_CRITERIA_TAGS))
+                   .thenCompose(AppendTransaction::commit)
+                   .get(5, TimeUnit.SECONDS);
+
+        SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
+
+        StepVerifier.create(testSubject.source(testCondition).asFlux())
+                    .expectNextCount(3)
+                    .verifyComplete();
+    }
+
+    @Test
+    void sourcingEventsReturnsTheHeadGlobalIndexAsConsistencyMarker() throws Exception {
+        testSubject.appendEvents(AppendCondition.none(),
+                                 taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
+                                 taggedEventMessage("event-1", TEST_CRITERIA_TAGS),
+                                 taggedEventMessage("event-2", OTHER_CRITERIA_TAGS),
+                                 taggedEventMessage("event-3", OTHER_CRITERIA_TAGS),
+                                 taggedEventMessage("event-4", OTHER_CRITERIA_TAGS),
+                                 taggedEventMessage("event-5", OTHER_CRITERIA_TAGS))
+                   .thenCompose(AppendTransaction::commit)
+                   .get(5, TimeUnit.SECONDS);
+
+        SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
+
+        StepVerifier.create(testSubject.source(testCondition).asFlux())
+                    .expectNextMatches(assertHasConsistencyMarker(5))
+                    .expectNextMatches(assertHasConsistencyMarker(5))
+                    .verifyComplete();
+    }
+
+    @Test
+    void sourcingEventsReturnsEmptyStreamIfNoEventsInTheStoreForFlux() {
+        SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
+
+        StepVerifier.create(testSubject.source(testCondition).asFlux())
+                    .expectNextCount(0)
+                    .verifyComplete();
+    }
+
+    @Test
+    void sourcingEventsReturnsEmptyStreamThatCompletesIfNoEventsInTheStore() {
+        AtomicBoolean completed = new AtomicBoolean(false);
+        SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
+
+        testSubject.source(testCondition)
+                   .whenComplete(() -> completed.set(true));
+
+        await("Awaiting until sourcing completes").untilTrue(completed);
+    }
+
+    @Test
+    void transactionRejectedWithConflictingEventsInStore() throws Exception {
+        testSubject.appendEvents(AppendCondition.none(),
+                                 taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
+                                 taggedEventMessage("event-1", TEST_CRITERIA_TAGS))
+                   .thenApply(AppendTransaction::commit)
+                   .get(5, TimeUnit.SECONDS);
+
+        AppendCondition testCondition = AppendCondition.withCriteria(TEST_CRITERIA);
+
+        CompletableFuture<ConsistencyMarker> actual =
+                testSubject.appendEvents(testCondition, taggedEventMessage("event-2", TEST_CRITERIA_TAGS))
+                           .thenCompose(AppendTransaction::commit);
+
+        ExecutionException actualException =
+                assertThrows(ExecutionException.class, () -> actual.get(1, TimeUnit.SECONDS));
+        assertInstanceOf(AppendEventsTransactionRejectedException.class, actualException.getCause());
+    }
+
+    @Test
+    void transactionRejectedWhenConcurrentlyCreatedTransactionIsCommittedFirst() {
+        AppendCondition appendCondition = AppendCondition.withCriteria(TEST_CRITERIA);
+
+        var firstTx = testSubject.appendEvents(appendCondition, taggedEventMessage("event-0", TEST_CRITERIA_TAGS));
+        var secondTx = testSubject.appendEvents(appendCondition, taggedEventMessage("event-1", TEST_CRITERIA_TAGS));
+
+        CompletableFuture<ConsistencyMarker> firstCommit = firstTx.thenCompose(AppendTransaction::commit);
+        assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
+
+        CompletableFuture<ConsistencyMarker> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
+        var actual = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
+        assertInstanceOf(AppendEventsTransactionRejectedException.class, actual.getCause());
+    }
+
+    @Test
+    void concurrentTransactionsForNonOverlappingIndicesBothCommit() throws Exception {
+        AppendCondition firstCondition = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, TEST_CRITERIA);
+        AppendCondition secondCondition = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, OTHER_CRITERIA);
+
+        AppendTransaction firstTx =
+                testSubject.appendEvents(firstCondition, taggedEventMessage("event-0", TEST_CRITERIA_TAGS))
+                           .get(1, TimeUnit.SECONDS);
+        AppendTransaction secondTx =
+                testSubject.appendEvents(secondCondition, taggedEventMessage("event-0", TEST_CRITERIA_TAGS))
+                           .get(1, TimeUnit.SECONDS);
+
+        CompletableFuture<ConsistencyMarker> firstCommit = firstTx.commit();
+        CompletableFuture<ConsistencyMarker> secondCommit = secondTx.commit();
+
+        assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
+        assertDoesNotThrow(() -> secondCommit.get(1, TimeUnit.SECONDS));
+
+        ConsistencyMarker actualIndex = firstCommit.get(5, TimeUnit.SECONDS);
+        assertNotNull(actualIndex);
+        assertEquals(GlobalIndexConsistencyMarker.position(actualIndex) + 1,
+                     GlobalIndexConsistencyMarker.position(secondCommit.get(5, TimeUnit.SECONDS)));
+    }
+
+    @Test
     void streamingFromStartReturnsSelectedMessages() throws Exception {
         TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_CRITERIA_TAGS);
         TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_CRITERIA_TAGS);
@@ -92,7 +210,8 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                                  expectedEventThree,
                                  taggedEventMessage("event-5", OTHER_CRITERIA_TAGS),
                                  taggedEventMessage("event-6", OTHER_CRITERIA_TAGS))
-                   .thenCompose(AppendTransaction::commit).get(5, TimeUnit.SECONDS);
+                   .thenCompose(AppendTransaction::commit)
+                   .get(5, TimeUnit.SECONDS);
 
         MessageStream<EventMessage<?>> result = testSubject.tailToken()
                                                            .thenApply(StreamingCondition::startingFrom)
@@ -110,30 +229,32 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     void streamingFromSpecificPositionReturnsSelectedMessages() throws Exception {
-        TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_CRITERIA_TAGS);
         TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_CRITERIA_TAGS);
         TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_CRITERIA_TAGS);
         // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
         testSubject.appendEvents(AppendCondition.none(),
-                                 expectedEventOne,
+                                 taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
                                  expectedEventTwo,
                                  taggedEventMessage("event-2", OTHER_CRITERIA_TAGS),
                                  taggedEventMessage("event-3", OTHER_CRITERIA_TAGS),
                                  expectedEventThree,
                                  taggedEventMessage("event-5", OTHER_CRITERIA_TAGS),
                                  taggedEventMessage("event-6", OTHER_CRITERIA_TAGS))
-                   .thenCompose(AppendTransaction::commit).get(5, TimeUnit.SECONDS);
+                   .thenCompose(AppendTransaction::commit)
+                   .get(5, TimeUnit.SECONDS);
 
         TrackingToken tokenOfFirstMessage = testSubject.tailToken()
                                                        .thenApply(StreamingCondition::startingFrom)
                                                        .thenApply(testSubject::stream)
                                                        .thenApply(MessageStream::first)
                                                        .thenCompose(MessageStream.Single::asCompletableFuture)
-                                                       .thenApply(r -> r.getResource(TrackingToken.RESOURCE_KEY)).get(5,
-                                                                                                                      TimeUnit.SECONDS);
+                                                       .thenApply(r -> r.getResource(TrackingToken.RESOURCE_KEY))
+                                                       .get(5, TimeUnit.SECONDS);
 
-        StepVerifier.create(testSubject.stream(StreamingCondition.startingFrom(tokenOfFirstMessage).or(TEST_CRITERIA))
-                                       .asFlux())
+        StreamingCondition testCondition = StreamingCondition.startingFrom(tokenOfFirstMessage)
+                                                             .or(TEST_CRITERIA);
+
+        StepVerifier.create(testSubject.stream(testCondition).asFlux())
                     // we've skipped the first one
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventTwo.event()))
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventThree.event()))
@@ -151,11 +272,13 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                                  taggedEventMessage("event-4", TEST_CRITERIA_TAGS),
                                  taggedEventMessage("event-5", TEST_CRITERIA_TAGS),
                                  taggedEventMessage("event-6", TEST_CRITERIA_TAGS))
-                   .thenCompose(AppendTransaction::commit).get(5, TimeUnit.SECONDS);
+                   .thenCompose(AppendTransaction::commit)
+                   .get(5, TimeUnit.SECONDS);
 
-        MessageStream<EventMessage<?>> result = testSubject.stream(StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(
-                                                                                             10))
-                                                                                     .or(TEST_CRITERIA));
+        StreamingCondition testCondition = StreamingCondition.startingFrom(new GlobalSequenceTrackingToken(10))
+                                                             .or(TEST_CRITERIA);
+
+        MessageStream<EventMessage<?>> result = testSubject.stream(testCondition);
 
         try {
             assertTrue(result.next().isEmpty());
@@ -165,145 +288,35 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
-    void sourcingEventsReturnsMatchingAggregateEvents() throws Exception {
-        testSubject.appendEvents(AppendCondition.none(),
-                                 taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
-                                 taggedEventMessage("event-1", TEST_CRITERIA_TAGS),
-                                 taggedEventMessage("event-2", OTHER_CRITERIA_TAGS),
-                                 taggedEventMessage("event-3", OTHER_CRITERIA_TAGS),
-                                 taggedEventMessage("event-4", OTHER_CRITERIA_TAGS),
-                                 taggedEventMessage("event-5", TEST_CRITERIA_TAGS))
-                   .thenCompose(AppendTransaction::commit).get(5, TimeUnit.SECONDS);
-
-        StepVerifier.create(
-                            testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)).asFlux())
-                    .expectNextCount(3)
-                    .verifyComplete();
-    }
-
-
-    @Test
-    void sourcingEventsReturnsTheHeadGlobalIndexAsConsistencyMarker() throws Exception {
-        testSubject.appendEvents(AppendCondition.none(),
-                                 taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
-                                 taggedEventMessage("event-1", TEST_CRITERIA_TAGS),
-                                 taggedEventMessage("event-2", OTHER_CRITERIA_TAGS),
-                                 taggedEventMessage("event-3", OTHER_CRITERIA_TAGS),
-                                 taggedEventMessage("event-4", OTHER_CRITERIA_TAGS),
-                                 taggedEventMessage("event-5", OTHER_CRITERIA_TAGS))
-                   .thenCompose(AppendTransaction::commit).get(5, TimeUnit.SECONDS);
-
-        StepVerifier.create(
-                            testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)).asFlux())
-                    .expectNextMatches(assertHasConsistencyMarker(5))
-                    .expectNextMatches(assertHasConsistencyMarker(5))
-                    .verifyComplete();
-    }
-
-    @Test
-    void sourcingEventsReturnsEmptyStreamIfNoEventsInTheStoreForFlux() {
-        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)).asFlux())
-                    .expectNextCount(0)
-                    .verifyComplete();
-    }
-
-
-    @Test
-    void sourcingEventsReturnsEmptyStreamThatCompletesIfNoEventsInTheStore() {
-        AtomicBoolean completed = new AtomicBoolean(false);
-        testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)).whenComplete(
-                () -> completed.set(true));
-
-        await().untilTrue(completed);
-    }
-
-    @Test
-    void transactionRejectedWithConflictingEventsInStore() throws Exception {
-        testSubject.appendEvents(AppendCondition.none(),
-                                 taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
-                                 taggedEventMessage("event-1", TEST_CRITERIA_TAGS))
-                   .thenApply(AppendTransaction::commit).get(5, TimeUnit.SECONDS);
-
-        CompletableFuture<ConsistencyMarker> actual = testSubject.appendEvents(AppendCondition.withCriteria(
-                                                                                       TEST_CRITERIA),
-                                                                               taggedEventMessage("event-2",
-                                                                                                  TEST_CRITERIA_TAGS))
-                                                                 .thenCompose(AppendTransaction::commit);
-
-        ExecutionException actualException = assertThrows(ExecutionException.class,
-                                                          () -> actual.get(1, TimeUnit.SECONDS));
-        assertInstanceOf(AppendEventsTransactionRejectedException.class, actualException.getCause());
-    }
-
-    @Test
-    void transactionRejectedWhenConcurrentlyCreatedTransactionIsCommittedFirst() {
-        AppendCondition appendCondition = AppendCondition.withCriteria(TEST_CRITERIA);
-
-        var firstTx = testSubject.appendEvents(appendCondition,
-                                               taggedEventMessage("event-0", TEST_CRITERIA_TAGS));
-        var secondTx = testSubject.appendEvents(appendCondition,
-                                                taggedEventMessage("event-1", TEST_CRITERIA_TAGS));
-
-        CompletableFuture<ConsistencyMarker> firstCommit = firstTx.thenCompose(AppendTransaction::commit);
-        assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
-
-        CompletableFuture<ConsistencyMarker> secondCommit = secondTx.thenCompose(AppendTransaction::commit);
-        var actual = assertThrows(ExecutionException.class, () -> secondCommit.get(1, TimeUnit.SECONDS));
-        assertInstanceOf(AppendEventsTransactionRejectedException.class, actual.getCause());
-    }
-
-    @Test
-    void concurrentTransactionsForNonOverlappingIndicesBothCommit() throws Exception {
-        AppendCondition appendCondition1 = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, TEST_CRITERIA);
-        AppendCondition appendCondition2 = new DefaultAppendCondition(ConsistencyMarker.ORIGIN, OTHER_CRITERIA);
-
-        AppendTransaction firstTx = testSubject.appendEvents(appendCondition1,
-                                                             taggedEventMessage("event-0", TEST_CRITERIA_TAGS))
-                                               .get(1, TimeUnit.SECONDS);
-        AppendTransaction secondTx = testSubject.appendEvents(appendCondition2,
-                                                              taggedEventMessage("event-0",
-                                                                                 TEST_CRITERIA_TAGS))
-                                                .get(1, TimeUnit.SECONDS);
-
-        CompletableFuture<ConsistencyMarker> firstCommit = firstTx.commit();
-        CompletableFuture<ConsistencyMarker> secondCommit = secondTx.commit();
-
-        assertDoesNotThrow(() -> firstCommit.get(1, TimeUnit.SECONDS));
-        assertDoesNotThrow(() -> secondCommit.get(1, TimeUnit.SECONDS));
-
-        ConsistencyMarker actualIndex = firstCommit.get(5, TimeUnit.SECONDS);
-        assertNotNull(actualIndex);
-        assertEquals(GlobalIndexConsistencyMarker.position(actualIndex) + 1,
-                     GlobalIndexConsistencyMarker.position(secondCommit.get(5, TimeUnit.SECONDS)));
-    }
-
-    @Test
     void eventsPublishedAreIncludedInOpenStreams() throws Exception {
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
                                  taggedEventMessage("event-1", TEST_CRITERIA_TAGS))
-                   .thenCompose(AppendTransaction::commit).get(5, TimeUnit.SECONDS);
+                   .thenCompose(AppendTransaction::commit)
+                   .get(5, TimeUnit.SECONDS);
 
         MessageStream<EventMessage<?>> stream = testSubject.tailToken()
-                                                           .thenApply(StreamingCondition::startingFrom).thenApply(
-                        testSubject::stream).get(5, TimeUnit.SECONDS);
+                                                           .thenApply(StreamingCondition::startingFrom)
+                                                           .thenApply(testSubject::stream)
+                                                           .get(5, TimeUnit.SECONDS);
 
         AssertUtils.assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(stream.next().isPresent()));
         AssertUtils.assertWithin(1, TimeUnit.SECONDS, () -> assertTrue(stream.next().isPresent()));
 
-        testSubject.appendEvents(AppendCondition.none(),
-                                 taggedEventMessage("event-3", TEST_CRITERIA_TAGS))
-                   .thenCompose(AppendTransaction::commit).get(5, TimeUnit.SECONDS);
+        testSubject.appendEvents(AppendCondition.none(), taggedEventMessage("event-3", TEST_CRITERIA_TAGS))
+                   .thenCompose(AppendTransaction::commit)
+                   .get(5, TimeUnit.SECONDS);
 
-        AssertUtils.assertWithin(1,
-                                 TimeUnit.SECONDS,
-                                 () -> assertTrue(stream.hasNextAvailable()));
+        await(
+                "Await until stream contains newly appended events"
+        ).atMost(Duration.ofSeconds(1))
+         .pollDelay(Duration.ofMillis(100))
+         .untilAsserted(() -> assertTrue(stream.hasNextAvailable()));
 
-        assertEquals("event-3",
-                     stream.next().map(e -> (String) e.message().getPayload())
-                           .orElse("none"));
+        assertEquals("event-3", stream.next()
+                                      .map(e -> (String) e.message().getPayload())
+                                      .orElse("none"));
     }
-
 
     @Test
     void tailTokenReturnsHeadTokenForEmptyStore() throws Exception {
@@ -320,55 +333,50 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         testSubject.appendEvents(AppendCondition.none(),
                                  firstEvent,
                                  taggedEventMessage("event-1", TEST_CRITERIA_TAGS))
-                   .thenCompose(AppendTransaction::commit).get(5, TimeUnit.SECONDS);
+                   .thenCompose(AppendTransaction::commit)
+                   .get(5, TimeUnit.SECONDS);
 
-        MessageStream<EventMessage<?>> stream = testSubject.tailToken().thenApply(StreamingCondition::startingFrom)
-                                                           .thenApply(testSubject::stream).get(5, TimeUnit.SECONDS);
+        MessageStream<EventMessage<?>> stream = testSubject.tailToken()
+                                                           .thenApply(StreamingCondition::startingFrom)
+                                                           .thenApply(testSubject::stream)
+                                                           .get(5, TimeUnit.SECONDS);
 
-        MessageStream.Entry<EventMessage<?>> actualEntry = stream.first().asCompletableFuture().get(5, TimeUnit.SECONDS);
+        MessageStream.Entry<EventMessage<?>> actualEntry = stream.first()
+                                                                 .asCompletableFuture()
+                                                                 .get(5, TimeUnit.SECONDS);
         assertEvent(actualEntry.message(), firstEvent.event());
     }
 
     @Test
     void headTokenReturnsTokenBasedOnLastAppendedEvent() throws Exception {
-        TaggedEventMessage<?> firstEvent = taggedEventMessage("event-0", TEST_CRITERIA_TAGS);
         testSubject.appendEvents(AppendCondition.none(),
-                                 firstEvent,
+                                 taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
                                  taggedEventMessage("event-1", TEST_CRITERIA_TAGS))
-                   .thenCompose(AppendTransaction::commit).get(5, TimeUnit.SECONDS);
+                   .thenCompose(AppendTransaction::commit)
+                   .get(5, TimeUnit.SECONDS);
 
-        MessageStream<EventMessage<?>> stream = testSubject.headToken().thenApply(StreamingCondition::startingFrom)
-                                                           .thenApply(testSubject::stream).get(5, TimeUnit.SECONDS);
+        MessageStream<EventMessage<?>> stream = testSubject.headToken()
+                                                           .thenApply(StreamingCondition::startingFrom)
+                                                           .thenApply(testSubject::stream)
+                                                           .get(5, TimeUnit.SECONDS);
 
-        // we need to give the store a chance to wire things up.
-        Thread.sleep(500);
-        assertFalse(stream.hasNextAvailable());
+        await(
+                "Await until the store has caught up"
+        ).atLeast(Duration.ofMillis(50))
+         .atMost(Duration.ofMillis(500))
+         .pollDelay(Duration.ofMillis(100))
+         .untilAsserted(() -> assertFalse(stream.hasNextAvailable()));
     }
 
     @Test
     void tokenAtRetrievesTokenFromStorageEngineThatStreamsEventsSinceThatMoment() throws Exception {
         Instant now = Instant.now(); // assign now to a variable to not be impacted by time passing during test
         testSubject.appendEvents(AppendCondition.none(),
-                                 new GenericTaggedEventMessage<>(new GenericEventMessage<>(UUID.randomUUID().toString(),
-                                                                                           new MessageType("event"),
-                                                                                           "event-0",
-                                                                                           Map.of(),
-                                                                                           now.minusSeconds(10)),
-                                                                 TEST_CRITERIA_TAGS),
-                                 new GenericTaggedEventMessage<>(new GenericEventMessage<>(UUID.randomUUID().toString(),
-                                                                                           new MessageType("event"),
-                                                                                           "event-1",
-                                                                                           Map.of(),
-                                                                                           now),
-                                                                 TEST_CRITERIA_TAGS),
-                                 new GenericTaggedEventMessage<>(new GenericEventMessage<>(UUID.randomUUID().toString(),
-                                                                                           new MessageType("event"),
-                                                                                           "event-2",
-                                                                                           Map.of(),
-                                                                                           now.plusSeconds(10)),
-                                                                 TEST_CRITERIA_TAGS))
-
-                   .thenCompose(AppendTransaction::commit).get(5, TimeUnit.SECONDS);
+                                 taggedEventMessageAt("event-0", TEST_CRITERIA_TAGS, now.minusSeconds(10)),
+                                 taggedEventMessageAt("event-1", TEST_CRITERIA_TAGS, now),
+                                 taggedEventMessageAt("event-2", TEST_CRITERIA_TAGS, now.plusSeconds(10)))
+                   .thenCompose(AppendTransaction::commit)
+                   .get(5, TimeUnit.SECONDS);
 
         TrackingToken actualToken = testSubject.tokenAt(now.minus(5, ChronoUnit.SECONDS)).get(5, TimeUnit.SECONDS);
 
@@ -383,15 +391,45 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                                  taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
                                  taggedEventMessage("event-1", TEST_CRITERIA_TAGS),
                                  taggedEventMessage("event-2", TEST_CRITERIA_TAGS))
+                   .thenCompose(AppendTransaction::commit)
+                   .get(5, TimeUnit.SECONDS);
 
-                   .thenCompose(AppendTransaction::commit).get(5, TimeUnit.SECONDS);
-
-        TrackingToken actualTokenAtToken = testSubject.tokenAt(Instant.now().plus(1, ChronoUnit.DAYS)).get(5,
-                                                                                                           TimeUnit.SECONDS);
-        TrackingToken actualHeadToken = testSubject.headToken().get(5, TimeUnit.SECONDS);
+        TrackingToken actualTokenAtToken = testSubject.tokenAt(Instant.now().plus(1, ChronoUnit.DAYS))
+                                                      .get(5, TimeUnit.SECONDS);
+        TrackingToken actualHeadToken = testSubject.headToken()
+                                                   .get(5, TimeUnit.SECONDS);
 
         assertNotNull(actualTokenAtToken);
         assertEquals(actualHeadToken, actualTokenAtToken);
+    }
+
+    private static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags) {
+        return taggedEventMessageAt(payload, tags, Instant.now());
+    }
+
+    private static TaggedEventMessage<?> taggedEventMessageAt(String payload,
+                                                              Set<Tag> tags,
+                                                              Instant timestamp) {
+        return new GenericTaggedEventMessage<>(
+                new GenericEventMessage<>(
+                        UUID.randomUUID().toString(),
+                        new MessageType("event"),
+                        payload,
+                        MetaData.emptyInstance(),
+                        timestamp
+                ),
+                tags
+        );
+    }
+
+    private static Predicate<MessageStream.Entry<EventMessage<?>>> assertHasConsistencyMarker(
+            @SuppressWarnings("SameParameterValue") int position
+    ) {
+        return entry -> {
+            assertEquals(new GlobalIndexConsistencyMarker(position),
+                         entry.getResource(ConsistencyMarker.RESOURCE_KEY));
+            return true;
+        };
     }
 
     private static void assertEvent(EventMessage<?> actual,
@@ -400,21 +438,5 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         assertEquals(expected.getIdentifier(), actual.getIdentifier());
         assertEquals(expected.getTimestamp().toEpochMilli(), actual.getTimestamp().toEpochMilli());
         assertEquals(expected.getMetaData(), actual.getMetaData());
-    }
-
-    protected static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags) {
-        return new GenericTaggedEventMessage<>(
-                new GenericEventMessage<>(new MessageType("event"), payload),
-                tags
-        );
-    }
-
-
-    private static Predicate<MessageStream.Entry<EventMessage<?>>> assertHasConsistencyMarker(int position) {
-        return em -> {
-            assertEquals(new GlobalIndexConsistencyMarker(position),
-                         em.getResource(ConsistencyMarker.RESOURCE_KEY));
-            return true;
-        };
     }
 }
