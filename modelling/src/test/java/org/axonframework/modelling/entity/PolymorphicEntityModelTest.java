@@ -213,7 +213,7 @@ class PolymorphicEntityModelTest {
 
         @Test
         void cannotAddConcreteTypeWithSameEntityType() {
-            PolyMorphicEntityModelBuilder<AbstractTestEntity> builder = PolymorphicEntityModel
+            PolymorphicEntityModelBuilder<AbstractTestEntity> builder = PolymorphicEntityModel
                     .forSuperType(AbstractTestEntity.class)
                     .addConcreteType(concreteTestEntityOneEntityModel)
                     .addConcreteType(concreteTestEntityTwoEntityModel);
@@ -225,7 +225,7 @@ class PolymorphicEntityModelTest {
 
         @Test
         void canNotAddNullChildEntityModel() {
-            PolyMorphicEntityModelBuilder<AbstractTestEntity> builder = PolymorphicEntityModel.forSuperType(
+            PolymorphicEntityModelBuilder<AbstractTestEntity> builder = PolymorphicEntityModel.forSuperType(
                     AbstractTestEntity.class);
 
             assertThrows(NullPointerException.class, () -> {

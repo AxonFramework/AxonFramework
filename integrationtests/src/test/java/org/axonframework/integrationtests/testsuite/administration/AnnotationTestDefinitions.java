@@ -37,8 +37,8 @@ import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.EntityId;
 import org.axonframework.modelling.entity.EntityModel;
 import org.axonframework.modelling.entity.EntityModelBuilder;
-import org.axonframework.modelling.entity.PolyMorphicEntityModelBuilder;
 import org.axonframework.modelling.entity.PolymorphicEntityModel;
+import org.axonframework.modelling.entity.PolymorphicEntityModelBuilder;
 import org.axonframework.modelling.entity.child.ChildEntityFieldDefinition;
 import org.axonframework.modelling.entity.child.ListEntityChildModel;
 import org.axonframework.modelling.entity.child.SingleEntityChildModel;
@@ -191,7 +191,7 @@ public class AnnotationTestDefinitions {
                 builder = EntityModel.forEntityType(entityType)
                                      .entityEvolver(new AnnotationBasedEventSourcedComponent<>(entityType));
             } else {
-                PolyMorphicEntityModelBuilder<E> polymorphicBuilder = PolymorphicEntityModel
+                PolymorphicEntityModelBuilder<E> polymorphicBuilder = PolymorphicEntityModel
                         .forSuperType(entityType)
                         .entityEvolver(new AnnotationBasedEventSourcedComponent<>(entityType));
                 collect.forEach((subType, model) -> {
