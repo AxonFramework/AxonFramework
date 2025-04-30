@@ -16,19 +16,25 @@
 
 package org.axonframework.axonserver.connector.event;
 
+import io.axoniq.axonserver.connector.AxonServerConnection;
+import io.axoniq.axonserver.connector.event.DcbEventChannel;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
+import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
+import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.serialization.Converter;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -40,10 +46,51 @@ import java.util.concurrent.CompletableFuture;
  */
 public class AxonServerEventStorageEngine implements EventStorageEngine {
 
+    private final AxonServerConnection connection;
+    private final EventConverter converter;
+
+    /**
+     * Constructs an {@code AxonServerEventStorageEngine} with the given {@code connection} and {@code converter}.
+     *
+     * @param connection The context-specific backing connection to Axon Server.
+     * @param converter  The converter to use to serialize {@link EventMessage#getPayload() payloads} and complex
+     *                   {@link org.axonframework.messaging.MetaData} values into bytes.
+     */
+    public AxonServerEventStorageEngine(@Nonnull AxonServerConnection connection,
+                                        @Nonnull Converter converter) {
+        this.connection = Objects.requireNonNull(connection, "The Axon Server connection cannot be null.");
+        this.converter = new EventConverter(converter);
+    }
+
     @Override
     public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
                                                              @Nonnull List<TaggedEventMessage<?>> events) {
-        return null;
+        DcbEventChannel.AppendEventsTransaction appendEventsTransaction = eventChannel().startTransaction();
+        if (events.isEmpty()) {
+            return CompletableFuture.completedFuture(null);
+        } else {
+            events.stream()
+                  .map(converter::convertTaggedEventMessage)
+                  .forEach(appendEventsTransaction::append);
+        }
+
+        return CompletableFuture.completedFuture(new AppendTransaction() {
+            @Override
+            public CompletableFuture<ConsistencyMarker> commit() {
+                return appendEventsTransaction.commit().thenApply(
+                        appendResponse -> new GlobalIndexConsistencyMarker(appendResponse.getLastPosition())
+                );
+            }
+
+            @Override
+            public void rollback() {
+                appendEventsTransaction.rollback();
+            }
+        });
+    }
+
+    private DcbEventChannel eventChannel() {
+        return connection.dcbEventChannel();
     }
 
     @Override
