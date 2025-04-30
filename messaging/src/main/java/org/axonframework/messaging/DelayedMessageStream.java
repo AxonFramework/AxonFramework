@@ -179,7 +179,7 @@ public class DelayedMessageStream<M extends Message<?>> implements MessageStream
      *
      * @param <M> The type of {@link Message} contained in the {@link Entry} of this stream.
      */
-    public static class Single<M extends Message<?>> extends DelayedMessageStream<M>
+    static class Single<M extends Message<?>> extends DelayedMessageStream<M>
             implements MessageStream.Single<M> {
 
         /**
