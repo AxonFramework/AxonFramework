@@ -81,7 +81,7 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
      * @param <E>        The type of the entity to create a model for.
      * @return A new {@link Builder} for the given entity type.
      */
-    public static <E> PolyMorphicEntityModelBuilder<E> forSuperType(Class<E> entityType) {
+    public static <E> PolymorphicEntityModelBuilder<E> forSuperType(Class<E> entityType) {
         return new Builder<>(entityType);
     }
 
@@ -140,7 +140,7 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
      *
      * @param <E> The type of the entity this model represents.
      */
-    public static class Builder<E> implements PolyMorphicEntityModelBuilder<E> {
+    public static class Builder<E> implements PolymorphicEntityModelBuilder<E> {
 
         private final SimpleEntityModel.Builder<E> superTypeBuilder;
         private final List<EntityModel<? extends E>> polymorphicModels = new ArrayList<>();

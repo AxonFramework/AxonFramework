@@ -32,20 +32,20 @@ import org.axonframework.modelling.entity.child.EntityChildModel;
  * @see PolymorphicEntityModel
  * @since 5.0.0
  */
-public interface PolyMorphicEntityModelBuilder<E> extends EntityModelBuilder<E> {
+public interface PolymorphicEntityModelBuilder<E> extends EntityModelBuilder<E> {
 
     @Nonnull
     @Override
-    PolyMorphicEntityModelBuilder<E> commandHandler(@Nonnull QualifiedName qualifiedName,
+    PolymorphicEntityModelBuilder<E> commandHandler(@Nonnull QualifiedName qualifiedName,
                                                     @Nonnull EntityCommandHandler<E> messageHandler);
 
     @Nonnull
     @Override
-    PolyMorphicEntityModelBuilder<E> addChild(@Nonnull EntityChildModel<?, E> child);
+    PolymorphicEntityModelBuilder<E> addChild(@Nonnull EntityChildModel<?, E> child);
 
     @Nonnull
     @Override
-    PolyMorphicEntityModelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver);
+    PolymorphicEntityModelBuilder<E> entityEvolver(@Nullable EntityEvolver<E> entityEvolver);
 
     /**
      * Adds a concrete type to this polymorphic entity model. The concrete type must be a subclass of the parent entity
@@ -55,5 +55,5 @@ public interface PolyMorphicEntityModelBuilder<E> extends EntityModelBuilder<E> 
      * @return This builder for further configuration.
      */
     @Nonnull
-    PolyMorphicEntityModelBuilder<E> addConcreteType(@Nonnull EntityModel<? extends E> entityModel);
+    PolymorphicEntityModelBuilder<E> addConcreteType(@Nonnull EntityModel<? extends E> entityModel);
 }
