@@ -93,9 +93,9 @@ public class DefaultEventStoreTransaction implements EventStoreTransaction {
                     new AtomicReference<>(appendCondition.consistencyMarker());
             AtomicBoolean receivedEvent = new AtomicBoolean(false);
             return source.onNext(e -> {
-                AtomicReference<ConsistencyMarker> markerResource = e.getResource(ConsistencyMarker.RESOURCE_KEY);
-                if (markerResource != null && markerResource.get() != null) {
-                    markerReference.set(markerResource.get());
+                ConsistencyMarker marker;
+                if ((marker = e.getResource(ConsistencyMarker.RESOURCE_KEY)) != null) {
+                    markerReference.set(marker);
                 }
                 receivedEvent.set(true);
             }).whenComplete(() -> {

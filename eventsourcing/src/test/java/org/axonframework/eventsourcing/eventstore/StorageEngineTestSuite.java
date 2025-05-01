@@ -427,7 +427,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     ) {
         return entry -> {
             assertEquals(new GlobalIndexConsistencyMarker(position),
-                         entry.getResource(ConsistencyMarker.RESOURCE_KEY).get());
+                         entry.getResource(ConsistencyMarker.RESOURCE_KEY));
             return true;
         };
     }

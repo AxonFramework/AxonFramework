@@ -19,9 +19,6 @@ package org.axonframework.eventsourcing.eventstore;
 import jakarta.annotation.Nonnull;
 import org.axonframework.messaging.Context;
 
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
-
 /**
  * Interface representing a point in an Event Stream up to where certain state has been made up-to-date. Typically,
  * consistency markers are provided by operations on an event stream that provide events for event sourcing purposes.
@@ -45,8 +42,7 @@ public interface ConsistencyMarker {
      *
      * @see Context#getResource(Context.ResourceKey)
      */
-    Context.ResourceKey<AtomicReference<ConsistencyMarker>> RESOURCE_KEY =
-            Context.ResourceKey.withLabel("consistencyMarker");
+    Context.ResourceKey<ConsistencyMarker> RESOURCE_KEY = Context.ResourceKey.withLabel("consistencyMarker");
 
     /**
      * The consistency marker representing the start of an event stream. Effectively any event present in an event store
@@ -81,30 +77,15 @@ public interface ConsistencyMarker {
     ConsistencyMarker upperBound(@Nonnull ConsistencyMarker other);
 
     /**
-     * Adds the given {@code consistencyMarker} inside an {@link AtomicReference} to the given {@code context} using the
-     * {@link #RESOURCE_KEY}.
+     * Adds the given {@code consistencyMarker} to the given {@code context} using the {@link #RESOURCE_KEY}.
      *
      * @param context           The {@code Context} to add the given {@code token} to.
-     * @param consistencyMarker The {@code consistencyMarker} to wrap in an {@link AtomicReference} and add to the given
-     *                          {@code context} using the {@link #RESOURCE_KEY}.
-     * @return The given {@code context} with the given {@code consistencyMarker} attached to it within an
-     * {@link AtomicReference}.
+     * @param consistencyMarker The {@code consistencyMarker} to add to the given {@code context} using the
+     *                          {@link #RESOURCE_KEY}.
+     * @return The given {@code context} with the given {@code consistencyMarker} attached to it.
      */
     static Context addToContext(@Nonnull Context context,
                                 @Nonnull ConsistencyMarker consistencyMarker) {
-        return addToContext(context, new AtomicReference<>(Objects.requireNonNull(consistencyMarker)));
-    }
-
-    /**
-     * Adds the given {@code consistencyMarkerRef} to the given {@code context} using the {@link #RESOURCE_KEY}.
-     *
-     * @param context              The {@code Context} to add the given {@code token} to.
-     * @param consistencyMarkerRef The {@code consistencyMarkerRef} to add to the given {@code context} using the
-     *                             {@link #RESOURCE_KEY}.
-     * @return The given {@code context} with the given {@code consistencyMarkerRef} reference attached to it.
-     */
-    static Context addToContext(@Nonnull Context context,
-                                @Nonnull AtomicReference<ConsistencyMarker> consistencyMarkerRef) {
-        return context.withResource(RESOURCE_KEY, consistencyMarkerRef);
+        return context.withResource(RESOURCE_KEY, consistencyMarker);
     }
 }

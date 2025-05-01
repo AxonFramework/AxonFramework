@@ -286,10 +286,10 @@ public class AggregateBasedJpaEventStorageEngine implements EventStorageEngine {
         AtomicReference<ConsistencyMarker> markerReference = new AtomicReference<>();
         return allCriteriaStream.map(e -> {
             ConsistencyMarker newMarker = markerReference.accumulateAndGet(
-                    e.getResource(ConsistencyMarker.RESOURCE_KEY).get(),
+                    e.getResource(ConsistencyMarker.RESOURCE_KEY),
                     (m1, m2) -> m1 == null ? m2 : m1.upperBound(m2)
             );
-            return e.withResource(ConsistencyMarker.RESOURCE_KEY, new AtomicReference<>(newMarker));
+            return e.withResource(ConsistencyMarker.RESOURCE_KEY, newMarker);
         });
     }
 
