@@ -42,7 +42,7 @@ public interface InterceptorChain<M extends Message<?>, R extends Message<?>> {
     /**
      * TODO Add documentation
      */
-    default MessageStream<? extends R> proceed(M message, ProcessingContext processingContext) {
+    default MessageStream<R> proceed(M message, ProcessingContext processingContext) {
         try {
             return MessageStream.fromFuture(CompletableFuture.completedFuture((R) proceedSync()));
         } catch (Exception e) {

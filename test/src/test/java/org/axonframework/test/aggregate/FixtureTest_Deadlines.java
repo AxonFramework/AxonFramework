@@ -84,7 +84,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void expectNoScheduledDeadline() {
         fixture.givenCommands(CREATE_COMMAND)
                .when(new ResetTriggerCommand(AGGREGATE_ID))
@@ -92,7 +92,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void expectNoScheduledDeadlineOfType() {
         fixture.givenCommands(CREATE_COMMAND)
                .when(new ResetTriggerCommand(AGGREGATE_ID))
@@ -100,7 +100,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void expectNoScheduledDeadlineWithName() {
         fixture.givenCommands(CREATE_COMMAND)
                .when(new ResetTriggerCommand(AGGREGATE_ID))
@@ -108,7 +108,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void expectTriggeredDeadlinesMatching() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
@@ -117,7 +117,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void triggeredDeadlinesMatching() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
@@ -126,7 +126,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void expectTriggeredDeadlines() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
@@ -135,7 +135,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void triggeredDeadlines() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
@@ -144,7 +144,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void triggeredDeadlinesFailsForIncorrectDeadlines() {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
@@ -162,7 +162,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void triggeredDeadlinesFailsForIncorrectNumberOfDeadlines() {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
@@ -178,7 +178,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void triggeredDeadlinesWithName() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
@@ -187,7 +187,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void triggeredDeadlinesWithNameFailsForIncorrectDeadlines() {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
@@ -205,7 +205,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void triggeredDeadlinesWithNameFailsForIncorrectNumberOfDeadlines() {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
@@ -221,7 +221,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void triggeredDeadlinesOfType() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
@@ -230,7 +230,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void triggeredDeadlinesOfTypeFailsForIncorrectDeadlines() {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
@@ -248,7 +248,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void triggeredDeadlinesOfTypeFailsForIncorrectNumberOfDeadlines() {
         ResultValidator<MyAggregate> given =
                 fixture.givenNoPriorActivity()
@@ -264,7 +264,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void deadlineWhichCancelsSchedule() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
@@ -273,7 +273,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void deadlineWhichCancelsAll() {
         fixture.givenNoPriorActivity()
                .andGivenCommands(CREATE_COMMAND)
@@ -282,7 +282,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void deadlineDispatcherInterceptor() {
         fixture.registerDeadlineDispatchInterceptor(
                 messages -> (i, m) -> asDeadlineMessage(m.getDeadlineName(), "fakeDeadlineDetails", m.getTimestamp()))
@@ -293,7 +293,7 @@ class FixtureTest_Deadlines {
     }
 
     @Test
-    @Disabled("TODO #3064 - Deprecated UnitOfWork clean-up")
+    @Disabled("TODO #3065 - Revisit Deadline support")
     void deadlineHandlerInterceptor() {
         fixture.registerDeadlineHandlerInterceptor((uow, chain) -> {
             uow.transformMessage(deadlineMessage -> asDeadlineMessage(

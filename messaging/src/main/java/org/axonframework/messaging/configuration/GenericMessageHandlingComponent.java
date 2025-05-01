@@ -114,8 +114,8 @@ public class GenericMessageHandlingComponent implements MessageHandlingComponent
 
     @Nonnull
     @Override
-    public MessageStream.Single<? extends CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
-                                                                          @Nonnull ProcessingContext context) {
+    public MessageStream.Single<CommandResultMessage<?>> handle(@Nonnull CommandMessage<?> command,
+                                                                @Nonnull ProcessingContext context) {
         QualifiedName messageType = command.type().qualifiedName();
         // TODO #3103 - add interceptor knowledge
         CommandHandler handler = commandHandlersByName.get(messageType);

@@ -21,8 +21,8 @@ import jakarta.annotation.Nullable;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.MessageStream.Entry;
 import org.axonframework.messaging.QualifiedName;
@@ -69,27 +69,27 @@ public class RetryingCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                            @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                               @Nullable ProcessingContext processingContext) {
         return dispatchToDelegate(command, processingContext)
                 .exceptionallyCompose(e -> performRetry(command, processingContext, unwrap(e)));
     }
 
-    private CompletableFuture<Message<?>> dispatchToDelegate(CommandMessage<?> command,
-                                                             ProcessingContext processingContext) {
+    private CompletableFuture<CommandResultMessage<?>> dispatchToDelegate(CommandMessage<?> command,
+                                                                          ProcessingContext processingContext) {
         return delegate.dispatch(command, processingContext)
                        .thenApply(Function.identity());
     }
 
-    private CompletableFuture<Message<?>> performRetry(CommandMessage<?> command,
-                                                       ProcessingContext processingContext,
-                                                       Throwable e) {
+    private CompletableFuture<CommandResultMessage<?>> performRetry(CommandMessage<?> command,
+                                                                    ProcessingContext processingContext,
+                                                                    Throwable e) {
         return retryScheduler.scheduleRetry(command, processingContext, e, this::redispatch)
                              .first().asCompletableFuture()
                              .thenApply(Entry::message);
     }
 
-    private MessageStream<Message<?>> redispatch(CommandMessage<?> cmd, ProcessingContext ctx) {
+    private MessageStream<CommandResultMessage<?>> redispatch(CommandMessage<?> cmd, ProcessingContext ctx) {
         return MessageStream.fromFuture(dispatchToDelegate(cmd, ctx));
     }
 

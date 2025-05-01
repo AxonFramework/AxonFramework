@@ -70,7 +70,7 @@ public class CorrelationDataInterceptor<T extends Message<?>> implements Message
     }
 
     @Override
-    public <M extends T, R extends Message<?>> MessageStream<? extends R> interceptOnHandle(
+    public <M extends T, R extends Message<?>> MessageStream<R> interceptOnHandle(
             @Nonnull M message,
             ProcessingContext context,
             InterceptorChain<M, R> interceptorChain

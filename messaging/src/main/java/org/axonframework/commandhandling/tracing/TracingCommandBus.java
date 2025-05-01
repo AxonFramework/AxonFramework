@@ -23,7 +23,6 @@ import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
-import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
@@ -68,8 +67,8 @@ public class TracingCommandBus implements CommandBus {
     }
 
     @Override
-    public CompletableFuture<? extends Message<?>> dispatch(@Nonnull CommandMessage<?> command,
-                                                            @Nullable ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage<?>> dispatch(@Nonnull CommandMessage<?> command,
+                                                               @Nullable ProcessingContext processingContext) {
         Span span = spanFactory.createDispatchCommandSpan(
                 requireNonNull(command, "The command message cannot be null."), false
         );
@@ -92,7 +91,7 @@ public class TracingCommandBus implements CommandBus {
 
         @Nonnull
         @Override
-        public MessageStream.Single<? extends CommandResultMessage<?>> handle(
+        public MessageStream.Single<CommandResultMessage<?>> handle(
                 @Nonnull CommandMessage<?> message,
                 @Nonnull ProcessingContext processingContext
         ) {

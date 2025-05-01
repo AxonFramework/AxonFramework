@@ -138,7 +138,7 @@ public class AnnotatedCommandHandlingComponent<T> implements CommandHandlingComp
 
     @Nonnull
     @Override
-    public MessageStream.Single<? extends CommandResultMessage<?>> handle(
+    public MessageStream.Single<CommandResultMessage<?>> handle(
             @Nonnull CommandMessage<?> command,
             @Nonnull ProcessingContext processingContext
     ) {

@@ -21,8 +21,8 @@ import org.axonframework.messaging.Message;
 import org.axonframework.messaging.MessageDispatchInterceptor;
 import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,17 +69,17 @@ public class LoggingInterceptor<T extends Message<?>>
     }
 
     @Override
-    public <M extends T, R extends Message<?>> MessageStream<? extends R> interceptOnDispatch(@Nonnull M message,
-                                                                           @Nullable ProcessingContext context,
-                                                                           @Nonnull InterceptorChain<M, R> interceptorChain) {
+    public <M extends T, R extends Message<?>> MessageStream<R> interceptOnDispatch(@Nonnull M message,
+                                                                                    @Nullable ProcessingContext context,
+                                                                                    @Nonnull InterceptorChain<M, R> interceptorChain) {
         logger.info("Dispatched message: [{}]", message.getPayloadType().getSimpleName());
         return interceptorChain.proceed(message, context);
     }
 
     @Override
-    public <M extends T, R extends Message<?>> MessageStream<? extends R> interceptOnHandle(@Nonnull M message,
-                                                                         @Nonnull ProcessingContext context,
-                                                                         @Nonnull InterceptorChain<M, R> interceptorChain) {
+    public <M extends T, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M message,
+                                                                                  @Nonnull ProcessingContext context,
+                                                                                  @Nonnull InterceptorChain<M, R> interceptorChain) {
         logger.info("Incoming message: [{}]", message.getPayloadType().getSimpleName());
         return interceptorChain.proceed(message, context)
                                .map(returnValue -> {

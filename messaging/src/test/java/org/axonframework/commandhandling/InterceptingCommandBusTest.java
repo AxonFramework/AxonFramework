@@ -279,18 +279,18 @@ class InterceptingCommandBusTest {
 
         @SuppressWarnings("unchecked")
         @Override
-        public <M1 extends M, R extends Message<?>> MessageStream<? extends R> interceptOnDispatch(@Nonnull M1 message,
-                                                                                                   @Nullable ProcessingContext context,
-                                                                                                   @Nonnull InterceptorChain<M1, R> interceptorChain) {
+        public <M1 extends M, R extends Message<?>> MessageStream<R> interceptOnDispatch(@Nonnull M1 message,
+                                                                                         @Nullable ProcessingContext context,
+                                                                                         @Nonnull InterceptorChain<M1, R> interceptorChain) {
             return interceptorChain.proceed((M1) message.andMetaData(Map.of(key, buildValue(message))), context)
                                    .mapMessage(m -> (R) ((Message<?>) m).andMetaData(Map.of(key, buildValue(m))));
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public <M1 extends M, R extends Message<?>> MessageStream<? extends R> interceptOnHandle(@Nonnull M1 message,
-                                                                                                 @Nonnull ProcessingContext context,
-                                                                                                 @Nonnull InterceptorChain<M1, R> interceptorChain) {
+        public <M1 extends M, R extends Message<?>> MessageStream<R> interceptOnHandle(@Nonnull M1 message,
+                                                                                       @Nonnull ProcessingContext context,
+                                                                                       @Nonnull InterceptorChain<M1, R> interceptorChain) {
             return interceptorChain.proceed((M1) message.andMetaData(Map.of(key, buildValue(message))), context)
                                    .mapMessage(m -> (R) m.andMetaData(Map.of(key, buildValue(m))));
         }

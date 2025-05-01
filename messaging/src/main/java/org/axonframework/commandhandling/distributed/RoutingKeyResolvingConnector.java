@@ -17,6 +17,7 @@
 package org.axonframework.commandhandling.distributed;
 
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.messaging.Message;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 
@@ -34,8 +35,8 @@ public class RoutingKeyResolvingConnector implements Connector {
     }
 
     @Override
-    public CompletableFuture<? extends Message<?>> dispatch(CommandMessage<?> command,
-                                                            ProcessingContext processingContext) {
+    public CompletableFuture<CommandResultMessage<?>> dispatch(CommandMessage<?> command,
+                                                               ProcessingContext processingContext) {
         String routingKey = routingStrategy.getRoutingKey(command);
         if (routingKey == null) {
             return delegate.dispatch(command, processingContext);

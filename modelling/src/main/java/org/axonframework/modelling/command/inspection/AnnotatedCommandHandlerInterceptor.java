@@ -23,8 +23,8 @@ import org.axonframework.messaging.MessageHandlerInterceptor;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.annotation.InterceptorChainParameterResolverFactory;
 import org.axonframework.messaging.annotation.MessageHandlingMember;
-import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.messaging.unitofwork.LegacyUnitOfWork;
+import org.axonframework.messaging.unitofwork.ProcessingContext;
 
 import javax.annotation.Nonnull;
 
@@ -63,7 +63,7 @@ public class AnnotatedCommandHandlerInterceptor<T> implements MessageHandlerInte
     }
 
     @Override
-    public <M extends CommandMessage<?>, R extends Message<?>> MessageStream<? extends R> interceptOnHandle(
+    public <M extends CommandMessage<?>, R extends Message<?>> MessageStream<R> interceptOnHandle(
             @Nonnull M message,
             @Nonnull ProcessingContext context,
             @Nonnull InterceptorChain<M, R> interceptorChain

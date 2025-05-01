@@ -28,7 +28,9 @@ import io.axoniq.axonserver.grpc.command.CommandResponse;
 import org.axonframework.axonserver.connector.ErrorCode;
 import org.axonframework.axonserver.connector.util.ExceptionSerializer;
 import org.axonframework.commandhandling.CommandMessage;
+import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
+import org.axonframework.commandhandling.GenericCommandResultMessage;
 import org.axonframework.commandhandling.distributed.Connector;
 import org.axonframework.commandhandling.distributed.PriorityResolver;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
@@ -64,13 +66,13 @@ public class AxonServerConnector implements Connector {
     }
 
     @Override
-    public CompletableFuture<Message<byte[]>> dispatch(CommandMessage<?> command,
+    public CompletableFuture<CommandResultMessage<?>> dispatch(CommandMessage<?> command,
                                                        ProcessingContext processingContext) {
         return commandChannel.sendCommand(buildCommand(command, processingContext))
                              .thenCompose(this::buildResultMessage);
     }
 
-    private CompletableFuture<Message<byte[]>> buildResultMessage(CommandResponse commandResponse) {
+    private CompletableFuture<CommandResultMessage<?>> buildResultMessage(CommandResponse commandResponse) {
         if (commandResponse.hasErrorMessage()) {
             return CompletableFuture.failedFuture(ErrorCode.getFromCode(commandResponse.getErrorCode())
                                                            .convert(commandResponse.getErrorMessage(),
@@ -82,12 +84,12 @@ public class AxonServerConnector implements Connector {
                                                                                              .toByteArray()));
         }
 
-        return CompletableFuture.completedFuture(new GenericMessage<>(
+        return CompletableFuture.completedFuture(new GenericCommandResultMessage<>(new GenericMessage<>(
                 commandResponse.getMessageIdentifier(),
                 new MessageType(commandResponse.getPayload().getType(), commandResponse.getPayload().getRevision()),
                 commandResponse.getPayload().getData().toByteArray(),
                 convertMap(commandResponse.getMetaDataMap(), this::convertToMetaDataValue)
-        ));
+        )));
     }
 
     private <S, T> Map<String, T> convertMap(Map<String, S> source, Function<S, T> mapper) {
