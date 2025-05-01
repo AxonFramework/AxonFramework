@@ -31,7 +31,10 @@ import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.serialization.Converter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.MethodHandles;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -45,6 +48,8 @@ import java.util.concurrent.CompletableFuture;
  * @since 5.0.0
  */
 public class AxonServerEventStorageEngine implements EventStorageEngine {
+
+    private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final AxonServerConnection connection;
     private final EventConverter converter;
@@ -71,7 +76,14 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
         } else {
             events.stream()
                   .map(converter::convertTaggedEventMessage)
-                  .forEach(appendEventsTransaction::append);
+                  .forEach(taggedEvent -> {
+                      if (logger.isDebugEnabled()) {
+                          logger.debug("Appended event [{}] with timestamp [{}].",
+                                       taggedEvent.getEvent().getIdentifier(),
+                                       taggedEvent.getEvent().getTimestamp());
+                      }
+                      appendEventsTransaction.append(taggedEvent);
+                  });
         }
 
         return CompletableFuture.completedFuture(new AppendTransaction() {
