@@ -21,6 +21,8 @@ import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.event.DcbEventChannel;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsResponse;
+import io.axoniq.axonserver.grpc.event.dcb.StreamEventsRequest;
+import io.axoniq.axonserver.grpc.event.dcb.StreamEventsResponse;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
@@ -114,13 +116,15 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
         return new SourcingMessageStream(sourcingStream, converter);
     }
 
-    private DcbEventChannel eventChannel() {
-        return connection.dcbEventChannel();
-    }
-
     @Override
     public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
-        return null;
+        StreamEventsRequest streamingRequest = ConditionConverter.convertStreamingCondition(condition);
+        ResultStream<StreamEventsResponse> stream = eventChannel().stream(streamingRequest);
+        return new StreamingMessageStream(stream, converter);
+    }
+
+    private DcbEventChannel eventChannel() {
+        return connection.dcbEventChannel();
     }
 
     @Override
