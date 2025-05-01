@@ -36,7 +36,7 @@ public class MockComponentDescriptor implements ComponentDescriptor {
      *
      * @return All described properties.
      */
-    public Map<String, Object> getProperties() {
+    public Map<String, Object> getDescribedProperties() {
         return properties;
     }
 

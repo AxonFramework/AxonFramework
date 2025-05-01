@@ -20,6 +20,8 @@ import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.event.dcb.Event;
 import io.axoniq.axonserver.grpc.event.dcb.TaggedEvent;
 import jakarta.annotation.Nonnull;
+import org.axonframework.common.infra.ComponentDescriptor;
+import org.axonframework.common.infra.DescribableComponent;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.Tag;
@@ -45,7 +47,7 @@ import java.util.stream.Collectors;
  * @since 4.0.0
  */
 // TODO validate the mapping with the server team!
-class EventConverter {
+class EventConverter implements DescribableComponent {
 
     private final Converter converter;
 
@@ -149,5 +151,10 @@ class EventConverter {
                                          event.getPayload().toByteArray(),
                                          event.getMetadataMap(),
                                          Instant.ofEpochMilli(event.getTimestamp()));
+    }
+
+    @Override
+    public void describeTo(@Nonnull ComponentDescriptor descriptor) {
+        descriptor.describeProperty("converter", converter);
     }
 }

@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector.event;
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
+import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
@@ -27,6 +28,9 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.IOException;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test suite implementation validating the {@link AxonServerEventStorageEngine}.
@@ -79,5 +83,17 @@ class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServer
 //                                                  axonServerContainer.getMappedPort(8124),
 //                                                  CONTEXT);
         return new AxonServerEventStorageEngine(connection, new TestConverter());
+    }
+
+    @Test
+    void describeTo() {
+        MockComponentDescriptor descriptor = new MockComponentDescriptor();
+
+        testSubject.describeTo(descriptor);
+
+        Map<String, Object> describedProperties = descriptor.getDescribedProperties();
+        assertEquals(2, describedProperties.size());
+        assertTrue(describedProperties.containsKey("connection"));
+        assertTrue(describedProperties.containsKey("converter"));
     }
 }

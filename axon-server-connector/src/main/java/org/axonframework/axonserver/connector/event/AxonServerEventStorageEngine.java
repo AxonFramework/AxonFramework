@@ -149,6 +149,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
 
     @Override
     public void describeTo(@Nonnull ComponentDescriptor descriptor) {
-
+        descriptor.describeProperty("connection", connection);
+        descriptor.describeProperty("converter", converter);
     }
 }
