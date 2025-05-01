@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector.event;
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.event.DcbEventChannel;
+import io.axoniq.axonserver.grpc.event.dcb.GetHeadRequest;
 import io.axoniq.axonserver.grpc.event.dcb.GetTailRequest;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsResponse;
@@ -131,13 +132,14 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
                              .thenApply(response -> new GlobalSequenceTrackingToken(response.getSequence()));
     }
 
-    private DcbEventChannel eventChannel() {
-        return connection.dcbEventChannel();
-    }
-
     @Override
     public CompletableFuture<TrackingToken> headToken() {
-        return null;
+        return eventChannel().head(GetHeadRequest.newBuilder().build())
+                             .thenApply(response -> new GlobalSequenceTrackingToken(response.getSequence()));
+    }
+
+    private DcbEventChannel eventChannel() {
+        return connection.dcbEventChannel();
     }
 
     @Override
