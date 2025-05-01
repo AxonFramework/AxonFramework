@@ -41,9 +41,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * {@link SourceEventsResponse SourceEventsResponses} from Axon Server, translating the {@code SourceEventsResponses}
  * into {@link EventMessage EventMessages} as it moves along.
  * <p>
- * This {@code MessageStream} implementation will receive the {@link ConsistencyMarker} for the given
- * {@code ResultStream} at the <b>end</b>. As such The {@link ConsistencyMarker#RESOURCE_KEY resource} will be empty
- * when requested early.
+ * Note that Axon Server regards the {@code ResultStream} as finite. At the end, this {@code MessageStream}
+ * implementation will receive the {@link ConsistencyMarker} form the given {@code ResultStream}. Due to this, the
+ * {@link ConsistencyMarker#RESOURCE_KEY resource} will be empty when requested early, but present once this stream
+ * {@link #isCompleted() completed}.
  *
  * @author Steven van Beelen
  * @since 5.0.0
