@@ -55,7 +55,7 @@ class SourcingMessageStream implements MessageStream<EventMessage<?>> {
 
     private final ResultStream<SourceEventsResponse> stream;
     private final EventConverter converter;
-    private final AtomicReference<ConsistencyMarker> consistencyMarker = new AtomicReference<>();
+    private final AtomicReference<SourceEventsResponse> previousReference = new AtomicReference<>();
 
     /**
      * Constructs a {@code SourcingMessageStream} with the given {@code stream} and {@code converter}.
@@ -73,24 +73,38 @@ class SourcingMessageStream implements MessageStream<EventMessage<?>> {
 
     @Override
     public Optional<Entry<EventMessage<?>>> next() {
-        SourceEventsResponse response = stream.nextIfAvailable();
-        if (response == null) {
-            logger.debug("There are no more events to source from the source result stream.");
+        SourceEventsResponse current = stream.nextIfAvailable();
+        SourceEventsResponse previous = previousReference.getAndSet(current);
+        SourceEventsResponse next = stream.peek();
+        long consistencyMarker;
+
+        if (previous == null && current != null && current.hasConsistencyMarker()) {
+            logger.warn("First and only entry of the source result stream is a consistency marker.");
+            // TODO Exceptional case?
             return Optional.empty();
-        }
-        if (response.hasConsistencyMarker()) {
-            logger.debug("Reached consistency marker for the source result stream. Setting reference.");
-            consistencyMarker.set(new GlobalIndexConsistencyMarker(response.getConsistencyMarker()));
+        } else if (previous == null) {
+            logger.debug("The source result stream never contained any entries.");
+            // TODO Exceptional case?
             return Optional.empty();
+        } else if (previous.hasConsistencyMarker()) {
+            logger.debug("Reached the end of the source result stream.");
+            return Optional.empty();
+        } else if (next.hasConsistencyMarker()) {
+            logger.debug("Peeked consistency marker (final response) for the source result stream.");
+            consistencyMarker = next.getConsistencyMarker();
+        } else {
+            logger.debug("Set consistency marker to sequence minus one of next response.");
+            consistencyMarker = next.getEvent().getSequence() - 1;
         }
-        return Optional.of(convertToEntry(response.getEvent()));
+        return Optional.of(convertToEntry(previous.getEvent(), consistencyMarker));
     }
 
-    private SimpleEntry<EventMessage<?>> convertToEntry(SequencedEvent event) {
+    private SimpleEntry<EventMessage<?>> convertToEntry(SequencedEvent event,
+                                                        long consistencyMarker) {
         EventMessage<byte[]> eventMessage = converter.convertEvent(event.getEvent());
         TrackingToken token = new GlobalSequenceTrackingToken(event.getSequence());
         Context context = Context.with(TrackingToken.RESOURCE_KEY, token);
-        context = ConsistencyMarker.addToContext(context, consistencyMarker);
+        context = ConsistencyMarker.addToContext(context, new GlobalIndexConsistencyMarker(consistencyMarker));
         return new SimpleEntry<>(eventMessage, context);
     }
 
