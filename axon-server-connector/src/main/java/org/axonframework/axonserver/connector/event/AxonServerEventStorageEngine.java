@@ -19,6 +19,7 @@ package org.axonframework.axonserver.connector.event;
 import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.event.DcbEventChannel;
+import io.axoniq.axonserver.grpc.event.dcb.GetTailRequest;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsResponse;
 import io.axoniq.axonserver.grpc.event.dcb.StreamEventsRequest;
@@ -26,6 +27,7 @@ import io.axoniq.axonserver.grpc.event.dcb.StreamEventsResponse;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
@@ -123,13 +125,14 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
         return new StreamingMessageStream(stream, converter);
     }
 
-    private DcbEventChannel eventChannel() {
-        return connection.dcbEventChannel();
-    }
-
     @Override
     public CompletableFuture<TrackingToken> tailToken() {
-        return null;
+        return eventChannel().tail(GetTailRequest.newBuilder().build())
+                             .thenApply(response -> new GlobalSequenceTrackingToken(response.getSequence()));
+    }
+
+    private DcbEventChannel eventChannel() {
+        return connection.dcbEventChannel();
     }
 
     @Override
