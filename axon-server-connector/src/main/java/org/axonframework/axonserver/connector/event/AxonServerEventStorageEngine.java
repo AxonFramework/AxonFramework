@@ -144,7 +144,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
 
     @Override
     public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
-        return null;
+        throw new UnsupportedOperationException("The Axon Server Connector does not yet support this operation.");
     }
 
     @Override
