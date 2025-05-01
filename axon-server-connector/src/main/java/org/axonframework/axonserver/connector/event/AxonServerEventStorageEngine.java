@@ -111,12 +111,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
         //  Axon Server UI does not support this, so we would have to cut off ourselves in the result stream.
         SourceEventsRequest sourcingRequest = ConditionConverter.convertSourcingCondition(condition);
         ResultStream<SourceEventsResponse> sourcingStream = eventChannel().source(sourcingRequest);
-        SourcingMessageStream messageStream = new SourcingMessageStream(sourcingStream, converter);
-        // TODO This cannot work for the consistency marker that comes in at the end, as this will be eager for each entry.
-        //  Perhaps we should concat the event stream with another single entry stream containing the consistency marker?
-        return messageStream.map(entry -> entry.withResource(ConsistencyMarker.RESOURCE_KEY,
-                                                             messageStream.consistencyMarker()
-                                                                          .get()));
+        return new SourcingMessageStream(sourcingStream, converter);
     }
 
     private DcbEventChannel eventChannel() {

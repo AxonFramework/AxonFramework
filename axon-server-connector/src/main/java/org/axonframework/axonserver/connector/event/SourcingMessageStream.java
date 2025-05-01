@@ -40,8 +40,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * A {@link MessageStream} implementation backed by a {@link ResultStream} of
  * {@link SourceEventsResponse SourceEventsResponses} from Axon Server, translating the {@code SourceEventsResponses}
  * into {@link EventMessage EventMessages} as it moves along.
- *
- * This {@code MessageStream} implementation will receive the {@link ConsistencyMarker} for the given {@code ResultStream} at the <b>end</b>. As such
+ * <p>
+ * This {@code MessageStream} implementation will receive the {@link ConsistencyMarker} for the given
+ * {@code ResultStream} at the <b>end</b>. As such The {@link ConsistencyMarker#RESOURCE_KEY resource} will be empty
+ * when requested early.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -52,8 +54,7 @@ class SourcingMessageStream implements MessageStream<EventMessage<?>> {
 
     private final ResultStream<SourceEventsResponse> stream;
     private final EventConverter converter;
-    private final AtomicReference<ConsistencyMarker> consistencyMarker =
-            new AtomicReference<>(new GlobalIndexConsistencyMarker(-1));
+    private final AtomicReference<ConsistencyMarker> consistencyMarker = new AtomicReference<>();
 
     /**
      * Constructs a {@code SourcingMessageStream} with the given {@code stream} and {@code converter}.
@@ -88,18 +89,8 @@ class SourcingMessageStream implements MessageStream<EventMessage<?>> {
         EventMessage<byte[]> eventMessage = converter.convertEvent(event.getEvent());
         TrackingToken token = new GlobalSequenceTrackingToken(event.getSequence());
         Context context = Context.with(TrackingToken.RESOURCE_KEY, token);
+        context = ConsistencyMarker.addToContext(context, consistencyMarker);
         return new SimpleEntry<>(eventMessage, context);
-    }
-
-    /**
-     * Returns an {@code AtomicReference} of the {@link ConsistencyMarker} from this stream.
-     * <p>
-     * Defaults to {@code -1}, switching to the actual consistency marker of the given {@link ResultStream} at the end.
-     *
-     * @return An {@code AtomicReference} of the {@link ConsistencyMarker} from this stream.
-     */
-    AtomicReference<ConsistencyMarker> consistencyMarker() {
-        return consistencyMarker;
     }
 
     @Override

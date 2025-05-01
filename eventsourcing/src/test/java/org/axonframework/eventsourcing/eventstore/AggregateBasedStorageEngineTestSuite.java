@@ -29,7 +29,14 @@ import org.junit.jupiter.api.*;
 import org.opentest4j.TestAbortedException;
 import reactor.test.StepVerifier;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -298,7 +305,7 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_AGGREGATE_CRITERIA.or(OTHER_AGGREGATE_CRITERIA))).asFlux())
                     //there is no predefined order between aggregates. We just expect 6 entries.
                     .thenConsumeWhile(e -> {
-                        lastMarker.set(e.getResource(ConsistencyMarker.RESOURCE_KEY));
+                        lastMarker.set(e.getResource(ConsistencyMarker.RESOURCE_KEY).get());
                         return actual.add(e.map(this::convertPayload).message().getPayload());
                     })
                     .verifyComplete();
@@ -528,13 +535,14 @@ public abstract class AggregateBasedStorageEngineTestSuite<ESE extends EventStor
         return e -> expectedPayload.equals(convertPayload(e.message()).getPayload())
                 && TEST_AGGREGATE_ID.equals(e.getResource(LegacyResources.AGGREGATE_IDENTIFIER_KEY))
                 && e.getResource(LegacyResources.AGGREGATE_SEQUENCE_NUMBER_KEY) == expectedSequence
-                && validConsistencyMarker(e.getResource(ConsistencyMarker.RESOURCE_KEY),
+                && validConsistencyMarker(e.getResource(ConsistencyMarker.RESOURCE_KEY).get(),
                                           TEST_AGGREGATE_ID,
                                           expectedSequence)
                 && TEST_AGGREGATE_TYPE.equals(e.getResource(LegacyResources.AGGREGATE_TYPE_KEY));
     }
 
-    protected boolean validConsistencyMarker(ConsistencyMarker consistencyMarker, String aggregateIdentifier,
+    protected boolean validConsistencyMarker(ConsistencyMarker consistencyMarker,
+                                             String aggregateIdentifier,
                                              int aggregateSequence) {
         return consistencyMarker instanceof AggregateBasedConsistencyMarker cm
                 && cm.positionOf(aggregateIdentifier) == aggregateSequence;
