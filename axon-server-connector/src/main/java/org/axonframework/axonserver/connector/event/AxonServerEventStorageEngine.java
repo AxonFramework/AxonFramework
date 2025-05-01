@@ -17,7 +17,10 @@
 package org.axonframework.axonserver.connector.event;
 
 import io.axoniq.axonserver.connector.AxonServerConnection;
+import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.event.DcbEventChannel;
+import io.axoniq.axonserver.grpc.event.dcb.SourceEventsRequest;
+import io.axoniq.axonserver.grpc.event.dcb.SourceEventsResponse;
 import jakarta.annotation.Nonnull;
 import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.eventhandling.EventMessage;
@@ -101,13 +104,23 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
         });
     }
 
-    private DcbEventChannel eventChannel() {
-        return connection.dcbEventChannel();
-    }
-
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
-        return null;
+        logger.debug("Starting event sourcing for condition [{}]", condition);
+        // TODO Do we disregard SourcingCondition#end for now?
+        //  Axon Server UI does not support this, so we would have to cut off ourselves in the result stream.
+        SourceEventsRequest sourcingRequest = ConditionConverter.convertSourcingCondition(condition);
+        ResultStream<SourceEventsResponse> sourcingStream = eventChannel().source(sourcingRequest);
+        SourcingMessageStream messageStream = new SourcingMessageStream(sourcingStream, converter);
+        // TODO This cannot work for the consistency marker that comes in at the end, as this will be eager for each entry.
+        //  Perhaps we should concat the event stream with another single entry stream containing the consistency marker?
+        return messageStream.map(entry -> entry.withResource(ConsistencyMarker.RESOURCE_KEY,
+                                                             messageStream.consistencyMarker()
+                                                                          .get()));
+    }
+
+    private DcbEventChannel eventChannel() {
+        return connection.dcbEventChannel();
     }
 
     @Override
