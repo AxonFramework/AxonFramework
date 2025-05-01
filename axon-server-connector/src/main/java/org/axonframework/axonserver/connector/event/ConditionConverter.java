@@ -19,12 +19,14 @@ package org.axonframework.axonserver.connector.event;
 import com.google.protobuf.ByteString;
 import io.axoniq.axonserver.grpc.event.dcb.Criterion;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsRequest;
+import io.axoniq.axonserver.grpc.event.dcb.StreamEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.Tag;
 import io.axoniq.axonserver.grpc.event.dcb.TagsAndNamesCriterion;
 import jakarta.annotation.Nonnull;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventCriterion;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
+import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.messaging.QualifiedName;
 
 import java.nio.charset.StandardCharsets;
@@ -33,8 +35,9 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Utility class containing operations to convert Axon Framework's {@link SourcingCondition} into an Axon Server
- * {@link SourceEventsRequest}.
+ * Utility class containing operations to convert Axon Framework's {@link SourcingCondition} and
+ * {@link StreamingCondition} into an Axon Server {@link SourceEventsRequest} and {@link StreamEventsRequest}
+ * respectively.
  *
  * @author Steven van Beelen
  * @since 5.0.0
@@ -55,6 +58,24 @@ public abstract class ConditionConverter {
         Objects.requireNonNull(condition, "The sourcing condition cannot be null.");
         return SourceEventsRequest.newBuilder()
                                   .setFromSequence(condition.start())
+                                  .addAllCriterion(convertEventCriterion(condition.criteria().flatten()))
+                                  .build();
+    }
+
+    /**
+     * Converts the given {@code condition} into a {@link StreamEventsRequest}.
+     * <p>
+     * The {@link StreamingCondition#position()} translates to the
+     * {@link StreamEventsRequest#getFromSequence() from sequence value}. The {@link StreamingCondition#criteria()} are
+     * {@link EventCriteria#flatten() flattened} before being mapped to {@link Criterion}.
+     *
+     * @param condition The {@code StreamingCondition} to base the {@link StreamEventsRequest} on.
+     * @return A {@code StreamEventsRequest} based on the given {@code condition}.
+     */
+    public static StreamEventsRequest convertStreamingCondition(@Nonnull StreamingCondition condition) {
+        Objects.requireNonNull(condition, "The streaming condition cannot be null.");
+        return StreamEventsRequest.newBuilder()
+                                  .setFromSequence(condition.position().position().orElse(-1))
                                   .addAllCriterion(convertEventCriterion(condition.criteria().flatten()))
                                   .build();
     }
