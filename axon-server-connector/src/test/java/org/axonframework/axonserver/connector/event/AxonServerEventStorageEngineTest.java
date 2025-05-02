@@ -21,13 +21,12 @@ import io.axoniq.axonserver.connector.AxonServerConnectionFactory;
 import io.axoniq.axonserver.connector.impl.ServerAddress;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
+import org.axonframework.test.server.AxonServerContainer;
 import org.junit.jupiter.api.*;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
-import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -41,31 +40,28 @@ import static org.junit.jupiter.api.Assertions.*;
 class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServerEventStorageEngine> {
 
     private static final String CONTEXT = "default";
+    private static final String DEFAULT_SERVER_IMAGE = "axoniq/axonserver";
 
-    @SuppressWarnings("resource")
     @Container
-    private static final GenericContainer<?> axonServerContainer =
-            new GenericContainer<>(getDockerImageName())
-                    .withExposedPorts(8024, 8124)
-                    .withEnv("AXONIQ_AXONSERVER_HOSTNAME", "localhost")
-                    .withEnv("AXONIQ_AXONSERVER_DEVMODE_ENABLED", "true")
-                    .waitingFor(Wait.forLogMessage(".*Started AxonServer.*", 1))
-                    .waitingFor(Wait.forHttp("/actuator/health").forPort(8024));
+    private static final AxonServerContainer container =
+            new AxonServerContainer(getDockerImageName()).withDevMode(true);
 
-    private static String getDockerImageName() {
+    private static DockerImageName getDockerImageName() {
         String envVariable = System.getenv("AXON_SERVER_IMAGE");
-        return envVariable != null ? envVariable : System.getProperty("AXON_SERVER_IMAGE", "axoniq/axonserver");
+        String serverImage = envVariable != null
+                ? envVariable
+                : System.getProperty("AXON_SERVER_IMAGE", DEFAULT_SERVER_IMAGE);
+        return DockerImageName.parse(serverImage).asCompatibleSubstituteFor(DEFAULT_SERVER_IMAGE);
     }
 
     private static AxonServerConnection connection;
 
     @BeforeAll
     static void beforeAll() {
-        axonServerContainer.start();
-        ServerAddress serverAddress = new ServerAddress(axonServerContainer.getHost(),
-                                                        axonServerContainer.getMappedPort(8124));
+        container.start();
+        ServerAddress address = new ServerAddress(container.getHost(), container.getGrpcPort());
         connection = AxonServerConnectionFactory.forClient("AxonServerEventStorageEngineTest")
-                                                .routingServers(serverAddress)
+                                                .routingServers(address)
                                                 .build()
                                                 .connect(CONTEXT);
     }
@@ -73,11 +69,11 @@ class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServer
     @AfterAll
     static void afterAll() {
         connection.disconnect();
-        axonServerContainer.stop();
+        container.stop();
     }
 
     @Override
-    protected AxonServerEventStorageEngine buildStorageEngine() throws IOException {
+    protected AxonServerEventStorageEngine buildStorageEngine() {
         // TODO replace for create and delete context
 //        AxonServerUtils.purgeEventsFromAxonServer(axonServerContainer.getHost(),
 //                                                  axonServerContainer.getMappedPort(8124),
