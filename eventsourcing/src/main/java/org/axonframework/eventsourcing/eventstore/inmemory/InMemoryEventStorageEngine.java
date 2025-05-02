@@ -22,13 +22,12 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
-import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.EventsCondition;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
-import org.axonframework.eventsourcing.eventstore.Tag;
 import org.axonframework.eventsourcing.eventstore.TaggedEventMessage;
 import org.axonframework.messaging.Context;
 import org.axonframework.messaging.MessageStream;
@@ -159,7 +158,9 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                                 .values()
                                 .stream()
                                 .map(event -> (TaggedEventMessage<?>) event)
-                                .anyMatch(taggedEvent -> condition.matches(taggedEvent.event().type().qualifiedName(), taggedEvent.tags()));
+                                .anyMatch(taggedEvent -> condition.matches(
+                                        taggedEvent.event().type().qualifiedName(), taggedEvent.tags()
+                                ));
     }
 
     @Override
@@ -250,15 +251,15 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
     private class MapBackedMessageStream implements MessageStream<EventMessage<?>> {
 
         private final AtomicLong position;
-        private final AtomicReference<Runnable> callback;
         private final long end;
         private final EventsCondition condition;
+        private final AtomicReference<Runnable> callback;
 
-        public MapBackedMessageStream(long start, long end, EventsCondition condition) {
+        private MapBackedMessageStream(long start, long end, EventsCondition condition) {
+            this.position = new AtomicLong(start);
             this.end = end;
             this.condition = condition;
-            position = new AtomicLong(start);
-            callback = new AtomicReference<>(() -> {
+            this.callback = new AtomicReference<>(() -> {
             });
         }
 
@@ -267,8 +268,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
             long currentPosition = position.get();
             while (currentPosition <= end
                     && eventStorage.containsKey(currentPosition)
-                    && position.compareAndSet(currentPosition,
-                                              currentPosition + 1)) {
+                    && position.compareAndSet(currentPosition, currentPosition + 1)) {
                 TaggedEventMessage<?> nextEvent = eventStorage.get(currentPosition);
                 if (match(nextEvent, condition)) {
                     Context context = Context.empty();
