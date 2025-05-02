@@ -111,7 +111,10 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
 
     @Override
     public MessageStream<EventMessage<?>> source(@Nonnull SourcingCondition condition) {
-        logger.debug("Starting event sourcing for condition [{}]", condition);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Start sourcing events with condition [{}].", condition);
+        }
+
         // TODO Do we disregard SourcingCondition#end for now?
         //  Axon Server UI does not support this, so we would have to cut off ourselves in the result stream.
         SourceEventsRequest sourcingRequest = ConditionConverter.convertSourcingCondition(condition);
@@ -121,6 +124,10 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
 
     @Override
     public MessageStream<EventMessage<?>> stream(@Nonnull StreamingCondition condition) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Start streaming events with condition [{}].", condition);
+        }
+
         StreamEventsRequest streamingRequest = ConditionConverter.convertStreamingCondition(condition);
         ResultStream<StreamEventsResponse> stream = eventChannel().stream(streamingRequest);
         return new StreamingMessageStream(stream, converter);
@@ -128,12 +135,20 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
 
     @Override
     public CompletableFuture<TrackingToken> tailToken() {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Operation tailToken() is invoked.");
+        }
+
         return eventChannel().tail(GetTailRequest.newBuilder().build())
                              .thenApply(response -> new GlobalSequenceTrackingToken(response.getSequence()));
     }
 
     @Override
     public CompletableFuture<TrackingToken> headToken() {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Operation headToken() is invoked.");
+        }
+
         return eventChannel().head(GetHeadRequest.newBuilder().build())
                              .thenApply(response -> new GlobalSequenceTrackingToken(response.getSequence()));
     }
@@ -144,6 +159,10 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
 
     @Override
     public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Operation tokenAt() is invoked with Instant [{}].", at);
+        }
+
         throw new UnsupportedOperationException("The Axon Server Connector does not yet support this operation.");
     }
 
