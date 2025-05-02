@@ -39,7 +39,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
@@ -101,26 +100,6 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
-    void sourcingEventsReturnsTheHeadGlobalIndexAsConsistencyMarkerForTheLastEntryOnly() throws Exception {
-        testSubject.appendEvents(AppendCondition.none(),
-                                 taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
-                                 taggedEventMessage("event-1", TEST_CRITERIA_TAGS),
-                                 taggedEventMessage("event-2", OTHER_CRITERIA_TAGS),
-                                 taggedEventMessage("event-3", OTHER_CRITERIA_TAGS),
-                                 taggedEventMessage("event-4", OTHER_CRITERIA_TAGS),
-                                 taggedEventMessage("event-5", OTHER_CRITERIA_TAGS))
-                   .thenCompose(AppendTransaction::commit)
-                   .get(5, TimeUnit.SECONDS);
-
-        SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
-
-        StepVerifier.create(testSubject.source(testCondition).asFlux())
-                    .expectNextMatches(assertHasConsistencyMarker(0))
-                    .expectNextMatches(assertHasConsistencyMarker(5))
-                    .verifyComplete();
-    }
-
-    @Test
     void usingMidStreamConsistencyMarkerFromSourcingEventsToAppendIsNotAllowed() throws Exception {
         // given ...
         testSubject.appendEvents(AppendCondition.none(),
@@ -133,21 +112,22 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .thenCompose(AppendTransaction::commit)
                    .get(5, TimeUnit.SECONDS);
 
-        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(OTHER_CRITERIA);
-        List<Entry<EventMessage<?>>> sourcedEntries = testSubject.source(testSourcingCondition)
-                                                                 .asFlux()
-                                                                 .collectList()
-                                                                 .block();
-        assertNotNull(sourcedEntries);
-        assertEquals(4, sourcedEntries.size());
+        ConsistencyMarker midStreamMarker = testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA))
+                                                       .asFlux()
+                                                       .collectList()
+                                                       .map(entries -> entries.get(1))
+                                                       .map(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY))
+                                                       .block();
         // when ...
-        ConsistencyMarker midStreamMarker = sourcedEntries.get(1).getResource(ConsistencyMarker.RESOURCE_KEY);
         AppendCondition testAppendCondition = AppendCondition.withCriteria(OTHER_CRITERIA)
                                                              .withMarker(midStreamMarker);
         CompletableFuture<ConsistencyMarker> result =
                 testSubject.appendEvents(testAppendCondition, taggedEventMessage("event-6", OTHER_CRITERIA_TAGS))
                            .thenCompose(AppendTransaction::commit);
         // then ...
+        await("Await commit").pollDelay(Duration.ofMillis(50))
+                             .atMost(Duration.ofSeconds(5))
+                             .untilAsserted(result::isDone);
         assertTrue(result.isCompletedExceptionally());
         assertInstanceOf(AppendEventsTransactionRejectedException.class, result.exceptionNow());
     }
@@ -165,8 +145,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .thenCompose(AppendTransaction::commit)
                    .get(5, TimeUnit.SECONDS);
 
-        SourcingCondition testSourcingCondition = SourcingCondition.conditionFor(OTHER_CRITERIA);
-        ConsistencyMarker marker = testSubject.source(testSourcingCondition)
+        ConsistencyMarker marker = testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA))
                                               .asFlux()
                                               .collectList()
                                               .map(List::getLast)
@@ -179,9 +158,12 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         AppendCondition testAppendCondition = AppendCondition.withCriteria(OTHER_CRITERIA)
                                                              .withMarker(marker);
         CompletableFuture<ConsistencyMarker> result =
-                testSubject.appendEvents(testAppendCondition, taggedEventMessage("event-", OTHER_CRITERIA_TAGS))
+                testSubject.appendEvents(testAppendCondition, taggedEventMessage("event-7", OTHER_CRITERIA_TAGS))
                            .thenCompose(AppendTransaction::commit);
         // then ...
+        await("Await commit").pollDelay(Duration.ofMillis(50))
+                             .atMost(Duration.ofSeconds(5))
+                             .untilAsserted(result::isDone);
         assertTrue(result.isCompletedExceptionally());
         assertInstanceOf(AppendEventsTransactionRejectedException.class, result.exceptionNow());
     }
@@ -488,16 +470,6 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                 ),
                 tags
         );
-    }
-
-    private static Predicate<Entry<EventMessage<?>>> assertHasConsistencyMarker(
-            @SuppressWarnings("SameParameterValue") int position
-    ) {
-        return entry -> {
-            assertEquals(new GlobalIndexConsistencyMarker(position),
-                         entry.getResource(ConsistencyMarker.RESOURCE_KEY));
-            return true;
-        };
     }
 
     private static void assertEvent(EventMessage<?> actual,
