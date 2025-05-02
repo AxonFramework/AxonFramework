@@ -75,7 +75,6 @@ class SourcingMessageStream implements MessageStream<EventMessage<?>> {
     public Optional<Entry<EventMessage<?>>> next() {
         SourceEventsResponse current = stream.nextIfAvailable();
         SourceEventsResponse previous = previousReference.getAndSet(current);
-        SourceEventsResponse next = stream.peek();
         long consistencyMarker;
 
         if (previous == null && current != null && current.hasConsistencyMarker()) {
@@ -83,18 +82,17 @@ class SourcingMessageStream implements MessageStream<EventMessage<?>> {
             // TODO Exceptional case?
             return Optional.empty();
         } else if (previous == null) {
-            logger.debug("The source result stream never contained any entries.");
-            // TODO Exceptional case?
+            logger.debug("The source result stream never contained any entries. Try a different sourcing condition.");
             return Optional.empty();
         } else if (previous.hasConsistencyMarker()) {
             logger.debug("Reached the end of the source result stream.");
             return Optional.empty();
-        } else if (next.hasConsistencyMarker()) {
+        } else if (current.hasConsistencyMarker()) {
             logger.debug("Peeked consistency marker (final response) for the source result stream.");
-            consistencyMarker = next.getConsistencyMarker();
+            consistencyMarker = current.getConsistencyMarker();
         } else {
             logger.debug("Set consistency marker to sequence minus one of next response.");
-            consistencyMarker = next.getEvent().getSequence() - 1;
+            consistencyMarker = current.getEvent().getSequence() - 1;
         }
         return Optional.of(convertToEntry(previous.getEvent(), consistencyMarker));
     }
