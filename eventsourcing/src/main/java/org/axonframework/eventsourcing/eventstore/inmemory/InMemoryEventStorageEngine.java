@@ -273,7 +273,6 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                 if (match(nextEvent, condition)) {
                     Context context = Context.empty();
                     context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition));
-                    context = Tag.addToContext(context, nextEvent.tags());
                     context = ConsistencyMarker.addToContext(context, new GlobalIndexConsistencyMarker(end));
                     return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
                 }
