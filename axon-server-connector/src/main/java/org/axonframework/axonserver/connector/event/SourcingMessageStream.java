@@ -88,11 +88,11 @@ class SourcingMessageStream implements MessageStream<EventMessage<?>> {
             logger.debug("Reached the end of the source result stream.");
             return Optional.empty();
         } else if (current.hasConsistencyMarker()) {
-            logger.debug("Peeked consistency marker (final response) for the source result stream.");
+            logger.debug("Peeked consistency marker (final response) from the source result stream.");
             consistencyMarker = current.getConsistencyMarker();
         } else {
-            logger.debug("Set consistency marker to sequence minus one of next response.");
-            consistencyMarker = current.getEvent().getSequence() - 1;
+            logger.debug("Set consistency marker to sequence of current response.");
+            consistencyMarker = previous.getEvent().getSequence();
         }
         return Optional.of(convertToEntry(previous.getEvent(), consistencyMarker));
     }
