@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2023. Axon Framework
+ * Copyright (c) 2010-2025. Axon Framework
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -42,7 +44,7 @@ import java.util.function.Predicate;
  * @author Sara Pelligrini
  * @since 4.8.0
  */
-class AxonServerContainerUtils {
+public class AxonServerContainerUtils {
 
     /**
      * Initialize the cluster of the Axon Server instance located at the given {@code hostname} and {@code port}
@@ -50,16 +52,17 @@ class AxonServerContainerUtils {
      * <p>
      * Note that this constructs the contexts {@code _admin} and {@code default}.
      *
-     * @param hostname The hostname of the Axon Server instance to initiate the cluster for.
-     * @param port     The port of the Axon Server instance to initiate the cluster for.
+     * @param hostname       The hostname of the Axon Server instance to initiate the cluster for.
+     * @param port           The port of the Axon Server instance to initiate the cluster for.
+     * @param shouldBeReused If set to {@code true}, ensure the cluster is not accidentally initialized twice.
      * @throws IOException When there are issues with the HTTP connection to the Axon Server instance at the given
      *                     {@code hostname} and {@code port}.
      */
-    static void initCluster(String hostname, int port, boolean shouldBeReused) throws IOException {
+    public static void initCluster(String hostname, int port, boolean shouldBeReused) throws IOException {
         if (shouldBeReused && initialized(hostname, port)) {
             return;
         }
-        final URL url = URI.create(String.format("http://%s:%d/v1/context/init", hostname, port)).toURL();
+        final URL url = URI.create(String.format("http://%s:%d/v2/cluster/init", hostname, port)).toURL();
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) url.openConnection();
@@ -91,7 +94,7 @@ class AxonServerContainerUtils {
      * @throws IOException When there are issues with the HTTP connection to the Axon Server instance at the given
      *                     {@code hostname} and {@code port}.
      */
-    static List<String> contexts(String hostname, int port) throws IOException {
+    public static List<String> contexts(String hostname, int port) throws IOException {
         final URL url = URI.create(String.format("http://%s:%d/v1/public/context", hostname, port)).toURL();
         HttpURLConnection connection = null;
         try {
@@ -170,6 +173,36 @@ class AxonServerContainerUtils {
             return cont.contains("_admin") && cont.contains("default");
         } catch (IllegalArgumentException e) {
             return false;
+        }
+    }
+
+    /**
+     * Calls the API of Axon Server at given {@code hostname} and (http) {@code port} to purge events of the given
+     * {@code context}.
+     *
+     * @param hostname The hostname where AxonServer can be reached
+     * @param port     The HTTP port AxonServer listens to for API calls
+     * @param context  The context to purge
+     * @throws IOException when an error occurs communicating with AxonServer
+     * @since 5.0.0
+     */
+    public static void purgeEventsFromAxonServer(String hostname, int port, String context) throws IOException {
+        final URL url = URI.create(String.format("http://%s:%d/v1/public/purge-events?context=%s", hostname, port,
+                                                 URLEncoder.encode(context, StandardCharsets.UTF_8))).toURL();
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setDoOutput(true);
+            connection.setRequestMethod("DELETE");
+            connection.getInputStream().close();
+            if (connection.getResponseCode() >= 300) {
+                throw new IOException(
+                        "Received unexpected response code from Axon Server: " + connection.getResponseCode());
+            }
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
     }
 }

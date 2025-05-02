@@ -26,6 +26,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AggregateBasedStorageEngineTestSuite;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.test.server.AxonServerContainer;
+import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -71,9 +72,9 @@ class AggregateBasedAxonServerEventStorageEngineTest extends
 
     @Override
     protected AggregateBasedAxonServerEventStorageEngine buildStorageEngine() throws IOException {
-        AxonServerUtils.purgeEventsFromAxonServer(axonServerContainer.getHost(),
-                                                  axonServerContainer.getHttpPort(),
-                                                  "default");
+        AxonServerContainerUtils.purgeEventsFromAxonServer(axonServerContainer.getHost(),
+                                                           axonServerContainer.getHttpPort(),
+                                                           "default");
         return new AggregateBasedAxonServerEventStorageEngine(connection, new TestConverter());
     }
 
