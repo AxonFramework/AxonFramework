@@ -22,7 +22,7 @@
 
     <groupId>org.axonframework.extensions.kotlin</groupId>
     <artifactId>axon-kotlin-parent</artifactId>
-    <version>4.11.1-SNAPSHOT</version>
+    <version>4.11.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
