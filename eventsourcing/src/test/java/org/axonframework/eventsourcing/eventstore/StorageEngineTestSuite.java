@@ -419,7 +419,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
-    void tokenAtRetrievesTokenFromStorageEngineThatStreamsEventsSinceThatMoment() throws Exception {
+    protected void tokenAtRetrievesTokenFromStorageEngineThatStreamsEventsSinceThatMoment() throws Exception {
         Instant now = Instant.now(); // assign now to a variable to not be impacted by time passing during test
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessageAt("event-0", TEST_CRITERIA_TAGS, now.minusSeconds(10)),
@@ -436,7 +436,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
-    void tokenAtReturnsHeadTokenWhenThereAreNoEventsAfterTheGivenAt() throws Exception {
+    protected void tokenAtReturnsHeadTokenWhenThereAreNoEventsAfterTheGivenAt() throws Exception {
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
                                  taggedEventMessage("event-1", TEST_CRITERIA_TAGS),

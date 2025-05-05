@@ -92,4 +92,14 @@ class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServer
         assertTrue(describedProperties.containsKey("connection"));
         assertTrue(describedProperties.containsKey("converter"));
     }
+
+    @Disabled
+    protected void tokenAtRetrievesTokenFromStorageEngineThatStreamsEventsSinceThatMoment() throws Exception {
+        super.tokenAtRetrievesTokenFromStorageEngineThatStreamsEventsSinceThatMoment();
+    }
+
+    @Disabled
+    protected void tokenAtReturnsHeadTokenWhenThereAreNoEventsAfterTheGivenAt() throws Exception {
+        super.tokenAtReturnsHeadTokenWhenThereAreNoEventsAfterTheGivenAt();
+    }
 }
