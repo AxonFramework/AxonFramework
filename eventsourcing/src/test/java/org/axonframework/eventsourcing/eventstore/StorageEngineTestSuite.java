@@ -282,15 +282,15 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     void streamingFromSpecificPositionReturnsSelectedMessages() throws Exception {
-        TaggedEventMessage<EventMessage<String>> expectedEventTwo = taggedEventMessage("event-1", TEST_CRITERIA_TAGS);
-        TaggedEventMessage<EventMessage<String>> expectedEventThree = taggedEventMessage("event-4", TEST_CRITERIA_TAGS);
+        TaggedEventMessage<EventMessage<String>> expectedEventOne = taggedEventMessage("event-1", TEST_CRITERIA_TAGS);
+        TaggedEventMessage<EventMessage<String>> expectedEventTwo = taggedEventMessage("event-4", TEST_CRITERIA_TAGS);
         // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
-                                 expectedEventTwo,
+                                 expectedEventOne,
                                  taggedEventMessage("event-2", OTHER_CRITERIA_TAGS),
                                  taggedEventMessage("event-3", OTHER_CRITERIA_TAGS),
-                                 expectedEventThree,
+                                 expectedEventTwo,
                                  taggedEventMessage("event-5", OTHER_CRITERIA_TAGS),
                                  taggedEventMessage("event-6", OTHER_CRITERIA_TAGS))
                    .thenCompose(AppendTransaction::commit)
@@ -308,9 +308,9 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                                                              .or(TEST_CRITERIA);
 
         StepVerifier.create(testSubject.stream(testCondition).asFlux())
-                    // we've skipped the first one
+                    // we've skipped the first one by changing the starting point
+                    .assertNext(entry -> assertEvent(entry.message(), expectedEventOne.event()))
                     .assertNext(entry -> assertEvent(entry.message(), expectedEventTwo.event()))
-                    .assertNext(entry -> assertEvent(entry.message(), expectedEventThree.event()))
                     .thenCancel()
                     .verify();
     }
