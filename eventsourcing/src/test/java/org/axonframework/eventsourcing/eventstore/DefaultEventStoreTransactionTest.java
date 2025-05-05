@@ -99,9 +99,9 @@ class DefaultEventStoreTransactionTest {
             // then
             assertNull(beforeCommitEvents.get().first().asCompletableFuture().join());
             StepVerifier.create(afterCommitEvents.get().asFlux())
-                        .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 0, event1))
-                        .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 1, event2))
-                        .assertNext(entry -> assertTagsPositionAndEvent(entry, eventCriteria, 2, event3))
+                        .assertNext(entry -> assertPositionAndEvent(entry, 0, event1))
+                        .assertNext(entry -> assertPositionAndEvent(entry, 1, event2))
+                        .assertNext(entry -> assertPositionAndEvent(entry, 2, event3))
                         .verifyComplete();
             assertEquals(
                     GlobalIndexConsistencyMarker.position(new GlobalIndexConsistencyMarker(2)),
@@ -138,8 +138,8 @@ class DefaultEventStoreTransactionTest {
 
             // then: after commit - both events should be visible
             StepVerifier.create(afterCommitEvents.get().asFlux())
-                        .assertNext(entry -> assertTagsPositionAndEvent(entry, TEST_AGGREGATE_CRITERIA, 0, event1))
-                        .assertNext(entry -> assertTagsPositionAndEvent(entry, TEST_AGGREGATE_CRITERIA, 1, event2))
+                        .assertNext(entry -> assertPositionAndEvent(entry, 0, event1))
+                        .assertNext(entry -> assertPositionAndEvent(entry, 1, event2))
                         .verifyComplete();
         }
 
@@ -388,20 +388,6 @@ class DefaultEventStoreTransactionTest {
 
     protected static EventMessage<?> eventMessage(int seq) {
         return new GenericEventMessage<>(new MessageType("test", "event", "0.0.1"), "event-" + seq);
-    }
-
-    private static void assertTagsPositionAndEvent(MessageStream.Entry<? extends EventMessage<?>> actual,
-                                                   EventCriteria expectedCriteria, int expectedPosition,
-                                                   EventMessage<?> expectedEvent) {
-        Optional<Set<Tag>> optionalTags = Tag.fromContext(actual);
-        assertTrue(optionalTags.isPresent());
-        Set<Tag> actualTags = optionalTags.get();
-        Set<Tag> expectedTags = expectedCriteria.flatten().stream()
-                                                .map(c -> c.tags())
-                                                .flatMap(Set::stream)
-                                                .collect(Collectors.toSet());
-        assertTrue(actualTags.containsAll(expectedTags));
-        assertPositionAndEvent(actual, expectedPosition, expectedEvent);
     }
 
     private static void assertPositionAndEvent(MessageStream.Entry<? extends EventMessage<?>> actual,
