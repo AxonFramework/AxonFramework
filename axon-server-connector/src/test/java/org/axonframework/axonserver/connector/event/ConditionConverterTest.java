@@ -17,12 +17,15 @@
 package org.axonframework.axonserver.connector.event;
 
 import com.google.protobuf.ByteString;
+import io.axoniq.axonserver.grpc.event.dcb.ConsistencyCondition;
 import io.axoniq.axonserver.grpc.event.dcb.Criterion;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.StreamEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.TagsAndNamesCriterion;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
+import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.eventsourcing.eventstore.Tag;
@@ -42,6 +45,41 @@ import static org.junit.jupiter.api.Assertions.*;
 class ConditionConverterTest {
 
     private static final int START = 1337;
+
+    @Test
+    void convertAppendConditionThrowsNullPointerExceptionForNullAppendCondition() {
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> ConditionConverter.convertAppendCondition(null));
+    }
+
+    @Test
+    void convertAppendConditionConstructsConsistencyConditionAsExpected() {
+        // given...
+        AppendCondition testCondition = AppendCondition.withCriteria(
+                EventCriteria.havingTags(
+                                     Tag.of("key1OnCriterion1", "value1OnCriterion1"),
+                                     Tag.of("key2OnCriterion1", "value2OnCriterion1")
+                             )
+                             .andBeingOneOfTypes(new QualifiedName("name1OnCriterion1"))
+                             .or()
+                             .havingTags(Tag.of("key1OnCriterion2", "value1OnCriterion2"))
+                             .andBeingOneOfTypes(
+                                     new QualifiedName("name1OnCriterion2"),
+                                     new QualifiedName("name2OnCriterion2")
+                             )
+                             .or()
+                             .havingTags(Tag.of("key1OnCriterion3", "value1OnCriterion3"))
+        ).withMarker(new GlobalIndexConsistencyMarker(START));
+        // when...
+        ConsistencyCondition result = ConditionConverter.convertAppendCondition(testCondition);
+        // then...
+        assertEquals(START, result.getConsistencyMarker());
+        List<Criterion> resultCriterion = result.getCriterionList();
+        assertEquals(3, resultCriterion.size());
+        validateCriterion(resultCriterion.getFirst().getTagsAndNames());
+        validateCriterion(resultCriterion.get(1).getTagsAndNames());
+        validateCriterion(resultCriterion.getLast().getTagsAndNames());
+    }
 
     @Test
     void convertSourcingConditionThrowsNullPointerExceptionForNullSourcingCondition() {

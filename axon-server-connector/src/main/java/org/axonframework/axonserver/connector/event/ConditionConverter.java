@@ -17,14 +17,17 @@
 package org.axonframework.axonserver.connector.event;
 
 import com.google.protobuf.ByteString;
+import io.axoniq.axonserver.grpc.event.dcb.ConsistencyCondition;
 import io.axoniq.axonserver.grpc.event.dcb.Criterion;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.StreamEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.Tag;
 import io.axoniq.axonserver.grpc.event.dcb.TagsAndNamesCriterion;
 import jakarta.annotation.Nonnull;
+import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.EventCriteria;
 import org.axonframework.eventsourcing.eventstore.EventCriterion;
+import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
 import org.axonframework.eventsourcing.eventstore.StreamingCondition;
 import org.axonframework.messaging.QualifiedName;
@@ -43,6 +46,27 @@ import java.util.Set;
  * @since 5.0.0
  */
 public abstract class ConditionConverter {
+
+    /**
+     * Converts the given {@code condition} into a {@link ConsistencyCondition}.
+     * <p>
+     * The {@link AppendCondition#consistencyMarker()}} translates to the
+     * {@link ConsistencyCondition#getConsistencyMarker() consistency marker value}. The
+     * {@link AppendCondition#criteria()} are {@link EventCriteria#flatten() flattened} before being mapped to
+     * {@link Criterion}.
+     *
+     * @param condition The {@code AppendCondition} to base the {@link ConsistencyCondition} on.
+     * @return A {@code ConsistencyCondition} based on the given {@code condition}.
+     */
+    public static ConsistencyCondition convertAppendCondition(@Nonnull AppendCondition condition) {
+        Objects.requireNonNull(condition, "The append condition cannot be null.");
+        return ConsistencyCondition.newBuilder()
+                                   .setConsistencyMarker(GlobalIndexConsistencyMarker.position(
+                                           condition.consistencyMarker()
+                                   ))
+                                   .addAllCriterion(convertEventCriterion(condition.criteria().flatten()))
+                                   .build();
+    }
 
     /**
      * Converts the given {@code condition} into a {@link SourceEventsRequest}.
