@@ -15,18 +15,10 @@
  */
 package org.axonframework.extensions.kotlin.serializer
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.axonframework.eventhandling.GapAwareTrackingToken
-import org.axonframework.eventhandling.GlobalSequenceTrackingToken
-import org.axonframework.eventhandling.MergedTrackingToken
-import org.axonframework.eventhandling.MultiSourceTrackingToken
-import org.axonframework.eventhandling.ReplayToken
-import org.axonframework.eventhandling.TrackingToken
+import org.axonframework.eventhandling.*
 import org.axonframework.eventhandling.scheduling.ScheduleToken
 import org.axonframework.eventhandling.scheduling.java.SimpleScheduleToken
 import org.axonframework.eventhandling.scheduling.quartz.QuartzScheduleToken
@@ -34,6 +26,7 @@ import org.axonframework.eventhandling.tokenstore.ConfigToken
 import org.axonframework.extensions.kotlin.messaging.responsetypes.ArrayResponseType
 import org.axonframework.extensions.kotlin.serialization.AxonSerializersModule
 import org.axonframework.extensions.kotlin.serialization.KotlinSerializer
+import org.axonframework.messaging.MetaData
 import org.axonframework.messaging.responsetypes.InstanceResponseType
 import org.axonframework.messaging.responsetypes.MultipleInstancesResponseType
 import org.axonframework.messaging.responsetypes.OptionalResponseType
@@ -41,9 +34,9 @@ import org.axonframework.messaging.responsetypes.ResponseType
 import org.axonframework.serialization.Serializer
 import org.axonframework.serialization.SimpleSerializedObject
 import org.axonframework.serialization.SimpleSerializedType
-import org.axonframework.serialization.json.JacksonSerializer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 internal class AxonSerializersTest {
