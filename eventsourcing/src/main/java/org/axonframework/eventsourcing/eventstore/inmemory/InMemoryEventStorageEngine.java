@@ -168,6 +168,8 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         if (logger.isDebugEnabled()) {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
+        // TODO Do we disregard SourcingCondition#end for now?
+        //  Axon Server does not support this, so the question's here to be sure we align in this implementation
         // Set end to the CURRENT last position, to reflect it's a finite stream.
         return eventsToMessageStream(condition.start(),
                                      eventStorage.isEmpty() ? -1 : eventStorage.lastKey(),
@@ -273,7 +275,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
                 if (match(nextEvent, condition)) {
                     Context context = Context.empty();
                     context = TrackingToken.addToContext(context, new GlobalSequenceTrackingToken(currentPosition));
-                    context = ConsistencyMarker.addToContext(context, new GlobalIndexConsistencyMarker(end));
+                    context = ConsistencyMarker.addToContext(context, new GlobalIndexConsistencyMarker(currentPosition));
                     return Optional.of(new SimpleEntry<>(nextEvent.event(), context));
                 }
                 currentPosition = position.get();

@@ -46,7 +46,6 @@ import java.util.stream.Collectors;
  * @author Steven van Beelen
  * @since 4.0.0
  */
-// TODO validate the mapping with the server team!
 class EventConverter implements DescribableComponent {
 
     private final Converter converter;
@@ -70,6 +69,7 @@ class EventConverter implements DescribableComponent {
      * @param taggedEvent The tagged event message to convert into a {@link TaggedEvent}.
      * @return A {@code TaggedEvent} based on the given {@code taggedEvent}.
      */
+    // TODO validate the mapping with the server team!
     TaggedEvent convertTaggedEventMessage(@Nonnull TaggedEventMessage<?> taggedEvent) {
         Objects.requireNonNull(taggedEvent, "The tagged event message cannot be null.");
         return TaggedEvent.newBuilder()
@@ -142,6 +142,7 @@ class EventConverter implements DescribableComponent {
      * @param event The event to convert into an {@link EventMessage}.
      * @return An {@code EventMessage} based on the given {@code event}.
      */
+    // TODO validate the mapping with the server team!
     EventMessage<byte[]> convertEvent(@Nonnull Event event) {
         Objects.requireNonNull(event, "The event cannot be null.");
         // TODO just taking the metadata map as is, means everything is a string now.

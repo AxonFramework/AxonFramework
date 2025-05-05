@@ -123,7 +123,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
         }
 
         // TODO Do we disregard SourcingCondition#end for now?
-        //  Axon Server UI does not support this, so we would have to cut off ourselves in the result stream.
+        //  Axon Server does not support this, so we would have to cut off ourselves in the result stream.
         SourceEventsRequest sourcingRequest = ConditionConverter.convertSourcingCondition(condition);
         ResultStream<SourceEventsResponse> sourcingStream = eventChannel().source(sourcingRequest);
         return new SourcingMessageStream(sourcingStream, converter);
@@ -160,10 +160,6 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
                              .thenApply(response -> new GlobalSequenceTrackingToken(response.getSequence()));
     }
 
-    private DcbEventChannel eventChannel() {
-        return connection.dcbEventChannel();
-    }
-
     @Override
     public CompletableFuture<TrackingToken> tokenAt(@Nonnull Instant at) {
         if (logger.isDebugEnabled()) {
@@ -171,6 +167,10 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
         }
 
         throw new UnsupportedOperationException("The Axon Server Connector does not yet support this operation.");
+    }
+
+    private DcbEventChannel eventChannel() {
+        return connection.dcbEventChannel();
     }
 
     @Override
