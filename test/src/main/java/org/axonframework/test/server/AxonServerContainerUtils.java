@@ -23,10 +23,10 @@ import org.axonframework.common.Assert;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +37,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 /**
  * Utility class for the {@link AxonServerContainer}, used to initialize the cluster.
  *
@@ -45,6 +47,15 @@ import java.util.function.Predicate;
  * @since 4.8.0
  */
 public class AxonServerContainerUtils {
+
+    /**
+     * Constant {@code boolean} specifying that a context supports DCB.
+     */
+    public static final boolean DCB_CONTEXT = true;
+    /**
+     * Constant {@code boolean} specifying that a context does <b>not</b> support DCB.
+     */
+    public static final boolean NO_DCB_CONTEXT = false;
 
     /**
      * Initialize the cluster of the Axon Server instance located at the given {@code hostname} and {@code port}
@@ -180,29 +191,89 @@ public class AxonServerContainerUtils {
      * Calls the API of Axon Server at given {@code hostname} and (http) {@code port} to purge events of the given
      * {@code context}.
      *
-     * @param hostname The hostname where AxonServer can be reached
-     * @param port     The HTTP port AxonServer listens to for API calls
-     * @param context  The context to purge
-     * @throws IOException when an error occurs communicating with AxonServer
+     * @param hostname   The hostname where AxonServer can be reached.
+     * @param port       The HTTP port AxonServer listens to for API calls.
+     * @param context    The context to purge.
+     * @param dcbContext A {@code boolean} stating whether a DCB or non-DCB context is being purged.
+     * @throws IOException When an error occurs communicating with Axon Server.
      * @since 5.0.0
      */
-    public static void purgeEventsFromAxonServer(String hostname, int port, String context) throws IOException {
-        final URL url = URI.create(String.format("http://%s:%d/v1/public/purge-events?context=%s", hostname, port,
-                                                 URLEncoder.encode(context, StandardCharsets.UTF_8))).toURL();
+    public static void purgeEventsFromAxonServer(String hostname,
+                                                 int port,
+                                                 String context,
+                                                 boolean dcbContext) throws IOException {
+        deleteContext(hostname, port, context);
+        createContext(hostname, port, context, dcbContext);
+        try {
+            Thread.sleep(2_000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Calls the API of Axon Server at the given {@code hostname} and (http) {@code port} to delete the given
+     * {@code context}.
+     *
+     * @param hostname The hostname where Axon Server can be reached.
+     * @param port     The HTTP port Axon Server listens to for API calls.
+     * @param context  The context to delete.
+     * @throws IOException When an error occurs communicating with Axon Server.
+     */
+    public static void deleteContext(String hostname, int port, String context) throws IOException {
+        URL url = URI.create(String.format("http://%s:%d/v1/context/%s", hostname, port, context)).toURL();
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) url.openConnection();
             connection.setDoOutput(true);
             connection.setRequestMethod("DELETE");
             connection.getInputStream().close();
-            if (connection.getResponseCode() >= 300) {
-                throw new IOException(
-                        "Received unexpected response code from Axon Server: " + connection.getResponseCode());
-            }
+            assertEquals(202, connection.getResponseCode());
         } finally {
             if (connection != null) {
                 connection.disconnect();
             }
         }
+        waitForContextsCondition(hostname, port, contexts -> !contexts.contains(context));
+    }
+
+    /**
+     * Calls the API of Axon Server at the given {@code hostname} and (http) {@code port} to create a context with the
+     * given {@code context} name. The {@code dcbContext} dictates whether the context to be created support DCB, yes or
+     * no.
+     *
+     * @param hostname   The hostname where Axon Server can be reached.
+     * @param port       The HTTP port Axon Server listens to for API calls.
+     * @param context    The context to create.
+     * @param dcbContext A {@code boolean} stating whether a DCB or non-DCB context is being created.
+     * @throws IOException When an error occurs communicating with Axon Server.
+     */
+    public static void createContext(String hostname, int port, String context, boolean dcbContext) throws IOException {
+        URL url = URI.create(String.format("http://%s:%d/v1/context", hostname, port)).toURL();
+        HttpURLConnection connection = null;
+        try {
+            String jsonRequest = String.format(
+                    "{\"context\": \"%s\", \"dcbContext\": %b, \"replicationGroup\": \"%s\", \"roles\": [{ \"node\": \"axonserver\", \"role\": \"PRIMARY\" }]}",
+                    context,
+                    dcbContext,
+                    context
+            );
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setDoOutput(true);
+            connection.setRequestMethod("POST");
+            try (OutputStream os = connection.getOutputStream()) {
+                byte[] input = jsonRequest.getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
+            }
+            connection.getInputStream().close();
+            assertEquals(202, connection.getResponseCode());
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+        waitForContextsCondition(hostname, port, contexts -> contexts.contains(context));
     }
 }

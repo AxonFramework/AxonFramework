@@ -22,11 +22,13 @@ import io.axoniq.axonserver.connector.impl.ServerAddress;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.eventsourcing.eventstore.StorageEngineTestSuite;
 import org.axonframework.test.server.AxonServerContainer;
+import org.axonframework.test.server.AxonServerContainerUtils;
 import org.junit.jupiter.api.*;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -73,11 +75,11 @@ class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServer
     }
 
     @Override
-    protected AxonServerEventStorageEngine buildStorageEngine() {
-        // TODO replace for create and delete context
-//        AxonServerUtils.purgeEventsFromAxonServer(axonServerContainer.getHost(),
-//                                                  axonServerContainer.getMappedPort(8124),
-//                                                  CONTEXT);
+    protected AxonServerEventStorageEngine buildStorageEngine() throws IOException {
+//        AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
+//                                                           container.getMappedPort(8124),
+//                                                           CONTEXT,
+//                                                           AxonServerContainerUtils.DCB_CONTEXT);
         return new AxonServerEventStorageEngine(connection, new TestConverter());
     }
 

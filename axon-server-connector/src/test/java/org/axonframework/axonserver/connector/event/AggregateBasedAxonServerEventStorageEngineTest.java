@@ -65,8 +65,9 @@ class AggregateBasedAxonServerEventStorageEngineTest extends
     void sourcingFromNonGlobalSequenceTrackingTokenShouldThrowException() {
         assertThrows(
                 IllegalArgumentException.class,
-                () -> testSubject.stream(StreamingCondition.startingFrom(new GapAwareTrackingToken(5,
-                                                                                                   Collections.emptySet())))
+                () -> testSubject.stream(StreamingCondition.startingFrom(
+                        new GapAwareTrackingToken(5, Collections.emptySet())
+                ))
         );
     }
 
@@ -74,7 +75,8 @@ class AggregateBasedAxonServerEventStorageEngineTest extends
     protected AggregateBasedAxonServerEventStorageEngine buildStorageEngine() throws IOException {
         AxonServerContainerUtils.purgeEventsFromAxonServer(axonServerContainer.getHost(),
                                                            axonServerContainer.getHttpPort(),
-                                                           "default");
+                                                           "default",
+                                                           AxonServerContainerUtils.NO_DCB_CONTEXT);
         return new AggregateBasedAxonServerEventStorageEngine(connection, new TestConverter());
     }
 
