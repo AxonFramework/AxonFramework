@@ -108,7 +108,9 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
 
     @Override
     public Set<QualifiedName> supportedInstanceCommands() {
-        return commandHandlers.keySet();
+        Set<QualifiedName> commands = new HashSet<>(commandHandlers.keySet());
+        children.values().forEach(child -> commands.addAll(child.supportedCommands()));
+        return commands;
     }
 
     @Override

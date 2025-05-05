@@ -134,7 +134,20 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
         if (concreteModel.supportedInstanceCommands().contains(message.type().qualifiedName())) {
             return concreteModel.handleInstance(message, entity, context);
         }
-        return superTypeModel.handleInstance(message, entity, context);
+        if(superTypeModel.supportedInstanceCommands().contains(message.type().qualifiedName())) {
+            return superTypeModel.handleInstance(message, entity, context);
+        }
+        if(supportedCreationalCommands().contains(message.type().qualifiedName())) {
+            return MessageStream.failed(new IllegalStateException(
+                    "Entity already exists while handling %s for entity %s".formatted(
+                            message.type().qualifiedName(), entity
+                    )
+            ));
+        }
+
+        return MessageStream.failed(new IllegalArgumentException(
+                "No command handler found for command " + message.type().qualifiedName() + " on entity " + entity
+        ));
     }
 
     @Override
