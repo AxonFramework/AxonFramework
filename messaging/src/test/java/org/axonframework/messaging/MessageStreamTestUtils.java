@@ -41,6 +41,6 @@ public class MessageStreamTestUtils {
         CompletableFuture<? extends MessageStream.Entry<?>> cf = stream.first().asCompletableFuture();
         var exception = assertThrows(CompletionException.class, cf::join);
         assertInstanceOf(expectedExceptionType, exception.getCause());
-        assertTrue(exception.getCause().getMessage().contains(expectedMessagePart));
+        assertTrue(exception.getCause().getMessage().contains(expectedMessagePart), () -> "Actual message: " + exception.getCause().getMessage());
     }
 }

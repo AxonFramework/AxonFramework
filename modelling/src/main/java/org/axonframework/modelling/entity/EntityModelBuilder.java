@@ -18,13 +18,12 @@ package org.axonframework.modelling.entity;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.EntityChildModel;
-import org.axonframework.modelling.entity.child.ListEntityChildModel;
-import org.axonframework.modelling.entity.child.SingleEntityChildModel;
 
 /**
  * Builder for a {@link EntityModel} instance. This builder allows for the configuration of the entity model, including
@@ -47,6 +46,23 @@ public interface EntityModelBuilder<E> {
     @Nonnull
     EntityModelBuilder<E> commandHandler(@Nonnull QualifiedName qualifiedName,
                                          @Nonnull EntityCommandHandler<E> messageHandler);
+
+    /**
+     * Adds a {@link CommandHandler} to this model for the given {@link QualifiedName} that is in charge of creation of
+     * the entity. The handler is expected to publish events that will be used to create the entity.
+     * <p>
+     * Note that this handler will only be invoked when the root entity is created, and in no other situation. If you
+     * want to handle both creation and existing entities, it's possible to register a command handler for the same
+     * {@link QualifiedName} for both this method and {@link #commandHandler(QualifiedName, EntityCommandHandler)}. This
+     * command handler will be ignored when the model is used as child entity.
+     *
+     * @param qualifiedName  The {@link QualifiedName} of the command this handler handles.
+     * @param messageHandler The {@link CommandHandler} to handle the command.
+     * @return This builder for further configuration.
+     */
+    @Nonnull
+    EntityModelBuilder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                   @Nonnull CommandHandler messageHandler);
 
     /**
      * Adds a child {@link EntityChildModel} to this model. The child model will be used to handle commands for the

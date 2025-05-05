@@ -17,10 +17,14 @@
 package org.axonframework.eventsourcing.annotation;
 
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import org.axonframework.eventhandling.EventMessage;
 
 /**
  * Functional interface towards creating a new instance of an entity of the given {@code entityType} and the given
- * {@code id}.
+ * {@code id}. Optionally, the {@link #createEntityBasedOnFirstEventMessage(Object, EventMessage)} method can be
+ * overridden to create an entity based on the first event message, enabling the creation of an entity with immutable
+ * state.
  *
  * @param <ID> The type of the identifier of the entity to create.
  * @param <E>  The type of the entity to create.
@@ -31,11 +35,24 @@ import jakarta.annotation.Nonnull;
 public interface EventSourcedEntityFactory<ID, E> {
 
     /**
-     * Creates a new instance of an entity of the given {@code entityType} and {@code idType}.
+     * Creates a new instance of an entity of the given {@code entityType} and {@code id}.
      *
-     * @param entityType The type of the entity to create.
      * @param id         The identifier of the entity to create.
      * @return A new instance of the entity.
      */
-    E createEntity(@Nonnull Class<E> entityType, @Nonnull ID id);
+    E createEmptyEntity(@Nonnull ID id);
+
+    /**
+     * Creates a new instance of an entity of the given {@code entityType}, {@code idType}, and the
+     * {@code firstEventMessage} that is present for the entity. Unless overridden, this method will create an empty
+     * entity through {@link #createEmptyEntity(Object)}.
+     *
+     * @param id                The identifier of the entity to create.
+     * @param firstEventMessage The first event message to be applied to the entity.
+     * @return A new instance of the entity.
+     */
+    default E createEntityBasedOnFirstEventMessage(@Nonnull ID id,
+                                                   @Nonnull EventMessage<?> firstEventMessage) {
+        return createEmptyEntity(id);
+    }
 }

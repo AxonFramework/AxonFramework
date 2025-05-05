@@ -40,6 +40,6 @@ public class ConstructorBasedEventSourcedEntityFactoryDefinition
             @Nonnull Class<Object> idType,
             @Nonnull Configuration configuration
     ) {
-        return new ConstructorBasedEventSourcedEntityFactory();
+        return new ConstructorBasedEventSourcedEntityFactory(entityType);
     }
 }

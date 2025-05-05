@@ -18,6 +18,7 @@ package org.axonframework.modelling.entity;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.common.infra.ComponentDescriptor;
@@ -106,20 +107,55 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
     }
 
     @Override
-    public MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message,
-                                                                E entity,
-                                                                ProcessingContext context) {
-
-        EntityModel<E> concreteModel = modelFor(entity);
-        if (concreteModel.supportedCommands().contains(message.type().qualifiedName())) {
-            return concreteModel.handle(message, entity, context);
+    public Set<QualifiedName> supportedCreationalCommands() {
+        HashSet<QualifiedName> qualifiedNames = new HashSet<>(superTypeModel.supportedCreationalCommands());
+        for (EntityModel<? extends E> concreteModel : concreteModels.values()) {
+            qualifiedNames.addAll(concreteModel.supportedCreationalCommands());
         }
-        return superTypeModel.handle(message, entity, context);
+        return qualifiedNames;
+    }
+
+
+
+    @Override
+    public Set<QualifiedName> supportedInstanceCommands() {
+        HashSet<QualifiedName> qualifiedNames = new HashSet<>(superTypeModel.supportedInstanceCommands());
+        for (EntityModel<? extends E> concreteModel : concreteModels.values()) {
+            qualifiedNames.addAll(concreteModel.supportedInstanceCommands());
+        }
+        return qualifiedNames;
+    }
+
+    @Override
+    public MessageStream.Single<CommandResultMessage<?>> handleInstance(CommandMessage<?> message,
+                                                                        E entity,
+                                                                        ProcessingContext context) {
+        EntityModel<E> concreteModel = modelFor(entity);
+        if (concreteModel.supportedInstanceCommands().contains(message.type().qualifiedName())) {
+            return concreteModel.handleInstance(message, entity, context);
+        }
+        return superTypeModel.handleInstance(message, entity, context);
     }
 
     @Override
     public Class<E> entityType() {
         return superTypeModel.entityType();
+    }
+
+    @Override
+    public MessageStream.Single<CommandResultMessage<?>> handleCreate(CommandMessage<?> message,
+                                                                      ProcessingContext context) {
+        for(EntityModel<? extends E> concreteModel : concreteModels.values()) {
+            if (concreteModel.supportedCreationalCommands().contains(message.type().qualifiedName())) {
+                return concreteModel.handleCreate(message, context);
+            }
+        }
+        if(superTypeModel.supportedCreationalCommands().contains(message.type().qualifiedName())) {
+            return superTypeModel.handleCreate(message, context);
+        }
+        return MessageStream.failed(
+                new IllegalArgumentException("No creational command handler found for " + message.type().qualifiedName())
+        );
     }
 
     @Override
@@ -154,6 +190,14 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
         public Builder<E> commandHandler(@Nonnull QualifiedName qualifiedName,
                                          @Nonnull EntityCommandHandler<E> messageHandler) {
             superTypeBuilder.commandHandler(qualifiedName, messageHandler);
+            return this;
+        }
+
+        @Nonnull
+        @Override
+        public EntityModelBuilder<E> creationalCommandHandler(@Nonnull QualifiedName qualifiedName,
+                                                              @Nonnull CommandHandler messageHandler) {
+            superTypeBuilder.creationalCommandHandler(qualifiedName, messageHandler);
             return this;
         }
 

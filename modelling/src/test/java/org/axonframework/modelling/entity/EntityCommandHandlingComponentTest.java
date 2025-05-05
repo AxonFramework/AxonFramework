@@ -18,10 +18,12 @@ package org.axonframework.modelling.entity;
 
 import org.axonframework.commandhandling.CommandMessage;
 import org.axonframework.commandhandling.CommandResultMessage;
+import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
-import org.axonframework.common.infra.ComponentDescriptor;
 import org.axonframework.common.infra.MockComponentDescriptor;
 import org.axonframework.messaging.MessageStream;
+import org.axonframework.messaging.MessageStreamTestUtils;
+import org.axonframework.messaging.MessageType;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.command.EntityIdResolver;
@@ -31,7 +33,6 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.*;
 import org.mockito.*;
 import org.mockito.junit.jupiter.*;
-import org.mockito.stubbing.*;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -51,10 +52,11 @@ class EntityCommandHandlingComponentTest {
     @Mock
     private EntityIdResolver<String> idResolver;
 
-    CommandMessage<?> commandMessage = mock(CommandMessage.class);
-    String entityId = "myEntityId456";
-    ManagedEntity<String, TestEntity> managedEntity = mock(ManagedEntity.class);
-    TestEntity mockEntity = mock(TestEntity.class);
+    private final CommandMessage<?> commandMessage = new GenericCommandMessage<>(new MessageType(Integer.class), "command");
+    private final String entityId = "myEntityId456";
+    private final ManagedEntity<String, TestEntity> managedEntity = mock(ManagedEntity.class);
+    private final TestEntity mockEntity = mock(TestEntity.class);
+    private EntityCreationPolicy creationPolicy = EntityCreationPolicy.CREATE_IF_MISSING;
 
     private EntityCommandHandlingComponent<String, TestEntity> testComponent;
 
@@ -63,8 +65,22 @@ class EntityCommandHandlingComponentTest {
         testComponent = new EntityCommandHandlingComponent<>(
                 repository,
                 entityModel,
-                idResolver
+                idResolver,
+                cm -> creationPolicy
         );
+        lenient().when(idResolver.resolve(eq(commandMessage), any())).thenReturn(entityId);
+        lenient().when(repository.load(eq(entityId), any()))
+                 .thenReturn(CompletableFuture.completedFuture(managedEntity));
+
+        CommandResultMessage<?> instanceResultMessage = new GenericCommandResultMessage<>(new MessageType(String.class),
+                                                                                          "instance");
+        MessageStream.Single<CommandResultMessage<?>> instanceResult = MessageStream.just(instanceResultMessage);
+        CommandResultMessage<?> creationalResultMessage = new GenericCommandResultMessage<>(new MessageType(String.class),
+                                                                                            "creational");
+        MessageStream.Single<CommandResultMessage<?>> creationalResult = MessageStream.just(creationalResultMessage);
+        lenient().when(entityModel.handleInstance(eq(commandMessage), eq(mockEntity), any()))
+                 .thenReturn(instanceResult);
+        lenient().when(entityModel.handleCreate(any(), any())).thenReturn(creationalResult);
     }
 
     @Test
@@ -80,21 +96,87 @@ class EntityCommandHandlingComponentTest {
         Assertions.assertEquals(supportedCommands, result);
     }
 
-    @Test
-    void loadsEntityBasedOnIdAndForwardsCommand() {
+    @Nested
+    class CreateIfMissing {
 
-        when(idResolver.resolve(eq(commandMessage), any())).thenReturn(entityId);
-        when(managedEntity.entity()).thenReturn(mockEntity);
-        when(repository.load(eq(entityId), any())).thenReturn(CompletableFuture.completedFuture(managedEntity));
-        CommandResultMessage<?> resultMessage = mock(GenericCommandResultMessage.class);
-        MessageStream.Single<CommandResultMessage<?>> entityResult = MessageStream.just(resultMessage);
-        when(entityModel.handle(eq(commandMessage), eq(mockEntity), any())).thenReturn(entityResult);
+        @BeforeEach
+        void setUpPolicy() {
+            creationPolicy = EntityCreationPolicy.CREATE_IF_MISSING;
+        }
 
-        MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(commandMessage,
-                                                                                                       mock(ProcessingContext.class));
+        @Test
+        void willInvokeCreationalCommandHandlerWhenRepositoryReturnsNull() {
+            when(managedEntity.entity()).thenReturn(null);
 
-        verify(entityModel).handle(eq(commandMessage), eq(mockEntity), any());
-        Assertions.assertEquals(resultMessage, componentResult.asCompletableFuture().join().message());
+            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
+                    commandMessage, mock(ProcessingContext.class));
+            verify(entityModel).handleCreate(eq(commandMessage), any());
+            assertEquals("creational", componentResult.first().asCompletableFuture().join().message().getPayload());
+        }
+
+        @Test
+        void willInvokeInstanceCommandHandlerWhenRepositoryReturnsEntity() {
+            when(managedEntity.entity()).thenReturn(mockEntity);
+
+            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
+                    commandMessage, mock(ProcessingContext.class));
+
+            verify(entityModel).handleInstance(eq(commandMessage), eq(mockEntity), any());
+            Assertions.assertEquals("instance", componentResult.asCompletableFuture().join().message().getPayload());
+        }
+    }
+
+    @Nested
+    class Always {
+
+        @BeforeEach
+        void setUpPolicy() {
+            creationPolicy = EntityCreationPolicy.ALWAYS;
+        }
+
+        @Test
+        void willNotTryToLoadEntityAndAlwaysCallCreationalHandler() {
+
+            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
+                    commandMessage, mock(ProcessingContext.class));
+
+            verify(entityModel).handleCreate(eq(commandMessage), any());
+            verifyNoInteractions(repository);
+            assertEquals("creational", componentResult.asCompletableFuture().join().message().getPayload());
+        }
+    }
+
+    @Nested
+    class Never {
+
+        @BeforeEach
+        void setUpPolicy() {
+            creationPolicy = EntityCreationPolicy.NEVER;
+        }
+
+        @Test
+        void willThrowExceptionIfEntityDoesNotExist() {
+            when(managedEntity.entity()).thenReturn(null);
+
+            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
+                    commandMessage, mock(ProcessingContext.class));
+
+            MessageStreamTestUtils.assertCompletedExceptionally(componentResult,
+                                                                IllegalStateException.class,
+            "No entity found for command java.lang.Integer with id " + entityId
+            );
+        }
+
+        @Test
+        void willCallInstanceCommandHandlerWhenEntityExists() {
+            when(managedEntity.entity()).thenReturn(mockEntity);
+
+            MessageStream.Single<CommandResultMessage<?>> componentResult = testComponent.handle(
+                    commandMessage, mock(ProcessingContext.class));
+
+            verify(entityModel).handleInstance(eq(commandMessage), eq(mockEntity), any());
+            Assertions.assertEquals("instance", componentResult.asCompletableFuture().join().message().getPayload());
+        }
     }
 
     @Test

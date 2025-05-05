@@ -87,12 +87,17 @@ public class SingleEntityChildModel<C, P> implements EntityChildModel<C, P> {
                             + " on parent entity " + entity
             ));
         }
-        return childEntityModel.handle(message, childEntity, context);
+        return childEntityModel.handleInstance(message, childEntity, context);
     }
 
     @Override
     public Class<C> entityType() {
         return childEntityModel.entityType();
+    }
+
+    @Override
+    public EntityModel<C> entityModel() {
+        return childEntityModel;
     }
 
     @Override

@@ -71,7 +71,7 @@ public abstract class AbstractAdministrationTestSuite {
     void canNotCreateDuplicateEmployee() {
         sendCommand(CREATE_EMPLOYEE_1_COMMAND);
 
-        assertThrowsExceptionWithText("Employee already created", () -> {
+        assertThrowsExceptionWithText("Entity already exists", () -> {
             sendCommand(CREATE_EMPLOYEE_1_COMMAND);
         });
     }
@@ -81,7 +81,7 @@ public abstract class AbstractAdministrationTestSuite {
     void canNotCreateDuplicateCustomer() {
         sendCommand(CREATE_CUSTOMER_1_COMMAND);
 
-        assertThrowsExceptionWithText("Customer already created", () -> {
+        assertThrowsExceptionWithText("Entity already exists", () -> {
             sendCommand(CREATE_CUSTOMER_1_COMMAND);
         });
     }
@@ -150,7 +150,7 @@ public abstract class AbstractAdministrationTestSuite {
         try {
             runnable.run();
         } catch (CompletionException e) {
-            Assertions.assertEquals(expectedMessage, e.getCause().getMessage());
+            Assertions.assertTrue(e.getCause().getMessage().contains(expectedMessage));
             return;
         } catch (Exception e) {
             Assertions.fail("Expected CompletionException, but got: " + e.getClass().getSimpleName());

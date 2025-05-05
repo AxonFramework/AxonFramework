@@ -70,7 +70,7 @@ import java.lang.annotation.*;
 @EventHandler
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR})
 public @interface EventSourcingHandler {
 
     /**

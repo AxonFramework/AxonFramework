@@ -184,8 +184,7 @@ class AnnotatedEventSourcedEntityBuilderTest {
             implements EventSourcedEntityFactory<CourseId, CustomEntityFactoryCourse> {
 
         @Override
-        public CustomEntityFactoryCourse createEntity(@Nonnull Class<CustomEntityFactoryCourse> entityType,
-                                                      @Nonnull CourseId courseId) {
+        public CustomEntityFactoryCourse createEmptyEntity(@Nonnull AnnotatedEventSourcedEntityBuilderTest.CourseId courseId) {
             return new CustomEntityFactoryCourse(courseId);
         }
     }

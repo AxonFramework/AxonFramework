@@ -42,11 +42,18 @@ public record ImmutableEmployee(
         List<ImmutableTask> taskList
 ) implements ImmutablePerson {
 
+    public ImmutableEmployee(EmployeeCreated employeeCreated) {
+        this(employeeCreated.identifier(),
+             employeeCreated.lastNames(),
+             employeeCreated.firstNames(),
+             employeeCreated.emailAddress(),
+             new ImmutableSalaryInformation(employeeCreated.initialSalary(), employeeCreated.role()),
+             new ArrayList<>()
+        );
+    }
+
     @CommandHandler
-    public void handle(CreateEmployee command, EventAppender eventAppender) {
-        if (identifier != null) {
-            throw new IllegalStateException("Employee already created");
-        }
+    public static void handle(CreateEmployee command, EventAppender eventAppender) {
         eventAppender.append(new EmployeeCreated(
                 command.identifier(),
                 command.lastNames(),

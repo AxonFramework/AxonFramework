@@ -72,7 +72,7 @@ class ListEntityChildModelTest {
 
         @BeforeEach
         void setUp() {
-            when(childEntityEntityModel.handle(any(), any(), any())).thenAnswer(answ -> {
+            when(childEntityEntityModel.handleInstance(any(), any(), any())).thenAnswer(answ -> {
                 RecordingChildEntity child = answ.getArgument(1);
                 return MessageStream.just(new GenericCommandResultMessage<>(
                         new MessageType(String.class),
@@ -93,8 +93,8 @@ class ListEntityChildModelTest {
             assertEquals("1337-result", result.asCompletableFuture().join().message().getPayload());
 
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
-            verify(childEntityEntityModel).handle(commandMessage, entityToBeFound, context);
-            verify(childEntityEntityModel, times(0)).handle(commandMessage, entityToBeSkipped, context);
+            verify(childEntityEntityModel).handleInstance(commandMessage, entityToBeFound, context);
+            verify(childEntityEntityModel, times(0)).handleInstance(commandMessage, entityToBeSkipped, context);
         }
 
         @Test
@@ -151,6 +151,11 @@ class ListEntityChildModelTest {
         when(childEntityEntityModel.entityType()).thenReturn(RecordingChildEntity.class);
 
         assertEquals(RecordingChildEntity.class, testSubject.entityType());
+    }
+
+    @Test
+    void returnsEntityModel() {
+        assertEquals(childEntityEntityModel, testSubject.entityModel());
     }
 
     @Nested

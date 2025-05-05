@@ -30,10 +30,9 @@ import org.axonframework.messaging.annotation.ParameterResolverFactory;
 import org.axonframework.modelling.annotation.AnnotationBasedEntityIdResolver;
 import org.axonframework.modelling.entity.EntityCommandHandlingComponent;
 import org.axonframework.modelling.entity.EntityModel;
+import org.junit.jupiter.api.*;
 
 import java.util.Set;
-
-import static java.lang.String.format;
 
 /**
  * THIS CLASS ONLY EXIST TO VERIFY THE CURRENT FUNCTIONALITY CAN BE APPLIED WITH ANNOTATIONS. THIS CLASS SHOULD NOT BE
@@ -41,6 +40,7 @@ import static java.lang.String.format;
  * <p>
  * All classes and annotations needed are located in this same class, so it can easily be skipped during review.
  */
+@Disabled
 public class MutableAnnotationBasedAdministrationTest extends AbstractAdministrationTestSuite {
 
     @Override

@@ -78,6 +78,13 @@ public interface EntityChildModel<C, P> extends EntityEvolver<P> {
     Class<C> entityType();
 
     /**
+     * Returns the {@link EntityModel} of the child entity this model describes.
+     *
+     * @return The {@link EntityModel} of the child entity this model describes.
+     */
+    EntityModel<C> entityModel();
+
+    /**
      * Starts a builder for a single child entity within the given parent entity type.
      *
      * @param parentClass      The class of the parent entity.

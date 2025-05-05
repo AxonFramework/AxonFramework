@@ -100,7 +100,7 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
                             + " on parent entity " + parentEntity
             ));
         }
-        return childEntityModel.handle(message, matchingChildEntities.getFirst(), context);
+        return childEntityModel.handleInstance(message, matchingChildEntities.getFirst(), context);
     }
 
     private List<C> getChildEntities(P entity) {
@@ -141,6 +141,11 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
     @Override
     public Class<C> entityType() {
         return childEntityModel.entityType();
+    }
+
+    @Override
+    public EntityModel<C> entityModel() {
+        return childEntityModel;
     }
 
     @Override

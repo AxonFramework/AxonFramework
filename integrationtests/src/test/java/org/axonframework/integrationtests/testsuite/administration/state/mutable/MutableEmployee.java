@@ -38,8 +38,8 @@ public class MutableEmployee extends MutablePerson {
 
     @CommandHandler
     public void handle(CreateEmployee command, EventAppender eventAppender) {
-        if (identifier != null) {
-            throw new IllegalStateException("Employee already created");
+        if(identifier != null) {
+            throw new IllegalStateException("Entity already exists");
         }
         eventAppender.append(new EmployeeCreated(
                 command.identifier(),

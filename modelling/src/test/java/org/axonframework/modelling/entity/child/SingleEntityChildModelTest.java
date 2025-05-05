@@ -63,7 +63,7 @@ class SingleEntityChildModelTest {
 
         @BeforeEach
         void setUp() {
-            when(childEntityEntityModel.handle(any(), any(), any())).thenReturn(
+            when(childEntityEntityModel.handleInstance(any(), any(), any())).thenReturn(
                     MessageStream.just(new GenericCommandResultMessage<>(new MessageType(String.class), "result")));
         }
 
@@ -78,7 +78,7 @@ class SingleEntityChildModelTest {
             assertEquals("result", result.asCompletableFuture().join().message().getPayload());
 
             verify(childEntityFieldDefinition).getChildValue(parentEntity);
-            verify(childEntityEntityModel).handle(command, entityToBeFound, context);
+            verify(childEntityEntityModel).handleInstance(command, entityToBeFound, context);
         }
 
         @Test
@@ -105,6 +105,11 @@ class SingleEntityChildModelTest {
         when(childEntityEntityModel.entityType()).thenReturn(RecordingChildEntity.class);
 
         assertEquals(RecordingChildEntity.class, testSubject.entityType());
+    }
+
+    @Test
+    void returnsEntityModel() {
+        assertEquals(childEntityEntityModel, testSubject.entityModel());
     }
 
     @Nested

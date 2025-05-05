@@ -288,11 +288,21 @@ public class AnnotationTestDefinitions {
         }
 
         @Override
-        public MessageStream.Single<CommandResultMessage<?>> handle(CommandMessage<?> message,
-                                                                    E entity,
-                                                                    ProcessingContext context
+        public Set<QualifiedName> supportedCreationalCommands() {
+            return entityModel.supportedCreationalCommands();
+        }
+
+        @Override
+        public Set<QualifiedName> supportedInstanceCommands() {
+            return entityModel.supportedInstanceCommands();
+        }
+
+        @Override
+        public MessageStream.Single<CommandResultMessage<?>> handleInstance(CommandMessage<?> message,
+                                                                            E entity,
+                                                                            ProcessingContext context
         ) {
-            return entityModel.handle(message, entity, context);
+            return entityModel.handleInstance(message, entity, context);
         }
 
         @Override
@@ -309,6 +319,12 @@ public class AnnotationTestDefinitions {
         @Override
         public Class<E> entityType() {
             return entityType;
+        }
+
+        @Override
+        public MessageStream.Single<CommandResultMessage<?>> handleCreate(CommandMessage<?> message,
+                                                                          ProcessingContext context) {
+            return null;
         }
     }
 }

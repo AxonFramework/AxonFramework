@@ -16,6 +16,7 @@
 
 package org.axonframework.modelling.entity;
 
+import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.CommandResultMessage;
 import org.axonframework.commandhandling.GenericCommandMessage;
 import org.axonframework.commandhandling.GenericCommandResultMessage;
@@ -33,14 +34,14 @@ import org.mockito.*;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class SimpleEntityModelTest {
 
-    private static final QualifiedName PARENT_ONLY_COMMAND = new QualifiedName("ParentCommand");
+    private static final QualifiedName PARENT_ONLY_INSTANCE_COMMAND = new QualifiedName("ParentCommand");
+    private static final QualifiedName PARENT_ONLY_CREATIONAL_COMMAND = new QualifiedName("ParentCreationalCommand");
     private static final QualifiedName SHARED_COMMAND = new QualifiedName("SharedCommand");
     private static final QualifiedName SHARED_CHILD_COMMAND = new QualifiedName("SharedChildCommand");
     private static final QualifiedName CHILD_ONE_ONLY_COMMAND = new QualifiedName("ChildOneOnlyCommand");
@@ -50,6 +51,7 @@ class SimpleEntityModelTest {
     private final EntityChildModel<TestChildEntityOne, TestEntity> childModelMockOne = mock(EntityChildModel.class);
     private final EntityChildModel<TestChildEntityTwo, TestEntity> childModelMockTwo = mock(EntityChildModel.class);
     private final EntityCommandHandler<TestEntity> parentEntityCommandHandler = mock(EntityCommandHandler.class);
+    private final CommandHandler parentCreationalCommandHandler = mock(CommandHandler.class);
     private final EntityEvolver<TestEntity> parentEntityEvolver = mock(EntityEvolver.class);
 
     private final TestEntity entity = new TestEntity();
@@ -75,105 +77,213 @@ class SimpleEntityModelTest {
         when(childModelMockOne.evolve(any(), any(), any())).thenAnswer(answ -> answ.getArgument(0));
         when(childModelMockTwo.evolve(any(), any(), any())).thenAnswer(answ -> answ.getArgument(0));
         when(childModelMockOne.entityType()).thenReturn(TestChildEntityOne.class);
+        EntityModel childEntityModelMockOne = mock(EntityModel.class);
+        when(childModelMockOne.entityModel()).thenReturn(childEntityModelMockOne);
+        EntityModel childEntityModelMockTwo = mock(EntityModel.class);
         when(childModelMockTwo.entityType()).thenReturn(TestChildEntityTwo.class);
+        when(childModelMockTwo.entityModel()).thenReturn(childEntityModelMockTwo);
         when(parentEntityCommandHandler.handle(any(), any(), any()))
                 .thenReturn(MessageStream.just(new GenericCommandResultMessage<>(new MessageType(String.class),
                                                                                  "parent")));
+        when(parentCreationalCommandHandler.handle(any(), any()))
+                .thenReturn(MessageStream.just(new GenericCommandResultMessage<>(new MessageType(String.class),
+                                                                                 "parent-creational")));
         entityModel = SimpleEntityModel
                 .forEntityClass(TestEntity.class)
                 .entityEvolver(parentEntityEvolver)
                 .commandHandler(SHARED_COMMAND, parentEntityCommandHandler)
-                .commandHandler(PARENT_ONLY_COMMAND, parentEntityCommandHandler)
+                .commandHandler(PARENT_ONLY_INSTANCE_COMMAND, parentEntityCommandHandler)
+                .creationalCommandHandler(PARENT_ONLY_CREATIONAL_COMMAND, parentCreationalCommandHandler)
                 .addChild(childModelMockOne)
                 .addChild(childModelMockTwo)
                 .build();
     }
 
-    @Test
-    void commandForParentWillOnlyCallParent() {
-        GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(PARENT_ONLY_COMMAND),
-                                                                            "myPayload");
-        MessageStream.Single<CommandResultMessage<?>> result = entityModel.handle(command, entity, context);
+    @Nested
+    class InstanceCommands {
 
-        assertEquals("parent", result.asCompletableFuture().join().message().getPayload());
-        verify(parentEntityCommandHandler).handle(command, entity, context);
-        verify(childModelMockOne, times(0)).handle(command, entity, context);
-        verify(childModelMockTwo, times(0)).handle(command, entity, context);
+        @Test
+        void instanceCommandForParentWillOnlyCallParent() {
+            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(
+                    PARENT_ONLY_INSTANCE_COMMAND),
+                                                                                "myPayload");
+            MessageStream.Single<CommandResultMessage<?>> result = entityModel.handleInstance(command, entity, context);
+
+            assertEquals("parent", result.asCompletableFuture().join().message().getPayload());
+            verify(parentEntityCommandHandler).handle(command, entity, context);
+            verify(childModelMockOne, times(0)).handle(command, entity, context);
+            verify(childModelMockTwo, times(0)).handle(command, entity, context);
+        }
+
+        @Test
+        void commandDefinedInChildOneWillOnlyCallChildOne() {
+            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(CHILD_ONE_ONLY_COMMAND),
+                                                                                "myPayload");
+            MessageStream.Single<CommandResultMessage<?>> result = entityModel.handleInstance(command, entity, context);
+
+            assertEquals("child-one", result.asCompletableFuture().join().message().getPayload());
+            verify(childModelMockOne).handle(command, entity, context);
+            verify(childModelMockTwo, times(0)).handle(command, entity, context);
+            verify(parentEntityCommandHandler, times(0)).handle(command, entity, context);
+        }
+
+        @Test
+        void commandDefinedInChildTwoWillOnlyCallChildTwo() {
+            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(CHILD_TWO_ONLY_COMMAND),
+                                                                                "myPayload");
+            MessageStream.Single<CommandResultMessage<?>> result = entityModel.handleInstance(command, entity, context);
+
+            assertEquals("child-two", result.asCompletableFuture().join().message().getPayload());
+            verify(childModelMockTwo).handle(command, entity, context);
+            verify(childModelMockOne, times(0)).handle(command, entity, context);
+            verify(parentEntityCommandHandler, times(0)).handle(command, entity, context);
+        }
+
+        @Test
+        void commandDefinedInBothChildrenWillThrowExceptionIfBothCanHandleInstanceCommand() {
+            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(SHARED_CHILD_COMMAND),
+                                                                                "myPayload");
+
+            when(childModelMockOne.canHandle(any(), any(), any())).thenReturn(true);
+            when(childModelMockTwo.canHandle(any(), any(), any())).thenReturn(true);
+            MessageStreamTestUtils.assertCompletedExceptionally(
+                    entityModel.handleInstance(command, entity, context),
+                    IllegalStateException.class,
+                    "Multiple child entities of class org.axonframework.modelling.entity.SimpleEntityModelTest$TestEntity are able to handle command SharedChildCommand#0.0.1: ["
+            );
+        }
+
+        @Test
+        void commandDefinedInBothChildrenWillCallChildOneIfOnlyChildOneCanHandleInstance() {
+            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(SHARED_CHILD_COMMAND),
+                                                                                "myPayload");
+
+            when(childModelMockOne.canHandle(any(), any(), any())).thenReturn(true);
+            when(childModelMockTwo.canHandle(any(), any(), any())).thenReturn(false);
+            MessageStream.Single<CommandResultMessage<?>> result = entityModel.handleInstance(command, entity, context);
+
+            assertEquals("child-one", result.asCompletableFuture().join().message().getPayload());
+            verify(childModelMockOne).handle(command, entity, context);
+            verify(parentEntityCommandHandler, times(0)).handle(command, entity, context);
+        }
+
+        @Test
+        void commandDefinedInBothChildrenWillCallChildTwoIfOnlyChildTwoCanHandleInstance() {
+            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(SHARED_CHILD_COMMAND),
+                                                                                "myPayload");
+
+            when(childModelMockOne.canHandle(any(), any(), any())).thenReturn(false);
+            when(childModelMockTwo.canHandle(any(), any(), any())).thenReturn(true);
+            MessageStream.Single<CommandResultMessage<?>> result = entityModel.handleInstance(command, entity, context);
+
+            assertEquals("child-two", result.asCompletableFuture().join().message().getPayload());
+            verify(childModelMockTwo).handle(command, entity, context);
+            verify(parentEntityCommandHandler, times(0)).handle(command, entity, context);
+        }
+
+        @Test
+        void instanceCommandHandlerBeingCalledWithCreateResultsInFailedMessageStream() {
+            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(
+                    PARENT_ONLY_CREATIONAL_COMMAND), "myPayload");
+
+            MessageStreamTestUtils.assertCompletedExceptionally(
+                    entityModel.handleInstance(command, entity, context),
+                    IllegalStateException.class,
+                    "Entity already exists while handling ParentCreationalCommand for entity"
+            );
+        }
+
+        @Test
+        void returnsFailedMessageStreamOnUnknownCommandType() {
+            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType("UnknownCommand"),
+                                                                                "myPayload");
+
+            MessageStreamTestUtils.assertCompletedExceptionally(
+                    entityModel.handleInstance(command, entity, context),
+                    IllegalArgumentException.class,
+                    "No command handler found for command UnknownCommand on entity " + entity
+            );
+        }
+
+        @Test
+        void returnsFailedMessageStreamIfParentCommandHandlerThrowsException() {
+            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(
+                    PARENT_ONLY_INSTANCE_COMMAND),
+                                                                                "myPayload");
+            when(parentEntityCommandHandler.handle(any(), any(), any())).thenThrow(new IllegalStateException(
+                    "Test exception"));
+
+            MessageStreamTestUtils.assertCompletedExceptionally(
+                    entityModel.handleInstance(command, entity, context),
+                    IllegalStateException.class,
+                    "Test exception"
+            );
+        }
     }
 
-    @Test
-    void commandDefinedInChildOneWillOnlyCallChildOne() {
-        GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(CHILD_ONE_ONLY_COMMAND),
-                                                                            "myPayload");
-        MessageStream.Single<CommandResultMessage<?>> result = entityModel.handle(command, entity, context);
+    @Nested
+    class CreationalCommands {
 
-        assertEquals("child-one", result.asCompletableFuture().join().message().getPayload());
-        verify(childModelMockOne).handle(command, entity, context);
-        verify(childModelMockTwo, times(0)).handle(command, entity, context);
-        verify(parentEntityCommandHandler, times(0)).handle(command, entity, context);
+        @Test
+        void creationalCommandForParentWillOnlyCallParent() {
+            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(
+                    PARENT_ONLY_CREATIONAL_COMMAND),
+                                                                                "myPayload");
+            MessageStream.Single<CommandResultMessage<?>> result = entityModel.handleCreate(command, context);
+
+            assertEquals("parent-creational", result.asCompletableFuture().join().message().getPayload());
+            verify(parentCreationalCommandHandler).handle(command, context);
+            verify(childModelMockOne, times(0)).handle(command, entity, context);
+            verify(childModelMockTwo, times(0)).handle(command, entity, context);
+        }
+
+        @Test
+        void creationalCommandHandlerBeingCalledWithInstanceResultsInFailedMessageStream() {
+            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(
+                    PARENT_ONLY_CREATIONAL_COMMAND),
+                                                                                "myPayload");
+
+            MessageStreamTestUtils.assertCompletedExceptionally(
+                    entityModel.handleInstance(command, new TestEntity(), context),
+                    IllegalStateException.class,
+                    "Entity already exists while handling ParentCreationalCommand for entity"
+            );
+        }
+
+        @Test
+        void returnsFailedMessageStreamOnUnknownCommandType() {
+            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType("UnknownCommand"),
+                                                                                "myPayload");
+
+            MessageStreamTestUtils.assertCompletedExceptionally(
+                    entityModel.handleCreate(command, context),
+                    IllegalArgumentException.class,
+                    "No creational command handler found for command UnknownCommand on entity"
+            );
+        }
+
+        @Test
+        void returnsFailedMessageStreamIfParentCommandHandlerThrowsException() {
+            GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(
+                    PARENT_ONLY_INSTANCE_COMMAND),
+                                                                                "myPayload");
+            when(parentCreationalCommandHandler.handle(any(), any())).thenThrow(new IllegalStateException(
+                    "Test exception"));
+
+            MessageStreamTestUtils.assertCompletedExceptionally(
+                    entityModel.handleCreate(command, context),
+                    IllegalStateException.class,
+                    "Entity already exists while handling ParentCommand for entity"
+            );
+        }
     }
-
-    @Test
-    void commandDefinedInChildTwoWillOnlyCallChildTwo() {
-        GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(CHILD_TWO_ONLY_COMMAND),
-                                                                            "myPayload");
-        MessageStream.Single<CommandResultMessage<?>> result = entityModel.handle(command, entity, context);
-
-        assertEquals("child-two", result.asCompletableFuture().join().message().getPayload());
-        verify(childModelMockTwo).handle(command, entity, context);
-        verify(childModelMockOne, times(0)).handle(command, entity, context);
-        verify(parentEntityCommandHandler, times(0)).handle(command, entity, context);
-    }
-
-    @Test
-    void commandDefinedInBothChildrenWillThrowExceptionIfBothCanHandleCommand() {
-        GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(SHARED_CHILD_COMMAND),
-                                                                            "myPayload");
-
-        when(childModelMockOne.canHandle(any(), any(), any())).thenReturn(true);
-        when(childModelMockTwo.canHandle(any(), any(), any())).thenReturn(true);
-        MessageStreamTestUtils.assertCompletedExceptionally(
-                entityModel.handle(command, entity, context),
-                IllegalStateException.class,
-                "Multiple child entities of class org.axonframework.modelling.entity.SimpleEntityModelTest$TestEntity are able to handle command SharedChildCommand#0.0.1: ["
-        );
-    }
-
-    @Test
-    void commandDefinedInBothChildrenWillCallChildOneIfOnlyChildOneCanHandle() {
-        GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(SHARED_CHILD_COMMAND),
-                                                                            "myPayload");
-
-        when(childModelMockOne.canHandle(any(), any(), any())).thenReturn(true);
-        when(childModelMockTwo.canHandle(any(), any(), any())).thenReturn(false);
-        MessageStream.Single<CommandResultMessage<?>> result = entityModel.handle(command, entity, context);
-
-        assertEquals("child-one", result.asCompletableFuture().join().message().getPayload());
-        verify(childModelMockOne).handle(command, entity, context);
-        verify(parentEntityCommandHandler, times(0)).handle(command, entity, context);
-    }
-
-    @Test
-    void commandDefinedInBothChildrenWillCallChildTwoIfOnlyChildTwoCanHandle() {
-        GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(SHARED_CHILD_COMMAND),
-                                                                            "myPayload");
-
-        when(childModelMockOne.canHandle(any(), any(), any())).thenReturn(false);
-        when(childModelMockTwo.canHandle(any(), any(), any())).thenReturn(true);
-        MessageStream.Single<CommandResultMessage<?>> result = entityModel.handle(command, entity, context);
-
-        assertEquals("child-two", result.asCompletableFuture().join().message().getPayload());
-        verify(childModelMockTwo).handle(command, entity, context);
-        verify(parentEntityCommandHandler, times(0)).handle(command, entity, context);
-    }
-
 
     @Test
     void withoutEntityEvolverWillStillEvolveChildren() {
         entityModel = SimpleEntityModel
                 .forEntityClass(TestEntity.class)
                 .commandHandler(SHARED_COMMAND, parentEntityCommandHandler)
-                .commandHandler(PARENT_ONLY_COMMAND, parentEntityCommandHandler)
+                .commandHandler(PARENT_ONLY_INSTANCE_COMMAND, parentEntityCommandHandler)
                 .addChild(childModelMockOne)
                 .addChild(childModelMockTwo)
                 .build();
@@ -201,36 +311,11 @@ class SimpleEntityModelTest {
     @Test
     void returnsSupportedCommandsForBothParentAndChild() {
         Set<QualifiedName> commandNames = entityModel.supportedCommands();
-        assertTrue(commandNames.contains(PARENT_ONLY_COMMAND));
+        assertTrue(commandNames.contains(PARENT_ONLY_CREATIONAL_COMMAND));
+        assertTrue(commandNames.contains(PARENT_ONLY_INSTANCE_COMMAND));
         assertTrue(commandNames.contains(CHILD_ONE_ONLY_COMMAND));
         assertTrue(commandNames.contains(CHILD_TWO_ONLY_COMMAND));
         assertTrue(commandNames.contains(SHARED_COMMAND));
-    }
-
-    @Test
-    void returnsFailedMessageStreamOnUnknownCommandType() {
-        GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType("UnknownCommand"),
-                                                                            "myPayload");
-
-        MessageStreamTestUtils.assertCompletedExceptionally(
-                entityModel.handle(command, entity, context),
-                IllegalArgumentException.class,
-                "No command handler found for command UnknownCommand on entity " + entity
-        );
-    }
-
-    @Test
-    void returnsFailedMessageStreamIfParentCommandHandlerThrowsException() {
-        GenericCommandMessage<String> command = new GenericCommandMessage<>(new MessageType(PARENT_ONLY_COMMAND),
-                                                                            "myPayload");
-        when(parentEntityCommandHandler.handle(any(), any(), any())).thenThrow(new IllegalStateException(
-                "Test exception"));
-
-        MessageStreamTestUtils.assertCompletedExceptionally(
-                entityModel.handle(command, entity, context),
-                IllegalStateException.class,
-                "Test exception"
-        );
     }
 
     @Test
@@ -241,7 +326,7 @@ class SimpleEntityModelTest {
 
 
         MessageStreamTestUtils.assertCompletedExceptionally(
-                entityModel.handle(command, entity, context),
+                entityModel.handleInstance(command, entity, context),
                 IllegalStateException.class,
                 "Test exception"
         );
@@ -260,7 +345,8 @@ class SimpleEntityModelTest {
         entityModel.describeTo(descriptor);
 
         assertEquals(TestEntity.class, descriptor.getProperty("entityType"));
-        assertEquals(Set.of(PARENT_ONLY_COMMAND,
+        assertEquals(Set.of(PARENT_ONLY_INSTANCE_COMMAND,
+                            PARENT_ONLY_CREATIONAL_COMMAND,
                             SHARED_COMMAND,
                             CHILD_ONE_ONLY_COMMAND,
                             CHILD_TWO_ONLY_COMMAND,
@@ -268,10 +354,11 @@ class SimpleEntityModelTest {
                      descriptor.getProperty("supportedCommandNames"));
         assertEquals(Map.of(SHARED_COMMAND,
                             parentEntityCommandHandler,
-                            PARENT_ONLY_COMMAND,
+                            PARENT_ONLY_INSTANCE_COMMAND,
                             parentEntityCommandHandler), descriptor.getProperty("commandHandlers"));
         assertEquals(parentEntityEvolver, descriptor.getProperty("entityEvolver"));
-        assertEquals(Map.of(TestChildEntityOne.class, childModelMockOne, TestChildEntityTwo.class, childModelMockTwo), descriptor.getProperty("children"));
+        assertEquals(Map.of(TestChildEntityOne.class, childModelMockOne, TestChildEntityTwo.class, childModelMockTwo),
+                     descriptor.getProperty("children"));
     }
 
     @Nested
@@ -288,13 +375,13 @@ class SimpleEntityModelTest {
 
         @Test
         void canNotAddNullCommandHandlerForQualifiedName() {
-            assertThrows(NullPointerException.class, () -> builder.commandHandler(PARENT_ONLY_COMMAND, null));
+            assertThrows(NullPointerException.class, () -> builder.commandHandler(PARENT_ONLY_INSTANCE_COMMAND, null));
         }
 
         @Test
         void canNotAddSecondCommandHandlerForSameQualifiedName() {
-            builder.commandHandler(PARENT_ONLY_COMMAND, parentEntityCommandHandler);
-            assertThrows(IllegalArgumentException.class, () -> builder.commandHandler(PARENT_ONLY_COMMAND,
+            builder.commandHandler(PARENT_ONLY_INSTANCE_COMMAND, parentEntityCommandHandler);
+            assertThrows(IllegalArgumentException.class, () -> builder.commandHandler(PARENT_ONLY_INSTANCE_COMMAND,
                                                                                       parentEntityCommandHandler));
         }
 
@@ -313,6 +400,15 @@ class SimpleEntityModelTest {
             //noinspection DataFlowIssue
             assertThrows(NullPointerException.class, () -> SimpleEntityModel.forEntityClass(null));
         }
+
+        @Test
+        void canNotAddChildThatSupportsCreationalCommand() {
+            EntityModel childEntityModel = mock(EntityModel.class);
+            when(childEntityModel.supportedCreationalCommands()).thenReturn(Set.of(CHILD_ONE_ONLY_COMMAND));
+            EntityChildModel<TestChildEntityOne, TestEntity> childModel = mock(EntityChildModel.class);
+            when(childModel.entityModel()).thenReturn(childEntityModel);
+            assertThrows(IllegalArgumentException.class, () -> builder.addChild(childModel));
+        }
     }
 
     private static class TestEntity {
@@ -322,6 +418,7 @@ class SimpleEntityModelTest {
     private static class TestChildEntityOne {
 
     }
+
     private static class TestChildEntityTwo {
 
     }
