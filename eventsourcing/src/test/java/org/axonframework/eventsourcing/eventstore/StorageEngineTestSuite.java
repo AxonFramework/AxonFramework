@@ -184,7 +184,9 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         SourcingCondition testCondition = SourcingCondition.conditionFor(TEST_CRITERIA);
 
         testSubject.source(testCondition)
-                   .whenComplete(() -> completed.set(true));
+                   .whenComplete(() -> completed.set(true))
+                   .first()
+                   .asCompletableFuture();
 
         await("Awaiting until sourcing completes").untilTrue(completed);
     }
@@ -364,9 +366,22 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
          .pollDelay(Duration.ofMillis(100))
          .untilAsserted(() -> assertTrue(stream.hasNextAvailable()));
 
-        assertEquals("event-3", stream.next()
-                                      .map(e -> (String) e.message().getPayload())
-                                      .orElse("none"));
+        assertEquals(
+                "event-3",
+                stream.next()
+                      .map(e -> {
+                          if (e.message().getPayload() instanceof String payload) {
+                              return payload;
+                          } else if (e.message().getPayload() instanceof byte[] payload) {
+                              return new String(payload, StandardCharsets.UTF_8);
+                          } else {
+                              throw new AssertionError(
+                                      "Unexpected payload type: " + e.message().getPayload().getClass()
+                              );
+                          }
+                      })
+                      .orElse("none")
+        );
     }
 
     @Test
@@ -433,7 +448,9 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
         assertNotNull(actualToken);
         StepVerifier.create(testSubject.stream(StreamingCondition.startingFrom(actualToken)).asFlux())
-                    .expectNextCount(2).thenCancel().verify();
+                    .expectNextCount(2)
+                    .thenCancel()
+                    .verify();
     }
 
     @Test
@@ -476,9 +493,9 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     private static void assertEvent(EventMessage<?> actual,
                                     EventMessage<String> expected) {
         if (actual.getPayload() instanceof byte[] actualPayload) {
-            assertArrayEquals(expected.getPayload().getBytes(StandardCharsets.UTF_8), actualPayload);
+            assertEquals(expected.getPayload(), new String(actualPayload, StandardCharsets.UTF_8));
         } else if (actual.getPayload() instanceof String actualPayload) {
-            assertEquals(actual.getPayload(), actualPayload);
+            assertEquals(expected.getPayload(), actualPayload);
         } else {
             throw new AssertionError("Unexpected payload type: " + actual.getPayload().getClass());
         }
