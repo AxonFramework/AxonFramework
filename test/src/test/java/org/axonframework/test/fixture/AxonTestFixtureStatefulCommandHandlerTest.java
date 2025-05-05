@@ -245,7 +245,7 @@ class AxonTestFixtureStatefulCommandHandlerTest {
                                                                  String.class,
                                                                  Student.class,
                                                                  c.getComponent(EventStore.class),
-                                                                 (type, id) -> new Student(id),
+                                                                 Student::new,
                                                                  id -> EventCriteria.havingTags("Student", id),
                                                                  new AnnotationBasedEventSourcedComponent<>(Student.class)
                                                          );
