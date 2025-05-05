@@ -29,6 +29,7 @@ import org.axonframework.utils.AssertUtils;
 import org.junit.jupiter.api.*;
 import reactor.test.StepVerifier;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -248,9 +249,9 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     void streamingFromStartReturnsSelectedMessages() throws Exception {
-        TaggedEventMessage<?> expectedEventOne = taggedEventMessage("event-0", TEST_CRITERIA_TAGS);
-        TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_CRITERIA_TAGS);
-        TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_CRITERIA_TAGS);
+        TaggedEventMessage<EventMessage<String>> expectedEventOne = taggedEventMessage("event-0", TEST_CRITERIA_TAGS);
+        TaggedEventMessage<EventMessage<String>> expectedEventTwo = taggedEventMessage("event-1", TEST_CRITERIA_TAGS);
+        TaggedEventMessage<EventMessage<String>> expectedEventThree = taggedEventMessage("event-4", TEST_CRITERIA_TAGS);
         // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
         testSubject.appendEvents(AppendCondition.none(),
                                  expectedEventOne,
@@ -279,8 +280,8 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     void streamingFromSpecificPositionReturnsSelectedMessages() throws Exception {
-        TaggedEventMessage<?> expectedEventTwo = taggedEventMessage("event-1", TEST_CRITERIA_TAGS);
-        TaggedEventMessage<?> expectedEventThree = taggedEventMessage("event-4", TEST_CRITERIA_TAGS);
+        TaggedEventMessage<EventMessage<String>> expectedEventTwo = taggedEventMessage("event-1", TEST_CRITERIA_TAGS);
+        TaggedEventMessage<EventMessage<String>> expectedEventThree = taggedEventMessage("event-4", TEST_CRITERIA_TAGS);
         // Ensure there are "gaps" in the global stream based on events not matching the sourcing condition
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
@@ -379,7 +380,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
 
     @Test
     void tailTokenReturnsFirstAppendedEvent() throws Exception {
-        TaggedEventMessage<?> firstEvent = taggedEventMessage("event-0", TEST_CRITERIA_TAGS);
+        TaggedEventMessage<EventMessage<String>> firstEvent = taggedEventMessage("event-0", TEST_CRITERIA_TAGS);
         testSubject.appendEvents(AppendCondition.none(),
                                  firstEvent,
                                  taggedEventMessage("event-1", TEST_CRITERIA_TAGS))
@@ -453,13 +454,13 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
         assertEquals(actualHeadToken, actualTokenAtToken);
     }
 
-    private static TaggedEventMessage<?> taggedEventMessage(String payload, Set<Tag> tags) {
+    private static TaggedEventMessage<EventMessage<String>> taggedEventMessage(String payload, Set<Tag> tags) {
         return taggedEventMessageAt(payload, tags, Instant.now());
     }
 
-    private static TaggedEventMessage<?> taggedEventMessageAt(String payload,
-                                                              Set<Tag> tags,
-                                                              Instant timestamp) {
+    private static TaggedEventMessage<EventMessage<String>> taggedEventMessageAt(String payload,
+                                                                                 Set<Tag> tags,
+                                                                                 Instant timestamp) {
         return new GenericTaggedEventMessage<>(
                 new GenericEventMessage<>(
                         UUID.randomUUID().toString(),
@@ -473,8 +474,14 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     private static void assertEvent(EventMessage<?> actual,
-                                    EventMessage<?> expected) {
-        assertEquals(expected.getPayload(), actual.getPayload());
+                                    EventMessage<String> expected) {
+        if (actual.getPayload() instanceof byte[] actualPayload) {
+            assertArrayEquals(expected.getPayload().getBytes(StandardCharsets.UTF_8), actualPayload);
+        } else if (actual.getPayload() instanceof String actualPayload) {
+            assertEquals(actual.getPayload(), actualPayload);
+        } else {
+            throw new AssertionError("Unexpected payload type: " + actual.getPayload().getClass());
+        }
         assertEquals(expected.getIdentifier(), actual.getIdentifier());
         assertEquals(expected.getTimestamp().toEpochMilli(), actual.getTimestamp().toEpochMilli());
         assertEquals(expected.getMetaData(), actual.getMetaData());
