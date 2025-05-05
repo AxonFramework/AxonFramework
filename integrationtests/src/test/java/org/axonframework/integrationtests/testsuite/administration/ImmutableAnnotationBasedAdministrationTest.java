@@ -56,7 +56,7 @@ public class ImmutableAnnotationBasedAdministrationTest extends AbstractAdminist
                 PersonIdentifier.class,
                 ImmutablePerson.class,
                 configuration.getComponent(EventStore.class),
-                (type, id) -> {
+                (id) -> {
                     if (id.type() == PersonType.EMPLOYEE) {
                         return new ImmutableEmployee(null, null, null, null, null, new ArrayList<>());
                     } else if (id.type() == PersonType.CUSTOMER) {

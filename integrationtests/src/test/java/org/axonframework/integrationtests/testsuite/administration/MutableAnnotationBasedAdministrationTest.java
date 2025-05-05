@@ -55,7 +55,7 @@ public class MutableAnnotationBasedAdministrationTest extends AbstractAdministra
                 PersonIdentifier.class,
                 MutablePerson.class,
                 configuration.getComponent(EventStore.class),
-                (type, id) -> {
+                (id) -> {
                     if (id.type() == PersonType.EMPLOYEE) {
                         return new MutableEmployee();
                     } else if (id.type() == PersonType.CUSTOMER) {

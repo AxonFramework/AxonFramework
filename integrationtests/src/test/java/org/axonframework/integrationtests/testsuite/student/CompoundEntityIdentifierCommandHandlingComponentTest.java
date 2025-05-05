@@ -48,7 +48,7 @@ class CompoundEntityIdentifierCommandHandlingComponentTest extends AbstractStude
     protected void registerAdditionalEntities(StatefulCommandHandlingModule.EntityPhase entityConfigurer) {
         EventSourcedEntityBuilder<StudentMentorModelIdentifier, StudentMentorAssignment> mentorAssignmentSlice =
                 EventSourcedEntityBuilder.entity(StudentMentorModelIdentifier.class, StudentMentorAssignment.class)
-                                         .entityFactory(c -> (type, id) -> new StudentMentorAssignment(id))
+                                         .entityFactory(c -> StudentMentorAssignment::new)
                                          .criteriaResolver(c -> id -> EventCriteria.either(
                                                  EventCriteria.havingTags(new Tag("Student", id.menteeId())),
                                                  EventCriteria.havingTags(new Tag("Student", id.mentorId()))

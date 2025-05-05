@@ -69,11 +69,11 @@ public abstract class AbstractStudentTestSuite {
     @BeforeEach
     void setUp() {
         studentEntity = EventSourcedEntityBuilder.entity(String.class, Student.class)
-                                                 .entityFactory(c -> (type, id) -> new Student(id))
+                                                 .entityFactory(c -> Student::new)
                                                  .criteriaResolver(this::studentCriteriaResolver)
                                                  .entityEvolver(this::studentEvolver);
         courseEntity = EventSourcedEntityBuilder.entity(String.class, Course.class)
-                                                .entityFactory(c -> (type, id) -> new Course(id))
+                                                .entityFactory(c -> Course::new)
                                                 .criteriaResolver(this::courseCriteriaResolver)
                                                 .entityEvolver(this::courseEvolver);
 
