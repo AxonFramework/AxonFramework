@@ -31,6 +31,7 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
+import org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
@@ -79,6 +80,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
                                                              @Nonnull List<TaggedEventMessage<?>> events) {
         DcbEventChannel.AppendEventsTransaction appendEventsTransaction = eventChannel().startTransaction();
+        appendEventsTransaction.condition(ConditionConverter.convertAppendCondition(condition));
         if (events.isEmpty()) {
             return CompletableFuture.completedFuture(null);
         } else {
@@ -97,9 +99,14 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
         return CompletableFuture.completedFuture(new AppendTransaction() {
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
-                return appendEventsTransaction.commit().thenApply(
-                        appendResponse -> new GlobalIndexConsistencyMarker(appendResponse.getLastPosition())
-                );
+                return appendEventsTransaction.commit()
+                                              .exceptionallyCompose(throwable -> CompletableFuture.failedFuture(
+                                                      new AppendEventsTransactionRejectedException(throwable.getMessage())
+                                              ))
+                                              .thenApply(appendResponse -> new GlobalIndexConsistencyMarker(
+                                                      // TODO we need to add the size of the event's?!
+                                                      appendResponse.getLastPosition() + events.size()
+                                              ));
             }
 
             @Override
