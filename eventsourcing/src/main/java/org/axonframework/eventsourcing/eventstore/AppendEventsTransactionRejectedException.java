@@ -28,7 +28,12 @@ import org.axonframework.common.AxonNonTransientException;
  */
 public class AppendEventsTransactionRejectedException extends AxonNonTransientException {
 
-    private AppendEventsTransactionRejectedException(String message) {
+    /**
+     * Constructs an {@code AppendConditionAssertionException} with the given {@code message}.
+     *
+     * @param message The message of the {@code AppendConditionAssertionException} under construction.
+     */
+    public AppendEventsTransactionRejectedException(String message) {
         super(message);
     }
 
