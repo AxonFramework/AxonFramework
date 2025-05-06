@@ -105,16 +105,4 @@ class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServer
         assertTrue(describedProperties.containsKey("connection"));
         assertTrue(describedProperties.containsKey("converter"));
     }
-
-    // TODO #3421 enable once tokenAt is implemented
-    @Disabled("#3421 enable once tokenAt is implemented")
-    protected void tokenAtRetrievesTokenFromStorageEngineThatStreamsEventsSinceThatMoment() throws Exception {
-        super.tokenAtRetrievesTokenFromStorageEngineThatStreamsEventsSinceThatMoment();
-    }
-
-    // TODO #3421 enable once tokenAt is implemented
-    @Disabled("#3421 enable once tokenAt is implemented")
-    protected void tokenAtReturnsHeadTokenWhenThereAreNoEventsAfterTheGivenAt() throws Exception {
-        super.tokenAtReturnsHeadTokenWhenThereAreNoEventsAfterTheGivenAt();
-    }
 }

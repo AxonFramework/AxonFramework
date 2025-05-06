@@ -20,6 +20,7 @@ import io.axoniq.axonserver.connector.AxonServerConnection;
 import io.axoniq.axonserver.connector.ResultStream;
 import io.axoniq.axonserver.connector.event.DcbEventChannel;
 import io.axoniq.axonserver.grpc.event.dcb.GetHeadRequest;
+import io.axoniq.axonserver.grpc.event.dcb.GetSequenceAtRequest;
 import io.axoniq.axonserver.grpc.event.dcb.GetTailRequest;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsRequest;
 import io.axoniq.axonserver.grpc.event.dcb.SourceEventsResponse;
@@ -164,7 +165,11 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
             logger.debug("Operation tokenAt() is invoked with Instant [{}].", at);
         }
 
-        throw new UnsupportedOperationException("The Axon Server Connector does not yet support this operation.");
+        GetSequenceAtRequest request = GetSequenceAtRequest.newBuilder()
+                                                           .setTimestamp(at.toEpochMilli())
+                                                           .build();
+        return eventChannel().getSequenceAt(request)
+                             .thenApply(response -> new GlobalSequenceTrackingToken(response.getSequence()));
     }
 
     private DcbEventChannel eventChannel() {
