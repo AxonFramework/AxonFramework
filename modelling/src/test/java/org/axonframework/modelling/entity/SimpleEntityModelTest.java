@@ -134,8 +134,8 @@ class SimpleEntityModelTest {
         when(childModelMockTwo.canHandle(any(), any(), any())).thenReturn(true);
         MessageStreamTestUtils.assertCompletedExceptionally(
                 entityModel.handle(command, entity, context),
-                IllegalStateException.class,
-                "Multiple child entities of class org.axonframework.modelling.entity.SimpleEntityModelTest$TestEntity are able to handle command SharedChildCommand#0.0.1: ["
+                ChildAmbiguityException.class,
+                "Multiple child entities found for command of type [SharedChildCommand#0.0.1]. State of parent entity ["
         );
     }
 
@@ -214,8 +214,8 @@ class SimpleEntityModelTest {
 
         MessageStreamTestUtils.assertCompletedExceptionally(
                 entityModel.handle(command, entity, context),
-                IllegalArgumentException.class,
-                "No command handler found for command UnknownCommand on entity " + entity
+                MissingCommandHandlerException.class,
+                "No command handler was found for command of type [UnknownCommand#0.0.1] for entity ["
         );
     }
 

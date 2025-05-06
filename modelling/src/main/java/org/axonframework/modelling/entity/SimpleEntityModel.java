@@ -126,9 +126,8 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
         } catch (Exception e) {
             return MessageStream.failed(e);
         }
-        return MessageStream.failed(new IllegalArgumentException(
-                "No command handler found for command " + message.type().qualifiedName() + " on entity " + entity
-        ));
+
+        return MessageStream.failed(new MissingCommandHandlerException(message, entityType));
     }
 
     private MessageStream.Single<CommandResultMessage<?>> handleForChildren(
@@ -149,15 +148,9 @@ public class SimpleEntityModel<E> implements DescribableComponent, EntityModel<E
             return matchingChildren.getFirst().handle(message, entity, context);
         }
         if (matchingChildren.size() > 1) {
-            return MessageStream.failed(new IllegalStateException(
-                    "Multiple child entities of %s are able to handle command %s: %s"
-                            .formatted(entityType(), message.type(), matchingChildren)
-            ));
+            return MessageStream.failed(new ChildAmbiguityException(message, entity));
         }
-        return MessageStream.failed(new IllegalArgumentException(
-                "No command handler found for command %s on entity %s after considering child entities: %s".formatted(
-                        message.type().qualifiedName(), entity, childrenWithCommandHandler)
-        ));
+        return MessageStream.failed(new ChildEntityMissingException(message, entity));
     }
 
     @Override

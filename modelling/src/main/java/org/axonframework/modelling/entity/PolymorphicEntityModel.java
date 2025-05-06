@@ -114,7 +114,10 @@ public class PolymorphicEntityModel<E> implements EntityModel<E>, DescribableCom
         if (concreteModel.supportedCommands().contains(message.type().qualifiedName())) {
             return concreteModel.handle(message, entity, context);
         }
-        return superTypeModel.handle(message, entity, context);
+        if(superTypeModel.supportedCommands().contains(message.type().qualifiedName())) {
+            return superTypeModel.handle(message, entity, context);
+        }
+        return MessageStream.failed(new MissingCommandHandlerException(message, entityType()));
     }
 
     @Override

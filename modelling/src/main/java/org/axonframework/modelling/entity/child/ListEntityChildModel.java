@@ -24,6 +24,8 @@ import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.messaging.MessageStream;
 import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
+import org.axonframework.modelling.entity.ChildAmbiguityException;
+import org.axonframework.modelling.entity.ChildEntityMissingException;
 import org.axonframework.modelling.entity.EntityModel;
 
 import java.util.List;
@@ -89,16 +91,10 @@ public class ListEntityChildModel<C, P> implements EntityChildModel<C, P> {
                 .filter(child -> commandTargetMatcher.matches(child, message))
                 .toList();
         if (matchingChildEntities.isEmpty()) {
-            return MessageStream.failed(new IllegalArgumentException(
-                    "No matching child entity found for command " + message.type().qualifiedName()
-                            + " on parent entity " + parentEntity
-            ));
+            return MessageStream.failed(new ChildEntityMissingException(message, parentEntity));
         }
         if (matchingChildEntities.size() > 1) {
-            return MessageStream.failed(new IllegalArgumentException(
-                    "Multiple matching child entities found for command " + message.type().qualifiedName()
-                            + " on parent entity " + parentEntity
-            ));
+            return MessageStream.failed(new ChildAmbiguityException(message, parentEntity));
         }
         return childEntityModel.handle(message, matchingChildEntities.getFirst(), context);
     }
