@@ -33,6 +33,7 @@ import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.AppendCondition;
 import org.axonframework.eventsourcing.eventstore.AppendEventsTransactionRejectedException;
 import org.axonframework.eventsourcing.eventstore.ConsistencyMarker;
+import org.axonframework.eventsourcing.eventstore.EmptyAppendTransaction;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.GlobalIndexConsistencyMarker;
 import org.axonframework.eventsourcing.eventstore.SourcingCondition;
@@ -79,39 +80,38 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
     @Override
     public CompletableFuture<AppendTransaction> appendEvents(@Nonnull AppendCondition condition,
                                                              @Nonnull List<TaggedEventMessage<?>> events) {
-        DcbEventChannel.AppendEventsTransaction appendEventsTransaction = eventChannel().startTransaction();
-        appendEventsTransaction.condition(ConditionConverter.convertAppendCondition(condition));
         if (events.isEmpty()) {
-            return CompletableFuture.completedFuture(null);
-        } else {
-            events.stream()
-                  .map(converter::convertTaggedEventMessage)
-                  .forEach(taggedEvent -> {
-                      if (logger.isDebugEnabled()) {
-                          logger.debug("Appended event [{}] with timestamp [{}].",
-                                       taggedEvent.getEvent().getIdentifier(),
-                                       taggedEvent.getEvent().getTimestamp());
-                      }
-                      appendEventsTransaction.append(taggedEvent);
-                  });
+            return CompletableFuture.completedFuture(EmptyAppendTransaction.INSTANCE);
         }
+
+        DcbEventChannel.AppendEventsTransaction appendTransaction = eventChannel().startTransaction();
+        appendTransaction.condition(ConditionConverter.convertAppendCondition(condition));
+        events.stream()
+              .map(converter::convertTaggedEventMessage)
+              .forEach(taggedEvent -> {
+                  if (logger.isDebugEnabled()) {
+                      logger.debug("Appended event [{}] with timestamp [{}].",
+                                   taggedEvent.getEvent().getIdentifier(),
+                                   taggedEvent.getEvent().getTimestamp());
+                  }
+                  appendTransaction.append(taggedEvent);
+              });
 
         return CompletableFuture.completedFuture(new AppendTransaction() {
             @Override
             public CompletableFuture<ConsistencyMarker> commit() {
-                return appendEventsTransaction.commit()
-                                              .exceptionallyCompose(throwable -> CompletableFuture.failedFuture(
-                                                      new AppendEventsTransactionRejectedException(throwable.getMessage())
-                                              ))
-                                              .thenApply(appendResponse -> new GlobalIndexConsistencyMarker(
-                                                      // TODO we need to add the size of the event's?!
-                                                      appendResponse.getLastPosition() + events.size()
-                                              ));
+                return appendTransaction.commit()
+                                        .exceptionallyCompose(throwable -> CompletableFuture.failedFuture(
+                                                new AppendEventsTransactionRejectedException(throwable.getMessage())
+                                        ))
+                                        .thenApply(appendResponse -> new GlobalIndexConsistencyMarker(
+                                                appendResponse.getLastPosition() + events.size()
+                                        ));
             }
 
             @Override
             public void rollback() {
-                appendEventsTransaction.rollback();
+                appendTransaction.rollback();
             }
         });
     }
