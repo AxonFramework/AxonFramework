@@ -87,11 +87,10 @@ class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServer
 
     @Override
     protected AxonServerEventStorageEngine buildStorageEngine() throws IOException {
-        // TODO actual use purge once present
-//        AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
-//                                                           container.getMappedPort(8124),
-//                                                           CONTEXT,
-//                                                           AxonServerContainerUtils.DCB_CONTEXT);
+        AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
+                                                           container.getHttpPort(),
+                                                           CONTEXT,
+                                                           AxonServerContainerUtils.DCB_CONTEXT);
         return new AxonServerEventStorageEngine(connection, new TestConverter());
     }
 
