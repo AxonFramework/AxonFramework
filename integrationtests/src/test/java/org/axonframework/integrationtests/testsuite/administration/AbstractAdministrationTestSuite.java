@@ -71,7 +71,7 @@ public abstract class AbstractAdministrationTestSuite {
     void canNotCreateDuplicateEmployee() {
         sendCommand(CREATE_EMPLOYEE_1_COMMAND);
 
-        assertThrowsExceptionWithText("Entity already exists", () -> {
+        assertThrowsExceptionWithText("existing entity", () -> {
             sendCommand(CREATE_EMPLOYEE_1_COMMAND);
         });
     }
@@ -81,7 +81,7 @@ public abstract class AbstractAdministrationTestSuite {
     void canNotCreateDuplicateCustomer() {
         sendCommand(CREATE_CUSTOMER_1_COMMAND);
 
-        assertThrowsExceptionWithText("Entity already exists", () -> {
+        assertThrowsExceptionWithText("existing entity", () -> {
             sendCommand(CREATE_CUSTOMER_1_COMMAND);
         });
     }
