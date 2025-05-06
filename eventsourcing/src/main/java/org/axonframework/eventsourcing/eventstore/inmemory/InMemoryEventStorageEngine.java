@@ -223,7 +223,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         return CompletableFuture.completedFuture(
                 eventStorage.isEmpty()
                         ? new GlobalSequenceTrackingToken(offset - 1)
-                        : new GlobalSequenceTrackingToken(eventStorage.firstKey() - 1)
+                        : new GlobalSequenceTrackingToken(eventStorage.firstKey())
         );
     }
 
@@ -236,7 +236,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         return CompletableFuture.completedFuture(
                 eventStorage.isEmpty()
                         ? new GlobalSequenceTrackingToken(offset - 1)
-                        : new GlobalSequenceTrackingToken(eventStorage.lastKey())
+                        : new GlobalSequenceTrackingToken(eventStorage.lastKey() + 1)
         );
     }
 
