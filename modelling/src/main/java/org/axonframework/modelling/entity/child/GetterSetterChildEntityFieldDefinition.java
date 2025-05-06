@@ -28,6 +28,8 @@ import java.util.function.Function;
  *
  * @param <P> The type of the parent entity.
  * @param <F> The type of the field. This can be the type of the child entity or a collection of child entities.
+ * @author Mitchell Herrijgers
+ * @since 5.0.0
  */
 public class GetterSetterChildEntityFieldDefinition<P, F> implements ChildEntityFieldDefinition<P, F> {
 

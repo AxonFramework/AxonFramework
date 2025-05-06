@@ -23,10 +23,10 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Functional interface describing how to apply the evolved child entity (or entities in case of a collection) to the
- * parent entity. The function can simply set a field or return a new instance of the parent entity with the evolved
- * child entity. The value returned from this function will be used as the new parent entity and must return a non-null
- * value.
+ * Functional interface describing how to get the child entity, and apply the evolved child entity (or entities in case
+ * of a collection) to the parent entity. The function can simply set a field or return a new instance of the parent
+ * entity with the evolved child entity. The value returned from this function will be used as the new parent entity and
+ * must return a non-null value.
  * <p>
  * There are three default ways to create an implementation:
  * <ul>
@@ -37,6 +37,8 @@ import java.util.function.Function;
  *
  * @param <P> The type of the parent entity.
  * @param <F> The type of the field. This can be the type of the child entity or a collection of child entities.
+ * @author Mitchell Herrijgers
+ * @since 5.0.0
  */
 public interface ChildEntityFieldDefinition<P, F> {
 

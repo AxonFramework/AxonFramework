@@ -23,8 +23,6 @@ import org.axonframework.messaging.QualifiedName;
 import org.axonframework.messaging.unitofwork.ProcessingContext;
 import org.axonframework.modelling.EntityEvolver;
 import org.axonframework.modelling.entity.child.EntityChildModel;
-import org.axonframework.modelling.entity.child.ListEntityChildModel;
-import org.axonframework.modelling.entity.child.SingleEntityChildModel;
 
 /**
  * Builder for a {@link EntityModel} instance. This builder allows for the configuration of the entity model, including
