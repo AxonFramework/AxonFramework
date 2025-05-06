@@ -87,11 +87,10 @@ class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServer
 
     @Override
     protected AxonServerEventStorageEngine buildStorageEngine() throws IOException {
-        // TODO actual use purge once present
-//        AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
-//                                                           container.getMappedPort(8124),
-//                                                           CONTEXT,
-//                                                           AxonServerContainerUtils.DCB_CONTEXT);
+        AxonServerContainerUtils.purgeEventsFromAxonServer(container.getHost(),
+                                                           container.getHttpPort(),
+                                                           CONTEXT,
+                                                           AxonServerContainerUtils.DCB_CONTEXT);
         return new AxonServerEventStorageEngine(connection, new TestConverter());
     }
 
@@ -105,17 +104,5 @@ class AxonServerEventStorageEngineTest extends StorageEngineTestSuite<AxonServer
         assertEquals(2, describedProperties.size());
         assertTrue(describedProperties.containsKey("connection"));
         assertTrue(describedProperties.containsKey("converter"));
-    }
-
-    // TODO #3421 enable once tokenAt is implemented
-    @Disabled("#3421 enable once tokenAt is implemented")
-    protected void tokenAtRetrievesTokenFromStorageEngineThatStreamsEventsSinceThatMoment() throws Exception {
-        super.tokenAtRetrievesTokenFromStorageEngineThatStreamsEventsSinceThatMoment();
-    }
-
-    // TODO #3421 enable once tokenAt is implemented
-    @Disabled("#3421 enable once tokenAt is implemented")
-    protected void tokenAtReturnsHeadTokenWhenThereAreNoEventsAfterTheGivenAt() throws Exception {
-        super.tokenAtReturnsHeadTokenWhenThereAreNoEventsAfterTheGivenAt();
     }
 }
