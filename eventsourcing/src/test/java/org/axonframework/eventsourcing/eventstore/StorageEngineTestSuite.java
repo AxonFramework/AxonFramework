@@ -19,6 +19,7 @@ package org.axonframework.eventsourcing.eventstore;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventhandling.GlobalSequenceTrackingToken;
+import org.axonframework.eventhandling.NoEventMessage;
 import org.axonframework.eventhandling.TrackingToken;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine.AppendTransaction;
 import org.axonframework.messaging.MessageStream;
@@ -101,8 +102,7 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
     }
 
     @Test
-    void usingMidStreamConsistencyMarkerFromSourcingEventsToAppendIsNotAllowed() throws Exception {
-        // given ...
+    void sourcingEventsReturnsConsistencyMarkerPairedWithNoEventMessageAsFinalEntryInTheMessageStream() throws Exception {
         testSubject.appendEvents(AppendCondition.none(),
                                  taggedEventMessage("event-0", TEST_CRITERIA_TAGS),
                                  taggedEventMessage("event-1", TEST_CRITERIA_TAGS),
@@ -113,24 +113,19 @@ public abstract class StorageEngineTestSuite<ESE extends EventStorageEngine> {
                    .thenCompose(AppendTransaction::commit)
                    .get(5, TimeUnit.SECONDS);
 
-        ConsistencyMarker midStreamMarker = testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA))
-                                                       .asFlux()
-                                                       .collectList()
-                                                       .map(entries -> entries.get(1))
-                                                       .map(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY))
-                                                       .block();
-        // when ...
-        AppendCondition testAppendCondition = AppendCondition.withCriteria(OTHER_CRITERIA)
-                                                             .withMarker(midStreamMarker);
-        CompletableFuture<ConsistencyMarker> result =
-                testSubject.appendEvents(testAppendCondition, taggedEventMessage("event-6", OTHER_CRITERIA_TAGS))
-                           .thenCompose(AppendTransaction::commit);
-        // then ...
-        await("Await commit").pollDelay(Duration.ofMillis(50))
-                             .atMost(Duration.ofSeconds(5))
-                             .untilAsserted(result::isDone);
-        assertTrue(result.isCompletedExceptionally());
-        assertInstanceOf(AppendEventsTransactionRejectedException.class, result.exceptionNow());
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(TEST_CRITERIA)).asFlux())
+                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
+                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
+                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) != null
+                            && entry.message().equals(NoEventMessage.INSTANCE));
+
+        StepVerifier.create(testSubject.source(SourcingCondition.conditionFor(OTHER_CRITERIA)).asFlux())
+                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
+                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
+                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
+                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) == null)
+                    .expectNextMatches(entry -> entry.getResource(ConsistencyMarker.RESOURCE_KEY) != null
+                            && entry.message().equals(NoEventMessage.INSTANCE));
     }
 
     @Test
