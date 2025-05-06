@@ -42,9 +42,8 @@ import java.util.stream.Collectors;
  * Wrapper around standard Axon Framework {@link Converter} that can convert
  * {@link TaggedEventMessage TaggedEventMessages} to {@link TaggedEvent TaggedEvents}.
  *
- * @author Marc Gathier
  * @author Steven van Beelen
- * @since 4.0.0
+ * @since 5.0.0
  */
 class EventConverter implements DescribableComponent {
 
