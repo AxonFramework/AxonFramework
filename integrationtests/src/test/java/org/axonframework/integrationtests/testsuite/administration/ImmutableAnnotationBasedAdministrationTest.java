@@ -34,8 +34,6 @@ import org.axonframework.modelling.entity.EntityModel;
 import java.util.ArrayList;
 import java.util.Set;
 
-import static java.lang.String.format;
-
 /**
  * THIS CLASS ONLY EXIST TO VERIFY THE CURRENT FUNCTIONALITY CAN BE APPLIED WITH ANNOTATIONS. THIS CLASS SHOULD NOT BE
  * REVIEWED. It's just proof of concept.
