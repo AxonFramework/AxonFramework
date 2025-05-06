@@ -35,6 +35,11 @@ jobs:
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
 
+      - name: Set Axon Server Image environment variable
+        id: step_one
+        run: |
+          echo "AXON_SERVER_IMAGE=${{ secrets.AXON_SERVER_IMAGE }}" >> "$GITHUB_ENV"
+
       - name: Regular Build
         if: ${{ !matrix.sonar-enabled }}
         run: |
