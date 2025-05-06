@@ -105,7 +105,7 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
                                                 new AppendEventsTransactionRejectedException(throwable.getMessage())
                                         ))
                                         .thenApply(appendResponse -> new GlobalIndexConsistencyMarker(
-                                                appendResponse.getLastPosition() + events.size()
+                                                appendResponse.getConsistencyMarker()
                                         ));
             }
 
