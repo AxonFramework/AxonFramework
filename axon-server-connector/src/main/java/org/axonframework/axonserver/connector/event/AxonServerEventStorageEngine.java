@@ -122,8 +122,6 @@ public class AxonServerEventStorageEngine implements EventStorageEngine {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
 
-        // TODO Do we disregard SourcingCondition#end for now?
-        //  Axon Server does not support this, so we would have to cut off ourselves in the result stream.
         SourceEventsRequest sourcingRequest = ConditionConverter.convertSourcingCondition(condition);
         ResultStream<SourceEventsResponse> sourcingStream = eventChannel().source(sourcingRequest);
         return new SourcingMessageStream(sourcingStream, converter);

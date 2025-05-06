@@ -168,8 +168,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         if (logger.isDebugEnabled()) {
             logger.debug("Start sourcing events with condition [{}].", condition);
         }
-        // TODO Do we disregard SourcingCondition#end for now?
-        //  Axon Server does not support this, so the question's here to be sure we align in this implementation
+
         // Set end to the CURRENT last position, to reflect it's a finite stream.
         return eventsToMessageStream(condition.start(),
                                      eventStorage.isEmpty() ? -1 : eventStorage.lastKey(),
@@ -181,6 +180,7 @@ public class InMemoryEventStorageEngine implements EventStorageEngine {
         if (logger.isDebugEnabled()) {
             logger.debug("Start streaming events with condition [{}].", condition);
         }
+
         // Set end to the Long.MAX-VALUE, to reflect it's an infinite stream.
         return eventsToMessageStream(condition.position().position().orElse(-1) + 1, Long.MAX_VALUE, condition);
     }
